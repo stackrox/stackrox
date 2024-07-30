@@ -2,22 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { Flex } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
-import {
-    OnSearchPayload,
-    PartialCompoundSearchFilterConfig,
-    SearchFilterAttributeName,
-    SearchFilterEntityName,
-} from '../types';
-import { getDefaultAttribute, getDefaultEntity } from '../utils/utils';
+import { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
+import { ensureString, getDefaultAttribute, getDefaultEntity } from '../utils/utils';
 
 import EntitySelector, { SelectedEntity } from './EntitySelector';
 import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
 import CompoundSearchFilterInputField, { InputFieldValue } from './CompoundSearchFilterInputField';
 
 export type CompoundSearchFilterProps = {
-    config: PartialCompoundSearchFilterConfig;
-    defaultEntity?: SearchFilterEntityName;
-    defaultAttribute?: SearchFilterAttributeName;
+    config: CompoundSearchFilterConfig;
+    defaultEntity?: string;
+    defaultAttribute?: string;
     searchFilter: SearchFilter;
     additionalContextFilter?: SearchFilter;
     onSearch: ({ action, category, value }: OnSearchPayload) => void;
@@ -74,11 +69,8 @@ function CompoundSearchFilter({
                 menuToggleClassName="pf-v5-u-flex-shrink-0"
                 selectedEntity={selectedEntity}
                 onChange={(value) => {
-                    setSelectedEntity(value as SearchFilterEntityName);
-                    const defaultAttribute = getDefaultAttribute(
-                        value as SearchFilterEntityName,
-                        config
-                    );
+                    setSelectedEntity(ensureString(value));
+                    const defaultAttribute = getDefaultAttribute(ensureString(value), config);
                     setSelectedAttribute(defaultAttribute);
                     setInputValue('');
                 }}
@@ -89,7 +81,7 @@ function CompoundSearchFilter({
                 selectedEntity={selectedEntity}
                 selectedAttribute={selectedAttribute}
                 onChange={(value) => {
-                    setSelectedAttribute(value as SearchFilterAttributeName);
+                    setSelectedAttribute(ensureString(value));
                     setInputValue('');
                 }}
                 config={config}

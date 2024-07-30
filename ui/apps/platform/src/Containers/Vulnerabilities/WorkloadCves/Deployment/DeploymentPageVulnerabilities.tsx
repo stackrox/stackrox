@@ -29,11 +29,12 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
+import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import {
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
-} from '../../searchFilterConfig';
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import {
     SearchOption,
     COMPONENT_SEARCH_OPTION,
@@ -102,11 +103,11 @@ const searchOptions: SearchOption[] = [
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
-const searchFilterConfig = {
-    Image: imageSearchFilterConfig,
-    'Image CVE': imageCVESearchFilterConfig,
-    ImageComponent: imageComponentSearchFilterConfig,
-};
+const searchFilterConfig = createSearchFilterConfig([
+    imageSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+]);
 
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;

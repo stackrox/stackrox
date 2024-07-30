@@ -1,20 +1,24 @@
-import { EntitySearchFilterConfig } from '../types';
+import { SearchCategory } from 'services/SearchService';
+import { CompoundSearchFilterConfig, SearchFilterAttribute } from '../types';
 
-export function getFilteredConfig<
-    T extends EntitySearchFilterConfig,
-    K extends keyof T['attributes'],
->(
-    config: T,
-    selectedAttributes: K[]
-): Omit<T, 'attributes'> & { attributes: Pick<T['attributes'], K> } {
-    const attributes = {} as Pick<T['attributes'], K>;
+export function createSearchFilterConfig(
+    configs: {
+        displayName: string;
+        searchCategory: SearchCategory;
+        attributes: SearchFilterAttribute[];
+    }[]
+): CompoundSearchFilterConfig {
+    const searchFilterConfig = configs.reduce((acc, config) => {
+        acc[config.displayName] = {
+            displayName: config.displayName,
+            searchCategory: config.searchCategory,
+            attributes: config.attributes.reduce((acc, curr) => {
+                acc[curr.displayName] = curr;
+                return acc;
+            }, {}),
+        };
+        return acc;
+    }, {});
 
-    selectedAttributes.forEach((key) => {
-        attributes[key] = config.attributes[key as string];
-    });
-
-    return {
-        ...config,
-        attributes,
-    };
+    return searchFilterConfig;
 }

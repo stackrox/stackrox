@@ -34,7 +34,11 @@ import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchU
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
-import { clusterSearchFilterConfig, platformCVESearchFilterConfig } from '../../searchFilterConfig';
+import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import {
+    clusterSearchFilterConfig,
+    platformCVESearchFilterConfig,
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
@@ -51,10 +55,10 @@ import CVEsTable, {
 } from './CVEsTable';
 import { usePlatformCveEntityCounts } from './usePlatformCveEntityCounts';
 
-const searchFilterConfig = {
-    Cluster: clusterSearchFilterConfig,
-    PlatformCVE: platformCVESearchFilterConfig,
-};
+const searchFilterConfig = createSearchFilterConfig([
+    clusterSearchFilterConfig,
+    platformCVESearchFilterConfig,
+]);
 
 function PlatformCvesOverviewPage() {
     const apolloClient = useApolloClient();

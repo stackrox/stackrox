@@ -30,13 +30,12 @@ import {
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
-import {
-    imageComponentSearchFilterConfig,
-    imageCVESearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
+import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import { getImageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
+import { getImageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
 import {
     SearchOption,
     IMAGE_CVE_SEARCH_OPTION,
@@ -99,10 +98,18 @@ const searchOptions: SearchOption[] = [
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
-const searchFilterConfig = {
-    'Image CVE': imageCVESearchFilterConfig,
-    ImageComponent: imageComponentSearchFilterConfig,
-};
+const searchFilterConfig = createSearchFilterConfig([
+    {
+        displayName: 'Image CVE',
+        searchCategory: 'IMAGE_VULNERABILITIES',
+        attributes: getImageCVEAttributes(),
+    },
+    {
+        displayName: 'Image component',
+        searchCategory: 'IMAGE_COMPONENTS',
+        attributes: getImageComponentAttributes(),
+    },
+]);
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;

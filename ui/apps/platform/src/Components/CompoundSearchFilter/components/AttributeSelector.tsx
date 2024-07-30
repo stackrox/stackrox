@@ -1,11 +1,11 @@
 import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
-import { PartialCompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
 import { getEntityAttributes } from 'Components/CompoundSearchFilter/utils/utils';
 
 import SimpleSelect from './SimpleSelect';
 import { SelectedEntity } from './EntitySelector';
+import { CompoundSearchFilterConfig } from '../types';
 
 export type SelectedAttribute = string | undefined;
 export type AttributeSelectorOnChange = (value: string | number | undefined) => void;
@@ -14,7 +14,7 @@ export type AttributeSelectorProps = {
     selectedEntity: SelectedEntity;
     selectedAttribute: SelectedAttribute;
     onChange: AttributeSelectorOnChange;
-    config: PartialCompoundSearchFilterConfig;
+    config: CompoundSearchFilterConfig;
     menuToggleClassName?: string;
 };
 

@@ -6,11 +6,7 @@ import { SearchFilter } from 'types/search';
 import { getDate } from 'utils/dateUtils';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
-import {
-    OnSearchPayload,
-    PartialCompoundSearchFilterConfig,
-    SearchFilterAttribute,
-} from '../types';
+import { CompoundSearchFilterConfig, OnSearchPayload, SearchFilterAttribute } from '../types';
 import {
     conditionMap,
     ensureConditionNumber,
@@ -39,7 +35,7 @@ export type CompoundSearchFilterInputFieldProps = {
     additionalContextFilter?: SearchFilter;
     onSearch: ({ action, category, value }: OnSearchPayload) => void;
     onChange: InputFieldOnChange;
-    config: PartialCompoundSearchFilterConfig;
+    config: CompoundSearchFilterConfig;
 };
 
 function dateParse(date: string): Date {

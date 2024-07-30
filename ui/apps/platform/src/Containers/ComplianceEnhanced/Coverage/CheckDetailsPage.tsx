@@ -11,8 +11,8 @@ import {
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { OnSearchPayload, clusterSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
-import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -28,6 +28,7 @@ import {
 import { getTableUIState } from 'utils/getTableUIState';
 import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
+import { getClusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
 import CheckDetailsHeader from './CheckDetailsHeader';
 import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
 import {
@@ -111,9 +112,13 @@ function CheckDetails() {
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
 
-    const searchFilterConfig = {
-        Cluster: getFilteredConfig(clusterSearchFilterConfig, ['Name']),
-    };
+    const searchFilterConfig = createSearchFilterConfig([
+        {
+            displayName: 'Cluster',
+            searchCategory: 'CLUSTERS',
+            attributes: getClusterAttributes(['Name']),
+        },
+    ]);
 
     const tableState = getTableUIState({
         isLoading: isLoadingCheckResults,

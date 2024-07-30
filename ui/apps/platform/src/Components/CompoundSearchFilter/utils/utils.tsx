@@ -1,16 +1,12 @@
-import React from 'react';
 import { FilterChip, FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 
 import { SearchFilter } from 'types/search';
 import { SetSearchFilter } from 'hooks/useURLSearch';
 import {
     OnSearchPayload,
-    PartialCompoundSearchFilterConfig,
     SearchFilterAttribute,
-    SearchFilterAttributeName,
-    SearchFilterEntityName,
+    SearchFilterConfig,
     SelectSearchFilterAttribute,
-    compoundSearchEntityNames,
 } from '../types';
 
 export const conditionMap = {
@@ -23,27 +19,21 @@ export const conditionMap = {
 
 export const conditions = Object.keys(conditionMap);
 
-export function getEntities(config: PartialCompoundSearchFilterConfig): SearchFilterEntityName[] {
-    const entities = Object.keys(config) as SearchFilterEntityName[];
+export function getEntities<T extends object>(config: T): Array<keyof T> {
+    const entities = Object.keys(config) as Array<keyof T>;
     return entities;
 }
 
-function isSearchFilterEntity(key: string): key is SearchFilterEntityName {
-    return compoundSearchEntityNames.includes(key);
-}
-
-export function getDefaultEntity(
-    config: PartialCompoundSearchFilterConfig
-): SearchFilterEntityName | undefined {
-    const entities = Object.keys(config).filter(isSearchFilterEntity);
+export function getDefaultEntity<T extends object>(config: T): keyof T {
+    const entities = getEntities(config);
     return entities[0];
 }
 
-export function getEntityAttributes(
-    entity: SearchFilterEntityName,
-    config: PartialCompoundSearchFilterConfig
+export function getEntityAttributes<T extends object>(
+    entity: string,
+    config: T
 ): SearchFilterAttribute[] {
-    const entityConfig = config[entity];
+    const entityConfig = config[entity] as SearchFilterConfig;
     if (entityConfig && entityConfig.attributes) {
         const attributeValues: SearchFilterAttribute[] = Object.values(entityConfig.attributes);
         return attributeValues;
@@ -51,13 +41,13 @@ export function getEntityAttributes(
     return [];
 }
 
-export function getDefaultAttribute(
-    entity: SearchFilterEntityName,
-    config: PartialCompoundSearchFilterConfig
-): SearchFilterAttributeName | undefined {
-    const entityConfig = config[entity];
+export function getDefaultAttribute<T extends object>(
+    entity: string,
+    config: T
+): string | undefined {
+    const entityConfig = config[entity] as SearchFilterConfig;
     if (entityConfig && entityConfig.attributes) {
-        const attributeNames = Object.keys(entityConfig.attributes) as SearchFilterAttributeName[];
+        const attributeNames = Object.keys(entityConfig.attributes) as string[];
         return attributeNames[0];
     }
     return undefined;
@@ -113,30 +103,31 @@ export function isSelectType(
  * @param searchFilterConfig Config object for the search filter
  * @returns An array of FilterChipGroupDescriptor objects
  */
-export function makeFilterChipDescriptors(
-    searchFilterConfig: PartialCompoundSearchFilterConfig
+export function makeFilterChipDescriptors<T extends object>(
+    searchFilterConfig: T
 ): FilterChipGroupDescriptor[] {
-    const filterChipDescriptors = Object.values(searchFilterConfig).flatMap(({ attributes = {} }) =>
-        Object.values(attributes).map((attributeConfig: SearchFilterAttribute) => {
-            const baseConfig = {
-                displayName: attributeConfig.filterChipLabel,
-                searchFilterName: attributeConfig.searchTerm,
-            };
-
-            if (isSelectType(attributeConfig)) {
-                return {
-                    ...baseConfig,
-                    render: (filter: string) => {
-                        const option = attributeConfig.inputProps.options.find(
-                            (option) => option.value === filter
-                        );
-                        return <FilterChip name={option?.label || 'N/A'} />;
-                    },
+    const filterChipDescriptors = Object.values(searchFilterConfig).flatMap(
+        ({ attributes = {} }: SearchFilterConfig) =>
+            Object.values(attributes).map((attributeConfig) => {
+                const baseConfig = {
+                    displayName: attributeConfig.filterChipLabel,
+                    searchFilterName: attributeConfig.searchTerm,
                 };
-            }
 
-            return baseConfig;
-        })
+                if (isSelectType(attributeConfig)) {
+                    return {
+                        ...baseConfig,
+                        render: (filter: string) => {
+                            const option = attributeConfig.inputProps.options.find(
+                                (option) => option.value === filter
+                            );
+                            return <FilterChip name={option?.label || 'N/A'} />;
+                        },
+                    };
+                }
+
+                return baseConfig;
+            })
     );
     return filterChipDescriptors;
 }

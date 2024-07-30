@@ -16,12 +16,9 @@ import {
 } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import {
-    OnSearchPayload,
-    profileCheckSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
+import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
@@ -33,6 +30,7 @@ import { getComplianceProfileClusterResults } from 'services/ComplianceResultsSe
 import { listComplianceScanConfigClusterProfiles } from 'services/ComplianceScanConfigurationService';
 import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
+import { getProfileCheckAttributes } from 'Components/CompoundSearchFilter/attributes/profileCheck';
 import ClusterDetailsTable from './ClusterDetailsTable';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
@@ -93,9 +91,13 @@ function ClusterDetailsPage() {
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
 
-    const searchFilterConfig = {
-        'Profile check': getFilteredConfig(profileCheckSearchFilterConfig, ['Name']),
-    };
+    const searchFilterConfig = createSearchFilterConfig([
+        {
+            displayName: 'Profile check',
+            searchCategory: 'COMPLIANCE',
+            attributes: getProfileCheckAttributes(),
+        },
+    ]);
 
     const tableState = getTableUIState({
         isLoading: isLoadingCheckResults,

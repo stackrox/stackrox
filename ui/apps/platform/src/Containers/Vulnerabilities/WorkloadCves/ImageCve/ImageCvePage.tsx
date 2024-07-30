@@ -37,14 +37,13 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
-import {
-    imageSearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import { getImageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
+import { getImageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
+import { getDeploymentAttributes } from 'Components/CompoundSearchFilter/attributes/deployment';
+import { getNamespaceAttributes } from 'Components/CompoundSearchFilter/attributes/namespace';
+import { getClusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -187,13 +186,33 @@ const searchOptions: SearchOption[] = [
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
-const searchFilterConfig = {
-    Image: imageSearchFilterConfig,
-    ImageComponent: imageComponentSearchFilterConfig,
-    Deployment: deploymentSearchFilterConfig,
-    Namespace: namespaceSearchFilterConfig,
-    Cluster: clusterSearchFilterConfig,
-};
+const searchFilterConfig = createSearchFilterConfig([
+    {
+        displayName: 'Image',
+        searchCategory: 'IMAGES',
+        attributes: getImageAttributes(),
+    },
+    {
+        displayName: 'Image components',
+        searchCategory: 'IMAGE_COMPONENTS',
+        attributes: getImageComponentAttributes(),
+    },
+    {
+        displayName: 'Deployment',
+        searchCategory: 'DEPLOYMENTS',
+        attributes: getDeploymentAttributes(),
+    },
+    {
+        displayName: 'Namespace',
+        searchCategory: 'NAMESPACES',
+        attributes: getNamespaceAttributes(),
+    },
+    {
+        displayName: 'Cluster',
+        searchCategory: 'CLUSTERS',
+        attributes: getClusterAttributes(),
+    },
+]);
 
 function ImageCvePage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();

@@ -5,7 +5,7 @@ import { uniq } from 'lodash';
 import CompoundSearchFilter, {
     CompoundSearchFilterProps,
 } from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import { OnSearchPayload, SearchFilterEntityName } from 'Components/CompoundSearchFilter/types';
+import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import SearchFilterChips, { FilterChip } from 'Components/PatternFly/SearchFilterChips';
 import useFeatureFlags from 'hooks/useFeatureFlags';
@@ -48,7 +48,7 @@ type AdvancedFiltersToolbarProps = {
     defaultFilters?: DefaultFilters;
     includeCveSeverityFilters?: boolean;
     includeCveStatusFilters?: boolean;
-    defaultSearchFilterEntity?: SearchFilterEntityName;
+    defaultSearchFilterEntity?: string;
     additionalContextFilter?: SearchFilter;
     // TODO We need to be able to apply the autocomplete search context to the advanced filters component @see FilterAutocomplete.tsx
     // autocompleteSearchContext?: unknown;

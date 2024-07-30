@@ -21,12 +21,11 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 
 import BySeveritySummaryCard from 'Containers/Vulnerabilities/components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from 'Containers/Vulnerabilities/WorkloadCves/SummaryCards/CvesByStatusSummaryCard';
-import {
-    nodeCVESearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
 import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import { getNodeCVEAttributes } from 'Components/CompoundSearchFilter/attributes/nodeCVE';
+import { getNodeComponentAttributes } from 'Components/CompoundSearchFilter/attributes/nodeComponent';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
@@ -41,10 +40,18 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 
-const searchFilterConfig = {
-    NodeCVE: nodeCVESearchFilterConfig,
-    'Node component': nodeComponentSearchFilterConfig,
-};
+const searchFilterConfig = createSearchFilterConfig([
+    {
+        displayName: 'Node CVE',
+        searchCategory: 'NODE_VULNERABILITIES',
+        attributes: getNodeCVEAttributes(),
+    },
+    {
+        displayName: 'Node component',
+        searchCategory: 'NODE_COMPONENTS',
+        attributes: getNodeComponentAttributes(),
+    },
+]);
 
 export type NodePageVulnerabilitiesProps = {
     nodeId: string;

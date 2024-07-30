@@ -17,12 +17,8 @@ import ComplianceUsageDisclaimer, {
     COMPLIANCE_DISCLAIMER_KEY,
 } from 'Components/ComplianceUsageDisclaimer';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import {
-    OnSearchPayload,
-    clusterSearchFilterConfig,
-    profileCheckSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
-import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
@@ -35,6 +31,8 @@ import {
 import { defaultChartHeight } from 'utils/chartUtils';
 
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
+import { getProfileCheckAttributes } from 'Components/CompoundSearchFilter/attributes/profileCheck';
+import { getClusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import {
     coverageProfileChecksPath,
@@ -68,10 +66,18 @@ function CoveragesPage() {
 
     const { searchFilter, setSearchFilter } = useURLSearch();
 
-    const searchFilterConfig = {
-        'Profile Check': profileCheckSearchFilterConfig,
-        Cluster: getFilteredConfig(clusterSearchFilterConfig, ['Name']),
-    };
+    const searchFilterConfig = createSearchFilterConfig([
+        {
+            displayName: 'Profile check',
+            searchCategory: 'COMPLIANCE',
+            attributes: getProfileCheckAttributes(),
+        },
+        {
+            displayName: 'Cluster',
+            searchCategory: 'CLUSTERS',
+            attributes: getClusterAttributes(),
+        },
+    ]);
 
     const fetchProfilesStats = useCallback(async () => {
         setSelectedProfileStats(undefined);

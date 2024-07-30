@@ -12,10 +12,7 @@ import {
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import {
-    OnSearchPayload,
-    PartialCompoundSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
+import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
@@ -39,7 +36,7 @@ export type ClusterDetailsTableProps = {
     tableState: TableUIState<ComplianceCheckResult>;
     pagination: UseURLPaginationResult;
     getSortParams: UseURLSortResult['getSortParams'];
-    searchFilterConfig: PartialCompoundSearchFilterConfig;
+    searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
     onSearch: (payload: OnSearchPayload) => void;
     onCheckStatusSelect: (
