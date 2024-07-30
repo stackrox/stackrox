@@ -12,9 +12,8 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// GetSensorNamespace tries to read the sensor namespace out of the service account token dir, POD_NAMESPACE if that
-// fails, and defaults to Stackrox otherwise.
-func GetSensorNamespace(params ...bool) string {
+// GetSensorNamespace is a heuristic to determine in what namespace the Sensor runs.
+func GetSensorNamespace() string {
 	// This attempts to load the namespace from the file serviceaccount/namespace
 	sensorNamespace, err := satoken.LoadNamespaceFromFile()
 	if err != nil {
