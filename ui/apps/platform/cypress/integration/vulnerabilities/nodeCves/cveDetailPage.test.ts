@@ -8,19 +8,29 @@ import {
 import { assertCannotFindThePage, visit } from '../../../helpers/visit';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
+    getAffectedNodesOpname,
     getNodeCveMetadataOpname,
+    getNodeCveSummaryOpname,
     nodeCveBaseUrl,
-    routeMatcherMapForNodeCveMetadata,
+    routeMatcherMapForNodeCvePage,
     routeMatcherMapForNodeCves,
+    routeMatcherMapForNodePage,
     visitNodeCvePage,
     visitNodeCvePageWithStaticPermissions,
 } from './NodeCve.helpers';
+import { staticResponseMapForNodePage } from './nodeDetailPage.test';
 
-const mockCveName = 'CVE-2022-1996';
+const mockCveName = 'CYPRESS-CVE-2022-1996';
 
-const staticResponseMapForNodeCveMetadata = {
+const staticResponseMapForNodeCvePage = {
     [getNodeCveMetadataOpname]: {
         fixture: `vulnerabilities/nodeCves/${getNodeCveMetadataOpname}`,
+    },
+    [getNodeCveSummaryOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeCveSummaryOpname}`,
+    },
+    [getAffectedNodesOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getAffectedNodesOpname}`,
     },
 };
 
@@ -50,8 +60,8 @@ describe('Node CVEs - CVE Detail Page', () => {
                 Node: 'READ_ACCESS',
                 Cluster: 'READ_ACCESS',
             },
-            routeMatcherMapForNodeCveMetadata,
-            staticResponseMapForNodeCveMetadata
+            routeMatcherMapForNodeCvePage,
+            staticResponseMapForNodeCvePage
         );
         cy.get('h1').contains(mockCveName);
     });
@@ -73,8 +83,8 @@ describe('Node CVEs - CVE Detail Page', () => {
         // clicking the Node CVEs breadcrumb should navigate to the overview page with the CVE tab selected
         visitNodeCvePage(
             mockCveName,
-            routeMatcherMapForNodeCveMetadata,
-            staticResponseMapForNodeCveMetadata
+            routeMatcherMapForNodeCvePage,
+            staticResponseMapForNodeCvePage
         );
 
         interactAndWaitForResponses(() => {
@@ -86,6 +96,22 @@ describe('Node CVEs - CVE Detail Page', () => {
 
     it('should link to the Node page from the name links in the table', () => {
         // clicking a Node name in the list should navigate to the correct Node details page
+        visitNodeCvePage(
+            mockCveName,
+            routeMatcherMapForNodeCvePage,
+            staticResponseMapForNodeCvePage
+        );
+
+        interactAndWaitForResponses(
+            () => {
+                cy.get(`table td[data-label="Node"]`).first().click();
+            },
+            routeMatcherMapForNodePage,
+            staticResponseMapForNodePage
+        );
+
+        // Check for the presence of the Node breadcrumb link to ensure we are on the correct page
+        cy.get('nav[aria-label="Breadcrumb"] a').contains('Nodes');
     });
 
     it('should display the expected Node table columns', () => {

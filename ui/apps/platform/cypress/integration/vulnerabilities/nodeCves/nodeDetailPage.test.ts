@@ -19,7 +19,7 @@ const nodeBaseUrl = '/main/vulnerabilities/node-cves/nodes';
 const mockNodeId = '1';
 const mockNodeName = 'cypress-node-1';
 
-const staticResponseMapForNodePage = {
+export const staticResponseMapForNodePage = {
     [getNodeMetadataOpname]: {
         fixture: `vulnerabilities/nodeCves/${getNodeMetadataOpname}`,
     },

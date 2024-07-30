@@ -18,6 +18,8 @@ export const getEntityTypeCountsOpname = 'getNodeCVEEntityCounts';
 
 // Node CVE page
 export const getNodeCveMetadataOpname = 'getNodeCVEMetadata';
+export const getNodeCveSummaryOpname = 'getNodeCVESummaryData';
+export const getAffectedNodesOpname = 'getAffectedNodes';
 
 // Node page
 export const getNodeMetadataOpname = 'getNodeMetadata';
@@ -45,10 +47,18 @@ export const routeMatcherMapForEntityCounts = {
     },
 };
 
-export const routeMatcherMapForNodeCveMetadata = {
+export const routeMatcherMapForNodeCvePage = {
     [getNodeCveMetadataOpname]: {
         method: 'POST',
         url: graphql(getNodeCveMetadataOpname),
+    },
+    [getNodeCveSummaryOpname]: {
+        method: 'POST',
+        url: graphql(getNodeCveSummaryOpname),
+    },
+    [getAffectedNodesOpname]: {
+        method: 'POST',
+        url: graphql(getAffectedNodesOpname),
     },
 };
 
