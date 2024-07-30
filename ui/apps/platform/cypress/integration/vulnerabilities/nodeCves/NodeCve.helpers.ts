@@ -77,6 +77,18 @@ export function visitNodeCveOverviewPage(
     visit(`/main/vulnerabilities/node-cves${paramString}`, routeMatcherMap, staticResponseMap);
 }
 
+export function visitNodeCvePage(
+    mockCveName: string,
+    routeMatcherMap?: Record<string, RouteMatcherOptions>,
+    staticResponseMap?: Record<string, RouteHandler>,
+    params?: Record<string, string>
+) {
+    const paramString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    const mockNodeCvePageUrl = `${nodeCveBaseUrl}/${mockCveName}${paramString}`;
+
+    return visit(mockNodeCvePageUrl, routeMatcherMap, staticResponseMap);
+}
+
 export function visitNodeCvePageWithStaticPermissions(
     mockCveName: string,
     resourceToAccess: Record<string, string>,

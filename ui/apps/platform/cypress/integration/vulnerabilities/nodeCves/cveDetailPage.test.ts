@@ -1,12 +1,18 @@
 import withAuth from '../../../helpers/basicAuth';
 import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
-import { getRouteMatcherMapForGraphQL } from '../../../helpers/request';
+import {
+    getRouteMatcherMapForGraphQL,
+    interactAndWaitForResponses,
+} from '../../../helpers/request';
 import { assertCannotFindThePage, visit } from '../../../helpers/visit';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
     getNodeCveMetadataOpname,
     nodeCveBaseUrl,
     routeMatcherMapForNodeCveMetadata,
+    routeMatcherMapForNodeCves,
+    visitNodeCvePage,
     visitNodeCvePageWithStaticPermissions,
 } from './NodeCve.helpers';
 
@@ -65,6 +71,17 @@ describe('Node CVEs - CVE Detail Page', () => {
 
     it('should link to the overview page from the breadcrumbs', () => {
         // clicking the Node CVEs breadcrumb should navigate to the overview page with the CVE tab selected
+        visitNodeCvePage(
+            mockCveName,
+            routeMatcherMapForNodeCveMetadata,
+            staticResponseMapForNodeCveMetadata
+        );
+
+        interactAndWaitForResponses(() => {
+            cy.get('nav[aria-label="Breadcrumb"] a').contains('Node CVEs').click();
+        }, routeMatcherMapForNodeCves);
+
+        cy.get(`${vulnSelectors.entityTypeToggleItem('CVE')}[aria-pressed=true]`);
     });
 
     it('should link to the Node page from the name links in the table', () => {
