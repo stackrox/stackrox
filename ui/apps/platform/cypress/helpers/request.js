@@ -38,6 +38,20 @@ export function getRouteMatcherMapForGraphQL(opnames) {
     return routeMatcherMap;
 }
 
+export function toAliases(keys) {
+    return keys.map((key) => `@${key}`);
+}
+
+/**
+ * Given an object with keys that are aliases, return an array of @-prefixed aliases
+ *
+ * @param {Record<string, RouteMatcherOptions>} routeMatcherMap
+ * @returns {string[]} An array of @-prefixed aliases
+ */
+export function aliasesFromRouteMatcher(routeMatcherMap) {
+    return toAliases(Object.keys(routeMatcherMap));
+}
+
 /**
  * Intercept requests before initial page visit or subsequent interaction:
  * routeMatcherMap: { alias: routeMatcher, … }
@@ -71,9 +85,7 @@ export function interceptRequests(routeMatcherMap, staticResponseMap) {
  */
 export function waitForResponses(routeMatcherMap, waitOptions = {}) {
     if (routeMatcherMap) {
-        const aliases = Object.keys(routeMatcherMap).map((alias) => `@${alias}`);
-
-        return cy.wait(aliases, waitOptions);
+        return cy.wait(aliasesFromRouteMatcher(routeMatcherMap), waitOptions);
     }
 
     return cy.wrap([]);
@@ -125,9 +137,7 @@ export function interceptAndWatchRequests(routeMatcherMap, staticResponseMap) {
      */
     function waitForRequests(keys, waitOptions) {
         const aliases =
-            keys && keys.length > 0
-                ? keys.map((key) => `@${key}`)
-                : Object.keys(routeMatcherMap).map((key) => `@${key}`);
+            keys && keys.length > 0 ? toAliases(keys) : aliasesFromRouteMatcher(routeMatcherMap);
 
         return cy.wait(aliases, waitOptions);
     }
