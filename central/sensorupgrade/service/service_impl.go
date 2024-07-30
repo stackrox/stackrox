@@ -128,7 +128,7 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 	log.Infof("Auto-upgrader toggled in the UI: %+v", req.GetConfig().String())
 
 	if req.GetConfig().GetEnableAutoUpgrade() && getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED {
-		return nil, errors.Wrap(errox.InvalidArgs, "sensor auto-upgrade is not supported")
+		return nil, errors.Wrap(errox.InvalidArgs, "secured cluster auto-upgrade is not supported")
 	}
 
 	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, req.GetConfig()); err != nil {
