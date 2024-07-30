@@ -321,8 +321,6 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		log.Debugf("Offline blob %s does not exist", opts.offlineBlobName)
 		return nil, nil
 	}
-	defer utils.IgnoreError(offlineBlob.Close)
-	archiveName := offlineBlob.Name()
 
 	var offlineFile *vulDefFile
 	switch t {
@@ -336,7 +334,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		defer utils.IgnoreError(offlineBlob.Close)
 		// search mapping file
 		fileName := filepath.Base(opts.fileName)
-		targetFile, _, err := h.openFromArchive(archiveName, fileName)
+		targetFile, _, err := h.openFromArchive(offlineBlob.Name(), fileName)
 		if err != nil {
 			return nil, err
 		}
@@ -361,7 +359,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 			return nil, errors.New(msg)
 		}
 
-		vulns, _, err := h.openFromArchive(archiveName, opts.vulnBundle)
+		vulns, _, err := h.openFromArchive(offlineBlob.Name(), opts.vulnBundle)
 		if err != nil {
 			return nil, err
 		}
@@ -460,7 +458,7 @@ func (h *httpHandler) getUpdater(t updaterType, urlPath string) (*requestedUpdat
 		case vulnerabilityUpdaterType:
 			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4VulnSubDir, urlPath)
 		case v2UpdaterType:
-			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerV2DefsFile)
+			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerV2DiffFile)
 		default:
 			return nil, fmt.Errorf("unknown updater type: %s", t)
 		}
