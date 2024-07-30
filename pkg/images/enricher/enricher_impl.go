@@ -769,7 +769,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 
 	var fetchedSignatures []*storage.Signature
 	for _, name := range img.GetNames() {
-		matchingImageIntegrations := integration.GetMatchingImageIntegrations(registries, name)
+		matchingImageIntegrations := integration.GetMatchingImageIntegrations(ctx, registries, name)
 		if len(matchingImageIntegrations) == 0 {
 			// Instead of propagating an error and stopping the image enrichment, we will instead log the occurrence
 			// and skip fetching signatures for this particular image name. We know that we have at least one matching

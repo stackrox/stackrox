@@ -80,7 +80,7 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	// Fetch the signatures by injecting the registry specific authentication options to the google/go-containerregistry
 	// client.
 	// Additionally, use a local signed entity to skip fetching the image manifest and only fetch the signature manifest.
-	se := newLocalSignedEntity(image, imgRef, ociremote.WithRemoteOptions(optionsFromRegistry(registry)...))
+	se := newLocalSignedEntity(image, imgRef, ociremote.WithRemoteOptions(optionsFromRegistry(ctx, registry)...))
 	signedPayloads, err := cosign.FetchSignatures(se)
 
 	// Cosign will return an error in case no signature is associated, we don't want to return that error. Since no
@@ -188,8 +188,8 @@ func makeTransientErrorRetryable(err error) error {
 	return err
 }
 
-func optionsFromRegistry(registry registryTypes.Registry) []gcrRemote.Option {
-	registryCfg := registry.Config()
+func optionsFromRegistry(ctx context.Context, registry registryTypes.Registry) []gcrRemote.Option {
+	registryCfg := registry.Config(ctx)
 	if registryCfg == nil {
 		return nil
 	}

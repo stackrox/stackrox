@@ -1,6 +1,7 @@
 package clairv4
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -37,7 +38,7 @@ func (m *mockRegistry) Test() error {
 	panic("unsupported")
 }
 
-func (m *mockRegistry) Config() *types.Config {
+func (m *mockRegistry) Config(_ context.Context) *types.Config {
 	return &types.Config{
 		URL: m.url,
 	}

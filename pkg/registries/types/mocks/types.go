@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	http "net/http"
 	reflect "reflect"
 
@@ -42,17 +43,17 @@ func (m *MockRegistry) EXPECT() *MockRegistryMockRecorder {
 }
 
 // Config mocks base method.
-func (m *MockRegistry) Config() *types.Config {
+func (m *MockRegistry) Config(ctx context.Context) *types.Config {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Config")
+	ret := m.ctrl.Call(m, "Config", ctx)
 	ret0, _ := ret[0].(*types.Config)
 	return ret0
 }
 
 // Config indicates an expected call of Config.
-func (mr *MockRegistryMockRecorder) Config() *gomock.Call {
+func (mr *MockRegistryMockRecorder) Config(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockRegistry)(nil).Config))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockRegistry)(nil).Config), ctx)
 }
 
 // HTTPClient mocks base method.
@@ -150,17 +151,17 @@ func (m *MockImageRegistry) EXPECT() *MockImageRegistryMockRecorder {
 }
 
 // Config mocks base method.
-func (m *MockImageRegistry) Config() *types.Config {
+func (m *MockImageRegistry) Config(ctx context.Context) *types.Config {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Config")
+	ret := m.ctrl.Call(m, "Config", ctx)
 	ret0, _ := ret[0].(*types.Config)
 	return ret0
 }
 
 // Config indicates an expected call of Config.
-func (mr *MockImageRegistryMockRecorder) Config() *gomock.Call {
+func (mr *MockImageRegistryMockRecorder) Config(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockImageRegistry)(nil).Config))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockImageRegistry)(nil).Config), ctx)
 }
 
 // DataSource mocks base method.

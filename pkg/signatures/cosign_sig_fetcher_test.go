@@ -64,7 +64,7 @@ type mockRegistry struct {
 	cfg *registryTypes.Config
 }
 
-func (m *mockRegistry) Config() *registryTypes.Config {
+func (m *mockRegistry) Config(_ context.Context) *registryTypes.Config {
 	return m.cfg
 }
 
@@ -430,7 +430,7 @@ func TestOptionsFromRegistry(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert.Len(t, optionsFromRegistry(c.registry), c.expectedNumOfOptions)
+			assert.Len(t, optionsFromRegistry(context.Background(), c.registry), c.expectedNumOfOptions)
 		})
 	}
 }

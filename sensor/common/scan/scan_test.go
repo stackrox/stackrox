@@ -682,7 +682,7 @@ func (f *fakeRegistry) Metadata(_ *storage.Image) (*storage.ImageMetadata, error
 	return &storage.ImageMetadata{V2: &storage.V2Metadata{Digest: "sha256:XYZ"}}, nil
 }
 
-func (f *fakeRegistry) Config() *registryTypes.Config {
+func (f *fakeRegistry) Config(_ context.Context) *registryTypes.Config {
 	return nil
 }
 

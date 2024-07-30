@@ -159,7 +159,7 @@ func (f *fakeRegistryScanner) Metadata(*storage.Image) (*storage.ImageMetadata, 
 	return &storage.ImageMetadata{}, nil
 }
 
-func (f *fakeRegistryScanner) Config() *types.Config {
+func (f *fakeRegistryScanner) Config(_ context.Context) *types.Config {
 	return nil
 }
 

@@ -48,14 +48,14 @@ var _ types.ImageRegistry = (*lazyTLSCheckRegistry)(nil)
 
 // Config will NOT trigger initialization, however after successful
 // initialization the values may change.
-func (l *lazyTLSCheckRegistry) Config() *types.Config {
+func (l *lazyTLSCheckRegistry) Config(ctx context.Context) *types.Config {
 	// registry is modified while the write lock is held,
 	// to avoid a race grab the read lock.
 	l.initializedMutex.RLock()
 	defer l.initializedMutex.RUnlock()
 
 	if l.registry != nil {
-		return l.registry.Config()
+		return l.registry.Config(ctx)
 	}
 
 	return &types.Config{

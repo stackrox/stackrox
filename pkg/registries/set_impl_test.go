@@ -1,6 +1,7 @@
 package registries
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -38,7 +39,7 @@ func (f *fakeRegistry) Test() error {
 	return nil
 }
 
-func (f *fakeRegistry) Config() *types.Config {
+func (f *fakeRegistry) Config(ctx context.Context) *types.Config {
 	return f.config
 }
 
