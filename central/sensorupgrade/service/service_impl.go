@@ -125,7 +125,7 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "need to specify a config")
 	}
-	log.Infof("UI triggered auto-upgrader change: %+v", req.GetConfig().String())
+	log.Infof("Auto-upgrader toggled in the UI: %+v", req.GetConfig().String())
 
 	if req.GetConfig().GetEnableAutoUpgrade() && getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED {
 		return nil, errors.Wrap(errox.InvalidArgs, "sensor auto-upgrade is not supported")
@@ -135,7 +135,6 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 		return nil, err
 	}
 	s.autoTriggerFlag.Set(req.GetConfig().EnableAutoUpgrade)
-	log.Infof("autoTriggerFlag is set to: %t", req.GetConfig().EnableAutoUpgrade)
 
 	return &v1.Empty{}, nil
 }
