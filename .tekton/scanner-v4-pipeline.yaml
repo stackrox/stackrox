@@ -113,7 +113,7 @@ spec:
     - name: image-url
       # We can't provide a StackRox-style tag because it is not known at this time (requires cloning source, etc.)
       # As a workaround, we still provide a unique tag that's based on a revision to this task to comply with its
-      # expected input. We later actually add this tag on a built image with apply-tags task.
+      # expected input. We later actually add this tag on a built image with build-image-manifest-konflux task.
       value: $(params.output-image-repo):konflux-$(params.revision)
     - name: rebuild
       value: $(params.rebuild)
@@ -366,10 +366,10 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: IMAGES
       value:
-        - $(tasks.build-container-amd64.results.IMAGE_URL)@$(tasks.build-container-amd64.results.IMAGE_DIGEST)
-        - $(tasks.build-container-s390x.results.IMAGE_URL)@$(tasks.build-container-s390x.results.IMAGE_DIGEST)
-        - $(tasks.build-container-ppc64le.results.IMAGE_URL)@$(tasks.build-container-ppc64le.results.IMAGE_DIGEST)
-        - $(tasks.build-container-arm64.results.IMAGE_URL)@$(tasks.build-container-arm64.results.IMAGE_DIGEST)
+        - $(tasks.build-container-amd64.results.IMAGE_REF)
+        - $(tasks.build-container-s390x.results.IMAGE_REF)
+        - $(tasks.build-container-ppc64le.results.IMAGE_REF)
+        - $(tasks.build-container-arm64.results.IMAGE_REF)
     - name: IMAGE_EXPIRES_AFTER
       value: $(params.image-expires-after)
     taskRef:
@@ -394,10 +394,10 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: IMAGES
       value:
-        - $(tasks.build-container-amd64.results.IMAGE_URL)@$(tasks.build-container-amd64.results.IMAGE_DIGEST)
-        - $(tasks.build-container-s390x.results.IMAGE_URL)@$(tasks.build-container-s390x.results.IMAGE_DIGEST)
-        - $(tasks.build-container-ppc64le.results.IMAGE_URL)@$(tasks.build-container-ppc64le.results.IMAGE_DIGEST)
-        - $(tasks.build-container-arm64.results.IMAGE_URL)@$(tasks.build-container-arm64.results.IMAGE_DIGEST)
+        - $(tasks.build-container-amd64.results.IMAGE_REF)
+        - $(tasks.build-container-s390x.results.IMAGE_REF)
+        - $(tasks.build-container-ppc64le.results.IMAGE_REF)
+        - $(tasks.build-container-arm64.results.IMAGE_REF)
     - name: IMAGE_EXPIRES_AFTER
       value: $(params.image-expires-after)
     taskRef:
