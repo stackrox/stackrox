@@ -201,7 +201,7 @@ test_upgrade_paths() {
     ########################################################################################
     # Upgrade back to latest to run the smoke tests by first walking previous releases     #
     ########################################################################################
-    for str in ${myArray[@]}; do
+    for str in ${PREVIOUS_RELEASES[@]}; do
       info "Walking upgrades -- release => $str"
       kubectl -n stackrox set image deploy/central "*=$REGISTRY/main:$str"
       kubectl -n stackrox set image deploy/central-db "*=$REGISTRY/central-db:$str"
