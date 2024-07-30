@@ -600,7 +600,14 @@ func (h *httpHandler) openFromArchive(archiveFile string, fileName string) (*os.
 
 	// Create a temporary file and remove it for the OS to clean up once the
 	// struct is closed.
-	tmpFile, err := os.CreateTemp(h.dataDir, fileName)
+	//
+	// Ensure the file extension stays intact (via the *- prefix) so the HTTP server
+	// can automatically pick up the Content-Type.
+	//
+	// Also, replace / with - to account for the mapping files, as
+	// forward slash is invalid in the pattern accepted by os.CreateTemp.
+	tmpFilePattern := "*-" + strings.ReplaceAll(fileName, "/", "-")
+	tmpFile, err := os.CreateTemp(h.dataDir, tmpFilePattern)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "opening temporary file")
 	}

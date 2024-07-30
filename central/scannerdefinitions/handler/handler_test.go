@@ -266,7 +266,6 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V2() {
 
 	// Get offline data again with good UUID.
 	getReq = s.getRequestUUID()
-<<<<<<< HEAD
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, getReq)
 	s.Equal(http.StatusOK, w.Code)
@@ -280,21 +279,6 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V2() {
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/json", w.Header().Get("Content-Type"))
 	s.Equal(v2ManifestContent, w.Body.String())
-=======
-	w = mock.NewResponseWriter()
-	h.ServeHTTP(w, getReq)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/zip", w.Header().Get("Content-Type"))
-	s.Greater(w.Data.Len(), 0)
-
-	// Should get file from offline data.
-	getReq = s.getRequestUUIDAndFile("manifest.json")
-	w = mock.NewResponseWriter()
-	h.ServeHTTP(w, getReq)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/json", w.Header().Get("Content-Type"))
-	s.Equal(v2ManifestContent, w.Data.String())
->>>>>>> e7a1d30e61 (fix v2 handling)
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
@@ -308,7 +292,6 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 	h.ServeHTTP(w, req)
 	// TODO: This should be a 404. Update in a followup.
 	s.Equal(http.StatusInternalServerError, w.Code)
-<<<<<<< HEAD
 
 	// Should get online vulns.
 	req = s.getRequestUUID()
@@ -326,36 +309,13 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 	s.Equal("application/json", w.Header().Get("Content-Type"))
 	s.Regexpf(`{"since":".*","until":".*"}`, w.Body.String(), "content1 did not match")
 
-=======
-
-	// Should get online vulns.
-	req = s.getRequestUUID()
-	w = mock.NewResponseWriter()
-	h.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/zip", w.Header().Get("Content-Type"))
-	s.Greater(w.Data.Len(), 0)
-
-	// Should get file from online update.
-	req = s.getRequestUUIDAndFile("manifest.json")
-	w = mock.NewResponseWriter()
-	h.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/json", w.Header().Get("Content-Type"))
-	s.Regexpf(`{"since":".*","until":".*"}`, w.Data.String(), "content1 did not match")
-
->>>>>>> e7a1d30e61 (fix v2 handling)
 	// Write offline definitions, directly.
 	// Set the offline dump's modified time to later than the online update's.
 	s.mustWriteBlob(content1, time.Now().Add(time.Hour))
 
 	// Serve the offline dump, as it is more recent.
 	req = s.getRequestUUID()
-<<<<<<< HEAD
 	w = httptest.NewRecorder()
-=======
-	w = mock.NewResponseWriter()
->>>>>>> e7a1d30e61 (fix v2 handling)
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal(content1, w.Body.String())
@@ -364,22 +324,14 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 	s.mustWriteBlob(content2, nov23)
 
 	// Serve the online dump, as it is now more recent.
-<<<<<<< HEAD
 	w = httptest.NewRecorder()
-=======
-	w = mock.NewResponseWriter()
->>>>>>> e7a1d30e61 (fix v2 handling)
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.NotEqual(content2, w.Body.String())
 
 	// File is unmodified.
 	req.Header.Set(ifModifiedSinceHeader, time.Now().UTC().Format(http.TimeFormat))
-<<<<<<< HEAD
 	w = httptest.NewRecorder()
-=======
-	w = mock.NewResponseWriter()
->>>>>>> e7a1d30e61 (fix v2 handling)
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusNotModified, w.Code)
 	s.Empty(w.Body.String())
