@@ -111,11 +111,3 @@ func TestOverridesOnReleaseBuilds(t *testing.T) {
 		testFlagEnabled(t, unchangeableFeature, "false", false)
 	}
 }
-
-func TestStage(t *testing.T) {
-	f := registerFeature("test_feat", "ROX_TEST_FEAT")
-	assert.Equal(t, "dev-preview", f.Stage())
-
-	f = registerFeature("test_feat", "ROX_TEST_FEAT", techPreview)
-	assert.Equal(t, "tech-preview", f.Stage())
-}

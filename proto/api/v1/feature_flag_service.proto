@@ -12,7 +12,7 @@ message FeatureFlag {
   string name = 1;
   string env_var = 2;
   bool enabled = 3;
-  string stage = 4;
+  reserved 4;
 }
 
 message GetFeatureFlagsResponse {
