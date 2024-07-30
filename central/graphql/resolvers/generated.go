@@ -1018,6 +1018,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sORTName: String!",
 		"scope: [Scope]!",
 		"severity: Severity!",
+		"source: PolicySource!",
 	}))
 	utils.Must(builder.AddType("PolicyGroup", []string{
 		"booleanOperator: BooleanOperator!",
@@ -1036,6 +1037,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"policyGroups: [PolicyGroup]!",
 		"sectionName: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PolicySource(0)))
 	utils.Must(builder.AddType("PolicyValue", []string{
 		"value: String!",
 	}))
@@ -11292,6 +11294,11 @@ func (resolver *policyResolver) Severity(ctx context.Context) string {
 	return value.String()
 }
 
+func (resolver *policyResolver) Source(ctx context.Context) string {
+	value := resolver.data.GetSource()
+	return value.String()
+}
+
 type policyGroupResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -11471,6 +11478,24 @@ func (resolver *policySectionResolver) PolicyGroups(ctx context.Context) ([]*pol
 func (resolver *policySectionResolver) SectionName(ctx context.Context) string {
 	value := resolver.data.GetSectionName()
 	return value
+}
+
+func toPolicySource(value *string) storage.PolicySource {
+	if value != nil {
+		return storage.PolicySource(storage.PolicySource_value[*value])
+	}
+	return storage.PolicySource(0)
+}
+
+func toPolicySources(values *[]string) []storage.PolicySource {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.PolicySource, len(*values))
+	for i, v := range *values {
+		output[i] = toPolicySource(&v)
+	}
+	return output
 }
 
 type policyValueResolver struct {
