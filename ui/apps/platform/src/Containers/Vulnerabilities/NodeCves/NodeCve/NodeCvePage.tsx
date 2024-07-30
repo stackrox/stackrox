@@ -137,6 +137,7 @@ function NodeCvePage() {
                     searchFilterConfig={searchFilterConfig}
                     onFilterChange={(newFilter, searchPayload) => {
                         setSearchFilter(newFilter);
+                        setPage(1, 'replace');
                         trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
                     }}
                 />

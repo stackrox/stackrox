@@ -2,6 +2,7 @@ import withAuth from '../../../helpers/basicAuth';
 import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
+    expectRequestedPagination,
     expectRequestedQuery,
     expectRequestedSort,
     getRouteMatcherMapForGraphQL,
@@ -10,6 +11,8 @@ import {
 } from '../../../helpers/request';
 import * as filterHelpers from '../../../helpers/compoundFilters';
 import {
+    paginateNext,
+    paginatePrevious,
     queryTableHeader,
     queryTableSortHeader,
     sortByTableHeader,
@@ -237,28 +240,93 @@ describe('Node CVEs - CVE Detail Page', () => {
         });
     });
 
-    // Note: This might not be reliable in CI due to the low number of Nodes. We may need to mock and/or
-    // just test the logic of the pagination in the URL.
     it('should paginate the Node table', () => {
-        // visit the location and save the list of Node names with a default perPage
-        //   visit the location with perPage=2 in the URL
-        //     should only display the first 2 rows of the previous list
-        //     paginating to the next page should display the following two rows
-        // go to page 1, then page 2
-        //   applying a filter should reset the page to 1
-        // go to page 1, then page 2
-        //   go to next page, applying a sort should reset the page to 1
+        interceptAndWatchRequests(
+            routeMatcherMapForNodeCvePage,
+            staticResponseMapForNodeCvePage
+        ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+            visitNodeCvePage(mockCveName);
+            waitForRequests();
+
+            // test pagination basics
+            paginateNext();
+            waitAndYieldRequestBodyVariables([getAffectedNodesOpname]).then(
+                expectRequestedPagination({ offset: 20, limit: 20 })
+            );
+
+            paginateNext();
+            waitAndYieldRequestBodyVariables([getAffectedNodesOpname]).then(
+                expectRequestedPagination({ offset: 40, limit: 20 })
+            );
+
+            paginatePrevious();
+            waitAndYieldRequestBodyVariables([getAffectedNodesOpname]).then(
+                expectRequestedPagination({ offset: 20, limit: 20 })
+            );
+
+            paginatePrevious();
+            waitAndYieldRequestBodyVariables([getAffectedNodesOpname]).then(
+                expectRequestedPagination({ offset: 0, limit: 20 })
+            );
+
+            // test that applying a filter resets the page to 1
+            paginateNext();
+            waitForRequests([getAffectedNodesOpname]);
+            filterHelpers.addAutocompleteFilter('Node', 'Name', 'a');
+            waitAndYieldRequestBodyVariables([
+                getAffectedNodesOpname,
+                getNodeCveSummaryOpname,
+            ]).then(([nodeListVars]) => {
+                expectRequestedPagination({ offset: 0, limit: 20 })(nodeListVars);
+            });
+
+            // test that applying a sort resets the page to 1
+            paginateNext();
+            waitForRequests([getAffectedNodesOpname]);
+            sortByTableHeader('Node');
+            waitAndYieldRequestBodyVariables([getAffectedNodesOpname]).then(
+                expectRequestedPagination({ offset: 0, limit: 20 })
+            );
+        });
     });
 
-    it('should update summary cards when a filter is applied', () => {
-        // apply a Critical severity filter and ensure that Important/Moderate/Low severities read "Results hidden" in the card
-        // clear filters
-        // apply a CVE status filter and ensure that the opposite status reads "Results hidden" in the card
-    });
+    it('should enable collapsing and expanding nested table rows', () => {
+        visitNodeCvePage(
+            mockCveName,
+            routeMatcherMapForNodeCvePage,
+            staticResponseMapForNodeCvePage
+        );
 
-    it('should allow viewing the Node details', () => {
-        // click the Details tab and ensure that the vulnerabilities table no longer displays
-        // verify that a Cluster field exists
-        // verify that label and annotation sections exist
+        // Check that all rows are collapsed by default
+        cy.get(vulnSelectors.expandRowButton).each(($button) => {
+            cy.wrap($button).should('have.attr', 'aria-expanded', 'false');
+        });
+        cy.get(vulnSelectors.expandableRow).each(($row) => {
+            cy.wrap($row).should('have.attr', 'hidden', 'hidden');
+        });
+
+        // Expand one row, expect the other to remain collapsed
+        cy.get(vulnSelectors.expandRowButton).eq(0).click();
+        cy.get(vulnSelectors.expandRowButton).eq(0).should('have.attr', 'aria-expanded', 'true');
+        cy.get(vulnSelectors.expandableRow).eq(0).should('not.have.attr', 'hidden');
+        cy.get(vulnSelectors.expandRowButton).eq(1).should('have.attr', 'aria-expanded', 'false');
+        cy.get(vulnSelectors.expandableRow).eq(1).should('have.attr', 'hidden', 'hidden');
+
+        // Expand the other row, expect both to be expanded
+        cy.get(vulnSelectors.expandRowButton).eq(1).click();
+        cy.get(vulnSelectors.expandRowButton).eq(0).should('have.attr', 'aria-expanded', 'true');
+        cy.get(vulnSelectors.expandableRow).eq(0).should('not.have.attr', 'hidden');
+        cy.get(vulnSelectors.expandRowButton).eq(1).should('have.attr', 'aria-expanded', 'true');
+        cy.get(vulnSelectors.expandableRow).eq(1).should('not.have.attr', 'hidden');
+
+        // Collapse both rows, expect both to be collapsed
+        cy.get(vulnSelectors.expandRowButton).eq(0).click();
+        cy.get(vulnSelectors.expandRowButton).eq(1).click();
+        cy.get(vulnSelectors.expandRowButton).each(($button) => {
+            cy.wrap($button).should('have.attr', 'aria-expanded', 'false');
+        });
+        cy.get(vulnSelectors.expandableRow).each(($row) => {
+            cy.wrap($row).should('have.attr', 'hidden', 'hidden');
+        });
     });
 });
