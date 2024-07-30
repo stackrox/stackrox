@@ -35,7 +35,7 @@ jobs:
   openshift-ci-lint:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-9-g9944fdc125
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69-9-g6ee7d5b7cc
     steps:
       - name: Checkout
         uses: actions/checkout@v4
