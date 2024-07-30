@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
+import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 import {
-    Button,
     Card,
     CardBody,
     CardTitle,
@@ -13,7 +13,6 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
 import { PrivateConfig } from 'types/config.proto';
 import { clustersBasePath } from 'routePaths';
@@ -286,14 +285,9 @@ const PrivateConfigDataRetentionDetails = ({
                     </CardBody>
                     {isClustersRoutePathRendered && (
                         <CardBody>
-                            <Button
-                                variant="link"
-                                isInline
-                                component={LinkShim}
-                                href={`${clustersBasePath}?s[Sensor Status]=UNHEALTHY`}
-                            >
+                            <Link to={`${clustersBasePath}?s[Sensor Status]=UNHEALTHY`}>
                                 Clusters which have Sensor Status: Unhealthy
-                            </Button>
+                            </Link>
                         </CardBody>
                     )}
                 </Card>

@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
-import { Button, Flex, FlexItem } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
+import { Flex, FlexItem } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { SearchResultCategory } from 'services/SearchService';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
@@ -36,14 +36,7 @@ function FilterLinks({
             <Flex spaceItems={{ default: 'spaceItemsMd' }}>
                 {filterLinks.map(({ basePath, linkText }) => (
                     <FlexItem key={linkText}>
-                        <Button
-                            variant="link"
-                            isInline
-                            component={LinkShim}
-                            href={`${basePath}?${queryString}`}
-                        >
-                            {linkText}
-                        </Button>
+                        <Link to={`${basePath}?${queryString}`}>{linkText}</Link>
                     </FlexItem>
                 ))}
             </Flex>
