@@ -21,7 +21,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - `roxctl central generate k8s pvc` and `roxctl central generate openshift pvc` no longer have the flags `--name`, `--size`, and `--storage-class`.
   - `roxctl central generate k8s hostpath` and `roxctl central generate openshift hostpath` no longer have the flags `--hostpath`, `--node-selector-key`, and `--node-selector-value`.
 
-### Deprecated Fatures
+### Deprecated Features
 - ROX-25677: The format for specifying durations in JSON requests to
   `v1/nodecves/suppress`, `v1/clustercves/suppress` and `v1/imagecves/suppress`
   will be restricted to a [proto JSON format](https://protobuf.dev/programming-guides/proto3/#json:~:text=are%20also%20accepted.-,Duration,-string).
