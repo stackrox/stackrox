@@ -7,7 +7,8 @@ import {
 } from '../../../helpers/visit';
 import navSelectors from '../../../selectors/navigation';
 import {
-    mockOverviewNodeCveListRequest,
+    getNodeCvesOpname,
+    routeMatcherMapForNodeCves,
     visitFirstNodeLinkFromTable,
     visitNodeCveOverviewPage,
 } from './NodeCve.helpers';
@@ -17,9 +18,14 @@ import {
     queryTableSortHeader,
     sortByTableHeader,
 } from '../../../helpers/tableHelpers';
-import { expectRequestedSort } from '../../../helpers/sort';
 import { waitForTableLoadCompleteIndicator } from '../workloadCves/WorkloadCves.helpers';
-import { interactAndInspectGraphQLVariables } from '../../../helpers/request';
+import { expectRequestedSort, interactAndInspectGraphQLVariables } from '../../../helpers/request';
+
+const staticResponseMapForNodeCVES = {
+    [getNodeCvesOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeCvesOpname}`,
+    },
+};
 
 describe('Node CVEs - Overview Page', () => {
     withAuth();
@@ -30,7 +36,7 @@ describe('Node CVEs - Overview Page', () => {
         }
     });
 
-    it('should restrict access to users with insufficient permissions', () => {
+    it('should restrict access to users with insufficient "Cluster" permission', () => {
         // When lacking the minimum permissions:
         // - Check that the Node CVEs link is not visible in the left navigation
         // - Check that direct navigation fails
@@ -42,7 +48,12 @@ describe('Node CVEs - Overview Page', () => {
         cy.get(navSelectors.allNavLinks).contains('Node CVEs').should('not.exist');
         visitNodeCveOverviewPage();
         assertCannotFindThePage();
+    });
 
+    it('should restrict access to users with insufficient "Node" permission', () => {
+        // When lacking the minimum permissions:
+        // - Check that the Node CVEs link is not visible in the left navigation
+        // - Check that direct navigation fails
         // Missing 'Node' permission
         visitWithStaticResponseForPermissions('/main', {
             body: { resourceToAccess: { Cluster: 'READ_ACCESS' } },
@@ -50,7 +61,9 @@ describe('Node CVEs - Overview Page', () => {
         cy.get(navSelectors.allNavLinks).contains('Node CVEs').should('not.exist');
         visitNodeCveOverviewPage();
         assertCannotFindThePage();
+    });
 
+    it('should allow access to users with sufficient "Node" and "Cluster" permissions', () => {
         // Has both 'Node' and 'Cluster' permissions
         visitWithStaticResponseForPermissions('/main', {
             body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },
@@ -83,8 +96,7 @@ describe('Node CVEs - Overview Page', () => {
     it('should link a CVE table row to the correct CVE detail page', () => {
         // Having a CVE in CI is unreliable, so we mock the request and assert
         // on the link construction instead of the content of the detail page.
-        mockOverviewNodeCveListRequest();
-        visitNodeCveOverviewPage();
+        visitNodeCveOverviewPage(routeMatcherMapForNodeCves, staticResponseMapForNodeCVES);
 
         cy.get('tbody tr td[data-label="CVE"] a')
             .first()

@@ -1,27 +1,22 @@
-import { graphql } from '../../../constants/apiEndpoints';
 import withAuth from '../../../helpers/basicAuth';
 import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import { getRouteMatcherMapForGraphQL } from '../../../helpers/request';
+import { assertCannotFindThePage, visit } from '../../../helpers/visit';
 import {
-    assertCannotFindThePage,
-    visit,
-    visitWithStaticResponseForPermissions,
-} from '../../../helpers/visit';
-
-const nodeCveBaseUrl = '/main/vulnerabilities/node-cves/cves';
+    getNodeCveMetadataOpname,
+    nodeCveBaseUrl,
+    routeMatcherMapForNodeCveMetadata,
+    visitNodeCvePageWithStaticPermissions,
+} from './NodeCve.helpers';
 
 const mockCveName = 'CVE-2022-1996';
 
-function mockNodeCvePageRequests() {
-    const opnames = ['getNodeCVEMetadata', 'getNodeCVESummaryData', 'getAffectedNodes'];
-    opnames.forEach((opname) => {
-        cy.intercept(
-            { method: 'POST', url: graphql(opname) },
-            { fixture: `vulnerabilities/nodeCves/${opname}.json` }
-        ).as(opname);
-    });
-}
+const staticResponseMapForNodeCveMetadata = {
+    [getNodeCveMetadataOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeCveMetadataOpname}`,
+    },
+};
 
 describe('Node CVEs - CVE Detail Page', () => {
     withAuth();
@@ -32,34 +27,35 @@ describe('Node CVEs - CVE Detail Page', () => {
         }
     });
 
-    beforeEach(() => {
-        // We cannot rely on any Node CVE data being available in CI so we need to mock the data
-        // and test page behavior independent of any expected server response.
-        mockNodeCvePageRequests();
+    it('should restrict access to users with insufficient "Node" permission', () => {
+        visitNodeCvePageWithStaticPermissions(mockCveName, { Node: 'READ_ACCESS' });
+        assertCannotFindThePage();
     });
 
-    it('should restrict access to users with insufficient permissions', () => {
-        const url = `${nodeCveBaseUrl}/${mockCveName}`;
-
-        visitWithStaticResponseForPermissions(url, {
-            body: { resourceToAccess: { Node: 'READ_ACCESS' } },
-        });
+    it('should restrict access to users with insufficient "Cluster" permission', () => {
+        visitNodeCvePageWithStaticPermissions(mockCveName, { Cluster: 'READ_ACCESS' });
         assertCannotFindThePage();
+    });
 
-        visitWithStaticResponseForPermissions(url, {
-            body: { resourceToAccess: { Cluster: 'READ_ACCESS' } },
-        });
-        assertCannotFindThePage();
-
-        visitWithStaticResponseForPermissions(url, {
-            body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },
-        });
+    it('should allow access to users with sufficient permissions', () => {
+        visitNodeCvePageWithStaticPermissions(
+            mockCveName,
+            {
+                Node: 'READ_ACCESS',
+                Cluster: 'READ_ACCESS',
+            },
+            routeMatcherMapForNodeCveMetadata,
+            staticResponseMapForNodeCveMetadata
+        );
         cy.get('h1').contains(mockCveName);
     });
 
     it('should only show relevant filters for the page', () => {
-        const url = `${nodeCveBaseUrl}/${mockCveName}`;
-        visit(url, getRouteMatcherMapForGraphQL(['getNodeCVEMetadata']), {});
+        visit(
+            `${nodeCveBaseUrl}/${mockCveName}`,
+            getRouteMatcherMapForGraphQL(['getNodeCVEMetadata']),
+            {}
+        );
         assertAvailableFilters({
             Cluster: ['Name', 'Label', 'Type', 'Platform type'],
             Node: ['Name', 'Operating System', 'Label', 'Annotation', 'Scan Time'],

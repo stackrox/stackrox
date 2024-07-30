@@ -1,27 +1,87 @@
+import type { RouteHandler, RouteMatcherOptions } from 'cypress/types/net-stubbing';
+
 import { graphql } from '../../../constants/apiEndpoints';
 import {
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
 } from '../../../helpers/request';
+import { visit, visitWithStaticResponseForPermissions } from '../../../helpers/visit';
 
-export function mockOverviewNodeCveListRequest() {
-    const opname = 'getNodeCVEs';
-    cy.intercept(
-        { method: 'POST', url: graphql(opname) },
-        { fixture: `vulnerabilities/nodeCves/${opname}.json` }
-    ).as(opname);
+export const nodeCveBaseUrl = '/main/vulnerabilities/node-cves/cves';
+
+// Source of truth for keys in routeMatcherMap and staticResponseMap objects.
+// Overview page
+export const getNodesOpname = 'getNodes';
+export const getNodeCvesOpname = 'getNodeCVEs';
+
+// Node CVE page
+export const getNodeCveMetadataOpname = 'getNodeCVEMetadata';
+
+// Node page
+export const getNodeMetadataOpname = 'getNodeMetadata';
+export const getNodeVulnSummaryOpname = 'getNodeVulnSummary';
+export const getNodeVulnerabilitiesOpname = 'getNodeVulnerabilities';
+
+export const routeMatcherMapForNodes = {
+    [getNodesOpname]: {
+        method: 'POST',
+        url: graphql(getNodesOpname),
+    },
+};
+
+export const routeMatcherMapForNodeCves = {
+    [getNodeCvesOpname]: {
+        method: 'POST',
+        url: graphql(getNodeCvesOpname),
+    },
+};
+
+export const routeMatcherMapForNodeCveMetadata = {
+    [getNodeCveMetadataOpname]: {
+        method: 'POST',
+        url: graphql(getNodeCveMetadataOpname),
+    },
+};
+
+export const routeMatcherMapForNodePage = {
+    [getNodeMetadataOpname]: {
+        method: 'POST',
+        url: graphql(getNodeMetadataOpname),
+    },
+    [getNodeVulnSummaryOpname]: {
+        method: 'POST',
+        url: graphql(getNodeVulnSummaryOpname),
+    },
+    [getNodeVulnerabilitiesOpname]: {
+        method: 'POST',
+        url: graphql(getNodeVulnerabilitiesOpname),
+    },
+};
+
+// visit
+export function visitNodeCveOverviewPage(
+    routeMatcherMap?: Record<string, RouteMatcherOptions>,
+    staticResponseMap?: Record<string, RouteHandler>
+) {
+    visit('/main/vulnerabilities/node-cves', routeMatcherMap, staticResponseMap);
 }
 
-export function mockOverviewNodeListRequest() {
-    const opname = 'getNodes';
-    cy.intercept(
-        { method: 'POST', url: graphql(opname) },
-        { fixture: `vulnerabilities/nodeCves/${opname}.json` }
-    ).as(opname);
-}
+export function visitNodeCvePageWithStaticPermissions(
+    mockCveName: string,
+    resourceToAccess: Record<string, string>,
+    routeMatcherMap?: Record<string, RouteMatcherOptions>,
+    staticResponseMap?: Record<string, RouteHandler>
+) {
+    const mockNodeCvePageUrl = `${nodeCveBaseUrl}/${mockCveName}`;
 
-export function visitNodeCveOverviewPage() {
-    cy.visit('/main/vulnerabilities/node-cves');
+    return visitWithStaticResponseForPermissions(
+        mockNodeCvePageUrl,
+        {
+            body: { resourceToAccess },
+        },
+        routeMatcherMap,
+        staticResponseMap
+    );
 }
 
 export function visitFirstNodeLinkFromTable(): Cypress.Chainable<string> {

@@ -1,3 +1,8 @@
+/**
+ * @typedef {import("cypress/types/net-stubbing").RouteMatcherOptions} RouteMatcherOptions
+ * @typedef {import("cypress/types/net-stubbing").RouteHandler} RouteHandler
+ * @typedef {import("cypress/types/net-stubbing").WaitOptions} WaitOptions
+ */
 import { interceptRequests, waitForResponses } from './request';
 
 // Single source of truth for keys in staticResponseMapForAuthenticatedRoutes object.
@@ -58,9 +63,9 @@ const routeMatcherMapForAuthenticatedRoutes = {
  * staticResponseMap: { alias: { fixture }, … }
  *
  * @param {string} pageUrl
- * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
- * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
- * @param {Parameters<Cypress.Chainable['wait']>[1]} [waitOptions]
+ * @param {Record<string, RouteMatcherOptions>} [routeMatcherMap]
+ * @param {Record<string, RouteHandler>} [staticResponseMap]
+ * @param {WaitOptions} [waitOptions]
  * @returns {{ request: Record<string, unknown>, response: Record<string, unknown>}[]}
  */
 export function visit(pageUrl, routeMatcherMap, staticResponseMap, waitOptions) {
@@ -113,8 +118,8 @@ export function visitWithStaticResponseForAuthStatus(
  *
  * @param {string} pageUrl
  * @param {{ body: { resourceToAccess: Record<string, string> } } | { fixture: string }} staticResponseForPermissions
- * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
- * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ * @param {Record<string, RouteMatcherOptions>} [routeMatcherMap]
+ * @param {Record<string, RouteHandler>} [staticResponseMap]
  */
 export function visitWithStaticResponseForPermissions(
     pageUrl,
