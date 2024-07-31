@@ -8,6 +8,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.Policy
 
 import common.Constants
 import services.NotifierService
+import util.Helpers
 import util.SplunkUtil
 
 @Slf4j
@@ -84,14 +85,17 @@ class GenericNotifier extends Notifier {
     }
 
     static getMostRecentViolationAndValidateCommonFields() {
-        def get = new URL("http://localhost:8080").openConnection()
+        Object generic = null
         def jsonSlurper = new JsonSlurper()
-        def object = jsonSlurper.parseText(get.getInputStream().getText())
-        def generic = object[-1]
-        assert generic["headers"]["Headerkey"] == ["headervalue"]
-        assert generic["headers"]["Content-Type"] == ["application/json"]
-        assert generic["headers"]["Authorization"] == ["Basic YWRtaW46YWRtaW4="]
-        assert generic["data"]["fieldkey"] == "fieldvalue"
+        Helpers.withRetry(4, 5) {
+            URLConnection get = new URL("http://localhost:8080").openConnection()
+            def object = jsonSlurper.parseText(get.getInputStream().getText())
+            generic = object[-1]
+            assert generic["headers"]["Headerkey"] == ["headervalue"]
+            assert generic["headers"]["Content-Type"] == ["application/json"]
+            assert generic["headers"]["Authorization"] == ["Basic YWRtaW46YWRtaW4="]
+            assert generic["data"]["fieldkey"] == "fieldvalue"
+        }
 
         return generic
     }
