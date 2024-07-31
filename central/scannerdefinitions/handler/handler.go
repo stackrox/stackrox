@@ -444,9 +444,11 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		return nil, nil
 	}
 	var offlineFile *vulDefFile
-	defer utils.IgnoreError(openedFile.Close)
 	switch t {
-	case mappingUpdaterType, v2UpdaterType:
+	case v2UpdaterType:
+		offlineFile = openedFile
+	case mappingUpdaterType:
+		defer utils.IgnoreError(openedFile.Close)
 		// search mapping file
 		fileName := filepath.Base(opts.fileName)
 		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), fileName)
@@ -456,6 +458,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		defer cleanUp()
 		offlineFile = &vulDefFile{File: targetFile, modTime: openedFile.modTime}
 	case vulnerabilityUpdaterType:
+		defer utils.IgnoreError(openedFile.Close)
 		// check version information in manifest
 		mf, cleanUp, err := openFromArchive(openedFile.Name(), "manifest.json")
 		if err != nil {
@@ -554,6 +557,13 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	var contentType string
 
 	switch {
+	case uuid != "":
+		// Scanner V2 definitions.
+		uType = v2UpdaterType
+		opts.name = uuid
+		opts.urlPath = uuid
+		opts.fileName = fileName
+		opts.offlineBlobName = offlineScannerDefinitionBlobName
 	case fileName != "" && v == "":
 		// If only file is requested, then this is request for Scanner v4 mapping file.
 		v4FileName, exists := v4FileMapping[fileName]
@@ -583,13 +593,6 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		opts.vulnVersion = v
 		opts.vulnBundle = bundle
 		opts.offlineBlobName = offlineScannerV4DefinitionBlobName
-	case uuid != "":
-		// Scanner V2 definitions.
-		uType = v2UpdaterType
-		opts.name = uuid
-		opts.urlPath = uuid
-		opts.fileName = fileName
-		opts.offlineBlobName = offlineScannerDefinitionBlobName
 	default:
 		writeErrorBadRequest(w)
 		return
