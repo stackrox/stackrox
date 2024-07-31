@@ -1,6 +1,6 @@
-# 0008 - NVD CVSS Scores
+# 0009 - NVD CVSS Scores
 
-- **Author(s):** Ross Tannenbaum
+- **Author(s):** Ross Tannenbaum and Yi Li
 - **Created:** [2024-04-11 Thurs]
 
 ## Status
@@ -10,7 +10,7 @@ Status: Accepted.
 ## Context
 
 Users who require FedRAMP compliance [must be able see NVD's CVSS scores associated with each CVE](https://www.fedramp.gov/assets/resources/documents/CSP_Vulnerability_Scanning_Requirements.pdf).
-Note: NVD tracks CVEs, so all of tis data is CVE-based.
+Note: NVD tracks CVEs, so all of its data is CVE-based.
 
 Currently, Scanner V4 provides a single CVSS score and severity, which is preferably from the vendor.
 In reality, the CVSS scores that are shown are from NVD except in the following cases:
@@ -77,12 +77,6 @@ message VulnerabilityReport {
       SEVERITY_CRITICAL = 4;
     }
     message CVSS {
-      enum Source {
-        SOURCE_UNKNOWN = 0;
-        SOURCE_RED_HAT = 1;
-        SOURCE_OSV = 2;
-        SOURCE_NVD = 3;
-      }
       message V2 {
         float base_score = 1;
         string vector = 2;
@@ -91,9 +85,10 @@ message VulnerabilityReport {
         float base_score = 1;
         string vector = 2;
       }
-      Source source = 3; <-- New field.
       V2 v2 = 1;
       V3 v3 = 2;
+      string updater = 3; <-- New field.
+      string cvss_url = 4; <-- New field, cvss source URL
     }
     ...
     string severity = 6;
@@ -107,10 +102,8 @@ message VulnerabilityReport {
 
 There will be a new type plus two new fields added:
 
-* `CVSS.Source`
-  * This specifies the supported CVSS metrics data sources.
-* `CVSS.source`
-  * This specifies the source of the particular CVSS metrics.
+* `CVSS.updater`
+  * This specifies the source of the particular CVSS metrics. The value will be the name of the scanner updater, indicating the data source from which the updater is fetching vulnerabilities.
 * `cvss_metrics`
   * This is a list of each unique CVSS metric based on the source.
 
