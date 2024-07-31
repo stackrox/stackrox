@@ -89,7 +89,7 @@ describe('Node CVEs - Overview Page', () => {
             CVE: ['Name', 'CVSS', 'Discovered Time'],
             Node: ['Name', 'Operating System', 'Label', 'Annotation', 'Scan Time'],
             'Node Component': ['Name', 'Version'],
-            Cluster: ['Name', 'Label', 'Type', 'Platform type'],
+            Cluster: ['ID', 'Name', 'Label', 'Type', 'Platform type'],
         };
 
         // check the advanced filters and ensure only the relevant filters are displayed for CVEs

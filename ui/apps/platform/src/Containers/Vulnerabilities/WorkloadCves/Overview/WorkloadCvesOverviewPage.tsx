@@ -134,10 +134,10 @@ function mergeDefaultAndLocalFilters(
 
 function getSearchFilterEntityByTab(
     entityTab: WorkloadEntityTab
-): 'Image CVE' | 'Image' | 'Deployment' | undefined {
+): 'CVE' | 'Image' | 'Deployment' | undefined {
     switch (entityTab) {
         case 'CVE':
-            return 'Image CVE';
+            return 'CVE';
         case 'Image':
             return 'Image';
         case 'Deployment':

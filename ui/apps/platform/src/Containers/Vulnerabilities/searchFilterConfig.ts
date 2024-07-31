@@ -17,7 +17,7 @@ const nodeSearchFilterConfig = {
 };
 
 const nodeCVESearchFilterConfig = {
-    displayName: 'Node CVE',
+    displayName: 'CVE',
     searchCategory: 'NODE_VULNERABILITIES' as SearchCategory,
     attributes: getNodeCVEAttributes(),
 };
@@ -35,8 +35,8 @@ const imageSearchFilterConfig = {
 };
 
 const imageCVESearchFilterConfig = {
-    displayName: 'Image CVE',
-    searchCategory: 'IMAGES_VULNERABILITIES' as SearchCategory,
+    displayName: 'CVE',
+    searchCategory: 'IMAGE_VULNERABILITIES' as SearchCategory,
     attributes: getImageCVEAttributes(),
 };
 
@@ -65,7 +65,7 @@ const clusterSearchFilterConfig = {
 };
 
 const platformCVESearchFilterConfig = {
-    displayName: 'Platform CVE',
+    displayName: 'CVE',
     searchCategory: 'CLUSTER_VULNERABILITIES' as SearchCategory,
     attributes: getPlatformCVEAttributes(),
 };

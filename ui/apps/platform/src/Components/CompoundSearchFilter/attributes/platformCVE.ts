@@ -4,7 +4,7 @@ import { SearchFilterAttribute } from '../types';
 
 const Name = {
     displayName: 'Name',
-    filterChipLabel: 'CVE',
+    filterChipLabel: 'Platform CVE',
     searchTerm: 'CVE',
     inputType: 'autocomplete',
 } as const;
