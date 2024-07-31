@@ -8,7 +8,7 @@ spec:
   - name: show-sbom
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
@@ -89,10 +89,10 @@ spec:
   results:
   - description: ""
     name: IMAGE_URL
-    value: $(tasks.build-container.results.IMAGE_URL)
+    value: $(tasks.build-image-manifest.results.IMAGE_URL)
   - description: ""
     name: IMAGE_DIGEST
-    value: $(tasks.build-container.results.IMAGE_DIGEST)
+    value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
   - description: ""
     name: CHAINS-GIT_URL
     value: $(tasks.clone-repository.results.url)
@@ -101,7 +101,7 @@ spec:
     value: $(tasks.clone-repository.results.commit)
   - description: ""
     name: JAVA_COMMUNITY_DEPENDENCIES
-    value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
+    value: $(tasks.build-container-amd64.results.JAVA_COMMUNITY_DEPENDENCIES)
 
   workspaces:
   - name: git-auth
@@ -113,7 +113,7 @@ spec:
     - name: image-url
       # We can't provide a StackRox-style tag because it is not known at this time (requires cloning source, etc.)
       # As a workaround, we still provide a unique tag that's based on a revision to this task to comply with its
-      # expected input. We later actually add this tag on a built image with apply-tags task.
+      # expected input. We later actually add this tag on a built image with build-image-manifest-konflux task.
       value: $(params.output-image-repo):konflux-$(params.revision)
     - name: rebuild
       value: $(params.rebuild)
@@ -200,10 +200,10 @@ spec:
         value: task
       resolver: bundles
 
-  - name: build-container
+  - name: build-container-amd64
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-amd64
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -229,7 +229,7 @@ spec:
       - name: name
         value: buildah-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.1@sha256:2a42822363c83b95a84c2f6a10c4d957835431d812b1e4a045b51fab1cca9769
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.2@sha256:b231d4082f4d51cdd78e6ed10498222bbc3cbf6d603829a49374b3bdc69bf3f6
       - name: kind
         value: task
       resolver: bundles
@@ -238,29 +238,186 @@ spec:
       operator: in
       values: [ "true" ]
 
-  - name: apply-tags
+  - name: build-container-s390x
     params:
     - name: IMAGE
-      value: $(tasks.build-container.results.IMAGE_URL)
-    - name: ADDITIONAL_TAGS
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
+    - name: DOCKERFILE
+      value: $(params.dockerfile)
+    - name: CONTEXT
+      value: $(params.path-context)
+    - name: HERMETIC
+      value: $(params.hermetic)
+    - name: PREFETCH_INPUT
+      value: $(params.prefetch-input)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: BUILD_ARGS
       value:
-      - konflux-$(params.revision)
+      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: PLATFORM
+      value: linux/s390x
     taskRef:
       params:
       - name: name
-        value: apply-tags
+        value: buildah-remote-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-apply-tags:0.1@sha256:7cf2482a7f50a4c493af0604ff388ff5cc2e2579cb3bf889cfa2587c723aa312
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:6fa1e7972e19c5bd8cc26c29c4de6ddb7f4f538dca10465bc4c1cb5a16400886
       - name: kind
         value: task
       resolver: bundles
+    when:
+    - input: $(tasks.init.results.build)
+      operator: in
+      values: [ "true" ]
+
+  - name: build-container-ppc64le
+    params:
+    - name: IMAGE
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
+    - name: DOCKERFILE
+      value: $(params.dockerfile)
+    - name: CONTEXT
+      value: $(params.path-context)
+    - name: HERMETIC
+      value: $(params.hermetic)
+    - name: PREFETCH_INPUT
+      value: $(params.prefetch-input)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: BUILD_ARGS
+      value:
+      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: PLATFORM
+      value: linux/ppc64le
+    taskRef:
+      params:
+      - name: name
+        value: buildah-remote-oci-ta
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:6fa1e7972e19c5bd8cc26c29c4de6ddb7f4f538dca10465bc4c1cb5a16400886
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(tasks.init.results.build)
+      operator: in
+      values: [ "true" ]
+
+  - name: build-container-arm64
+    params:
+    - name: IMAGE
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-arm64
+    - name: DOCKERFILE
+      value: $(params.dockerfile)
+    - name: CONTEXT
+      value: $(params.path-context)
+    - name: HERMETIC
+      value: $(params.hermetic)
+    - name: PREFETCH_INPUT
+      value: $(params.prefetch-input)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: BUILD_ARGS
+      value:
+      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
+      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: PLATFORM
+      value: linux/arm64
+    taskRef:
+      params:
+      - name: name
+        value: buildah-remote-oci-ta
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:6fa1e7972e19c5bd8cc26c29c4de6ddb7f4f538dca10465bc4c1cb5a16400886
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(tasks.init.results.build)
+      operator: in
+      values: [ "true" ]
+
+  - name: build-image-manifest
+    params:
+    - name: IMAGE
+      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: IMAGES
+      value:
+        - $(tasks.build-container-amd64.results.IMAGE_REF)
+        - $(tasks.build-container-s390x.results.IMAGE_REF)
+        - $(tasks.build-container-ppc64le.results.IMAGE_REF)
+        - $(tasks.build-container-arm64.results.IMAGE_REF)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
+    taskRef:
+      params:
+        - name: name
+          value: build-image-manifest
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:fd0a0cf019621d6b577f1b9ab774bb1832f7cba61b4ceee2fd1bffc96895abf9
+        - name: kind
+          value: task
+      resolver: bundles
+    when:
+      - input: $(tasks.init.results.build)
+        operator: in
+        values: [ "true" ]
+
+  - name: build-image-manifest-konflux
+    params:
+    - name: IMAGE
+      value: $(params.output-image-repo):konflux-$(params.revision)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: IMAGES
+      value:
+        - $(tasks.build-container-amd64.results.IMAGE_REF)
+        - $(tasks.build-container-s390x.results.IMAGE_REF)
+        - $(tasks.build-container-ppc64le.results.IMAGE_REF)
+        - $(tasks.build-container-arm64.results.IMAGE_REF)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
+    taskRef:
+      params:
+        - name: name
+          value: build-image-manifest
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:fd0a0cf019621d6b577f1b9ab774bb1832f7cba61b4ceee2fd1bffc96895abf9
+        - name: kind
+          value: task
+      resolver: bundles
+    when:
+      - input: $(tasks.init.results.build)
+        operator: in
+        values: [ "true" ]
 
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
-      value: $(tasks.build-container.results.IMAGE_URL)
-    - name: BASE_IMAGES
-      value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -282,14 +439,72 @@ spec:
       operator: in
       values: [ "true" ]
 
-  - name: deprecated-base-image-check
+  - name: deprecated-base-image-check-amd64
     params:
-    - name: BASE_IMAGES_DIGESTS
-      value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
     - name: IMAGE_URL
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-container-amd64.results.IMAGE_URL)
     - name: IMAGE_DIGEST
-      value: $(tasks.build-container.results.IMAGE_DIGEST)
+      value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: deprecated-image-check
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:3f956e0cd9b0a183e4fd95e010aa668a788ef564d3af1f7aecaaf6e2ccc2ce93
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: deprecated-base-image-check-s390x
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-container-s390x.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-container-s390x.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: deprecated-image-check
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:3f956e0cd9b0a183e4fd95e010aa668a788ef564d3af1f7aecaaf6e2ccc2ce93
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: deprecated-base-image-check-ppc64le
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-container-ppc64le.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-container-ppc64le.results.IMAGE_DIGEST)
+    taskRef:
+      params:
+      - name: name
+        value: deprecated-image-check
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:3f956e0cd9b0a183e4fd95e010aa668a788ef564d3af1f7aecaaf6e2ccc2ce93
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: [ "false" ]
+
+  - name: deprecated-base-image-check-arm64
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.build-container-arm64.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-container-arm64.results.IMAGE_DIGEST)
     taskRef:
       params:
       - name: name
@@ -307,9 +522,9 @@ spec:
   - name: clair-scan
     params:
     - name: image-digest
-      value: $(tasks.build-container.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
     - name: image-url
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
@@ -345,9 +560,9 @@ spec:
   - name: clamav-scan
     params:
     - name: image-digest
-      value: $(tasks.build-container.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
     - name: image-url
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
@@ -365,9 +580,9 @@ spec:
   - name: sbom-json-check
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-container.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     - name: IMAGE_DIGEST
-      value: $(tasks.build-container.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
     taskRef:
       params:
       - name: name
