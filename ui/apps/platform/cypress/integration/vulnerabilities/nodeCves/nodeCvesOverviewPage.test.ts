@@ -7,27 +7,32 @@ import {
 } from '../../../helpers/visit';
 import navSelectors from '../../../selectors/navigation';
 import {
+    getEntityTypeCountsOpname,
     getNodeCvesOpname,
+    getNodesOpname,
+    routeMatcherMapForEntityCounts,
     routeMatcherMapForNodeCves,
     routeMatcherMapForNodes,
     visitFirstNodeLinkFromTable,
     visitNodeCveOverviewPage,
 } from './NodeCve.helpers';
-import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
     assertOnEachRowForColumn,
+    paginateNext,
+    paginatePrevious,
     queryTableHeader,
     queryTableSortHeader,
     sortByTableHeader,
 } from '../../../helpers/tableHelpers';
 import {
+    expectRequestedPagination,
     expectRequestedQuery,
     expectRequestedSort,
     interceptAndWatchRequests,
 } from '../../../helpers/request';
 import * as filterHelpers from '../../../helpers/compoundFilters';
 import { applyLocalSeverityFilters } from '../workloadCves/WorkloadCves.helpers';
-import { getSeverityLabelCounts } from '../vulnerabilities.helpers';
+import { getSeverityLabelCounts, visitEntityTab } from '../vulnerabilities.helpers';
 
 describe('Node CVEs - Overview Page', () => {
     withAuth();
@@ -91,7 +96,7 @@ describe('Node CVEs - Overview Page', () => {
         assertAvailableFilters(expectedFilters);
 
         // check the advanced filters and ensure only the relevant filters are displayed for Nodes
-        cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+        visitEntityTab('Node');
         assertAvailableFilters(expectedFilters);
     });
 
@@ -115,7 +120,7 @@ describe('Node CVEs - Overview Page', () => {
 
     it('should link a Node table row to the correct Node detail page', () => {
         visitNodeCveOverviewPage();
-        cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+        visitEntityTab('Node');
 
         visitFirstNodeLinkFromTable().then((name) => {
             cy.get('h1').contains(name);
@@ -197,7 +202,7 @@ describe('Node CVEs - Overview Page', () => {
             }) => {
                 // Visit Node tab and wait for initial load - sorting will be pre-applied to the Node column
                 visitNodeCveOverviewPage();
-                cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+                visitEntityTab('Node');
                 waitForRequests();
 
                 // check sorting of Node column
@@ -312,7 +317,7 @@ describe('Node CVEs - Overview Page', () => {
             ({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
                 // Visit Node tab and wait for initial load
                 visitNodeCveOverviewPage();
-                cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+                visitEntityTab('Node');
                 waitForRequests();
 
                 // filtering by Node name should only display rows with a matching name
@@ -382,28 +387,141 @@ describe('Node CVEs - Overview Page', () => {
     });
 
     it('should correctly paginate the CVE table', () => {
-        // visit the location and save the list of CVE names with a default perPage
-        //   visit the location with perPage=2 in the URL
-        //     should only display the first 2 rows of the previous list
-        //     paginating to the next page should display the following two rows
-        // go to page 1, then page 2
-        //   applying a filter should reset the page to 1
-        // go to page 1, then page 2
-        //   go to next page, applying a sort should reset the page to 1
-        // go to page 1, then page 2
-        //   click the "nodes" tab, then click back to the "cves" tab should reset the page to 1
+        interceptAndWatchRequests(
+            {
+                ...routeMatcherMapForEntityCounts,
+                ...routeMatcherMapForNodes,
+                ...routeMatcherMapForNodeCves,
+            },
+            {
+                [getEntityTypeCountsOpname]: {
+                    body: { data: { nodeCVECount: 100, nodeCount: 100 } },
+                },
+            }
+        ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+            visitNodeCveOverviewPage();
+            waitForRequests([getNodeCvesOpname]);
+
+            // test pagination basics
+            paginateNext();
+            waitAndYieldRequestBodyVariables([getNodeCvesOpname]).then(
+                expectRequestedPagination({ offset: 20, limit: 20 })
+            );
+
+            paginateNext();
+            waitAndYieldRequestBodyVariables([getNodeCvesOpname]).then(
+                expectRequestedPagination({ offset: 40, limit: 20 })
+            );
+
+            paginatePrevious();
+            waitAndYieldRequestBodyVariables([getNodeCvesOpname]).then(
+                expectRequestedPagination({ offset: 20, limit: 20 })
+            );
+
+            paginatePrevious();
+            waitAndYieldRequestBodyVariables([getNodeCvesOpname]).then(
+                expectRequestedPagination({ offset: 0, limit: 20 })
+            );
+
+            // test that applying a filter resets the page to 1
+            paginateNext();
+            waitForRequests([getNodeCvesOpname]);
+            filterHelpers.addAutocompleteFilter('CVE', 'Name', 'CVE-2021-1234');
+            waitAndYieldRequestBodyVariables([getNodeCvesOpname, getEntityTypeCountsOpname]).then(
+                ([nodeCveListVars]) => {
+                    expectRequestedPagination({ offset: 0, limit: 20 })(nodeCveListVars);
+                }
+            );
+
+            // test that applying a sort resets the page to 1
+            paginateNext();
+            waitForRequests([getNodeCvesOpname]);
+            sortByTableHeader('CVE');
+            waitAndYieldRequestBodyVariables([getNodeCvesOpname]).then(
+                expectRequestedPagination({ offset: 0, limit: 20 })
+            );
+
+            // test that pagination is reset when switching between tabs
+            paginateNext();
+            waitForRequests([getNodeCvesOpname]);
+            visitEntityTab('Node');
+            waitAndYieldRequestBodyVariables([getNodesOpname]).then(
+                expectRequestedPagination({ offset: 0, limit: 20 })
+            );
+            visitEntityTab('CVE');
+            waitAndYieldRequestBodyVariables([getNodeCvesOpname]).then(
+                expectRequestedPagination({ offset: 0, limit: 20 })
+            );
+        });
     });
 
     it('should correctly paginate the Node table', () => {
-        // visit the location and save the list of Node names with a default perPage
-        //   visit the location with perPage=2 in the URL
-        //     should only display the first 2 rows of the previous list
-        //     paginating to the next page should display the following two rows
-        // go to page 1, then page 2
-        //   applying a filter should reset the page to 1
-        // go to page 1, then page 2
-        //   go to next page, applying a sort should reset the page to 1
-        // go to page 1, then page 2
-        //   click the "cves" tab, then click back to the "nodes" tab should reset the page to 1
+        interceptAndWatchRequests(
+            {
+                ...routeMatcherMapForEntityCounts,
+                ...routeMatcherMapForNodes,
+                ...routeMatcherMapForNodeCves,
+            },
+            {
+                [getEntityTypeCountsOpname]: {
+                    body: { data: { nodeCVECount: 100, nodeCount: 100 } },
+                },
+            }
+        ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+            visitNodeCveOverviewPage();
+            visitEntityTab('Node');
+            waitForRequests([getNodesOpname]);
+
+            // test pagination basics
+            paginateNext();
+            waitAndYieldRequestBodyVariables([getNodesOpname]).then(
+                expectRequestedPagination({ offset: 20, limit: 20 })
+            );
+
+            paginateNext();
+            waitAndYieldRequestBodyVariables([getNodesOpname]).then(
+                expectRequestedPagination({ offset: 40, limit: 20 })
+            );
+
+            paginatePrevious();
+            waitAndYieldRequestBodyVariables([getNodesOpname]).then(
+                expectRequestedPagination({ offset: 20, limit: 20 })
+            );
+
+            paginatePrevious();
+            waitAndYieldRequestBodyVariables([getNodesOpname]).then(
+                expectRequestedPagination({ offset: 0, limit: 20 })
+            );
+
+            // test that applying a filter resets the page to 1
+            paginateNext();
+            waitForRequests([getNodesOpname]);
+            filterHelpers.addAutocompleteFilter('Node', 'Name', 'a');
+            waitAndYieldRequestBodyVariables([getNodesOpname, getEntityTypeCountsOpname]).then(
+                ([nodeListVars]) => {
+                    expectRequestedPagination({ offset: 0, limit: 20 })(nodeListVars);
+                }
+            );
+
+            // test that applying a sort resets the page to 1
+            paginateNext();
+            waitForRequests([getNodesOpname]);
+            sortByTableHeader('Node');
+            waitAndYieldRequestBodyVariables([getNodesOpname]).then(
+                expectRequestedPagination({ offset: 0, limit: 20 })
+            );
+
+            // test that pagination is reset when switching between tabs
+            paginateNext();
+            waitForRequests([getNodesOpname]);
+            visitEntityTab('CVE');
+            waitAndYieldRequestBodyVariables([getNodeCvesOpname]).then(
+                expectRequestedPagination({ offset: 0, limit: 20 })
+            );
+            visitEntityTab('Node');
+            waitAndYieldRequestBodyVariables([getNodesOpname]).then(
+                expectRequestedPagination({ offset: 0, limit: 20 })
+            );
+        });
     });
 });

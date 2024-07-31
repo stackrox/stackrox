@@ -125,6 +125,7 @@ function NodeCvesOverviewPage() {
             searchFilterConfig={searchFilterConfig}
             onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
+                pagination.setPage(1, 'replace');
                 trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
             }}
         />

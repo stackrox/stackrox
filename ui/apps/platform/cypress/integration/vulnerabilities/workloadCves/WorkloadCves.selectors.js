@@ -49,8 +49,6 @@ export const selectors = {
     iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
     bulkActionMenuToggle: 'button:contains("Bulk actions")',
     menuOption: (optionText) => `*[role="menu"] button:contains("${optionText}")`,
-    paginationPrevious: "button[aria-label='Go to previous page']",
-    paginationNext: "button[aria-label='Go to next page']",
     severityIcon: (severity) => `span.pf-v5-c-icon:contains('${severity}')`,
     loadingSpinner: 'svg[role="progressbar"][aria-valuetext="Loading..."]',
 

@@ -39,6 +39,14 @@ export function sortByTableHeader(headerName: string) {
     return queryTableSortHeader(headerName).click();
 }
 
+export function paginateNext() {
+    return cy.get('button[aria-label="Go to next page"]').click();
+}
+
+export function paginatePrevious() {
+    return cy.get('button[aria-label="Go to previous page"]').click();
+}
+
 export function assertOnEachRowForColumn(
     columnDataLabel: string,
     // eslint-disable-next-line no-unused-vars
