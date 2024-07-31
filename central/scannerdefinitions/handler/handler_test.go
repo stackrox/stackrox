@@ -1,4 +1,4 @@
-//go:build sql_integration
+////go:build sql_integration
 
 package handler
 
@@ -237,7 +237,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V2() {
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V2() {
-	s.T().Skip("TODO: fix in followup PRs")
+	//s.T().Skip("TODO: fix in followup PRs")
 
 	s.T().Setenv(env.OfflineModeEnv.EnvVar(), "true")
 	s.T().Setenv(features.ScannerV4.EnvVar(), "false")
@@ -256,11 +256,11 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V2() {
 	h.ServeHTTP(w, postReq)
 	s.Require().Equal(http.StatusOK, w.Code)
 
-	// Bad request after data is uploaded.
+	// Bad request after data is uploaded should give offline data.
 	getReq = s.getRequestBadUUID()
-	w.Data.Reset()
+	w = mock.NewResponseWriter()
 	h.ServeHTTP(w, getReq)
-	s.Equal(http.StatusNotFound, w.Code)
+	s.Equal(http.StatusOK, w.Code)
 
 	// Get scanner-defs again.
 	getReq = s.getRequestUUID()
@@ -268,6 +268,14 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V2() {
 	h.ServeHTTP(w, getReq)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal(content1, w.Data.String())
+
+	// Should get file from online update.
+	getReq = s.getRequestUUIDAndFile("manifest.json")
+	w.Data.Reset()
+	h.ServeHTTP(w, getReq)
+	s.Equal(http.StatusOK, w.Code)
+	s.Equal("application/json", w.Header().Get("Content-Type"))
+	s.Regexpf(`{"since":".*","until":".*"}`, w.Data.String(), "content1 did not match")
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
