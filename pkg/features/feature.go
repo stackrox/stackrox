@@ -1,5 +1,10 @@
 package features
 
+import (
+	"os"
+	"strings"
+)
+
 const (
 	devPreviewString  = "dev-preview"
 	techPreviewString = "tech-preview"
@@ -40,6 +45,12 @@ func (f *feature) Default() bool {
 }
 
 func (f *feature) Enabled() bool {
+	switch strings.ToLower(os.Getenv(f.envVar)) {
+	case "true":
+		f.Set(true, FlagSource_ENVIRON)
+	case "false":
+		f.Set(false, FlagSource_ENVIRON)
+	}
 	return f.value
 }
 
