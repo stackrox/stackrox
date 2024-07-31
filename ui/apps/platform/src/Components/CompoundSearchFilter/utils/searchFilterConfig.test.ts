@@ -13,32 +13,33 @@ describe('searchFilterConfig', () => {
             ]);
 
             expect(result).toStrictEqual({
-                displayName: 'Image',
-                searchCategory: 'IMAGES',
-                attributes: {
-                    Name: {
-                        displayName: 'Name',
-                        filterChipLabel: 'Image name',
-                        searchTerm: 'Image',
-                        inputType: 'autocomplete',
-                    },
-                    Tag: {
-                        displayName: 'Tag',
-                        filterChipLabel: 'Image tag',
-                        searchTerm: 'Image Tag',
-                        inputType: 'text',
-                    },
-                    Label: {
-                        displayName: 'Label',
-                        filterChipLabel: 'Image label',
-                        searchTerm: 'Image Label',
-                        inputType: 'autocomplete',
+                Image: {
+                    displayName: 'Image',
+                    searchCategory: 'IMAGES',
+                    attributes: {
+                        Name: {
+                            displayName: 'Name',
+                            filterChipLabel: 'Image name',
+                            searchTerm: 'Image',
+                            inputType: 'autocomplete',
+                        },
+                        Tag: {
+                            displayName: 'Tag',
+                            filterChipLabel: 'Image tag',
+                            searchTerm: 'Image Tag',
+                            inputType: 'text',
+                        },
+                        Label: {
+                            displayName: 'Label',
+                            filterChipLabel: 'Image label',
+                            searchTerm: 'Image Label',
+                            inputType: 'autocomplete',
+                        },
                     },
                 },
             });
         });
 
-        // We will allow this case. If the Compound Search Filter gets a config like this, it'll just ignore it.
         it('should get the image config with all attributes if none were selected', () => {
             const result = createSearchFilterConfig([
                 {
@@ -49,9 +50,42 @@ describe('searchFilterConfig', () => {
             ]);
 
             expect(result).toStrictEqual({
-                displayName: 'Image',
-                searchCategory: 'IMAGES',
-                attributes: {},
+                Image: {
+                    displayName: 'Image',
+                    searchCategory: 'IMAGES',
+                    attributes: {
+                        Name: {
+                            displayName: 'Name',
+                            filterChipLabel: 'Image name',
+                            searchTerm: 'Image',
+                            inputType: 'autocomplete',
+                        },
+                        'Operating system': {
+                            displayName: 'Operating system',
+                            filterChipLabel: 'Image operating system',
+                            searchTerm: 'Image OS',
+                            inputType: 'autocomplete',
+                        },
+                        Tag: {
+                            displayName: 'Tag',
+                            filterChipLabel: 'Image tag',
+                            searchTerm: 'Image Tag',
+                            inputType: 'text',
+                        },
+                        Label: {
+                            displayName: 'Label',
+                            filterChipLabel: 'Image label',
+                            searchTerm: 'Image Label',
+                            inputType: 'autocomplete',
+                        },
+                        Registry: {
+                            displayName: 'Registry',
+                            filterChipLabel: 'Image registry',
+                            searchTerm: 'Image Registry',
+                            inputType: 'text',
+                        },
+                    },
+                },
             });
         });
     });
