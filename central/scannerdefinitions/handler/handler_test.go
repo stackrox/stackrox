@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -19,7 +20,6 @@ import (
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/httputil/mock"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -126,41 +126,42 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get() {
 
 	// No scanner defs found.
 	req := s.mustGetRequest(t)
-	w := mock.NewResponseWriter()
+	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusNotFound, w.Code())
+	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	// Add scanner defs.
 	s.mustWriteOffline(content1, time.Now())
 
-	w.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
-	assert.Equal(t, content1, w.DataString())
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, content1, w.Body.String())
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Online_Get() {
 	t := s.T()
 	h := New(s.datastore, handlerOpts{})
 
-	w := mock.NewResponseWriter()
-
 	// Should not get anything.
 	req := s.mustGetBadRequest(t)
+	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusNotFound, w.Code())
+	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	// Should get file from online update.
 	req = s.mustGetRequestWithFile(t, "manifest.json")
-	w.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
-	assert.Regexpf(t, `{"since":".*","until":".*"}`, w.DataString(), "content1 did not match")
+	assert.Regexpf(t, `{"since":".*","until":".*"}`, w.Body.String(), "content1 did not match")
+
 	// Should get online update.
 	req = s.mustGetRequest(t)
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	// Write offline definitions.
 	s.mustWriteOffline(content1, time.Now())
@@ -169,57 +170,56 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get() {
 	s.mustWriteOffline(content1, time.Now().Add(time.Hour))
 
 	// Served the offline dump, as it is more recent.
-	w.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
-	assert.Equal(t, content1, w.DataString())
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, content1, w.Body.String())
 
 	// Set the offline dump's modified time to earlier than the online update's.
 	s.mustWriteOffline(content2, nov23)
 
 	// Serve the online dump, as it is now more recent.
-	w.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
-	assert.NotEqual(t, content2, w.DataString())
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.NotEqual(t, content2, w.Body.String())
 
 	// File is unmodified.
 	req.Header.Set(ifModifiedSinceHeader, time.Now().UTC().Format(http.TimeFormat))
-	w.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusNotModified, w.Code())
-	assert.Empty(t, w.DataString())
+	assert.Equal(t, http.StatusNotModified, w.Code)
+	assert.Empty(t, w.Body.String())
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Online_ZSTD_Bundle_Get() {
 	t := s.T()
 	h := New(s.datastore, handlerOpts{})
 
-	w := mock.NewResponseWriter()
-
+	w := httptest.NewRecorder()
 	req := s.getRequestWithVersionedFile(t, "randomName")
 	h.ServeHTTP(w, req)
 	// If the version is invalid or versioned bundle cannot be found, it's a 500
-	assert.Equal(t, http.StatusInternalServerError, w.Code())
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	// Should get dev zstd file from online update.
 	req = s.getRequestWithVersionedFile(t, "dev")
-	w.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
 
 	req = s.getRequestWithVersionedFile(t, "4.3.x-173-g6bbb2e07dc")
-	w.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
 
 	// Should get dev zstd file from online update.
 	req = s.getRequestWithVersionedFile(t, "4.3.x-nightly-20240106")
-	w.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
 }
 
@@ -227,25 +227,25 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Mappings_Get() {
 	t := s.T()
 	h := New(s.datastore, handlerOpts{})
 
-	w := mock.NewResponseWriter()
+	w := httptest.NewRecorder()
 
 	// Nothing should be found
 	req := s.getRequestWithJSONFile(t, "randomName")
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusNotFound, w.Code())
+	assert.Equal(t, http.StatusNotFound, w.Code)
 
 	// Should get mapping json file from online update.
 	req = s.getRequestWithJSONFile(t, "name2repos")
-	w.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 
 	// Should get mapping json file from online update.
 	req = s.getRequestWithJSONFile(t, "repo2cpe")
-	w.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 }
 
@@ -265,22 +265,22 @@ func (s *handlerTestSuite) TestServeHTTP_v4_Offline_Get() {
 	t := s.T()
 	t.Setenv(env.OfflineModeEnv.EnvVar(), "true")
 	h := New(s.datastore, handlerOpts{})
-	w := mock.NewResponseWriter()
+	w := httptest.NewRecorder()
 
 	// No scanner defs found.
 	req := s.getRequestWithVersionedFile(t, "4.3.0")
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusInternalServerError, w.Code())
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	// No mapping json file
 	req = s.getRequestWithJSONFile(t, "name2repos")
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusInternalServerError, w.Code())
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	// No mapping json file
 	req = s.getRequestWithJSONFile(t, "repo2cpe")
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusInternalServerError, w.Code())
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	tempDir := t.TempDir()
 	filePath := tempDir + "/test.zip"
@@ -307,20 +307,21 @@ func (s *handlerTestSuite) TestServeHTTP_v4_Offline_Get() {
 	s.Require().NoError(err)
 
 	req = s.getRequestWithVersionedFile(t, "4.3.0")
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/zstd", w.Header().Get("Content-Type"))
 
-	w.Reset()
+	w = httptest.NewRecorder()
 	req = s.getRequestWithJSONFile(t, "repo2cpe")
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 
-	w.Reset()
+	w = httptest.NewRecorder()
 	req = s.getRequestWithJSONFile(t, "name2repos")
 	h.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusOK, w.Code())
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 }
 

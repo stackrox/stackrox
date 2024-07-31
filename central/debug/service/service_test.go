@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
-	"github.com/stackrox/rox/pkg/httputil/mock"
 	pkgmocks "github.com/stackrox/rox/pkg/mocks/github.com/jackc/pgx/v5/mocks"
 	"github.com/stackrox/rox/pkg/postgres/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -194,7 +194,7 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 		return stubTime
 	}
 
-	w := mock.NewResponseWriter()
+	w := httptest.NewRecorder()
 	testutils.SetVersion(s.T(), testutils.GetExampleVersion(s.T()))
 	db := mocks.NewMockDB(s.mockCtrl)
 	pgxRows := pkgmocks.NewRows([]string{"server_version"}).AddRow("15.1").ToPgxRows()
@@ -214,9 +214,9 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 		since:             time.Now(),
 	})
 
-	s.Equal(http.StatusOK, w.Code())
+	s.Equal(http.StatusOK, w.Code)
 
-	body := w.Data()
+	body := w.Body.Bytes()
 	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	s.Require().NoError(err)
 
