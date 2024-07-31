@@ -172,7 +172,11 @@ function ViolationsTablePage(): ReactElement {
             <PageSection variant="default">
                 {currentPageAlertsErrorMessage ? (
                     <Bullseye>
-                        <Alert variant="danger" title={currentPageAlertsErrorMessage} />
+                        <Alert
+                            variant="danger"
+                            title={currentPageAlertsErrorMessage}
+                            component="p"
+                        />
                     </Bullseye>
                 ) : (
                     <PageSection variant="light">

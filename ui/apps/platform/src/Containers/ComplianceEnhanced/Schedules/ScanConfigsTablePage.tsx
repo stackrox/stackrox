@@ -285,7 +285,7 @@ function ScanConfigsTablePage({
             {error ? (
                 <PageSection variant="light" isFilled id="policies-table-error">
                     <Bullseye>
-                        <Alert variant="danger" title={getAxiosErrorMessage(error)} />
+                        <Alert variant="danger" title={getAxiosErrorMessage(error)} component="p" />
                     </Bullseye>
                 </PageSection>
             ) : (
@@ -293,10 +293,10 @@ function ScanConfigsTablePage({
                     {alertObj !== null && (
                         <Alert
                             title={alertObj.title}
+                            component="p"
                             variant={alertObj.type}
                             isInline
                             className="pf-v5-u-mb-lg"
-                            component="h2"
                             actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                         >
                             {alertObj.children}
@@ -348,6 +348,7 @@ function ScanConfigsTablePage({
                                             isInline
                                             variant="danger"
                                             title="Failed to delete"
+                                            component="p"
                                             className="pf-v5-u-mb-sm"
                                         >
                                             {deleteError.toString()}

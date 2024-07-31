@@ -399,6 +399,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                             isInline
                             variant={AlertVariant.danger}
                             title={deleteDownloadError}
+                            component="p"
                             className="pf-v5-u-mb-sm"
                         />
                     )}

@@ -66,7 +66,12 @@ const IntegrationHealthWidget = ({
             {(errorMessageFetching || integrations.length !== 0) && (
                 <CardBody>
                     {errorMessageFetching ? (
-                        <Alert isInline variant="warning" title={errorMessageFetching} />
+                        <Alert
+                            isInline
+                            variant="warning"
+                            title={errorMessageFetching}
+                            component="p"
+                        />
                     ) : (
                         <IntegrationsHealth integrations={integrations} />
                     )}

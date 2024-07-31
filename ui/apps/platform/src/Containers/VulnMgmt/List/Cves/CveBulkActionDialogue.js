@@ -276,7 +276,12 @@ const CveBulkActionDialogue = ({ closeAction, bulkActionCveIds, cveType }) => {
                 ) : (
                     <>
                         {messageObj && (
-                            <Alert variant={messageObj.variant} isInline title={messageObj.title}>
+                            <Alert
+                                variant={messageObj.variant}
+                                isInline
+                                title={messageObj.title}
+                                component="p"
+                            >
                                 {messageObj.text}
                             </Alert>
                         )}

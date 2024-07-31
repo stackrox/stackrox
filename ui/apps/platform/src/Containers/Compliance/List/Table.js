@@ -346,7 +346,12 @@ const ListTable = ({
                         contents = (
                             <>
                                 {data.results.errorMessage && (
-                                    <Alert variant="danger" isInline title="Unable to get data">
+                                    <Alert
+                                        variant="danger"
+                                        isInline
+                                        title="Unable to get data"
+                                        component="p"
+                                    >
                                         {data.results.errorMessage}
                                     </Alert>
                                 )}

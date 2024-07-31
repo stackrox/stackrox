@@ -46,7 +46,7 @@ function PolicyCategoriesPage(): React.ReactElement {
         listContent = (
             <PageSection variant="light" isFilled id="policies-table-error">
                 <Bullseye>
-                    <Alert variant="danger" title={errorMessage} component="div" />
+                    <Alert variant="danger" title={errorMessage} component="p" />
                 </Bullseye>
             </PageSection>
         );
@@ -117,7 +117,7 @@ function PolicyCategoriesPage(): React.ReactElement {
                     <Alert
                         variant={variant}
                         title={title}
-                        component="div"
+                        component="p"
                         timeout={4000}
                         onTimeout={() => removeToast(key)}
                         actionClose={

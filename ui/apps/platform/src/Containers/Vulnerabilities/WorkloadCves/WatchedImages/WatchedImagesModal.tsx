@@ -91,6 +91,7 @@ function WatchedImagesModal({
                         variant="success"
                         isInline
                         title="The image was successfully added to the watch list"
+                        component="p"
                     >
                         {watchImageMutation.data ?? ''}
                     </Alert>
@@ -100,6 +101,7 @@ function WatchedImagesModal({
                         variant="danger"
                         isInline
                         title="There was an error adding the image to the watch list"
+                        component="p"
                     >
                         {getAxiosErrorMessage(watchImageMutation.error)}
                     </Alert>
@@ -109,6 +111,7 @@ function WatchedImagesModal({
                         variant="success"
                         isInline
                         title="The image was successfully removed from the watch list"
+                        component="p"
                     />
                 )}
                 {unwatchImageMutation.isError && (
@@ -116,6 +119,7 @@ function WatchedImagesModal({
                         variant="danger"
                         isInline
                         title="There was an error removing the image from the watch list"
+                        component="p"
                     >
                         {getAxiosErrorMessage(unwatchImageMutation.error)}
                     </Alert>
@@ -125,6 +129,7 @@ function WatchedImagesModal({
                         variant="danger"
                         isInline
                         title="There was an error loading the current list of watched images"
+                        component="p"
                     >
                         {getAxiosErrorMessage(currentWatchedImagesRequest.error)}
                     </Alert>

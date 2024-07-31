@@ -131,6 +131,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                         key={key}
                         variant={variant}
                         title={title}
+                        component="p"
                         timeout
                         onTimeout={() => removeToast(key)}
                         actionClose={

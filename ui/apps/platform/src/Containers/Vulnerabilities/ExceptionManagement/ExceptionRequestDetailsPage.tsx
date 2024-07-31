@@ -176,11 +176,17 @@ function ExceptionRequestDetailsPage() {
                     variant={AlertVariant.success}
                     isInline
                     title={successMessage}
+                    component="p"
                     actionClose={<AlertActionCloseButton onClose={() => setSuccessMessage(null)} />}
                 />
             )}
             {expired && (
-                <Alert variant={AlertVariant.warning} isInline title="Request Canceled.">
+                <Alert
+                    variant={AlertVariant.warning}
+                    isInline
+                    title="Request Canceled."
+                    component="p"
+                >
                     You are viewing a canceled request. If this cancelation was not intended, please
                     submit a new request
                 </Alert>

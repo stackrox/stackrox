@@ -114,7 +114,7 @@ function DiscoveredClustersPage(): ReactElement {
                     <Alert
                         variant="warning"
                         title="Unable to fetch discovered clusters"
-                        component="div"
+                        component="p"
                         isInline
                     >
                         {errorMessage}

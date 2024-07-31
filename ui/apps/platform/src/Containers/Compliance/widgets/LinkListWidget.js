@@ -58,7 +58,12 @@ const LinkListWidget = ({
                 contents = <Loader />;
             } else if (error) {
                 contents = (
-                    <Alert variant="warning" isInline title="Unable to get aggregated results">
+                    <Alert
+                        variant="warning"
+                        isInline
+                        title="Unable to get aggregated results"
+                        component="p"
+                    >
                         {error}
                     </Alert>
                 );

@@ -255,7 +255,7 @@ function QuayIntegrationForm({
                         />
                     </FormLabelGroup>
                     {isEditable && (
-                        <Alert variant="info" isInline title="Authentication">
+                        <Alert variant="info" isInline title="Authentication" component="p">
                             <List>
                                 {values.config.categories.includes('SCANNER') ? (
                                     <ListItem>
@@ -334,6 +334,7 @@ function QuayIntegrationForm({
                                     variant="info"
                                     isInline
                                     title="Use your Quay.io or Quay robot account username and password"
+                                    component="p"
                                 />
                             </GridItem>
                             <GridItem span={12} lg={6}>

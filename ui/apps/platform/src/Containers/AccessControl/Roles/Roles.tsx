@@ -89,7 +89,12 @@ function Roles(): ReactElement {
             })
             .catch((error) => {
                 setAlertRoles(
-                    <Alert title="Fetch roles failed" variant={AlertVariant.danger} isInline>
+                    <Alert
+                        title="Fetch roles failed"
+                        component="p"
+                        variant={AlertVariant.danger}
+                        isInline
+                    >
                         {error.message}
                     </Alert>
                 );
@@ -126,6 +131,7 @@ function Roles(): ReactElement {
                 setAlertGroups(
                     <Alert
                         title="Fetch auth providers or groups failed"
+                        component="p"
                         variant={AlertVariant.warning}
                         isInline
                         actionClose={actionClose}
@@ -149,6 +155,7 @@ function Roles(): ReactElement {
                 setAlertPermissionSets(
                     <Alert
                         title="Fetch permission sets failed"
+                        component="p"
                         variant={AlertVariant.warning}
                         isInline
                         actionClose={actionClose}
@@ -172,6 +179,7 @@ function Roles(): ReactElement {
                 setAlertAccessScopes(
                     <Alert
                         title="Fetch access scopes failed"
+                        component="p"
                         variant={AlertVariant.warning}
                         isInline
                         actionClose={actionClose}

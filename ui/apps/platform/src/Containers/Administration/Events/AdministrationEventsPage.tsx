@@ -109,7 +109,7 @@ function AdministrationEventsPage(): ReactElement {
                     <Alert
                         variant="warning"
                         title="Unable to fetch administration events"
-                        component="div"
+                        component="p"
                         isInline
                     >
                         {errorMessage}

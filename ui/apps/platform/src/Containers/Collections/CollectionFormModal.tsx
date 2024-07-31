@@ -174,6 +174,7 @@ function CollectionsFormModal({
                 <Alert
                     className="pf-v5-u-mx-lg pf-v5-u-mb-md"
                     title={configError.message}
+                    component="p"
                     variant="danger"
                     isInline
                 >

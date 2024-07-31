@@ -86,7 +86,12 @@ function DeclarativeConfigurationHealthCard({
             {(errorMessageFetching || unhealthyCount !== 0) && (
                 <CardBody>
                     {errorMessageFetching ? (
-                        <Alert isInline variant="warning" title={errorMessageFetching} />
+                        <Alert
+                            isInline
+                            variant="warning"
+                            title={errorMessageFetching}
+                            component="p"
+                        />
                     ) : (
                         <Table variant="compact">
                             <Thead>

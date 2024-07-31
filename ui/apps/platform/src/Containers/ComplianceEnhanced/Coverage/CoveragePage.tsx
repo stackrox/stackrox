@@ -35,7 +35,7 @@ function CoverageContent() {
 
     if (error) {
         return (
-            <Alert variant="warning" title="Unable to fetch profiles" component="div" isInline>
+            <Alert variant="warning" title="Unable to fetch profiles" component="p" isInline>
                 {getAxiosErrorMessage(error)}
             </Alert>
         );

@@ -19,6 +19,7 @@ function FormMessage({ message }: FormMessageProps): ReactElement {
                 <Alert
                     className="pf-v5-u-mt-md pf-v5-u-mb-md"
                     title={title}
+                    component="p"
                     variant={variant}
                     isInline
                 >

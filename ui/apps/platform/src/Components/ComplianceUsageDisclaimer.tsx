@@ -19,7 +19,7 @@ function ComplianceUsageDisclaimer({ className, onAccept }: ComplianceUsageDiscl
                 variant="info"
                 isInline
                 title="Usage disclaimer"
-                component="div"
+                component="p"
                 actionLinks={
                     <>
                         <AlertActionLink onClick={onAccept}>

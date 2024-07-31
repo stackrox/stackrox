@@ -311,6 +311,7 @@ function NetworkPolicySimulatorSidePanel({
                                     ? simulator.error
                                     : 'Viewing modification that will undo last applied change'
                             }
+                            component="p"
                         />
                     </StackItem>
                     <StackItem isFilled style={{ overflow: 'auto' }}>
@@ -362,6 +363,7 @@ function NetworkPolicySimulatorSidePanel({
                             title={
                                 simulator.error ? simulator.error : 'Uploaded policies processed'
                             }
+                            component="p"
                         />
                     </StackItem>
                     <StackItem isFilled style={{ overflow: 'auto' }}>

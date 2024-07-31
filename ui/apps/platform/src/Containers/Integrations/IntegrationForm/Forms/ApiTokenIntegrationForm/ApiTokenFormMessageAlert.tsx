@@ -63,7 +63,12 @@ function ApiTokenResponseDetails({ message }) {
 
 function ApiTokenFormMessageAlert({ message }: ApiTokenFormMessageAlertProps): ReactElement {
     return (
-        <Alert isInline variant={message.isError ? 'danger' : 'success'} title={message.message}>
+        <Alert
+            isInline
+            variant={message.isError ? 'danger' : 'success'}
+            title={message.message}
+            component="p"
+        >
             {message.responseData && <ApiTokenResponseDetails message={message} />}
         </Alert>
     );

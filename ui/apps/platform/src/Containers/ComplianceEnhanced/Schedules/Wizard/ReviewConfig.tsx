@@ -58,6 +58,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                     {errorMessage && (
                         <Alert
                             title={'Scan configuration request failure'}
+                            component="p"
                             variant="danger"
                             isInline
                         >
@@ -106,7 +107,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                 <Alert
                     variant="info"
                     title="Save for new versus existing scan schedule"
-                    component="div"
+                    component="p"
                     isInline
                 >
                     Compliance Operator runs a new scan schedule immediately upon creation, but does

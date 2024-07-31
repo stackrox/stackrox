@@ -98,6 +98,7 @@ function AccessScopeFormWrapper({
                 setAlertSubmit(
                     <Alert
                         title="Failed to save access scope"
+                        component="p"
                         variant={AlertVariant.danger}
                         isInline
                     >

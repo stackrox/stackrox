@@ -136,7 +136,7 @@ function ClusterDetailsPage() {
             <Alert
                 variant="warning"
                 title="Unable to fetch cluster profiles"
-                component="div"
+                component="p"
                 isInline
             >
                 {getAxiosErrorMessage(scanConfigProfilesError)}
