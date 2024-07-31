@@ -14,7 +14,7 @@ function HeaderLoadingSkeleton({
         <Flex
             direction={{ default: 'column' }}
             spaceItems={{ default: 'spaceItemsXs' }}
-            className="pf-u-w-50"
+            className="pf-v5-u-w-50"
         >
             <Skeleton screenreaderText={nameScreenreaderText} fontSize="2xl" />
             <Skeleton screenreaderText={metadataScreenreaderText} height="100px" />
