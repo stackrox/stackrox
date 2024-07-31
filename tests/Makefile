@@ -6,9 +6,8 @@ TESTFLAGS=-race -p 1 -timeout 30m
 TOPLEVEL=$(CURDIR)/..
 
 .PHONY: all
-all: test
+all: tests
 	@echo "+ $@"
-	@GOTAGS=$(GOTAGS),test,test_e2e ../scripts/go-test.sh -cover -v -run Test 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=all-tests-results
 
 .PHONY: destructive-tests
