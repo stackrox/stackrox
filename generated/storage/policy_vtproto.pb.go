@@ -64,6 +64,7 @@ func (m *Policy) CloneVT() *Policy {
 	r.CriteriaLocked = m.CriteriaLocked
 	r.MitreVectorsLocked = m.MitreVectorsLocked
 	r.IsDefault = m.IsDefault
+	r.Source = m.Source
 	if rhs := m.Categories; rhs != nil {
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
@@ -528,6 +529,9 @@ func (this *Policy) EqualVT(that *Policy) bool {
 	if this.IsDefault != that.IsDefault {
 		return false
 	}
+	if this.Source != that.Source {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -925,6 +929,13 @@ func (m *Policy) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Source != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Source))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xd8
 	}
 	if m.IsDefault {
 		i--
@@ -1893,6 +1904,9 @@ func (m *Policy) SizeVT() (n int) {
 	}
 	if m.IsDefault {
 		n += 3
+	}
+	if m.Source != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.Source))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3025,6 +3039,25 @@ func (m *Policy) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.IsDefault = bool(v != 0)
+		case 27:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Source", wireType)
+			}
+			m.Source = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Source |= PolicySource(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
