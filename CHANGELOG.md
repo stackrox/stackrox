@@ -7,18 +7,6 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
-## [NEXT RELEASE]
-
-### Added Features
-
-- ROX-25066: Add new external backup integration for non-AWS S3 compatible providers.
-
-### Removed Features
-
-### Deprecated Features
-
-### Technical Changes
-
 
 ## [4.5.0]
 
