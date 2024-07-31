@@ -10,7 +10,6 @@ type feature struct {
 	name         string
 	defaultValue bool
 	unchangeable bool
-	techPreview  bool
 }
 
 func (f *feature) EnvVar() string {
