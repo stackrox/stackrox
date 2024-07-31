@@ -125,6 +125,7 @@ function DeploymentSideBar({
                     <Alert
                         variant={AlertVariant.danger}
                         title={error.toString()}
+                        component="p"
                         className="pf-v5-u-my-lg pf-v5-u-mx-lg"
                     />
                 </StackItem>

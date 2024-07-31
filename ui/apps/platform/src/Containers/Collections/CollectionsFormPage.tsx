@@ -315,6 +315,7 @@ function CollectionsFormPage({
                                 <Alert
                                     className="pf-v5-u-m-md"
                                     title={configError.message}
+                                    component="p"
                                     variant="danger"
                                     isInline
                                 >
@@ -351,6 +352,7 @@ function CollectionsFormPage({
                         key={key}
                         variant={variant}
                         title={title}
+                        component="p"
                         timeout
                         onTimeout={() => removeToast(key)}
                         actionClose={

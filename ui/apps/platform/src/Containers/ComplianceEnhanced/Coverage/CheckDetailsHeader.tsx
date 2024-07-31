@@ -27,12 +27,7 @@ function CheckDetailsHeader({
 
         if (error) {
             return (
-                <Alert
-                    variant="danger"
-                    title="Unable to fetch check stats"
-                    component="div"
-                    isInline
-                >
+                <Alert variant="danger" title="Unable to fetch check stats" component="p" isInline>
                     {getAxiosErrorMessage(error)}
                 </Alert>
             );

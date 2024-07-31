@@ -71,6 +71,7 @@ function PermissionSets(): ReactElement {
                 setAlertPermissionSets(
                     <Alert
                         title="Fetch permission sets failed"
+                        component="p"
                         variant={AlertVariant.danger}
                         isInline
                     >
@@ -95,6 +96,7 @@ function PermissionSets(): ReactElement {
                 setAlertRoles(
                     <Alert
                         title="Fetch resources failed"
+                        component="p"
                         variant={AlertVariant.warning}
                         isInline
                         actionClose={actionClose}
@@ -118,6 +120,7 @@ function PermissionSets(): ReactElement {
                 setAlertRoles(
                     <Alert
                         title="Fetch roles failed"
+                        component="p"
                         variant={AlertVariant.warning}
                         isInline
                         actionClose={actionClose}

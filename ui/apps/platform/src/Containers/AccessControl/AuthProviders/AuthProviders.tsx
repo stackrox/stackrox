@@ -209,6 +209,7 @@ function AuthProviders(): ReactElement {
                             variant="info"
                             title="Consider using short-lived tokens for machine-to-machine communications
                             such as CI/CD pipelines, scripts, and other automation."
+                            component="p"
                         >
                             <Flex
                                 direction={{ default: 'column' }}

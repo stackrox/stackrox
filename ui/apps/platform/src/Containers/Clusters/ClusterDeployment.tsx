@@ -43,7 +43,7 @@ function ClusterDeployment({
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
             {editing && clusterCheckedIn && (
-                <Alert variant="info" isInline title={managerTypeTitle} component="div">
+                <Alert variant="info" isInline title={managerTypeTitle} component="p">
                     {managerTypeText}
                 </Alert>
             )}

@@ -159,6 +159,7 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                         isInline
                         variant="warning"
                         title={errorMessageFetching}
+                        component="p"
                         className="pf-v5-u-mt-md"
                     />
                 )}
@@ -167,6 +168,7 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                         isInline
                         variant="danger"
                         title={errorMessageDownloading}
+                        component="p"
                         className="pf-v5-u-mt-md"
                     />
                 )}

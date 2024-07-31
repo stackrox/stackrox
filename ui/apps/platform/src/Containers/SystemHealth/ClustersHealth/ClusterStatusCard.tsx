@@ -64,7 +64,7 @@ function ClusterStatusTable({
             />
             {errorMessageFetching ? (
                 <CardBody>
-                    <Alert isInline variant="warning" title={errorMessageFetching} />
+                    <Alert isInline variant="warning" title={errorMessageFetching} component="p" />
                 </CardBody>
             ) : countsOverall !== null &&
               countsSensor !== null &&

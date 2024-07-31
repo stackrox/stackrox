@@ -145,7 +145,12 @@ const TableWidgetFixableCves = ({
                 </div>
             )}
             {cvesError && (
-                <Alert variant="warning" isInline title="Error retrieving fixable CVEs">
+                <Alert
+                    variant="warning"
+                    isInline
+                    title="Error retrieving fixable CVEs"
+                    component="p"
+                >
                     {cvesError.message}
                 </Alert>
             )}

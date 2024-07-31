@@ -27,7 +27,12 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
     return (
         <>
             <div className="pf-v5-u-mb-md">
-                <Alert title="Include or exclude selected CVEs" variant="info" isInline>
+                <Alert
+                    title="Include or exclude selected CVEs"
+                    component="p"
+                    variant="info"
+                    isInline
+                >
                     You currently have ({selectedCVEIds.length}) selected. Review your selection
                     below.
                 </Alert>

@@ -174,14 +174,14 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
                 </Formik>
                 {!!successMessage && (
                     <div className="pb-4">
-                        <Alert isInline variant="success" component="h3" title={successTitle}>
+                        <Alert isInline variant="success" title={successTitle} component="p">
                             {successMessage}
                         </Alert>
                     </div>
                 )}
                 {!!errorMessage && (
                     <div className="pb-4">
-                        <Alert isInline variant="danger" component="h3" title={errorTitle}>
+                        <Alert isInline variant="danger" title={errorTitle} component="p">
                             {errorMessage}
                         </Alert>
                     </div>

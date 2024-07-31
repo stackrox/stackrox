@@ -340,10 +340,16 @@ const StaticConfigurationSection = ({
                             variant="warning"
                             isInline
                             title="Failed to check if Central has kernel support packages available"
+                            component="p"
                         />
                     )}
                     {showSlimCollectorWarning && (
-                        <Alert variant="warning" isInline title="Kernel support package">
+                        <Alert
+                            variant="warning"
+                            isInline
+                            title="Kernel support package"
+                            component="p"
+                        >
                             <span>
                                 Central doesn’t have the required Kernel support package. Retrieve
                                 it from{' '}

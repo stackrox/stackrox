@@ -108,6 +108,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
                 isInline
                 variant="warning"
                 title="There was an error loading system summary counts"
+                component="p"
             />
         );
     }

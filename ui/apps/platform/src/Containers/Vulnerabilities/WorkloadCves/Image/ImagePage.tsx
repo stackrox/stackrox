@@ -139,6 +139,7 @@ function ImagePage() {
                                     variant="warning"
                                     isInline
                                     title="CVE data may be inaccurate"
+                                    component="p"
                                 >
                                     <Flex
                                         direction={{ default: 'column' }}

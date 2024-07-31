@@ -84,13 +84,19 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                 {isSuccess && (
-                    <Alert variant="success" isInline title="Request submitted successfully" />
+                    <Alert
+                        variant="success"
+                        isInline
+                        title="Request submitted successfully"
+                        component="p"
+                    />
                 )}
                 {isError && (
                     <Alert
                         variant="danger"
                         isInline
                         title="There was an error submitting the request"
+                        component="p"
                     >
                         {getAxiosErrorMessage(error)}
                     </Alert>

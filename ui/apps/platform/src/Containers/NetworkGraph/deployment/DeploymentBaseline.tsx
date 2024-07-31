@@ -153,6 +153,7 @@ function DeploymentBaselines({ deployment, deploymentId, onNodeSelect }: Deploym
                     isInline
                     variant={AlertVariant.danger}
                     title={errorMessage}
+                    component="p"
                     className="pf-v5-u-mb-sm"
                 />
             )}

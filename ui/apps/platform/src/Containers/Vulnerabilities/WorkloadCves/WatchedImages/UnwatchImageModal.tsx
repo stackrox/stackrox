@@ -55,6 +55,7 @@ function UnwatchImageModal({
                         variant="success"
                         isInline
                         title="The image was successfully removed from the watch list"
+                        component="p"
                     />
                 )}
                 {unwatchImageMutation.isError && (
@@ -62,6 +63,7 @@ function UnwatchImageModal({
                         variant="danger"
                         isInline
                         title="There was an error removing the image from the watch list"
+                        component="p"
                     >
                         {getAxiosErrorMessage(unwatchImageMutation.error)}
                     </Alert>

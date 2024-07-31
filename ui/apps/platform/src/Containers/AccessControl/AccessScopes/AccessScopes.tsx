@@ -67,6 +67,7 @@ function AccessScopes(): ReactElement {
                 setAlertAccessScopes(
                     <Alert
                         title="Fetch access scopes failed"
+                        component="p"
                         variant={AlertVariant.danger}
                         isInline
                     >
@@ -91,6 +92,7 @@ function AccessScopes(): ReactElement {
                 setAlertRoles(
                     <Alert
                         title="Fetch roles failed"
+                        component="p"
                         variant={AlertVariant.warning}
                         isInline
                         actionClose={actionClose}
