@@ -26,9 +26,9 @@ func nodeScanCmd(_ context.Context) *cobra.Command {
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		// Create scanner client.
 		// scanner, err := factory.Create(ctx)
-		//if err != nil {
+		// if err != nil {
 		//	return fmt.Errorf("create client: %w", err)
-		//}
+		// }
 
 		var report any
 		if *withMatching {
@@ -42,7 +42,7 @@ func nodeScanCmd(_ context.Context) *cobra.Command {
 		}
 		// if err != nil {
 		//	return fmt.Errorf("scanning: %w", err)
-		//}
+		// }
 
 		reportJSON, err := json.MarshalIndent(report, "", "  ")
 		if err != nil {
