@@ -177,41 +177,36 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		postgresResults []string
 		ignoreOrder     bool
 	}{
-		//{
-		//	query:           search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentNameOneOff.Name).Query(),
-		//	expectedResults: []string{deploymentNameOneOff.GetName()},
-		//},
-		//{
-		//	query: search.NewQueryBuilder().AddStrings(search.DeploymentName, "name").Query(),
-		//	// This is odd, but this is correct. Bleve scores name12 higher than name1
-		//	expectedResults: []string{"name12", "name1"},
-		//},
-		//{
-		//	query:           fmt.Sprintf("%s:", search.DeploymentName),
-		//	expectedResults: []string{"name12", "nginx_server", "name1"},
-		//},
-		//{
-		//	query:           fmt.Sprintf("%s:name12,", search.DeploymentName),
-		//	expectedResults: []string{"name12", "nginx_server", "name1"},
-		//},
-		//{
-		//	query:           fmt.Sprintf("%s:he=h", search.DeploymentLabel),
-		//	expectedResults: []string{"hello=hi", "hey=ho"},
-		//	ignoreOrder:     true,
-		//},
-		//{
-		//	query:           fmt.Sprintf("%s:hey=", search.DeploymentLabel),
-		//	expectedResults: []string{"hey=ho"},
-		//	ignoreOrder:     true,
-		//},
-		//{
-		//	query:           fmt.Sprintf("%s:%s+%s:", search.DeploymentName, deploymentName2.Name, search.DeploymentLabel),
-		//	expectedResults: []string{"hello=hi", "hey=ho"},
-		//	ignoreOrder:     true,
-		//},
 		{
-			query:           fmt.Sprintf("%s:", search.CPUCoresLimit),
-			expectedResults: []string{},
+			query:           search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentNameOneOff.Name).Query(),
+			expectedResults: []string{deploymentNameOneOff.GetName()},
+		},
+		{
+			query: search.NewQueryBuilder().AddStrings(search.DeploymentName, "name").Query(),
+			// This is odd, but this is correct. Bleve scores name12 higher than name1
+			expectedResults: []string{"name12", "name1"},
+		},
+		{
+			query:           fmt.Sprintf("%s:", search.DeploymentName),
+			expectedResults: []string{"name12", "nginx_server", "name1"},
+		},
+		{
+			query:           fmt.Sprintf("%s:name12,", search.DeploymentName),
+			expectedResults: []string{"name12", "nginx_server", "name1"},
+		},
+		{
+			query:           fmt.Sprintf("%s:he=h", search.DeploymentLabel),
+			expectedResults: []string{"hello=hi", "hey=ho"},
+			ignoreOrder:     true,
+		},
+		{
+			query:           fmt.Sprintf("%s:hey=", search.DeploymentLabel),
+			expectedResults: []string{"hey=ho"},
+			ignoreOrder:     true,
+		},
+		{
+			query:           fmt.Sprintf("%s:%s+%s:", search.DeploymentName, deploymentName2.Name, search.DeploymentLabel),
+			expectedResults: []string{"hello=hi", "hey=ho"},
 			ignoreOrder:     true,
 		},
 		{
