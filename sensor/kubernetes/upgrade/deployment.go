@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -58,7 +59,7 @@ func (p *process) determineImage() (string, error) {
 	return "", errors.New("no sensor container found in sensor deployment")
 }
 
-func (p *process) createDeployment(serviceAccountName string, sensorDeployment *appsV1.Deployment, sensorNamespace string) (*appsV1.Deployment, error) {
+func (p *process) createDeployment(serviceAccountName string, sensorDeployment *appsV1.Deployment) (*appsV1.Deployment, error) {
 	image, err := p.determineImage()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to determine image")
@@ -70,7 +71,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      upgraderDeploymentName,
-			Namespace: sensorNamespace,
+			Namespace: sensorupgrader.GetSensorNamespace(),
 			Labels: map[string]string{
 				"app":             upgraderDeploymentName,
 				processIDLabelKey: p.trigger.GetUpgradeProcessId(),
@@ -86,7 +87,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 			},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: sensorNamespace,
+					Namespace: sensorupgrader.GetSensorNamespace(),
 					Labels: map[string]string{
 						"app":             upgraderDeploymentName,
 						processIDLabelKey: p.trigger.GetUpgradeProcessId(),
@@ -208,7 +209,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 		Name:  "ROX_UPGRADER_OWNER",
 		Value: fmt.Sprintf("%s:%s:%s/%s", deployment.Kind, deployment.APIVersion, deployment.Namespace, deployment.Name),
 	})
-	
+
 	*envVars = append(*envVars, v1.EnvVar{
 		Name: "POD_NAMESPACE",
 		ValueFrom: &v1.EnvVarSource{

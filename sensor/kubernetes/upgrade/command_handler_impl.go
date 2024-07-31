@@ -10,6 +10,7 @@ import (
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -36,12 +37,11 @@ type commandHandler struct {
 	k8sClient           kubernetes.Interface
 	checkInClient       central.SensorUpgradeControlServiceClient
 
-	configHandler   config.Handler
-	sensorNamespace string
+	configHandler config.Handler
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
-func NewCommandHandler(configHandler config.Handler, sensorNamespace string) (common.SensorComponent, error) {
+func NewCommandHandler(configHandler config.Handler) (common.SensorComponent, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining in-cluster Kubernetes config")
@@ -56,7 +56,6 @@ func NewCommandHandler(configHandler config.Handler, sensorNamespace string) (co
 		baseK8sRESTConfig: config,
 		k8sClient:         k8sClientSet,
 		configHandler:     configHandler,
-		sensorNamespace:   sensorNamespace,
 	}, nil
 }
 
@@ -145,7 +144,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 		return upgradesNotSupportedErr
 	}
 
-	newProc, err := newProcess(trigger, h.checkInClient, h.baseK8sRESTConfig, h.sensorNamespace)
+	newProc, err := newProcess(trigger, h.checkInClient, h.baseK8sRESTConfig)
 	if err != nil {
 		return errors.Wrap(err, "error creating new upgrade process")
 	}
@@ -161,7 +160,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 func (h *commandHandler) deleteUpgraderDeployments() {
 	// Only try deleting once. There's no big issue if these linger around as the upgrader doesn't do anything without
 	// being told to by central, so we don't go out of our way to make sure they are gone.
-	err := h.k8sClient.AppsV1().Deployments(h.sensorNamespace).DeleteCollection(
+	err := h.k8sClient.AppsV1().Deployments(sensorupgrader.GetSensorNamespace()).DeleteCollection(
 		h.ctx(), pkgKubernetes.DeleteBackgroundOption, v1.ListOptions{
 			LabelSelector: v1.FormatLabelSelector(&v1.LabelSelector{
 				MatchExpressions: []v1.LabelSelectorRequirement{

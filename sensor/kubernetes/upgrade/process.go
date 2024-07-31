@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -52,18 +53,15 @@ type process struct {
 	checkInReqC chan *central.UpgradeCheckInFromSensorRequest
 
 	checkInClient central.SensorUpgradeControlServiceClient
-
-	sensorNamespace string
 }
 
-func newProcess(trigger *central.SensorUpgradeTrigger, checkInClient central.SensorUpgradeControlServiceClient, baseConfig *rest.Config, sensorNamespace string) (*process, error) {
+func newProcess(trigger *central.SensorUpgradeTrigger, checkInClient central.SensorUpgradeControlServiceClient, baseConfig *rest.Config) (*process, error) {
 	config := *baseConfig
 	p := &process{
-		trigger:         trigger,
-		doneSig:         concurrency.NewErrorSignal(),
-		checkInClient:   checkInClient,
-		checkInReqC:     make(chan *central.UpgradeCheckInFromSensorRequest, 1),
-		sensorNamespace: sensorNamespace,
+		trigger:       trigger,
+		doneSig:       concurrency.NewErrorSignal(),
+		checkInClient: checkInClient,
+		checkInReqC:   make(chan *central.UpgradeCheckInFromSensorRequest, 1),
 	}
 	baseWrapTransport := baseConfig.WrapTransport
 	config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
@@ -190,7 +188,7 @@ func (p *process) waitForDeploymentDeletion(name string, uid types.UID) error {
 }
 
 func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) error {
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(p.sensorNamespace)
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(sensorupgrader.GetSensorNamespace())
 	listOpts := metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
 	}
@@ -244,7 +242,7 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 }
 
 func (p *process) createUpgraderDeploymentIfNecessary() error {
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(p.sensorNamespace)
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(sensorupgrader.GetSensorNamespace())
 
 	upgraderDeployment, err := deploymentsClient.Get(p.ctx(), upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
@@ -283,7 +281,7 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 		return errors.Wrap(err, "retrieving existing sensor deployment")
 	}
 
-	newDeployment, err := p.createDeployment(serviceAccountName, sensorDeployment, p.sensorNamespace)
+	newDeployment, err := p.createDeployment(serviceAccountName, sensorDeployment)
 	if err != nil {
 		return errors.Wrap(err, "instantiating upgrader deployment object")
 	}
@@ -343,7 +341,7 @@ func (p *process) watchUpgraderDeployment() {
 func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, bool, error) {
 	errs := errorhelpers.NewErrorList("polling")
 
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(p.sensorNamespace)
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(sensorupgrader.GetSensorNamespace())
 	foundDeployment, err := deploymentsClient.Get(p.ctx(), upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
@@ -421,7 +419,7 @@ func (p *process) GetID() string {
 }
 
 func (p *process) chooseServiceAccount() string {
-	saClient := p.k8sClient.CoreV1().ServiceAccounts(p.sensorNamespace)
+	saClient := p.k8sClient.CoreV1().ServiceAccounts(sensorupgrader.GetSensorNamespace())
 
 	sensorUpgraderSA, err := saClient.Get(p.ctx(), preferredServiceAccountName, metav1.GetOptions{})
 	if err != nil {
