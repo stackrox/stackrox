@@ -14,20 +14,27 @@ RUN make bundle-post-process
 
 FROM scratch
 
+ARG MAIN_IMAGE_TAG
+
 # Enterprise Contract labels.
 LABEL com.redhat.component="rhacs-operator-bundle-container"
+LABEL com.redhat.license_terms="https://www.redhat.com/agreements"
 LABEL description="Operator Bundle Image for Red Hat Advanced Cluster Security for Kubernetes"
 LABEL distribution-scope="public"
 LABEL io.k8s.description="Operator Bundle Image for Red Hat Advanced Cluster Security for Kubernetes"
+LABEL io.k8s.display-name="operator-bundle"
+LABEL io.openshift.tags="rhacs,operator-bundle,stackrox""
+LABEL maintainer="Red Hat, Inc."
 LABEL name="rhacs-operator-bundle"
+LABEL source-location="https://github.com/stackrox/stackrox"
+LABEL summary="Operator Bundle Image for Red Hat Advanced Cluster Security for Kubernetes"
+LABEL url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c"
+LABEL vendor="Red Hat, Inc."
+# We must set version label to prevent inheriting value set in the base stage.
+LABEL version="${MAIN_IMAGE_TAG}"
 # Release label is required by EC although has no practical semantics.
 # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
 LABEL release="1"
-LABEL url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c"
-LABEL vendor="Red Hat, Inc."
-LABEL version="${MAIN_IMAGE_TAG}"
-LABEL maintainer="Red Hat, Inc."
-LABEL summary="Operator Bundle Image for Red Hat Advanced Cluster Security for Kubernetes"
 
 # Core bundle labels.
 LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1
