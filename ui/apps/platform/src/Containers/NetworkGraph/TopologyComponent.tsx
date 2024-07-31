@@ -181,10 +181,15 @@ const TopologyComponent = ({
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
+    // id prop of headings in child components correspond to aria-labelledby prop of TopologySideBar
     return (
         <TopologyView
             sideBar={
-                <TopologySideBar resizable onClose={closeSidebar}>
+                <TopologySideBar
+                    aria-labelledby="TopologySideBarLabelledBy"
+                    resizable
+                    onClose={closeSidebar}
+                >
                     {hasReadAccessForNetworkPolicy &&
                         simulation.isOn &&
                         simulation.type === 'networkPolicy' && (

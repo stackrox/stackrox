@@ -9,8 +9,7 @@ import {
     Tabs,
     TabTitleText,
     Text,
-    TextContent,
-    TextVariants,
+    Title,
 } from '@patternfly/react-core';
 import uniq from 'lodash/uniq';
 
@@ -58,6 +57,7 @@ function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: Namespace
     }, [] as string[]);
     const uniqueNamespacePolicyIds = uniq(namespacePolicyIds);
 
+    // id prop of heading corresponds to aria-labelledby prop of TopologySideBar
     return (
         <Stack>
             <StackItem>
@@ -66,21 +66,14 @@ function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: Namespace
                         <NamespaceIcon />
                     </FlexItem>
                     <FlexItem>
-                        <TextContent>
-                            <Text component={TextVariants.h1} className="pf-v5-u-font-size-xl">
-                                {namespaceNode?.label}
-                            </Text>
-                        </TextContent>
-                        <TextContent>
-                            <Text
-                                component={TextVariants.h2}
-                                className="pf-v5-u-font-size-sm pf-v5-u-color-200"
-                            >
-                                in &quot;
-                                {cluster}
-                                &quot;
-                            </Text>
-                        </TextContent>
+                        <Title headingLevel="h2" id="TopologySideBarLabelledBy">
+                            {namespaceNode?.label}
+                        </Title>
+                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                            in &quot;
+                            {cluster}
+                            &quot;
+                        </Text>
                     </FlexItem>
                 </Flex>
             </StackItem>

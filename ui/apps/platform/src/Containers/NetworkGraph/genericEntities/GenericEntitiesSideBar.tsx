@@ -6,8 +6,7 @@ import {
     Stack,
     StackItem,
     Text,
-    TextContent,
-    TextVariants,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -69,25 +68,19 @@ function GenericEntitiesSideBar({
         onNodeSelect(entityId);
     };
 
+    // id prop of heading corresponds to aria-labelledby prop of TopologySideBar
     return (
         <Stack>
             <StackItem>
                 <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
                     <FlexItem>{EntityHeaderIcon}</FlexItem>
                     <FlexItem>
-                        <TextContent>
-                            <Text component={TextVariants.h1} className="pf-v5-u-font-size-xl">
-                                {entityNode?.label}
-                            </Text>
-                        </TextContent>
-                        <TextContent>
-                            <Text
-                                component={TextVariants.h2}
-                                className="pf-v5-u-font-size-sm pf-v5-u-color-200"
-                            >
-                                {sidebarTitle}
-                            </Text>
-                        </TextContent>
+                        <Title headingLevel="h2" id="TopologySideBarLabelledBy">
+                            {entityNode?.label}
+                        </Title>
+                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                            {sidebarTitle}
+                        </Text>
                     </FlexItem>
                 </Flex>
             </StackItem>
