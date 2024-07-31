@@ -1150,8 +1150,12 @@
         "isDefault": {
           "type": "boolean",
           "description": "Read-only field. Indicates the policy is a default policy if true and a custom policy if false."
+        },
+        "source": {
+          "$ref": "#/definitions/storagePolicySource"
         }
-      }
+      },
+      "title": "Next tag: 28"
     },
     "storagePolicyGroup": {
       "type": "object",
@@ -1188,6 +1192,14 @@
           }
         }
       }
+    },
+    "storagePolicySource": {
+      "type": "string",
+      "enum": [
+        "IMPERATIVE",
+        "DECLARATIVE"
+      ],
+      "default": "IMPERATIVE"
     },
     "storagePolicyValue": {
       "type": "object",

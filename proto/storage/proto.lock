@@ -11700,6 +11700,18 @@
       "def": {
         "enums": [
           {
+            "name": "PolicySource",
+            "enum_fields": [
+              {
+                "name": "IMPERATIVE"
+              },
+              {
+                "name": "DECLARATIVE",
+                "integer": 1
+              }
+            ]
+          },
+          {
             "name": "EventSource",
             "enum_fields": [
               {
@@ -11959,6 +11971,11 @@
                 "id": 26,
                 "name": "is_default",
                 "type": "bool"
+              },
+              {
+                "id": 27,
+                "name": "source",
+                "type": "PolicySource"
               }
             ],
             "reserved_ids": [

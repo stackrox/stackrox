@@ -267,7 +267,7 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
-	// if feature flag turned on, check if categories need to be created/new policy category edges need to be created/
+	// Check if categories need to be created/new policy category edges need to be created/
 	// existing policy category edges need to be removed?
 	if err := ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policy.GetCategories()); err != nil {
 		return err
