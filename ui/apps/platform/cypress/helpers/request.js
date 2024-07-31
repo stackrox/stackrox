@@ -173,3 +173,14 @@ export function expectRequestedQuery(expectedQuery) {
         );
     };
 }
+
+export function expectRequestedPagination(expectedPagination) {
+    return (variables) => {
+        const { pagination } = variables;
+        delete pagination.sortOption;
+        expect(pagination).to.deep.equal(
+            expectedPagination,
+            `Expected pagination ${JSON.stringify(expectedPagination)} but received ${JSON.stringify(pagination)}`
+        );
+    };
+}
