@@ -56,6 +56,10 @@ area/postgres:
     - pkg/search/postgres/**/*
     - tools/generate-helpers/pg-table-bindings/**/*
     - tools/generate-helpers/pg-table-bindings-wrapper
+
+auto-retest:
+- base-branch: 'master'
+
 ci-all-qa-tests:
 - changed-files:
   - any-glob-to-any-file:
