@@ -23,18 +23,6 @@ var (
 func toK8sEnvVars(triggerEnvVars []*central.SensorUpgradeTrigger_EnvVarDef) []v1.EnvVar {
 	envVars := make([]v1.EnvVar, 0, len(triggerEnvVars))
 
-	// TODO(ROX-15042): Refactor this:
-	// Quick and dirty addition of POD_NAMESPACE to upgrader deployments, refactor this before merging
-	podNamespaceEnvVar := v1.EnvVar{
-		Name: "POD_NAMESPACE",
-		ValueFrom: &v1.EnvVarSource{
-			FieldRef: &v1.ObjectFieldSelector{
-				FieldPath: "metadata.namespace",
-			},
-		},
-	}
-	envVars = append(envVars, podNamespaceEnvVar)
-
 	for _, tev := range triggerEnvVars {
 		ev := v1.EnvVar{
 			Name:  tev.GetName(),
@@ -219,6 +207,15 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 	*envVars = append(*envVars, v1.EnvVar{
 		Name:  "ROX_UPGRADER_OWNER",
 		Value: fmt.Sprintf("%s:%s:%s/%s", deployment.Kind, deployment.APIVersion, deployment.Namespace, deployment.Name),
+	})
+	
+	*envVars = append(*envVars, v1.EnvVar{
+		Name: "POD_NAMESPACE",
+		ValueFrom: &v1.EnvVarSource{
+			FieldRef: &v1.ObjectFieldSelector{
+				FieldPath: "metadata.namespace",
+			},
+		},
 	})
 
 	// These are all nil safe because they are all non-pointers
