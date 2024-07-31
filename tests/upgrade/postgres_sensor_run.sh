@@ -99,6 +99,7 @@ preamble() {
         *) die "Unknown architecture" ;;
     esac
 
+    make cli_host-arch upgrader
     require_executable "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl"
     require_executable "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/upgrader"
 
