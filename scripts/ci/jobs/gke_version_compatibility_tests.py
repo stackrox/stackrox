@@ -40,9 +40,12 @@ latest_tag = subprocess.check_output(
     encoding="utf-8",
 ).strip()
 
-if len(central_chart_versions) == 0 and len(sensor_chart_versions) == 0:
-    logging.info("Found no older versions to test against according to the product lifecycles API. \n"
-                 "However versions with support exceptions will still be tested against.")
+if len(central_chart_versions) == 0:
+    logging.info("Found no older central chart versions to test against according to the product lifecycles API.")
+if len(sensor_chart_versions) == 0:
+    logging.info("Found no older sensor chart versions to test against according to the product lifecycles API.")
+if len(central_chart_versions) == 0 or len(sensor_chart_versions) == 0:
+    logging.info("However versions with support exceptions will still be tested against.")
 
 ChartVersions = namedtuple(
     "Chart_versions", ["central_version", "sensor_version"])
