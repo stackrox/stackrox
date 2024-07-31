@@ -45,11 +45,15 @@ func (f *feature) Default() bool {
 }
 
 func (f *feature) Enabled() bool {
+	if f.unchangeable {
+		return f.defaultValue
+	}
+
 	switch strings.ToLower(os.Getenv(f.envVar)) {
 	case "true":
-		f.Set(true, FlagSource_ENVIRON)
+		return true
 	case "false":
-		f.Set(false, FlagSource_ENVIRON)
+		return false
 	}
 	return f.value
 }
