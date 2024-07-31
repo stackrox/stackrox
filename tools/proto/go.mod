@@ -3,7 +3,7 @@ module github.com/stackrox/stackrox/tools/proto
 go 1.21
 
 require (
-	github.com/bufbuild/buf v1.35.0
+	github.com/bufbuild/buf v1.35.1
 	github.com/favadi/protoc-go-inject-tag v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0
 	github.com/planetscale/vtprotobuf v0.6.0
