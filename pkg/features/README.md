@@ -15,21 +15,23 @@ To add a feature flag, add a variable with your feature to `list.go`. To registe
 
 * Name: This is a short description of what this flag is about
 * Environment Variable name: This is the environment variable which needs to be set to override the default value of this flag. Env var names **must** start with `ROX_`
-* Type: This is the type of the feature flag. An unchangeable or a changeable one. See below for more details
-* Default value: The default value to use if the flag has not been overridden
-* Release stage: Either `DevPreview` for features in early stage of development, or `TechPreview` for features we are ready to collect customers' feedback. Consult [the article on Products & Services](https://access.redhat.com/articles/6966848) for the differences between the both
+* Options:
+  * whether the flag is changeable on release builds (default) or not (add `unchangeableInProd` option). See below for more details
+  * default value: disabled (default) or enabled (add `enabled` option)
 
 The variable can be one of two types of feature flag:
 
-#### An unchangeable feature:
+### An `unchangeableInProd` feature
+
 This flag cannot be changed from its default value on release builds (i.e. "production"). To enable or disable it, you must make a code change.
 On development builds, the setting _can_ be changed.
 
-#### A changeable feature:
+### A changeable feature
+
 This is the default feature flag. The value of the flag can be changed in both release and development builds.
 Use this if you want the end user to be able to enable or disable the setting.
 
-> :warning: To introduce features that could be disabled in release builds, you must be cautious to ensure that Central returns to "normal" state after disabling the feature. Especially for the features at the tech-preview stage.
+> :warning: To introduce features that could be disabled in release builds, you must be cautious to ensure that Central returns to "normal" state after disabling the feature.
 > Sometimes it is not as simple as turning off the feature flag to return Central to the "normal" state for various reasons, including (but not limited to) schema and data changes.
 
 ## Overriding the default value of a feature flag
@@ -37,6 +39,7 @@ Use this if you want the end user to be able to enable or disable the setting.
 To change the value of a feature flag on a running container, you must set or update the underlying environment variable to the desired value.
 
 For example, if there exists a feature flag with an environment variable `ROX_MY_FEATURE_FLAG` and a default value of `false` and you want to override it to `true` in central (stackrox namespace), then run:
+
 ```sh
 kubectl set env -n=stackrox deploy/central ROX_MY_FEATURE_FLAG=true
 ```

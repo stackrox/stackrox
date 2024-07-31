@@ -36,7 +36,6 @@ func (s *serviceImpl) GetFeatureFlags(context.Context, *v1.Empty) (*v1.GetFeatur
 			Name:    feature.Name(),
 			EnvVar:  feature.EnvVar(),
 			Enabled: feature.Enabled(),
-			Stage:   feature.Stage(),
 		})
 	}
 
