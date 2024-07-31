@@ -7,7 +7,7 @@ import (
 
 // ConvertResourceCollectionFromProto converts a `*storage.ResourceCollection` to Gorm model
 func ConvertResourceCollectionFromProto(obj *storage.ResourceCollection) (*Collections, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

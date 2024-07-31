@@ -7,7 +7,7 @@ import (
 
 // ConvertComplianceOperatorRuleV2FromProto converts a `*storage.ComplianceOperatorRuleV2` to Gorm model
 func ConvertComplianceOperatorRuleV2FromProto(obj *storage.ComplianceOperatorRuleV2) (*ComplianceOperatorRuleV2, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

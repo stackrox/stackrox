@@ -8,7 +8,7 @@ import (
 
 // ConvertImageCVEEdgeFromProto converts a `*storage.ImageCVEEdge` to Gorm model
 func ConvertImageCVEEdgeFromProto(obj *storage.ImageCVEEdge) (*ImageCveEdges, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

@@ -7,7 +7,7 @@ import (
 
 // ConvertReportConfigurationFromProto converts a `*storage.ReportConfiguration` to Gorm model
 func ConvertReportConfigurationFromProto(obj *storage.ReportConfiguration) (*ReportConfigurations, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

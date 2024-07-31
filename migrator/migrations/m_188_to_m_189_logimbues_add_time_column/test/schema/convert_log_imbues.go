@@ -8,7 +8,7 @@ import (
 
 // ConvertLogImbueFromProto converts a `*storage.LogImbue` to Gorm model
 func ConvertLogImbueFromProto(obj *storage.LogImbue) (*LogImbues, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

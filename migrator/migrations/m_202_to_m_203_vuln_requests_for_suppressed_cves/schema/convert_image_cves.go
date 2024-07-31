@@ -8,7 +8,7 @@ import (
 
 // ConvertImageCVEFromProto converts a `*storage.ImageCVE` to Gorm model
 func ConvertImageCVEFromProto(obj *storage.ImageCVE) (*ImageCves, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
