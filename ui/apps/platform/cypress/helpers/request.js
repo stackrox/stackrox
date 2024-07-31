@@ -164,3 +164,12 @@ export function expectRequestedSort(expectedSort) {
         );
     };
 }
+
+export function expectRequestedQuery(expectedQuery) {
+    return ({ query }) => {
+        expect(query).to.deep.equal(
+            expectedQuery,
+            `Expected query ${expectedQuery} but received ${query}`
+        );
+    };
+}

@@ -9,6 +9,10 @@ const attributeMenuToggle = '[aria-label="compound search filter attribute selec
 const attributeMenu = '[aria-label="compound search filter attribute selector menu"]';
 const attributeMenuItem = `${attributeMenu} li`;
 
+const numericConditionMenuToggle = '[aria-label="Condition selector toggle"]';
+const numericConditionMenu = '[aria-label="Condition selector menu"]';
+const numericConditionMenuItem = `${numericConditionMenu} li`;
+
 export const compoundFiltersSelectors = {
     entityMenuToggle,
     entityMenu,
@@ -16,11 +20,15 @@ export const compoundFiltersSelectors = {
     attributeMenuToggle,
     attributeMenu,
     attributeMenuItem,
+    numericConditionMenuToggle,
+    numericConditionMenu,
+    numericConditionMenuItem,
 };
 
 export function toggleEntitySelectorMenu() {
     cy.get(entityMenuToggle).click();
 }
+
 export function selectEntity(entity: string) {
     toggleEntitySelectorMenu();
     cy.get(entityMenu)
@@ -37,6 +45,44 @@ export function selectAttribute(attribute: string) {
     cy.get(attributeMenuItem)
         .contains(new RegExp(`^${attribute}$`, 'i'))
         .click();
+}
+
+export function selectNumericCondition(condition: string) {
+    cy.get(numericConditionMenuToggle).click();
+    cy.get(numericConditionMenuItem)
+        .contains(new RegExp(`^${condition}$`, 'i'))
+        .click();
+}
+
+export function addAutocompleteFilter(entity: string, attribute: string, value: string) {
+    selectEntity(entity);
+    selectAttribute(attribute);
+    cy.get('[aria-label^="Filter results by"]').type(value);
+    cy.get('[aria-label="Apply autocomplete input to search"]').click();
+}
+
+export function addPlainTextFilter(entity: string, attribute: string, value: string) {
+    selectEntity(entity);
+    selectAttribute(attribute);
+    cy.get('[aria-label^="Filter results by"]').type(value);
+    cy.get('[aria-label="Apply text input to search"]').click();
+}
+
+export function addNumericFilter(
+    entity: string,
+    attribute: string,
+    condition: string,
+    value: number
+) {
+    selectEntity(entity);
+    selectAttribute(attribute);
+    selectNumericCondition(condition);
+    cy.get('[aria-label="Condition value input"]').type(String(value));
+    cy.get('[aria-label="Apply condition and number input to search"]').click();
+}
+
+export function clearFilters() {
+    cy.get('button').contains('Clear filters').click();
 }
 
 /**

@@ -116,6 +116,7 @@ function NodesTable({
                                             moderateCount={moderate.total}
                                             lowCount={low.total}
                                             filteredSeverities={filteredSeverities}
+                                            entity={'node'}
                                         />
                                     </Td>
                                     <Td dataLabel="Cluster" modifier="nowrap">
