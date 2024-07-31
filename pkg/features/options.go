@@ -10,12 +10,6 @@ func withEnabledByDefault() option {
 	}
 }
 
-func withTechPreviewStage() option {
-	return func(f *feature) {
-		f.techPreview = true
-	}
-}
-
 func withUnchangeable(unchangeable bool) option {
 	return func(f *feature) {
 		f.unchangeable = unchangeable
@@ -24,6 +18,5 @@ func withUnchangeable(unchangeable bool) option {
 
 var (
 	enabled            = withEnabledByDefault()
-	techPreview        = withTechPreviewStage()
 	unchangeableInProd = withUnchangeable(buildinfo.ReleaseBuild)
 )
