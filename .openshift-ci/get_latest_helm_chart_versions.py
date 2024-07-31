@@ -13,6 +13,7 @@ import pathlib
 import re
 import subprocess
 import sys
+from urllib.error import URLError
 from urllib.request import Request, urlopen
 
 from collections import namedtuple
@@ -131,14 +132,13 @@ def __get_supported_helm_chart_versions():
 def get_supported_releases():
     supported_releases = []
     data = __get_data_from_product_lifecycles_api()
-    releases = []
-    try:
-        releases = data["data"][0]["versions"]
-    except Exception as exception:
-        logging.debug(f"Found no RHACS releases in PRODUCT_LIFECYCLES_API at "
-                      f"{PRODUCT_LIFECYCLES_API}\n{repr(exception)}")
+    if "data" not in data or len(data["data"]) == 0 or "versions" not in data["data"][0]:
+        logging.debug(f"Found no RHACS releases in PRODUCT_LIFECYCLES_API")
+        return []
+    releases = data["data"][0]["versions"]
+
     for release in releases:
-        if release["type"] != "End of life":
+        if "type" in release and release["type"] != "End of life":
             supported_releases.append(parse_release(release["name"]))
     return supported_releases
 
@@ -150,18 +150,22 @@ def __get_data_from_product_lifecycles_api():
     )
     try:
         response = urlopen(req)
-        with response:
-            try:
-                response_bytes = response.read()
-                response_string = response_bytes.decode('utf-8')
-                data = json.loads(response_string)
-                return data
-            except Exception as exception:
-                logging.debug(f"Failed to read data from PRODUCT_LIFECYCLES_API at "
-                              f"{PRODUCT_LIFECYCLES_API}\n{repr(exception)}")
-    except Exception as exception:
-        logging.debug(f"Failed to access PRODUCT_LIFECYCLES_API at {PRODUCT_LIFECYCLES_API}\n{repr(exception)}")
-    return []
+    except URLError as exception:
+        logging.debug(f"Failed to open URL {req.url} with error:\n{repr(exception)}")
+        return []
+    with response:
+        try:
+            response_bytes = response.read()
+            response_string = response_bytes.decode('utf-8')
+        except ValueError as exception:
+            logging.debug(f"Failed to decode API response from {req.url} with error:\n{repr(exception)}")
+            return []
+        try:
+            data = json.loads(response_string)
+        except json.JSONDecodeError as exception:
+            logging.debug(f"Failed to load JSON from API response from {req.url} with error:\n{repr(exception)}")
+            return []
+        return data
 
 
 def __does_chart_exist(chart_name, release):
