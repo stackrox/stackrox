@@ -6,7 +6,7 @@ TESTFLAGS=-race -p 1 -timeout 30m
 TOPLEVEL=$(CURDIR)/..
 
 .PHONY: all
-all: tests
+all: test
 	@echo "+ $@"
 	@$(MAKE) report JUNIT_OUT=all-tests-results
 
