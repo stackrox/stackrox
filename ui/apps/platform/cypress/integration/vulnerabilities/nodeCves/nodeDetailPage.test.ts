@@ -1,12 +1,14 @@
 import withAuth from '../../../helpers/basicAuth';
-import { assertAvailableFilters } from '../../../helpers/compoundFilters';
+import * as filterHelpers from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
+    expectRequestedQuery,
     expectRequestedSort,
     interactAndWaitForResponses,
     interceptAndWatchRequests,
 } from '../../../helpers/request';
 import {
+    assertOnEachRowForColumn,
     queryTableHeader,
     queryTableSortHeader,
     sortByTableHeader,
@@ -17,6 +19,10 @@ import {
 } from '../../../helpers/visit';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
+    applyLocalSeverityFilters,
+    applyLocalStatusFilters,
+} from '../workloadCves/WorkloadCves.helpers';
+import {
     getNodeMetadataOpname,
     getNodeVulnerabilitiesOpname,
     getNodeVulnSummaryOpname,
@@ -24,6 +30,8 @@ import {
     routeMatcherMapForNodes,
     visitFirstNodeFromOverviewPage,
 } from './NodeCve.helpers';
+
+const { assertAvailableFilters } = filterHelpers;
 
 const nodeBaseUrl = '/main/vulnerabilities/node-cves/nodes';
 const mockNodeId = '1';
@@ -167,14 +175,72 @@ describe('Node CVEs - Node Detail Page', () => {
     });
 
     it('should filter the CVE table', () => {
-        // filtering by CVE name should only display rows with a matching name
-        // filtering by Severity should only display rows with a matching top severity
-        // filtering by CVE Status should only display rows with a matching status
-        // filtering by CVSS should only display rows with a CVSS in range
-        // filtering by Component should only display rows with a nested table containing a matching component
-        //   - expand each row
-        //   - check that the component name exists in the table
-        // clearing filters should remove all filter chips and filter from the URL
+        interceptAndWatchRequests({
+            [getNodeVulnerabilitiesOpname]:
+                routeMatcherMapForNodePage[getNodeVulnerabilitiesOpname],
+        }).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+            visitFirstNodeFromOverviewPage();
+            waitForRequests();
+
+            // filtering by CVE name should only display rows with a matching name
+            filterHelpers.addAutocompleteFilter('CVE', 'Name', 'CVE-2021-1234');
+            waitAndYieldRequestBodyVariables().then(expectRequestedQuery('CVE:r/CVE-2021-1234'));
+            // Do not assert on cell contents as the filter value is mocked
+            filterHelpers.clearFilters();
+            waitForRequests();
+
+            // filtering by Severity should only display rows with a matching top severity
+            applyLocalSeverityFilters('Low');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedQuery('SEVERITY:LOW_VULNERABILITY_SEVERITY')
+            );
+            assertOnEachRowForColumn('Top severity', (_, cell) => {
+                expect(cell.innerText).to.contain('Low');
+            });
+            filterHelpers.clearFilters();
+            waitForRequests();
+
+            // filtering by CVE Status should only display rows with a matching status
+            applyLocalStatusFilters('Fixable');
+            waitAndYieldRequestBodyVariables().then(expectRequestedQuery('FIXABLE:true'));
+            assertOnEachRowForColumn('CVE status', (_, cell) => {
+                expect(cell.innerText).to.contain('Fixable');
+            });
+            filterHelpers.clearFilters();
+            waitForRequests();
+
+            // filtering by CVSS should only display rows with a CVSS in range
+            filterHelpers.addNumericFilter('CVE', 'CVSS', 'Is less than', 8);
+            waitAndYieldRequestBodyVariables().then(expectRequestedQuery('CVSS:<8'));
+            assertOnEachRowForColumn('CVSS score', (_, cell) => {
+                const cvss = parseFloat(cell.innerText.replace(/[^0-9.]/g, ''));
+                expect(cvss).to.be.lessThan(8);
+            });
+            filterHelpers.clearFilters();
+            waitForRequests();
+
+            // filtering by Component should only display rows with a nested table containing a matching component
+            //   - expand each row
+            //   - check that the component name exists in the table
+            const componentFilter = 'a';
+            filterHelpers.addAutocompleteFilter('Node component', 'Name', componentFilter);
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedQuery(`Component:r/${componentFilter}`)
+            );
+            // scope these assertions to the first parent table so that assertions run in the child tables
+            const columnDataLabel = 'Component';
+            cy.get(`table`)
+                .then(($el) =>
+                    $el.find(
+                        `table:has(th:contains("${columnDataLabel}")) td[data-label="${columnDataLabel}"]`
+                    )
+                )
+                .then(($cells) => {
+                    $cells.each((_, cell) => {
+                        expect(cell.innerText).to.contain(componentFilter);
+                    });
+                });
+        });
     });
 
     it('should correctly paginate the CVE table', () => {

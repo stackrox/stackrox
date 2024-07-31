@@ -73,6 +73,18 @@ export function applyLocalSeverityFilters(...severities) {
 }
 
 /**
+ * Apply local status filters via the filter toolbar.
+ * @param {...('Fixable' | 'Not fixable')} statuses
+ */
+export function applyLocalStatusFilters(...statuses) {
+    cy.get(selectors.fixabilityDropdown).click();
+    statuses.forEach((status) => {
+        cy.get(selectors.fixabilityMenuItem(status)).click();
+    });
+    cy.get(selectors.fixabilityDropdown).click();
+}
+
+/**
  * Select a search option from the search options dropdown.
  * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  */
