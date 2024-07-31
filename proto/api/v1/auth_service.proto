@@ -47,6 +47,7 @@ message AuthMachineToMachineConfig {
   enum Type {
     GENERIC = 0;
     GITHUB_ACTIONS = 1;
+    KUBE_SERVICE_ACCOUNT = 2;
   }
   Type type = 2;
 
