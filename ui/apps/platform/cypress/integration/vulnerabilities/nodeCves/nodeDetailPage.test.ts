@@ -1,6 +1,7 @@
 import withAuth from '../../../helpers/basicAuth';
 import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
+import { interactAndWaitForResponses } from '../../../helpers/request';
 import {
     assertCannotFindThePage,
     visitWithStaticResponseForPermissions,
@@ -11,8 +12,8 @@ import {
     getNodeVulnerabilitiesOpname,
     getNodeVulnSummaryOpname,
     routeMatcherMapForNodePage,
-    visitFirstNodeLinkFromTable,
-    visitNodeCveOverviewPage,
+    routeMatcherMapForNodes,
+    visitFirstNodeFromOverviewPage,
 } from './NodeCve.helpers';
 
 const nodeBaseUrl = '/main/vulnerabilities/node-cves/nodes';
@@ -69,10 +70,7 @@ describe('Node CVEs - Node Detail Page', () => {
     });
 
     it('should only show relevant filters for the Node Detail page', () => {
-        visitNodeCveOverviewPage();
-        cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
-
-        visitFirstNodeLinkFromTable();
+        visitFirstNodeFromOverviewPage();
 
         assertAvailableFilters({
             CVE: ['Name', 'CVSS', 'Discovered Time'],
@@ -80,9 +78,29 @@ describe('Node CVEs - Node Detail Page', () => {
         });
     });
 
-    it('should link to the correct pages', () => {
+    it('should follow the breadcrumb link to the Node list tab', () => {
+        visitFirstNodeFromOverviewPage();
+
         // clicking the Nodes breadcrumb should navigate to the overview page with the Node tab selected
-        // clicking a CVE name in the list should navigate to the correct Node CVE details page
+        interactAndWaitForResponses(() => {
+            cy.get('nav[aria-label="Breadcrumb"] a').contains('Nodes').click();
+        }, routeMatcherMapForNodes);
+        cy.get(`${vulnSelectors.entityTypeToggleItem('CVE')}[aria-pressed=false]`);
+        cy.get(`${vulnSelectors.entityTypeToggleItem('Node')}[aria-pressed=true]`);
+    });
+
+    it('should link from a CVE in the table to the CVE detail page', () => {
+        interactAndWaitForResponses(
+            () => {
+                visitFirstNodeFromOverviewPage();
+            },
+            routeMatcherMapForNodePage,
+            staticResponseMapForNodePage
+        );
+
+        // clicking a CVE name in the list should navigate to a Node CVE details page
+        cy.get(`table td[data-label="CVE"]`).first().click();
+        cy.get('nav[aria-label="Breadcrumb"] a').contains('Node CVEs');
     });
 
     it('should sort CVE table columns', () => {
