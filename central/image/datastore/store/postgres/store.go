@@ -89,7 +89,7 @@ func (s *storeImpl) insertIntoImages(
 		cloned = parts.image.Clone()
 		cloned.Scan.Components = nil
 	}
-	serialized, marshalErr := cloned.Marshal()
+	serialized, marshalErr := cloned.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -234,7 +234,7 @@ func copyFromImageComponents(ctx context.Context, tx *postgres.Tx, objs ...*stor
 
 	for idx, obj := range objs {
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -301,7 +301,7 @@ func copyFromImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID s
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -370,7 +370,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 		}
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -431,7 +431,7 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs .
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -582,7 +582,7 @@ func copyFromImageCVEEdgesWithVulnStateUpdates(ctx context.Context, tx *postgres
 }
 
 func getImageCVEEdgeRowToInsert(edge *storage.ImageCVEEdge) ([]interface{}, error) {
-	serialized, marshalErr := edge.Marshal()
+	serialized, marshalErr := edge.MarshalVT()
 	if marshalErr != nil {
 		return nil, marshalErr
 	}
