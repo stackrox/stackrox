@@ -8,8 +8,15 @@ import (
 	"os"
 )
 
+// GetKubeServiceAccountIssuer calls GetServiceAccountIssuer with reader that reads
+// the service account token from the standard path
 func GetKubeServiceAccountIssuer() (string, error) {
-	token, err := readServiceAccountToken()
+	return GetServiceAccountIssuer(&kubeServiceAccountTokenReader{})
+}
+
+// GetServiceAccountIssuer takes a base64-encoded JWT and returns the "iss" (issuer) claim value
+func GetServiceAccountIssuer(reader ServiceAccountTokenReader) (string, error) {
+	token, err := reader.ReadServiceAccountToken()
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to read kube service account token")
 	}
@@ -43,7 +50,13 @@ func GetKubeServiceAccountIssuer() (string, error) {
 	return claims.Issuer, nil
 }
 
-func readServiceAccountToken() (string, error) {
+type ServiceAccountTokenReader interface {
+	ReadServiceAccountToken() (string, error)
+}
+
+type kubeServiceAccountTokenReader struct{}
+
+func (k *kubeServiceAccountTokenReader) ReadServiceAccountToken() (string, error) {
 	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
 		return "", fmt.Errorf("error reading service account token file: %v", err)
@@ -51,3 +64,5 @@ func readServiceAccountToken() (string, error) {
 
 	return string(token), nil
 }
+
+var staticServiceAccountReader ServiceAccountTokenReader = &kubeServiceAccountTokenReader{}
