@@ -1,4 +1,4 @@
-FROM centos
+FROM quay.io/centos/centos:stream9
 
 WORKDIR /
 
@@ -8,8 +8,13 @@ WORKDIR /
 # RUN echo "a secret" > /run/secrets/asecret
 # VOLUME /run/secrets
 
+RUN yum update -y
+
 # For: "Shell Spawned by Java Application"
 RUN yum -y install csh
+
+# For: trigger-violations.sh to trigger systemctl violation
+RUN yum update -y && yum install systemd -y
 
 # Using ADD also triggers: "ADD Command used instead of COPY"
 ADD trigger-violations.sh /trigger-violations-insecure.sh
