@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>konflux-ci/mintmaker//config/renovate/renovate.json"
+  ],
+  "timezone": "Etc/UTC",
+  "schedule": [
+    "after 3am and before 7am"
+  ],
+  "dockerfile": {
+    "fileMatch": [
+      "(^|\\/)konflux\\.([Dd]ocker|[Cc]ontainer)file$"
+    ]
+  }
+}
