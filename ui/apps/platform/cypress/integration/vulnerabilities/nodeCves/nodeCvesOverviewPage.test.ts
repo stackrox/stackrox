@@ -15,11 +15,19 @@ import {
 } from './NodeCve.helpers';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
+    assertOnEachRowForColumn,
     queryTableHeader,
     queryTableSortHeader,
     sortByTableHeader,
 } from '../../../helpers/tableHelpers';
-import { expectRequestedSort, interceptAndWatchRequests } from '../../../helpers/request';
+import {
+    expectRequestedQuery,
+    expectRequestedSort,
+    interceptAndWatchRequests,
+} from '../../../helpers/request';
+import * as filterHelpers from '../../../helpers/compoundFilters';
+import { applyLocalSeverityFilters } from '../workloadCves/WorkloadCves.helpers';
+import { getSeverityLabelCounts } from '../vulnerabilities.helpers';
 
 describe('Node CVEs - Overview Page', () => {
     withAuth();
@@ -244,22 +252,133 @@ describe('Node CVEs - Overview Page', () => {
     });
 
     it('should filter the CVE table', () => {
-        // filtering by CVE name should only display rows with a matching name
-        // filtering by Severity should only display rows with a matching severity
-        // filtering by Severity should change icons to "hidden severity" icons
-        // filtering by CVSS should only display rows with a CVSS in range
-        // filtering by CVE Discovered Time should only display rows matching the timeframe
-        // clearing filters should remove all filter chips and filter from the URL
+        interceptAndWatchRequests(routeMatcherMapForNodeCves).then(
+            ({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+                // Visit Node tab and wait for initial load
+                visitNodeCveOverviewPage();
+                waitForRequests();
+
+                // filtering by CVE name should only display rows with a matching name
+                filterHelpers.addAutocompleteFilter('CVE', 'Name', 'CVE-2021-1234');
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedQuery('CVE:r/CVE-2021-1234')
+                );
+                // Do not assert on cell contents as the filter value is mocked
+                filterHelpers.clearFilters();
+                waitForRequests();
+
+                // filtering by Severity should only display rows with a matching severity
+                // filtering by Severity should not report counts for hidden severities
+                applyLocalSeverityFilters('Low');
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedQuery('SEVERITY:LOW_VULNERABILITY_SEVERITY')
+                );
+                assertOnEachRowForColumn('Nodes by severity', (_, cell) => {
+                    const { critical, important, moderate, low } = getSeverityLabelCounts(cell);
+                    expect(critical).to.be.null;
+                    expect(important).to.be.null;
+                    expect(moderate).to.be.null;
+                    expect(low).to.be.greaterThan(0);
+                });
+                filterHelpers.clearFilters();
+                waitForRequests();
+
+                // filtering by CVSS should only display rows with a CVSS in range
+                filterHelpers.addNumericFilter('CVE', 'CVSS', 'Is less than', 8);
+                waitAndYieldRequestBodyVariables().then(expectRequestedQuery('CVSS:<8'));
+                assertOnEachRowForColumn('Top CVSS', (_, cell) => {
+                    const cvss = parseFloat(cell.innerText.replace(/[^0-9.]/g, ''));
+                    expect(cvss).to.be.lessThan(8);
+                });
+                filterHelpers.clearFilters();
+                waitForRequests();
+
+                // filtering by CVE Discovered Time should only display rows matching the timeframe
+                // TODO - Implement once we support date ranges, otherwise this is of little utility
+
+                // applying multiple filters should combine queries in the request
+                filterHelpers.addAutocompleteFilter('CVE', 'Name', 'CVE-2021-1234');
+                waitForRequests();
+                filterHelpers.addNumericFilter('CVE', 'CVSS', 'Is less than', 8);
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedQuery('CVE:r/CVE-2021-1234+CVSS:<8')
+                );
+            }
+        );
     });
 
     it('should filter the Node table', () => {
-        // filtering by Node name should only display rows with a matching name
-        // filtering by Severity should only display rows with a matching severity
-        // filtering by Severity should change icons to "hidden severity" icons
-        // filtering by Cluster should only display rows with a matching cluster
-        // filtering by Operating System should only display rows with a matching OS
-        // filtering by Scan Time should only display rows matching the timeframe
-        // clearing filters should remove all filter chips and filter from the URL
+        interceptAndWatchRequests(routeMatcherMapForNodes).then(
+            ({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+                // Visit Node tab and wait for initial load
+                visitNodeCveOverviewPage();
+                cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+                waitForRequests();
+
+                // filtering by Node name should only display rows with a matching name
+                const nodeNameFilter = 'a';
+                filterHelpers.addAutocompleteFilter('Node', 'Name', nodeNameFilter);
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedQuery(`Node:r/${nodeNameFilter}`)
+                );
+                assertOnEachRowForColumn('Node', (_, cell) => {
+                    expect(cell.innerText).to.match(new RegExp(nodeNameFilter, 'i'));
+                });
+                filterHelpers.clearFilters();
+                waitForRequests();
+
+                // filtering by Severity should only display rows with a matching severity
+                // filtering by Severity should not report counts for hidden severities
+                applyLocalSeverityFilters('Low');
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedQuery('SEVERITY:LOW_VULNERABILITY_SEVERITY')
+                );
+                assertOnEachRowForColumn('CVEs by severity', (_, cell) => {
+                    const { critical, important, moderate, low } = getSeverityLabelCounts(cell);
+                    expect(critical).to.be.null;
+                    expect(important).to.be.null;
+                    expect(moderate).to.be.null;
+                    expect(low).to.be.greaterThan(0);
+                });
+                filterHelpers.clearFilters();
+                waitForRequests();
+
+                // filtering by Cluster should only display rows with a matching cluster
+                const clusterNameFilter = 'a';
+                filterHelpers.addAutocompleteFilter('Cluster', 'Name', clusterNameFilter);
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedQuery(`Cluster:r/${clusterNameFilter}`)
+                );
+                assertOnEachRowForColumn('Cluster', (_, cell) => {
+                    expect(cell.innerText).to.match(new RegExp(clusterNameFilter, 'i'));
+                });
+                filterHelpers.clearFilters();
+                waitForRequests();
+
+                // filtering by Operating System should only display rows with a matching OS
+                const osFilter = 'red hat';
+                filterHelpers.addPlainTextFilter('Node', 'Operating System', osFilter);
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedQuery(`Operating System:r/${osFilter}`)
+                );
+                assertOnEachRowForColumn('Operating system', (_, cell) => {
+                    expect(cell.innerText).to.match(new RegExp(osFilter, 'i'));
+                });
+                filterHelpers.clearFilters();
+                waitForRequests();
+
+                // filtering by Scan Time should only display rows matching the timeframe
+                // TODO - Implement once we support date ranges, otherwise this is of little utility
+
+                // applying multiple filters should combine queries in the request
+                filterHelpers.addAutocompleteFilter('Node', 'Name', nodeNameFilter);
+                waitForRequests();
+                filterHelpers.addAutocompleteFilter('Cluster', 'Name', clusterNameFilter);
+                waitAndYieldRequestBodyVariables().then(
+                    expectRequestedQuery(`Node:r/${nodeNameFilter}+Cluster:r/${clusterNameFilter}`)
+                );
+            }
+        );
     });
 
     it('should correctly paginate the CVE table', () => {
