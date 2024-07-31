@@ -125,7 +125,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PolicyCategory)
 
 func insertIntoPolicyCategories(batch *pgx.Batch, obj *storage.PolicyCategory) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}

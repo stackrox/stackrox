@@ -7,7 +7,7 @@ import (
 
 // ConvertPolicyCategoryEdgeFromProto converts a `*storage.PolicyCategoryEdge` to Gorm model
 func ConvertPolicyCategoryEdgeFromProto(obj *storage.PolicyCategoryEdge) (*PolicyCategoryEdges, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

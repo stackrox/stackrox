@@ -7,7 +7,7 @@ import (
 
 // ConvertNotifierFromProto converts a `*storage.Notifier` to Gorm model
 func ConvertNotifierFromProto(obj *storage.Notifier) (*Notifiers, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

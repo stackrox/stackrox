@@ -7,7 +7,7 @@ import (
 
 // ConvertPolicyCategoryFromProto converts a `*storage.PolicyCategory` to Gorm model
 func ConvertPolicyCategoryFromProto(obj *storage.PolicyCategory) (*PolicyCategories, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

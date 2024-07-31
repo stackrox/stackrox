@@ -7,7 +7,7 @@ import (
 
 // ConvertComplianceOperatorScanV2FromProto converts a `*storage.ComplianceOperatorScanV2` to Gorm model
 func ConvertComplianceOperatorScanV2FromProto(obj *storage.ComplianceOperatorScanV2) (*ComplianceOperatorScanV2, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}

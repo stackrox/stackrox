@@ -307,7 +307,7 @@ schema and conversion functions.
 More examples with test protobuf objects are available in `migrator/migrations/postgreshelper/schema`
 ```go
 func convertVulnerabilityRequestFromProto(obj *storage.VulnerabilityRequest) (*schema.VulnerabilityRequests, error) {
-        serialized, err := obj.Marshal()
+        serialized, err := obj.MarshalVT()
         if err != nil {
                 return nil, err
         }
