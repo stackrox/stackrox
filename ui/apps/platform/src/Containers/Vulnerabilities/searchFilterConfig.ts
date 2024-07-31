@@ -8,11 +8,18 @@ import { getNamespaceAttributes } from 'Components/CompoundSearchFilter/attribut
 import { getNodeAttributes } from 'Components/CompoundSearchFilter/attributes/node';
 import { getNodeComponentAttributes } from 'Components/CompoundSearchFilter/attributes/nodeComponent';
 import { getPlatformCVEAttributes } from 'Components/CompoundSearchFilter/attributes/platformCVE';
+import { getNodeCVEAttributes } from 'Components/CompoundSearchFilter/attributes/nodeCVE';
 
 const nodeSearchFilterConfig = {
     displayName: 'Node',
     searchCategory: 'NODES' as SearchCategory,
     attributes: getNodeAttributes(),
+};
+
+const nodeCVESearchFilterConfig = {
+    displayName: 'Node CVE',
+    searchCategory: 'NODE_VULNERABILITIES' as SearchCategory,
+    attributes: getNodeCVEAttributes(),
 };
 
 const nodeComponentSearchFilterConfig = {
@@ -65,6 +72,7 @@ const platformCVESearchFilterConfig = {
 
 export {
     nodeSearchFilterConfig,
+    nodeCVESearchFilterConfig,
     nodeComponentSearchFilterConfig,
     imageSearchFilterConfig,
     imageCVESearchFilterConfig,

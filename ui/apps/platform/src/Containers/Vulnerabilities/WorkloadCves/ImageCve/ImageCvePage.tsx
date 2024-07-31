@@ -39,11 +39,13 @@ import {
 import { getTableUIState } from 'utils/getTableUIState';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
-import { getImageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
-import { getImageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
-import { getDeploymentAttributes } from 'Components/CompoundSearchFilter/attributes/deployment';
-import { getNamespaceAttributes } from 'Components/CompoundSearchFilter/attributes/namespace';
-import { getClusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
+import {
+    clusterSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+    namespaceSearchFilterConfig,
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -187,31 +189,11 @@ const searchOptions: SearchOption[] = [
 ];
 
 const searchFilterConfig = createSearchFilterConfig([
-    {
-        displayName: 'Image',
-        searchCategory: 'IMAGES',
-        attributes: getImageAttributes(),
-    },
-    {
-        displayName: 'Image components',
-        searchCategory: 'IMAGE_COMPONENTS',
-        attributes: getImageComponentAttributes(),
-    },
-    {
-        displayName: 'Deployment',
-        searchCategory: 'DEPLOYMENTS',
-        attributes: getDeploymentAttributes(),
-    },
-    {
-        displayName: 'Namespace',
-        searchCategory: 'NAMESPACES',
-        attributes: getNamespaceAttributes(),
-    },
-    {
-        displayName: 'Cluster',
-        searchCategory: 'CLUSTERS',
-        attributes: getClusterAttributes(),
-    },
+    imageSearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
 ]);
 
 function ImageCvePage() {

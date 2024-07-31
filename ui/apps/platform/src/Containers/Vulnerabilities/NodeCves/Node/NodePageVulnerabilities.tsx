@@ -24,8 +24,10 @@ import CvesByStatusSummaryCard from 'Containers/Vulnerabilities/WorkloadCves/Sum
 import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
-import { getNodeCVEAttributes } from 'Components/CompoundSearchFilter/attributes/nodeCVE';
-import { getNodeComponentAttributes } from 'Components/CompoundSearchFilter/attributes/nodeComponent';
+import {
+    nodeCVESearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import {
     getHiddenSeverities,
     getHiddenStatuses,
@@ -41,16 +43,8 @@ import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayo
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 
 const searchFilterConfig = createSearchFilterConfig([
-    {
-        displayName: 'Node CVE',
-        searchCategory: 'NODE_VULNERABILITIES',
-        attributes: getNodeCVEAttributes(),
-    },
-    {
-        displayName: 'Node component',
-        searchCategory: 'NODE_COMPONENTS',
-        attributes: getNodeComponentAttributes(),
-    },
+    nodeCVESearchFilterConfig,
+    nodeComponentSearchFilterConfig,
 ]);
 
 export type NodePageVulnerabilitiesProps = {

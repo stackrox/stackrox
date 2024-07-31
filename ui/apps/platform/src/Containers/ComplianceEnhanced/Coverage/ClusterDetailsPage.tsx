@@ -30,7 +30,6 @@ import { getComplianceProfileClusterResults } from 'services/ComplianceResultsSe
 import { listComplianceScanConfigClusterProfiles } from 'services/ComplianceScanConfigurationService';
 import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
-import { getProfileCheckAttributes } from 'Components/CompoundSearchFilter/attributes/profileCheck';
 import ClusterDetailsTable from './ClusterDetailsTable';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE } from '../compliance.constants';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
@@ -44,6 +43,9 @@ import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
+import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
+
+const searchFilterConfig = createSearchFilterConfig([profileCheckSearchFilterConfig]);
 
 function ClusterDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
@@ -90,14 +92,6 @@ function ClusterDetailsPage() {
         isLoading: isLoadingCheckResults,
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
-
-    const searchFilterConfig = createSearchFilterConfig([
-        {
-            displayName: 'Profile check',
-            searchCategory: 'COMPLIANCE',
-            attributes: getProfileCheckAttributes(),
-        },
-    ]);
 
     const tableState = getTableUIState({
         isLoading: isLoadingCheckResults,

@@ -1,3 +1,4 @@
+import React from 'react';
 import { FilterChip, FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 
 import { SearchFilter } from 'types/search';
@@ -19,8 +20,8 @@ export const conditionMap = {
 
 export const conditions = Object.keys(conditionMap);
 
-export function getEntities<T extends object>(config: T): Array<keyof T> {
-    const entities = Object.keys(config) as Array<keyof T>;
+export function getEntities<T extends object>(config: T): (keyof T)[] {
+    const entities = Object.keys(config) as (keyof T)[];
     return entities;
 }
 
@@ -47,7 +48,7 @@ export function getDefaultAttribute<T extends object>(
 ): string | undefined {
     const entityConfig = config[entity] as SearchFilterConfig;
     if (entityConfig && entityConfig.attributes) {
-        const attributeNames = Object.keys(entityConfig.attributes) as string[];
+        const attributeNames = Object.keys(entityConfig.attributes);
         return attributeNames[0];
     }
     return undefined;

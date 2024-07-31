@@ -52,6 +52,14 @@ const tabContentIdForDetails = 'check-details-Details-tab-section';
 export const TAB_NAV_QUERY = 'detailsTab';
 const TAB_NAV_VALUES = [RESULTS_TAB, DETAILS_TAB] as const;
 
+const searchFilterConfig = createSearchFilterConfig([
+    {
+        displayName: 'Cluster',
+        searchCategory: 'CLUSTERS',
+        attributes: getClusterAttributes(['Name']),
+    },
+]);
+
 function CheckDetails() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
@@ -111,14 +119,6 @@ function CheckDetails() {
         isLoading: isLoadingCheckResults,
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
-
-    const searchFilterConfig = createSearchFilterConfig([
-        {
-            displayName: 'Cluster',
-            searchCategory: 'CLUSTERS',
-            attributes: getClusterAttributes(['Name']),
-        },
-    ]);
 
     const tableState = getTableUIState({
         isLoading: isLoadingCheckResults,

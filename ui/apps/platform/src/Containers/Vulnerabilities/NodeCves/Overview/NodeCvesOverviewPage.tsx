@@ -30,10 +30,12 @@ import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchU
 import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
-import { getNodeAttributes } from 'Components/CompoundSearchFilter/attributes/node';
-import { getNodeCVEAttributes } from 'Components/CompoundSearchFilter/attributes/nodeCVE';
-import { getNodeComponentAttributes } from 'Components/CompoundSearchFilter/attributes/nodeComponent';
-import { getClusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
+import {
+    clusterSearchFilterConfig,
+    nodeCVESearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    nodeSearchFilterConfig,
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
@@ -55,26 +57,10 @@ import NodesTable, {
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
 
 const searchFilterConfig = createSearchFilterConfig([
-    {
-        displayName: 'Node',
-        searchCategory: 'NODES',
-        attributes: getNodeAttributes(),
-    },
-    {
-        displayName: 'Node CVE',
-        searchCategory: 'NODE_VULNERABILITIES',
-        attributes: getNodeCVEAttributes(),
-    },
-    {
-        displayName: 'Node component',
-        searchCategory: 'NODE_COMPONENTS',
-        attributes: getNodeComponentAttributes(),
-    },
-    {
-        displayName: 'Cluster',
-        searchCategory: 'CLUSTERS',
-        attributes: getClusterAttributes(),
-    },
+    nodeSearchFilterConfig,
+    nodeCVESearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    clusterSearchFilterConfig,
 ]);
 
 function NodeCvesOverviewPage() {

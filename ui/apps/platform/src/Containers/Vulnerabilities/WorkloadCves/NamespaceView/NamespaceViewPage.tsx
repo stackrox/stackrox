@@ -35,8 +35,10 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
-import { getNamespaceAttributes } from 'Components/CompoundSearchFilter/attributes/namespace';
-import { getClusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
+import {
+    clusterSearchFilterConfig,
+    namespaceSearchFilterConfig,
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import DeploymentFilterLink from './DeploymentFilterLink';
@@ -88,16 +90,8 @@ const defaultSearchFilters = {
 };
 
 const searchFilterConfig = createSearchFilterConfig([
-    {
-        displayName: 'Namespace',
-        searchCategory: 'NAMESPACES',
-        attributes: getNamespaceAttributes(),
-    },
-    {
-        displayName: 'Cluster',
-        searchCategory: 'CLUSTERS',
-        attributes: getClusterAttributes(),
-    },
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
 ]);
 
 const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);

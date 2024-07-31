@@ -31,8 +31,7 @@ import {
 import { defaultChartHeight } from 'utils/chartUtils';
 
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import { getProfileCheckAttributes } from 'Components/CompoundSearchFilter/attributes/profileCheck';
-import { getClusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
+import { clusterSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import {
     coverageProfileChecksPath,
@@ -48,6 +47,12 @@ import ProfilesToggleGroup from './ProfilesToggleGroup';
 import ProfileChecksPage from './ProfileChecksPage';
 import ProfileClustersPage from './ProfileClustersPage';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
+import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
+
+const searchFilterConfig = createSearchFilterConfig([
+    profileCheckSearchFilterConfig,
+    clusterSearchFilterConfig,
+]);
 
 function CoveragesPage() {
     const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(
@@ -65,19 +70,6 @@ function CoveragesPage() {
     >(undefined);
 
     const { searchFilter, setSearchFilter } = useURLSearch();
-
-    const searchFilterConfig = createSearchFilterConfig([
-        {
-            displayName: 'Profile check',
-            searchCategory: 'COMPLIANCE',
-            attributes: getProfileCheckAttributes(),
-        },
-        {
-            displayName: 'Cluster',
-            searchCategory: 'CLUSTERS',
-            attributes: getClusterAttributes(),
-        },
-    ]);
 
     const fetchProfilesStats = useCallback(async () => {
         setSelectedProfileStats(undefined);
