@@ -3,6 +3,8 @@
 ## IMPORTANT
 All migrations must be backwards compatible in order to ensure a safe and successful rollback.
 
+Please review the [overview](OVERVIEW.md) for details on the upgrade and migration process.
+
 ## Purpose of database migrations
 
 When changing the data model for stored objects, data conversions may be required. All migrations
