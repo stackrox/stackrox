@@ -26,8 +26,9 @@ The short version is:
 The application has to work on the same data model with enabled and disabled feature flags.
 
 If a feature needs a new field (named `new_field` for the purpose of the example) in the stored data,
-this `new_field` needs to be seeded. The data should have an initial seed in the form of a migration
-that populates it from default values, or a mix of existing fields. Once the migration has run,
+the code should be able to support the zero value (0, empty string, nil pointer), or
+this `new_field` needs to be seeded. In the latter case, the data should have an initial seed in the form
+of a migration that populates it from default values, or a mix of existing fields. Once the migration has run,
 the application code should also populate and maintain this field on creation or update of stored objects.
 It is important that this `new_field` should be populated regardless of the fact that the feature is
 activated or not: the feature may have to be temporarily deactivated, and later reactivated, in which case
