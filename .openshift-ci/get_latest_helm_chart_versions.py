@@ -149,24 +149,19 @@ def __get_data_from_product_lifecycles_api():
         headers={'User-Agent': 'Mozilla/5.0'}
     )
     try:
-        response = urlopen(req)
-    except URLError as exception:
-        logging.debug(f"Failed to open URL {PRODUCT_LIFECYCLES_API} with error:\n{repr(exception)}")
-        return []
-    with response:
-        try:
+        with urlopen(req) as response:
             response_bytes = response.read()
             response_string = response_bytes.decode('utf-8')
-        except ValueError as exception:
-            logging.debug(f"Failed to decode API response from {PRODUCT_LIFECYCLES_API} with error:\n{repr(exception)}")
-            return []
-        try:
             data = json.loads(response_string)
-        except json.JSONDecodeError as exception:
-            logging.debug(f"Failed to load JSON from API response from {PRODUCT_LIFECYCLES_API} with error:"
-                          f"\n{repr(exception)}")
-            return []
-        return data
+            return data
+    except URLError as exception:
+        logging.debug(f"Failed to open URL {PRODUCT_LIFECYCLES_API} with error:\n{repr(exception)}")
+    except json.JSONDecodeError as exception:
+        logging.debug(f"Failed to load JSON from API response from {PRODUCT_LIFECYCLES_API} with error:"
+                      f"\n{repr(exception)}")
+    except ValueError as exception:
+        logging.debug(f"Failed to decode API response from {PRODUCT_LIFECYCLES_API} with error:\n{repr(exception)}")
+    return []
 
 
 def __does_chart_exist(chart_name, release):
