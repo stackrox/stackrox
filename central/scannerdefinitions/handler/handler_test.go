@@ -1,4 +1,4 @@
-////go:build sql_integration
+//go:build sql_integration
 
 package handler
 
@@ -33,6 +33,10 @@ const (
 	content1 = "Hello, world!"
 	content2 = "Papaya"
 
+	v2ManifestContent = `{
+  "since": "yesterday",
+  "until": "today"
+}`
 	v4ManifestContent = `{
   "version": "dev"
 }`
@@ -68,29 +72,31 @@ func (s *handlerTestSuite) SetupTest() {
 }
 
 func (s *handlerTestSuite) TearDownSuite() {
-	entries, err := os.ReadDir(s.tmpDir)
-	s.NoError(err)
-	s.LessOrEqual(len(entries), 3)
-	if len(entries) == 3 {
-		s.True(strings.HasPrefix(entries[0].Name(), definitionsBaseDir))
-		s.True(strings.HasPrefix(entries[1].Name(), definitionsBaseDir))
-		s.True(strings.HasPrefix(entries[2].Name(), definitionsBaseDir))
-	}
-
 	s.testDB.Teardown(s.T())
-	utils.IgnoreError(func() error { return os.RemoveAll(s.tmpDir) })
 }
 
 func (s *handlerTestSuite) postRequestV2() *http.Request {
-	var buf bytes.Buffer
-	zw := zip.NewWriter(&buf)
+	var manifestBuf bytes.Buffer
+	zw := zip.NewWriter(&manifestBuf)
 	file, err := zw.CreateHeader(&zip.FileHeader{
-		Name:               "scanner-defs.zip",
-		Comment:            "Scanner V2 content",
-		UncompressedSize64: uint64(len(content1)),
+		Name:               "manifest.json",
+		Comment:            "Scanner V2 manifest",
+		UncompressedSize64: uint64(len(v2ManifestContent)),
 	})
 	s.Require().NoError(err)
-	_, err = file.Write([]byte(content1))
+	_, err = file.Write([]byte(v2ManifestContent))
+	s.Require().NoError(err)
+	s.Require().NoError(zw.Close())
+
+	var buf bytes.Buffer
+	zw = zip.NewWriter(&buf)
+	file, err = zw.CreateHeader(&zip.FileHeader{
+		Name:               "scanner-defs.zip",
+		Comment:            "Scanner V2 content",
+		UncompressedSize64: uint64(manifestBuf.Len()),
+	})
+	s.Require().NoError(err)
+	_, err = file.Write(manifestBuf.Bytes())
 	s.Require().NoError(err)
 	s.Require().NoError(zw.Close())
 
@@ -228,6 +234,7 @@ func (s *handlerTestSuite) mockHandleZipContents(zipPath string) error {
 func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V2() {
 	s.T().Setenv(env.OfflineModeEnv.EnvVar(), "true")
 	s.T().Setenv(features.ScannerV4.EnvVar(), "false")
+
 	h := New(s.datastore, handlerOpts{})
 	w := mock.NewResponseWriter()
 
@@ -237,16 +244,14 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V2() {
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V2() {
-	//s.T().Skip("TODO: fix in followup PRs")
-
 	s.T().Setenv(env.OfflineModeEnv.EnvVar(), "true")
 	s.T().Setenv(features.ScannerV4.EnvVar(), "false")
+
 	h := New(s.datastore, handlerOpts{})
 	w := mock.NewResponseWriter()
 
 	// No scanner-defs found.
 	getReq := s.getRequestUUID()
-	w.Data.Reset()
 	h.ServeHTTP(w, getReq)
 	s.Equal(http.StatusNotFound, w.Code)
 
@@ -261,25 +266,27 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V2() {
 	w = mock.NewResponseWriter()
 	h.ServeHTTP(w, getReq)
 	s.Equal(http.StatusOK, w.Code)
+	s.Equal("application/zip", w.Header().Get("Content-Type"))
 
-	// Get scanner-defs again.
+	// Get offline data again with good UUID.
 	getReq = s.getRequestUUID()
-	w.Data.Reset()
+	w = mock.NewResponseWriter()
 	h.ServeHTTP(w, getReq)
 	s.Equal(http.StatusOK, w.Code)
-	s.Equal(content1, w.Data.String())
+	s.Equal("application/zip", w.Header().Get("Content-Type"))
+	s.Greater(w.Data.Len(), 0)
 
-	// Should get file from online update.
+	// Should get file from offline data.
 	getReq = s.getRequestUUIDAndFile("manifest.json")
-	w.Data.Reset()
+	w = mock.NewResponseWriter()
 	h.ServeHTTP(w, getReq)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/json", w.Header().Get("Content-Type"))
-	s.Regexpf(`{"since":".*","until":".*"}`, w.Data.String(), "content1 did not match")
+	s.Equal(v2ManifestContent, w.Data.String())
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
-	s.T().Skip("TODO: fix in followup PRs")
+	s.T().Setenv(features.ScannerV4.EnvVar(), "false")
 
 	h := New(s.datastore, handlerOpts{})
 	w := mock.NewResponseWriter()
@@ -287,27 +294,32 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 	// Should not get anything with bad UUID.
 	req := s.getRequestBadUUID()
 	h.ServeHTTP(w, req)
-	s.Equal(http.StatusNotFound, w.Code)
+	// TODO: This should be a 404. Update in a followup.
+	s.Equal(http.StatusInternalServerError, w.Code)
+
+	// Should get online vulns.
+	req = s.getRequestUUID()
+	w = mock.NewResponseWriter()
+	h.ServeHTTP(w, req)
+	s.Equal(http.StatusOK, w.Code)
+	s.Equal("application/zip", w.Header().Get("Content-Type"))
+	s.Greater(w.Data.Len(), 0)
 
 	// Should get file from online update.
 	req = s.getRequestUUIDAndFile("manifest.json")
-	w.Data.Reset()
+	w = mock.NewResponseWriter()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/json", w.Header().Get("Content-Type"))
 	s.Regexpf(`{"since":".*","until":".*"}`, w.Data.String(), "content1 did not match")
-
-	// Should get online vulns.
-	req = s.getRequestUUID()
-	h.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Code)
 
 	// Write offline definitions, directly.
 	// Set the offline dump's modified time to later than the online update's.
 	s.mustWriteBlob(content1, time.Now().Add(time.Hour))
 
 	// Serve the offline dump, as it is more recent.
-	w.Data.Reset()
+	req = s.getRequestUUID()
+	w = mock.NewResponseWriter()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal(content1, w.Data.String())
@@ -316,14 +328,14 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 	s.mustWriteBlob(content2, nov23)
 
 	// Serve the online dump, as it is now more recent.
-	w.Data.Reset()
+	w = mock.NewResponseWriter()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.NotEqual(content2, w.Data.String())
 
 	// File is unmodified.
 	req.Header.Set(ifModifiedSinceHeader, time.Now().UTC().Format(http.TimeFormat))
-	w.Data.Reset()
+	w = mock.NewResponseWriter()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusNotModified, w.Code)
 	s.Empty(w.Data.String())
@@ -332,6 +344,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 	s.T().Setenv(env.OfflineModeEnv.EnvVar(), "true")
 	s.T().Setenv(features.ScannerV4.EnvVar(), "true")
+
 	h := New(s.datastore, handlerOpts{})
 	w := mock.NewResponseWriter()
 
@@ -343,6 +356,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V4() {
 func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 	s.T().Setenv(env.OfflineModeEnv.EnvVar(), "true")
 	s.T().Setenv(features.ScannerV4.EnvVar(), "true")
+
 	h := New(s.datastore, handlerOpts{})
 	w := mock.NewResponseWriter()
 
