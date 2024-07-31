@@ -100,7 +100,7 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 			reporter.Warnf("Evaluation error performing access review check for action %s on resource %s: %s", ra.Verb, ra.Resource, sarResult.Status.EvaluationError)
 		}
 		if !sarResult.Status.Allowed && !sarResult.Status.Denied {
-			errEntry := fmt.Sprintf("%s:%s (sarResult=%q)", ra.Verb, ra.Resource, sarResult.Status.String())
+			errEntry := fmt.Sprintf("%s:%s", ra.Verb, ra.Resource)
 			actionResourceErr[errEntry] = struct{}{}
 		} else if !sarResult.Status.Allowed {
 			reporter.Errorf("Action %s on resource %s is not allowed", ra.Verb, ra.Resource)
