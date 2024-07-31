@@ -1,7 +1,13 @@
 import withAuth from '../../../helpers/basicAuth';
 import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
-import { interactAndWaitForResponses } from '../../../helpers/request';
+import {
+    expectRequestedSort,
+    interactAndWaitForResponses,
+    interceptAndWatchRequests,
+    waitForResponses,
+} from '../../../helpers/request';
+import { sortByTableHeader } from '../../../helpers/tableHelpers';
 import {
     assertCannotFindThePage,
     visitWithStaticResponseForPermissions,
@@ -103,13 +109,30 @@ describe('Node CVEs - Node Detail Page', () => {
         cy.get('nav[aria-label="Breadcrumb"] a').contains('Node CVEs');
     });
 
-    it('should sort CVE table columns', () => {
-        // check sorting of CVE column
-        // check sorting of Top Severity column
-        // check sorting of CVE status column
-        // check sorting of CVSS column
-        // check sorting of Affected components column
-        // check sorting of First discovered column
+    it.only('should sort CVE table columns', () => {
+        interceptAndWatchRequests({
+            [getNodeVulnerabilitiesOpname]:
+                routeMatcherMapForNodePage[getNodeVulnerabilitiesOpname],
+        }).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+            visitFirstNodeFromOverviewPage();
+            waitForRequests();
+
+            sortByTableHeader('CVE');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'CVE', reversed: true })
+            );
+            sortByTableHeader('CVE');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'CVE', reversed: false })
+            );
+
+            // check sorting of CVE column
+            // check sorting of Top Severity column
+            // check sorting of CVE status column
+            // check sorting of CVSS column
+            // check sorting of Affected components column
+            // check sorting of First discovered column
+        });
     });
 
     it('should filter the CVE table', () => {
