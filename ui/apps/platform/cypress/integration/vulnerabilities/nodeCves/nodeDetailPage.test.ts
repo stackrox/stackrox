@@ -5,9 +5,12 @@ import {
     expectRequestedSort,
     interactAndWaitForResponses,
     interceptAndWatchRequests,
-    waitForResponses,
 } from '../../../helpers/request';
-import { sortByTableHeader } from '../../../helpers/tableHelpers';
+import {
+    queryTableHeader,
+    queryTableSortHeader,
+    sortByTableHeader,
+} from '../../../helpers/tableHelpers';
 import {
     assertCannotFindThePage,
     visitWithStaticResponseForPermissions,
@@ -109,7 +112,7 @@ describe('Node CVEs - Node Detail Page', () => {
         cy.get('nav[aria-label="Breadcrumb"] a').contains('Node CVEs');
     });
 
-    it.only('should sort CVE table columns', () => {
+    it('should sort CVE table columns', () => {
         interceptAndWatchRequests({
             [getNodeVulnerabilitiesOpname]:
                 routeMatcherMapForNodePage[getNodeVulnerabilitiesOpname],
@@ -117,6 +120,7 @@ describe('Node CVEs - Node Detail Page', () => {
             visitFirstNodeFromOverviewPage();
             waitForRequests();
 
+            // check sorting of CVE column
             sortByTableHeader('CVE');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'CVE', reversed: true })
@@ -126,12 +130,39 @@ describe('Node CVEs - Node Detail Page', () => {
                 expectRequestedSort({ field: 'CVE', reversed: false })
             );
 
-            // check sorting of CVE column
             // check sorting of Top Severity column
+            sortByTableHeader('Top severity');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Severity', reversed: true })
+            );
+            sortByTableHeader('Top severity');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Severity', reversed: false })
+            );
+
             // check sorting of CVE status column
+            sortByTableHeader('CVE status');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Fixable', reversed: true })
+            );
+            sortByTableHeader('CVE status');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'Fixable', reversed: false })
+            );
+
             // check sorting of CVSS column
-            // check sorting of Affected components column
-            // check sorting of First discovered column
+            sortByTableHeader('CVSS score');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'CVSS', reversed: true })
+            );
+            sortByTableHeader('CVSS score');
+            waitAndYieldRequestBodyVariables().then(
+                expectRequestedSort({ field: 'CVSS', reversed: false })
+            );
+
+            // check that the Affected components column is not sortable
+            queryTableHeader('Affected components');
+            queryTableSortHeader('Affected components').should('not.exist');
         });
     });
 
