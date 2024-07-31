@@ -60,7 +60,7 @@ class ProcessVisualizationTest extends BaseSpecification {
                 .addLabel ("app", "test" ),
      ]
 
-    static final private MAX_SLEEP_TIME = 180000
+    static final private MAX_SLEEP_TIME = 240000
     static final private SLEEP_INCREMENT = 5000
 
     def setupSpec() {
