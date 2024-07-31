@@ -57,7 +57,7 @@ spec:
     name: basic-component-pipeline
 
   taskRunSpecs:
-  - pipelineTaskName: build-container
+  - pipelineTaskName: build-container-amd64
     stepSpecs:
     - name: build
       # CPU requests are increased to speed up builds compared to the defaults.
