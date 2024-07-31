@@ -7,7 +7,7 @@ maintainers:
     email: support@stackrox.com
 dependencies:
   - name: kube-state-metrics
-    version: 4.20.0
+    version: 4.32.0
     repository: https://prometheus-community.github.io/helm-charts
   - name: alertmanager
     version: 0.20.1
