@@ -19,11 +19,15 @@ To promote a feature through various release stages, consider the following prog
 
 ### Feature deprecation
 
-When an existing feature needs to be removed, a feature flag could be used to gradually deprecate it:
+When an existing feature needs to be removed, a feature flag could be used to gradually deprecate the feature:
 
 1. Create a feature flag, disabled by default, with a variable having `HIDDEN`, `SUPPRESSION` or similar word in the name. Do not use `DISABLED`.
-2. Put the functionality being deprecated under condition, e.g., `if !featureSuppression.Enabled() { feature }`, and announce deprecation.
+2. Put the functionality being deprecated under condition, e.g., `if !featureSuppression.Enabled() { feature }`, and announce the deprecation.
 3. After some grace period, make the flag enabled by default and announce removal.
+
+### Dependencies
+
+This package does not implement any support for managing dependencies between flags. Make sure to document potential dependencies close to the flag definition.
 
 > :warning: Feature flags cannot be used inside migrations or schema changes.
 > Migrations must be merged to the master branch without any feature flag gate, and must not break any current features.
