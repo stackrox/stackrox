@@ -418,7 +418,13 @@ func (h *httpHandler) openOnlineDefinitions(_ context.Context, t updaterType, op
 	}
 	log.Debugf("Compressed data file is available: %s", openedFile.Name())
 	switch t {
-	case mappingUpdaterType, v2UpdaterType:
+	case v2UpdaterType:
+		if opts.fileName == "" {
+			return &vulDefFile{File: openedFile, modTime: onlineTime}, nil
+		}
+		fallthrough
+	case mappingUpdaterType:
+		defer utils.IgnoreError(openedFile.Close)
 		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), opts.fileName)
 		if err != nil {
 			return nil, err
@@ -446,7 +452,11 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 	var offlineFile *vulDefFile
 	switch t {
 	case v2UpdaterType:
-		offlineFile = openedFile
+		if opts.fileName == "" {
+			offlineFile = openedFile
+			break
+		}
+		fallthrough
 	case mappingUpdaterType:
 		defer utils.IgnoreError(openedFile.Close)
 		// search mapping file
