@@ -27,7 +27,7 @@ func TestGCMEncryptionDecryption(t *testing.T) {
 		AccessKeyId:     "key-id",
 		SecretAccessKey: "lorem ipsum dolor sit amet",
 	}
-	marshalled, err := originalCreds.Marshal()
+	marshalled, err := originalCreds.MarshalVT()
 	assert.NoError(t, err)
 	marshalledString := string(marshalled)
 

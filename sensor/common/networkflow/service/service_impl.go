@@ -195,7 +195,7 @@ func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_PushNet
 			return
 		}
 		if s.writer != nil {
-			if data, err := msg.Marshal(); err == nil {
+			if data, err := msg.MarshalVT(); err == nil {
 				if _, err := s.writer.Write(data); err != nil {
 					log.Warnf("Error writing msg: %v", err)
 				}

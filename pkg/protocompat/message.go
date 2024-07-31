@@ -29,12 +29,12 @@ func Marshal[T any, PT marshalable[T]](msg PT) ([]byte, error) {
 	if msg == null {
 		return nil, ErrNil
 	}
-	return msg.Marshal()
+	return msg.MarshalVT()
 }
 
 type marshalable[T any] interface {
 	*T
-	Marshal() ([]byte, error)
+	MarshalVT() ([]byte, error)
 }
 
 // MarshalTextString writes a given protocol buffer in text format,
