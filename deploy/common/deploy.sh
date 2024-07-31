@@ -155,7 +155,7 @@ function get_cluster_zip {
     fi
 
     echo "Creating a new cluster"
-    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"collection_method\": \"$COLLECTION_METHOD_ENUM\", \"admission_controller\": $ADMISSION_CONTROLLER $EXTRA_JSON}"
+    export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"collection_method\": \"$COLLECTION_METHOD_ENUM\" $EXTRA_JSON}"
     echo "Using cluster config: ${CLUSTER_JSON}"
 
     TMP=$(mktemp)
