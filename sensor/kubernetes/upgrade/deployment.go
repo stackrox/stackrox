@@ -23,6 +23,18 @@ var (
 func toK8sEnvVars(triggerEnvVars []*central.SensorUpgradeTrigger_EnvVarDef) []v1.EnvVar {
 	envVars := make([]v1.EnvVar, 0, len(triggerEnvVars))
 
+	// TODO(ROX-15042): Refactor this:
+	// Quick and dirty addition of POD_NAMESPACE to upgrader deployments, refactor this before merging
+	podNamespaceEnvVar := v1.EnvVar{
+		Name: "POD_NAMESPACE",
+		ValueFrom: &v1.EnvVarSource{
+			FieldRef: &v1.ObjectFieldSelector{
+				FieldPath: "metadata.namespace",
+			},
+		},
+	}
+	envVars = append(envVars, podNamespaceEnvVar)
+
 	for _, tev := range triggerEnvVars {
 		ev := v1.EnvVar{
 			Name:  tev.GetName(),
