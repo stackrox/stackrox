@@ -103,7 +103,7 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 	}
 
 	var config storage.DynamicClusterConfig
-	if err := protocompat.Unmarshal(configData, &config); err != nil {
+	if err := config.UnmarshalVT(configData); err != nil {
 		return nil, errors.Wrap(err, "could not parse protobuf-encoded config data from configmap")
 	}
 

@@ -43,32 +43,17 @@ func MarshalTextString(m proto.Message) string {
 	return prototext.MarshalOptions{Multiline: true}.Format(m)
 }
 
-// Unmarshal parses the protocol buffer representation in buf and places
-// the decoded result in pb. If the struct underlying pb does not match
-// the data in buf, the results can be unpredictable.
-//
-// Unmarshal resets pb before starting to unmarshal, so any existing data
-// in pb is always removed.
-func Unmarshal[T any, PT Unmarshaler[T]](dAtA []byte, msg PT) error {
-	if dAtA == nil {
-		return ErrNil
-	}
-
-	return msg.Unmarshal(dAtA)
-}
-
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
 type Unmarshaler[T any] interface {
-	Unmarshal(dAtA []byte) error
+	UnmarshalVT(dAtA []byte) error
 	*T
 }
 
 // ClonedUnmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler
 // and that have a Clone deep-copy method.
 type ClonedUnmarshaler[T any] interface {
+	Unmarshaler[T]
 	Clone() *T
-	Unmarshal(dAtA []byte) error
-	*T
 }
 
 // Merge merges src into dst.

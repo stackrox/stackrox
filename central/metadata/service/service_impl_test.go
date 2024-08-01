@@ -71,7 +71,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge() {
 	s.Require().NoError(err)
 
 	trustInfo := &v1.TrustInfo{}
-	err = protocompat.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
+	err = trustInfo.UnmarshalVT(resp.GetTrustInfoSerialized())
 	s.Require().NoError(err)
 
 	// Verify that additional CAs were received
@@ -101,7 +101,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_Should
 	s.Require().NoError(err)
 
 	trustInfo := &v1.TrustInfo{}
-	err = protocompat.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
+	err = trustInfo.UnmarshalVT(resp.GetTrustInfoSerialized())
 	s.Require().NoError(err)
 
 	// Read root CA from response
