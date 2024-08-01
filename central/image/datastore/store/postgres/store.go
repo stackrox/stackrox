@@ -893,7 +893,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID s
 	}
 
 	var image storage.Image
-	if err := image.Unmarshal(data); err != nil {
+	if err := image.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 

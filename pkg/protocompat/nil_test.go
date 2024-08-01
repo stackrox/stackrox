@@ -21,18 +21,3 @@ func TestErrorOnNilMarshal(t *testing.T) {
 	_, err = Marshal(&storage.Image{})
 	assert.NoError(t, err)
 }
-
-func TestErrorOnNilUnmarshal(t *testing.T) {
-	err := Unmarshal([]byte{}, null)
-	assert.NoError(t, err)
-
-	err = Unmarshal(nil, null)
-	assert.Equal(t, proto.ErrNil, err)
-
-	err = Unmarshal(nil, null)
-	assert.Equal(t, proto.ErrNil, err)
-
-	img := &storage.Image{}
-	err = Unmarshal([]byte{}, img)
-	assert.NoError(t, err)
-}

@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -119,7 +118,7 @@ func (s *service) doHandleProbeUpload(req *http.Request) error {
 	}
 
 	var manifest v1.ProbeUploadManifest
-	if err := protocompat.Unmarshal(manifestBytes, &manifest); err != nil {
+	if err := manifest.UnmarshalVT(manifestBytes); err != nil {
 		return errors.Wrap(err, "failed to unmarshal manifest")
 	}
 
