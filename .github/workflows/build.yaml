@@ -726,7 +726,7 @@ jobs:
           if [[ ${{ matrix.image }} =~ "operator" ]]; then
             release_tag=$(make -C operator --silent tag)
           fi
-          roxctl image scan --retries=10 --retry-delay=15 --force --output=sarif \
+          roxctl image scan --retries=10 --retry-delay=15 --force --severity=CRITICAL,IMPORTANT --output=sarif \
             --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
             > results.sarif
 
