@@ -88,7 +88,7 @@ message VulnerabilityReport {
       V2 v2 = 1;
       V3 v3 = 2;
       string updater = 3; <-- New field.
-      string cvss_url = 4; <-- New field, cvss source URL
+      string cvss_url = 4; <-- New field
     }
     ...
     string severity = 6;
@@ -104,6 +104,8 @@ There will be a new type plus two new fields added:
 
 * `CVSS.updater`
   * This specifies the source of the particular CVSS metrics. The value will be the name of the scanner updater, indicating the data source from which the updater is fetching vulnerabilities.
+* `CVSS.cvss_url`
+  * This specifies the CVSS score source URL, aiding both API and UI users in tracking the origin of this metric.
 * `cvss_metrics`
   * This is a list of each unique CVSS metric based on the source.
 
@@ -126,8 +128,10 @@ This URL encoding will be extended to include `cve=<CVE ID>`.
 
 ## Consequences
 
-* Creating an `enum` for `Source` instead of just using a `string` ensures consistency and limits mistakes which may be made
-with misspelled or differently spelled strings.
+* Introducing `string` field `CVSS.updater` ensures consistency and limits mistakes which may be made
+with misspelled or differently spelled strings because `updater` values directly come from Scanner vulnerability updater names.
+* `repeated CVSS` field `cvss_metrics` will always include CVSS metrics from all updaters/data sources, including the Scanner's preferred CVSS metric.
+This approach simplifies data querying and filtering, as `cvss_metrics` will be the sole field used for filtering data or making policies.
 * Encoding the RHSA/RHEA/RHBA's related CVE allows Scanner V4 to relate the advisory back to the CVE which has the highest score and search NVD for that CVE's score.
 * Other type of advisories like ALAS and USN will not have a score from NVD.
 * OSV.dev sometimes does not related non-CVEs (like GHSAs) back to CVEs. When this happens, we cannot determine the CVSS score from NVD.
