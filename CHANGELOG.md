@@ -19,7 +19,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - `roxctl central generate k8s pvc` and `roxctl central generate openshift pvc` no longer have the flags `--name`, `--size`, and `--storage-class`.
   - `roxctl central generate k8s hostpath` and `roxctl central generate openshift hostpath` no longer have the flags `--hostpath`, `--node-selector-key`, and `--node-selector-value`.
 
-### Deprecated Fatures
+### Deprecated Features
 - ROX-25677: The format for specifying durations in JSON requests to
   `v1/nodecves/suppress`, `v1/clustercves/suppress` and `v1/imagecves/suppress`
   will be restricted to a [proto JSON format](https://protobuf.dev/programming-guides/proto3/#json:~:text=are%20also%20accepted.-,Duration,-string).
@@ -28,6 +28,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   This replaces the current format, which allows a string with a signed sequence of decimal numbers,
   each with an optional fraction and a unit suffix (e.g., "300ms", "-1.5h", or "2h45m").
   The currently valid time units "ns", "us" (or "µs"), "ms", "m", and "h" will no longer be supported.
+- ROX-24169: API token authentication has been deprecated by Red Hat OpenShift Cluster Manager. The corresponding cloud source integration now uses service accounts for authentication.
 
 ### Technical Changes
 - ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.

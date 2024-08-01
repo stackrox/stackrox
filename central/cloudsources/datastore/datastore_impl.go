@@ -97,7 +97,8 @@ func validateCloudSource(cloudSource *storage.CloudSource) error {
 	if cloudSource.GetName() == "" {
 		errorList.AddString("cloud source name must be defined")
 	}
-	if cloudSource.GetCredentials().GetSecret() == "" {
+	if cloudSource.GetCredentials().GetSecret() == "" &&
+		(cloudSource.GetCredentials().GetClientId() == "" || cloudSource.GetCredentials().GetClientSecret() == "") {
 		errorList.AddString("cloud source credentials must be defined")
 	}
 	if err := validateType(cloudSource); err != nil {

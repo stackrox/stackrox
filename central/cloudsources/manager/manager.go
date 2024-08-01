@@ -64,7 +64,8 @@ type managerImpl struct {
 }
 
 func newManager(cloudSourcesDS cloudSourcesDS.DataStore,
-	discoveredClustersDS discoveredClustersDS.DataStore, clustersDS clusterDS.DataStore) *managerImpl {
+	discoveredClustersDS discoveredClustersDS.DataStore, clustersDS clusterDS.DataStore,
+) *managerImpl {
 	return &managerImpl{
 		shortCircuitSignal:          concurrency.NewSignal(),
 		stopSignal:                  concurrency.NewSignal(),
@@ -143,7 +144,10 @@ func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclust
 		return nil
 	}
 
-	clients, err := createClients(cloudSources)
+	createTimeout := 30 * time.Second
+	createCtx, cancel := context.WithTimeout(context.Background(), createTimeout)
+	defer cancel()
+	clients, err := createClients(createCtx, cloudSources)
 	if err != nil {
 		log.Errorw("Received errors during creating clients from cloud sources. The result might be incomplete",
 			logging.Err(err))
@@ -291,11 +295,11 @@ func (m *managerImpl) fetchDiscoveredClusters(cluster *storage.Cluster, sources 
 }
 
 // createClients creates the API clients to interact with the third-party API of the cloud source.
-func createClients(cloudSources []*storage.CloudSource) ([]cloudsources.Client, error) {
+func createClients(ctx context.Context, cloudSources []*storage.CloudSource) ([]cloudsources.Client, error) {
 	clients := make([]cloudsources.Client, 0, len(cloudSources))
 	var clientCreationErrs error
 	for _, cloudSource := range cloudSources {
-		client, err := cloudsources.NewClientForCloudSource(cloudSource)
+		client, err := cloudsources.NewClientForCloudSource(ctx, cloudSource)
 		if err != nil {
 			clientCreationErrs = errors.Join(clientCreationErrs,
 				pkgErrors.Wrapf(err, "creating client for cloud source %q", cloudSource.GetName()))
