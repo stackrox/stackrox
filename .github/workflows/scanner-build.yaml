@@ -196,6 +196,13 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+
+    - name: Login to docker.io to mitigate rate limiting on downloading images
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
     - name: Set up QEMU
       if: matrix.goarch != 'amd64'
       uses: docker/setup-qemu-action@v3
