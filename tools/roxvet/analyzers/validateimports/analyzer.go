@@ -268,7 +268,9 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/defaults/policies",
 			"pkg/env",
 			"pkg/errorhelpers",
-			"pkg/features",
+			// DO NOT ADD "pkg/features" to the packages allowed for the migrator.
+			// Migration code should not depend on features being activated or not.
+			// See the migrator README for more details.
 			"pkg/fileutils",
 			"pkg/fsutils",
 			"pkg/grpc/routes",
