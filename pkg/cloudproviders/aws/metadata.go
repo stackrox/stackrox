@@ -85,13 +85,10 @@ func signedIdentityDoc(ctx context.Context, mdClient *imds.Client) (*imds.Instan
 		return nil, errors.Wrap(err, "retrieving RSA-2048 signature")
 	}
 
-	p7Base64, err := io.ReadAll(output.Content)
+	reader := base64.NewDecoder(base64.StdEncoding, output.Content)
+	p7Raw, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading RSA-2048 signature")
-	}
-	p7Raw, err := base64.StdEncoding.DecodeString(string(p7Base64))
-	if err != nil {
-		return nil, errors.Wrap(err, "decoding RSA-2048 signature")
 	}
 
 	p7, err := pkcs7.Parse(p7Raw)
