@@ -152,7 +152,7 @@ func getClusterMetadata(ctx context.Context,
 func getClusterNameFromInstanceTags(ctx context.Context, client *imds.Client) (string, error) {
 	output, err := client.GetMetadata(ctx, &imds.GetMetadataInput{Path: instanceTagsPath})
 	if err != nil {
-		return "", errors.Wrap(err, "getting cluster name tag")
+		return "", errors.Wrap(err, "getting cluster metadata")
 	}
 	clusterName, ok := output.ResultMetadata.Get(eksClusterNameTag).(string)
 	if !ok {
