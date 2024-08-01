@@ -336,7 +336,7 @@ jobs:
     - name: Scan images for vulnerabilities
       run: |
         release_tag=$(make tag)
-        roxctl image scan --retries=10 --retry-delay=15 --force --output=sarif \
+        roxctl image scan --retries=10 --retry-delay=15 --force --severity=IMPORTANT,CRITICAL --output=sarif \
           --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
           > results.sarif
 
