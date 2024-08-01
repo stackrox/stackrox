@@ -27,5 +27,10 @@
       // See https://redhat-internal.slack.com/archives/C04PZ7H0VA8/p1721809083784519
       "(^|\\/)konflux\\.([Dd]ocker|[Cc]ontainer)file$"
     ]
-  }
+  },
+  "enabledManagers": [
+    // Restrict Renovate focus on Konflux things since we rely on GitHub's dependabot for everything else.
+    "tekton",
+    "dockerfile",
+  ],
 }
