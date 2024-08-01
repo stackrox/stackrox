@@ -256,7 +256,6 @@ func main() {
 		metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
 	}
 	var k8sClient client.Interface
-	k8sClient, err := k8s.MakeOutOfClusterClient()
 	// when replying a trace, there is no need to connect to K8s cluster
 	if localConfig.ReplayK8sEnabled {
 		k8sClient = k8s.MakeFakeClient()
@@ -268,7 +267,11 @@ func main() {
 			WithWorkloadFile(localConfig.FakeWorkloadFile))
 		k8sClient = workloadManager.Client()
 	}
-	utils.CrashOnError(err)
+	if k8sClient == nil {
+		var err error
+		k8sClient, err = k8s.MakeOutOfClusterClient()
+		utils.CrashOnError(err)
+	}
 	if !localConfig.NoCPUProfile {
 		f, err := os.Create(fmt.Sprintf("local-sensor-cpu-%s.prof", time.Now().UTC().Format(time.RFC3339)))
 		if err != nil {
