@@ -43,8 +43,6 @@ spec:
         - mountPath: /run/secrets/stackrox.io/central-license/
           name: central-license-volume
           readOnly: true
-        - mountPath: /var/lib/stackrox
-          name: stackrox-db
         - mountPath: /etc/stackrox
           name: central-config-volume
         - mountPath: /run/secrets/stackrox.io/proxy-config/
@@ -120,5 +118,3 @@ spec:
           name: central-external-db
           optional: true
         name: central-external-db-volume
-      - name: stackrox-db
-        emptyDir: {}

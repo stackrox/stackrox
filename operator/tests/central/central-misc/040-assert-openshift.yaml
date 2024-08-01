@@ -43,8 +43,6 @@ spec:
          - mountPath: /run/secrets/stackrox.io/central-license/
            name: central-license-volume
            readOnly: true
-         - mountPath: /var/lib/stackrox
-           name: stackrox-db
          - mountPath: /etc/stackrox
            name: central-config-volume
          - mountPath: /run/secrets/stackrox.io/proxy-config/
@@ -148,8 +146,6 @@ spec:
               audience: openshift
               expirationSeconds: 3600
               path: token
-      - name: stackrox-db
-        emptyDir: {}
       - name: monitoring-tls
         secret:
           defaultMode: 420

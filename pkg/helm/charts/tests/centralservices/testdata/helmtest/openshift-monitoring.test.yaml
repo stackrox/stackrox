@@ -3,9 +3,6 @@ server:
   - openshift-4.1.0
   - com.coreos
 values:
-  central:
-    persistence:
-      none: true
   imagePullSecrets:
     allowNone: true
 tests:

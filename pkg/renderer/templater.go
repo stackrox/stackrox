@@ -86,17 +86,6 @@ type DeclarativeConfigMounts struct {
 	Secrets    []string
 }
 
-// PersistenceType describes the type of persistence
-type PersistenceType string
-
-// StringToPersistentTypes is a map from the persistenttype string value to its object
-var StringToPersistentTypes = make(map[string]PersistenceType)
-
-// String returns the string form of the enum
-func (m PersistenceType) String() string {
-	return string(m)
-}
-
 // K8sConfig contains k8s fields
 type K8sConfig struct {
 	CommonConfig

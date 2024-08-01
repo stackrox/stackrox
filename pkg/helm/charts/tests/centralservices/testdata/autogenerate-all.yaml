@@ -19,8 +19,6 @@ central:
       enabled: true
   db:
     enabled: true
-  persistence:
-    none: true
 monitoring:
   openshift:
     enabled: true
