@@ -36,6 +36,7 @@ const (
 	expectedLatestTagPolicy = `Latest tag`
 
 	waitTimeout = 5 * time.Minute
+	timeout     = 30 * time.Second
 )
 
 var (

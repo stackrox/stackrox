@@ -19,10 +19,6 @@ type allCounts struct {
 	PodCount int
 }
 
-const (
-	timeout = 30 * time.Second
-)
-
 func allIntsZero(ints ...int) bool {
 	for _, i := range ints {
 		if i != 0 {
