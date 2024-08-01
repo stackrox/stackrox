@@ -37,7 +37,7 @@ posttest:
 .PHONY: test-common
 test-common:
 	@echo "+ $@"
-	$(SILENT)$(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v $(shell go list -e ./... | grep -v generated | grep -v vendor) 2>&1 | tee test.log
+	$(SILENT)GOTAGS=$(GOTAGS),test,test_e2e $(TOPLEVEL)/scripts/go-test.sh -cover $(TESTFLAGS) -v $(shell go list -e ./... | grep -v generated | grep -v vendor) 2>&1 | tee test.log
 
 .PHONY: test-integration
 test-integration:

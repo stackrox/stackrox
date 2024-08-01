@@ -33,7 +33,6 @@ type authMode int
 
 const (
 	dialRetries = 3
-	timeout     = 30 * time.Second
 
 	userPKIProviderName = "test-userpki"
 )

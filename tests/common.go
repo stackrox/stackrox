@@ -1,4 +1,4 @@
-//go:build test_e2e || sql_integration || compliance
+//go:build test_e2e || sql_integration || compliance || destructive || externalbackups
 
 package tests
 
@@ -36,6 +36,7 @@ const (
 	expectedLatestTagPolicy = `Latest tag`
 
 	waitTimeout = 5 * time.Minute
+	timeout     = 30 * time.Second
 )
 
 var (
