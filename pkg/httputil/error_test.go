@@ -1,11 +1,11 @@
 package httputil
 
 import (
+	"net/http/httptest"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/httputil/mock"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -64,10 +64,10 @@ func TestWriteError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			writer := mock.NewResponseWriter()
+			writer := httptest.NewRecorder()
 			WriteError(writer, tt.incomingErr)
 			assert.Equal(t, tt.expectedStatus, writer.Code)
-			data := writer.Data.String()
+			data := writer.Body.String()
 			if len(data) > 0 {
 				assert.JSONEq(t, tt.expectedMessage, data)
 			} else {
@@ -76,10 +76,10 @@ func TestWriteError(t *testing.T) {
 
 			// Note: writeGRPCStyleError panics on nil error
 			if tt.incomingErr != nil {
-				grpcWriter := mock.NewResponseWriter()
+				grpcWriter := httptest.NewRecorder()
 				WriteGRPCStyleError(grpcWriter, tt.grpcCode, tt.incomingErr)
 				assert.Equal(t, tt.expectedStatus, writer.Code)
-				grpcData := grpcWriter.Data.String()
+				grpcData := grpcWriter.Body.String()
 				if len(grpcData) > 0 {
 					assert.JSONEq(t, tt.expectedGRPCMessage, grpcData)
 				} else {
