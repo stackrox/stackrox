@@ -20,6 +20,8 @@ func isImagePullRelatedReason(reason string) bool {
 func getImageErrorRemediation(reason string) string {
 	switch reason {
 	case "ImagePullBackOff":
+		fallthrough
+	case "ErrImagePull":
 		return " This typically happens when the image does not exist or Sensor lacks required credentials to pull it."
 	}
 	return ""
