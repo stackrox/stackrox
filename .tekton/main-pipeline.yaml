@@ -207,7 +207,7 @@ spec:
   - name: build-container
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+      value: stage.quay.io/stackrox-test/main:$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
