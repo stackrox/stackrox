@@ -33,4 +33,6 @@
     "tekton",
     "dockerfile",
   ],
+  // TODO: remove once debugged. See https://redhat-internal.slack.com/archives/C04PZ7H0VA8/p1721809083784519
+  "printConfig": true
 }
