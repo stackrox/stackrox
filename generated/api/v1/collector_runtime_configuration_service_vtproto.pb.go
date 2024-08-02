@@ -7,7 +7,7 @@ package v1
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
-	common "github.com/stackrox/rox/generated/api/v1/common"
+	commonapi "github.com/stackrox/rox/generated/api/v1/commonapi"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
@@ -27,11 +27,11 @@ func (m *GetCollectorRuntimeConfigResponse) CloneVT() *GetCollectorRuntimeConfig
 	r := new(GetCollectorRuntimeConfigResponse)
 	if rhs := m.CollectorRuntimeConfig; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface {
-			CloneVT() *common.CollectorRuntimeConfig
+			CloneVT() *commonapi.CollectorRuntimeConfig
 		}); ok {
 			r.CollectorRuntimeConfig = vtpb.CloneVT()
 		} else {
-			r.CollectorRuntimeConfig = proto.Clone(rhs).(*common.CollectorRuntimeConfig)
+			r.CollectorRuntimeConfig = proto.Clone(rhs).(*commonapi.CollectorRuntimeConfig)
 		}
 	}
 	if len(m.unknownFields) > 0 {
@@ -52,11 +52,11 @@ func (m *CollectorRuntimeConfigRequest) CloneVT() *CollectorRuntimeConfigRequest
 	r := new(CollectorRuntimeConfigRequest)
 	if rhs := m.CollectorRuntimeConfig; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface {
-			CloneVT() *common.CollectorRuntimeConfig
+			CloneVT() *commonapi.CollectorRuntimeConfig
 		}); ok {
 			r.CollectorRuntimeConfig = vtpb.CloneVT()
 		} else {
-			r.CollectorRuntimeConfig = proto.Clone(rhs).(*common.CollectorRuntimeConfig)
+			r.CollectorRuntimeConfig = proto.Clone(rhs).(*commonapi.CollectorRuntimeConfig)
 		}
 	}
 	if len(m.unknownFields) > 0 {
@@ -111,10 +111,10 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) CloneVT() *Dr
 	}
 	r := new(DryRunCollectorRuntimeConfigResponse_StatusWithResources)
 	if rhs := m.Status; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *common.Status }); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *commonapi.Status }); ok {
 			r.Status = vtpb.CloneVT()
 		} else {
-			r.Status = proto.Clone(rhs).(*common.Status)
+			r.Status = proto.Clone(rhs).(*commonapi.Status)
 		}
 	}
 	if rhs := m.Resources; rhs != nil {
@@ -189,7 +189,7 @@ func (this *GetCollectorRuntimeConfigResponse) EqualVT(that *GetCollectorRuntime
 		return false
 	}
 	if equal, ok := interface{}(this.CollectorRuntimeConfig).(interface {
-		EqualVT(*common.CollectorRuntimeConfig) bool
+		EqualVT(*commonapi.CollectorRuntimeConfig) bool
 	}); ok {
 		if !equal.EqualVT(that.CollectorRuntimeConfig) {
 			return false
@@ -214,7 +214,7 @@ func (this *CollectorRuntimeConfigRequest) EqualVT(that *CollectorRuntimeConfigR
 		return false
 	}
 	if equal, ok := interface{}(this.CollectorRuntimeConfig).(interface {
-		EqualVT(*common.CollectorRuntimeConfig) bool
+		EqualVT(*commonapi.CollectorRuntimeConfig) bool
 	}); ok {
 		if !equal.EqualVT(that.CollectorRuntimeConfig) {
 			return false
@@ -279,7 +279,7 @@ func (this *DryRunCollectorRuntimeConfigResponse_StatusWithResources) EqualVT(th
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.Status).(interface{ EqualVT(*common.Status) bool }); ok {
+	if equal, ok := interface{}(this.Status).(interface{ EqualVT(*commonapi.Status) bool }); ok {
 		if !equal.EqualVT(that.Status) {
 			return false
 		}
@@ -933,7 +933,7 @@ func (m *GetCollectorRuntimeConfigResponse) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CollectorRuntimeConfig == nil {
-				m.CollectorRuntimeConfig = &common.CollectorRuntimeConfig{}
+				m.CollectorRuntimeConfig = &commonapi.CollectorRuntimeConfig{}
 			}
 			if unmarshal, ok := interface{}(m.CollectorRuntimeConfig).(interface {
 				UnmarshalVT([]byte) error
@@ -1028,7 +1028,7 @@ func (m *CollectorRuntimeConfigRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.CollectorRuntimeConfig == nil {
-				m.CollectorRuntimeConfig = &common.CollectorRuntimeConfig{}
+				m.CollectorRuntimeConfig = &commonapi.CollectorRuntimeConfig{}
 			}
 			if unmarshal, ok := interface{}(m.CollectorRuntimeConfig).(interface {
 				UnmarshalVT([]byte) error
@@ -1321,7 +1321,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) UnmarshalVT(d
 				return io.ErrUnexpectedEOF
 			}
 			if m.Status == nil {
-				m.Status = &common.Status{}
+				m.Status = &commonapi.Status{}
 			}
 			if unmarshal, ok := interface{}(m.Status).(interface {
 				UnmarshalVT([]byte) error
@@ -1434,7 +1434,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) UnmarshalVT(dA
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.RuntimeFeature |= common.RuntimeFeature(b&0x7F) << shift
+				m.RuntimeFeature |= commonapi.RuntimeFeature(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

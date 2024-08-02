@@ -166,7 +166,7 @@
       "type": "object",
       "properties": {
         "status": {
-          "$ref": "#/definitions/commonStatus"
+          "$ref": "#/definitions/commonapiStatus"
         },
         "resources": {
           "type": "array",
@@ -181,7 +181,7 @@
       "type": "object",
       "properties": {
         "runtimeFeature": {
-          "$ref": "#/definitions/commonRuntimeFeature"
+          "$ref": "#/definitions/commonapiRuntimeFeature"
         },
         "statusWithResources": {
           "type": "array",
@@ -196,10 +196,10 @@
       "type": "object",
       "properties": {
         "resourceCollection": {
-          "$ref": "#/definitions/commonConfigResourceCollection"
+          "$ref": "#/definitions/commonapiConfigResourceCollection"
         },
         "status": {
-          "$ref": "#/definitions/commonStatus"
+          "$ref": "#/definitions/commonapiStatus"
         }
       }
     },
@@ -233,7 +233,7 @@
         }
       }
     },
-    "commonBooleanOperator": {
+    "commonapiBooleanOperator": {
       "type": "string",
       "enum": [
         "OR",
@@ -241,37 +241,37 @@
       ],
       "default": "OR"
     },
-    "commonCollectorRuntimeConfig": {
+    "commonapiCollectorRuntimeConfig": {
       "type": "object",
       "properties": {
         "runtimeFeatureConfig": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/commonRuntimeFeatureConfig"
+            "$ref": "#/definitions/commonapiRuntimeFeatureConfig"
           }
         },
         "resourceCollections": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/commonResourceCollection"
+            "$ref": "#/definitions/commonapiResourceCollection"
           }
         }
       }
     },
-    "commonConfigResourceCollection": {
+    "commonapiConfigResourceCollection": {
       "type": "object",
       "properties": {
         "resourceCollectionName": {
           "type": "string"
         },
         "resourceCollection": {
-          "$ref": "#/definitions/commonResourceCollection"
+          "$ref": "#/definitions/commonapiResourceCollection"
         }
       }
     },
-    "commonMatchType": {
+    "commonapiMatchType": {
       "type": "string",
       "enum": [
         "EXACT",
@@ -279,7 +279,7 @@
       ],
       "default": "EXACT"
     },
-    "commonResourceCollection": {
+    "commonapiResourceCollection": {
       "type": "object",
       "properties": {
         "id": {
@@ -300,16 +300,16 @@
           "format": "date-time"
         },
         "createdBy": {
-          "$ref": "#/definitions/commonSlimUser"
+          "$ref": "#/definitions/commonapiSlimUser"
         },
         "updatedBy": {
-          "$ref": "#/definitions/commonSlimUser"
+          "$ref": "#/definitions/commonapiSlimUser"
         },
         "resourceSelectors": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/commonResourceSelector"
+            "$ref": "#/definitions/commonapiResourceSelector"
           },
           "description": "`resource_selectors` resolve as disjunction (OR) with each-other and with selectors from `embedded_collections`. For MVP, the size of resource_selectors will at most be 1 from UX standpoint."
         },
@@ -317,12 +317,12 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/commonResourceCollectionEmbeddedResourceCollection"
+            "$ref": "#/definitions/commonapiResourceCollectionEmbeddedResourceCollection"
           }
         }
       }
     },
-    "commonResourceCollectionEmbeddedResourceCollection": {
+    "commonapiResourceCollectionEmbeddedResourceCollection": {
       "type": "object",
       "properties": {
         "id": {
@@ -330,31 +330,31 @@
         }
       }
     },
-    "commonResourceSelector": {
+    "commonapiResourceSelector": {
       "type": "object",
       "properties": {
         "rules": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/commonSelectorRule"
+            "$ref": "#/definitions/commonapiSelectorRule"
           },
           "description": "`rules` resolve as a conjunction (AND)."
         }
       }
     },
-    "commonRuleValue": {
+    "commonapiRuleValue": {
       "type": "object",
       "properties": {
         "value": {
           "type": "string"
         },
         "matchType": {
-          "$ref": "#/definitions/commonMatchType"
+          "$ref": "#/definitions/commonapiMatchType"
         }
       }
     },
-    "commonRuntimeFeature": {
+    "commonapiRuntimeFeature": {
       "type": "string",
       "enum": [
         "PROCESSES",
@@ -363,14 +363,14 @@
       ],
       "default": "PROCESSES"
     },
-    "commonRuntimeFeatureConfig": {
+    "commonapiRuntimeFeatureConfig": {
       "type": "object",
       "properties": {
         "feature": {
-          "$ref": "#/definitions/commonRuntimeFeature"
+          "$ref": "#/definitions/commonapiRuntimeFeature"
         },
         "defaultStatus": {
-          "$ref": "#/definitions/commonStatus"
+          "$ref": "#/definitions/commonapiStatus"
         },
         "rules": {
           "type": "array",
@@ -381,7 +381,7 @@
         }
       }
     },
-    "commonSelectorRule": {
+    "commonapiSelectorRule": {
       "type": "object",
       "properties": {
         "fieldName": {
@@ -389,20 +389,20 @@
           "title": "`field_name` can be one of the following:\n- Cluster\n- Cluster Label\n- Namespace\n- Namespace Label\n- Namespace Annotation\n- Deployment\n- Deployment Label\n- Deployment Annotation"
         },
         "operator": {
-          "$ref": "#/definitions/commonBooleanOperator",
+          "$ref": "#/definitions/commonapiBooleanOperator",
           "title": "'operator' only supports disjunction (OR) currently"
         },
         "values": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/commonRuleValue"
+            "$ref": "#/definitions/commonapiRuleValue"
           },
           "description": "`values` resolve as a conjunction (AND) or disjunction (OR) depending on operator. For MVP, only OR is supported from UX standpoint."
         }
       }
     },
-    "commonSlimUser": {
+    "commonapiSlimUser": {
       "type": "object",
       "properties": {
         "id": {
@@ -413,7 +413,7 @@
         }
       }
     },
-    "commonStatus": {
+    "commonapiStatus": {
       "type": "object",
       "properties": {
         "processStatus": {
@@ -461,7 +461,7 @@
       "type": "object",
       "properties": {
         "collectorRuntimeConfig": {
-          "$ref": "#/definitions/commonCollectorRuntimeConfig"
+          "$ref": "#/definitions/commonapiCollectorRuntimeConfig"
         }
       }
     },
@@ -495,7 +495,7 @@
       "type": "object",
       "properties": {
         "collectorRuntimeConfig": {
-          "$ref": "#/definitions/commonCollectorRuntimeConfig"
+          "$ref": "#/definitions/commonapiCollectorRuntimeConfig"
         }
       }
     }

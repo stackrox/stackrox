@@ -1,12 +1,12 @@
 syntax = "proto3";
 
-package common;
+package commonapi;
 
 import "google/protobuf/timestamp.proto";
-import "api/v1/common/boolean-operator.proto";
-import "api/v1/common/slim-user.proto";
+import "api/v1/commonapi/boolean-operator.proto";
+import "api/v1/commonapi/slim-user.proto";
 
-option go_package = "./api/v1/common;common";
+option go_package = "./api/v1/commonapi;commonapi";
 
 // This file has been copied from proto/storage/resource_collection.proto
 // It may have diverged from it
