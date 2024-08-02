@@ -272,14 +272,21 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 		log.Info("Deleted leftover upgrader deployment")
 	}
 
-	serviceAccountName := p.chooseServiceAccount()
-	log.Infof("Using service account %q for upgrade process %q", serviceAccountName, p.GetID())
-
 	// Fetch Sensor deployment to carry through some features of the pod spec
 	sensorDeployment, err := deploymentsClient.Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing sensor deployment")
 	}
+
+	newSA := p.createUpgraderSA(preferredServiceAccountName)
+	saClinet := p.k8sClient.CoreV1().ServiceAccounts(namespaces.StackRox)
+	_, err = saClinet.Create(p.ctx(), newSA, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "creating new sensor-upgrader SA")
+	}
+	// if the preferred SA has been created, we should try to use it
+	serviceAccountName := p.chooseServiceAccount()
+	log.Infof("Using service account %q for upgrade process %q", serviceAccountName, p.GetID())
 
 	newDeployment, err := p.createDeployment(serviceAccountName, sensorDeployment)
 	if err != nil {
