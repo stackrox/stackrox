@@ -41,10 +41,6 @@ func rootCmd(ctx context.Context) *cobra.Command {
 	}
 	cmd.SetContext(ctx)
 	flags := cmd.PersistentFlags()
-	address := flags.String(
-		"address",
-		"",
-		"Address of the scanner service (indexer and matcher).")
 	indexerAddr := flags.String(
 		"indexer-address",
 		"",
@@ -53,10 +49,6 @@ func rootCmd(ctx context.Context) *cobra.Command {
 		"matcher-address",
 		"",
 		"Address of the matcher service.")
-	serverName := flags.String(
-		"server-name",
-		"scanner-v4.stackrox",
-		"Server name of the scanner service, primarily used for TLS verification.")
 	indexerServerName := flags.String(
 		"indexer-server-name",
 		"",
@@ -100,14 +92,6 @@ func rootCmd(ctx context.Context) *cobra.Command {
 		}
 		if *skipTLSVerify {
 			opts = append(opts, client.SkipTLSVerification)
-		}
-		if *address != "" {
-			opts = append(opts, client.WithAddress(*address))
-			*indexerAddr, *matcherAddr = *address, *address
-		}
-		if *serverName != "" {
-			opts = append(opts, client.WithServerName(*serverName))
-			*indexerServerName, *matcherServerName = *serverName, *serverName
 		}
 		if *indexerAddr == *matcherAddr && *indexerServerName == *matcherServerName {
 			opts = append(opts, client.WithSubject(mtls.ScannerV4Subject))

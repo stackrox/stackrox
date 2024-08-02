@@ -40,7 +40,8 @@ const (
 	ServiceType_SCANNER_V4_INDEXER_SERVICE ServiceType = 13
 	ServiceType_SCANNER_V4_MATCHER_SERVICE ServiceType = 14
 	ServiceType_SCANNER_V4_DB_SERVICE      ServiceType = 15
-	ServiceType_SCANNER_V4_SERVICE         ServiceType = 16
+	// This is used when Scanner V4 is run in combo-mode.
+	ServiceType_SCANNER_V4_SERVICE ServiceType = 16
 )
 
 // Enum value maps for ServiceType.

@@ -602,6 +602,7 @@
         "SCANNER_V4_SERVICE"
       ],
       "default": "UNKNOWN_SERVICE",
+      "description": "- SCANNER_V4_SERVICE: This is used when Scanner V4 is run in combo-mode.",
       "title": "Next available tag: 17"
     },
     "storageTraits": {
