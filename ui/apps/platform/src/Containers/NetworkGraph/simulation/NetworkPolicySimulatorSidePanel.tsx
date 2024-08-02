@@ -17,8 +17,6 @@ import {
     Tabs,
     TabTitleText,
     Text,
-    TextContent,
-    TextVariants,
     Title,
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
@@ -60,6 +58,7 @@ export function clearSimulationQuery(search: string): string {
 }
 
 export type NetworkPolicySimulatorSidePanelProps = {
+    labelledById: string; // corresponds to aria-labelledby prop of TopologySideBar
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
     /** scopeHierarchy is the user's selected scope for the network graph */
@@ -73,6 +72,7 @@ const tabs = {
 }; // space in visible text, but id has underscore!
 
 function NetworkPolicySimulatorSidePanel({
+    labelledById,
     simulator,
     setNetworkPolicyModification,
     scopeHierarchy,
@@ -182,6 +182,7 @@ function NetworkPolicySimulatorSidePanel({
     }
 
     if (simulator.state === 'GENERATED') {
+        // Actions: Rebuild rules from active traffic
         const currentPolicies = currentNetworkPolicies ?? [];
         const currentYaml =
             currentPolicies.length === 0
@@ -196,12 +197,10 @@ function NetworkPolicySimulatorSidePanel({
                     className="pf-v5-u-p-md pf-v5-u-pb-sm pf-v5-u-mb-0"
                 >
                     <FlexItem>
-                        <TextContent>
-                            <Text component={TextVariants.h2}>Generated network policies</Text>
-                            <Text component={TextVariants.h3} className="pf-v5-u-m-0">
-                                Scope of baseline:
-                            </Text>
-                        </TextContent>
+                        <Title headingLevel="h2" id={labelledById}>
+                            Generated network policies
+                        </Title>
+                        <Text className="pf-v5-u-font-weight-bold">Scope of baseline:</Text>
                     </FlexItem>
                     <NetworkPoliciesGenerationScope
                         scopeHierarchy={scopeHierarchy}
@@ -283,6 +282,7 @@ function NetworkPolicySimulatorSidePanel({
 
     // @TODO: Consider how to reuse parts of this that are similar between states
     if (simulator.state === 'UNDO') {
+        // Actions: Revert rules to previously applied YAML
         const yaml = getDisplayYAMLFromNetworkPolicyModification(simulator.modification);
         return (
             <div>
@@ -292,11 +292,9 @@ function NetworkPolicySimulatorSidePanel({
                     className="pf-v5-u-p-lg pf-v5-u-mb-0"
                 >
                     <FlexItem>
-                        <TextContent>
-                            <Text component={TextVariants.h2} className="pf-v5-u-font-size-xl">
-                                Network Policy Simulator
-                            </Text>
-                        </TextContent>
+                        <Title headingLevel="h2" id={labelledById}>
+                            Network policy simulator
+                        </Title>
                     </FlexItem>
                 </Flex>
                 <Divider component="div" />
@@ -346,11 +344,9 @@ function NetworkPolicySimulatorSidePanel({
                     className="pf-v5-u-p-lg pf-v5-u-mb-0"
                 >
                     <FlexItem>
-                        <TextContent>
-                            <Text component={TextVariants.h2} className="pf-v5-u-font-size-xl">
-                                Network Policy Simulator
-                            </Text>
-                        </TextContent>
+                        <Title headingLevel="h2" id={labelledById}>
+                            Network policy simulator
+                        </Title>
                     </FlexItem>
                 </Flex>
                 <Divider component="div" />
@@ -396,12 +392,10 @@ function NetworkPolicySimulatorSidePanel({
                     spaceItems={{ default: 'spaceItemsSm' }}
                     className="pf-v5-u-p-md pf-v5-u-pb-sm pf-v5-u-mb-0"
                 >
-                    <TextContent>
-                        <Text component={TextVariants.h2}>Generate network policies</Text>
-                        <Text component={TextVariants.h3} className="pf-v5-u-m-0">
-                            Scope of baseline:
-                        </Text>
-                    </TextContent>
+                    <Title headingLevel="h2" id={labelledById}>
+                        Generate network policies
+                    </Title>
+                    <Text className="pf-v5-u-font-weight-bold">Scope of baseline:</Text>
                     <NetworkPoliciesGenerationScope
                         scopeHierarchy={scopeHierarchy}
                         scopeDeploymentCount={scopeDeploymentCount}
@@ -433,24 +427,17 @@ function NetworkPolicySimulatorSidePanel({
                             <StackItem>
                                 <Stack hasGutter>
                                     <StackItem>
-                                        <TextContent>
-                                            <Text
-                                                component={TextVariants.h2}
-                                                className="pf-v5-u-font-size-lg"
-                                            >
-                                                Generate network policies from the traffic
-                                            </Text>
-                                        </TextContent>
+                                        <Title headingLevel="h3">
+                                            Generate network policies from the traffic
+                                        </Title>
                                     </StackItem>
                                     <StackItem>
-                                        <TextContent>
-                                            <Text component={TextVariants.p}>
-                                                Generate a set of recommended network policies based
-                                                on your cluster&apos;s traffic. Only deployments
-                                                that are part of the current scope will be included
-                                                in generated policies.
-                                            </Text>
-                                        </TextContent>
+                                        <Text>
+                                            Generate a set of recommended network policies based on
+                                            your cluster&apos;s traffic. Only deployments that are
+                                            part of the current scope will be included in generated
+                                            policies.
+                                        </Text>
                                     </StackItem>
                                     <StackItem>
                                         <Checkbox
@@ -479,24 +466,17 @@ function NetworkPolicySimulatorSidePanel({
                             <StackItem>
                                 <Stack hasGutter>
                                     <StackItem>
-                                        <TextContent>
-                                            <Text
-                                                component={TextVariants.h2}
-                                                className="pf-v5-u-font-size-lg"
-                                            >
-                                                Upload a network policy YAML
-                                            </Text>
-                                        </TextContent>
+                                        <Title headingLevel="h3">
+                                            Upload a network policy YAML
+                                        </Title>
                                     </StackItem>
                                     <StackItem>
-                                        <TextContent>
-                                            <Text component={TextVariants.p}>
-                                                Upload your network policies to quickly preview your
-                                                environment under different policy configurations
-                                                and time windows. When ready, apply the network
-                                                policies directly or share them with your team.
-                                            </Text>
-                                        </TextContent>
+                                        <Text>
+                                            Upload your network policies to quickly preview your
+                                            environment under different policy configurations and
+                                            time windows. When ready, apply the network policies
+                                            directly or share them with your team.
+                                        </Text>
                                     </StackItem>
                                     <StackItem>
                                         <UploadYAMLButton

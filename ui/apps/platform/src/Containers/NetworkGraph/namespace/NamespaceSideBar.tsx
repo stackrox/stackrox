@@ -9,8 +9,7 @@ import {
     Tabs,
     TabTitleText,
     Text,
-    TextContent,
-    TextVariants,
+    Title,
 } from '@patternfly/react-core';
 import uniq from 'lodash/uniq';
 
@@ -27,13 +26,20 @@ import NamespaceDeployments from './NamespaceDeployments';
 import NetworkPolicies from '../common/NetworkPolicies';
 
 type NamespaceSideBarProps = {
+    labelledById: string; // corresponds to aria-labelledby prop of TopologySideBar
     namespaceId: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
     onNodeSelect: (id: string) => void;
 };
 
-function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: NamespaceSideBarProps) {
+function NamespaceSideBar({
+    labelledById,
+    namespaceId,
+    nodes,
+    edges,
+    onNodeSelect,
+}: NamespaceSideBarProps) {
     // component state
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: 'Deployments',
@@ -66,21 +72,14 @@ function NamespaceSideBar({ namespaceId, nodes, edges, onNodeSelect }: Namespace
                         <NamespaceIcon />
                     </FlexItem>
                     <FlexItem>
-                        <TextContent>
-                            <Text component={TextVariants.h1} className="pf-v5-u-font-size-xl">
-                                {namespaceNode?.label}
-                            </Text>
-                        </TextContent>
-                        <TextContent>
-                            <Text
-                                component={TextVariants.h2}
-                                className="pf-v5-u-font-size-sm pf-v5-u-color-200"
-                            >
-                                in &quot;
-                                {cluster}
-                                &quot;
-                            </Text>
-                        </TextContent>
+                        <Title headingLevel="h2" id={labelledById}>
+                            {namespaceNode?.label}
+                        </Title>
+                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                            in &quot;
+                            {cluster}
+                            &quot;
+                        </Text>
                     </FlexItem>
                 </Flex>
             </StackItem>

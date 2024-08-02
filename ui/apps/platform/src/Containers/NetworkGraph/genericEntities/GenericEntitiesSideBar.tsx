@@ -6,8 +6,7 @@ import {
     Stack,
     StackItem,
     Text,
-    TextContent,
-    TextVariants,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -31,6 +30,7 @@ import FlowsTable from '../common/FlowsTable';
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 
 export type GenericEntitiesSideBarProps = {
+    labelledById: string; // corresponds to aria-labelledby prop of TopologySideBar
     id: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
@@ -41,6 +41,7 @@ export type GenericEntitiesSideBarProps = {
 };
 
 function GenericEntitiesSideBar({
+    labelledById,
     id,
     nodes,
     edges,
@@ -75,19 +76,12 @@ function GenericEntitiesSideBar({
                 <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
                     <FlexItem>{EntityHeaderIcon}</FlexItem>
                     <FlexItem>
-                        <TextContent>
-                            <Text component={TextVariants.h1} className="pf-v5-u-font-size-xl">
-                                {entityNode?.label}
-                            </Text>
-                        </TextContent>
-                        <TextContent>
-                            <Text
-                                component={TextVariants.h2}
-                                className="pf-v5-u-font-size-sm pf-v5-u-color-200"
-                            >
-                                {sidebarTitle}
-                            </Text>
-                        </TextContent>
+                        <Title headingLevel="h2" id={labelledById}>
+                            {entityNode?.label}
+                        </Title>
+                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                            {sidebarTitle}
+                        </Text>
                     </FlexItem>
                 </Flex>
             </StackItem>
