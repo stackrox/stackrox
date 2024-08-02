@@ -89,25 +89,25 @@ func TestSnoozedQueryHandler(t *testing.T) {
 	}{
 		{
 			desc:     "query is not in image scope; nothing to do",
-			incoming: snoozedCVEsQuery.Clone(),
+			incoming: snoozedCVEsQuery.CloneVT(),
 			expected: snoozedCVEsQuery,
 			ctx:      context.Background(),
 		},
 		{
 			desc:     "query is in image scope; should be updated",
-			incoming: snoozedCVEsQuery.Clone(),
+			incoming: snoozedCVEsQuery.CloneVT(),
 			expected: conjunction,
 			ctx:      scopedCtx,
 		},
 		{
 			desc:     "not querying snoozed cves; should not be updated",
-			incoming: observedCVEsQuery.Clone(),
+			incoming: observedCVEsQuery.CloneVT(),
 			expected: observedCVEsQuery,
 			ctx:      scopedCtx,
 		},
 		{
 			desc:     "nothing to do",
-			incoming: conjunction.Clone(),
+			incoming: conjunction.CloneVT(),
 			expected: conjunction,
 			ctx:      scopedCtx,
 		},

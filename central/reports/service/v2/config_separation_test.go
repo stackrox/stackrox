@@ -153,7 +153,7 @@ func (s *ServiceLevelConfigSeparationSuiteV2) TestDeleteReportConfiguration() {
 
 	// No error on v2 config ID
 	s.scheduler.EXPECT().RemoveReportSchedule(gomock.Any()).Return().Times(1)
-	config := s.v2Configs[0].Clone()
+	config := s.v2Configs[0].CloneVT()
 	config.Id = ""
 	config.Name = "Delete report config"
 	config.Id, err = s.reportConfigDatastore.AddReportConfiguration(s.ctx, config)

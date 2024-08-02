@@ -9,7 +9,7 @@ import (
 
 // WithCountQuery returns a query to count the number of distinct values of the given field
 func WithCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 	}
@@ -17,7 +17,7 @@ func WithCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
 }
 
 func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	cloned.Selects = append(cloned.Selects,
 		search.NewQuerySelect(countOn).
 			Distinct().

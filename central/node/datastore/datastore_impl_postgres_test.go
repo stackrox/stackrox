@@ -125,7 +125,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	suite.False(exists)
 
 	// Upsert old scan should not change data (save for node.LastUpdated).
-	olderNode := node.Clone()
+	olderNode := node.CloneVT()
 	olderNode.GetScan().GetScanTime().Seconds = olderNode.GetScan().GetScanTime().GetSeconds() - 500
 	suite.NoError(suite.datastore.UpsertNode(allowAllCtx, olderNode))
 	storedNode, exists, err = suite.datastore.GetNode(allowAllCtx, olderNode.Id)
@@ -136,7 +136,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestBasicOps() {
 	// Scan data is unchanged.
 	protoassert.Equal(suite.T(), expectedNode, storedNode)
 
-	newNode := node.Clone()
+	newNode := node.CloneVT()
 	newNode.Id = fixtureconsts.Node2
 
 	// Upsert new node.
@@ -493,7 +493,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.NoError(err)
 	suite.ElementsMatch(cveIDsSet.AsSlice(), pkgSearch.ResultsToIDs(results))
 
-	testNode2 := testNode.Clone()
+	testNode2 := testNode.CloneVT()
 	testNode2.Id = fixtureconsts.Node2
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 	storedNode, found, err = suite.datastore.GetNode(ctx, testNode2.GetId())
@@ -613,11 +613,11 @@ func (suite *NodePostgresDataStoreTestSuite) TestGetManyNodeMetadata() {
 	converter.MoveNodeVulnsToNewField(testNode1)
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode1))
 
-	testNode2 := testNode1.Clone()
+	testNode2 := testNode1.CloneVT()
 	testNode2.Id = fixtureconsts.Node2
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode2))
 
-	testNode3 := testNode1.Clone()
+	testNode3 := testNode1.CloneVT()
 	testNode3.Id = fixtureconsts.Node3
 	suite.NoError(suite.datastore.UpsertNode(ctx, testNode3))
 
@@ -693,7 +693,7 @@ func getTestNodeForPostgres(id, name string) *storage.Node {
 }
 
 func cloneAndUpdateRiskPriority(node *storage.Node) *storage.Node {
-	cloned := node.Clone()
+	cloned := node.CloneVT()
 	cloned.Priority = 1
 	for _, component := range cloned.GetScan().GetComponents() {
 		component.Priority = 1

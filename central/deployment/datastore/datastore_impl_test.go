@@ -113,7 +113,7 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 		Id:   "id",
 		Type: kubernetes.Deployment,
 	}
-	expectedDep := dep.Clone()
+	expectedDep := dep.CloneVT()
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
@@ -130,20 +130,20 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 		},
 	}
 	dep.Type = kubernetes.CronJob
-	expectedDep = dep.Clone()
+	expectedDep = dep.CloneVT()
 	// All container have images with digests
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
 	// All containers don't have images with digests, but old deployment does not exist
 	dep.Containers[1].Image.Id = ""
-	expectedDep = dep.Clone()
+	expectedDep = dep.CloneVT()
 	suite.storage.EXPECT().Get(ctx, "id").Return(nil, false, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
 	// Different numbers of containers for the CronJob so early exit with no changes
-	returnedDep := dep.Clone()
+	returnedDep := dep.CloneVT()
 	returnedDep.Containers = returnedDep.Containers[:1]
 
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
@@ -151,7 +151,7 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
 	// Filled in for missing last container, but names do not match
-	returnedDep.Containers = append(returnedDep.Containers, dep.Containers[1].Clone())
+	returnedDep.Containers = append(returnedDep.Containers, dep.Containers[1].CloneVT())
 	returnedDep.Containers[1].Image.Id = "xyz"
 	returnedDep.Containers[1].Image.Name = &storage.ImageName{
 		FullName: "fullname",

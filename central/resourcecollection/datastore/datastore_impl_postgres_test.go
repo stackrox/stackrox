@@ -230,7 +230,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	assert.Error(s.T(), err)
 
 	// dryrun update 'a' with a new name
-	objADup = objA.Clone()
+	objADup = objA.CloneVT()
 	objA.Name = "A"
 	err = s.datastore.DryRunUpdateCollection(ctx, objA)
 	assert.NoError(s.T(), err)
@@ -258,7 +258,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	protoassert.Equal(s.T(), objE, obj)
 
 	// dryrun update 'e' to point to only 'a'
-	objEDup := objE.Clone()
+	objEDup := objE.CloneVT()
 	updateTestCollection(objE, []string{objA.GetId()})
 	err = s.datastore.DryRunUpdateCollection(ctx, objE)
 	assert.NoError(s.T(), err)
@@ -277,7 +277,7 @@ func (s *CollectionPostgresDataStoreTestSuite) TestCollectionWorkflows() {
 	protoassert.Equal(s.T(), objE, obj)
 
 	// dryrun update 'b' to point to only 'e'
-	objBDup := objB.Clone()
+	objBDup := objB.CloneVT()
 	updateTestCollection(objB, []string{objE.GetId()})
 	err = s.datastore.DryRunUpdateCollection(ctx, objB)
 	assert.NoError(s.T(), err)

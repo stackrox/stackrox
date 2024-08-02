@@ -69,7 +69,7 @@ func (s *NodesStoreSuite) TestStore() {
 	foundNode, exists, err = store.Get(s.ctx, node.GetId())
 	s.NoError(err)
 	s.True(exists)
-	cloned := node.Clone()
+	cloned := node.CloneVT()
 
 	for _, component := range cloned.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulnerabilities() {
@@ -120,7 +120,7 @@ func (s *NodesStoreSuite) TestStore_UpsertWithoutScan() {
 	s.True(exists)
 	s.NotNil(foundNode.GetScan())
 
-	node = foundNode.Clone()
+	node = foundNode.CloneVT()
 	node.Scan = nil
 	s.NoError(store.Upsert(s.ctx, node))
 

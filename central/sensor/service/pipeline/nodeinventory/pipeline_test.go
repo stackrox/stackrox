@@ -162,7 +162,7 @@ type recordingInjector struct {
 func (r *recordingInjector) InjectMessage(_ concurrency.Waitable, msg *central.MsgToSensor) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	r.messages = append(r.messages, msg.GetNodeInventoryAck().Clone())
+	r.messages = append(r.messages, msg.GetNodeInventoryAck().CloneVT())
 	return nil
 }
 

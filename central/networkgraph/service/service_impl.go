@@ -259,7 +259,7 @@ func (s *serviceImpl) getNetworkGraph(ctx context.Context, request *v1.NetworkGr
 		return nil, errors.Wrap(errox.InvalidArgs, "cluster ID must be specified")
 	}
 
-	requestClone := request.Clone()
+	requestClone := request.CloneVT()
 	if requestClone.GetSince() == nil {
 		since, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(defaultSince))
 		if err != nil {

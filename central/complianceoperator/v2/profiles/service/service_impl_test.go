@@ -121,7 +121,7 @@ func (s *ComplianceProfilesServiceTestSuite) TestListComplianceProfiles() {
 					search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
 					search.EmptyQuery(),
 				)
-				countQuery := profileQuery.Clone()
+				countQuery := profileQuery.CloneVT()
 				paginated.FillPaginationV2(profileQuery, nil, maxPaginationLimit)
 
 				profiles := convertUtils.GetProfilesV2Storage(s.T())

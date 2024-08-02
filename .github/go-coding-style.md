@@ -143,7 +143,7 @@ var (
 - An exported function should only ever return exported types (even though Go
   permits otherwise).
 - Always pass around proto objects as pointers when traversing function
-  boundaries. If you need to make a copy, use `obj.Clone()`.
+  boundaries. If you need to make a copy, use `obj.CloneVT()`.
 - When using slice tricks like filtering in a function, pass the slice as a
   pointer to explicitly call out that the underlying data may be modified in
   that function.

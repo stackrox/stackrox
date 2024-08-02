@@ -51,7 +51,7 @@ func (f *fakeClusterStorage) UpdateClusterUpgradeStatus(_ context.Context, clust
 	if _, ok := f.values[clusterID]; !ok {
 		return errors.Errorf("WRITE TO UNEXPECTED ID %s", clusterID)
 	}
-	f.values[clusterID] = status.Clone()
+	f.values[clusterID] = status.CloneVT()
 	return nil
 }
 
@@ -89,7 +89,7 @@ func (r *recordingConn) InjectMessage(_ concurrency.Waitable, msg *central.MsgTo
 	}
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	r.triggers = append(r.triggers, msg.GetSensorUpgradeTrigger().Clone())
+	r.triggers = append(r.triggers, msg.GetSensorUpgradeTrigger().CloneVT())
 	return nil
 }
 

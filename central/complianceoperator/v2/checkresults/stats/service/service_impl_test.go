@@ -158,7 +158,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 					search.EmptyQuery(),
 				)
 
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
@@ -183,7 +183,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 					search.EmptyQuery(),
 				)
 
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
@@ -323,7 +323,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 					search.EmptyQuery(),
 				)
 
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
@@ -355,7 +355,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 					search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
 				)
 
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
@@ -563,7 +563,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery(),
 					search.EmptyQuery(),
 				)
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultCountByProfile{
@@ -605,7 +605,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery(),
 					expectedQ,
 				)
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultCountByProfile{
@@ -685,7 +685,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 					search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
 					search.EmptyQuery(),
 				)
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultCountByProfile{
@@ -728,7 +728,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 					search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
 					expectedQ,
 				)
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultCountByProfile{

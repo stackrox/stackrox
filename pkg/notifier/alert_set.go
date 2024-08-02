@@ -26,7 +26,7 @@ type alertSetImpl struct {
 }
 
 func (as *alertSetImpl) Add(alert *storage.Alert) {
-	as.alerts.Add(alert.GetId(), alert.Clone())
+	as.alerts.Add(alert.GetId(), alert.CloneVT())
 }
 
 func (as *alertSetImpl) Remove(id string) {

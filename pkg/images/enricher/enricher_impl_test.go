@@ -1339,7 +1339,7 @@ func TestUpdateFromDatabase_ImageNames(t *testing.T) {
 
 	for name, testCase := range cases {
 		t.Run(name, func(t *testing.T) {
-			testImg := img.Clone()
+			testImg := img.CloneVT()
 			_ = e.updateImageFromDatabase(context.Background(), testImg, testCase.opt)
 			protoassert.ElementsMatch(t, testImg.GetNames(), testCase.expectedImageNames)
 		})
