@@ -103,7 +103,7 @@ type manager struct {
 // NewManager creates a new manager
 func NewManager(namespace string, maxImageCacheSize int64, imageServiceClient sensor.ImageServiceClient, deploymentServiceClient sensor.DeploymentServiceClient) *manager {
 	cache, err := sizeboundedcache.New(maxImageCacheSize, 2*size.MB, func(key string, value imageCacheEntry) int64 {
-		return int64(len(key) + value.Size())
+		return int64(len(key) + value.SizeVT())
 	})
 	utils.CrashOnError(err)
 
