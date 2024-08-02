@@ -3,6 +3,38 @@ import { useLocation, useHistory } from 'react-router-dom';
 import isEqual from 'lodash/isEqual';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 
+// TODO - Push this out into Redux, or context, or something
+let store: {
+    historyAction: 'push' | 'replace';
+    newValue: QueryValue;
+    keyPrefix: string;
+}[] = [];
+let isUpdateQueued = false;
+
+function applyUpdates(history) {
+    const action = store.some(({ historyAction }) => historyAction === 'push') ? 'push' : 'replace';
+
+    const previousQuery = getQueryObject(history.location.search) || {};
+    const newQuery = { ...previousQuery };
+
+    store.forEach(({ keyPrefix, newValue }) => {
+        newQuery[keyPrefix] = newValue;
+
+        // If the value passed in is `undefined`, don't display it in the URL at all
+        if (typeof newValue === 'undefined') {
+            delete newQuery[keyPrefix];
+        }
+    });
+
+    // Do not change history states if setter is called with current value
+    if (!isEqual(previousQuery, newQuery)) {
+        history[action]({ search: getQueryString(newQuery) });
+    }
+
+    isUpdateQueued = false;
+    store = [];
+}
+
 export type QueryValue = undefined | string | string[] | qs.ParsedQs | qs.ParsedQs[];
 
 // Note that when we upgrade React Router and 'history' we can probably import a more accurate version of this type
@@ -39,27 +71,11 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
     // as the URL parameters do not change
     const setValue = useCallback(
         (newValue: QueryValue, historyAction: HistoryAction = 'push') => {
-            // Note that we use the version of `location` on `history` here, since it is mutable (compared
-            // to the immutable `location` when used directly.) In this case, we aren't looking
-            // for a reference change to trigger a rerender, we are looking for the current up-to-date
-            // location search parameters.
-            //
-            // https://v5.reactrouter.com/web/api/history/history-is-mutable
-            const previousQuery = getQueryObject(history.location.search) || {};
-            const newQuery = {
-                ...previousQuery,
-                [keyPrefix]: newValue,
-            };
-
-            // If the value passed in is `undefined`, don't display it in the URL at all
-            if (typeof newValue === 'undefined') {
-                delete newQuery[keyPrefix];
+            store.push({ historyAction, keyPrefix, newValue });
+            if (!isUpdateQueued) {
+                queueMicrotask(() => applyUpdates(history));
             }
-
-            // Do not change history states if setter is called with current value
-            if (!isEqual(previousQuery[keyPrefix], newValue)) {
-                history[historyAction]({ search: getQueryString(newQuery) });
-            }
+            isUpdateQueued = true;
         },
         [keyPrefix, history]
     );
