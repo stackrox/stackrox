@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/pods"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -56,6 +57,29 @@ func (p *process) determineImage() (string, error) {
 		}
 	}
 	return "", errors.New("no sensor container found in sensor deployment")
+}
+
+// createUpgraderSA creates a powerful SA for sensor upgrader.
+// It requires clusterrole and clusterrolebindig to exist
+func (p *process) createUpgraderSA(serviceAccountName string) *v1.ServiceAccount {
+	return &v1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceAccount",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      serviceAccountName,
+			Namespace: namespaces.StackRox,
+			Labels: map[string]string{
+				"app":             upgraderDeploymentName,
+				processIDLabelKey: p.trigger.GetUpgradeProcessId(),
+			},
+		},
+		Secrets: nil,
+		ImagePullSecrets: []v1.LocalObjectReference{
+			{Name: "stackrox"},
+		},
+	}
 }
 
 func (p *process) createDeployment(serviceAccountName string, sensorDeployment *appsV1.Deployment) (*appsV1.Deployment, error) {

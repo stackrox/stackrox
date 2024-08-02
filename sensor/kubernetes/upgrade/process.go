@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/timeutil"
@@ -301,6 +302,16 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing sensor deployment")
 	}
+
+	newSA := p.createUpgraderSA(preferredServiceAccountName)
+	saClinet := p.k8sClient.CoreV1().ServiceAccounts(namespaces.StackRox)
+	_, err = saClinet.Create(p.ctx(), newSA, metav1.CreateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "creating new sensor-upgrader SA")
+	}
+	// if the preferred SA has been created, we should try to use it
+	serviceAccountName := p.chooseServiceAccount()
+	log.Infof("Using service account %q for upgrade process %q", serviceAccountName, p.GetID())
 
 	newDeployment, err := p.createDeployment(serviceAccountName, sensorDeployment)
 	if err != nil {
