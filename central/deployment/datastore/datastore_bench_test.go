@@ -21,7 +21,7 @@ func BenchmarkSearchAllDeployments(b *testing.B) {
 	deploymentsDatastore, err := GetTestPostgresDataStore(b, testDB.DB)
 	require.NoError(b, err)
 
-	deploymentPrototype := fixtures.GetDeployment().Clone()
+	deploymentPrototype := fixtures.GetDeployment().CloneVT()
 	const numDeployments = 1000
 	for i := 0; i < numDeployments; i++ {
 		if i > 0 && i%100 == 0 {

@@ -41,7 +41,7 @@ func migrateWorkflowAdministrationPermissionSet(db postgres.DB) error {
 	permissionSetsToInsert := make([]*storage.PermissionSet, 0, batchSize)
 	err := pgStore.Walk(ctx, func(obj *storage.PermissionSet) error {
 		if accessLevel, found := obj.GetResourceToAccess()[reportConfigurationResource]; found {
-			newPermissionSet := obj.Clone()
+			newPermissionSet := obj.CloneVT()
 			newPermissionSet.ResourceToAccess[workflowAdminResource] = accessLevel
 			permissionSetsToInsert = append(permissionSetsToInsert, newPermissionSet)
 			if len(permissionSetsToInsert) >= batchSize {

@@ -32,7 +32,7 @@ func updateVulnerabilityRequests(ctx context.Context, database *types.Databases)
 	var count int
 	err := vulnReqStore.Walk(ctx, func(obj *storage.VulnerabilityRequest) error {
 
-		updated := obj.Clone()
+		updated := obj.CloneVT()
 
 		// Migrate requester and approvers to new RequesterV2 and ApproversV2 fields
 		if requester := obj.GetRequestor(); requester != nil {

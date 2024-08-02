@@ -115,7 +115,7 @@ func (ps *PodStore) GetAll() []*storage.Pod {
 
 	var ret []*storage.Pod
 	for _, pod := range ps.getAllNoLock() {
-		ret = append(ret, pod.Clone())
+		ret = append(ret, pod.CloneVT())
 	}
 	return ret
 }

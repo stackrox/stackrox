@@ -277,7 +277,7 @@ func (c *cachedStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, erro
 	if !c.isReadAllowed(ctx, obj) {
 		return nil, false, nil
 	}
-	return obj.Clone(), true, nil
+	return obj.CloneVT(), true, nil
 }
 
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
@@ -300,7 +300,7 @@ func (c *cachedStore[T, PT]) GetMany(ctx context.Context, identifiers []string) 
 			misses = append(misses, idx)
 			continue
 		}
-		results = append(results, obj.Clone())
+		results = append(results, obj.CloneVT())
 	}
 	return results, misses, nil
 }
@@ -368,7 +368,7 @@ func (c *cachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([
 		if !c.isReadAllowed(ctx, obj) {
 			continue
 		}
-		results = append(results, obj.Clone())
+		results = append(results, obj.CloneVT())
 	}
 	return results, nil
 }
@@ -418,7 +418,7 @@ func (c *cachedStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
 	defer c.cacheLock.RUnlock()
 	result := make([]PT, 0, len(c.cache))
 	err := c.walkCacheNoLock(ctx, func(obj PT) error {
-		result = append(result, obj.Clone())
+		result = append(result, obj.CloneVT())
 		return nil
 	})
 	if err != nil {
@@ -506,5 +506,5 @@ func (c *cachedStore[T, PT]) populateCache() error {
 }
 
 func (c *cachedStore[T, PT]) addToCacheNoLock(obj PT) {
-	c.cache[c.pkGetter(obj)] = obj.Clone()
+	c.cache[c.pkGetter(obj)] = obj.CloneVT()
 }

@@ -111,7 +111,7 @@ func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 
 	result := &v1.AuthStatus{
 		Expires:        exp,
-		UserInfo:       id.User().Clone(),
+		UserInfo:       id.User().CloneVT(),
 		UserAttributes: userPkg.ConvertAttributes(id.Attributes()),
 	}
 
@@ -120,7 +120,7 @@ func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 		if backend := provider.Backend(); backend != nil {
 			result.RefreshUrl = backend.RefreshURL()
 		}
-		authProvider := provider.StorageView().Clone()
+		authProvider := provider.StorageView().CloneVT()
 		if authProvider != nil {
 			// config might contain semi-sensitive values, so strip it
 			authProvider.Config = nil

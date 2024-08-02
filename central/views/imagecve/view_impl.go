@@ -96,7 +96,7 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 
 	var err error
 	// Avoid changing the passed query
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 }
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 	}
@@ -201,7 +201,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 }
 
 func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	if len(cveIDsToFilter) > 0 {
 		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
 		cloned.Pagination = q.GetPagination()

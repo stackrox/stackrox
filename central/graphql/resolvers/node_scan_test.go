@@ -85,7 +85,7 @@ func (s *NodeScanResolverTestSuite) TestGetNodesWithScan() {
 		Return([]search.Result{{
 			ID: node.GetId(),
 		}}, nil)
-	cloned := node.Clone()
+	cloned := node.CloneVT()
 	cloned.Scan.Components = nil
 	s.nodeDataStore.EXPECT().GetManyNodeMetadata(gomock.Any(), gomock.Any()).
 		Return([]*storage.Node{cloned}, nil)
@@ -104,7 +104,7 @@ func (s *NodeScanResolverTestSuite) TestGetNodesWithoutScan() {
 			ID: node.GetId(),
 		}}, nil)
 
-	cloned := node.Clone()
+	cloned := node.CloneVT()
 	cloned.Scan.Components = nil
 	s.nodeDataStore.EXPECT().GetManyNodeMetadata(gomock.Any(), gomock.Any()).
 		Return([]*storage.Node{cloned}, nil)

@@ -77,7 +77,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		log.Errorf("inventory %s has unsupported action: %q", nodeStr, event.GetAction())
 		return nil
 	}
-	ninv = ninv.Clone()
+	ninv = ninv.CloneVT()
 
 	// Read the node from the database, if not found we fail.
 	node, found, err := p.nodeDatastore.GetNode(ctx, ninv.GetNodeId())

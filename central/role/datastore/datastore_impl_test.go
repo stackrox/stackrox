@@ -461,7 +461,7 @@ func (s *roleDataStoreTestSuite) TestPermissionSetReadOperations() {
 
 func (s *roleDataStoreTestSuite) TestPermissionSetWriteOperations() {
 	goodPermissionSet := getValidPermissionSet("permissionset.new", "new valid permissionset")
-	updatedGoodPermissionSet := goodPermissionSet.Clone()
+	updatedGoodPermissionSet := goodPermissionSet.CloneVT()
 	updatedGoodPermissionSet.ResourceToAccess = map[string]storage.Access{
 		resources.Namespace.String(): storage.Access_READ_WRITE_ACCESS,
 	}
@@ -717,7 +717,7 @@ func (s *roleDataStoreTestSuite) TestAccessScopeReadOperations() {
 
 func (s *roleDataStoreTestSuite) TestAccessScopeWriteOperations() {
 	goodScope := getValidAccessScope("scope.new", "new valid scope")
-	updatedGoodScope := goodScope.Clone()
+	updatedGoodScope := goodScope.CloneVT()
 	updatedIncludedClusters := []string{"clusterA"}
 	updatedGoodScope.Rules = &storage.SimpleAccessScope_Rules{
 		IncludedClusters: updatedIncludedClusters,

@@ -21,7 +21,7 @@ var (
 
 func createV2reportConfig(reportConfigProto *storage.ReportConfiguration) *storage.ReportConfiguration {
 	// clone v1 report config
-	newConfig := reportConfigProto.Clone()
+	newConfig := reportConfigProto.CloneVT()
 	// populate id
 	id := getDeterministicID(reportConfigProto.GetId())
 	newConfig.Id = id
@@ -87,7 +87,7 @@ func createReportSnapshot(v1Config *storage.ReportConfiguration, v2Config *stora
 				CompletedAt:       v1Config.LastSuccessfulRunTime,
 			},
 			Filter: &storage.ReportSnapshot_VulnReportFilters{
-				VulnReportFilters: v2Config.GetVulnReportFilters().Clone(),
+				VulnReportFilters: v2Config.GetVulnReportFilters().CloneVT(),
 			},
 		}
 	}

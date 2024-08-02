@@ -232,7 +232,7 @@ func (s *PolicyServiceTestSuite) TestListPoliciesHandlesQueryAndPagination() {
 	basePolicy := fixtures.GetPolicy()
 	policies := make([]*storage.Policy, 4)
 	for i := 0; i < 4; i++ {
-		p := basePolicy.Clone()
+		p := basePolicy.CloneVT()
 		p.Id = fmt.Sprintf("policy-%d", i)
 		policies = append(policies, p)
 	}

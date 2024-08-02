@@ -123,7 +123,7 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 	needsUpsert := false
 	privateConfig := config.GetPrivateConfig()
 	if privateConfig == nil {
-		privateConfig = defaultPrivateConfig.Clone()
+		privateConfig = defaultPrivateConfig.CloneVT()
 		needsUpsert = true
 	}
 

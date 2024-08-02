@@ -153,7 +153,7 @@ func (v *platformCVECoreViewImpl) CVECountByFixability(ctx context.Context, q *v
 }
 
 func withSelectQuery(q *v1.Query) *v1.Query {
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Proto(),
@@ -176,7 +176,7 @@ func withSelectQuery(q *v1.Query) *v1.Query {
 }
 
 func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	cloned.Selects = append(cloned.Selects,
 		search.NewQuerySelect(search.ClusterID).
 			Distinct().
@@ -223,7 +223,7 @@ func withCountByPlatformTypeSelectQuery(q *v1.Query) *v1.Query {
 }
 
 func withCVECountByTypeQuery(q *v1.Query) *v1.Query {
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	cloned.Selects = append(cloned.Selects,
 		search.NewQuerySelect(search.CVEID).
 			Distinct().
@@ -260,7 +260,7 @@ func withCVECountByTypeQuery(q *v1.Query) *v1.Query {
 }
 
 func withCVECountByFixabilityQuery(q *v1.Query) *v1.Query {
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	cloned.Selects = append(cloned.Selects,
 		search.NewQuerySelect(search.CVEID).
 			Distinct().

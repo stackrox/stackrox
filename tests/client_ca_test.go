@@ -186,8 +186,8 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	validateAuthStatusResponseForClientCert(t, leafCert, authStatus)
 
 	// Compare auth provider ignoring "Config" field.
-	expectedAuthProvider := createdAuthProvider.Clone()
-	actualAuthProvider := authStatus.GetAuthProvider().Clone()
+	expectedAuthProvider := createdAuthProvider.CloneVT()
+	actualAuthProvider := authStatus.GetAuthProvider().CloneVT()
 	actualAuthProvider.Config = expectedAuthProvider.GetConfig()
 	protoassert.Equal(t, expectedAuthProvider, actualAuthProvider)
 
@@ -207,8 +207,8 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	require.NoError(t, err)
 
 	// Compare auth provider ignoring fields: "Config", "Validated", "Active", and "LastUpdated".
-	expectedAuthProvider = createdAuthProvider.Clone()
-	actualAuthProvider = authStatusWithToken.GetAuthProvider().Clone()
+	expectedAuthProvider = createdAuthProvider.CloneVT()
+	actualAuthProvider = authStatusWithToken.GetAuthProvider().CloneVT()
 	actualAuthProvider.Config = expectedAuthProvider.GetConfig()
 	actualAuthProvider.Validated = expectedAuthProvider.GetValidated()
 	actualAuthProvider.Active = expectedAuthProvider.GetActive()

@@ -194,7 +194,7 @@ func ConstructImage(image *storage.Image, imageFullName string) (*pathutil.Augme
 		return pathutil.NewAugmentedObj(image), nil
 	}
 
-	img := image.Clone()
+	img := image.CloneVT()
 
 	// When evaluating policies, the evaluator will stop when any of the objects within the path
 	// are nil and immediately return, not matching. Within the image signature criteria, we have
