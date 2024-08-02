@@ -180,7 +180,7 @@ function NetworkPolicySimulatorSidePanel({
     }
 
     if (simulator.state === 'GENERATED') {
-        // Actioms: Rebuild rules from active traffic
+        // Actions: Rebuild rules from active traffic
         const currentPolicies = currentNetworkPolicies ?? [];
         const currentYaml =
             currentPolicies.length === 0
