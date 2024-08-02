@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package v1;
 
-import "api/v1/empty.proto";
 import "api/v1/commonapi/collector_runtime_config.proto";
+import "api/v1/empty.proto";
 import weak "google/api/annotations.proto";
 
 option go_package = "./api/v1;v1";
@@ -33,10 +33,10 @@ message DryRunCollectorRuntimeConfigResponse {
   }
 
   message StatusesForFeature {
-     commonapi.RuntimeFeature runtime_feature = 1;
-     repeated StatusWithResources status_with_resources = 2;
+    commonapi.RuntimeFeature runtime_feature = 1;
+    repeated StatusWithResources status_with_resources = 2;
   }
-  repeated StatusesForFeature statuses_for_features = 1; 
+  repeated StatusesForFeature statuses_for_features = 1;
 }
 
 // CollectorRuntimeConfigService can be used to update and check the Collector runtime config

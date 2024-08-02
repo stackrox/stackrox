@@ -35,10 +35,10 @@ message Status {
 }
 
 message ConfigResourceCollection {
-   oneof config_resource_collection {
-     string resource_collection_name = 1;
-     ResourceCollection resource_collection = 2;
-   }
+  oneof config_resource_collection {
+    string resource_collection_name = 1;
+    ResourceCollection resource_collection = 2;
+  }
 }
 
 message RuntimeFeatureConfig {

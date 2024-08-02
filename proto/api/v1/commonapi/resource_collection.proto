@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package commonapi;
 
-import "google/protobuf/timestamp.proto";
 import "api/v1/commonapi/boolean-operator.proto";
 import "api/v1/commonapi/slim-user.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "./api/v1/commonapi;commonapi";
 
