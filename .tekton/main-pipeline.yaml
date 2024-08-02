@@ -235,7 +235,7 @@ spec:
       - name: name
         value: buildah-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.1@sha256:c4f5ad3ce5a5c60c58b8ae093c807bdf6963b243cc46d78abb60cff25ccbe587
+        value: quay.io/redhat-appstudio-tekton-catalog/task-buildah-oci-ta:0.2@sha256:97f8527bd3a801cc51d0971bf9f5e71e12b5ecc25711f4ea33534e2d8d35768c
       - name: kind
         value: task
       resolver: bundles
@@ -265,8 +265,6 @@ spec:
     params:
     - name: BINARY_IMAGE
       value: $(tasks.build-container.results.IMAGE_URL)
-    - name: BASE_IMAGES
-      value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -276,7 +274,7 @@ spec:
       - name: name
         value: source-build-oci-ta
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-source-build-oci-ta:0.1@sha256:49a4c8ee7f38b89e2a0808bd308737f9dafdb35d43b7dc4a766b63df00d887b3
+        value: quay.io/redhat-appstudio-tekton-catalog/task-source-build-oci-ta:0.1@sha256:9ea6c027a7e025a9a18367b2608f69e824a388807ef8d9f33742a8f9ef387045
       - name: kind
         value: task
       resolver: bundles
@@ -290,8 +288,6 @@ spec:
 
   - name: deprecated-base-image-check
     params:
-    - name: BASE_IMAGES_DIGESTS
-      value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
     - name: IMAGE_URL
       value: $(tasks.build-container.results.IMAGE_URL)
     - name: IMAGE_DIGEST
@@ -301,7 +297,7 @@ spec:
       - name: name
         value: deprecated-image-check
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:3f956e0cd9b0a183e4fd95e010aa668a788ef564d3af1f7aecaaf6e2ccc2ce93
+        value: quay.io/redhat-appstudio-tekton-catalog/task-deprecated-image-check:0.4@sha256:6c389c2f670975cc0dfdd07dcb33142b1668bbfd46f6af520dd0ab736c56e7e9
       - name: kind
         value: task
       resolver: bundles
