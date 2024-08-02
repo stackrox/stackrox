@@ -273,7 +273,7 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 	}
 
 	serviceAccountName := p.chooseServiceAccount()
-	log.Infof("Using service account %s for upgrade process %s", serviceAccountName, p.GetID())
+	log.Infof("Using service account %q for upgrade process %q", serviceAccountName, p.GetID())
 
 	// Fetch Sensor deployment to carry through some features of the pod spec
 	sensorDeployment, err := deploymentsClient.Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
