@@ -58,6 +58,7 @@ export function clearSimulationQuery(search: string): string {
 }
 
 export type NetworkPolicySimulatorSidePanelProps = {
+    labelledById: string; // corresponds to aria-labelledby prop of TopologySideBar
     simulator: NetworkPolicySimulator;
     setNetworkPolicyModification: SetNetworkPolicyModification;
     /** scopeHierarchy is the user's selected scope for the network graph */
@@ -71,6 +72,7 @@ const tabs = {
 }; // space in visible text, but id has underscore!
 
 function NetworkPolicySimulatorSidePanel({
+    labelledById,
     simulator,
     setNetworkPolicyModification,
     scopeHierarchy,
@@ -187,7 +189,6 @@ function NetworkPolicySimulatorSidePanel({
                 ? 'No network policies exist in the current scope'
                 : currentPolicies.map((policy) => policy.yaml).join('\n---\n');
         const generatedYaml = getDisplayYAMLFromNetworkPolicyModification(simulator.modification);
-        // id prop of heading corresponds to aria-labelledby prop of TopologySideBar
         return (
             <div>
                 <Flex
@@ -196,7 +197,7 @@ function NetworkPolicySimulatorSidePanel({
                     className="pf-v5-u-p-md pf-v5-u-pb-sm pf-v5-u-mb-0"
                 >
                     <FlexItem>
-                        <Title headingLevel="h2" id="TopologySideBarLabelledBy">
+                        <Title headingLevel="h2" id={labelledById}>
                             Generated network policies
                         </Title>
                         <Text className="pf-v5-u-font-weight-bold">Scope of baseline:</Text>
@@ -283,7 +284,6 @@ function NetworkPolicySimulatorSidePanel({
     if (simulator.state === 'UNDO') {
         // Actions: Revert rules to previously applied YAML
         const yaml = getDisplayYAMLFromNetworkPolicyModification(simulator.modification);
-        // id prop of heading corresponds to aria-labelledby prop of TopologySideBar
         return (
             <div>
                 <Flex
@@ -292,7 +292,7 @@ function NetworkPolicySimulatorSidePanel({
                     className="pf-v5-u-p-lg pf-v5-u-mb-0"
                 >
                     <FlexItem>
-                        <Title headingLevel="h2" id="TopologySideBarLabelledBy">
+                        <Title headingLevel="h2" id={labelledById}>
                             Network policy simulator
                         </Title>
                     </FlexItem>
@@ -336,7 +336,6 @@ function NetworkPolicySimulatorSidePanel({
 
     if (simulator.state === 'UPLOAD') {
         const yaml = getDisplayYAMLFromNetworkPolicyModification(simulator.modification);
-        // id prop of heading corresponds to aria-labelledby prop of TopologySideBar
         return (
             <div>
                 <Flex
@@ -345,7 +344,7 @@ function NetworkPolicySimulatorSidePanel({
                     className="pf-v5-u-p-lg pf-v5-u-mb-0"
                 >
                     <FlexItem>
-                        <Title headingLevel="h2" id="TopologySideBarLabelledBy">
+                        <Title headingLevel="h2" id={labelledById}>
                             Network policy simulator
                         </Title>
                     </FlexItem>
@@ -385,7 +384,6 @@ function NetworkPolicySimulatorSidePanel({
         );
     }
 
-    // id prop of heading corresponds to aria-labelledby prop of TopologySideBar
     return (
         <Stack>
             <StackItem>
@@ -394,7 +392,7 @@ function NetworkPolicySimulatorSidePanel({
                     spaceItems={{ default: 'spaceItemsSm' }}
                     className="pf-v5-u-p-md pf-v5-u-pb-sm pf-v5-u-mb-0"
                 >
-                    <Title headingLevel="h2" id="TopologySideBarLabelledBy">
+                    <Title headingLevel="h2" id={labelledById}>
                         Generate network policies
                     </Title>
                     <Text className="pf-v5-u-font-weight-bold">Scope of baseline:</Text>

@@ -42,6 +42,7 @@ const sidebarHeadingStyleConstant = {
 } as CSSProperties;
 
 type DeploymentSideBarProps = {
+    labelledById: string; // corresponds to aria-labelledby prop of TopologySideBar
     deploymentId: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
@@ -51,6 +52,7 @@ type DeploymentSideBarProps = {
 };
 
 function DeploymentSideBar({
+    labelledById,
     deploymentId,
     nodes,
     edges,
@@ -132,7 +134,6 @@ function DeploymentSideBar({
         );
     }
 
-    // id prop of heading corresponds to aria-labelledby prop of TopologySideBar
     return (
         <Stack>
             <StackItem>
@@ -143,7 +144,7 @@ function DeploymentSideBar({
                     <FlexItem>
                         <Title
                             headingLevel="h2"
-                            id="TopologySideBarLabelledBy"
+                            id={labelledById}
                             className="pf-v5-u-max-width"
                             style={sidebarHeadingStyleConstant}
                             data-testid="drawer-title"

@@ -30,6 +30,7 @@ import FlowsTable from '../common/FlowsTable';
 import FlowsTableHeaderText from '../common/FlowsTableHeaderText';
 
 export type GenericEntitiesSideBarProps = {
+    labelledById: string; // corresponds to aria-labelledby prop of TopologySideBar
     id: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
@@ -40,6 +41,7 @@ export type GenericEntitiesSideBarProps = {
 };
 
 function GenericEntitiesSideBar({
+    labelledById,
     id,
     nodes,
     edges,
@@ -68,14 +70,13 @@ function GenericEntitiesSideBar({
         onNodeSelect(entityId);
     };
 
-    // id prop of heading corresponds to aria-labelledby prop of TopologySideBar
     return (
         <Stack>
             <StackItem>
                 <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
                     <FlexItem>{EntityHeaderIcon}</FlexItem>
                     <FlexItem>
-                        <Title headingLevel="h2" id="TopologySideBarLabelledBy">
+                        <Title headingLevel="h2" id={labelledById}>
                             {entityNode?.label}
                         </Title>
                         <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">

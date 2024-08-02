@@ -28,6 +28,7 @@ import { CidrBlockIcon, ExternalEntitiesIcon } from '../common/NetworkGraphIcons
 import EntityNameSearchInput from '../common/EntityNameSearchInput';
 
 type ExternalGroupSideBarProps = {
+    labelledById: string; // corresponds to aria-labelledby prop of TopologySideBar
     id: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
@@ -42,6 +43,7 @@ const columnNames = {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ExternalGroupSideBar({
+    labelledById,
     id,
     nodes,
     edges,
@@ -70,13 +72,12 @@ function ExternalGroupSideBar({
           })
         : externalNodes;
 
-    // id prop of heading corresponds to aria-labelledby prop of TopologySideBar
     return (
         <Stack>
             <StackItem>
                 <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
                     <FlexItem>
-                        <Title headingLevel="h2" id="TopologySideBarLabelledBy">
+                        <Title headingLevel="h2" id={labelledById}>
                             {externalGroupNode?.label}
                         </Title>
                         <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
