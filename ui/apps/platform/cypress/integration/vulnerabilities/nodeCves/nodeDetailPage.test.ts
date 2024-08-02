@@ -291,10 +291,28 @@ describe('Node CVEs - Node Detail Page', () => {
         );
     });
 
-    it('should correctly update summary cards when a filter is applied', () => {
-        // get the total number of nodes from the affected nodes card an store this value as 'n'
-        // apply a filter for a Node name and ensure that "affected nodes" contains the text: 1/n affected nodes
-        // clear filters
-        // apply a Critical severity filter and ensure that Important/Moderate/Low severities read "Results hidden" in the card
+    it('should update summary cards when a filter is applied', () => {
+        interceptAndWatchRequests(routeMatcherMapForNodePage, staticResponseMapForNodePage).then(
+            ({ waitForRequests }) => {
+                visitFirstNodeFromOverviewPage();
+                waitForRequests();
+
+                applyLocalSeverityFilters('Low');
+                cy.get(vulnSelectors.summaryCard('CVEs by severity')).contains('Critical hidden');
+                cy.get(vulnSelectors.summaryCard('CVEs by severity')).contains('Important hidden');
+                cy.get(vulnSelectors.summaryCard('CVEs by severity')).contains('Moderate hidden');
+                cy.get(vulnSelectors.summaryCard('CVEs by severity')).contains(
+                    new RegExp(/\d+ Low/)
+                );
+                filterHelpers.clearFilters();
+                waitForRequests([getNodeVulnerabilitiesOpname]);
+
+                applyLocalStatusFilters('Fixable');
+                cy.get(vulnSelectors.summaryCard('CVEs by status')).contains(
+                    new RegExp(/\d+ vulnerabilities with available fixes/)
+                );
+                cy.get(vulnSelectors.summaryCard('CVEs by status')).contains('Not fixable hidden');
+            }
+        );
     });
 });
