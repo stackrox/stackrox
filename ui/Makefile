@@ -10,7 +10,7 @@ ROX_PRODUCT_BRANDING ?= $(shell $(MAKE) --quiet --no-print-directory -C .. produ
 export REACT_APP_ROX_PRODUCT_BRANDING := $(ROX_PRODUCT_BRANDING)
 
 deps: apps/platform/package.json apps/platform/package-lock.json
-	npm ci --prefix apps/platform --prefer-offline --fetch-timeout=$(UI_PKG_INSTALL_NETWORK_TIMEOUT)
+	npm ci --prefix apps/platform --prefer-offline --fetch-timeout=$(UI_PKG_INSTALL_NETWORK_TIMEOUT) --no-fund
 	@touch deps
 
 .PHONY: printsrcs
