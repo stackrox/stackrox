@@ -59,6 +59,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
+        onSort: () => setPage(1, 'replace'),
     });
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
@@ -93,6 +94,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                     searchFilterConfig={searchFilterConfig}
                     onFilterChange={(newFilter, searchPayload) => {
                         setSearchFilter(newFilter);
+                        setPage(1, 'replace');
                         trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
                     }}
                 />

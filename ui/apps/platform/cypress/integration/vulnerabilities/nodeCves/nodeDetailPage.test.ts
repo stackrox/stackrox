@@ -2,6 +2,7 @@ import withAuth from '../../../helpers/basicAuth';
 import * as filterHelpers from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
 import {
+    expectRequestedPagination,
     expectRequestedQuery,
     expectRequestedSort,
     interactAndWaitForResponses,
@@ -9,6 +10,8 @@ import {
 } from '../../../helpers/request';
 import {
     assertOnEachRowForColumn,
+    paginateNext,
+    paginatePrevious,
     queryTableHeader,
     queryTableSortHeader,
     sortByTableHeader,
@@ -244,14 +247,48 @@ describe('Node CVEs - Node Detail Page', () => {
     });
 
     it('should correctly paginate the CVE table', () => {
-        // visit the location and save the list of CVE names with a default perPage
-        //   visit the location with perPage=2 in the URL
-        //     should only display the first 2 rows of the previous list
-        //     paginating to the next page should display the following two rows
-        // go to page 1, then page 2
-        //   applying a filter should reset the page to 1
-        // go to page 1, then page 2
-        //   go to next page, applying a sort should reset the page to 1
+        interceptAndWatchRequests(routeMatcherMapForNodePage, staticResponseMapForNodePage).then(
+            ({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+                visitFirstNodeFromOverviewPage();
+                waitForRequests();
+
+                paginateNext();
+                waitAndYieldRequestBodyVariables([getNodeVulnerabilitiesOpname]).then(
+                    expectRequestedPagination({ offset: 20, limit: 20 })
+                );
+
+                paginateNext();
+                waitAndYieldRequestBodyVariables([getNodeVulnerabilitiesOpname]).then(
+                    expectRequestedPagination({ offset: 40, limit: 20 })
+                );
+
+                paginatePrevious();
+                waitAndYieldRequestBodyVariables([getNodeVulnerabilitiesOpname]).then(
+                    expectRequestedPagination({ offset: 20, limit: 20 })
+                );
+
+                paginatePrevious();
+                waitAndYieldRequestBodyVariables([getNodeVulnerabilitiesOpname]).then(
+                    expectRequestedPagination({ offset: 0, limit: 20 })
+                );
+
+                // test that applying a filter resets the page to 1
+                paginateNext();
+                waitForRequests([getNodeVulnerabilitiesOpname]);
+                filterHelpers.addAutocompleteFilter('CVE', 'Name', '1');
+                waitAndYieldRequestBodyVariables([getNodeVulnerabilitiesOpname]).then(
+                    expectRequestedPagination({ offset: 0, limit: 20 })
+                );
+
+                // test that applying a sort resets the page to 1
+                paginateNext();
+                waitForRequests([getNodeVulnerabilitiesOpname]);
+                sortByTableHeader('CVE');
+                waitAndYieldRequestBodyVariables([getNodeVulnerabilitiesOpname]).then(
+                    expectRequestedPagination({ offset: 0, limit: 20 })
+                );
+            }
+        );
     });
 
     it('should correctly update summary cards when a filter is applied', () => {
