@@ -29,7 +29,7 @@ spec:
     # TODO(ROX-24530): return expiration for non-released images to 13w
     value: '52w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/main
+    value: stage.quay.io/stackrox-test/main
   - name: path-context
     value: .
   - name: revision

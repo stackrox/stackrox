@@ -191,7 +191,8 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.fetch-external-networks.results.SOURCE_ARTIFACT)
     - name: ociStorage
-      value: $(params.output-image-repo):konflux-$(params.revision).prefetch
+      # value: $(params.output-image-repo):konflux-$(params.revision).prefetch
+      value: quay.io/rhacs-eng/main:konflux-$(params.revision).prefetch
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
     taskRef:
