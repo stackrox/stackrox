@@ -19,7 +19,7 @@ import DatabaseStatusBanner from './Banners/DatabaseStatusBanner';
 import OutdatedVersionBanner from './Banners/OutdatedVersionBanner';
 import ServerStatusBanner from './Banners/ServerStatusBanner';
 
-import Masthead from './Header/Masthead';
+import Header from './Header/Header';
 
 import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
 import PublicConfigHeader from './PublicConfig/PublicConfigHeader';
@@ -129,7 +129,7 @@ function MainPage(): ReactElement {
                 <AcsFeedbackModal />
                 <Page
                     mainContainerId="main-page-container"
-                    header={<Masthead />}
+                    header={<Header />}
                     isManagedSidebar
                     sidebar={
                         <NavigationSidebar
