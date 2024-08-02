@@ -68,7 +68,7 @@ function PlatformCvesOverviewPage() {
         sortFields: activeEntityTabKey === 'CVE' ? cveSortFields : clusterSortFields,
         defaultSortOption:
             activeEntityTabKey === 'CVE' ? cveDefaultSortOption : clusterDefaultSortOption,
-        onSort: () => pagination.setPage(1, 'replace'),
+        onSort: () => pagination.setPage(1),
     });
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -82,10 +82,7 @@ function PlatformCvesOverviewPage() {
 
     function onEntityTabChange(entityTab: 'CVE' | 'Cluster') {
         pagination.setPage(1);
-        setSortOption(
-            entityTab === 'CVE' ? cveDefaultSortOption : clusterDefaultSortOption,
-            'replace'
-        );
+        setSortOption(entityTab === 'CVE' ? cveDefaultSortOption : clusterDefaultSortOption);
 
         analyticsTrack({
             event: PLATFORM_CVE_ENTITY_CONTEXT_VIEWED,
@@ -110,7 +107,7 @@ function PlatformCvesOverviewPage() {
 
     function onClearFilters() {
         setSearchFilter({});
-        pagination.setPage(1, 'replace');
+        pagination.setPage(1);
     }
 
     const filterToolbar = (
