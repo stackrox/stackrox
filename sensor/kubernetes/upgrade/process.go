@@ -292,7 +292,7 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 	}
 
 	serviceAccountName := p.chooseServiceAccount()
-	log.Infof("Using service account %s for upgrade process %s", serviceAccountName, p.GetID())
+	log.Infof("Using service account %q for upgrade process %q", serviceAccountName, p.GetID())
 
 	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
 
