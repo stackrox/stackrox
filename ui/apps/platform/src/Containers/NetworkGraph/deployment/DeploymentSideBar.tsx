@@ -13,8 +13,7 @@ import {
     Tabs,
     TabTitleText,
     Text,
-    TextContent,
-    TextVariants,
+    Title,
 } from '@patternfly/react-core';
 
 import useTabs from 'hooks/patternfly/useTabs';
@@ -43,6 +42,7 @@ const sidebarHeadingStyleConstant = {
 } as CSSProperties;
 
 type DeploymentSideBarProps = {
+    labelledById: string; // corresponds to aria-labelledby prop of TopologySideBar
     deploymentId: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
@@ -52,6 +52,7 @@ type DeploymentSideBarProps = {
 };
 
 function DeploymentSideBar({
+    labelledById,
     deploymentId,
     nodes,
     edges,
@@ -141,25 +142,21 @@ function DeploymentSideBar({
                         <DeploymentIcon />
                     </FlexItem>
                     <FlexItem>
-                        <TextContent>
-                            <Text
-                                component={TextVariants.h1}
-                                className="pf-v5-u-font-size-xl pf-v5-u-max-width"
-                                style={sidebarHeadingStyleConstant}
-                                data-testid="drawer-title"
-                            >
-                                {deployment?.name}
-                            </Text>
-                        </TextContent>
-                        <TextContent>
-                            <Text
-                                component={TextVariants.h2}
-                                className="pf-v5-u-font-size-sm pf-v5-u-color-200"
-                                data-testid="drawer-subtitle"
-                            >
-                                in &quot;{deployment?.clusterName} / {deployment?.namespace}&quot;
-                            </Text>
-                        </TextContent>
+                        <Title
+                            headingLevel="h2"
+                            id={labelledById}
+                            className="pf-v5-u-max-width"
+                            style={sidebarHeadingStyleConstant}
+                            data-testid="drawer-title"
+                        >
+                            {deployment?.name}
+                        </Title>
+                        <Text
+                            className="pf-v5-u-font-size-sm pf-v5-u-color-200"
+                            data-testid="drawer-subtitle"
+                        >
+                            in &quot;{deployment?.clusterName} / {deployment?.namespace}&quot;
+                        </Text>
                     </FlexItem>
                 </Flex>
             </StackItem>

@@ -7,8 +7,7 @@ import {
     Stack,
     StackItem,
     Text,
-    TextContent,
-    TextVariants,
+    Title,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -29,6 +28,7 @@ import { CidrBlockIcon, ExternalEntitiesIcon } from '../common/NetworkGraphIcons
 import EntityNameSearchInput from '../common/EntityNameSearchInput';
 
 type ExternalGroupSideBarProps = {
+    labelledById: string; // corresponds to aria-labelledby prop of TopologySideBar
     id: string;
     nodes: CustomNodeModel[];
     edges: CustomEdgeModel[];
@@ -43,6 +43,7 @@ const columnNames = {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ExternalGroupSideBar({
+    labelledById,
     id,
     nodes,
     edges,
@@ -76,19 +77,12 @@ function ExternalGroupSideBar({
             <StackItem>
                 <Flex direction={{ default: 'row' }} className="pf-v5-u-p-md pf-v5-u-mb-0">
                     <FlexItem>
-                        <TextContent>
-                            <Text component={TextVariants.h2} className="pf-v5-u-font-size-xl">
-                                {externalGroupNode?.label}
-                            </Text>
-                        </TextContent>
-                        <TextContent>
-                            <Text
-                                component={TextVariants.h3}
-                                className="pf-v5-u-font-size-sm pf-v5-u-color-200"
-                            >
-                                Connected entities outside your cluster
-                            </Text>
-                        </TextContent>
+                        <Title headingLevel="h2" id={labelledById}>
+                            {externalGroupNode?.label}
+                        </Title>
+                        <Text className="pf-v5-u-font-size-sm pf-v5-u-color-200">
+                            Connected entities outside your cluster
+                        </Text>
                     </FlexItem>
                 </Flex>
             </StackItem>
@@ -110,11 +104,9 @@ function ExternalGroupSideBar({
                         <Toolbar className="pf-v5-u-p-0">
                             <ToolbarContent className="pf-v5-u-px-0">
                                 <ToolbarItem>
-                                    <TextContent>
-                                        <Text component={TextVariants.h3}>
-                                            {filteredExternalNodes.length} results found
-                                        </Text>
-                                    </TextContent>
+                                    <Title headingLevel="h3">
+                                        {filteredExternalNodes.length} results found
+                                    </Title>
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
