@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/gziputil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -132,7 +131,7 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 		return nil, nil
 	}
 
-	configBytes, err := protocompat.Marshal(clusterConfig)
+	configBytes, err := clusterConfig.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +140,7 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 		return nil, err
 	}
 
-	deployTimePoliciesBytes, err := protocompat.Marshal(enforcedDeployTimePolicies)
+	deployTimePoliciesBytes, err := enforcedDeployTimePolicies.MarshalVT()
 	if err != nil {
 		return nil, errors.Wrap(err, "encoding deploy-time policies")
 	}
@@ -150,7 +149,7 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 		return nil, errors.Wrap(err, "compressing deploy-time policies")
 	}
 
-	runTimePoliciesBytes, err := protocompat.Marshal(runtimePolicies)
+	runTimePoliciesBytes, err := runtimePolicies.MarshalVT()
 	if err != nil {
 		return nil, errors.Wrap(err, "encoding run-time policies")
 	}

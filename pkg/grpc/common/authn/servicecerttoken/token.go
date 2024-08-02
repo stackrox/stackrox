@@ -79,7 +79,7 @@ func CreateToken(cert *tls.Certificate, currTime time.Time) (string, error) {
 		CurrentTime: tsPb,
 	}
 
-	authBytes, err := protocompat.Marshal(auth)
+	authBytes, err := auth.MarshalVT()
 	if err != nil {
 		return "", errors.Wrap(err, "could not marshal service cert auth structure")
 	}
