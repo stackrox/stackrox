@@ -120,7 +120,7 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 		s.Require().NoError(err)
 		s.Require().True(found)
 
-		cloned := actual.Clone()
+		cloned := actual.CloneVT()
 		// Adjust dynamic fields and ensure images in ACS are as expected.
 		standardizeImages(image, cloned)
 		protoassert.Equal(s.T(), image, cloned)
@@ -237,7 +237,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageIDs() {
 				return
 			}
 
-			query := tc.q.Clone()
+			query := tc.q.CloneVT()
 			query.Pagination = nil
 			actualAffectedImageIDs, err := s.cveView.GetImageIDs(sac.WithAllAccess(tc.ctx), query)
 			assert.NoError(t, err)
@@ -258,7 +258,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageIDsSAC() {
 
 				testCtxs := testutils.GetNamespaceScopedTestContexts(tc.ctx, s.T(), resources.Image)
 				ctx := testCtxs[key]
-				query := tc.q.Clone()
+				query := tc.q.CloneVT()
 				query.Pagination = nil
 				actualAffectedImageIDs, err := s.cveView.GetImageIDs(ctx, query)
 				assert.NoError(t, err)

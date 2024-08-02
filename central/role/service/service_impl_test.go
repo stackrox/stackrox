@@ -551,7 +551,7 @@ func (s *serviceImplTestSuite) SetupTest() {
 	writeCtx := sac.WithAllAccess(context.Background())
 
 	for _, cluster := range clusters {
-		clusterToAdd := cluster.Clone()
+		clusterToAdd := cluster.CloneVT()
 		clusterToAdd.Id = ""
 		clusterToAdd.MainImage = "quay.io/rhacs-eng/main:latest"
 		id, err := s.service.clusterDataStore.AddCluster(writeCtx, clusterToAdd)
@@ -561,7 +561,7 @@ func (s *serviceImplTestSuite) SetupTest() {
 	}
 
 	for _, namespace := range namespaces {
-		ns := namespace.Clone()
+		ns := namespace.CloneVT()
 		ns.Id = getNamespaceID(ns.GetName())
 		ns.ClusterId = s.clusterNameToIDMap[ns.GetClusterName()]
 		s.Require().NoError(s.service.namespaceDataStore.AddNamespace(writeCtx, ns))

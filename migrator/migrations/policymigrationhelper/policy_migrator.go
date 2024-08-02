@@ -203,8 +203,8 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 	}
 
 	// Clone policies because we mutate them.
-	beforePolicy = beforePolicy.Clone()
-	afterPolicy = afterPolicy.Clone()
+	beforePolicy = beforePolicy.CloneVT()
+	afterPolicy = afterPolicy.CloneVT()
 
 	var updates PolicyUpdates
 

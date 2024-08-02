@@ -290,7 +290,7 @@ func generateReportSnapshot(
 		},
 	}
 
-	reportFilters := config.GetVulnReportFilters().Clone()
+	reportFilters := config.GetVulnReportFilters().CloneVT()
 	var requester *storage.SlimUser
 	switch requestType {
 	case storage.ReportStatus_ON_DEMAND:

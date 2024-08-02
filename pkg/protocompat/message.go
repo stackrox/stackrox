@@ -53,7 +53,7 @@ type Unmarshaler[T any] interface {
 // and that have a Clone deep-copy method.
 type ClonedUnmarshaler[T any] interface {
 	Unmarshaler[T]
-	Clone() *T
+	CloneVT() *T
 }
 
 // Merge merges src into dst.

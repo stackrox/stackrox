@@ -166,7 +166,7 @@ func (s *updaterTestSuite) TestDelete_Error() {
 			Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 		},
 	}
-	orphanedScope := scopes[1].Clone()
+	orphanedScope := scopes[1].CloneVT()
 	orphanedScope.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
 
 	healths := []*storage.DeclarativeConfigHealth{

@@ -100,7 +100,7 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
@@ -187,7 +187,7 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 		parsedQuery,
 	)
 
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
@@ -213,7 +213,7 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 	)
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
@@ -270,7 +270,7 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 	)
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
@@ -352,7 +352,7 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		parsedQuery,
 	)
 
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)

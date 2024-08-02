@@ -92,7 +92,7 @@ func (b *datastoreImpl) GetAllNamespaces(ctx context.Context) ([]*storage.Namesp
 				IsAllowed() {
 				return nil
 			}
-			allowedNamespaces = append(allowedNamespaces, namespace.Clone())
+			allowedNamespaces = append(allowedNamespaces, namespace.CloneVT())
 			return nil
 		})
 	}

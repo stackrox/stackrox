@@ -346,7 +346,7 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 
 		// This will ensure that when we change the Name of the image
 		// that it will not cause a potential race condition
-		image := *imgResult.image.Clone()
+		image := *imgResult.image.CloneVT()
 		// Overwrite the image Name as a workaround to the fact that we fetch the image by ID
 		// The ID may actually have many names that refer to it. e.g. busybox:latest and busybox:1.31 could have the
 		// exact same ID

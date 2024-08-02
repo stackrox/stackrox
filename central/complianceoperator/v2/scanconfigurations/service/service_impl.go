@@ -187,7 +187,7 @@ func (s *serviceImpl) ListComplianceScanConfigurations(ctx context.Context, quer
 	}
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
@@ -278,7 +278,7 @@ func (s *serviceImpl) ListComplianceScanConfigProfiles(ctx context.Context, quer
 	}
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
@@ -320,7 +320,7 @@ func (s *serviceImpl) ListComplianceScanConfigClusterProfiles(ctx context.Contex
 	)
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)

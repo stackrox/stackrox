@@ -131,7 +131,7 @@ func (n *nodeCVECoreViewImpl) GetNodeIDs(ctx context.Context, q *v1.Query) ([]st
 }
 
 func withSelectQuery(q *v1.Query) *v1.Query {
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),

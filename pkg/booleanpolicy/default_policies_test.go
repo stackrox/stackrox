@@ -1945,12 +1945,12 @@ func assertNetworkBaselineMessagesEqual(
 	thisWithoutTime := make([]*storage.Alert_Violation, 0, len(this))
 	thatWithoutTime := make([]*storage.Alert_Violation, 0, len(that))
 	for _, violation := range this {
-		cp := violation.Clone()
+		cp := violation.CloneVT()
 		cp.Time = nil
 		thisWithoutTime = append(thisWithoutTime, cp)
 	}
 	for _, violation := range that {
-		cp := violation.Clone()
+		cp := violation.CloneVT()
 		cp.Time = nil
 		thatWithoutTime = append(thatWithoutTime, cp)
 	}
@@ -1975,7 +1975,7 @@ func rbacPermissionMessage(level string) []*storage.Alert_Violation {
 func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 	deployments := make(map[string]*storage.Deployment)
 	for permissionLevelStr, permissionLevel := range storage.PermissionLevel_value {
-		dep := fixtures.GetDeployment().Clone()
+		dep := fixtures.GetDeployment().CloneVT()
 		dep.ServiceAccountPermissionLevel = storage.PermissionLevel(permissionLevel)
 		deployments[permissionLevelStr] = dep
 	}
@@ -2049,7 +2049,7 @@ func (suite *DefaultPoliciesTestSuite) TestK8sRBACField() {
 func (suite *DefaultPoliciesTestSuite) TestPortExposure() {
 	deployments := make(map[string]*storage.Deployment)
 	for exposureLevelStr, exposureLevel := range storage.PortConfig_ExposureLevel_value {
-		dep := fixtures.GetDeployment().Clone()
+		dep := fixtures.GetDeployment().CloneVT()
 		dep.Ports = []*storage.PortConfig{{ExposureInfos: []*storage.PortConfig_ExposureInfo{{Level: storage.PortConfig_ExposureLevel(exposureLevel)}}}}
 		deployments[exposureLevelStr] = dep
 	}
@@ -2116,7 +2116,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageOS() {
 		"debian:10",
 	} {
 		img := imageWithOS(imgName)
-		dep := fixtures.GetDeployment().Clone()
+		dep := fixtures.GetDeployment().CloneVT()
 		dep.Containers = []*storage.Container{
 			{
 				Name:  imgName,
@@ -2408,7 +2408,7 @@ func (suite *DefaultPoliciesTestSuite) TestContainerName() {
 		"container_internal",
 		"external_container",
 	} {
-		dep := fixtures.GetDeployment().Clone()
+		dep := fixtures.GetDeployment().CloneVT()
 		dep.Containers = []*storage.Container{
 			{
 				Name: containerName,
@@ -2487,7 +2487,7 @@ func (suite *DefaultPoliciesTestSuite) TestAllowPrivilegeEscalationPolicyCriteri
 			AllowPrivilegeEscalation: false,
 		},
 	} {
-		dep := fixtures.GetDeployment().Clone()
+		dep := fixtures.GetDeployment().CloneVT()
 		dep.Containers[0].Name = d.ContainerName
 		if d.AllowPrivilegeEscalation {
 			dep.Containers[0].SecurityContext.AllowPrivilegeEscalation = d.AllowPrivilegeEscalation
@@ -2561,7 +2561,7 @@ func (suite *DefaultPoliciesTestSuite) TestAutomountServiceAccountToken() {
 			ServiceAccountName: "custom",
 		},
 	} {
-		dep := fixtures.GetDeployment().Clone()
+		dep := fixtures.GetDeployment().CloneVT()
 		dep.Name = d.DeploymentName
 		dep.ServiceAccount = d.ServiceAccountName
 		dep.AutomountServiceAccountToken = d.AutomountServiceAccountTokens
@@ -2636,7 +2636,7 @@ func (suite *DefaultPoliciesTestSuite) TestRuntimeClass() {
 		"",
 		"blah",
 	} {
-		dep := fixtures.GetDeployment().Clone()
+		dep := fixtures.GetDeployment().CloneVT()
 		dep.RuntimeClass = runtimeClass
 		deps = append(deps, dep)
 	}
@@ -2696,7 +2696,7 @@ func (suite *DefaultPoliciesTestSuite) TestNamespace() {
 		"dep_internal",
 		"external_dep",
 	} {
-		dep := fixtures.GetDeployment().Clone()
+		dep := fixtures.GetDeployment().CloneVT()
 		dep.Namespace = namespace
 		deps = append(deps, dep)
 	}
@@ -2758,7 +2758,7 @@ func (suite *DefaultPoliciesTestSuite) TestDropCaps() {
 
 	deployments := make(map[string]*storage.Deployment)
 	for _, idxs := range [][]int{{}, {0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}, {3}} {
-		dep := fixtures.GetDeployment().Clone()
+		dep := fixtures.GetDeployment().CloneVT()
 		dep.Containers[0].SecurityContext.DropCapabilities = make([]string, 0, len(idxs))
 		for _, idx := range idxs {
 			dep.Containers[0].SecurityContext.DropCapabilities = append(dep.Containers[0].SecurityContext.DropCapabilities, testCaps[idx])
@@ -2836,7 +2836,7 @@ func (suite *DefaultPoliciesTestSuite) TestAddCaps() {
 
 	deployments := make(map[string]*storage.Deployment)
 	for _, idxs := range [][]int{{}, {0}, {1}, {2}, {0, 1}, {1, 2}, {0, 1, 2}} {
-		dep := fixtures.GetDeployment().Clone()
+		dep := fixtures.GetDeployment().CloneVT()
 		dep.Containers[0].SecurityContext.AddCapabilities = make([]string, 0, len(idxs))
 		for _, idx := range idxs {
 			dep.Containers[0].SecurityContext.AddCapabilities = append(dep.Containers[0].SecurityContext.AddCapabilities, testCaps[idx])
@@ -2890,11 +2890,11 @@ func (suite *DefaultPoliciesTestSuite) TestAddCaps() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestProcessBaseline() {
-	privilegedDep := fixtures.GetDeployment().Clone()
+	privilegedDep := fixtures.GetDeployment().CloneVT()
 	privilegedDep.Id = "PRIVILEGED"
 	suite.addDepAndImages(privilegedDep)
 
-	nonPrivilegedDep := fixtures.GetDeployment().Clone()
+	nonPrivilegedDep := fixtures.GetDeployment().CloneVT()
 	nonPrivilegedDep.Id = "NOTPRIVILEGED"
 	nonPrivilegedDep.Containers[0].SecurityContext.Privileged = false
 	suite.addDepAndImages(nonPrivilegedDep)
@@ -3185,7 +3185,7 @@ func (suite *DefaultPoliciesTestSuite) TestKubeEventDefaultPolicies() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TestNetworkBaselinePolicy() {
-	deployment := fixtures.GetDeployment().Clone()
+	deployment := fixtures.GetDeployment().CloneVT()
 	suite.addDepAndImages(deployment)
 
 	// Create a policy for triggering flows that are not in baseline
@@ -3280,7 +3280,7 @@ func (suite *DefaultPoliciesTestSuite) TestReplicasPolicyCriteria() {
 		},
 	} {
 		suite.Run(testCase.caseName, func() {
-			deployment := fixtures.GetDeployment().Clone()
+			deployment := fixtures.GetDeployment().CloneVT()
 			deployment.Replicas = testCase.replicas
 			policy := policyWithSingleKeyValue(fieldnames.Replicas, testCase.policyValue, testCase.negate)
 
@@ -3363,7 +3363,7 @@ func (suite *DefaultPoliciesTestSuite) TestLivenessProbePolicyCriteria() {
 		},
 	} {
 		suite.Run(testCase.caseName, func() {
-			deployment := fixtures.GetDeployment().Clone()
+			deployment := fixtures.GetDeployment().CloneVT()
 			deployment.Containers = testCase.containers
 			policy := policyWithSingleKeyValue(fieldnames.LivenessProbeDefined, testCase.policyValue, false)
 
@@ -3458,7 +3458,7 @@ func (suite *DefaultPoliciesTestSuite) TestNetworkPolicyFields() {
 
 	for name, testCase := range testCases {
 		suite.Run(name, func() {
-			deployment := fixtures.GetDeployment().Clone()
+			deployment := fixtures.GetDeployment().CloneVT()
 			missingIngressPolicy := policyWithSingleKeyValue(fieldnames.HasIngressNetworkPolicy, "false", false)
 			missingEgressPolicy := policyWithSingleKeyValue(fieldnames.HasEgressNetworkPolicy, "false", false)
 
@@ -3551,7 +3551,7 @@ func (suite *DefaultPoliciesTestSuite) TestReadinessProbePolicyCriteria() {
 		},
 	} {
 		suite.Run(testCase.caseName, func() {
-			deployment := fixtures.GetDeployment().Clone()
+			deployment := fixtures.GetDeployment().CloneVT()
 			deployment.Containers = testCase.containers
 			policy := policyWithSingleKeyValue(fieldnames.ReadinessProbeDefined, testCase.policyValue, false)
 
@@ -3579,11 +3579,11 @@ func newIndicator(deployment *storage.Deployment, name, args, execFilePath strin
 }
 
 func BenchmarkProcessPolicies(b *testing.B) {
-	privilegedDep := fixtures.GetDeployment().Clone()
+	privilegedDep := fixtures.GetDeployment().CloneVT()
 	privilegedDep.Id = "PRIVILEGED"
 	images := []*storage.Image{fixtures.GetImage(), fixtures.GetImage()}
 
-	nonPrivilegedDep := fixtures.GetDeployment().Clone()
+	nonPrivilegedDep := fixtures.GetDeployment().CloneVT()
 	nonPrivilegedDep.Id = "NOTPRIVILEGED"
 	nonPrivilegedDep.Containers[0].SecurityContext.Privileged = false
 

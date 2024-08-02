@@ -34,7 +34,7 @@ func (p *policyRuleSet) Add(prs ...*storage.PolicyRule) {
 		// policyRuleSet can *take ownership of and later modify* its
 		// parameter on subsequent calls. It is better to play it safe and Clone the rules
 		// before adding.
-		p.add(pr.Clone())
+		p.add(pr.CloneVT())
 	}
 }
 

@@ -118,7 +118,7 @@ func (u *upgradeController) doHandleNewConnection(sensorCtx context.Context, con
 	if u.active != nil {
 		// Since we send the trigger asynchronously, clone the object -- we do modify the trigger
 		// sometimes, and don't want to cause a race.
-		trigger = u.active.trigger.Clone()
+		trigger = u.active.trigger.CloneVT()
 	} else {
 		trigger = &central.SensorUpgradeTrigger{} // empty trigger indicates "no upgrade should be in progress"
 	}

@@ -102,7 +102,7 @@ func (s *configServiceTestSuite) TestExceptionConfigOps() {
 	protoassert.Equal(s.T(), expected, cfg.GetConfig())
 
 	// Invalid Update.
-	updatedExceptionCfg := initialCfg.Clone().GetPrivateConfig().GetVulnerabilityExceptionConfig()
+	updatedExceptionCfg := initialCfg.CloneVT().GetPrivateConfig().GetVulnerabilityExceptionConfig()
 	updatedExceptionCfg.ExpiryOptions.DayOptions = nil
 	req := &v1.UpdateVulnerabilityExceptionConfigRequest{
 		Config: storagetov1.VulnerabilityExceptionConfig(updatedExceptionCfg),

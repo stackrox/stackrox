@@ -116,7 +116,7 @@ func (t *nRadixTree) GetSubnets(key string) []*storage.NetworkEntityInfo {
 
 	results := make([]*storage.NetworkEntityInfo, 0, len(subnets))
 	for _, n := range subnets {
-		results = append(results, n.Clone())
+		results = append(results, n.CloneVT())
 	}
 	return results
 }
@@ -136,7 +136,7 @@ func (t *nRadixTree) GetSubnetsForCIDR(cidr string) []*storage.NetworkEntityInfo
 
 	results := make([]*storage.NetworkEntityInfo, 0, len(subnets))
 	for _, n := range subnets {
-		results = append(results, n.Clone())
+		results = append(results, n.CloneVT())
 	}
 	return results
 }
@@ -190,7 +190,7 @@ func (t *nRadixTree) Get(key string) *storage.NetworkEntityInfo {
 		return nil
 	}
 
-	ret := node.value.Clone()
+	ret := node.value.CloneVT()
 	// Internet entity is expected only with ID and Type fields.
 	rmDescIfInternet(ret)
 	return ret
@@ -198,7 +198,7 @@ func (t *nRadixTree) Get(key string) *storage.NetworkEntityInfo {
 
 func (t *nRadixTree) getMatchingSupernetNoLock(key string, pred func(entity *storage.NetworkEntityInfo) bool) *storage.NetworkEntityInfo {
 	if t.root.value.GetId() == key {
-		ret := t.root.value.Clone()
+		ret := t.root.value.CloneVT()
 		rmDescIfInternet(ret)
 		return ret
 	}
@@ -213,7 +213,7 @@ func (t *nRadixTree) getMatchingSupernetNoLock(key string, pred func(entity *sto
 		return nil
 	}
 
-	ret := match.value.Clone()
+	ret := match.value.CloneVT()
 	rmDescIfInternet(ret)
 	return ret
 }
@@ -248,7 +248,7 @@ func (t *nRadixTree) getMatchingSupernetForCIDRNoLock(cidr string, pred func(ent
 		return nil
 	}
 
-	ret := match.value.Clone()
+	ret := match.value.CloneVT()
 	rmDescIfInternet(ret)
 	return ret
 }

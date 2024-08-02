@@ -179,7 +179,7 @@ func (suite *AlertManagerTestSuite) TestNotifyAndUpdateBatch() {
 
 	suite.T().Setenv(env.AlertRenotifDebounceDuration.EnvVar(), "5m")
 
-	resolvedAlerts := []*storage.Alert{alerts[0].Clone(), alerts[1].Clone()}
+	resolvedAlerts := []*storage.Alert{alerts[0].CloneVT(), alerts[1].CloneVT()}
 	resolvedAlerts[0].ResolvedAt = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-10 * time.Minute))
 	resolvedAlerts[1].ResolvedAt = protoconv.MustConvertTimeToTimestamp(time.Now().Add(-2 * time.Minute))
 
@@ -297,10 +297,10 @@ func (suite *AlertManagerTestSuite) TestNewResourceAlertIsAdded() {
 
 func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 	alerts := getResourceAlerts()
-	newAlert := alerts[0].Clone()
+	newAlert := alerts[0].CloneVT()
 	newAlert.Violations[0].Message = "new-violation"
 
-	expectedMergedAlert := newAlert.Clone()
+	expectedMergedAlert := newAlert.CloneVT()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
 
 	// Only the merged alert will be updated.
@@ -325,10 +325,10 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlerts() {
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
 	suite.T().Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
 	alerts := getResourceAlerts()
-	newAlert := alerts[0].Clone()
+	newAlert := alerts[0].CloneVT()
 	newAlert.Violations[0].Message = "new-violation"
 
-	expectedMergedAlert := newAlert.Clone()
+	expectedMergedAlert := newAlert.CloneVT()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
 
 	// Only the merged alert will be updated.
@@ -351,9 +351,9 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsNoNotify() {
 
 func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 	alerts := getResourceAlerts()
-	newAlert := alerts[0].Clone()
+	newAlert := alerts[0].CloneVT()
 	newAlert.Violations[0].Message = "new-violation"
-	newAlert2 := alerts[0].Clone()
+	newAlert2 := alerts[0].CloneVT()
 	newAlert2.Violations[0].Message = "new-violation-2"
 
 	// There will be two calls to Upsert
@@ -379,13 +379,13 @@ func (suite *AlertManagerTestSuite) TestMergeMultipleResourceAlerts() {
 
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfMoreThanMax() {
 	alerts := getResourceAlerts()
-	newAlert := alerts[0].Clone()
+	newAlert := alerts[0].CloneVT()
 	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
 	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
 		newAlert.Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("new-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
 
-	expectedMergedAlert := newAlert.Clone()
+	expectedMergedAlert := newAlert.CloneVT()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
 	expectedMergedAlert.Violations = expectedMergedAlert.Violations[:maxRunTimeViolationsPerAlert]
 
@@ -413,13 +413,13 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfM
 func (suite *AlertManagerTestSuite) TestMergeResourceAlertsKeepsNewViolationsIfMoreThanMaxNoNotify() {
 	suite.T().Setenv("NOTIFY_EVERY_RUNTIME_EVENT", "false")
 	alerts := getResourceAlerts()
-	newAlert := alerts[0].Clone()
+	newAlert := alerts[0].CloneVT()
 	newAlert.Violations = make([]*storage.Alert_Violation, maxRunTimeViolationsPerAlert)
 	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
 		newAlert.Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("new-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
 
-	expectedMergedAlert := newAlert.Clone()
+	expectedMergedAlert := newAlert.CloneVT()
 	expectedMergedAlert.Violations = append(expectedMergedAlert.Violations, alerts[0].Violations...)
 	expectedMergedAlert.Violations = expectedMergedAlert.Violations[:maxRunTimeViolationsPerAlert]
 
@@ -447,10 +447,10 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
 		alerts[0].Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("old-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
-	newAlert := alerts[0].Clone()
+	newAlert := alerts[0].CloneVT()
 	newAlert.Violations[0].Message = "new-violation"
 
-	expectedMergedAlert := newAlert.Clone()
+	expectedMergedAlert := newAlert.CloneVT()
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -478,10 +478,10 @@ func (suite *AlertManagerTestSuite) TestMergeResourceAlertsOnlyKeepsMaxViolation
 	for i := 0; i < maxRunTimeViolationsPerAlert; i++ {
 		alerts[0].Violations[i] = &storage.Alert_Violation{Message: fmt.Sprintf("old-violation-%d", i), Type: storage.Alert_Violation_K8S_EVENT}
 	}
-	newAlert := alerts[0].Clone()
+	newAlert := alerts[0].CloneVT()
 	newAlert.Violations[0].Message = "new-violation"
 
-	expectedMergedAlert := newAlert.Clone()
+	expectedMergedAlert := newAlert.CloneVT()
 
 	// Only the merged alert will be updated.
 	suite.alertsMock.EXPECT().UpsertAlert(suite.ctx, protomock.GoMockMatcherEqualMessage(expectedMergedAlert)).Return(nil)
@@ -712,16 +712,16 @@ func TestMergeRunTimeAlerts(t *testing.T) {
 func TestFindAlert(t *testing.T) {
 	resourceAlerts := []*storage.Alert{getResourceAlerts()[0], fixtures.GetResourceAlert()}
 
-	snoozedAlert := getAlerts()[0].Clone()
+	snoozedAlert := getAlerts()[0].CloneVT()
 	snoozedAlert.State = storage.ViolationState_SNOOZED
-	snoozedResourceAlert := getResourceAlerts()[0].Clone()
+	snoozedResourceAlert := getResourceAlerts()[0].CloneVT()
 	snoozedResourceAlert.State = storage.ViolationState_SNOOZED
 
-	resourceAlertWithAltPolicy := getResourceAlerts()[0].Clone()
-	resourceAlertWithAltPolicy.Policy = getPolicies()[0].Clone()
+	resourceAlertWithAltPolicy := getResourceAlerts()[0].CloneVT()
+	resourceAlertWithAltPolicy.Policy = getPolicies()[0].CloneVT()
 
-	resourceAlertWithAltPolicyAndResource := getResourceAlerts()[1].Clone()
-	resourceAlertWithAltPolicyAndResource.Policy = getPolicies()[0].Clone()
+	resourceAlertWithAltPolicyAndResource := getResourceAlerts()[1].CloneVT()
+	resourceAlertWithAltPolicyAndResource.Policy = getPolicies()[0].CloneVT()
 
 	for _, c := range []struct {
 		desc     string

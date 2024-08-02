@@ -111,7 +111,7 @@ func (s *serviceImpl) GetComplianceProfileStats(ctx context.Context, request *v2
 	)
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
@@ -132,7 +132,7 @@ func (s *serviceImpl) GetComplianceProfilesStats(ctx context.Context, query *v2.
 	}
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
@@ -171,7 +171,7 @@ func (s *serviceImpl) GetComplianceProfilesClusterStats(ctx context.Context, req
 	)
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
@@ -240,7 +240,7 @@ func (s *serviceImpl) GetComplianceClusterScanStats(ctx context.Context, request
 		parsedQuery,
 	)
 
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
@@ -282,7 +282,7 @@ func (s *serviceImpl) GetComplianceOverallClusterStats(ctx context.Context, quer
 	}
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
@@ -334,7 +334,7 @@ func (s *serviceImpl) GetComplianceClusterStats(ctx context.Context, request *v2
 	}
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)

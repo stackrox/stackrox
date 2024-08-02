@@ -1091,7 +1091,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.Requester = &storage.SlimUser{
 					Id:   reportSnapshot.Requester.Id + "-1",
 					Name: reportSnapshot.Requester.Name + "-1",
@@ -1108,7 +1108,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.RunState = storage.ReportStatus_DELIVERED
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1122,7 +1122,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.RunState = storage.ReportStatus_GENERATED
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1136,7 +1136,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1254,7 +1254,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.Requester = &storage.SlimUser{
 					Id:   reportSnapshot.Requester.Id + "-1",
 					Name: reportSnapshot.Requester.Name + "-1",
@@ -1271,7 +1271,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_EMAIL
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1285,7 +1285,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1325,7 +1325,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.RunState = storage.ReportStatus_GENERATED
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), snap.GetReportId()).
 					Return(snap, true, nil).Times(1)
