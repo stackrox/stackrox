@@ -51,7 +51,6 @@ import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/Advanc
 import LinkShim from 'Components/PatternFly/LinkShim';
 
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
-import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,
@@ -147,14 +146,14 @@ function getSearchFilterEntityByTab(
     }
 }
 
-const searchFilterConfig = createSearchFilterConfig([
-    imageSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-]);
+const searchFilterConfig = {
+    Image: imageSearchFilterConfig,
+    CVE: imageCVESearchFilterConfig,
+    'Image Component': imageComponentSearchFilterConfig,
+    Deployment: deploymentSearchFilterConfig,
+    Namespace: namespaceSearchFilterConfig,
+    Cluster: clusterSearchFilterConfig,
+};
 
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();

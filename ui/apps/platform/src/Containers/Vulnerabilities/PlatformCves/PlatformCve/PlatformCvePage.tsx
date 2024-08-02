@@ -34,7 +34,6 @@ import useURLSort from 'hooks/useURLSort';
 import { getDateTime } from 'utils/dateUtils';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
-import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import { clusterSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
@@ -55,7 +54,9 @@ const workloadCveOverviewCvePath = getOverviewPagePath('Platform', {
     entityTab: 'CVE',
 });
 
-const searchFilterConfig = createSearchFilterConfig([clusterSearchFilterConfig]);
+const searchFilterConfig = {
+    Cluster: clusterSearchFilterConfig,
+};
 
 function PlatformCvePage() {
     const { analyticsTrack } = useAnalytics();

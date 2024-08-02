@@ -34,7 +34,6 @@ import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchU
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
-import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import {
     clusterSearchFilterConfig,
     platformCVESearchFilterConfig,
@@ -55,10 +54,10 @@ import CVEsTable, {
 } from './CVEsTable';
 import { usePlatformCveEntityCounts } from './usePlatformCveEntityCounts';
 
-const searchFilterConfig = createSearchFilterConfig([
-    clusterSearchFilterConfig,
-    platformCVESearchFilterConfig,
-]);
+const searchFilterConfig = {
+    Cluster: clusterSearchFilterConfig,
+    CVE: platformCVESearchFilterConfig,
+};
 
 function PlatformCvesOverviewPage() {
     const apolloClient = useApolloClient();

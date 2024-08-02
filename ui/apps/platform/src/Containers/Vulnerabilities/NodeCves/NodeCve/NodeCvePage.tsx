@@ -29,7 +29,6 @@ import {
 import useURLSort from 'hooks/useURLSort';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
-import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import {
@@ -53,11 +52,11 @@ import useNodeCveSummaryData from './useNodeCveSummaryData';
 
 const nodeCveOverviewCvePath = getOverviewPagePath('Node', { entityTab: 'CVE' });
 
-const searchFilterConfig = createSearchFilterConfig([
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-    clusterSearchFilterConfig,
-]);
+const searchFilterConfig = {
+    Node: nodeSearchFilterConfig,
+    'Node component': nodeComponentSearchFilterConfig,
+    Cluster: clusterSearchFilterConfig,
+};
 
 const defaultNodeCveSummary = {
     affectedNodeCountBySeverity: {

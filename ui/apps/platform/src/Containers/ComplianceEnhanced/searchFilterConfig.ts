@@ -1,17 +1,17 @@
 import { SearchCategory } from 'services/SearchService';
-import { getClusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
-import { getProfileCheckAttributes } from 'Components/CompoundSearchFilter/attributes/profileCheck';
+import { clusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
+import { profileCheckAttributes } from 'Components/CompoundSearchFilter/attributes/profileCheck';
 
 const profileCheckSearchFilterConfig = {
     displayName: 'Profile check',
     searchCategory: 'COMPLIANCE' as SearchCategory,
-    attributes: getProfileCheckAttributes(),
+    attributes: profileCheckAttributes,
 };
 
 const clusterSearchFilterConfig = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS' as SearchCategory,
-    attributes: getClusterAttributes(),
+    attributes: clusterAttributes,
 };
 
 export { profileCheckSearchFilterConfig, clusterSearchFilterConfig };

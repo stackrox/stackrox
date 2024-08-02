@@ -23,7 +23,6 @@ import BySeveritySummaryCard from 'Containers/Vulnerabilities/components/BySever
 import CvesByStatusSummaryCard from 'Containers/Vulnerabilities/WorkloadCves/SummaryCards/CvesByStatusSummaryCard';
 import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
-import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import {
     nodeCVESearchFilterConfig,
     nodeComponentSearchFilterConfig,
@@ -42,10 +41,10 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 
-const searchFilterConfig = createSearchFilterConfig([
-    nodeCVESearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-]);
+const searchFilterConfig = {
+    'Node CVE': nodeCVESearchFilterConfig,
+    'Node component': nodeComponentSearchFilterConfig,
+};
 
 export type NodePageVulnerabilitiesProps = {
     nodeId: string;

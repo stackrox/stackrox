@@ -16,7 +16,6 @@ import {
 } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import PageTitle from 'Components/PageTitle';
@@ -45,7 +44,9 @@ import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
 import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
 
-const searchFilterConfig = createSearchFilterConfig([profileCheckSearchFilterConfig]);
+const searchFilterConfig = {
+    'Profile check': profileCheckSearchFilterConfig,
+};
 
 function ClusterDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =

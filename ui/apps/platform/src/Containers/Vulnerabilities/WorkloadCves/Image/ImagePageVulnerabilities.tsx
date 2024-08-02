@@ -33,7 +33,6 @@ import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/Advanc
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
-import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import {
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
@@ -100,10 +99,10 @@ const searchOptions: SearchOption[] = [
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
-const searchFilterConfig = createSearchFilterConfig([
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-]);
+const searchFilterConfig = {
+    'Image CVE': imageCVESearchFilterConfig,
+    'Image component': imageComponentSearchFilterConfig,
+};
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;

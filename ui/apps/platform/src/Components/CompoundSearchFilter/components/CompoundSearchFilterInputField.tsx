@@ -6,12 +6,14 @@ import { SearchFilter } from 'types/search';
 import { getDate } from 'utils/dateUtils';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
-import { CompoundSearchFilterConfig, OnSearchPayload, SearchFilterAttribute } from '../types';
+import { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
 import {
     conditionMap,
     ensureConditionNumber,
     ensureString,
     ensureStringArray,
+    getAttributeConfig,
+    getEntityConfig,
     isSelectType,
 } from '../utils/utils';
 
@@ -68,8 +70,8 @@ function CompoundSearchFilterInputField({
         return null;
     }
 
-    const entityObject = config[selectedEntity];
-    const attributeObject: SearchFilterAttribute = entityObject?.attributes?.[selectedAttribute];
+    const entityObject = getEntityConfig(config, selectedEntity);
+    const attributeObject = getAttributeConfig(config, selectedEntity, selectedAttribute);
 
     if (!attributeObject) {
         return null;

@@ -18,7 +18,6 @@ import ComplianceUsageDisclaimer, {
 } from 'Components/ComplianceUsageDisclaimer';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
-import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
@@ -49,10 +48,10 @@ import ProfileClustersPage from './ProfileClustersPage';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
 
-const searchFilterConfig = createSearchFilterConfig([
-    profileCheckSearchFilterConfig,
-    clusterSearchFilterConfig,
-]);
+const searchFilterConfig = {
+    'Profile check': profileCheckSearchFilterConfig,
+    Cluster: clusterSearchFilterConfig,
+};
 
 function CoveragesPage() {
     const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(

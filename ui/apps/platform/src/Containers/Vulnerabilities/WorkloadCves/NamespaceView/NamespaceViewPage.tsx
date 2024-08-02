@@ -34,7 +34,6 @@ import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
-import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import {
     clusterSearchFilterConfig,
     namespaceSearchFilterConfig,
@@ -89,10 +88,10 @@ const defaultSearchFilters = {
     'Vulnerability State': 'OBSERVED',
 };
 
-const searchFilterConfig = createSearchFilterConfig([
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-]);
+const searchFilterConfig = {
+    Namespace: namespaceSearchFilterConfig,
+    Cluster: clusterSearchFilterConfig,
+};
 
 const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 

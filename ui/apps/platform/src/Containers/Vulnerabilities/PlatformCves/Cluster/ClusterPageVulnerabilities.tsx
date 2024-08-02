@@ -21,7 +21,6 @@ import { DynamicTableLabel } from 'Components/DynamicIcon';
 import useURLSort from 'hooks/useURLSort';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
-import { createSearchFilterConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import { platformCVESearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
 import { getHiddenStatuses, parseQuerySearchFilter } from '../../utils/searchUtils';
@@ -34,7 +33,9 @@ import CVEsTable, { defaultSortOption, sortFields } from './CVEsTable';
 import PlatformCvesByStatusSummaryCard from './PlatformCvesByStatusSummaryCard';
 import PlatformCvesByTypeSummaryCard from './PlatformCvesByTypeSummaryCard';
 
-const searchFilterConfig = createSearchFilterConfig([platformCVESearchFilterConfig]);
+const searchFilterConfig = {
+    'Platform CVE': platformCVESearchFilterConfig,
+};
 
 export type ClusterPageVulnerabilitiesProps = {
     clusterId: string;

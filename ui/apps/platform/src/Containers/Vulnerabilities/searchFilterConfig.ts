@@ -1,73 +1,73 @@
 import { SearchCategory } from 'services/SearchService';
-import { getClusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
-import { getDeploymentAttributes } from 'Components/CompoundSearchFilter/attributes/deployment';
-import { getImageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
-import { getImageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
-import { getImageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
-import { getNamespaceAttributes } from 'Components/CompoundSearchFilter/attributes/namespace';
-import { getNodeAttributes } from 'Components/CompoundSearchFilter/attributes/node';
-import { getNodeComponentAttributes } from 'Components/CompoundSearchFilter/attributes/nodeComponent';
-import { getPlatformCVEAttributes } from 'Components/CompoundSearchFilter/attributes/platformCVE';
-import { getNodeCVEAttributes } from 'Components/CompoundSearchFilter/attributes/nodeCVE';
+import { clusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
+import { deploymentAttributes } from 'Components/CompoundSearchFilter/attributes/deployment';
+import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
+import { imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
+import { imageComponentAttributes } from 'Components/CompoundSearchFilter/attributes/imageComponent';
+import { namespaceAttributes } from 'Components/CompoundSearchFilter/attributes/namespace';
+import { nodeAttributes } from 'Components/CompoundSearchFilter/attributes/node';
+import { nodeCVEAttributes } from 'Components/CompoundSearchFilter/attributes/nodeCVE';
+import { nodeComponentAttributes } from 'Components/CompoundSearchFilter/attributes/nodeComponent';
+import { platformCVEAttributes } from 'Components/CompoundSearchFilter/attributes/platformCVE';
 
 const nodeSearchFilterConfig = {
     displayName: 'Node',
     searchCategory: 'NODES' as SearchCategory,
-    attributes: getNodeAttributes(),
+    attributes: nodeAttributes,
 };
 
 const nodeCVESearchFilterConfig = {
     displayName: 'CVE',
     searchCategory: 'NODE_VULNERABILITIES' as SearchCategory,
-    attributes: getNodeCVEAttributes(),
+    attributes: nodeCVEAttributes,
 };
 
 const nodeComponentSearchFilterConfig = {
     displayName: 'Node component',
     searchCategory: 'NODE_COMPONENTS' as SearchCategory,
-    attributes: getNodeComponentAttributes(),
+    attributes: nodeComponentAttributes,
 };
 
 const imageSearchFilterConfig = {
     displayName: 'Image',
     searchCategory: 'IMAGES' as SearchCategory,
-    attributes: getImageAttributes(),
+    attributes: imageAttributes,
 };
 
 const imageCVESearchFilterConfig = {
     displayName: 'CVE',
     searchCategory: 'IMAGE_VULNERABILITIES' as SearchCategory,
-    attributes: getImageCVEAttributes(),
+    attributes: imageCVEAttributes,
 };
 
 const imageComponentSearchFilterConfig = {
     displayName: 'Image component',
     searchCategory: 'IMAGE_COMPONENTS' as SearchCategory,
-    attributes: getImageComponentAttributes(),
+    attributes: imageComponentAttributes,
 };
 
 const deploymentSearchFilterConfig = {
     displayName: 'Deployment',
     searchCategory: 'DEPLOYMENTS' as SearchCategory,
-    attributes: getDeploymentAttributes(),
+    attributes: deploymentAttributes,
 };
 
 const namespaceSearchFilterConfig = {
     displayName: 'Namespace',
     searchCategory: 'NAMESPACES' as SearchCategory,
-    attributes: getNamespaceAttributes(),
+    attributes: namespaceAttributes,
 };
 
 const clusterSearchFilterConfig = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS' as SearchCategory,
-    attributes: getClusterAttributes(),
+    attributes: clusterAttributes,
 };
 
 const platformCVESearchFilterConfig = {
     displayName: 'CVE',
     searchCategory: 'CLUSTER_VULNERABILITIES' as SearchCategory,
-    attributes: getPlatformCVEAttributes(),
+    attributes: platformCVEAttributes,
 };
 
 export {

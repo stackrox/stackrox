@@ -1,6 +1,7 @@
 import React from 'react';
-import { FilterChip, FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
+import pick from 'lodash/pick';
 
+import { FilterChip, FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 import { SearchFilter } from 'types/search';
 import { SetSearchFilter } from 'hooks/useURLSearch';
 import {
@@ -20,35 +21,64 @@ export const conditionMap = {
 
 export const conditions = Object.keys(conditionMap);
 
-export function getEntities<T extends object>(config: T): (keyof T)[] {
-    const entities = Object.keys(config) as (keyof T)[];
+export function getEntityConfig<T extends Record<string, SearchFilterConfig>>(
+    config: T,
+    entity: string
+): SearchFilterConfig | undefined {
+    const entityConfig = Object.values(config).find((entityConfig) => {
+        return entityConfig.displayName === entity;
+    });
+    return entityConfig;
+}
+
+export function getAttributeConfig<T extends Record<string, SearchFilterConfig>>(
+    config: T,
+    entity: string,
+    attribute: string
+): SearchFilterAttribute | undefined {
+    const entityConfig = getEntityConfig(config, entity);
+    if (entityConfig && entityConfig.attributes) {
+        return Object.values(entityConfig.attributes).find((attributeConfig) => {
+            return attributeConfig.displayName === attribute;
+        });
+    }
+    return undefined;
+}
+
+export function getEntities<T extends Record<string, SearchFilterConfig>>(config: T): (keyof T)[] {
+    const entities = Object.values(config).map((entityConfig) => {
+        const { displayName } = entityConfig;
+        return displayName;
+    });
     return entities;
 }
 
-export function getDefaultEntity<T extends object>(config: T): keyof T {
+export function getDefaultEntity<T extends Record<string, SearchFilterConfig>>(config: T): keyof T {
     const entities = getEntities(config);
     return entities[0];
 }
 
-export function getEntityAttributes<T extends object>(
+export function getEntityAttributes<T extends Record<string, SearchFilterConfig>>(
     entity: string,
     config: T
 ): SearchFilterAttribute[] {
-    const entityConfig = config[entity] as SearchFilterConfig;
+    const entityConfig = getEntityConfig(config, entity);
     if (entityConfig && entityConfig.attributes) {
-        const attributeValues: SearchFilterAttribute[] = Object.values(entityConfig.attributes);
+        const attributeValues = Object.values(entityConfig.attributes);
         return attributeValues;
     }
     return [];
 }
 
-export function getDefaultAttribute<T extends object>(
+export function getDefaultAttribute<T extends Record<string, SearchFilterConfig>>(
     entity: string,
     config: T
 ): string | undefined {
-    const entityConfig = config[entity] as SearchFilterConfig;
+    const entityConfig = getEntityConfig(config, entity);
     if (entityConfig && entityConfig.attributes) {
-        const attributeNames = Object.keys(entityConfig.attributes);
+        const attributeNames = Object.values(entityConfig.attributes).map((attributeConfig) => {
+            return attributeConfig.displayName;
+        });
         return attributeNames[0];
     }
     return undefined;
@@ -154,3 +184,10 @@ export const onURLSearch = (
         [category]: newSelection,
     });
 };
+
+export function pickAttributes<T extends Record<string, SearchFilterAttribute>>(
+    attrs: T,
+    keys: string[]
+) {
+    return pick(attrs, keys);
+}
