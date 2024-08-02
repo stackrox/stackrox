@@ -82,7 +82,7 @@ func (d *datastoreImpl) GetBlobWithDataInBuffer(ctx context.Context, name string
 
 	blob, exists, err := d.store.Get(ctx, name, buf)
 	if blob.GetLength() > int64(bufferedBlobDataLimitInBytes) {
-		utils.Should(fmt.Errorf("blob %s has %d in length which is beyond buffer limit %d", name, blob.Size(), bufferedBlobDataLimitInBytes))
+		utils.Should(fmt.Errorf("blob %s has %d in length which is beyond buffer limit %d", name, blob.SizeVT(), bufferedBlobDataLimitInBytes))
 	}
 	return buf, blob, exists, err
 }
