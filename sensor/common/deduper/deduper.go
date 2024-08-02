@@ -65,7 +65,7 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		log.Infof("Adding %d events as unchanged to sync event", len(d.unchangedIDs))
 		resourcesSynced.UnchangedIds = d.unchangedIDs.AsSlice()
 		metrics.IncrementTotalResourcesSyncSent(len(d.unchangedIDs))
-		metrics.SetResourcesSyncedSize(msg.Size())
+		metrics.SetResourcesSyncedSize(msg.SizeVT())
 	}
 
 	// This filter works around race conditions in which image integrations may be initialized prior to CentralHello being received

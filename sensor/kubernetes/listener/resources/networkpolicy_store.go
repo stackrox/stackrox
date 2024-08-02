@@ -187,7 +187,7 @@ func (n *networkPolicyStoreImpl) Find(namespace string, podLabels map[string]str
 	// Apparently 'labels.MatchLabels' does not cover this corner case
 	if len(podLabels) == 0 {
 		for id, policy := range nsPolicies {
-			if policy.GetSpec().GetPodSelector().Size() == 0 {
+			if policy.GetSpec().GetPodSelector().SizeVT() == 0 {
 				results[id] = policy
 			}
 		}

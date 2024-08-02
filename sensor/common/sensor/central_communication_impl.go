@@ -325,7 +325,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 			return errors.Wrapf(errIncorrectDeduperStateOrder, "expected message number %d but received %d", current, msg.GetDeduperState().GetCurrent())
 		}
 
-		log.Infof("Received %d hashes (size=%d), current chunk: %d, total: %d", len(msg.GetDeduperState().GetResourceHashes()), msg.Size(), msg.GetDeduperState().GetCurrent(), msg.GetDeduperState().GetTotal())
+		log.Infof("Received %d hashes (size=%d), current chunk: %d, total: %d", len(msg.GetDeduperState().GetResourceHashes()), msg.SizeVT(), msg.GetDeduperState().GetCurrent(), msg.GetDeduperState().GetTotal())
 		for k, v := range msg.GetDeduperState().GetResourceHashes() {
 			deduperState[k] = v
 		}

@@ -173,7 +173,7 @@ func ObserveScansTotal(nodeName string) {
 func ObserveInventoryProtobufMessage(cmsg *sensor.MsgFromCompliance) {
 	protobufMessageSize.With(prometheus.Labels{
 		"node_name": cmsg.GetNode(),
-	}).Observe(float64(cmsg.Size()))
+	}).Observe(float64(cmsg.SizeVT()))
 }
 
 // InventoryTransmission names the way in which a NodeInventory was obtained

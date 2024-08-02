@@ -35,7 +35,7 @@ func (tr *NetworkFlowTraceWriter) Write(data []byte) (int, error) {
 	case <-tr.ctx.Done():
 		return 0, errors.New("Context done")
 	case tr.messageC <- message:
-		return message.Size(), nil
+		return message.SizeVT(), nil
 	}
 }
 
@@ -66,6 +66,6 @@ func (tr *ProcessIndicatorTraceWriter) Write(data []byte) (int, error) {
 	case <-tr.ctx.Done():
 		return 0, errors.New("Context done")
 	case tr.messageC <- message:
-		return message.Size(), nil
+		return message.SizeVT(), nil
 	}
 }
