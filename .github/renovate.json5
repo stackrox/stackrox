@@ -21,6 +21,8 @@
     // that.
     "after 3am and before 7am"
   ],
+  // Tell Renovate not to update PRs when outside of schedule.
+  "updateNotScheduled": false,
   "dockerfile": {
     "fileMatch": [
       // Instruct Renovate not try to update Dockerfiles other than */konflux.Dockerfile to have less PR noise.
