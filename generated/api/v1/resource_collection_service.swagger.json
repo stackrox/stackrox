@@ -427,15 +427,6 @@
         }
       }
     },
-    "ResourceCollectionEmbeddedResourceCollection": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "title": "'id' is searchable to force a separate table"
-        }
-      }
-    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -553,8 +544,17 @@
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/ResourceCollectionEmbeddedResourceCollection"
+            "$ref": "#/definitions/storageResourceCollectionEmbeddedResourceCollection"
           }
+        }
+      }
+    },
+    "storageResourceCollectionEmbeddedResourceCollection": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "'id' is searchable to force a separate table"
         }
       }
     },

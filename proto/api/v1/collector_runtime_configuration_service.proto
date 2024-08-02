@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package v1;
+
+import "api/v1/empty.proto";
+import "api/v1/common/collector_runtime_config.proto";
+import weak "google/api/annotations.proto";
+
+option go_package = "./api/v1;v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+message GetCollectorRuntimeConfigResponse {
+  common.CollectorRuntimeConfig collector_runtime_config = 1;
+}
+
+message CollectorRuntimeConfigRequest {
+  common.CollectorRuntimeConfig collector_runtime_config = 1;
+}
+
+message DeleteCollectorRuntimeConfigRequest {
+  string id = 1;
+}
+
+message DryRunCollectorRuntimeConfigResponse {
+  message Resource {
+    string cluster = 1;
+    string namespace = 2;
+  }
+
+  message StatusWithResources {
+    common.Status status = 1;
+    repeated Resource resources = 2;
+  }
+
+  message StatusesForFeature {
+     common.RuntimeFeature runtime_feature = 1;
+     repeated StatusWithResources status_with_resources = 2;
+  }
+  repeated StatusesForFeature statuses_for_features = 1; 
+}
+
+// CollectorRuntimeConfigService can be used to update and check the Collector runtime config
+service CollectorRuntimeConfigService {
+  rpc GetCollectorRuntimeConfig(Empty) returns (GetCollectorRuntimeConfigResponse) {
+    option (google.api.http) = {get: "/v1/collector_runtime_config"};
+  }
+
+  rpc PostCollectorRuntimeConfig(CollectorRuntimeConfigRequest) returns (Empty) {
+    option (google.api.http) = {
+      post: "/v1/collector_runtime_config"
+      body: "*"
+    };
+  }
+
+  rpc PatchCollectorRuntimeConfig(CollectorRuntimeConfigRequest) returns (Empty) {
+    option (google.api.http) = {
+      patch: "/v1/collector_runtime_config"
+      body: "*"
+    };
+  }
+
+  rpc DeleteCollectorRuntimeConfig(DeleteCollectorRuntimeConfigRequest) returns (Empty) {
+    option (google.api.http) = {delete: "/v1/collector_runtime_config/id/{id}"};
+  }
+
+  rpc DryRunCollectorRuntimeConfig(CollectorRuntimeConfigRequest) returns (DryRunCollectorRuntimeConfigResponse) {
+    option (google.api.http) = {
+      post: "/v1/collector_runtime_config/dryrun"
+      body: "*"
+    };
+  }
+}
