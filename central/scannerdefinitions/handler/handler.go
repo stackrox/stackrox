@@ -259,17 +259,16 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		writeErrorForFile(w, err, opts.name)
 		return
 	}
-
 	if f == nil {
 		writeErrorNotFound(w)
 		return
 	}
+	defer utils.IgnoreError(f.Close)
 
 	if contentType != "" {
 		w.Header().Set("Content-Type", contentType)
 	}
 
-	defer utils.IgnoreError(f.Close)
 	serveContent(w, r, f.Name(), f.modTime, f)
 }
 
@@ -391,6 +390,14 @@ func (h *httpHandler) openOfflineBlob(ctx context.Context, blobName string) (*vu
 	return &vulDefFile{snap.File, modTime, snap.Close}, nil
 }
 
+type errNotExist struct {
+	error
+}
+
+func (e errNotExist) Is(target error) bool {
+	return target == fs.ErrNotExist
+}
+
 // openOnlineDefinitions gets desired "online" file, which is pulled and managed
 // by the updater.
 func (h *httpHandler) openOnlineDefinitions(t updaterType, opts openOpts) (*vulDefFile, error) {
@@ -406,7 +413,7 @@ func (h *httpHandler) openOnlineDefinitions(t updaterType, opts openOpts) (*vulD
 		return nil, err
 	}
 	if online == nil {
-		return nil, fmt.Errorf("scanner %s file %s not found", t, opts.urlPath)
+		return nil, errNotExist{fmt.Errorf("scanner %s file %s not found", t, opts.urlPath)}
 	}
 	log.Debugf("Online data %s file %s is available: %s", t, opts.urlPath, online.Name())
 
@@ -474,6 +481,11 @@ func (h *httpHandler) getUpdater(t updaterType, urlPath string) (*requestedUpdat
 }
 
 func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
+	if r.Body == nil {
+		writeErrorBadPOSTRequest(w)
+		return
+	}
+
 	// Swap will set h.uploadInProgress to true and return the previous value.
 	// If it was previously true, then there is already an upload in progress,
 	// so we should abort the operation.
@@ -513,32 +525,44 @@ func (h *httpHandler) validateV4DefsVersion(zipPath string) error {
 	}
 	defer utils.IgnoreError(zipR.Close)
 
-	for _, zipF := range zipR.File {
-		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			defs, size, err := h.openFromArchive(zipPath, zipF.Name)
-			if err != nil {
-				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
-			}
-			defer utils.IgnoreError(defs.Close)
-			// Use readFromArchive, as the defs file was already closed via openFromArchive.
-			mf, err := h.readFromArchive(defs, size, scannerV4ManifestFile)
-			if err != nil {
-				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
-			}
-			defer utils.IgnoreError(mf.Close)
-			offlineV, err := readV4ManifestVersion(mf)
-			if err != nil {
-				return errors.Wrap(err, "couldn't get v4 offline defs version")
-			}
-			v := minorVersionPattern.FindString(version.GetMainVersion())
-			if offlineV != "dev" && offlineV != v {
-				msg := fmt.Sprintf("failed to upload offline file bundle, uploaded file is version: %s and system version is: %s; "+
-					"please upload an offline bundle version: %s, consider using command roxctl scanner download-db", offlineV, version.GetMainVersion(), v)
-				log.Errorf(msg)
-				return errors.New(msg)
-			}
+	validate := func(zipF *zip.File) error {
+		// Extract the Scanner V4 file out of the ZIP.
+		defs, size, err := h.openFromArchive(zipPath, zipF.Name)
+		if err != nil {
+			return errors.Wrap(err, "opening Scanner V4 definitions")
 		}
+		defer utils.IgnoreError(defs.Close)
+		// Extract the manifest file out of the extracted Scanner V4 defs file.
+		// Use readFromArchive, as the defs file was already closed via openFromArchive.
+		mf, err := h.readFromArchive(defs, size, scannerV4ManifestFile)
+		if err != nil {
+			return errors.Wrap(err, "opening Scanner V4 definitions manifest")
+		}
+		defer utils.IgnoreError(mf.Close)
+		offlineV, err := readV4ManifestVersion(mf)
+		if err != nil {
+			return errors.Wrap(err, "reading v4 offline definitions version")
+		}
+		v := minorVersionPattern.FindString(version.GetMainVersion())
+		if offlineV != "dev" && offlineV != v {
+			msg := fmt.Sprintf("failed to upload offline file bundle, uploaded file is version: %s and system version is: %s; "+
+				"please upload an offline bundle version: %s, consider using command roxctl scanner download-db", offlineV, version.GetMainVersion(), v)
+			log.Error(msg)
+			return errors.New(msg)
+		}
+		return nil
 	}
+
+	// Search for the Scanner V4 related file.
+	// It will have a specific prefix, but the full name is unknown.
+	for _, zipF := range zipR.File {
+		if !strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
+			continue
+		}
+		// TODO: Validate there is exactly one of these files?
+		return validate(zipF)
+	}
+
 	return nil
 }
 
@@ -553,12 +577,13 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 	// scanner-defs.zip contains data required by Scanner V2.
 	// scanner-v4-defs-*.zip contains data required by Scanner v4.
 	// In the future, we may decide to support other files (like we have in the past), which is why we
-	// expect this ZIP of a single ZIP.
+	// loop through this ZIP of ZIPs.
 	for _, zipF := range zipR.File {
 		if zipF.Name == scannerV2DefsFile {
 			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV2DefsBlobName); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
 			}
+			log.Debugf("Successfully processed file: %s", zipF.Name)
 			count++
 			continue
 		}
@@ -568,23 +593,25 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 			}
 			log.Debugf("Successfully processed file: %s", zipF.Name)
 			count++
+			continue
 		}
 		// Ignore any other files which may be in the ZIP.
 	}
+	// Just do a simple check for at least one valid file.
+	// Anything stricter may come with incompatibilities.
 	if count > 0 {
 		return nil
 	}
-	return errors.New("scanner defs file not found in upload zip; wrong zip uploaded?")
+	return errors.New("scanner defs file(s) not found in upload zip: incorrect zip?")
 }
 
 func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File, blobName string) error {
 	r, err := zipF.Open()
 	if err != nil {
-		return errors.Wrap(err, "opening ZIP reader")
+		return errors.Wrap(err, "opening compressed file")
 	}
 	defer utils.IgnoreError(r.Close)
 
-	// POST requests only update the offline feed.
 	b := &storage.Blob{
 		Name:         blobName,
 		LastUpdated:  protocompat.TimestampNow(),
@@ -705,6 +732,11 @@ func writeErrorNotFound(w http.ResponseWriter) {
 func writeErrorBadRequest(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusBadRequest)
 	_, _ = w.Write([]byte("at least one of file or uuid must be specified"))
+}
+
+func writeErrorBadPOSTRequest(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusBadRequest)
+	_, _ = w.Write([]byte("request missing body"))
 }
 
 func writeErrorForFile(w http.ResponseWriter, err error, path string) {
