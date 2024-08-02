@@ -204,7 +204,7 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
 		}
-		metrics.SetGRPCLastMessageSizeReceived(getSensorMessageTypeString(msg), float64(msg.Size()))
+		metrics.SetGRPCLastMessageSizeReceived(getSensorMessageTypeString(msg), float64(msg.SizeVT()))
 		c.multiplexedPush(ctx, msg, queues)
 	}
 }
@@ -805,7 +805,7 @@ func (c *sensorConnection) sendDeduperState(server central.SensorService_Communi
 		},
 	}}
 
-	log.Infof("Sending %d hashes (Size=%d), current chunk: %d, total: %d", len(payload), deduperMessage.Size(), current, total)
+	log.Infof("Sending %d hashes (Size=%d), current chunk: %d, total: %d", len(payload), deduperMessage.SizeVT(), current, total)
 
 	err := server.Send(deduperMessage)
 	if err != nil {
