@@ -54,10 +54,7 @@ const workloadCveOverviewCvePath = getOverviewPagePath('Platform', {
     entityTab: 'CVE',
 });
 
-const searchFilterConfig = {
-    Cluster: clusterSearchFilterConfig,
-};
-
+const searchFilterConfig = [clusterSearchFilterConfig];
 function PlatformCvePage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);

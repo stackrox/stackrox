@@ -1,13 +1,13 @@
 import React from 'react';
-import pick from 'lodash/pick';
 
 import { FilterChip, FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 import { SearchFilter } from 'types/search';
 import { SetSearchFilter } from 'hooks/useURLSearch';
 import {
+    CompoundSearchFilterAttribute,
+    CompoundSearchFilterConfig,
+    CompoundSearchFilterEntity,
     OnSearchPayload,
-    SearchFilterAttribute,
-    SearchFilterConfig,
     SelectSearchFilterAttribute,
 } from '../types';
 
@@ -21,67 +21,45 @@ export const conditionMap = {
 
 export const conditions = Object.keys(conditionMap);
 
-export function getEntityConfig<T extends Record<string, SearchFilterConfig>>(
-    config: T,
-    entity: string
-): SearchFilterConfig | undefined {
-    const entityConfig = Object.values(config).find((entityConfig) => {
-        return entityConfig.displayName === entity;
+export function getEntity(
+    config: CompoundSearchFilterConfig,
+    entityName: string
+): CompoundSearchFilterEntity | undefined {
+    const entity = config.find((entity) => {
+        return entity.displayName === entityName;
     });
-    return entityConfig;
+    return entity;
 }
 
-export function getAttributeConfig<T extends Record<string, SearchFilterConfig>>(
-    config: T,
-    entity: string,
-    attribute: string
-): SearchFilterAttribute | undefined {
-    const entityConfig = getEntityConfig(config, entity);
-    if (entityConfig && entityConfig.attributes) {
-        return Object.values(entityConfig.attributes).find((attributeConfig) => {
-            return attributeConfig.displayName === attribute;
-        });
-    }
-    return undefined;
-}
-
-export function getEntities<T extends Record<string, SearchFilterConfig>>(config: T): (keyof T)[] {
-    const entities = Object.values(config).map((entityConfig) => {
-        const { displayName } = entityConfig;
-        return displayName;
+export function getAttribute(
+    config: CompoundSearchFilterConfig,
+    entityName: string,
+    attributeName: string
+): CompoundSearchFilterAttribute | undefined {
+    const entity = getEntity(config, entityName);
+    return entity?.attributes?.find((attribute) => {
+        return attribute.displayName === attributeName;
     });
-    return entities;
 }
 
-export function getDefaultEntity<T extends Record<string, SearchFilterConfig>>(config: T): keyof T {
-    const entities = getEntities(config);
-    return entities[0];
+export function getDefaultEntityName(config: CompoundSearchFilterConfig): string {
+    return config[0].displayName;
 }
 
-export function getEntityAttributes<T extends Record<string, SearchFilterConfig>>(
-    entity: string,
-    config: T
-): SearchFilterAttribute[] {
-    const entityConfig = getEntityConfig(config, entity);
-    if (entityConfig && entityConfig.attributes) {
-        const attributeValues = Object.values(entityConfig.attributes);
-        return attributeValues;
-    }
-    return [];
+export function getEntityAttributes(
+    config: CompoundSearchFilterConfig,
+    entityName: string
+): CompoundSearchFilterAttribute[] {
+    const entity = getEntity(config, entityName);
+    return entity?.attributes || [];
 }
 
-export function getDefaultAttribute<T extends Record<string, SearchFilterConfig>>(
-    entity: string,
-    config: T
+export function getDefaultAttributeName(
+    config: CompoundSearchFilterConfig,
+    entityName: string
 ): string | undefined {
-    const entityConfig = getEntityConfig(config, entity);
-    if (entityConfig && entityConfig.attributes) {
-        const attributeNames = Object.values(entityConfig.attributes).map((attributeConfig) => {
-            return attributeConfig.displayName;
-        });
-        return attributeNames[0];
-    }
-    return undefined;
+    const attributes = getEntityAttributes(config, entityName);
+    return attributes[0].displayName;
 }
 
 export function ensureStringArray(value: unknown): string[] {
@@ -122,9 +100,9 @@ export function ensureConditionNumber(value: unknown): { condition: string; numb
 }
 
 export function isSelectType(
-    attributeObject: SearchFilterAttribute
-): attributeObject is SelectSearchFilterAttribute {
-    return attributeObject.inputType === 'select';
+    attribute: CompoundSearchFilterAttribute
+): attribute is SelectSearchFilterAttribute {
+    return attribute.inputType === 'select';
 }
 
 /**
@@ -134,22 +112,22 @@ export function isSelectType(
  * @param searchFilterConfig Config object for the search filter
  * @returns An array of FilterChipGroupDescriptor objects
  */
-export function makeFilterChipDescriptors<T extends object>(
-    searchFilterConfig: T
+export function makeFilterChipDescriptors(
+    config: CompoundSearchFilterConfig
 ): FilterChipGroupDescriptor[] {
-    const filterChipDescriptors = Object.values(searchFilterConfig).flatMap(
-        ({ attributes = {} }: SearchFilterConfig) =>
-            Object.values(attributes).map((attributeConfig) => {
+    const filterChipDescriptors = config.flatMap(
+        ({ attributes = [] }: CompoundSearchFilterEntity) =>
+            attributes.map((attribute) => {
                 const baseConfig = {
-                    displayName: attributeConfig.filterChipLabel,
-                    searchFilterName: attributeConfig.searchTerm,
+                    displayName: attribute.filterChipLabel,
+                    searchFilterName: attribute.searchTerm,
                 };
 
-                if (isSelectType(attributeConfig)) {
+                if (isSelectType(attribute)) {
                     return {
                         ...baseConfig,
                         render: (filter: string) => {
-                            const option = attributeConfig.inputProps.options.find(
+                            const option = attribute.inputProps.options.find(
                                 (option) => option.value === filter
                             );
                             return <FilterChip name={option?.label || 'N/A'} />;
@@ -184,10 +162,3 @@ export const onURLSearch = (
         [category]: newSelection,
     });
 };
-
-export function pickAttributes<T extends Record<string, SearchFilterAttribute>>(
-    attrs: T,
-    keys: string[]
-) {
-    return pick(attrs, keys);
-}

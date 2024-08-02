@@ -1,16 +1,16 @@
-import { SearchCategory } from 'services/SearchService';
 import { clusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
 import { profileCheckAttributes } from 'Components/CompoundSearchFilter/attributes/profileCheck';
+import { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
 
-const profileCheckSearchFilterConfig = {
+const profileCheckSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Profile check',
-    searchCategory: 'COMPLIANCE' as SearchCategory,
+    searchCategory: 'COMPLIANCE',
     attributes: profileCheckAttributes,
 };
 
-const clusterSearchFilterConfig = {
+const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Cluster',
-    searchCategory: 'CLUSTERS' as SearchCategory,
+    searchCategory: 'CLUSTERS',
     attributes: clusterAttributes,
 };
 

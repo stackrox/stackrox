@@ -1,31 +1,33 @@
-// If you're adding a new attribute, make sure to add it to the "namespaceAttributes" object as well
+// If you're adding a new attribute, make sure to add it to "namespaceAttributes" as well
 
-export const ID = {
+import { CompoundSearchFilterAttribute } from '../types';
+
+export const ID: CompoundSearchFilterAttribute = {
     displayName: 'ID',
     filterChipLabel: 'Namespace ID',
     searchTerm: 'Namespace ID',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const Name = {
+export const Name: CompoundSearchFilterAttribute = {
     displayName: 'Name',
     filterChipLabel: 'Namespace name',
     searchTerm: 'Namespace',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const Label = {
+export const Label: CompoundSearchFilterAttribute = {
     displayName: 'Label',
     filterChipLabel: 'Namespace label',
     searchTerm: 'Namespace Label',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const Annotation = {
+export const Annotation: CompoundSearchFilterAttribute = {
     displayName: 'Annotation',
     filterChipLabel: 'Namespace annotation',
     searchTerm: 'Namespace Annotation',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const namespaceAttributes = { ID, Name, Label, Annotation } as const;
+export const namespaceAttributes = [ID, Name, Label, Annotation];

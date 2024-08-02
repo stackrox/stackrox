@@ -180,10 +180,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display Image attributes in the attribute selector', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            Deployment: deploymentSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig, deploymentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -202,10 +199,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display Deployment attributes in the attribute selector', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            Deployment: deploymentSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig, deploymentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -226,10 +220,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display the text input and correctly search for image tags', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            'Node component': nodeComponentSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig, nodeComponentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -254,10 +245,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display the select input and correctly search for image component source', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            'Image component': imageComponentSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig, imageComponentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -302,9 +290,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display the date-picker input and correctly search for image cve discovered time', () => {
-        const config = {
-            'Image CVE': imageCVESearchFilterConfig,
-        };
+        const config = [imageCVESearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -333,9 +319,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display the condition-number input and correctly search for image cvss', () => {
-        const config = {
-            'Image CVE': imageCVESearchFilterConfig,
-        };
+        const config = [imageCVESearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -411,9 +395,7 @@ describe(Cypress.spec.relative, () => {
     it('should display the autocomplete input and correctly search for image name', () => {
         mockAutocompleteResponse();
 
-        const config = {
-            Image: imageSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 

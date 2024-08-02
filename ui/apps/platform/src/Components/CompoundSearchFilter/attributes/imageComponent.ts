@@ -1,15 +1,16 @@
+// If you're adding a new attribute, make sure to add it to "imageComponentAttributes" as well
+
 import { sourceTypeLabels, sourceTypes } from 'types/image.proto';
+import { CompoundSearchFilterAttribute } from '../types';
 
-// If you're adding a new attribute, make sure to add it to the "imageComponentAttributes" object as well
-
-export const Name = {
+export const Name: CompoundSearchFilterAttribute = {
     displayName: 'Name',
     filterChipLabel: 'Image component name',
     searchTerm: 'Component',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const Source = {
+export const Source: CompoundSearchFilterAttribute = {
     displayName: 'Source',
     filterChipLabel: 'Image component source',
     searchTerm: 'Component Source',
@@ -19,13 +20,13 @@ export const Source = {
             return { label: sourceTypeLabels[sourceType], value: sourceType };
         }),
     },
-} as const;
+};
 
-export const Version = {
+export const Version: CompoundSearchFilterAttribute = {
     displayName: 'Version',
     filterChipLabel: 'Image component version',
     searchTerm: 'Component Version',
     inputType: 'text',
-} as const;
+};
 
-export const imageComponentAttributes = { Name, Source, Version } as const;
+export const imageComponentAttributes = [Name, Source, Version];

@@ -48,10 +48,7 @@ import ProfileClustersPage from './ProfileClustersPage';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
 
-const searchFilterConfig = {
-    'Profile check': profileCheckSearchFilterConfig,
-    Cluster: clusterSearchFilterConfig,
-};
+const searchFilterConfig = [profileCheckSearchFilterConfig, clusterSearchFilterConfig];
 
 function CoveragesPage() {
     const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(

@@ -102,11 +102,11 @@ const searchOptions: SearchOption[] = [
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
-const searchFilterConfig = {
-    Image: imageSearchFilterConfig,
-    'Image CVE': imageCVESearchFilterConfig,
-    'Image component': imageComponentSearchFilterConfig,
-};
+const searchFilterConfig = [
+    imageSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+];
 
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;

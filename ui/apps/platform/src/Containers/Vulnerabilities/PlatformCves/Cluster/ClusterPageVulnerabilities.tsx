@@ -33,9 +33,7 @@ import CVEsTable, { defaultSortOption, sortFields } from './CVEsTable';
 import PlatformCvesByStatusSummaryCard from './PlatformCvesByStatusSummaryCard';
 import PlatformCvesByTypeSummaryCard from './PlatformCvesByTypeSummaryCard';
 
-const searchFilterConfig = {
-    'Platform CVE': platformCVESearchFilterConfig,
-};
+const searchFilterConfig = [platformCVESearchFilterConfig];
 
 export type ClusterPageVulnerabilitiesProps = {
     clusterId: string;

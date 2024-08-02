@@ -54,10 +54,7 @@ import CVEsTable, {
 } from './CVEsTable';
 import { usePlatformCveEntityCounts } from './usePlatformCveEntityCounts';
 
-const searchFilterConfig = {
-    Cluster: clusterSearchFilterConfig,
-    CVE: platformCVESearchFilterConfig,
-};
+const searchFilterConfig = [clusterSearchFilterConfig, platformCVESearchFilterConfig];
 
 function PlatformCvesOverviewPage() {
     const apolloClient = useApolloClient();

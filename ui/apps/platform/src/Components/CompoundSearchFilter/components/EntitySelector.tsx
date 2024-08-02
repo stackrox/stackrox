@@ -1,7 +1,7 @@
 import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
-import { getEntities } from 'Components/CompoundSearchFilter/utils/utils';
+import { getEntity } from 'Components/CompoundSearchFilter/utils/utils';
 
 import SimpleSelect from './SimpleSelect';
 import { CompoundSearchFilterConfig } from '../types';
@@ -17,31 +17,28 @@ export type EntitySelectorProps = {
 };
 
 function EntitySelector({
-    selectedEntity,
+    selectedEntity = '',
     onChange,
     config,
     menuToggleClassName,
 }: EntitySelectorProps) {
-    const entities = getEntities(config);
+    const entity = getEntity(config, selectedEntity);
 
-    if (entities.length === 0) {
+    if (!entity) {
         return null;
     }
-
-    const displayName = selectedEntity ? config[selectedEntity]?.displayName : undefined;
 
     return (
         <SimpleSelect
             menuToggleClassName={menuToggleClassName}
-            value={displayName}
+            value={entity.displayName}
             onChange={onChange}
             ariaLabelMenu="compound search filter entity selector menu"
             ariaLabelToggle="compound search filter entity selector toggle"
         >
-            {entities.map((entity) => {
-                const displayName = config[entity]?.displayName;
+            {config.map(({ displayName }) => {
                 return (
-                    <SelectOption key={entity} value={entity}>
+                    <SelectOption key={displayName} value={displayName}>
                         {displayName}
                     </SelectOption>
                 );

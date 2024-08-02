@@ -44,9 +44,7 @@ import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
 import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
 
-const searchFilterConfig = {
-    'Profile check': profileCheckSearchFilterConfig,
-};
+const searchFilterConfig = [profileCheckSearchFilterConfig];
 
 function ClusterDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =

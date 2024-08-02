@@ -11,7 +11,7 @@ import {
 import { useParams } from 'react-router-dom';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -28,7 +28,6 @@ import { getTableUIState } from 'utils/getTableUIState';
 import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
 import { Name } from 'Components/CompoundSearchFilter/attributes/cluster';
-import { SearchCategory } from 'services/SearchService';
 import CheckDetailsHeader from './CheckDetailsHeader';
 import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
 import {
@@ -52,13 +51,13 @@ const tabContentIdForDetails = 'check-details-Details-tab-section';
 export const TAB_NAV_QUERY = 'detailsTab';
 const TAB_NAV_VALUES = [RESULTS_TAB, DETAILS_TAB] as const;
 
-const searchFilterConfig = {
-    Cluster: {
+const searchFilterConfig: CompoundSearchFilterConfig = [
+    {
         displayName: 'Cluster',
-        searchCategory: 'CLUSTERS' as SearchCategory,
-        attributes: { Name },
+        searchCategory: 'CLUSTERS',
+        attributes: [Name],
     },
-};
+];
 
 function CheckDetails() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =

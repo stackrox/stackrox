@@ -19,19 +19,15 @@ export type AttributeSelectorProps = {
 };
 
 function AttributeSelector({
-    selectedEntity,
-    selectedAttribute,
+    selectedEntity = '',
+    selectedAttribute = '',
     onChange,
     config,
     menuToggleClassName,
 }: AttributeSelectorProps) {
-    if (!selectedEntity) {
-        return null;
-    }
+    const entityAttributes = getEntityAttributes(config, selectedEntity);
 
-    const entityAttributes = getEntityAttributes(selectedEntity, config);
-
-    if (entityAttributes.length <= 1) {
+    if (entityAttributes.length === 0) {
         return null;
     }
 
@@ -43,10 +39,10 @@ function AttributeSelector({
             ariaLabelMenu="compound search filter attribute selector menu"
             ariaLabelToggle="compound search filter attribute selector toggle"
         >
-            {entityAttributes.map((attribute) => {
+            {entityAttributes.map(({ displayName }) => {
                 return (
-                    <SelectOption key={attribute.displayName} value={attribute.displayName}>
-                        {attribute.displayName}
+                    <SelectOption key={displayName} value={displayName}>
+                        {displayName}
                     </SelectOption>
                 );
             })}

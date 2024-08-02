@@ -99,10 +99,7 @@ const searchOptions: SearchOption[] = [
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
-const searchFilterConfig = {
-    'Image CVE': imageCVESearchFilterConfig,
-    'Image component': imageComponentSearchFilterConfig,
-};
+const searchFilterConfig = [imageCVESearchFilterConfig, imageComponentSearchFilterConfig];
 
 export type ImagePageVulnerabilitiesProps = {
     imageId: string;

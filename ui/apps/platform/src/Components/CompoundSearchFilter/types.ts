@@ -5,7 +5,7 @@ import { SearchCategory } from 'services/SearchService';
 
 export type InputType = 'autocomplete' | 'text' | 'date-picker' | 'condition-number' | 'select';
 
-export type BaseSearchFilterAttribute = {
+type BaseSearchFilterAttribute = {
     displayName: string;
     filterChipLabel: string;
     searchTerm: string;
@@ -19,15 +19,15 @@ export interface SelectSearchFilterAttribute extends BaseSearchFilterAttribute {
     };
 }
 
-export type SearchFilterAttribute = BaseSearchFilterAttribute | SelectSearchFilterAttribute;
+export type CompoundSearchFilterAttribute = BaseSearchFilterAttribute | SelectSearchFilterAttribute;
 
-export type SearchFilterConfig = {
+export type CompoundSearchFilterEntity = {
     displayName: string;
     searchCategory: SearchCategory;
-    attributes: Record<string, SearchFilterAttribute>;
+    attributes: CompoundSearchFilterAttribute[];
 };
 
-export type CompoundSearchFilterConfig = Record<string, SearchFilterConfig>;
+export type CompoundSearchFilterConfig = CompoundSearchFilterEntity[];
 
 // Misc
 

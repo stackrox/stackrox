@@ -55,12 +55,12 @@ import NodesTable, {
 } from './NodesTable';
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
 
-const searchFilterConfig = {
-    Node: nodeSearchFilterConfig,
-    CVE: nodeCVESearchFilterConfig,
-    'Node component': nodeComponentSearchFilterConfig,
-    Cluster: clusterSearchFilterConfig,
-};
+const searchFilterConfig = [
+    nodeSearchFilterConfig,
+    nodeCVESearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    clusterSearchFilterConfig,
+];
 
 function NodeCvesOverviewPage() {
     const apolloClient = useApolloClient();

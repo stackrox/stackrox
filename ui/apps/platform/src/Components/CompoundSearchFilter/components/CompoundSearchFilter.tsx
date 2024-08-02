@@ -3,7 +3,7 @@ import { Flex } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
 import { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
-import { ensureString, getDefaultAttribute, getDefaultEntity } from '../utils/utils';
+import { ensureString, getDefaultAttributeName, getDefaultEntityName } from '../utils/utils';
 
 import EntitySelector, { SelectedEntity } from './EntitySelector';
 import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
@@ -30,18 +30,18 @@ function CompoundSearchFilter({
         if (defaultEntity) {
             return defaultEntity;
         }
-        return getDefaultEntity(config);
+        return getDefaultEntityName(config);
     });
 
     const [selectedAttribute, setSelectedAttribute] = useState<SelectedAttribute>(() => {
         if (defaultAttribute) {
             return defaultAttribute;
         }
-        const defaultEntity = getDefaultEntity(config);
-        if (!defaultEntity) {
+        const defaultEntityName = getDefaultEntityName(config);
+        if (!defaultEntityName) {
             return undefined;
         }
-        return getDefaultAttribute(defaultEntity, config);
+        return getDefaultAttributeName(config, defaultEntityName);
     });
 
     const [inputValue, setInputValue] = useState<InputFieldValue>('');
@@ -69,9 +69,10 @@ function CompoundSearchFilter({
                 menuToggleClassName="pf-v5-u-flex-shrink-0"
                 selectedEntity={selectedEntity}
                 onChange={(value) => {
-                    setSelectedEntity(ensureString(value));
-                    const defaultAttribute = getDefaultAttribute(ensureString(value), config);
-                    setSelectedAttribute(defaultAttribute);
+                    const entityName = ensureString(value);
+                    const defaultAttributeName = getDefaultAttributeName(config, entityName);
+                    setSelectedEntity(entityName);
+                    setSelectedAttribute(defaultAttributeName);
                     setInputValue('');
                 }}
                 config={config}

@@ -1,24 +1,26 @@
-// If you're adding a new attribute, make sure to add it to the "imageCVEAttributes" object as well
+// If you're adding a new attribute, make sure to add it to "imageCVEAttributes" as well
 
-export const Name = {
+import { CompoundSearchFilterAttribute } from '../types';
+
+export const Name: CompoundSearchFilterAttribute = {
     displayName: 'Name',
     filterChipLabel: 'Image CVE',
     searchTerm: 'CVE',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const DiscoveredTime = {
+export const DiscoveredTime: CompoundSearchFilterAttribute = {
     displayName: 'Discovered time',
     filterChipLabel: 'Image CVE discovered time',
     searchTerm: 'CVE Created Time',
     inputType: 'date-picker',
-} as const;
+};
 
-export const CVSS = {
+export const CVSS: CompoundSearchFilterAttribute = {
     displayName: 'CVSS',
     filterChipLabel: 'CVSS',
     searchTerm: 'CVSS',
     inputType: 'condition-number',
-} as const;
+};
 
-export const imageCVEAttributes = { Name, DiscoveredTime, CVSS } as const;
+export const imageCVEAttributes = [Name, DiscoveredTime, CVSS];

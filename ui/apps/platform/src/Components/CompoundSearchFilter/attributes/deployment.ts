@@ -1,31 +1,33 @@
-// If you're adding a new attribute, make sure to add it to the "deploymentAttributes" object as well
+// If you're adding a new attribute, make sure to add it to "deploymentAttributes" as well
 
-export const ID = {
+import { CompoundSearchFilterAttribute } from '../types';
+
+export const ID: CompoundSearchFilterAttribute = {
     displayName: 'ID',
     filterChipLabel: 'Deployment ID',
     searchTerm: 'Deployment ID',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const Name = {
+export const Name: CompoundSearchFilterAttribute = {
     displayName: 'Name',
     filterChipLabel: 'Deployment name',
     searchTerm: 'Deployment',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const Label = {
+export const Label: CompoundSearchFilterAttribute = {
     displayName: 'Label',
     filterChipLabel: 'Deployment label',
     searchTerm: 'Deployment Label',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const Annotation = {
+export const Annotation: CompoundSearchFilterAttribute = {
     displayName: 'Annotation',
     filterChipLabel: 'Deployment annotation',
     searchTerm: 'Deployment Annotation',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const deploymentAttributes = { ID, Name, Label, Annotation } as const;
+export const deploymentAttributes = [ID, Name, Label, Annotation];

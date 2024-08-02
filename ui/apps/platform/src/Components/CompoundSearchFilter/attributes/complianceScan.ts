@@ -1,10 +1,12 @@
-// If you're adding a new attribute, make sure to add it to the "complianceScanAttributes" object as well
+// If you're adding a new attribute, make sure to add it to "complianceScanAttributes" as well
 
-export const ConfigID = {
+import { CompoundSearchFilterAttribute } from '../types';
+
+export const ConfigID: CompoundSearchFilterAttribute = {
     displayName: 'Config ID',
     filterChipLabel: 'Compliance scan config ID',
     searchTerm: 'Compliance Scan Config Id',
     inputType: 'text',
-} as const;
+};
 
-export const complianceScanAttributes = { ConfigID } as const;
+export const complianceScanAttributes = [ConfigID];

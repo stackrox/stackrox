@@ -1,4 +1,4 @@
-import { SearchCategory } from 'services/SearchService';
+import { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
 import { clusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
 import { deploymentAttributes } from 'Components/CompoundSearchFilter/attributes/deployment';
 import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
@@ -10,63 +10,63 @@ import { nodeCVEAttributes } from 'Components/CompoundSearchFilter/attributes/no
 import { nodeComponentAttributes } from 'Components/CompoundSearchFilter/attributes/nodeComponent';
 import { platformCVEAttributes } from 'Components/CompoundSearchFilter/attributes/platformCVE';
 
-const nodeSearchFilterConfig = {
+const nodeSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Node',
-    searchCategory: 'NODES' as SearchCategory,
+    searchCategory: 'NODES',
     attributes: nodeAttributes,
 };
 
-const nodeCVESearchFilterConfig = {
+const nodeCVESearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'CVE',
-    searchCategory: 'NODE_VULNERABILITIES' as SearchCategory,
+    searchCategory: 'NODE_VULNERABILITIES',
     attributes: nodeCVEAttributes,
 };
 
-const nodeComponentSearchFilterConfig = {
+const nodeComponentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Node component',
-    searchCategory: 'NODE_COMPONENTS' as SearchCategory,
+    searchCategory: 'NODE_COMPONENTS',
     attributes: nodeComponentAttributes,
 };
 
-const imageSearchFilterConfig = {
+const imageSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Image',
-    searchCategory: 'IMAGES' as SearchCategory,
+    searchCategory: 'IMAGES',
     attributes: imageAttributes,
 };
 
-const imageCVESearchFilterConfig = {
+const imageCVESearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'CVE',
-    searchCategory: 'IMAGE_VULNERABILITIES' as SearchCategory,
+    searchCategory: 'IMAGE_VULNERABILITIES',
     attributes: imageCVEAttributes,
 };
 
-const imageComponentSearchFilterConfig = {
+const imageComponentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Image component',
-    searchCategory: 'IMAGE_COMPONENTS' as SearchCategory,
+    searchCategory: 'IMAGE_COMPONENTS',
     attributes: imageComponentAttributes,
 };
 
-const deploymentSearchFilterConfig = {
+const deploymentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Deployment',
-    searchCategory: 'DEPLOYMENTS' as SearchCategory,
+    searchCategory: 'DEPLOYMENTS',
     attributes: deploymentAttributes,
 };
 
-const namespaceSearchFilterConfig = {
+const namespaceSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Namespace',
-    searchCategory: 'NAMESPACES' as SearchCategory,
+    searchCategory: 'NAMESPACES',
     attributes: namespaceAttributes,
 };
 
-const clusterSearchFilterConfig = {
+const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Cluster',
-    searchCategory: 'CLUSTERS' as SearchCategory,
+    searchCategory: 'CLUSTERS',
     attributes: clusterAttributes,
 };
 
-const platformCVESearchFilterConfig = {
+const platformCVESearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'CVE',
-    searchCategory: 'CLUSTER_VULNERABILITIES' as SearchCategory,
+    searchCategory: 'CLUSTER_VULNERABILITIES',
     attributes: platformCVEAttributes,
 };
 

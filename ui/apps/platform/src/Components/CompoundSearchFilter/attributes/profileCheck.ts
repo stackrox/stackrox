@@ -1,10 +1,12 @@
-// If you're adding a new attribute, make sure to add it to the "profileCheckAttributes" object as well
+// If you're adding a new attribute, make sure to add it to "profileCheckAttributes" as well
 
-export const Name = {
+import { CompoundSearchFilterAttribute } from '../types';
+
+export const Name: CompoundSearchFilterAttribute = {
     displayName: 'Name',
     filterChipLabel: 'Profile check name',
     searchTerm: 'Compliance Check Name',
     inputType: 'text',
-} as const;
+};
 
-export const profileCheckAttributes = { Name } as const;
+export const profileCheckAttributes = [Name];

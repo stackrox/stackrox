@@ -12,8 +12,8 @@ import {
     ensureConditionNumber,
     ensureString,
     ensureStringArray,
-    getAttributeConfig,
-    getEntityConfig,
+    getAttribute,
+    getEntity,
     isSelectType,
 } from '../utils/utils';
 
@@ -70,15 +70,15 @@ function CompoundSearchFilterInputField({
         return null;
     }
 
-    const entityObject = getEntityConfig(config, selectedEntity);
-    const attributeObject = getAttributeConfig(config, selectedEntity, selectedAttribute);
+    const entity = getEntity(config, selectedEntity);
+    const attribute = getAttribute(config, selectedEntity, selectedAttribute);
 
-    if (!attributeObject) {
+    if (!attribute) {
         return null;
     }
 
-    if (attributeObject.inputType === 'text') {
-        const textLabel = `Filter results by ${attributeObject.filterChipLabel}`;
+    if (attribute.inputType === 'text') {
+        const textLabel = `Filter results by ${attribute.filterChipLabel}`;
         return (
             <SearchInput
                 aria-label={textLabel}
@@ -88,7 +88,7 @@ function CompoundSearchFilterInputField({
                 onSearch={(_event, _value) => {
                     onSearch({
                         action: 'ADD',
-                        category: attributeObject.searchTerm,
+                        category: attribute.searchTerm,
                         value: _value,
                     });
                     onChange('');
@@ -98,7 +98,7 @@ function CompoundSearchFilterInputField({
             />
         );
     }
-    if (attributeObject.inputType === 'date-picker') {
+    if (attribute.inputType === 'date-picker') {
         const dateValue = ensureString(value);
 
         return (
@@ -122,7 +122,7 @@ function CompoundSearchFilterInputField({
                         if (!Number.isNaN(date.getTime())) {
                             onSearch({
                                 action: 'ADD',
-                                category: attributeObject.searchTerm,
+                                category: attribute.searchTerm,
                                 value: dateValue,
                             });
                             onChange('');
@@ -134,7 +134,7 @@ function CompoundSearchFilterInputField({
             </Flex>
         );
     }
-    if (attributeObject.inputType === 'condition-number') {
+    if (attribute.inputType === 'condition-number') {
         return (
             <ConditionNumber
                 value={ensureConditionNumber(value)}
@@ -146,20 +146,16 @@ function CompoundSearchFilterInputField({
                     onChange(newValue);
                     onSearch({
                         action: 'ADD',
-                        category: attributeObject.searchTerm,
+                        category: attribute.searchTerm,
                         value: `${conditionMap[condition]}${number}`,
                     });
                 }}
             />
         );
     }
-    if (
-        entityObject &&
-        entityObject.searchCategory &&
-        attributeObject.inputType === 'autocomplete'
-    ) {
-        const { searchCategory } = entityObject;
-        const { searchTerm, filterChipLabel } = attributeObject;
+    if (entity && entity.searchCategory && attribute.inputType === 'autocomplete') {
+        const { searchCategory } = entity;
+        const { searchTerm, filterChipLabel } = attribute;
         const textLabel = `Filter results by ${filterChipLabel}`;
         return (
             <SearchFilterAutocomplete
@@ -172,7 +168,7 @@ function CompoundSearchFilterInputField({
                 onSearch={(newValue) => {
                     onSearch({
                         action: 'ADD',
-                        category: attributeObject.searchTerm,
+                        category: attribute.searchTerm,
                         value: newValue,
                     });
                     onChange('');
@@ -183,10 +179,10 @@ function CompoundSearchFilterInputField({
             />
         );
     }
-    if (isSelectType(attributeObject)) {
-        const attributeLabel = attributeObject.displayName;
-        const selectOptions = attributeObject.inputProps.options;
-        const { searchTerm } = attributeObject;
+    if (isSelectType(attribute)) {
+        const attributeLabel = attribute.displayName;
+        const selectOptions = attribute.inputProps.options;
+        const { searchTerm } = attribute;
         const selection = ensureStringArray(searchFilter?.[searchTerm]);
 
         return (
@@ -196,7 +192,7 @@ function CompoundSearchFilterInputField({
                     onChange(value);
                     onSearch({
                         action: checked ? 'ADD' : 'REMOVE',
-                        category: attributeObject.searchTerm,
+                        category: attribute.searchTerm,
                         value: _value,
                     });
                 }}

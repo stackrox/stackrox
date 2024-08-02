@@ -1,38 +1,40 @@
-// If you're adding a new attribute, make sure to add it to the "nodeAttributes" object as well
+// If you're adding a new attribute, make sure to add it to "nodeAttributes" as well
 
-export const Name = {
+import { CompoundSearchFilterAttribute } from '../types';
+
+export const Name: CompoundSearchFilterAttribute = {
     displayName: 'Name',
     filterChipLabel: 'Node name',
     searchTerm: 'Node',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const OperatingSystem = {
+export const OperatingSystem: CompoundSearchFilterAttribute = {
     displayName: 'Operating system',
     filterChipLabel: 'Node operating system',
     searchTerm: 'Operating System',
     inputType: 'text',
-} as const;
+};
 
-export const Label = {
+export const Label: CompoundSearchFilterAttribute = {
     displayName: 'Label',
     filterChipLabel: 'Node label',
     searchTerm: 'Node Label',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const Annotation = {
+export const Annotation: CompoundSearchFilterAttribute = {
     displayName: 'Annotation',
     filterChipLabel: 'Node annotation',
     searchTerm: 'Node Annotation',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const ScanTime = {
+export const ScanTime: CompoundSearchFilterAttribute = {
     displayName: 'Scan time',
     filterChipLabel: 'Node scan time',
     searchTerm: 'Node Scan Time',
     inputType: 'date-picker',
-} as const;
+};
 
-export const nodeAttributes = { Name, OperatingSystem, Label, Annotation, ScanTime } as const;
+export const nodeAttributes = [Name, OperatingSystem, Label, Annotation, ScanTime];

@@ -88,10 +88,7 @@ const defaultSearchFilters = {
     'Vulnerability State': 'OBSERVED',
 };
 
-const searchFilterConfig = {
-    Namespace: namespaceSearchFilterConfig,
-    Cluster: clusterSearchFilterConfig,
-};
+const searchFilterConfig = [namespaceSearchFilterConfig, clusterSearchFilterConfig];
 
 const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 

@@ -146,14 +146,14 @@ function getSearchFilterEntityByTab(
     }
 }
 
-const searchFilterConfig = {
-    Image: imageSearchFilterConfig,
-    CVE: imageCVESearchFilterConfig,
-    'Image Component': imageComponentSearchFilterConfig,
-    Deployment: deploymentSearchFilterConfig,
-    Namespace: namespaceSearchFilterConfig,
-    Cluster: clusterSearchFilterConfig,
-};
+const searchFilterConfig = [
+    imageSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
+];
 
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();

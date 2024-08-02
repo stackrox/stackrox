@@ -1,27 +1,29 @@
-// If you're adding a new attribute, make sure to add it to the "platformCVEAttributes" object as well
+// If you're adding a new attribute, make sure to add it to "platformCVEAttributes" as well
 
-export const Name = {
+import { CompoundSearchFilterAttribute } from '../types';
+
+export const Name: CompoundSearchFilterAttribute = {
     displayName: 'Name',
     filterChipLabel: 'Platform CVE',
     searchTerm: 'CVE',
     inputType: 'autocomplete',
-} as const;
+};
 
-export const DiscoveredTime = {
+export const DiscoveredTime: CompoundSearchFilterAttribute = {
     displayName: 'Discovered time',
     filterChipLabel: 'CVE discovered time',
     searchTerm: 'CVE Created Time',
     inputType: 'date-picker',
-} as const;
+};
 
-export const CVSS = {
+export const CVSS: CompoundSearchFilterAttribute = {
     displayName: 'CVSS',
     filterChipLabel: 'CVE CVSS',
     searchTerm: 'CVSS',
     inputType: 'condition-number',
-} as const;
+};
 
-export const Type = {
+export const Type: CompoundSearchFilterAttribute = {
     displayName: 'Type',
     filterChipLabel: 'CVE type',
     searchTerm: 'CVE Type',
@@ -33,6 +35,6 @@ export const Type = {
             { label: 'Openshift CVE', value: 'OPENSHIFT_CVE' },
         ],
     },
-} as const;
+};
 
-export const platformCVEAttributes = { Name, DiscoveredTime, CVSS, Type } as const;
+export const platformCVEAttributes = [Name, DiscoveredTime, CVSS, Type];

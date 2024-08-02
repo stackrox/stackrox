@@ -41,10 +41,7 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { SummaryCard, SummaryCardLayout } from '../../components/SummaryCardLayout';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 
-const searchFilterConfig = {
-    'Node CVE': nodeCVESearchFilterConfig,
-    'Node component': nodeComponentSearchFilterConfig,
-};
+const searchFilterConfig = [nodeCVESearchFilterConfig, nodeComponentSearchFilterConfig];
 
 export type NodePageVulnerabilitiesProps = {
     nodeId: string;
