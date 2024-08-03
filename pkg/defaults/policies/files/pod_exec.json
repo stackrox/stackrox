@@ -47,6 +47,15 @@
           "namespace": "openshift-etcd"
         }
       }
+      },
+      {
+      "name": "Don't alert on deployment workspace\\w{16} in namespace openshift-terminal",
+      "deployment": {
+        "name": "workspace\\w{16}",
+        "scope": {
+          "namespace": "openshift-terminal"
+        }
+      }
     }
   ],
   "severity": "HIGH_SEVERITY",
