@@ -970,6 +970,11 @@
                     "value": "true"
                   }
                 ]
+              },
+              {
+                "id": 9,
+                "name": "deployment_type",
+                "type": "string"
               }
             ],
             "reserved_ids": [
