@@ -63,7 +63,7 @@ func populateListAlertEntityInfoForDeployment(listAlert *storage.ListAlert, depl
 			Namespace:      deployment.GetNamespace(),
 			NamespaceId:    deployment.GetNamespaceId(),
 			Inactive:       deployment.GetInactive(),
-			DeploymentType: deployment.GetDeploymentType(),
+			DeploymentType: deployment.GetType(),
 		},
 	}
 	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
