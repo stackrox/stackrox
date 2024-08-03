@@ -31,6 +31,8 @@ import { fetchRolesAsArray, Role } from 'services/RolesService';
 import { MachineConfigType } from 'services/MachineAccessService';
 import { getAxiosErrorMessage } from '../../../../utils/responseErrorUtils';
 
+import './MachineAccessIntegrationForm.css';
+
 export type MachineAccessConfig = {
     id: string;
     type: MachineConfigType;
