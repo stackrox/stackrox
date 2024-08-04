@@ -5,25 +5,23 @@ package service
 import (
 	"context"
 	"testing"
-	"time"
 
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
-	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	datastore "github.com/stackrox/rox/central/processlisteningonport/datastore"
+	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
 	postgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/id"
 	"github.com/stackrox/rox/pkg/protoassert"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 func TestPLOPService(t *testing.T) {
@@ -132,90 +130,73 @@ var (
 		ClusterId:    fixtureconsts.Cluster1,
 		Namespace:    fixtureconsts.Namespace1,
 	}
-
-	closedPlopObject = storage.ProcessListeningOnPortFromSensor{
-		Port:           1234,
-		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodName1,
-			ContainerName:       "test_container1",
-			ProcessName:         "test_process1",
-			ProcessArgs:         "test_arguments1",
-			ProcessExecFilePath: "test_path1",
-		},
-		DeploymentId: fixtureconsts.Deployment1,
-		PodUid:       fixtureconsts.PodUID1,
-		ClusterId:    fixtureconsts.Cluster1,
-		Namespace:    fixtureconsts.Namespace1,
-	}
 )
 
 func (suite *ServiceTestSuite) addDeployments() {
-        deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
-        suite.Nil(err)
-        suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
-        suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
+	deploymentDS, err := deploymentStore.GetTestPostgresDataStore(suite.T(), suite.postgres.DB)
+	suite.Nil(err)
+	suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment1, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
+	suite.NoError(deploymentDS.UpsertDeployment(suite.hasAllCtx, &storage.Deployment{Id: fixtureconsts.Deployment2, Namespace: fixtureconsts.Namespace1, ClusterId: fixtureconsts.Cluster1}))
 }
 
 // TestPLOPAdd: Happy path for ProcessListeningOnPort, one PLOP object is added
 // with a correct process indicator reference and could be fetched later.
 func (suite *ServiceTestSuite) TestPLOPAdd() {
-        indicators := getIndicators()
+	indicators := getIndicators()
 
-        plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
+	plopObjects := []*storage.ProcessListeningOnPortFromSensor{&openPlopObject}
 
-        suite.addDeployments()
+	suite.addDeployments()
 
-        // Prepare indicators for FK
-        suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
-                suite.hasWriteCtx, indicators...))
+	// Prepare indicators for FK
+	suite.NoError(suite.indicatorDataStore.AddProcessIndicators(
+		suite.hasWriteCtx, indicators...))
 
-        // Add PLOP referencing those indicators
-        suite.NoError(suite.datastore.AddProcessListeningOnPort(
-                suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
+	// Add PLOP referencing those indicators
+	suite.NoError(suite.datastore.AddProcessListeningOnPort(
+		suite.hasWriteCtx, fixtureconsts.Cluster1, plopObjects...))
 
-        // Fetch inserted PLOP back
+	// Fetch inserted PLOP back
 	req := v1.GetProcessesListeningOnPortsRequest{DeploymentId: fixtureconsts.Deployment1}
-        newPlops, err := suite.service.GetListeningEndpoints(
-                suite.hasReadCtx, &req)
-        suite.NoError(err)
+	newPlops, err := suite.service.GetListeningEndpoints(
+		suite.hasReadCtx, &req)
+	suite.NoError(err)
 
-        suite.Len(newPlops.ListeningEndpoints, 1)
-        protoassert.Equal(suite.T(), newPlops.ListeningEndpoints[0], &storage.ProcessListeningOnPort{
-                ContainerName: "test_container1",
-                PodId:         fixtureconsts.PodName1,
-                PodUid:        fixtureconsts.PodUID1,
-                DeploymentId:  fixtureconsts.Deployment1,
-                ClusterId:     fixtureconsts.Cluster1,
-                Namespace:     fixtureconsts.Namespace1,
-                Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-                        Port:     1234,
-                        Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-                },
-                Signal: &storage.ProcessSignal{
-                        Name:         "test_process1",
-                        Args:         "test_arguments1",
-                        ExecFilePath: "test_path1",
-                },
-        })
-        // Check a deployment that doesn't exist
+	suite.Len(newPlops.ListeningEndpoints, 1)
+	protoassert.Equal(suite.T(), newPlops.ListeningEndpoints[0], &storage.ProcessListeningOnPort{
+		ContainerName: "test_container1",
+		PodId:         fixtureconsts.PodName1,
+		PodUid:        fixtureconsts.PodUID1,
+		DeploymentId:  fixtureconsts.Deployment1,
+		ClusterId:     fixtureconsts.Cluster1,
+		Namespace:     fixtureconsts.Namespace1,
+		Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+			Port:     1234,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+		Signal: &storage.ProcessSignal{
+			Name:         "test_process1",
+			Args:         "test_arguments1",
+			ExecFilePath: "test_path1",
+		},
+	})
+	// Check a deployment that doesn't exist
 	req = v1.GetProcessesListeningOnPortsRequest{DeploymentId: fixtureconsts.Deployment3}
-        newPlops, err = suite.service.GetListeningEndpoints(
-                suite.hasReadCtx, &req)
-        suite.NoError(err)
+	newPlops, err = suite.service.GetListeningEndpoints(
+		suite.hasReadCtx, &req)
+	suite.NoError(err)
 
-        suite.Len(newPlops.ListeningEndpoints, 0)
+	suite.Len(newPlops.ListeningEndpoints, 0)
 
 	var empty *v1.Empty
-        plopCounts, err := suite.service.CountListeningEndpoints(suite.hasReadCtx, empty)
-        suite.NoError(err)
+	plopCounts, err := suite.service.CountListeningEndpoints(suite.hasReadCtx, empty)
+	suite.NoError(err)
 
-        expectedPlopCounts := map[string]int32{
-                fixtureconsts.Deployment1:        1,
-                fixtureconsts.Deployment2:        0,
-        }
-        suite.Equal(expectedPlopCounts, plopCounts.Counts)
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts.Counts)
 }
 
 // TestPLOPServiceSAC: Test various access scopes
@@ -234,68 +215,68 @@ func (suite *ServiceTestSuite) TestPLOPServiceSAC() {
 
 	suite.addDeployments()
 
-        cases := map[string]struct {
-                checker       sac.ScopeCheckerCore
-                expectAllowed bool
+	cases := map[string]struct {
+		checker            sac.ScopeCheckerCore
+		expectAllowed      bool
 		expectedPlopCounts map[string]int32
-        }{
-                "all access": {
-                        checker:       sac.AllowAllAccessScopeChecker(),
-                        expectAllowed: true,
-                        expectedPlopCounts: map[string]int32{
-                                fixtureconsts.Deployment1: 1,
-                                fixtureconsts.Deployment2: 0,
-                        },
-                },
+	}{
+		"all access": {
+			checker:       sac.AllowAllAccessScopeChecker(),
+			expectAllowed: true,
+			expectedPlopCounts: map[string]int32{
+				fixtureconsts.Deployment1: 1,
+				fixtureconsts.Deployment2: 0,
+			},
+		},
 		"read and write access": {
-                        checker: sac.AllowFixedScopes(
-                                sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-                                sac.ResourceScopeKeys(resources.DeploymentExtension),
-                                sac.ClusterScopeKeys(fixtureconsts.Cluster1),
-                                sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
-                        ),
-                        expectAllowed: true,
-                        expectedPlopCounts: map[string]int32{
-                                fixtureconsts.Deployment1: 1,
-                                fixtureconsts.Deployment2: 0,
-                        },
-                },
-                "access to wrong namespace": {
-                        checker: sac.AllowFixedScopes(
-                                sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-                                sac.ResourceScopeKeys(resources.DeploymentExtension),
-                                sac.ClusterScopeKeys(fixtureconsts.Cluster1),
-                                sac.NamespaceScopeKeys(fixtureconsts.Namespace2),
-                        ),
-                        expectAllowed:      false,
-                        expectedPlopCounts: map[string]int32{},
-                },
-                "access to wrong cluster": {
-                        checker: sac.AllowFixedScopes(
-                                sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-                                sac.ResourceScopeKeys(resources.DeploymentExtension),
-                                sac.ClusterScopeKeys(fixtureconsts.Cluster2),
-                                sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
-                        ),
-                        expectAllowed:      false,
-                        expectedPlopCounts: map[string]int32{},
-                },
-		                "cluster level access": {
-                        checker: sac.AllowFixedScopes(
-                                sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-                                sac.ResourceScopeKeys(resources.DeploymentExtension),
-                                sac.ClusterScopeKeys(fixtureconsts.Cluster1),
-                        ),
-                        expectAllowed: true,
-                        expectedPlopCounts: map[string]int32{
-                                fixtureconsts.Deployment1: 1,
-                                fixtureconsts.Deployment2: 0,
-                        },
-                },
+			checker: sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
+			),
+			expectAllowed: true,
+			expectedPlopCounts: map[string]int32{
+				fixtureconsts.Deployment1: 1,
+				fixtureconsts.Deployment2: 0,
+			},
+		},
+		"access to wrong namespace": {
+			checker: sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace2),
+			),
+			expectAllowed:      false,
+			expectedPlopCounts: map[string]int32{},
+		},
+		"access to wrong cluster": {
+			checker: sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster2),
+				sac.NamespaceScopeKeys(fixtureconsts.Namespace1),
+			),
+			expectAllowed:      false,
+			expectedPlopCounts: map[string]int32{},
+		},
+		"cluster level access": {
+			checker: sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+				sac.ClusterScopeKeys(fixtureconsts.Cluster1),
+			),
+			expectAllowed: true,
+			expectedPlopCounts: map[string]int32{
+				fixtureconsts.Deployment1: 1,
+				fixtureconsts.Deployment2: 0,
+			},
+		},
 		"no access": {
-                        checker:       sac.DenyAllAccessScopeChecker(),
-			expectAllowed:	false,
-                        expectedPlopCounts: map[string]int32{},
+			checker:            sac.DenyAllAccessScopeChecker(),
+			expectAllowed:      false,
+			expectedPlopCounts: map[string]int32{},
 		},
 	}
 
@@ -313,27 +294,27 @@ func (suite *ServiceTestSuite) TestPLOPServiceSAC() {
 				suite.NoError(err)
 				suite.NoError(countErr)
 				suite.Len(processListeningOnPortsResponse.ListeningEndpoints, 1)
-                                protoassert.Equal(suite.T(), processListeningOnPortsResponse.ListeningEndpoints[0], &storage.ProcessListeningOnPort{
-                                        ContainerName: "test_container1",
-                                        PodId:         fixtureconsts.PodName1,
-                                        PodUid:        fixtureconsts.PodUID1,
-                                        DeploymentId:  fixtureconsts.Deployment1,
-                                        ClusterId:     fixtureconsts.Cluster1,
-                                        Namespace:     fixtureconsts.Namespace1,
-                                        Endpoint: &storage.ProcessListeningOnPort_Endpoint{
-                                                Port:     1234,
-                                                Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
-                                        },
-                                        Signal: &storage.ProcessSignal{
-                                                Name:         "test_process1",
-                                                Args:         "test_arguments1",
-                                                ExecFilePath: "test_path1",
-                                        },
-                                })
+				protoassert.Equal(suite.T(), processListeningOnPortsResponse.ListeningEndpoints[0], &storage.ProcessListeningOnPort{
+					ContainerName: "test_container1",
+					PodId:         fixtureconsts.PodName1,
+					PodUid:        fixtureconsts.PodUID1,
+					DeploymentId:  fixtureconsts.Deployment1,
+					ClusterId:     fixtureconsts.Cluster1,
+					Namespace:     fixtureconsts.Namespace1,
+					Endpoint: &storage.ProcessListeningOnPort_Endpoint{
+						Port:     1234,
+						Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+					},
+					Signal: &storage.ProcessSignal{
+						Name:         "test_process1",
+						Args:         "test_arguments1",
+						ExecFilePath: "test_path1",
+					},
+				})
 			} else {
 				suite.ErrorIs(err, sac.ErrResourceAccessDenied)
 			}
 
 		})
-        }
+	}
 }

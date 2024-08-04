@@ -420,11 +420,10 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPSAC() {
 			},
 		},
 		"no access": {
-			ctx:           sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker()),
-                        expectAllowed:  false,
+			ctx:                sac.WithGlobalAccessScopeChecker(context.Background(), sac.DenyAllAccessScopeChecker()),
+			expectAllowed:      false,
 			expectedPlopCounts: map[string]int32{},
-                },
-
+		},
 	}
 
 	for name, c := range cases {
@@ -524,8 +523,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosed() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -600,8 +599,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenTwice() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -660,8 +659,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseTwice() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -745,8 +744,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPReopen() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -811,8 +810,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPCloseSameTimestamp() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -869,8 +868,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedSameBatch() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -930,8 +929,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedWithoutActive() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -1011,8 +1010,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddNoIndicator() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -1063,8 +1062,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddClosedNoIndicator() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -1126,8 +1125,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenNoIndicatorThenClose() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -1183,8 +1182,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenAndClosedNoIndicator() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -1290,8 +1289,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddMultipleIndicators() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -1356,8 +1355,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatch() 
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -1421,8 +1420,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseThenCloseAndOpenSameBatch()
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -1543,8 +1542,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreClosed()
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -1660,8 +1659,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddCloseBatchOutOfOrderMoreOpen() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -1841,8 +1840,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPDeleteAndCreateDeployment() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        1,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 1,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -1914,8 +1913,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPNoProcessInformation() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -2019,8 +2018,8 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        2,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 2,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -2052,8 +2051,8 @@ func (suite *PLOPDataStoreTestSuite) TestRemovePlopsByPod() {
 	suite.NoError(err)
 
 	expectedPlopCounts = map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -2136,8 +2135,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -2193,8 +2192,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 	suite.NoError(err)
 
 	expectedPlopCounts = map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -2282,8 +2281,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -2304,8 +2303,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 	suite.NoError(err)
 
 	expectedPlopCounts = map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -2388,8 +2387,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatchWit
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -2492,8 +2491,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        0,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 0,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -2549,8 +2548,8 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 	suite.NoError(err)
 
 	expectedPlopCounts = map[string]int32{
-		fixtureconsts.Deployment1:        1,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 1,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
@@ -2675,8 +2674,8 @@ func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 	suite.NoError(err)
 
 	expectedPlopCounts := map[string]int32{
-		fixtureconsts.Deployment1:        54000,
-		fixtureconsts.Deployment2:        0,
+		fixtureconsts.Deployment1: 54000,
+		fixtureconsts.Deployment2: 0,
 	}
 	suite.Equal(expectedPlopCounts, plopCounts)
 
