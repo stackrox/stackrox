@@ -2132,6 +2132,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 		},
 	})
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Verify the state of the table
 	newPlopsFromDB := suite.getPlopsFromDB()
 
@@ -2179,6 +2188,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlank() {
 			ExecFilePath: "test_path1",
 		},
 	})
+
+	plopCounts, err = suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts = map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify the state of the table
 	newPlopsFromDB = suite.getPlopsFromDB()
@@ -2260,6 +2278,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 
 	suite.Len(newPlops, 0)
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	plopObjects = []*storage.ProcessListeningOnPortFromSensor{&plopWithPodUID}
 
 	// Add PLOP with PodUid
@@ -2272,6 +2299,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdatePodUidFromBlankClosed() {
 	suite.NoError(err)
 
 	suite.Len(newPlops, 0)
+
+	plopCounts, err = suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts = map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	newPlopsFromDB := suite.getPlopsFromDB()
 	suite.Len(newPlopsFromDB, 1)
@@ -2347,6 +2383,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPAddOpenThenCloseAndOpenSameBatchWit
 	// The plop is opened. Then in the batch it is closed and opened, so it is in
 	// its original open state.
 	suite.Len(newPlops, 1)
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify the state of the table after the test
 	newPlopsFromDB := suite.getPlopsFromDB()
@@ -2443,6 +2488,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 		},
 	})
 
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        0,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
+
 	// Verify the state of the table
 	newPlopsFromDB := suite.getPlopsFromDB()
 
@@ -2490,6 +2544,15 @@ func (suite *PLOPDataStoreTestSuite) TestPLOPUpdateClusterIdFromBlank() {
 			ExecFilePath: "test_path1",
 		},
 	})
+
+	plopCounts, err = suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts = map[string]int32{
+		fixtureconsts.Deployment1:        1,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 	// Verify the state of the table
 	newPlopsFromDB = suite.getPlopsFromDB()
@@ -2544,6 +2607,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 						ProcessExecFilePath: execFilePath,
 					},
 					DeploymentId: deployment,
+					Namespace:    fixtureconsts.Namespace1,
 					ClusterId:    fixtureconsts.Cluster1,
 				}
 				plopUDP := &storage.ProcessListeningOnPortFromSensor{
@@ -2558,6 +2622,7 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 						ProcessExecFilePath: execFilePath,
 					},
 					DeploymentId: deployment,
+					Namespace:    fixtureconsts.Namespace1,
 					ClusterId:    fixtureconsts.Cluster1,
 				}
 				plops[count] = plopTCP
@@ -2605,6 +2670,15 @@ func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 	for _, plop := range newPlops {
 		suite.Equal(plop.PodUid != "", true)
 	}
+
+	plopCounts, err := suite.datastore.CountProcessListeningOnPort(suite.hasReadCtx)
+	suite.NoError(err)
+
+	expectedPlopCounts := map[string]int32{
+		fixtureconsts.Deployment1:        54000,
+		fixtureconsts.Deployment2:        0,
+	}
+	suite.Equal(expectedPlopCounts, plopCounts)
 
 }
 
