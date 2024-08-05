@@ -54,7 +54,7 @@ func mainCmd() error {
 	sigC := make(chan os.Signal, 1)
 	signal.Notify(sigC, unix.SIGTERM, unix.SIGINT)
 
-	namespace := pods.GetPodNamespace(pods.ConsiderSATokenNamespace)
+	namespace := pods.GetPodNamespace()
 
 	if err := safe.RunE(func() error {
 		if err := configureCA(); err != nil {
