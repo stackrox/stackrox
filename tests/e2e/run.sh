@@ -235,7 +235,9 @@ run_proxy_tests() {
         "HTTP/2 proxy with TLS backends:14443"
         "HTTP/2 proxy with plain backends:15443"
     )
-
+    
+    export ROX_CA_CERT_FILE=""
+    export ROX_SERVER_NAME=""
     local failures=()
     for p in "${proxies[@]}"; do
         local name
@@ -266,13 +268,22 @@ run_proxy_tests() {
 
         info "Testing roxctl access through ${name}..."
         local endpoint="${server_name}:${port}"
+
+        if [[ "$plaintext" = "false" ]]; then
+            local central_cert
+            central_cert="$(mktemp -d)/central_cert.pem"
+            info "Fetching central certificate for ${name}..."
+            roxctl "${extra_args[@]}" -e "$endpoint" -p "$ROX_PASSWORD" \
+                central cert --insecure-skip-tls-verify 1>"$central_cert"
+            extra_args+=(--ca "$central_cert")
+        fi
+
         for endpoint_tgt in "${scheme}://${endpoint}" "${scheme}://${endpoint}/" "$endpoint"; do
         roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" central debug log >/dev/null || \
             failures+=("$p")
-
         if (( direct )); then
-            roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" central debug log &>/dev/null && \
-            failures+=("${p},force-http1")
+            roxctl "${extra_args[@]}" -e "${endpoint_tgt}" central debug log >/dev/null && \
+            failures+=("${p},direct-grpc")
         else
             roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" central debug log >/dev/null || \
             failures+=("${p},force-http1")
