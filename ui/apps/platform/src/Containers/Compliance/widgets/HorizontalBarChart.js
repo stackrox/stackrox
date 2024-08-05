@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import {
     FlexibleWidthXYPlot,
     XAxis,
@@ -25,41 +25,26 @@ const sortByYValue = (a, b) => {
     return 0;
 };
 
-class HorizontalBarChart extends Component {
-    static propTypes = {
-        data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-        containerProps: PropTypes.shape({}),
-        plotProps: PropTypes.shape({}),
-        seriesProps: PropTypes.shape({}),
-        valueFormat: PropTypes.func,
-        tickValues: PropTypes.arrayOf(PropTypes.number),
-        valueGradientColorStart: PropTypes.string,
-        valueGradientColorEnd: PropTypes.string,
-        minimal: PropTypes.bool,
-        history: PropTypes.object.isRequired,
-    };
+const HorizontalBarChart = ({
+    data,
+    containerProps = {},
+    plotProps = {},
+    seriesProps = {},
+    valueFormat = (x) => x,
+    tickValues = [0, 25, 50, 75, 100],
+    minimal = false,
+}) => {
+    const history = useHistory();
 
-    static defaultProps = {
-        valueFormat: (x) => x,
-        tickValues: [0, 25, 50, 75, 100],
-        containerProps: {},
-        plotProps: {},
-        seriesProps: {},
-        valueGradientColorStart: '#B3DCFF',
-        valueGradientColorEnd: '#BDF3FF',
-        minimal: false,
-    };
+    const showLabel = (value) => value >= 10;
 
-    showLabel = (value) => value >= 10;
-
-    getLabelData = () =>
-        this.props.data.sort(sortByYValue).map((item) => {
+    const getLabelData = () =>
+        data.sort(sortByYValue).map((item) => {
             let label = '';
             // This prevents overlap between the value label and the axis label
-            if (this.showLabel(item.x)) {
-                label = (this.props.valueFormat && this.props.valueFormat(item.x).toString()) || '';
+            if (showLabel(item.x)) {
+                label = (valueFormat && valueFormat(item.x).toString()) || '';
             }
-            const { minimal } = this.props;
             const val = {
                 x: item.x - 5,
                 y: item.y,
@@ -71,21 +56,20 @@ class HorizontalBarChart extends Component {
             return val;
         });
 
-    onValueClickHandler = (datum) => {
+    const onValueClickHandler = (datum) => {
         if (datum.link) {
-            this.props.history.push(datum.link);
+            history.push(datum.link);
         }
     };
 
-    getContainerProps = () => {
+    const getContainerProps = () => {
         const defaultContainerProps = {
             className: 'relative chart-container w-full horizontal-bar-responsive',
         };
-        return merge(defaultContainerProps, this.props.containerProps);
+        return merge(defaultContainerProps, containerProps);
     };
 
-    getPlotProps = () => {
-        const { minimal, data } = this.props;
+    const getPlotProps = () => {
         const sortedData = data.sort(sortByYValue);
         // This determines how far to push the bar graph to the right based on the longest axis label character's length
         const maxLength = sortedData.reduce((acc, curr) => Math.max(curr.y.length, acc), 0);
@@ -102,120 +86,121 @@ class HorizontalBarChart extends Component {
             margin: minimal ? minimalMargin : { top: 33.3, left: Math.ceil(maxLength * 7.5) },
             stackBy: 'x',
         };
-        return merge(defaultPlotProps, this.props.plotProps);
+        return merge(defaultPlotProps, plotProps);
     };
 
-    getSeriesProps = () => {
-        const { minimal } = this.props;
+    const getSeriesProps = () => {
         const defaultSeriesProps = {
             style: {
                 height: minimal ? 15 : 20,
                 rx: '2px',
-                cursor: `${this.props.minimal ? '' : 'pointer'}`,
+                cursor: `${minimal ? '' : 'pointer'}`,
             },
-            onValueMouseOver: this.onValueMouseOverHandler,
-            onValueMouseOut: this.onValueMouseOutHandler,
-            onValueClick: this.onValueClickHandler,
+            onValueMouseOver: null,
+            onValueMouseOut: null,
+            onValueClick: onValueClickHandler,
         };
-        return merge(defaultSeriesProps, this.props.seriesProps);
+        return merge(defaultSeriesProps, seriesProps);
     };
 
-    render() {
-        const { data, tickValues, valueFormat, minimal } = this.props;
-        const sortedData = data.sort(sortByYValue);
+    const sortedData = data.sort(sortByYValue);
 
-        // Generate y axis links
-        const axisLinks = sortedData.reduce((acc, curr) => {
-            if (curr.link) {
-                acc[curr.y] = curr.link;
-            }
-            return acc;
-        }, {});
+    // Generate y axis links
+    const axisLinks = sortedData.reduce((acc, curr) => {
+        if (curr.link) {
+            acc[curr.y] = curr.link;
+        }
+        return acc;
+    }, {});
 
-        const containerProps = this.getContainerProps();
-        const plotProps = this.getPlotProps();
-        const seriesProps = this.getSeriesProps();
+    const containerPropsMerged = getContainerProps();
+    const plotPropsMerged = getPlotProps();
+    const seriesPropsMerged = getSeriesProps();
 
-        function tickFormat(value) {
-            let inner = value;
-            if (axisLinks[value]) {
-                inner = (
-                    <Link
-                        style={{ fill: 'var(--pf-v5-global--link--Color)' }}
-                        className="text-sm"
-                        to={axisLinks[value]}
-                    >
-                        {value}
-                    </Link>
-                );
-            }
-
-            return <tspan>{inner}</tspan>;
+    function tickFormat(value) {
+        let inner = value;
+        if (axisLinks[value]) {
+            inner = (
+                <Link
+                    style={{ fill: 'var(--pf-v5-global--link--Color)' }}
+                    className="text-sm"
+                    to={axisLinks[value]}
+                >
+                    {value}
+                </Link>
+            );
         }
 
-        return (
-            <div {...containerProps}>
-                <FlexibleWidthXYPlot {...plotProps}>
-                    {/* Empty area bar background */}
-
-                    {!minimal && <VerticalGridLines tickValues={tickValues} />}
-
-                    {!minimal && (
-                        <XAxis
-                            orientation="top"
-                            tickSize={0}
-                            tickFormat={valueFormat}
-                            tickValues={tickValues}
-                        />
-                    )}
-
-                    {/* Empty Background */}
-                    <HorizontalBarSeries
-                        data={sortedData.map((item) => ({
-                            x: 0,
-                            x0: Math.ceil(sortedData[0].x / 5) * 5,
-                            y: item.y,
-                            link: item.link,
-                        }))}
-                        color="var(--pf-v5-global--palette--black-200)"
-                        style={{
-                            height: seriesProps.style.height,
-                            rx: '2',
-                            ry: '2',
-                            cursor: `${minimal ? '' : 'pointer'}`,
-                        }}
-                        onValueClick={this.onValueClickHandler}
-                    />
-
-                    {/* Values */}
-                    <HorizontalBarSeries
-                        data={sortedData.map((item) => ({ ...item, color: getColor(item.x) }))}
-                        {...seriesProps}
-                        colorType="literal"
-                    />
-                    <LabelSeries
-                        data={this.getLabelData()}
-                        className="text-xs pointer-events-none theme-light"
-                        labelAnchorY="no-change"
-                        labelAnchorX="end-alignment"
-                        style={{
-                            fill: '#ffffff',
-                            cursor: `${minimal ? '' : 'pointer'}`,
-                        }}
-                    />
-
-                    {!minimal && (
-                        <YAxis tickSize={0} top={26} className="text-xs" tickFormat={tickFormat} />
-                    )}
-                </FlexibleWidthXYPlot>
-            </div>
-        );
+        return <tspan>{inner}</tspan>;
     }
-}
 
-function HorizontalBarChartWrapper(props) {
-    const history = useHistory();
-    return <HorizontalBarChart {...props} history={history} />;
-}
+    return (
+        <div {...containerPropsMerged}>
+            <FlexibleWidthXYPlot {...plotPropsMerged}>
+                {/* Empty area bar background */}
 
-export default HorizontalBarChartWrapper;
+                {!minimal && <VerticalGridLines tickValues={tickValues} />}
+
+                {!minimal && (
+                    <XAxis
+                        orientation="top"
+                        tickSize={0}
+                        tickFormat={valueFormat}
+                        tickValues={tickValues}
+                    />
+                )}
+
+                {/* Empty Background */}
+                <HorizontalBarSeries
+                    data={sortedData.map((item) => ({
+                        x: 0,
+                        x0: Math.ceil(sortedData[0].x / 5) * 5,
+                        y: item.y,
+                        link: item.link,
+                    }))}
+                    color="var(--pf-v5-global--palette--black-200)"
+                    style={{
+                        height: seriesPropsMerged.style.height,
+                        rx: '2',
+                        ry: '2',
+                        cursor: `${minimal ? '' : 'pointer'}`,
+                    }}
+                    onValueClick={onValueClickHandler}
+                />
+
+                {/* Values */}
+                <HorizontalBarSeries
+                    data={sortedData.map((item) => ({ ...item, color: getColor(item.x) }))}
+                    {...seriesPropsMerged}
+                    colorType="literal"
+                />
+                <LabelSeries
+                    data={getLabelData()}
+                    className="text-xs pointer-events-none theme-light"
+                    labelAnchorY="no-change"
+                    labelAnchorX="end-alignment"
+                    style={{
+                        fill: '#ffffff',
+                        cursor: `${minimal ? '' : 'pointer'}`,
+                    }}
+                />
+
+                {!minimal && (
+                    <YAxis tickSize={0} top={26} className="text-xs" tickFormat={tickFormat} />
+                )}
+            </FlexibleWidthXYPlot>
+        </div>
+    );
+};
+
+HorizontalBarChart.propTypes = {
+    data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    containerProps: PropTypes.shape({}),
+    plotProps: PropTypes.shape({}),
+    seriesProps: PropTypes.shape({}),
+    valueFormat: PropTypes.func,
+    tickValues: PropTypes.arrayOf(PropTypes.number),
+    minimal: PropTypes.bool,
+};
+
+export default HorizontalBarChart;
