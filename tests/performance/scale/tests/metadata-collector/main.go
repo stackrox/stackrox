@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"unicode"
 
@@ -64,6 +65,7 @@ var (
 	workerNodesCount             = newMetadataIntField("workerNodesCount", true, "number of worker nodes on the test cluster")
 	workerNodesKernelVersion     = newMetadataStringField("workerNodesKernelVersion", false, "kernel version used on the worker nodes on the test cluster")
 	workerNodesType              = newMetadataStringField("workerNodesType", true, "type of the worker nodes used on the test cluster")
+	testName                     = newMetadataStringField("testName", false, "The name of the test. Multiple tests that differ by the number namespaces, deployments, and pods can have the same name")
 
 	allMetadata = make(map[string]interface{}, len(metadataFields))
 )
@@ -276,6 +278,20 @@ func getGitRevision() (string, error) {
 	return hashString, nil
 }
 
+func truncateVersion(version string) string {
+    // Version should match x.y
+    re := regexp.MustCompile(`^[vV]?(\d+\.\d+)`)
+
+    match := re.FindStringSubmatch(version)
+
+    // If the version is valid return it. Otherwise return 0.0
+    if len(match) > 1 {
+        return match[1]
+    }
+    return "0.0"
+}
+
+
 func collectClusterInformation(kubeConfigurationPath string) error {
 	config, configErr := clientcmd.BuildConfigFromFlags("", kubeConfigurationPath)
 	if configErr != nil {
@@ -293,7 +309,7 @@ func collectClusterInformation(kubeConfigurationPath string) error {
 	allMetadata[clusterType.Name] = clusterMetadata.ClusterType
 	allMetadata[infraNodesCount.Name] = clusterMetadata.InfraNodesCount
 	allMetadata[infraNodesType.Name] = clusterMetadata.InfraNodesType
-	allMetadata[k8sVersion.Name] = clusterMetadata.K8SVersion
+	allMetadata[k8sVersion.Name] = truncateVersion(clusterMetadata.K8SVersion)
 	allMetadata[masterNodesCount.Name] = clusterMetadata.MasterNodesCount
 	allMetadata[masterNodesType.Name] = clusterMetadata.MasterNodesType
 	allMetadata[ocpMajorVersion.Name] = clusterMetadata.OCPMajorVersion
