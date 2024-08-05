@@ -6,12 +6,18 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
 	"golang.org/x/exp/maps"
 	v1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	defaultServiceAccountName = `sensor-upgrader`
+	defaultClusterRoleBinding = namespaces.StackRox + ":upgrade-sensors"
 )
 
 type accessCheck struct{}
@@ -110,9 +116,41 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 		affected := maps.Keys(actionResourceErr)
 		slices.Sort(affected)
 		reporter.Errorf("K8s authorizer did not explicitly allow or deny access to perform "+
-			"the following actions on following resources: %s. This usually means access is denied.",
-			strings.Join(affected, ", "))
+			"the following actions on following resources: %s. This usually means access is denied. "+
+			"%s",
+			strings.Join(affected, ", "), c.auxiliaryInfoOnPermissionDenied(ctx))
 	}
 
 	return nil
+}
+
+func (c accessCheck) auxiliaryInfoOnPermissionDenied(ctx *upgradectx.UpgradeContext) string {
+	var saInfo, cluRole, cluRoleBinding string
+	if err := c.checkDefaultSA(ctx); err != nil {
+		saInfo = fmt.Sprintf("Default SA %q not found", defaultServiceAccountName)
+	} else {
+		saInfo = fmt.Sprintf("Default SA %q found", defaultServiceAccountName)
+	}
+
+	if err := c.checkDefaultClusterRoleBinding(ctx); err != nil {
+		cluRoleBinding = fmt.Sprintf("Default Clusterrolebinding %q not found", defaultClusterRoleBinding)
+	} else {
+		cluRoleBinding = fmt.Sprintf("Default Clusterrolebinding %q found", defaultClusterRoleBinding)
+	}
+
+	return fmt.Sprintf("Checks for default configuration: (1) %s, (2) %s, (3) %s",
+		saInfo, cluRoleBinding, "placeholder")
+
+}
+
+func (c accessCheck) checkDefaultSA(ctx *upgradectx.UpgradeContext) error {
+	saClinet := ctx.ClientSet().CoreV1().ServiceAccounts(namespaces.StackRox)
+	_, err := saClinet.Get(ctx.Context(), defaultServiceAccountName, metav1.GetOptions{})
+	return err
+}
+
+func (c accessCheck) checkDefaultClusterRoleBinding(ctx *upgradectx.UpgradeContext) error {
+	clbClinet := ctx.ClientSet().RbacV1().ClusterRoleBindings()
+	_, err := clbClinet.Get(ctx.Context(), defaultClusterRoleBinding, metav1.GetOptions{})
+	return err
 }

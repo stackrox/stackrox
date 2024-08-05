@@ -28,7 +28,7 @@ config:
     timeout: [< default 10 .TimeoutSeconds >]
   registryOverride:
   disableTaintTolerations: [< default false (not .TolerationsEnabled ) >]
-  createUpgraderServiceAccount: [< default true .CreateUpgraderSA >]
+  createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]
   createSecrets: true
   offlineMode: [< default false .OfflineMode >]
   slimCollector: [< default false .SlimCollector >]
