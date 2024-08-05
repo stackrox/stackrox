@@ -23,7 +23,6 @@ function Header(): ReactElement {
     // aria-label="primary" prop makes header element a unique landmark.
     return (
         <Masthead
-            aria-label="primary"
             className="ignore-react-onclickoutside theme-dark"
             inset={{ default: 'insetNone' }}
         >
