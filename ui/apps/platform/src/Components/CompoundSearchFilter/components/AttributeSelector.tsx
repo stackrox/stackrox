@@ -1,11 +1,11 @@
 import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
-import { PartialCompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
 import { getEntityAttributes } from 'Components/CompoundSearchFilter/utils/utils';
 
 import SimpleSelect from './SimpleSelect';
 import { SelectedEntity } from './EntitySelector';
+import { CompoundSearchFilterConfig } from '../types';
 
 export type SelectedAttribute = string | undefined;
 export type AttributeSelectorOnChange = (value: string | number | undefined) => void;
@@ -14,24 +14,20 @@ export type AttributeSelectorProps = {
     selectedEntity: SelectedEntity;
     selectedAttribute: SelectedAttribute;
     onChange: AttributeSelectorOnChange;
-    config: PartialCompoundSearchFilterConfig;
+    config: CompoundSearchFilterConfig;
     menuToggleClassName?: string;
 };
 
 function AttributeSelector({
-    selectedEntity,
-    selectedAttribute,
+    selectedEntity = '',
+    selectedAttribute = '',
     onChange,
     config,
     menuToggleClassName,
 }: AttributeSelectorProps) {
-    if (!selectedEntity) {
-        return null;
-    }
+    const entityAttributes = getEntityAttributes(config, selectedEntity);
 
-    const entityAttributes = getEntityAttributes(selectedEntity, config);
-
-    if (entityAttributes.length <= 1) {
+    if (entityAttributes.length === 0) {
         return null;
     }
 
@@ -43,10 +39,10 @@ function AttributeSelector({
             ariaLabelMenu="compound search filter attribute selector menu"
             ariaLabelToggle="compound search filter attribute selector toggle"
         >
-            {entityAttributes.map((attribute) => {
+            {entityAttributes.map(({ displayName }) => {
                 return (
-                    <SelectOption key={attribute.displayName} value={attribute.displayName}>
-                        {attribute.displayName}
+                    <SelectOption key={displayName} value={displayName}>
+                        {displayName}
                     </SelectOption>
                 );
             })}

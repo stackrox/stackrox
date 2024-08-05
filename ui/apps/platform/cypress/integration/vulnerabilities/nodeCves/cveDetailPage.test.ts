@@ -57,7 +57,7 @@ describe('Node CVEs - CVE Detail Page', () => {
             {}
         );
         assertAvailableFilters({
-            Cluster: ['Name', 'Label', 'Type', 'Platform type'],
+            Cluster: ['ID', 'Name', 'Label', 'Type', 'Platform type'],
             Node: ['Name', 'Operating System', 'Label', 'Annotation', 'Scan Time'],
             'Node Component': ['Name', 'Version'],
         });

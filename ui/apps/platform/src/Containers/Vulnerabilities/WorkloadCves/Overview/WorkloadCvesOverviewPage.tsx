@@ -49,9 +49,16 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import LinkShim from 'Components/PatternFly/LinkShim';
-import { SearchFilterEntityName } from 'Components/CompoundSearchFilter/types';
 
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import {
+    clusterSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+    namespaceSearchFilterConfig,
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import {
     DefaultFilters,
     WorkloadEntityTab,
@@ -80,14 +87,6 @@ import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import ObservedCveModeSelect from './ObservedCveModeSelect';
 import { getViewStateDescription, getViewStateTitle } from './string.utils';
-import {
-    clusterSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    namespaceSearchFilterConfig,
-} from '../../searchFilterConfig';
 
 const searchOptions: SearchOption[] = [
     IMAGE_SEARCH_OPTION,
@@ -134,10 +133,10 @@ function mergeDefaultAndLocalFilters(
 
 function getSearchFilterEntityByTab(
     entityTab: WorkloadEntityTab
-): SearchFilterEntityName | undefined {
+): 'CVE' | 'Image' | 'Deployment' | undefined {
     switch (entityTab) {
         case 'CVE':
-            return 'Image CVE';
+            return 'CVE';
         case 'Image':
             return 'Image';
         case 'Deployment':
@@ -147,14 +146,14 @@ function getSearchFilterEntityByTab(
     }
 }
 
-const searchFilterConfig = {
-    Image: imageSearchFilterConfig,
-    'Image CVE': imageCVESearchFilterConfig,
-    'Image Component': imageComponentSearchFilterConfig,
-    Deployment: deploymentSearchFilterConfig,
-    Namespace: namespaceSearchFilterConfig,
-    Cluster: clusterSearchFilterConfig,
-};
+const searchFilterConfig = [
+    imageSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
+];
 
 function WorkloadCvesOverviewPage() {
     const apolloClient = useApolloClient();

@@ -52,11 +52,11 @@ import useNodeCveSummaryData from './useNodeCveSummaryData';
 
 const nodeCveOverviewCvePath = getOverviewPagePath('Node', { entityTab: 'CVE' });
 
-const searchFilterConfig = {
-    Node: nodeSearchFilterConfig,
-    'Node Component': nodeComponentSearchFilterConfig,
-    Cluster: clusterSearchFilterConfig,
-} as const;
+const searchFilterConfig = [
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    clusterSearchFilterConfig,
+];
 
 const defaultNodeCveSummary = {
     affectedNodeCountBySeverity: {

@@ -37,14 +37,14 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
-import {
-    imageSearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import {
+    clusterSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+    namespaceSearchFilterConfig,
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -187,13 +187,13 @@ const searchOptions: SearchOption[] = [
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
-const searchFilterConfig = {
-    Image: imageSearchFilterConfig,
-    ImageComponent: imageComponentSearchFilterConfig,
-    Deployment: deploymentSearchFilterConfig,
-    Namespace: namespaceSearchFilterConfig,
-    Cluster: clusterSearchFilterConfig,
-};
+const searchFilterConfig = [
+    imageSearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
+];
 
 function ImageCvePage() {
     const { isFeatureFlagEnabled } = useFeatureFlags();

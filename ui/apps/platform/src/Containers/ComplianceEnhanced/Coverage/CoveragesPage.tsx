@@ -17,12 +17,7 @@ import ComplianceUsageDisclaimer, {
     COMPLIANCE_DISCLAIMER_KEY,
 } from 'Components/ComplianceUsageDisclaimer';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import {
-    OnSearchPayload,
-    clusterSearchFilterConfig,
-    profileCheckSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
-import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
+import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { useBooleanLocalStorage } from 'hooks/useLocalStorage';
@@ -35,6 +30,7 @@ import {
 import { defaultChartHeight } from 'utils/chartUtils';
 
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
+import { clusterSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import {
     coverageProfileChecksPath,
@@ -50,6 +46,9 @@ import ProfilesToggleGroup from './ProfilesToggleGroup';
 import ProfileChecksPage from './ProfileChecksPage';
 import ProfileClustersPage from './ProfileClustersPage';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
+import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
+
+const searchFilterConfig = [profileCheckSearchFilterConfig, clusterSearchFilterConfig];
 
 function CoveragesPage() {
     const [isDisclaimerAccepted, setIsDisclaimerAccepted] = useBooleanLocalStorage(
@@ -67,11 +66,6 @@ function CoveragesPage() {
     >(undefined);
 
     const { searchFilter, setSearchFilter } = useURLSearch();
-
-    const searchFilterConfig = {
-        'Profile Check': profileCheckSearchFilterConfig,
-        Cluster: getFilteredConfig(clusterSearchFilterConfig, ['Name']),
-    };
 
     const fetchProfilesStats = useCallback(async () => {
         setSelectedProfileStats(undefined);

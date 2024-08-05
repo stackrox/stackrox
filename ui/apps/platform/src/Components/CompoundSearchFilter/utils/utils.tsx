@@ -1,16 +1,14 @@
 import React from 'react';
-import { FilterChip, FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 
+import { FilterChip, FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 import { SearchFilter } from 'types/search';
 import { SetSearchFilter } from 'hooks/useURLSearch';
 import {
+    CompoundSearchFilterAttribute,
+    CompoundSearchFilterConfig,
+    CompoundSearchFilterEntity,
     OnSearchPayload,
-    PartialCompoundSearchFilterConfig,
-    SearchFilterAttribute,
-    SearchFilterAttributeName,
-    SearchFilterEntityName,
     SelectSearchFilterAttribute,
-    compoundSearchEntityNames,
 } from '../types';
 
 export const conditionMap = {
@@ -23,44 +21,51 @@ export const conditionMap = {
 
 export const conditions = Object.keys(conditionMap);
 
-export function getEntities(config: PartialCompoundSearchFilterConfig): SearchFilterEntityName[] {
-    const entities = Object.keys(config) as SearchFilterEntityName[];
-    return entities;
+export function getEntity(
+    config: CompoundSearchFilterConfig,
+    entityName: string
+): CompoundSearchFilterEntity | undefined {
+    if (!config || !Array.isArray(config)) {
+        return undefined;
+    }
+    const entity = config.find((entity) => {
+        return entity.displayName === entityName;
+    });
+    return entity;
 }
 
-function isSearchFilterEntity(key: string): key is SearchFilterEntityName {
-    return compoundSearchEntityNames.includes(key);
+export function getAttribute(
+    config: CompoundSearchFilterConfig,
+    entityName: string,
+    attributeName: string
+): CompoundSearchFilterAttribute | undefined {
+    const entity = getEntity(config, entityName);
+    return entity?.attributes?.find((attribute) => {
+        return attribute.displayName === attributeName;
+    });
 }
 
-export function getDefaultEntity(
-    config: PartialCompoundSearchFilterConfig
-): SearchFilterEntityName | undefined {
-    const entities = Object.keys(config).filter(isSearchFilterEntity);
-    return entities[0];
+export function getDefaultEntityName(config: CompoundSearchFilterConfig): string | undefined {
+    if (!config || !Array.isArray(config)) {
+        return undefined;
+    }
+    return config?.[0]?.displayName;
 }
 
 export function getEntityAttributes(
-    entity: SearchFilterEntityName,
-    config: PartialCompoundSearchFilterConfig
-): SearchFilterAttribute[] {
-    const entityConfig = config[entity];
-    if (entityConfig && entityConfig.attributes) {
-        const attributeValues: SearchFilterAttribute[] = Object.values(entityConfig.attributes);
-        return attributeValues;
-    }
-    return [];
+    config: CompoundSearchFilterConfig,
+    entityName: string
+): CompoundSearchFilterAttribute[] {
+    const entity = getEntity(config, entityName);
+    return entity?.attributes || [];
 }
 
-export function getDefaultAttribute(
-    entity: SearchFilterEntityName,
-    config: PartialCompoundSearchFilterConfig
-): SearchFilterAttributeName | undefined {
-    const entityConfig = config[entity];
-    if (entityConfig && entityConfig.attributes) {
-        const attributeNames = Object.keys(entityConfig.attributes) as SearchFilterAttributeName[];
-        return attributeNames[0];
-    }
-    return undefined;
+export function getDefaultAttributeName(
+    config: CompoundSearchFilterConfig,
+    entityName: string
+): string | undefined {
+    const attributes = getEntityAttributes(config, entityName);
+    return attributes?.[0]?.displayName;
 }
 
 export function ensureStringArray(value: unknown): string[] {
@@ -101,9 +106,9 @@ export function ensureConditionNumber(value: unknown): { condition: string; numb
 }
 
 export function isSelectType(
-    attributeObject: SearchFilterAttribute
-): attributeObject is SelectSearchFilterAttribute {
-    return attributeObject.inputType === 'select';
+    attribute: CompoundSearchFilterAttribute
+): attribute is SelectSearchFilterAttribute {
+    return attribute.inputType === 'select';
 }
 
 /**
@@ -114,29 +119,30 @@ export function isSelectType(
  * @returns An array of FilterChipGroupDescriptor objects
  */
 export function makeFilterChipDescriptors(
-    searchFilterConfig: PartialCompoundSearchFilterConfig
+    config: CompoundSearchFilterConfig
 ): FilterChipGroupDescriptor[] {
-    const filterChipDescriptors = Object.values(searchFilterConfig).flatMap(({ attributes = {} }) =>
-        Object.values(attributes).map((attributeConfig: SearchFilterAttribute) => {
-            const baseConfig = {
-                displayName: attributeConfig.filterChipLabel,
-                searchFilterName: attributeConfig.searchTerm,
-            };
-
-            if (isSelectType(attributeConfig)) {
-                return {
-                    ...baseConfig,
-                    render: (filter: string) => {
-                        const option = attributeConfig.inputProps.options.find(
-                            (option) => option.value === filter
-                        );
-                        return <FilterChip name={option?.label || 'N/A'} />;
-                    },
+    const filterChipDescriptors = config.flatMap(
+        ({ attributes = [] }: CompoundSearchFilterEntity) =>
+            attributes.map((attribute) => {
+                const baseConfig = {
+                    displayName: attribute.filterChipLabel,
+                    searchFilterName: attribute.searchTerm,
                 };
-            }
 
-            return baseConfig;
-        })
+                if (isSelectType(attribute)) {
+                    return {
+                        ...baseConfig,
+                        render: (filter: string) => {
+                            const option = attribute.inputProps.options.find(
+                                (option) => option.value === filter
+                            );
+                            return <FilterChip name={option?.label || 'N/A'} />;
+                        },
+                    };
+                }
+
+                return baseConfig;
+            })
     );
     return filterChipDescriptors;
 }

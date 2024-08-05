@@ -17,10 +17,7 @@ import { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
-import {
-    OnSearchPayload,
-    PartialCompoundSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
+import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { SearchFilter } from 'types/search';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
@@ -42,7 +39,7 @@ export type CheckDetailsTableProps = {
     profileName: string;
     tableState: TableUIState<ClusterCheckStatus>;
     getSortParams: UseURLSortResult['getSortParams'];
-    searchFilterConfig: PartialCompoundSearchFilterConfig;
+    searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
     onSearch: (payload: OnSearchPayload) => void;
     onCheckStatusSelect: (

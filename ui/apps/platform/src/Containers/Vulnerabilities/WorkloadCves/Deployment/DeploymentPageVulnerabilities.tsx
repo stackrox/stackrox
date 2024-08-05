@@ -33,7 +33,7 @@ import {
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
-} from '../../searchFilterConfig';
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import {
     SearchOption,
     COMPONENT_SEARCH_OPTION,
@@ -102,11 +102,11 @@ const searchOptions: SearchOption[] = [
     COMPONENT_SOURCE_SEARCH_OPTION,
 ];
 
-const searchFilterConfig = {
-    Image: imageSearchFilterConfig,
-    'Image CVE': imageCVESearchFilterConfig,
-    ImageComponent: imageComponentSearchFilterConfig,
-};
+const searchFilterConfig = [
+    imageSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+];
 
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;

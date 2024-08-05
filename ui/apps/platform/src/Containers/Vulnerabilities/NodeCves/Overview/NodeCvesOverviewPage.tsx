@@ -27,14 +27,14 @@ import useAnalytics, {
 import { getHasSearchApplied } from 'utils/searchUtils';
 
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
-import {
-    nodeSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-    nodeCVESearchFilterConfig,
-    clusterSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
 import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import {
+    clusterSearchFilterConfig,
+    nodeCVESearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    nodeSearchFilterConfig,
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
@@ -55,12 +55,12 @@ import NodesTable, {
 } from './NodesTable';
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
 
-const searchFilterConfig = {
-    Node: nodeSearchFilterConfig,
-    NodeCVE: nodeCVESearchFilterConfig,
-    'Node Component': nodeComponentSearchFilterConfig,
-    Cluster: clusterSearchFilterConfig,
-};
+const searchFilterConfig = [
+    nodeSearchFilterConfig,
+    nodeCVESearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    clusterSearchFilterConfig,
+];
 
 function NodeCvesOverviewPage() {
     const apolloClient = useApolloClient();
