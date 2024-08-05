@@ -9,6 +9,8 @@ import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import VIOLATION_STATES from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
+import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
@@ -66,6 +68,10 @@ function ViolationsTablePage(): ReactElement {
         sortFields,
         defaultSortOption,
     });
+
+    const onSearch = (payload: OnSearchPayload) => {
+        onURLSearch(searchFilter, setSearchFilter, payload);
+    };
 
     useEffectAfterFirstRender(() => {
         if (hasExecutableFilter && !isViewFiltered) {
@@ -201,7 +207,7 @@ function ViolationsTablePage(): ReactElement {
                             columns={columns}
                             isAdvancedFiltersEnabled={isAdvancedFiltersEnabled}
                             searchFilter={searchFilter}
-                            setSearchFilter={setSearchFilter}
+                            onSearch={onSearch}
                         />
                     </PageSection>
                 )}

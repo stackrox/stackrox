@@ -31,8 +31,8 @@ import { ListAlert } from 'types/alert.proto';
 import { TableColumn } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { SearchFilter } from 'types/search';
-import { SetSearchFilter } from 'hooks/useURLSearch';
 
+import { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
 import ViolationsTableSearchFilter from './ViolationsTableSearchFilter';
@@ -57,7 +57,7 @@ type ViolationsTablePanelProps = {
     columns: TableColumn[];
     isAdvancedFiltersEnabled?: boolean;
     searchFilter: SearchFilter;
-    setSearchFilter: SetSearchFilter;
+    onSearch: OnSearchCallback;
 };
 
 function ViolationsTablePanel({
@@ -73,7 +73,7 @@ function ViolationsTablePanel({
     columns,
     isAdvancedFiltersEnabled = false,
     searchFilter,
-    setSearchFilter,
+    onSearch,
 }: ViolationsTablePanelProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
@@ -198,10 +198,7 @@ function ViolationsTablePanel({
             </AlertGroup>
             {isAdvancedFiltersEnabled && (
                 <>
-                    <ViolationsTableSearchFilter
-                        searchFilter={searchFilter}
-                        setSearchFilter={setSearchFilter}
-                    />
+                    <ViolationsTableSearchFilter searchFilter={searchFilter} onSearch={onSearch} />
                     <Divider component="div" />
                 </>
             )}

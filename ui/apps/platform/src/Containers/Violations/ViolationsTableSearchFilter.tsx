@@ -2,11 +2,11 @@ import React from 'react';
 import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
+import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import {
-    makeFilterChipDescriptors,
-    onURLSearch,
-} from 'Components/CompoundSearchFilter/utils/utils';
-import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+    CompoundSearchFilterConfig,
+    OnSearchCallback,
+} from 'Components/CompoundSearchFilter/types';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
 import {
@@ -25,7 +25,6 @@ import {
     ID as DeploymentID,
     Name as DeploymentName,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
-import { SetSearchFilter } from 'hooks/useURLSearch';
 
 const searchFilterConfig: CompoundSearchFilterConfig = [
     {
@@ -52,18 +51,11 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
 
 export type ViolationsTableSearchFilterProps = {
     searchFilter: SearchFilter;
-    setSearchFilter: SetSearchFilter;
+    onSearch: OnSearchCallback;
 };
 
-function ViolationsTableSearchFilter({
-    searchFilter,
-    setSearchFilter,
-}: ViolationsTableSearchFilterProps) {
+function ViolationsTableSearchFilter({ searchFilter, onSearch }: ViolationsTableSearchFilterProps) {
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
-
-    const onSearch = (payload: OnSearchPayload) => {
-        onURLSearch(searchFilter, setSearchFilter, payload);
-    };
 
     return (
         <Toolbar>

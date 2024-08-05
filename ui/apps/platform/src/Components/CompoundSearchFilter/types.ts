@@ -31,6 +31,8 @@ export type CompoundSearchFilterConfig = CompoundSearchFilterEntity[];
 
 // Misc
 
+export type OnSearchCallback = (payload: OnSearchPayload) => void;
+
 export type OnSearchPayload = {
     action: 'ADD' | 'REMOVE';
     category: string;
