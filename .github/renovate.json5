@@ -24,11 +24,11 @@
   // Tell Renovate not to update PRs when outside of schedule.
   "updateNotScheduled": false,
   "dockerfile": {
-    "fileMatch": [
-      // Instruct Renovate not try to update Dockerfiles other than */konflux.Dockerfile to have less PR noise.
-      // See https://redhat-internal.slack.com/archives/C04PZ7H0VA8/p1721809083784519
-      "(^|\\/)konflux\\.([Dd]ocker|[Cc]ontainer)file$"
-    ]
+    "includePaths": [
+      // Instruct Renovate not try to update Dockerfiles other than konflux.Dockerfile (or konflux.anything.Dockerfile)
+      // to have less PR noise.
+      "**/konflux.*Dockerfile",
+    ],
   },
   "enabledManagers": [
     // Restrict Renovate focus on Konflux things since we rely on GitHub's dependabot for everything else.
