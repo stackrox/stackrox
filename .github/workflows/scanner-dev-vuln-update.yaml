@@ -19,6 +19,37 @@ on:
         default: nvd-api
 
 jobs:
+  build-updater:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns'))
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+    - uses: ./.github/actions/cache-go-dependencies
+
+    - name: Build updater
+      run: |
+        make tag
+        make -C scanner bin/updater
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: updater
+        path: scanner/bin/updater
+        if-no-files-found: error
+
   download-nvd:
     runs-on: ubuntu-latest
     env:
@@ -57,38 +88,6 @@ jobs:
       with:
         name: nvd
         path: nvd.zip
-        if-no-files-found: error
-
-  build-updater:
-    runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'schedule' ||
-      (github.event_name == 'pull_request' &&
-       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns'))
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - uses: ./.github/actions/cache-go-dependencies
-
-    - name: Build updater
-      run: |
-        make tag
-        make -C scanner bin/updater
-
-    - uses: ./.github/actions/upload-artifact-with-retry
-      with:
-        name: updater
-        path: scanner/bin/updater
         if-no-files-found: error
 
   run-updater:
