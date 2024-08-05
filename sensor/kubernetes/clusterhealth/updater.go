@@ -271,7 +271,7 @@ func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) commo
 		updates:        make(chan *message.ExpiringMessage),
 		stopSig:        concurrency.NewSignal(),
 		updateInterval: interval,
-		namespace:      pods.GetPodNamespace(pods.NoSATokenNamespace),
+		namespace:      pods.GetPodNamespace(),
 		updateTicker:   updateTicker,
 	}
 }
