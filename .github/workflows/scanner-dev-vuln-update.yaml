@@ -95,13 +95,6 @@ jobs:
     - build-updater
     - download-nvd
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
-      volumes:
-      # The updater makes heavy use of /tmp files.
-      - /tmp:/tmp
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
     env:
       STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       STACKROX_NVD_API_CALL_INTERVAL: 6s
