@@ -7,9 +7,6 @@ on:
     - opened
     - reopened
     - synchronize
-  push: # TODO: delete once done testing
-    branches:
-    - "ross-scanner-dev-fix-08052024"
   workflow_dispatch:
     inputs:
       job:
