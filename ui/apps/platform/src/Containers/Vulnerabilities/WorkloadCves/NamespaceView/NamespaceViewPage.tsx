@@ -25,11 +25,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
-import {
-    OnSearchPayload,
-    clusterSearchFilterConfig,
-    namespaceSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
+import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
@@ -38,6 +34,10 @@ import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import {
+    clusterSearchFilterConfig,
+    namespaceSearchFilterConfig,
+} from 'Containers/Vulnerabilities/searchFilterConfig';
 import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import DeploymentFilterLink from './DeploymentFilterLink';
@@ -88,10 +88,7 @@ const defaultSearchFilters = {
     'Vulnerability State': 'OBSERVED',
 };
 
-const searchFilterConfig = {
-    Namespace: namespaceSearchFilterConfig,
-    Cluster: clusterSearchFilterConfig,
-};
+const searchFilterConfig = [namespaceSearchFilterConfig, clusterSearchFilterConfig];
 
 const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 

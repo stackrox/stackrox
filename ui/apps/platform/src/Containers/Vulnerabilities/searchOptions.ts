@@ -1,5 +1,4 @@
 import { SearchCategory } from 'services/SearchService';
-import { SearchFilterAttribute } from 'Components/CompoundSearchFilter/types';
 import {
     nodeSearchFilterConfig,
     nodeComponentSearchFilterConfig,
@@ -41,7 +40,7 @@ export const regexSearchOptions = [
     namespaceSearchFilterConfig,
     clusterSearchFilterConfig,
 ]
-    .flatMap((config) => Object.values<SearchFilterAttribute>(config.attributes))
+    .flatMap((config) => config.attributes)
     .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
     .map(({ searchTerm }) => searchTerm);
 

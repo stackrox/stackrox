@@ -1,41 +1,58 @@
+import { deploymentAttributes } from '../attributes/deployment';
+import { imageAttributes } from '../attributes/image';
+import { imageCVEAttributes } from '../attributes/imageCVE';
 import {
-    CompoundSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageSearchFilterConfig,
-} from '../types';
-import {
-    getEntities,
+    getDefaultAttributeName,
+    getDefaultEntityName,
     getEntityAttributes,
-    getDefaultEntity,
-    getDefaultAttribute,
     makeFilterChipDescriptors,
 } from './utils';
+import { CompoundSearchFilterEntity } from '../types';
+
+const imageSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Image',
+    searchCategory: 'IMAGES',
+    attributes: imageAttributes,
+};
+
+const deploymentSearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Deployment',
+    searchCategory: 'DEPLOYMENTS',
+    attributes: deploymentAttributes,
+};
+
+const imageCVESearchFilterConfig: CompoundSearchFilterEntity = {
+    displayName: 'Image CVE',
+    searchCategory: 'IMAGE_VULNERABILITIES',
+    attributes: imageCVEAttributes,
+};
 
 describe('utils', () => {
     describe('getEntities', () => {
         it('should get the entities in a config object', () => {
-            const config: Partial<CompoundSearchFilterConfig> = {
-                Image: imageSearchFilterConfig,
-                Deployment: deploymentSearchFilterConfig,
-                'Image CVE': imageCVESearchFilterConfig,
-            };
+            const config = [
+                imageSearchFilterConfig,
+                deploymentSearchFilterConfig,
+                imageCVESearchFilterConfig,
+            ];
 
-            const result = getEntities(config);
-
-            expect(result).toStrictEqual(['Image', 'Deployment', 'Image CVE']);
+            expect(config).toStrictEqual([
+                imageSearchFilterConfig,
+                deploymentSearchFilterConfig,
+                imageCVESearchFilterConfig,
+            ]);
         });
     });
 
     describe('getEntityAttributes', () => {
         it('should get the attributes of an entity in a config object', () => {
-            const config: Partial<CompoundSearchFilterConfig> = {
-                Image: imageSearchFilterConfig,
-                Deployment: deploymentSearchFilterConfig,
-                'Image CVE': imageCVESearchFilterConfig,
-            };
+            const config = [
+                imageSearchFilterConfig,
+                deploymentSearchFilterConfig,
+                imageCVESearchFilterConfig,
+            ];
 
-            const result = getEntityAttributes('Image CVE', config);
+            const result = getEntityAttributes(config, 'Image CVE');
 
             expect(result).toStrictEqual([
                 {
@@ -62,27 +79,13 @@ describe('utils', () => {
 
     describe('getDefaultEntity', () => {
         it('should get the default (first) entity in a config object', () => {
-            const config: Partial<CompoundSearchFilterConfig> = {
-                Image: imageSearchFilterConfig,
-                Deployment: deploymentSearchFilterConfig,
-                'Image CVE': imageCVESearchFilterConfig,
-            };
+            const config = [
+                imageSearchFilterConfig,
+                deploymentSearchFilterConfig,
+                imageCVESearchFilterConfig,
+            ];
 
-            const result = getDefaultEntity(config);
-
-            expect(result).toStrictEqual('Image');
-        });
-
-        // @TODO: Worth considering if we want to ignore vs. highlight the issue
-        it("should ignore entity names that aren't valid", () => {
-            const config = {
-                BOGUS: {
-                    hello: 'friend',
-                },
-                Image: imageSearchFilterConfig,
-            };
-
-            const result = getDefaultEntity(config);
+            const result = getDefaultEntityName(config);
 
             expect(result).toStrictEqual('Image');
         });
@@ -90,13 +93,13 @@ describe('utils', () => {
 
     describe('getDefaultAttribute', () => {
         it('should get the default (first) attribute of a specific entity in a config object', () => {
-            const config: Partial<CompoundSearchFilterConfig> = {
-                Image: imageSearchFilterConfig,
-                Deployment: deploymentSearchFilterConfig,
-                'Image CVE': imageCVESearchFilterConfig,
-            };
+            const config = [
+                imageSearchFilterConfig,
+                deploymentSearchFilterConfig,
+                imageCVESearchFilterConfig,
+            ];
 
-            const result = getDefaultAttribute('Image CVE', config);
+            const result = getDefaultAttributeName(config, 'Image CVE');
 
             expect(result).toStrictEqual('Name');
         });
@@ -104,9 +107,7 @@ describe('utils', () => {
 
     describe('makeFilterChipDescriptors', () => {
         it('should create an array of FilterChipGroupDescriptor objects from a config object', () => {
-            const config: Partial<CompoundSearchFilterConfig> = {
-                'Image CVE': imageCVESearchFilterConfig,
-            };
+            const config = [imageCVESearchFilterConfig];
 
             const result = makeFilterChipDescriptors(config);
 

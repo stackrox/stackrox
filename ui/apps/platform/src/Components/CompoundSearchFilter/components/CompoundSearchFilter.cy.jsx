@@ -4,14 +4,48 @@ import ComponentTestProviders from 'test-utils/ComponentProviders';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import CompoundSearchFilter from './CompoundSearchFilter';
-import {
-    clusterSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    nodeComponentSearchFilterConfig,
-} from '../types';
+import { nodeComponentAttributes } from '../attributes/nodeComponent';
+import { imageAttributes } from '../attributes/image';
+import { imageCVEAttributes } from '../attributes/imageCVE';
+import { imageComponentAttributes } from '../attributes/imageComponent';
+import { deploymentAttributes } from '../attributes/deployment';
+import { clusterAttributes } from '../attributes/cluster';
+
+const nodeComponentSearchFilterConfig = {
+    displayName: 'Node component',
+    searchCategory: 'NODE_COMPONENTS',
+    attributes: nodeComponentAttributes,
+};
+
+const imageSearchFilterConfig = {
+    displayName: 'Image',
+    searchCategory: 'IMAGES',
+    attributes: imageAttributes,
+};
+
+const imageCVESearchFilterConfig = {
+    displayName: 'Image CVE',
+    searchCategory: 'IMAGES_VULNERABILITIES',
+    attributes: imageCVEAttributes,
+};
+
+const imageComponentSearchFilterConfig = {
+    displayName: 'Image component',
+    searchCategory: 'IMAGE_COMPONENTS',
+    attributes: imageComponentAttributes,
+};
+
+const deploymentSearchFilterConfig = {
+    displayName: 'Deployment',
+    searchCategory: 'DEPLOYMENTS',
+    attributes: deploymentAttributes,
+};
+
+const clusterSearchFilterConfig = {
+    displayName: 'Cluster',
+    searchCategory: 'CLUSTERS',
+    attributes: clusterAttributes,
+};
 
 const selectors = {
     entitySelectToggle: 'button[aria-label="compound search filter entity selector toggle"]',
@@ -96,7 +130,7 @@ function selectDatePickerDate(month, day, year) {
 
 describe(Cypress.spec.relative, () => {
     it('should display nothing in the entity selector', () => {
-        const config = {};
+        const config = [];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -106,10 +140,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display Image and Deployment entities in the entity selector', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            Deployment: deploymentSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig, deploymentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -125,11 +156,11 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display Image, Deployment, and Cluster entities in the entity selector', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            Deployment: deploymentSearchFilterConfig,
-            Cluster: clusterSearchFilterConfig,
-        };
+        const config = [
+            imageSearchFilterConfig,
+            deploymentSearchFilterConfig,
+            clusterSearchFilterConfig,
+        ];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -145,11 +176,24 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.entitySelectItems).eq(2).should('have.text', 'Cluster');
     });
 
+    it('should display nothing in the attributes selector', () => {
+        const config = [
+            {
+                displayName: 'Image',
+                searchCategory: 'IMAGES',
+                attributes: [],
+            },
+        ];
+        const onSearch = cy.stub().as('onSearch');
+        const searchFilter = {};
+
+        setup(config, searchFilter, onSearch);
+
+        cy.get(selectors.attributeSelectToggle).should('not.exist');
+    });
+
     it('should display Image attributes in the attribute selector', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            Deployment: deploymentSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig, deploymentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -168,10 +212,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display Deployment attributes in the attribute selector', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            Deployment: deploymentSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig, deploymentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -180,21 +221,19 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.entitySelectToggle).click();
         cy.get(selectors.entitySelectItem('Deployment')).click();
 
-        cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
+        cy.get(selectors.attributeSelectToggle).should('contain.text', 'ID');
 
         cy.get(selectors.attributeSelectToggle).click();
 
-        cy.get(selectors.attributeSelectItems).should('have.length', 3);
-        cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'Name');
-        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Label');
-        cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Annotation');
+        cy.get(selectors.attributeSelectItems).should('have.length', 4);
+        cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'ID');
+        cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Name');
+        cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Label');
+        cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'Annotation');
     });
 
     it('should display the text input and correctly search for image tags', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            NodeComponent: nodeComponentSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig, nodeComponentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -219,10 +258,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display the select input and correctly search for image component source', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            'Image component': imageComponentSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig, imageComponentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -267,9 +303,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display the date-picker input and correctly search for image cve discovered time', () => {
-        const config = {
-            'Image CVE': imageCVESearchFilterConfig,
-        };
+        const config = [imageCVESearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -298,9 +332,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display the condition-number input and correctly search for image cvss', () => {
-        const config = {
-            'Image CVE': imageCVESearchFilterConfig,
-        };
+        const config = [imageCVESearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -376,9 +408,7 @@ describe(Cypress.spec.relative, () => {
     it('should display the autocomplete input and correctly search for image name', () => {
         mockAutocompleteResponse();
 
-        const config = {
-            Image: imageSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 

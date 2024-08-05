@@ -16,12 +16,8 @@ import {
 } from '@patternfly/react-core';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import { getFilteredConfig } from 'Components/CompoundSearchFilter/utils/searchFilterConfig';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import {
-    OnSearchPayload,
-    profileCheckSearchFilterConfig,
-} from 'Components/CompoundSearchFilter/types';
+import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import PageTitle from 'Components/PageTitle';
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
@@ -46,6 +42,9 @@ import ScanConfigurationSelect from './components/ScanConfigurationSelect';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 import ProfilesToggleGroup from './ProfilesToggleGroup';
+import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
+
+const searchFilterConfig = [profileCheckSearchFilterConfig];
 
 function ClusterDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
@@ -92,10 +91,6 @@ function ClusterDetailsPage() {
         isLoading: isLoadingCheckResults,
         error: checkResultsError,
     } = useRestQuery(fetchCheckResults);
-
-    const searchFilterConfig = {
-        'Profile check': getFilteredConfig(profileCheckSearchFilterConfig, ['Name']),
-    };
 
     const tableState = getTableUIState({
         isLoading: isLoadingCheckResults,
