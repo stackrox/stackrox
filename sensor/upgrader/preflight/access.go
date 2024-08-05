@@ -124,33 +124,36 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 	return nil
 }
 
+// auxiliaryInfoOnPermissionDenied returns string that should help understand why the upgrader does not have permission
+// to run the upgrade. The string returned from this function will be displayed in the UI, so keep it brief.
 func (c accessCheck) auxiliaryInfoOnPermissionDenied(ctx *upgradectx.UpgradeContext) string {
-	var saInfo, cluRole, cluRoleBinding string
+	var msgs []string
+	if err := c.checkDefaultClusterRoleBinding(ctx, defaultServiceAccountName); err != nil {
+		msgs = append(msgs, err.Error())
+	}
 	if err := c.checkDefaultSA(ctx); err != nil {
-		saInfo = fmt.Sprintf("Default SA %q not found", defaultServiceAccountName)
-	} else {
-		saInfo = fmt.Sprintf("Default SA %q found", defaultServiceAccountName)
+		msgs = append(msgs, err.Error())
 	}
-
-	if err := c.checkDefaultClusterRoleBinding(ctx); err != nil {
-		cluRoleBinding = fmt.Sprintf("Default Clusterrolebinding %q not found", defaultClusterRoleBinding)
-	} else {
-		cluRoleBinding = fmt.Sprintf("Default Clusterrolebinding %q found", defaultClusterRoleBinding)
-	}
-
-	return fmt.Sprintf("Checks for default configuration: (1) %s, (2) %s, (3) %s",
-		saInfo, cluRoleBinding, "placeholder")
-
+	return fmt.Sprintf("Checks for default configuration: %s.", strings.Join(msgs, ", "))
 }
 
 func (c accessCheck) checkDefaultSA(ctx *upgradectx.UpgradeContext) error {
-	saClinet := ctx.ClientSet().CoreV1().ServiceAccounts(namespaces.StackRox)
-	_, err := saClinet.Get(ctx.Context(), defaultServiceAccountName, metav1.GetOptions{})
+	saClient := ctx.ClientSet().CoreV1().ServiceAccounts(namespaces.StackRox)
+	_, err := saClient.Get(ctx.Context(), defaultServiceAccountName, metav1.GetOptions{})
 	return err
 }
 
-func (c accessCheck) checkDefaultClusterRoleBinding(ctx *upgradectx.UpgradeContext) error {
-	clbClinet := ctx.ClientSet().RbacV1().ClusterRoleBindings()
-	_, err := clbClinet.Get(ctx.Context(), defaultClusterRoleBinding, metav1.GetOptions{})
-	return err
+func (c accessCheck) checkDefaultClusterRoleBinding(ctx *upgradectx.UpgradeContext, saName string) error {
+	crbClient := ctx.ClientSet().RbacV1().ClusterRoleBindings()
+	crb, err := crbClient.Get(ctx.Context(), defaultClusterRoleBinding, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "failed to get default ClusterRoleBinding %q", defaultClusterRoleBinding)
+	}
+	if crb.RoleRef.Name != "cluster-admin" {
+		return fmt.Errorf("ClusterRoleBinding %q is not bound to the cluster-admin ClusterRole", defaultClusterRoleBinding)
+	}
+	if len(crb.Subjects) > 0 && crb.Subjects[0].Name != saName {
+		return fmt.Errorf("ClusterRoleBinding %q has no subject set to %q ServiceAccount", defaultClusterRoleBinding, saName)
+	}
+	return nil
 }
