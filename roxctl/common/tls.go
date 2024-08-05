@@ -15,10 +15,11 @@ import (
 	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/logger"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-const warningMsg = `The remote endpoint failed TLS validation. This will be a fatal error in future releases.
-Please do one of the following at your earliest convenience:
+const errorMsg = `The remote endpoint failed TLS validation. Please do one of the following:
   1. Obtain a valid certificate for your Central instance/Load Balancer.
   2. Use the --ca option to specify a custom CA certificate (PEM format). This Certificate can be obtained by
      running "roxctl central cert".
@@ -33,6 +34,12 @@ type insecureVerifierWithWarning struct {
 	logger           logger.Logger
 }
 
+type grpcPermissionDenied struct{ error }
+
+func (p *grpcPermissionDenied) GRPCStatus() *status.Status {
+	return status.New(codes.PermissionDenied, p.Error())
+}
+
 func (v *insecureVerifierWithWarning) VerifyPeerCertificate(leaf *x509.Certificate, chainRest []*x509.Certificate, conf *tls.Config) error {
 	verifyOpts := x509.VerifyOptions{
 		DNSName:       conf.ServerName,
@@ -40,12 +47,9 @@ func (v *insecureVerifierWithWarning) VerifyPeerCertificate(leaf *x509.Certifica
 		Roots:         conf.RootCAs,
 	}
 
-	_, err := leaf.Verify(verifyOpts)
-	if err != nil {
-		v.printWarningOnce.Do(func() {
-			v.logger.WarnfLn(warningMsg)
-			v.logger.WarnfLn("Certificate validation error: %v", err)
-		})
+	if _, err := leaf.Verify(verifyOpts); err != nil {
+		v.logger.ErrfLn(errorMsg)
+		return &grpcPermissionDenied{err}
 	}
 	return nil
 }
