@@ -25,6 +25,9 @@ export function getEntity(
     config: CompoundSearchFilterConfig,
     entityName: string
 ): CompoundSearchFilterEntity | undefined {
+    if (!config || !Array.isArray(config)) {
+        return undefined;
+    }
     const entity = config.find((entity) => {
         return entity.displayName === entityName;
     });
@@ -42,8 +45,11 @@ export function getAttribute(
     });
 }
 
-export function getDefaultEntityName(config: CompoundSearchFilterConfig): string {
-    return config[0].displayName;
+export function getDefaultEntityName(config: CompoundSearchFilterConfig): string | undefined {
+    if (!config || !Array.isArray(config)) {
+        return undefined;
+    }
+    return config?.[0]?.displayName;
 }
 
 export function getEntityAttributes(
@@ -59,7 +65,7 @@ export function getDefaultAttributeName(
     entityName: string
 ): string | undefined {
     const attributes = getEntityAttributes(config, entityName);
-    return attributes[0].displayName;
+    return attributes?.[0]?.displayName;
 }
 
 export function ensureStringArray(value: unknown): string[] {

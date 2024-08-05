@@ -130,7 +130,7 @@ function selectDatePickerDate(month, day, year) {
 
 describe(Cypress.spec.relative, () => {
     it('should display nothing in the entity selector', () => {
-        const config = {};
+        const config = [];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -140,10 +140,7 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display Image and Deployment entities in the entity selector', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            Deployment: deploymentSearchFilterConfig,
-        };
+        const config = [imageSearchFilterConfig, deploymentSearchFilterConfig];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -159,11 +156,11 @@ describe(Cypress.spec.relative, () => {
     });
 
     it('should display Image, Deployment, and Cluster entities in the entity selector', () => {
-        const config = {
-            Image: imageSearchFilterConfig,
-            Deployment: deploymentSearchFilterConfig,
-            Cluster: clusterSearchFilterConfig,
-        };
+        const config = [
+            imageSearchFilterConfig,
+            deploymentSearchFilterConfig,
+            clusterSearchFilterConfig,
+        ];
         const onSearch = cy.stub().as('onSearch');
         const searchFilter = {};
 
@@ -177,6 +174,22 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.entitySelectItems).eq(0).should('have.text', 'Image');
         cy.get(selectors.entitySelectItems).eq(1).should('have.text', 'Deployment');
         cy.get(selectors.entitySelectItems).eq(2).should('have.text', 'Cluster');
+    });
+
+    it('should display nothing in the attributes selector', () => {
+        const config = [
+            {
+                displayName: 'Image',
+                searchCategory: 'IMAGES',
+                attributes: [],
+            },
+        ];
+        const onSearch = cy.stub().as('onSearch');
+        const searchFilter = {};
+
+        setup(config, searchFilter, onSearch);
+
+        cy.get(selectors.attributeSelectToggle).should('not.exist');
     });
 
     it('should display Image attributes in the attribute selector', () => {

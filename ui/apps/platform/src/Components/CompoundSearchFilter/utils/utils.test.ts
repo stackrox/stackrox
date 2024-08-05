@@ -36,7 +36,11 @@ describe('utils', () => {
                 imageCVESearchFilterConfig,
             ];
 
-            expect(config).toStrictEqual(['Image', 'Deployment', 'Image CVE']);
+            expect(config).toStrictEqual([
+                imageSearchFilterConfig,
+                deploymentSearchFilterConfig,
+                imageCVESearchFilterConfig,
+            ]);
         });
     });
 
