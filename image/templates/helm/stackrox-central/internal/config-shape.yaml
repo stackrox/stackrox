@@ -60,16 +60,6 @@ central:
     generate: null # bool
     htpasswd: null # string
   resources: null # string | dict
-  persistence:
-    hostPath: null # string
-    persistentVolumeClaim:
-      claimName: null # string
-      createClaim: null # bool
-      storageClass: null # string
-      size: null # int | string
-      volume:
-        volumeSpec: null # dict
-    none: null # bool
   exposure:
     loadBalancer:
       enabled: null # bool

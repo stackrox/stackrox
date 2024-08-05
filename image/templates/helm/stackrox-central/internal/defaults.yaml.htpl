@@ -324,10 +324,6 @@ defaults:
     enablePodSecurityPolicies: [< .EnablePodSecurityPolicies >]
     [<- end >]
 
-pvcDefaults:
-  claimName: "stackrox-db"
-  size: "100Gi"
-
 dbPVCDefaults:
   claimName: "central-db"
   size: "100Gi"

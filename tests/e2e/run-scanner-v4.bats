@@ -225,7 +225,14 @@ teardown_file() {
         MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
         info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
     fi
-    CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
+    local _ROX_CENTRAL_EXTRA_HELM_VALUES_FILE
+    _ROX_CENTRAL_EXTRA_HELM_VALUES_FILE=$(mktemp)
+    cat <<EOF >"$_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"
+central:
+  persistence:
+    none: true
+EOF
+    ROX_CENTRAL_EXTRA_HELM_VALUES_FILE="${_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}" CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
 
     # Upgrade to HEAD chart without explicit disabling of Scanner v4.
     info "Upgrading StackRox using HEAD Helm chart"

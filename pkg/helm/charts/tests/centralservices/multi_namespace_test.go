@@ -22,8 +22,6 @@ imagePullSecrets:
   username: myuser
   password: mypass
 central:
-  persistence:
-    none: true
   exposure:
     loadBalancer:
       enabled: true
