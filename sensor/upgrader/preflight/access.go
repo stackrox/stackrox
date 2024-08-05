@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	defaultServiceAccountName = `sensor-upgrader`
-	defaultClusterRoleBinding = namespaces.StackRox + ":upgrade-sensors"
+	defaultServiceAccountName  = `sensor-upgrader`
+	fallbackServiceAccountName = `sensor`
+	defaultClusterRoleBinding  = namespaces.StackRox + ":upgrade-sensors"
 )
 
 type accessCheck struct{}
@@ -128,18 +129,27 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 // to run the upgrade. The string returned from this function will be displayed in the UI, so keep it brief.
 func (c accessCheck) auxiliaryInfoOnPermissionDenied(ctx *upgradectx.UpgradeContext) string {
 	var msgs []string
-	if err := c.checkDefaultClusterRoleBinding(ctx, defaultServiceAccountName); err != nil {
+	var activeSA string
+	if err := c.checkSA(ctx, defaultServiceAccountName); err != nil {
+		msgs = append(msgs, fmt.Sprintf("ServiceAccount %q not found", defaultServiceAccountName))
+		if err := c.checkSA(ctx, fallbackServiceAccountName); err != nil {
+			msgs = append(msgs, fmt.Sprintf("ServiceAccount %q not found", fallbackServiceAccountName))
+		} else {
+			activeSA = fallbackServiceAccountName
+		}
+	} else {
+		activeSA = defaultServiceAccountName
+	}
+	if err := c.checkDefaultClusterRoleBinding(ctx, activeSA); err != nil {
 		msgs = append(msgs, err.Error())
 	}
-	if err := c.checkDefaultSA(ctx); err != nil {
-		msgs = append(msgs, err.Error())
-	}
-	return fmt.Sprintf("Checks for default configuration: %s.", strings.Join(msgs, ", "))
+
+	return fmt.Sprintf("Potential issues: %s.", strings.Join(msgs, "; "))
 }
 
-func (c accessCheck) checkDefaultSA(ctx *upgradectx.UpgradeContext) error {
+func (c accessCheck) checkSA(ctx *upgradectx.UpgradeContext, name string) error {
 	saClient := ctx.ClientSet().CoreV1().ServiceAccounts(namespaces.StackRox)
-	_, err := saClient.Get(ctx.Context(), defaultServiceAccountName, metav1.GetOptions{})
+	_, err := saClient.Get(ctx.Context(), name, metav1.GetOptions{})
 	return err
 }
 
@@ -153,7 +163,7 @@ func (c accessCheck) checkDefaultClusterRoleBinding(ctx *upgradectx.UpgradeConte
 		return fmt.Errorf("ClusterRoleBinding %q is not bound to the cluster-admin ClusterRole", defaultClusterRoleBinding)
 	}
 	if len(crb.Subjects) > 0 && crb.Subjects[0].Name != saName {
-		return fmt.Errorf("ClusterRoleBinding %q has no subject set to %q ServiceAccount", defaultClusterRoleBinding, saName)
+		return fmt.Errorf("ClusterRoleBinding %q does not include subject %q ServiceAccount", defaultClusterRoleBinding, saName)
 	}
 	return nil
 }
