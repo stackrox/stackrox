@@ -118,7 +118,7 @@ jobs:
         set -x
         df -h
         for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
-          rm -rf "/mnt${delete:?}"
+          rm -rf "${delete:?}"
         done
         df -h
 
