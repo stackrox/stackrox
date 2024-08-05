@@ -87,7 +87,6 @@ test('should read/write scoped string value in URL parameter without changing ex
 });
 
 test('should allow multiple sequential parameter updates without data loss', async () => {
-    jest.useFakeTimers();
     let params;
     let testLocation;
 
@@ -121,7 +120,6 @@ test('should allow multiple sequential parameter updates without data loss', asy
 });
 
 test('should read/write scoped complex object in URL parameter without changing existing URL parameters', async () => {
-    jest.useFakeTimers();
     let params: URLSearchParams;
     let testLocation;
 
@@ -204,7 +202,6 @@ test('should read/write scoped complex object in URL parameter without changing 
 });
 
 test('should implement push and replace state for history', async () => {
-    jest.useFakeTimers();
     let testHistory;
     let testLocation;
 
@@ -245,4 +242,92 @@ test('should implement push and replace state for history', async () => {
     });
     expect(testLocation.pathname).toBe('/main/dashboard');
     expect(testLocation.search).toBe('');
+});
+
+test('should batch URL parameter updates', async () => {
+    let params;
+    let testLocation;
+    let testHistory;
+
+    const { result } = renderHook(
+        () => ({
+            hook1: useURLParameter('testKey1', undefined),
+            hook2: useURLParameter('testKey2', undefined),
+        }),
+        {
+            wrapper: createWrapper({
+                children: [],
+                onRouteRender: ({ history, location }) => {
+                    testHistory = history;
+                    testLocation = location;
+                },
+                initialIndex: 1,
+                initialEntries: [''],
+            }),
+        }
+    );
+
+    params = new URLSearchParams(testLocation.search);
+    expect(testHistory.length).toBe(1);
+    expect(params.get('testKey1')).toBeNull();
+    expect(params.get('testKey2')).toBeNull();
+    expect(result.current.hook1[0]).toBeUndefined();
+    expect(result.current.hook2[0]).toBeUndefined();
+
+    // Default behavior is to push URL parameter changes to the history stack
+    actAndRunTicks(() => {
+        const [, setParam] = result.current.hook1;
+        setParam('testValue');
+    });
+
+    params = new URLSearchParams(testLocation.search);
+    expect(testHistory.length).toBe(2);
+    expect(params.get('testKey1')).toBe('testValue');
+    expect(params.get('testKey2')).toBeNull();
+    expect(result.current.hook1[0]).toBe('testValue');
+    expect(result.current.hook2[0]).toBeUndefined();
+
+    // Multiple URL updates should be batched into a single history entry
+    actAndRunTicks(() => {
+        const [, setParam1] = result.current.hook1;
+        const [, setParam2] = result.current.hook2;
+        setParam1('newValue1');
+        setParam2('newValue2');
+        setParam2('newValue3');
+    });
+
+    params = new URLSearchParams(testLocation.search);
+    expect(testHistory.length).toBe(3);
+    expect(params.get('testKey1')).toBe('newValue1');
+    expect(params.get('testKey2')).toBe('newValue3');
+    expect(result.current.hook1[0]).toBe('newValue1');
+    expect(result.current.hook2[0]).toBe('newValue3');
+
+    // A single URL update with a 'replace' action should replace the current history entry
+    actAndRunTicks(() => {
+        const [, setParam] = result.current.hook1;
+        setParam('newTestValue', 'replace');
+    });
+
+    params = new URLSearchParams(testLocation.search);
+    expect(testHistory.length).toBe(3);
+    expect(params.get('testKey1')).toBe('newTestValue');
+    expect(params.get('testKey2')).toBe('newValue3');
+    expect(result.current.hook1[0]).toBe('newTestValue');
+    expect(result.current.hook2[0]).toBe('newValue3');
+
+    // A mix of 'push' and 'replace' actions should result in a single history entry
+    actAndRunTicks(() => {
+        const [, setParam1] = result.current.hook1;
+        const [, setParam2] = result.current.hook2;
+        setParam1('newValue4', 'replace');
+        setParam2('newValue5');
+    });
+
+    params = new URLSearchParams(testLocation.search);
+    expect(testHistory.length).toBe(4);
+    expect(params.get('testKey1')).toBe('newValue4');
+    expect(params.get('testKey2')).toBe('newValue5');
+    expect(result.current.hook1[0]).toBe('newValue4');
+    expect(result.current.hook2[0]).toBe('newValue5');
 });
