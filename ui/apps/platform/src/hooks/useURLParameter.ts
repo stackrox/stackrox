@@ -1,23 +1,41 @@
-import { useCallback, useRef } from 'react';
+import { createContext, useCallback, useContext, useRef } from 'react';
 import { useLocation, useHistory } from 'react-router-dom';
 import isEqual from 'lodash/isEqual';
+
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 
-// TODO - Push this out into Redux, or context, or something
-let store: {
-    historyAction: 'push' | 'replace';
-    newValue: QueryValue;
-    keyPrefix: string;
-}[] = [];
-let isUpdateQueued = false;
+// TODO replace with a more accurate type when we upgrade React Router and 'history'
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type History = any;
 
-function applyUpdates(history) {
-    const action = store.some(({ historyAction }) => historyAction === 'push') ? 'push' : 'replace';
+export type QueryValue = undefined | string | string[] | qs.ParsedQs | qs.ParsedQs[];
+
+// Note that when we upgrade React Router and 'history' we can probably import a more accurate version of this type
+export type HistoryAction = 'push' | 'replace';
+
+export type UrlParameterUpdate = {
+    keyPrefix: string;
+    newValue: QueryValue;
+    historyAction: HistoryAction;
+};
+
+/**
+ * Given an array of URL parameter updates, apply them as a single operation to the URL.
+ * If any of the updates in the batch specify a 'push' history action, the overall
+ * action will be 'push', otherwise 'replace'.
+ *
+ * @param updates Url parameter updates that need to be applied to the URL
+ * @param history The history object to use to apply the updates
+ */
+export function applyUpdatesToUrl(updates: UrlParameterUpdate[], history: History) {
+    const action = updates.some(({ historyAction }) => historyAction === 'push')
+        ? 'push'
+        : 'replace';
 
     const previousQuery = getQueryObject(history.location.search) || {};
     const newQuery = { ...previousQuery };
 
-    store.forEach(({ keyPrefix, newValue }) => {
+    updates.forEach(({ keyPrefix, newValue }) => {
         newQuery[keyPrefix] = newValue;
 
         // If the value passed in is `undefined`, don't display it in the URL at all
@@ -30,15 +48,39 @@ function applyUpdates(history) {
     if (!isEqual(previousQuery, newQuery)) {
         history[action]({ search: getQueryString(newQuery) });
     }
-
-    isUpdateQueued = false;
-    store = [];
 }
 
-export type QueryValue = undefined | string | string[] | qs.ParsedQs | qs.ParsedQs[];
+/**
+ * The default context object for scheduling URL parameter updates. This context
+ * object schedules updates to be applied in a microtask, ensuring that multiple
+ * updates to the same URL parameter are batched together.
+ *
+ * @returns A context object that can be used to schedule URL parameter updates to be applied
+ */
+function makeMicrotaskSchedulingContext() {
+    let updates: UrlParameterUpdate[] = [];
+    let isUpdateScheduled = false;
 
-// Note that when we upgrade React Router and 'history' we can probably import a more accurate version of this type
-export type HistoryAction = 'push' | 'replace';
+    function scheduleAndFlushUpdates(history: History) {
+        queueMicrotask(() => {
+            applyUpdatesToUrl(updates, history);
+            updates = [];
+            isUpdateScheduled = false;
+        });
+    }
+
+    return {
+        addUrlParameterUpdate: (update: UrlParameterUpdate, history: History) => {
+            updates = [...updates, update];
+            if (!isUpdateScheduled) {
+                scheduleAndFlushUpdates(history);
+            }
+            isUpdateScheduled = true;
+        },
+    };
+}
+
+export const UrlParameterUpdateContext = createContext(makeMicrotaskSchedulingContext());
 
 export type UseURLParameterResult = [
     QueryValue,
@@ -61,6 +103,7 @@ export type UseURLParameterResult = [
  * @returns [value, setterFn]
  */
 function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLParameterResult {
+    const { addUrlParameterUpdate } = useContext(UrlParameterUpdateContext);
     const history = useHistory();
     const location = useLocation();
     // We use an internal Ref here so that calling code that depends on the
@@ -69,15 +112,12 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
     const internalValue = useRef(defaultValue);
     // memoize the setter function to retain referential equality as long
     // as the URL parameters do not change
+
     const setValue = useCallback(
         (newValue: QueryValue, historyAction: HistoryAction = 'push') => {
-            store.push({ historyAction, keyPrefix, newValue });
-            if (!isUpdateQueued) {
-                queueMicrotask(() => applyUpdates(history));
-            }
-            isUpdateQueued = true;
+            addUrlParameterUpdate({ historyAction, keyPrefix, newValue }, history);
         },
-        [keyPrefix, history]
+        [addUrlParameterUpdate, keyPrefix, history]
     );
 
     const nextValue = getQueryObject(location.search)[keyPrefix] || defaultValue;
