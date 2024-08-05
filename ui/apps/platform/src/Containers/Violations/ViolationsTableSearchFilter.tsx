@@ -25,6 +25,7 @@ import {
     ID as DeploymentID,
     Name as DeploymentName,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
+import { ResourceType as AlertResourceType } from 'Components/CompoundSearchFilter/attributes/alert';
 
 const searchFilterConfig: CompoundSearchFilterConfig = [
     {
@@ -46,6 +47,11 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
         displayName: 'Deployment',
         searchCategory: 'ALERTS',
         attributes: [DeploymentID, DeploymentName],
+    },
+    {
+        displayName: 'Alert',
+        searchCategory: 'ALERTS',
+        attributes: [AlertResourceType],
     },
 ];
 
