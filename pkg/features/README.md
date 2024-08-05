@@ -10,7 +10,7 @@ Feature flags can be valuable to ship features in a preview state, to provide th
 
 ### Feature release stages
 
-To promote a feature through various the release stages, consider the following progression:
+To promote a feature through the release stages, consider the following progression:
 
 1. Until the feature is ready to be tested by customers, the flag should be disabled by default and unchangeable in production.
 2. The flag, disabled by default, can be made changeable to allow customers share feedback on the feature.
@@ -21,7 +21,7 @@ To promote a feature through various the release stages, consider the following 
 
 When an existing feature needs to be removed, a feature flag should be used to gradually deprecate the feature:
 
-1. Create a feature flag, disabled by default, with a variable having `HIDDEN`, `SUPPRESSION` or similar word in the name. Do not use `DISABLED`, because the condition for the enabled feature will read bad.
+1. Create a feature flag, disabled by default, with a variable having `HIDDEN`, `SUPPRESSION` or similar word in the name. Do not use `DISABLED`, because the condition for the enabled feature will read badly.
 2. Put the functionality being deprecated under condition, e.g., `if !featureSuppression.Enabled() { feature }`, and announce the deprecation.
 3. After some grace period, make the flag enabled by default and announce removal.
 
