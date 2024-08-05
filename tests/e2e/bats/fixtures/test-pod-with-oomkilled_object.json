@@ -214,10 +214,6 @@
                         "readOnly": true
                     },
                     {
-                        "mountPath": "/var/lib/stackrox",
-                        "name": "stackrox-db"
-                    },
-                    {
                         "mountPath": "/etc/stackrox",
                         "name": "central-config-volume"
                     },
@@ -366,12 +362,6 @@
                     "name": "central-endpoints"
                 },
                 "name": "endpoints-config-volume"
-            },
-            {
-                "name": "stackrox-db",
-                "persistentVolumeClaim": {
-                    "claimName": "stackrox-db"
-                }
             },
             {
                 "name": "kube-api-access-9thvp",

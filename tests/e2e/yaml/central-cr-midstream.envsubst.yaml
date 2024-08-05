@@ -31,9 +31,6 @@ spec:
         requests:
           cpu: 1
           memory: 1Gi
-    persistence:
-      persistentVolumeClaim:
-        claimName: stackrox-db
 ${disableSpecTLS}  tls:
 ${disableSpecTLS}    additionalCAs:
 ${disableSpecTLS}    - name: additional-ca

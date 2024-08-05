@@ -18,9 +18,6 @@ rules:
   - securitycontextconstraints
   resourceNames:
   - nonroot-v2
-  {{- if ._rox.central.persistence.hostPath }}
-  - hostmount-anyuid
-  {{- end }}
   verbs:
   - use
 ---
