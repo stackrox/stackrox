@@ -66,28 +66,6 @@ function MainPage(): ReactElement {
         return <LoadingSection message="Loading..." />;
     }
 
-    /*
-            <PublicConfigHeader />
-            <AnnouncementBanner />
-            <CredentialExpiryBanner
-                component="CENTRAL"
-                showCertGenerateAction={currentUserCanGenerateCert}
-            />
-            <CredentialExpiryBanner
-                component="SCANNER"
-                showCertGenerateAction={currentUserCanGenerateCert}
-            />
-            {isScannerV4Enabled && (
-                <CredentialExpiryBanner
-                    component="SCANNER_V4"
-                    showCertGenerateAction={currentUserCanGenerateCert}
-                />
-            )}
-            <OutdatedVersionBanner />
-            <DatabaseStatusBanner />
-            <ServerStatusBanner />
-    */
-
     return (
         <>
             <div id="PageParent">
