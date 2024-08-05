@@ -70,7 +70,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      upgraderDeploymentName,
-			Namespace: pods.GetPodNamespace(pods.NoSATokenNamespace),
+			Namespace: pods.GetPodNamespace(),
 			Labels: map[string]string{
 				"app":             upgraderDeploymentName,
 				processIDLabelKey: p.trigger.GetUpgradeProcessId(),
@@ -86,7 +86,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 			},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: pods.GetPodNamespace(pods.NoSATokenNamespace),
+					Namespace: pods.GetPodNamespace(),
 					Labels: map[string]string{
 						"app":             upgraderDeploymentName,
 						processIDLabelKey: p.trigger.GetUpgradeProcessId(),

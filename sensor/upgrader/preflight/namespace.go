@@ -35,7 +35,7 @@ func namespaceAllowed(resource *k8sobjects.ObjectRef) bool {
 	if matchesException(resource) {
 		return true
 	}
-	return (resource.Namespace == "") || (resource.Namespace == pods.GetPodNamespace(pods.NoSATokenNamespace))
+	return (resource.Namespace == "") || (resource.Namespace == pods.GetPodNamespace())
 }
 
 func (namespaceCheck) Check(_ *upgradectx.UpgradeContext, execPlan *plan.ExecutionPlan, reporter checkReporter) error {

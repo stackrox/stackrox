@@ -160,7 +160,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 func (h *commandHandler) deleteUpgraderDeployments() {
 	// Only try deleting once. There's no big issue if these linger around as the upgrader doesn't do anything without
 	// being told to by central, so we don't go out of our way to make sure they are gone.
-	err := h.k8sClient.AppsV1().Deployments(pods.GetPodNamespace(pods.NoSATokenNamespace)).DeleteCollection(
+	err := h.k8sClient.AppsV1().Deployments(pods.GetPodNamespace()).DeleteCollection(
 		h.ctx(), pkgKubernetes.DeleteBackgroundOption, v1.ListOptions{
 			LabelSelector: v1.FormatLabelSelector(&v1.LabelSelector{
 				MatchExpressions: []v1.LabelSelectorRequirement{
