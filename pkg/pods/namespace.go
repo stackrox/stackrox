@@ -38,7 +38,7 @@ const (
 	ConsiderSATokenNamespace
 )
 
-// GetPodNamespace is a heuristic to determine in what namespace a given Pod runs.
+// GetPodNamespace is a heuristic to determine in which namespace a given Pod runs.
 func GetPodNamespace(heuristic HeuristicType) string {
 	var sensorNamespace string
 	if heuristic == ConsiderSATokenNamespace {
