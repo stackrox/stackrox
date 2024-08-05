@@ -96,6 +96,13 @@ jobs:
     - build-updater
     - download-nvd
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      volumes:
+      # The updater makes heavy use of /tmp files.
+      - /tmp:/tmp
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
     env:
       STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
       STACKROX_NVD_API_CALL_INTERVAL: 6s
@@ -111,6 +118,17 @@ jobs:
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Free up disk space
+      shell: bash
+      run: |
+        set +e
+        set -x
+        df -h
+        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
+          rm -rf "/mnt${delete:?}"
+        done
+        df -h
 
     - name: Set MANUAL_URL
       id: set-manual-url
