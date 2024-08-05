@@ -532,8 +532,10 @@ poll_for_system_test_images() {
 #   should not start until the images are built to avoid backoff noise in the
 #   prefetcher logs.
 
+image_prefetcher_await_msg_prefix="Waiting for pre-fetcher"
+
 image_prefetcher_prebuilt_start() {
-    info "Starting image pre-fetcher of pre-built images (NOT built for current commit)."
+    info "Starting image pre-fetcher of pre-built images (NOT built for current commit)..."
     junit_wrap image-prefetcher-prebuilt-start \
                "Start image pre-fetcher for pre-built images (NOT built for current commit)." \
                "See log for error details." \
@@ -541,7 +543,7 @@ image_prefetcher_prebuilt_start() {
 }
 
 image_prefetcher_system_start() {
-    info "Starting image pre-fetcher of system images (built for current commit)."
+    info "Starting image pre-fetcher of system images (built for current commit)..."
     junit_wrap image-prefetcher-system-start \
                "Start image pre-fetcher for system images (built for current commit)." \
                "See log for error details." \
@@ -559,7 +561,7 @@ _image_prefetcher_prebuilt_start() {
         ;;
     # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
     *)
-        info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}"
+        info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}."
         ;;
     esac
 }
@@ -572,7 +574,7 @@ _image_prefetcher_system_start() {
         image_prefetcher_start_set stackrox-images
         ;;
     *)
-        info "No system image prefetching is performed for: ${CI_JOB_NAME}"
+        info "No system image prefetching is performed for: ${CI_JOB_NAME}."
         ;;
     esac
 }
@@ -627,6 +629,7 @@ image_prefetcher_start_set() {
 
     # apply configmap, daemonset etc
     retry 5 true kubectl apply --namespace=$ns -f "$manifest"
+    info "Image pre-fetcher is now running in the background. Its status will be checked later (look for message starting with ${image_prefetcher_await_msg_prefix}). Proceeding with other tasks in the meantime."
     rm -f "$image_list" "$manifest"
 }
 
@@ -635,7 +638,7 @@ image_prefetcher_prebuilt_await() {
         return
     fi
 
-    info "Waiting for pre-fetcher of pre-built images to complete."
+    info "${image_prefetcher_await_msg_prefix} of pre-built images to complete..."
     junit_wrap image-prefetcher-prebuilt-await \
                "Waiting for pre-fetcher of pre-built images to complete." \
                "See log for error details." \
@@ -647,7 +650,7 @@ image_prefetcher_system_await() {
         return
     fi
 
-    info "Waiting for pre-fetcher of system images to complete."
+    info "${image_prefetcher_await_msg_prefix} of system images to complete..."
     junit_wrap image-prefetcher-system-await \
                "Waiting for pre-fetcher of system images to complete." \
                "See log for error details." \
@@ -661,7 +664,7 @@ _image_prefetcher_prebuilt_await() {
         ;;
     # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
     *)
-        info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}"
+        info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}. Nothing to wait for."
         ;;
     esac
 }
@@ -674,7 +677,7 @@ _image_prefetcher_system_await() {
         image_prefetcher_await_set stackrox-images
         ;;
     *)
-        info "No system image prefetching is performed for: ${CI_JOB_NAME}"
+        info "No system image prefetching is performed for: ${CI_JOB_NAME}. Nothing to wait for."
         ;;
     esac
 }
@@ -683,9 +686,9 @@ image_prefetcher_await_set() {
     local ns="prefetch-images"
     local name="$1"
 
-    info "Waiting for image prefetcher set ${name} to complete."
+    info "Waiting for image prefetcher set ${name} to complete..."
     kubectl rollout status daemonset "$name" -n "$ns" --timeout 15m
-    # All images fetched, now retrieve metrics.
+    info "All images in the set are now pre-fetched, now retrieving metrics..."
     local attempt=0
     local service="service/${name}-metrics"
     while [[ -z $(kubectl -n "${ns}" get "${service}" -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
@@ -714,6 +717,7 @@ image_prefetcher_await_set() {
     rm -f "${fetcher_metrics_json}"
 
     save_image_prefetches_metrics "${fetcher_metrics}"
+    info "Image pre-fetcher metrics retrieved and saved."
     rm -f "${fetcher_metrics}"
 }
 
