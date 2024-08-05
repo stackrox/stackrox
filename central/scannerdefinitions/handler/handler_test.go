@@ -399,6 +399,7 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusNotFound, w.Code)
 
+	w = httptest.NewRecorder()
 	// Set the header properly.
 	req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
 	h.ServeHTTP(w, req)
@@ -429,21 +430,21 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4() {
 
 	// Should get dev zstd file from online update.
 	req = s.getRequestVersion("dev")
-	w.Body.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/zstd", w.Header().Get("Content-Type"))
 
 	// Release version.
 	req = s.getRequestVersion("4.4.0")
-	w.Body.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/zstd", w.Header().Get("Content-Type"))
 
 	// Should get dev zstd file from online update.
 	req = s.getRequestVersion("4.3.x-nightly-20240106")
-	w.Body.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/zstd", w.Header().Get("Content-Type"))
@@ -451,7 +452,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4() {
 	// Multi-bundle ZIP.
 	req = s.getRequestVersion("dev")
 	req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
-	w.Body.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/zip", w.Header().Get("Content-Type"))
@@ -468,14 +469,14 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4_Mappings() {
 
 	// Should get mapping json file from online update.
 	req = s.getRequestFile("name2repos")
-	w.Body.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/json", w.Header().Get("Content-Type"))
 
 	// Should get mapping json file from online update.
 	req = s.getRequestFile("repo2cpe")
-	w.Body.Reset()
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/json", w.Header().Get("Content-Type"))

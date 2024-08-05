@@ -424,6 +424,9 @@ func (h *httpHandler) openOnlineDefinitions(_ context.Context, t updaterType, op
 		}
 		fallthrough
 	case mappingUpdaterType:
+		// openFromArchive will copy the contents of opts.fileName from openedFile to
+		// targetFile. Because of this, openedFile is not needed outside this function,
+		// so close it here.
 		defer utils.IgnoreError(openedFile.Close)
 		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), opts.fileName)
 		if err != nil {
@@ -458,6 +461,9 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		}
 		fallthrough
 	case mappingUpdaterType:
+		// openFromArchive will copy the contents of opts.fileName from openedFile to
+		// targetFile. Because of this, openedFile is not needed outside this function,
+		// so close it here.
 		defer utils.IgnoreError(openedFile.Close)
 		// search mapping file
 		fileName := filepath.Base(opts.fileName)
@@ -468,6 +474,9 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		defer cleanUp()
 		offlineFile = &vulDefFile{File: targetFile, modTime: openedFile.modTime}
 	case vulnerabilityUpdaterType:
+		// openFromArchive will copy the contents of opts.fileName from openedFile to
+		// mf. Because of this, openedFile is not needed outside this function,
+		// so close it here.
 		defer utils.IgnoreError(openedFile.Close)
 		// check version information in manifest
 		mf, cleanUp, err := openFromArchive(openedFile.Name(), "manifest.json")
