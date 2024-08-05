@@ -3,7 +3,7 @@ package preflight
 import (
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
@@ -34,14 +34,14 @@ func namespaceAllowed(resource *k8sobjects.ObjectRef) bool {
 	if matchesException(resource) {
 		return true
 	}
-	return resource.Namespace == "" || resource.Namespace == sensorupgrader.GetSensorNamespace()
+	return resource.Namespace == "" || resource.Namespace == pods.GetPodNamespace(pods.NoSATokenNamespace)
 }
 
 func (namespaceCheck) Check(_ *upgradectx.UpgradeContext, execPlan *plan.ExecutionPlan, reporter checkReporter) error {
 	for _, act := range execPlan.Actions() {
 		act := act
 		if !namespaceAllowed(&act.ObjectRef) {
-			reporter.Errorf("To-be-%sd object %v is in disallowed namespace %s", act.ActionName, act.ObjectRef, sensorupgrader.GetSensorNamespace())
+			reporter.Errorf("To-be-%sd object %v is in disallowed namespace %s", act.ActionName, act.ObjectRef, pods.GetPodNamespace(pods.NoSATokenNamespace))
 		}
 	}
 	return nil

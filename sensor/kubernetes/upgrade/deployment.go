@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"github.com/stackrox/rox/pkg/pods"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -71,7 +71,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      upgraderDeploymentName,
-			Namespace: sensorupgrader.GetSensorNamespace(),
+			Namespace: pods.GetPodNamespace(pods.NoSATokenNamespace),
 			Labels: map[string]string{
 				"app":             upgraderDeploymentName,
 				processIDLabelKey: p.trigger.GetUpgradeProcessId(),
@@ -87,7 +87,7 @@ func (p *process) createDeployment(serviceAccountName string, sensorDeployment *
 			},
 			Template: v1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: sensorupgrader.GetSensorNamespace(),
+					Namespace: pods.GetPodNamespace(pods.NoSATokenNamespace),
 					Labels: map[string]string{
 						"app":             upgraderDeploymentName,
 						processIDLabelKey: p.trigger.GetUpgradeProcessId(),

@@ -2,12 +2,12 @@ package common
 
 import (
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
-	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"github.com/stackrox/rox/pkg/pods"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
-	sensorNamespace = sensorupgrader.GetSensorNamespace()
+	sensorNamespace = pods.GetPodNamespace(pods.NoSATokenNamespace)
 	// SharedObjects are objects shared with other resource bundles (i.e., central). Not creating these objects is
 	// okay - Central takes precedence here.
 	SharedObjects = []k8sobjects.ObjectRef{

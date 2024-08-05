@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sensorupgrader"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
@@ -271,7 +271,7 @@ func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) commo
 		updates:        make(chan *message.ExpiringMessage),
 		stopSig:        concurrency.NewSignal(),
 		updateInterval: interval,
-		namespace:      sensorupgrader.GetSensorNamespace(),
+		namespace:      pods.GetPodNamespace(pods.NoSATokenNamespace),
 		updateTicker:   updateTicker,
 	}
 }
