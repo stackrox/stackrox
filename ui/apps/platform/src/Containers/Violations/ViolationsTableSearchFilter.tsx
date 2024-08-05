@@ -1,7 +1,7 @@
 import React from 'react';
 import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
-import useURLSearch from 'hooks/useURLSearch';
+import { SearchFilter } from 'types/search';
 import {
     makeFilterChipDescriptors,
     onURLSearch,
@@ -25,6 +25,7 @@ import {
     ID as DeploymentID,
     Name as DeploymentName,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
+import { SetSearchFilter } from 'hooks/useURLSearch';
 
 const searchFilterConfig: CompoundSearchFilterConfig = [
     {
@@ -49,9 +50,15 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
     },
 ];
 
-function ViolationsTableSearchFilter() {
-    const { searchFilter, setSearchFilter } = useURLSearch();
+export type ViolationsTableSearchFilterProps = {
+    searchFilter: SearchFilter;
+    setSearchFilter: SetSearchFilter;
+};
 
+function ViolationsTableSearchFilter({
+    searchFilter,
+    setSearchFilter,
+}: ViolationsTableSearchFilterProps) {
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
     const onSearch = (payload: OnSearchPayload) => {

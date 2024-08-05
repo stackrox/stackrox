@@ -200,6 +200,8 @@ function ViolationsTablePage(): ReactElement {
                             getSortParams={getSortParams}
                             columns={columns}
                             isAdvancedFiltersEnabled={isAdvancedFiltersEnabled}
+                            searchFilter={searchFilter}
+                            setSearchFilter={setSearchFilter}
                         />
                     </PageSection>
                 )}
