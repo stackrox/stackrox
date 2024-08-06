@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -101,7 +102,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 	s.Equal(expectedEvent, *event)
 
 	// Write a few more log lines and check that they are read and parsed
-	expectedEvents := make([]auditEvent, 0, 3)
+	expectedEvents := make([]auditEvent, 0, 4)
 	lines := make([]string, 0, 3)
 	for i := 0; i < 3; i++ {
 		eventTime = eventTime.Add(60 * time.Second)
@@ -109,6 +110,9 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 		expectedEvents = append(expectedEvents, expectedEvent)
 		lines = append(lines, line)
 	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 
 	// Write to the file in parallel to simulate the log file getting written to in parallel
 	go func() {
@@ -119,14 +123,17 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 		// unlikely scenario is real life since the audit log is constantly being written to
 		line, _ := s.fakeAuditLogLineAtTime("get", "configmaps", "extra-map", "stackrox", eventTime.Format(time.RFC3339Nano))
 		s.appendToFile(logPath, line)
+		wg.Done()
 	}()
-
-	time.Sleep(1 * time.Second)
 
 	for _, expectedEvent := range expectedEvents {
 		event = s.getSentEvent(sender.sentC)
 		s.Equal(expectedEvent, *event)
 	}
+
+	// Wait before removing the temporary directory to avoid calling
+	// appendToFile() after removal.
+	wg.Wait()
 }
 
 func (s *ComplianceAuditLogReaderTestSuite) TestReaderOnlySendsEventsThatMatchResourceTypeFilter() {

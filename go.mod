@@ -507,7 +507,7 @@ require (
 // for Go build tools to accept the `go.mod`.
 
 // @stackrox/core-workflows
-replace github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20210831224919-407035634f5d
+replace github.com/nxadm/tail => github.com/stackrox/tail v1.4.9-0.20240806130957-77cf33bea65f
 
 // @stackrox/draco
 // github.com/stackrox/helm-operator is a modified fork of github.com/operator-framework/helm-operator-plugins that

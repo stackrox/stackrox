@@ -54,9 +54,10 @@ type auditLogReaderImpl struct {
 
 func (s *auditLogReaderImpl) StartReader(ctx context.Context) (bool, error) {
 	t, err := tail.TailFile(s.logPath, tail.Config{
-		ReOpen:    true,
-		MustExist: true,
-		Follow:    true,
+		ReOpen:        true,
+		MustExist:     true,
+		Follow:        true,
+		CompleteLines: true,
 	})
 
 	if err != nil {
