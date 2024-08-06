@@ -70,7 +70,7 @@ func renderBaseFiles(cluster *storage.Cluster, renderOpts clusters.RenderOptions
 
 	baseFiles, err := renderer.RenderSensor(fields, &certs, opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get required cluster information")
+		return nil, errors.Wrap(err, "unable to render sensor")
 	}
 
 	return baseFiles, nil
