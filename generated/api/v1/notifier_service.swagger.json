@@ -345,6 +345,9 @@
         "syslog": {
           "$ref": "#/definitions/storageSyslog"
         },
+        "microsoftSentinel": {
+          "$ref": "#/definitions/storageMicrosoftSentinel"
+        },
         "notifierSecret": {
           "type": "string"
         },
@@ -401,6 +404,9 @@
             },
             "syslog": {
               "$ref": "#/definitions/storageSyslog"
+            },
+            "microsoftSentinel": {
+              "$ref": "#/definitions/storageMicrosoftSentinel"
             },
             "notifierSecret": {
               "type": "string"
@@ -670,6 +676,29 @@
         }
       }
     },
+    "storageMicrosoftSentinel": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "dataCollectionRuleId": {
+          "type": "string"
+        },
+        "streamName": {
+          "type": "string"
+        },
+        "directoryTenantId": {
+          "type": "string"
+        },
+        "applicationClientId": {
+          "type": "string"
+        },
+        "secret": {
+          "type": "string"
+        }
+      }
+    },
     "storageNotifier": {
       "type": "object",
       "properties": {
@@ -717,6 +746,9 @@
         },
         "syslog": {
           "$ref": "#/definitions/storageSyslog"
+        },
+        "microsoftSentinel": {
+          "$ref": "#/definitions/storageMicrosoftSentinel"
         },
         "notifierSecret": {
           "type": "string"
