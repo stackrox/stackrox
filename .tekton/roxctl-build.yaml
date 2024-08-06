@@ -38,7 +38,7 @@ spec:
     value: 'true'
   # TODO(ROX-20234): Enable hermetic builds
   # - name: hermetic
-  #   value: "true"
+  #   value: 'true'
   - name: prefetch-input
     value: '{"type": "gomod", "path": "."}'
   - name: build-source-image

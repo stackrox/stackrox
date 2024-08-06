@@ -1,12 +1,13 @@
 apiVersion: tekton.dev/v1
 kind: PipelineRun
+
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
-    pipelinesascode.tekton.dev/max-keep-runs: "3"
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: (event == "push" && target_branch == "master") || (event == "pull_request" && (source_branch.contains("rhtap") || source_branch.contains("konflux") || source_branch.contains("appstudio")))
   creationTimestamp: null
@@ -16,15 +17,17 @@ metadata:
     pipelines.appstudio.openshift.io/type: build
   name: operator-bundle-build
   namespace: rh-acs-tenant
+
 spec:
+
   params:
   - name: dockerfile
-    value: operator/bundle.Dockerfile.konflux
+    value: operator/konflux.bundle.Dockerfile
   - name: git-url
-    value: '{{source_url}}'
+    value: '{{repo_url}}'
   # TODO(ROX-24530): return expiration for non-released images to 13w
   - name: image-expires-after
-    value: 5d
+    value: '52w'
   - name: output-image-repo
     value: quay.io/rhacs-eng/stackrox-operator-bundle
   - name: revision
@@ -45,9 +48,10 @@ spec:
   - name: image-tag-style
     value: 'operator'
 
-  pipelineRef:
-    name: operator-bundle-pipeline
   workspaces:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
+
+  pipelineRef:
+    name: operator-bundle-pipeline
