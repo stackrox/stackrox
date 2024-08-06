@@ -313,6 +313,6 @@ metadata:
     {{- include "srox.annotations" (list . "secret" "helm-effective-cluster-name" $annotations) | nindent 4 }}
 stringData:
   cluster-name: |
-    {{- ._rox.clusterName | toString | nindent 4 }}
+    {{- printf "%s" (._rox.clusterName | toString) | nindent 4 }}
 {{- end}}
 [<- end >]
