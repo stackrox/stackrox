@@ -18,7 +18,7 @@ LABEL name="central-db" \
       summary="Stackrox Central Database for the StackRox Kubernetes Security Platform" \
       description="This image provides Database services to Stackrox Central in the StackRox Kubernetes Security Platform."
 
-ENV PG_MAJOR=13
+ENV PG_MAJOR=15
 ENV PATH="$PATH:/usr/pgsql-$PG_MAJOR/bin/"
 ENV LANG=en_US.utf8
 
@@ -36,7 +36,7 @@ RUN microdnf upgrade -y --nobest && \
     microdnf -y --setopt=install_weak_deps=0 --nodocs install \
         ca-certificates libicu systemd-sysv \
         glibc-locale-source glibc-langpack-en \
-        perl-libs libxslt python3 uuid && \
+        perl-libs libxslt python3 uuid lz4 && \
     rpm -i /tmp/postgres-libs.rpm /tmp/postgres-server.rpm /tmp/postgres.rpm /tmp/postgres-contrib.rpm && \
     # Restore /usr/share/zoneinfo that's empty in ubi-minimal because postgres reads timezone data from it.
     # https://access.redhat.com/solutions/5616681
