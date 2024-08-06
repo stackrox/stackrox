@@ -266,7 +266,7 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 			existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
 			img = existingImg
 
-			log.Debugw("Scan cache miss enriching image",
+			log.Debugw("Scan cache ignored enriching image",
 				logging.ImageName(existingImg.GetName().GetFullName()),
 				logging.ImageID(imgID),
 				logging.String("request_image", request.GetImage().GetName().GetFullName()),
@@ -534,7 +534,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 				return internalScanRespFromImage(existingImg), nil
 			}
 
-			log.Debugw("Scan cache miss enriching image with vulnerabilities",
+			log.Debugw("Scan cache ignored enriching image with vulnerabilities",
 				logging.ImageName(existingImg.GetName().GetFullName()),
 				logging.ImageID(imgID),
 				logging.String("request_image", request.GetImageName().GetFullName()),
