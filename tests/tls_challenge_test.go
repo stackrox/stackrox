@@ -23,6 +23,14 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+const (
+	s                  = namespaces.StackRox // for brevity
+	proxyNs            = "qa-tls-challenge"  // Must match the additionalCA X509v3 Subject Alternative Name
+	sensorDeployment   = "sensor"
+	sensorContainer    = "sensor"
+	centralEndpointVar = "ROX_CENTRAL_ENDPOINT"
+)
+
 //go:embed "bad-ca/root.crt"
 var additionalCA []byte
 
@@ -38,50 +46,53 @@ func TestTLSChallenge(t *testing.T) {
 
 type TLSChallengeSuite struct {
 	KubernetesSuite
+	ctx                     context.Context
+	cleanupCtx              context.Context
+	cancel                  func()
+	originalCentralEndpoint string
 }
 
 func (ts *TLSChallengeSuite) SetupSuite() {
 	ts.KubernetesSuite.SetupSuite()
+	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(ts.T(), "TestTLSChallenge", 20*time.Minute)
+
+	// Check sanity before test.
+	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
+
+	logf(ts.T(), "Gathering original central endpoint value from sensor...")
+	ts.originalCentralEndpoint = ts.getDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
+	logf(ts.T(), "Original value is %q. (Will restore this value on cleanup.)", ts.originalCentralEndpoint)
+
+	ts.setupProxy(ts.ctx, proxyNs, ts.originalCentralEndpoint)
+}
+
+func (ts *TLSChallengeSuite) TearDownSuite() {
+	ts.cleanupProxy(ts.cleanupCtx, proxyNs)
+	if ts.originalCentralEndpoint != "" {
+		ts.setDeploymentEnvVal(ts.cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, ts.originalCentralEndpoint)
+	}
+	// Check sanity after test.
+	waitUntilCentralSensorConnectionIs(ts.T(), ts.cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
+	ts.cancel()
 }
 
 func (ts *TLSChallengeSuite) TestTLSChallenge() {
-
 	const (
-		s                  = namespaces.StackRox // for brevity
-		sensorDeployment   = "sensor"
-		sensorContainer    = "sensor"
-		centralEndpointVar = "ROX_CENTRAL_ENDPOINT"
-		proxyServiceName   = "nginx-loadbalancer"
-		proxyNs            = "qa-tls-challenge" // Must match the additionalCA X509v3 Subject Alternative Name
-		proxyEndpoint      = proxyServiceName + "." + proxyNs + ":443"
+		proxyServiceName = "nginx-loadbalancer"
+		proxyEndpoint    = proxyServiceName + "." + proxyNs + ":443"
 	)
 
-	ctx, cleanupCtx, cancel := testContexts(ts.T(), "TestTLSChallenge", 20*time.Minute)
-	defer cancel()
-
-	// Check sanity before and after test.
-	waitUntilCentralSensorConnectionIs(ts.T(), ctx, storage.ClusterHealthStatus_HEALTHY)
-	defer waitUntilCentralSensorConnectionIs(ts.T(), cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
-
-	logf(ts.T(), "Gathering original central endpoint value from sensor...")
-	originalCentralEndpoint := ts.getDeploymentEnvVal(ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
-	logf(ts.T(), "Original value is %q. (Will restore this value on cleanup.)", originalCentralEndpoint)
-	defer ts.setDeploymentEnvVal(cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, originalCentralEndpoint)
-
-	ts.setupProxy(ctx, proxyNs, originalCentralEndpoint)
-	defer ts.cleanupProxy(cleanupCtx, proxyNs)
-
 	logf(ts.T(), "Pointing sensor at the proxy...")
-	ts.setDeploymentEnvVal(ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
+	ts.setDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
 	logf(ts.T(), "Sensor will now attempt connecting via the nginx proxy.")
 
-	ts.waitUntilLog(ctx, s, map[string]string{"app": "sensor"}, "sensor", "contain info about successful connection",
+	ts.waitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection",
 		containsLineMatching(regexp.MustCompile("Info: Add central CA cert with CommonName: 'Custom Root'")),
 		containsLineMatching(regexp.MustCompile("Info: Connecting to Central server "+proxyEndpoint)),
 		containsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
 		containsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
 	)
-	waitUntilCentralSensorConnectionIs(ts.T(), ctx, storage.ClusterHealthStatus_HEALTHY)
+	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 }
 
 func (ts *TLSChallengeSuite) setupProxy(ctx context.Context, proxyNs string, centralEndpoint string) {
