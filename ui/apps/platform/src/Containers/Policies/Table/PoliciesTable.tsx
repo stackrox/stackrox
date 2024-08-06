@@ -301,7 +301,9 @@ function PoliciesTable({
                 <Table isStickyHeader aria-label="Policies table" data-testid="policies-table">
                     <Thead>
                         <Tr>
-                            <Th>{/* Header for expanded column */}</Th>
+                            <Th>
+                                <span className="pf-v5-screen-reader">Row expansion</span>
+                            </Th>
                             <Th
                                 select={{
                                     onSelect: onSelectAll,
@@ -330,7 +332,9 @@ function PoliciesTable({
                                     </Th>
                                 );
                             })}
-                            <Td />
+                            <Th>
+                                <span className="pf-v5-screen-reader">Row actions</span>
+                            </Th>
                         </Tr>
                     </Thead>
                     {policies.map((policy) => {

@@ -184,7 +184,11 @@ function CVEsTable({
                             Request details
                         </TooltipTh>
                     )}
-                    {createTableActions && <Th aria-label="CVE actions" />}
+                    {createTableActions && (
+                        <Th>
+                            <span className="pf-v5-screen-reader">CVE actions</span>
+                        </Th>
+                    )}
                 </Tr>
             </Thead>
             <TbodyUnified

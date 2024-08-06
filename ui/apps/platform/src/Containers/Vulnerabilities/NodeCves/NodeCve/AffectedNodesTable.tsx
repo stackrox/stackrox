@@ -111,7 +111,9 @@ function AffectedNodesTable({
         >
             <Thead noWrap>
                 <Tr>
-                    <Th aria-label="Expand row" />
+                    <Th>
+                        <span className="pf-v5-screen-reader">Row expansion</span>
+                    </Th>
                     <Th sort={getSortParams(NODE_SORT_FIELD)}>Node</Th>
                     <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>CVE severity</Th>
                     <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>

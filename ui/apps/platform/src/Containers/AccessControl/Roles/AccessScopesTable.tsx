@@ -22,7 +22,9 @@ function AccessScopesTable({
         <Table variant="compact" isStickyHeader>
             <Thead>
                 <Tr>
-                    <Td />
+                    <Th>
+                        <span className="pf-v5-screen-reader">Row selection</span>
+                    </Th>
                     <Th width={20}>Name</Th>
                     <Th>Description</Th>
                 </Tr>
