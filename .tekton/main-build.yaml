@@ -65,22 +65,21 @@ spec:
     name: main-pipeline
 
   taskRunSpecs:
-  # For all arch build-container-* tasks
-  # CPU requests are increased to speed up builds compared to the defaults.
-  # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
-  #
-  # Memory is increased for UI builds to succeed. Otherwise, there's an error like this in logs:
-  # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
-  #
-  # Not using buildah-6gb/-8gb/... because these don't have memory requests equal to limits which still occasionally
-  # leads to failing builds.
-  #
-  # For sbom-syft-generate tasks:
-  # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container exits with 137 (OOMKilled):
+  # For all sbom-syft-generate steps:
+  # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
+  # exits with 137 (OOMKilled):
   # /tekton/scripts/script-2-h7nll: line 7:    33 Killed                  syft dir:$(cat /shared/container_path) --output cyclonedx-json=/var/workdir/sbom-image.json
   - pipelineTaskName: build-container-amd64
     stepSpecs:
     - name: build
+      # CPU requests are increased to speed up builds compared to the defaults.
+      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
+      #
+      # Memory is increased for UI builds to succeed. Otherwise, there's an error like this in logs:
+      # [build] @stackrox/platform-app: The build failed because the process exited too early. This probably means the system ran out of memory or someone called `kill -9` on the process.
+      #
+      # Not using buildah-6gb/-8gb/... because these don't have memory requests equal to limits which still occasionally
+      # leads to failing builds.
       computeResources:
         limits:
           cpu: 4
