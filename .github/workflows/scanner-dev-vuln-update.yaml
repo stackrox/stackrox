@@ -107,6 +107,21 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Free up disk space
+      shell: bash
+      run: |
+        set +e
+        set -x
+        df -h
+        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
+          rm -rf "${delete:?}"
+        done
+        df -h
+
     - name: Set MANUAL_URL
       id: set-manual-url
       run: |
