@@ -1,6 +1,10 @@
 package errox
 
-import "github.com/pkg/errors"
+import (
+	"net"
+
+	"github.com/pkg/errors"
+)
 
 // IsAny returns a bool if it matches any of the target errors
 // This helps consolidate code from
@@ -13,4 +17,27 @@ func IsAny(err error, targets ...error) bool {
 		}
 	}
 	return false
+}
+
+// ConcealSensitive strips sensitive data from some known error types and
+// returns a new error.
+func ConcealSensitive(err error) error {
+	if err == nil {
+		return nil
+	}
+	if e := (*net.AddrError)(nil); errors.As(err, &e) {
+		return errors.New("address error: " + e.Err)
+	}
+	if e := (*net.DNSError)(nil); errors.As(err, &e) {
+		return errors.New("lookup error: " + e.Err)
+	}
+	if e := (*net.OpError)(nil); errors.As(err, &e) {
+		s := e.Op
+		if e.Net != "" {
+			s += " " + e.Net
+		}
+		s += ": " + e.Err.Error()
+		return errors.New(s)
+	}
+	return err
 }
