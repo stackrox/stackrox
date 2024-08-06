@@ -63,7 +63,7 @@ func (ts *TLSChallengeSuite) SetupSuite() {
 	ts.originalCentralEndpoint = ts.getDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
 	ts.logf("Original value is %q. (Will restore this value on cleanup.)", ts.originalCentralEndpoint)
 
-	ts.setupProxy(ts.ctx, proxyNs, ts.originalCentralEndpoint)
+	ts.setupProxy(proxyNs, ts.originalCentralEndpoint)
 }
 
 func (ts *TLSChallengeSuite) TearDownSuite() {
@@ -95,30 +95,30 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 }
 
-func (ts *TLSChallengeSuite) setupProxy(ctx context.Context, proxyNs string, centralEndpoint string) {
+func (ts *TLSChallengeSuite) setupProxy(proxyNs string, centralEndpoint string) {
 	name := "nginx-loadbalancer"
 	nginxLabels := map[string]string{"app": "nginx"}
 	nginxTLSSecretName := "nginx-tls-conf"
 	nginxConfigName := "nginx-proxy-conf"
 	ts.logf("Setting up nginx proxy in namespace %q...", proxyNs)
-	ts.createProxyNamespace(ctx, proxyNs)
-	ts.installImagePullSecret(ctx, proxyNs)
-	ts.createProxyTLSSecret(ctx, proxyNs, nginxTLSSecretName)
-	ts.createProxyConfigMap(ctx, proxyNs, centralEndpoint, nginxConfigName)
-	ts.createService(ctx, proxyNs, name, nginxLabels, map[int32]int32{443: 8443})
-	ts.createProxyDeployment(ctx, proxyNs, name, nginxLabels, nginxConfigName, nginxTLSSecretName)
+	ts.createProxyNamespace(proxyNs)
+	ts.installImagePullSecret(proxyNs)
+	ts.createProxyTLSSecret(proxyNs, nginxTLSSecretName)
+	ts.createProxyConfigMap(proxyNs, centralEndpoint, nginxConfigName)
+	ts.createService(ts.ctx, proxyNs, name, nginxLabels, map[int32]int32{443: 8443})
+	ts.createProxyDeployment(proxyNs, name, nginxLabels, nginxConfigName, nginxTLSSecretName)
 	ts.logf("Nginx proxy is now set up in namespace %q.", proxyNs)
 }
 
-func (ts *TLSChallengeSuite) createProxyNamespace(ctx context.Context, proxyNs string) {
-	_, err := ts.k8s.CoreV1().Namespaces().Create(ctx, &v1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: proxyNs}}, metaV1.CreateOptions{})
+func (ts *TLSChallengeSuite) createProxyNamespace(proxyNs string) {
+	_, err := ts.k8s.CoreV1().Namespaces().Create(ts.ctx, &v1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: proxyNs}}, metaV1.CreateOptions{})
 	if apiErrors.IsAlreadyExists(err) {
 		return
 	}
 	ts.Require().NoError(err, "cannot create proxy namespace %q", proxyNs)
 }
 
-func (ts *TLSChallengeSuite) installImagePullSecret(ctx context.Context, proxyNs string) {
+func (ts *TLSChallengeSuite) installImagePullSecret(proxyNs string) {
 	configBytes, err := json.Marshal(config.DockerConfigJSON{
 		Auths: map[string]config.DockerConfigEntry{
 			"https://quay.io": {
@@ -129,23 +129,23 @@ func (ts *TLSChallengeSuite) installImagePullSecret(ctx context.Context, proxyNs
 	})
 	secretName := "quay"
 	ts.Require().NoError(err, "cannot serialize docker config for image pull secret %q in namespace %q", secretName, proxyNs)
-	ts.ensureSecretExists(ctx, proxyNs, secretName, v1.SecretTypeDockerConfigJson, map[string][]byte{v1.DockerConfigJsonKey: configBytes})
+	ts.ensureSecretExists(ts.ctx, proxyNs, secretName, v1.SecretTypeDockerConfigJson, map[string][]byte{v1.DockerConfigJsonKey: configBytes})
 	patch := []byte(fmt.Sprintf(`{"imagePullSecrets":[{"name":%q}]}`, secretName))
-	_, err = ts.k8s.CoreV1().ServiceAccounts(proxyNs).Patch(ctx, "default", types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
+	_, err = ts.k8s.CoreV1().ServiceAccounts(proxyNs).Patch(ts.ctx, "default", types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
 	ts.Require().NoError(err, "cannot patch service account %q in namespace %q", "default", proxyNs)
 }
 
-func (ts *TLSChallengeSuite) createProxyTLSSecret(ctx context.Context, proxyNs string, nginxTLSSecretName string) {
+func (ts *TLSChallengeSuite) createProxyTLSSecret(proxyNs string, nginxTLSSecretName string) {
 	var certChain []byte
 	certChain = append(certChain, leafCert...)
 	certChain = append(certChain, additionalCA...)
-	ts.ensureSecretExists(ctx, proxyNs, nginxTLSSecretName, v1.SecretTypeTLS, map[string][]byte{
+	ts.ensureSecretExists(ts.ctx, proxyNs, nginxTLSSecretName, v1.SecretTypeTLS, map[string][]byte{
 		v1.TLSCertKey:       certChain,
 		v1.TLSPrivateKeyKey: leafKey,
 	})
 }
 
-func (ts *TLSChallengeSuite) createProxyConfigMap(ctx context.Context, proxyNs string, centralEndpoint string, nginxConfigName string) {
+func (ts *TLSChallengeSuite) createProxyConfigMap(proxyNs string, centralEndpoint string, nginxConfigName string) {
 	const nginxConfigTmpl = `
 server {
     listen 8443 ssl http2;
@@ -166,12 +166,12 @@ server {
 	}
 }
 `
-	ts.ensureConfigMapExists(ctx, proxyNs, nginxConfigName, map[string]string{
+	ts.ensureConfigMapExists(ts.ctx, proxyNs, nginxConfigName, map[string]string{
 		"nginx-proxy-grpc-tls.conf": fmt.Sprintf(nginxConfigTmpl, centralEndpoint),
 	})
 }
 
-func (ts *TLSChallengeSuite) createProxyDeployment(ctx context.Context, proxyNs string, name string, nginxLabels map[string]string, nginxConfigName string, nginxTLSSecretName string) {
+func (ts *TLSChallengeSuite) createProxyDeployment(proxyNs string, name string, nginxLabels map[string]string, nginxConfigName string, nginxTLSSecretName string) {
 	d := &appsV1.Deployment{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:   name,
@@ -239,7 +239,7 @@ func (ts *TLSChallengeSuite) createProxyDeployment(ctx context.Context, proxyNs 
 			},
 		},
 	}
-	_, err := ts.k8s.AppsV1().Deployments(proxyNs).Create(ctx, d, metaV1.CreateOptions{})
+	_, err := ts.k8s.AppsV1().Deployments(proxyNs).Create(ts.ctx, d, metaV1.CreateOptions{})
 	ts.Require().NoError(err, "cannot create deployment %q in namespace %q", name, proxyNs)
 }
 
