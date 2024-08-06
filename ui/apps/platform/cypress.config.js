@@ -19,6 +19,15 @@ module.exports = {
         specPattern: 'cypress/integration/**/*.test.{js,ts}',
         viewportHeight: 850, // Viewport options
         viewportWidth: 1440, // Viewport options
+        setupNodeEvents: (on) => {
+            on('task', {
+                beforeSuite(spec) {
+                    // eslint-disable-next-line no-console
+                    console.log(`${new Date().toISOString()} running test suite: ${spec.name}\n`);
+                    return null;
+                },
+            });
+        },
     },
 
     component: {
