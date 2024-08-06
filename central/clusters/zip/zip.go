@@ -151,6 +151,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	baseFiles, err := renderBaseFiles(cluster, renderOpts, certs)
 	if err != nil {
+		log.Errorf("error rendering cluster zip files: %v", err)
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}
