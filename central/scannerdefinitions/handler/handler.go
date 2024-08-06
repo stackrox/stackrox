@@ -151,205 +151,6 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func writeErrorNotFound(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusNotFound)
-	_, _ = w.Write([]byte("No scanner definitions found"))
-}
-
-func writeErrorBadRequest(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusBadRequest)
-	_, _ = w.Write([]byte("at least one of file or uuid must be specified"))
-}
-
-func writeErrorForFile(w http.ResponseWriter, err error, path string) {
-	if errox.IsAny(err, fs.ErrNotExist, snapshot.ErrBlobNotExist) {
-		writeErrorNotFound(w)
-		return
-	}
-
-	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read vulnerability definition %s: %v", filepath.Base(path), err)
-}
-
-func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime time.Time, content io.ReadSeeker) {
-	log.Debugf("Serving vulnerability definitions from %s", filepath.Base(name))
-	http.ServeContent(w, r, name, modTime, content)
-}
-
-// getUpdater gets or creates an updater for the scanner definitions identified
-// by the given updater type and a URL path to the definitions file. If the
-// updater was created, it is no started here, callers are expected to start it.
-func (h *httpHandler) getUpdater(t updaterType, urlPath string) *requestedUpdater {
-	h.lock.Lock()
-	defer h.lock.Unlock()
-
-	fileName := strings.ReplaceAll(filepath.Join(t.String(), urlPath), "/", "-")
-	updater, exists := h.updaters[fileName]
-	if !exists {
-		var updateURL *url.URL
-		var ext string
-		switch t {
-		case mappingUpdaterType:
-			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4MappingSubDir, scannerV4MappingFile)
-			ext = ".zip"
-		case vulnerabilityUpdaterType:
-			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4VulnSubDir, urlPath)
-			ext = ".json.zst"
-		default: // uuid
-			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerUpdateURLSuffix)
-			ext = ".zip"
-		}
-		filePath := filepath.Join(h.onlineVulnDir, fileName)
-		// Use a default extension if the URL path does not contain one.
-		if filepath.Ext(fileName) == "" {
-			filePath += ext
-		}
-		updater = &requestedUpdater{
-			updater: newUpdater(file.New(filePath), client, updateURL.String(), h.interval),
-		}
-		h.updaters[fileName] = updater
-	}
-
-	updater.lastRequestedTime = time.Now()
-	return updater
-}
-
-func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File, blobName string) error {
-	r, err := zipF.Open()
-	if err != nil {
-		return errors.Wrap(err, "opening ZIP reader")
-	}
-	defer utils.IgnoreError(r.Close)
-
-	// POST requests only update the offline feed.
-	b := &storage.Blob{
-		Name:         blobName,
-		LastUpdated:  protocompat.TimestampNow(),
-		ModifiedTime: protocompat.TimestampNow(),
-		Length:       zipF.FileInfo().Size(),
-	}
-
-	if err := h.blobStore.Upsert(sac.WithAllAccess(ctx), b, r); err != nil {
-		return errors.Wrap(err, "writing scanner definitions")
-	}
-
-	return nil
-}
-
-func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath string) error {
-	zipR, err := zip.OpenReader(zipPath)
-	if err != nil {
-		return errors.Wrap(err, "couldn't open file as zip")
-	}
-	defer utils.IgnoreError(zipR.Close)
-	var count int
-	// It is expected a ZIP file be uploaded with both Scanner V2 and V4 vulnerability definitions.
-	// scanner-defs.zip contains data required by Scanner V2.
-	// scanner-v4-defs-*.zip contains data required by Scanner v4.
-	// In the future, we may decide to support other files (like we have in the past), which is why we
-	// expect this ZIP of a single ZIP.
-	for _, zipF := range zipR.File {
-		if zipF.Name == scannerDefsSubZipName {
-			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerDefinitionBlobName); err != nil {
-				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
-			}
-			count++
-			continue
-		}
-		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV4DefinitionBlobName); err != nil {
-				return errors.Wrap(err, "couldn't handle scanner-v4-defs sub file")
-			}
-			log.Debugf("Successfully processed file: %s", zipF.Name)
-			count++
-		}
-		// Ignore any other files which may be in the ZIP.
-	}
-	if count > 0 {
-		return nil
-	}
-	return errors.New("scanner defs file not found in upload zip; wrong zip uploaded?")
-}
-
-func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
-	tempDir, err := os.MkdirTemp("", "scanner-definitions-handler")
-	if err != nil {
-		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to create temp dir: %v", err)
-		return
-	}
-	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
-			log.Warnf("Failed to remove temp dir for scanner defs: %v", err)
-		}
-	}()
-
-	tempFile := filepath.Join(tempDir, "tempfile.zip")
-	if err := fileutils.CopySrcToFile(tempFile, r.Body); err != nil {
-		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrapf(err, "copying HTTP POST body to %s", tempFile))
-		return
-	}
-	if features.ScannerV4.Enabled() {
-		if err := validateV4DefsVersion(tempFile); err != nil {
-			httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
-			return
-		}
-	}
-	if err := h.handleZipContentsFromVulnDump(r.Context(), tempFile); err != nil {
-		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
-		return
-	}
-
-	_, _ = w.Write([]byte("Successfully stored the offline vulnerability definitions"))
-}
-
-func (h *httpHandler) runCleanupUpdaters(cleanupInterval, cleanupAge *time.Duration) {
-	interval := defaultCleanupInterval
-	if cleanupInterval != nil {
-		interval = *cleanupInterval
-	}
-	age := defaultCleanupAge
-	if cleanupAge != nil {
-		age = *cleanupAge
-	}
-
-	t := time.NewTicker(interval)
-	for range t.C {
-		h.cleanupUpdaters(age)
-	}
-}
-
-func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
-	now := time.Now()
-
-	h.lock.Lock()
-	defer h.lock.Unlock()
-
-	for id, updatingHandler := range h.updaters {
-		if now.Sub(updatingHandler.lastRequestedTime) > cleanupAge {
-			// Updater has not been requested for a long time.
-			// Clean it up.
-			updatingHandler.Stop()
-			delete(h.updaters, id)
-		}
-	}
-}
-
-func (h *httpHandler) openOfflineBlob(ctx context.Context, blobName string) (*vulDefFile, error) {
-	snap, err := snapshot.TakeBlobSnapshot(sac.WithAllAccess(ctx), h.blobStore, blobName)
-	if err != nil {
-		// If the blob does not exist, return no reader.
-		if errors.Is(err, snapshot.ErrBlobNotExist) {
-			return nil, nil
-		}
-		log.Warnf("Cannnot take a snapshot of Blob %q: %v", blobName, err)
-		return nil, err
-	}
-	modTime := time.Time{}
-	if t := protocompat.NilOrTime(snap.GetBlob().ModifiedTime); t != nil {
-		modTime = *t
-	}
-	return &vulDefFile{snap.File, modTime, snap.Close}, nil
-}
-
 // openOpts are options to open most recent V4 definition files.
 type openOpts struct {
 	// name is a generic name to refer to the definition bundle and its content.
@@ -366,201 +167,6 @@ type openOpts struct {
 	vulnBundle string
 	// offlineBlobName is the name of the offline blob to use.
 	offlineBlobName string
-}
-
-func (h *httpHandler) openDefinitions(ctx context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
-	log.Debugf("Fetching scanner V4 (online: %t): type %s: options: %#v", h.online, t, opts)
-
-	file, err := h.openOfflineDefinitions(ctx, t, opts)
-	if !h.online {
-		return file, err
-	}
-	if err != nil {
-		log.Debugf("Failed to access offline file (ignore the message if no "+
-			"offline bundle has been uploaded): %v", err)
-	}
-
-	offlineFile := file
-
-	defer func() {
-		if offlineFile != nil {
-			_ = offlineFile.Close()
-		}
-	}()
-
-	file, err = h.openOnlineDefinitions(ctx, t, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	// If the offline files are newer, return them instead.
-	if offlineFile != nil && offlineFile.modTime.After(file.modTime) {
-		_ = file.Close()
-		// Set nil to protect the deferred close.
-		file, offlineFile = offlineFile, nil
-	}
-
-	return file, err
-}
-
-// openOnlineDefinitions gets desired "online" file, which is pulled and managed
-// by the updater.
-func (h *httpHandler) openOnlineDefinitions(_ context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
-	u := h.getUpdater(t, opts.urlPath)
-	// Ensure the updater is running.
-	u.Start()
-	openedFile, onlineTime, err := u.file.Open()
-	if err != nil {
-		return nil, err
-	}
-	if openedFile == nil {
-		return nil, fmt.Errorf("scanner V4 %s file %s not found", t, opts.urlPath)
-	}
-	log.Debugf("Compressed data file is available: %s", openedFile.Name())
-	switch t {
-	case v2UpdaterType:
-		if opts.fileName == "" {
-			return &vulDefFile{File: openedFile, modTime: onlineTime}, nil
-		}
-		fallthrough
-	case mappingUpdaterType:
-		// openFromArchive will copy the contents of opts.fileName from openedFile to
-		// targetFile. Because of this, openedFile is not needed outside this function,
-		// so close it here.
-		defer utils.IgnoreError(openedFile.Close)
-		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), opts.fileName)
-		if err != nil {
-			return nil, err
-		}
-		defer cleanUp()
-		return &vulDefFile{File: targetFile, modTime: onlineTime}, nil
-	case vulnerabilityUpdaterType:
-		return &vulDefFile{File: openedFile, modTime: onlineTime}, nil
-	}
-	return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
-}
-
-// openOfflineDefinitions gets desired offline file from compressed bundle.
-func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
-	log.Debugf("Getting v4 offline data for updater: type %s: options: %#v", t, opts)
-	openedFile, err := h.openOfflineBlob(ctx, opts.offlineBlobName)
-	if err != nil {
-		return nil, fmt.Errorf("opening offline definitions: %s: %w",
-			opts.offlineBlobName, err)
-	}
-	if openedFile == nil {
-		log.Warnf("Blob %s does not exist", opts.offlineBlobName)
-		return nil, nil
-	}
-	var offlineFile *vulDefFile
-	switch t {
-	case v2UpdaterType:
-		if opts.fileName == "" {
-			offlineFile = openedFile
-			break
-		}
-		fallthrough
-	case mappingUpdaterType:
-		// openFromArchive will copy the contents of opts.fileName from openedFile to
-		// targetFile. Because of this, openedFile is not needed outside this function,
-		// so close it here.
-		defer utils.IgnoreError(openedFile.Close)
-		// search mapping file
-		fileName := filepath.Base(opts.fileName)
-		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), fileName)
-		if err != nil {
-			return nil, err
-		}
-		defer cleanUp()
-		offlineFile = &vulDefFile{File: targetFile, modTime: openedFile.modTime}
-	case vulnerabilityUpdaterType:
-		// openFromArchive will copy the contents of opts.fileName from openedFile to
-		// mf. Because of this, openedFile is not needed outside this function,
-		// so close it here.
-		defer utils.IgnoreError(openedFile.Close)
-		// check version information in manifest
-		mf, cleanUp, err := openFromArchive(openedFile.Name(), "manifest.json")
-		if err != nil {
-			return nil, err
-		}
-		defer cleanUp()
-		offlineV, err := getOfflineFileVersion(mf)
-		if err != nil {
-			return nil, err
-		}
-		defer utils.IgnoreError(mf.Close)
-
-		if offlineV != minorVersionPattern.FindString(opts.vulnVersion) && (opts.vulnVersion != "dev" || buildinfo.ReleaseBuild) {
-			msg := fmt.Sprintf("failed to get offline vuln file, uploaded file is version: %s and requested file version is: %s", offlineV, opts.vulnVersion)
-			log.Errorf(msg)
-			return nil, errors.New(msg)
-		}
-
-		vulns, cleanUp, err := openFromArchive(openedFile.Name(), opts.vulnBundle)
-		if err != nil {
-			return nil, err
-		}
-		defer cleanUp()
-		offlineFile = &vulDefFile{File: vulns, modTime: openedFile.modTime}
-	default:
-		return nil, fmt.Errorf("unknown updater type: %s", t)
-	}
-
-	return offlineFile, nil
-}
-
-// openFromArchive returns a file object for a name within the definitions
-// bundle. The file object has a file descriptor allocated on the filesystem, but
-// its name is removed. Meaning once the file object is closed, the data will be
-// freed in filesystem by the OS.
-func openFromArchive(archiveFile string, fileName string) (*os.File, func(), error) {
-	// Open zip archive and extract the fileName.
-	zipReader, err := zip.OpenReader(archiveFile)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "opening zip archive")
-	}
-	defer utils.IgnoreError(zipReader.Close)
-	fileReader, err := zipReader.Open(fileName)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "extracting")
-	}
-	defer utils.IgnoreError(fileReader.Close)
-
-	// Create a temporary file and remove it, keeping the file descriptor.
-	tmpDir, err := os.MkdirTemp("", definitionsBaseDir)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating temporary directory")
-	}
-	tmpFile, err := os.Create(filepath.Join(tmpDir, path.Base(fileName)))
-	if err != nil {
-		// Best effort to clean.
-		_ = os.RemoveAll(tmpDir)
-		return nil, nil, errors.Wrap(err, "opening temporary file")
-	}
-	defer func() {
-		if err != nil {
-			_ = tmpFile.Close()
-		}
-	}()
-	cleanup := func() {
-		_ = os.RemoveAll(tmpDir)
-	}
-
-	// Extract the file and copy contents to the temporary file, notice we
-	// intentionally don't Sync(), to benefit from filesystem caching.
-	_, err = io.Copy(tmpFile, fileReader)
-	if err != nil {
-		_ = os.RemoveAll(tmpDir)
-		return nil, nil, errors.Wrap(err, "writing to temporary file")
-	}
-
-	// Reset for caller's convenience.
-	_, err = tmpFile.Seek(0, io.SeekStart)
-	if err != nil {
-		_ = os.RemoveAll(tmpDir)
-		return nil, nil, errors.Wrap(err, "writing to temporary file")
-	}
-	return tmpFile, cleanup, nil
 }
 
 func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
@@ -636,13 +242,231 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 	serveContent(w, r, f.Name(), f.modTime, f)
 }
 
-func getOfflineFileVersion(mf *os.File) (string, error) {
-	var m manifest
-	err := json.NewDecoder(mf).Decode(&m)
-	if err != nil {
-		return "", err
+func (h *httpHandler) openDefinitions(ctx context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
+	log.Debugf("Fetching scanner V4 (online: %t): type %s: options: %#v", h.online, t, opts)
+
+	file, err := h.openOfflineDefinitions(ctx, t, opts)
+	if !h.online {
+		return file, err
 	}
-	return m.Version, nil
+	if err != nil {
+		log.Debugf("Failed to access offline file (ignore the message if no "+
+			"offline bundle has been uploaded): %v", err)
+	}
+
+	offlineFile := file
+
+	defer func() {
+		if offlineFile != nil {
+			_ = offlineFile.Close()
+		}
+	}()
+
+	file, err = h.openOnlineDefinitions(ctx, t, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	// If the offline files are newer, return them instead.
+	if offlineFile != nil && offlineFile.modTime.After(file.modTime) {
+		_ = file.Close()
+		// Set nil to protect the deferred close.
+		file, offlineFile = offlineFile, nil
+	}
+
+	return file, err
+}
+
+// openOfflineDefinitions gets desired offline file from compressed bundle.
+func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
+	log.Debugf("Getting v4 offline data for updater: type %s: options: %#v", t, opts)
+	openedFile, err := h.openOfflineBlob(ctx, opts.offlineBlobName)
+	if err != nil {
+		return nil, fmt.Errorf("opening offline definitions: %s: %w",
+			opts.offlineBlobName, err)
+	}
+	if openedFile == nil {
+		log.Warnf("Blob %s does not exist", opts.offlineBlobName)
+		return nil, nil
+	}
+	var offlineFile *vulDefFile
+	switch t {
+	case v2UpdaterType:
+		if opts.fileName == "" {
+			offlineFile = openedFile
+			break
+		}
+		fallthrough
+	case mappingUpdaterType:
+		// openFromArchive will copy the contents of opts.fileName from openedFile to
+		// targetFile. Because of this, openedFile is not needed outside this function,
+		// so close it here.
+		defer utils.IgnoreError(openedFile.Close)
+		// search mapping file
+		fileName := filepath.Base(opts.fileName)
+		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), fileName)
+		if err != nil {
+			return nil, err
+		}
+		defer cleanUp()
+		offlineFile = &vulDefFile{File: targetFile, modTime: openedFile.modTime}
+	case vulnerabilityUpdaterType:
+		// openFromArchive will copy the contents of opts.fileName from openedFile to
+		// mf. Because of this, openedFile is not needed outside this function,
+		// so close it here.
+		defer utils.IgnoreError(openedFile.Close)
+		// check version information in manifest
+		mf, cleanUp, err := openFromArchive(openedFile.Name(), "manifest.json")
+		if err != nil {
+			return nil, err
+		}
+		defer cleanUp()
+		offlineV, err := getOfflineFileVersion(mf)
+		if err != nil {
+			return nil, err
+		}
+		defer utils.IgnoreError(mf.Close)
+
+		if offlineV != minorVersionPattern.FindString(opts.vulnVersion) && (opts.vulnVersion != "dev" || buildinfo.ReleaseBuild) {
+			msg := fmt.Sprintf("failed to get offline vuln file, uploaded file is version: %s and requested file version is: %s", offlineV, opts.vulnVersion)
+			log.Errorf(msg)
+			return nil, errors.New(msg)
+		}
+
+		vulns, cleanUp, err := openFromArchive(openedFile.Name(), opts.vulnBundle)
+		if err != nil {
+			return nil, err
+		}
+		defer cleanUp()
+		offlineFile = &vulDefFile{File: vulns, modTime: openedFile.modTime}
+	default:
+		return nil, fmt.Errorf("unknown updater type: %s", t)
+	}
+
+	return offlineFile, nil
+}
+
+func (h *httpHandler) openOfflineBlob(ctx context.Context, blobName string) (*vulDefFile, error) {
+	snap, err := snapshot.TakeBlobSnapshot(sac.WithAllAccess(ctx), h.blobStore, blobName)
+	if err != nil {
+		// If the blob does not exist, return no reader.
+		if errors.Is(err, snapshot.ErrBlobNotExist) {
+			return nil, nil
+		}
+		log.Warnf("Cannnot take a snapshot of Blob %q: %v", blobName, err)
+		return nil, err
+	}
+	modTime := time.Time{}
+	if t := protocompat.NilOrTime(snap.GetBlob().ModifiedTime); t != nil {
+		modTime = *t
+	}
+	return &vulDefFile{snap.File, modTime, snap.Close}, nil
+}
+
+// openOnlineDefinitions gets desired "online" file, which is pulled and managed
+// by the updater.
+func (h *httpHandler) openOnlineDefinitions(_ context.Context, t updaterType, opts openOpts) (*vulDefFile, error) {
+	u := h.getUpdater(t, opts.urlPath)
+	// Ensure the updater is running.
+	u.Start()
+	openedFile, onlineTime, err := u.file.Open()
+	if err != nil {
+		return nil, err
+	}
+	if openedFile == nil {
+		return nil, fmt.Errorf("scanner V4 %s file %s not found", t, opts.urlPath)
+	}
+	log.Debugf("Compressed data file is available: %s", openedFile.Name())
+	switch t {
+	case v2UpdaterType:
+		if opts.fileName == "" {
+			return &vulDefFile{File: openedFile, modTime: onlineTime}, nil
+		}
+		fallthrough
+	case mappingUpdaterType:
+		// openFromArchive will copy the contents of opts.fileName from openedFile to
+		// targetFile. Because of this, openedFile is not needed outside this function,
+		// so close it here.
+		defer utils.IgnoreError(openedFile.Close)
+		targetFile, cleanUp, err := openFromArchive(openedFile.Name(), opts.fileName)
+		if err != nil {
+			return nil, err
+		}
+		defer cleanUp()
+		return &vulDefFile{File: targetFile, modTime: onlineTime}, nil
+	case vulnerabilityUpdaterType:
+		return &vulDefFile{File: openedFile, modTime: onlineTime}, nil
+	}
+	return nil, fmt.Errorf("unknown Scanner V4 updater type: %s", t)
+}
+
+// getUpdater gets or creates an updater for the scanner definitions identified
+// by the given updater type and a URL path to the definitions file. If the
+// updater was created, it is no started here, callers are expected to start it.
+func (h *httpHandler) getUpdater(t updaterType, urlPath string) *requestedUpdater {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	fileName := strings.ReplaceAll(filepath.Join(t.String(), urlPath), "/", "-")
+	updater, exists := h.updaters[fileName]
+	if !exists {
+		var updateURL *url.URL
+		var ext string
+		switch t {
+		case mappingUpdaterType:
+			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4MappingSubDir, scannerV4MappingFile)
+			ext = ".zip"
+		case vulnerabilityUpdaterType:
+			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4VulnSubDir, urlPath)
+			ext = ".json.zst"
+		default: // uuid
+			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerUpdateURLSuffix)
+			ext = ".zip"
+		}
+		filePath := filepath.Join(h.onlineVulnDir, fileName)
+		// Use a default extension if the URL path does not contain one.
+		if filepath.Ext(fileName) == "" {
+			filePath += ext
+		}
+		updater = &requestedUpdater{
+			updater: newUpdater(file.New(filePath), client, updateURL.String(), h.interval),
+		}
+		h.updaters[fileName] = updater
+	}
+
+	updater.lastRequestedTime = time.Now()
+	return updater
+}
+
+func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
+	tempDir, err := os.MkdirTemp("", "scanner-definitions-handler")
+	if err != nil {
+		httputil.WriteGRPCStyleErrorf(w, codes.Internal, "failed to create temp dir: %v", err)
+		return
+	}
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			log.Warnf("Failed to remove temp dir for scanner defs: %v", err)
+		}
+	}()
+
+	tempFile := filepath.Join(tempDir, "tempfile.zip")
+	if err := fileutils.CopySrcToFile(tempFile, r.Body); err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrapf(err, "copying HTTP POST body to %s", tempFile))
+		return
+	}
+	if features.ScannerV4.Enabled() {
+		if err := validateV4DefsVersion(tempFile); err != nil {
+			httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
+			return
+		}
+	}
+	if err := h.handleZipContentsFromVulnDump(r.Context(), tempFile); err != nil {
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
+		return
+	}
+
+	_, _ = w.Write([]byte("Successfully stored the offline vulnerability definitions"))
 }
 
 func validateV4DefsVersion(zipPath string) error {
@@ -679,4 +503,180 @@ func validateV4DefsVersion(zipPath string) error {
 		}
 	}
 	return nil
+}
+
+func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath string) error {
+	zipR, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return errors.Wrap(err, "couldn't open file as zip")
+	}
+	defer utils.IgnoreError(zipR.Close)
+	var count int
+	// It is expected a ZIP file be uploaded with both Scanner V2 and V4 vulnerability definitions.
+	// scanner-defs.zip contains data required by Scanner V2.
+	// scanner-v4-defs-*.zip contains data required by Scanner v4.
+	// In the future, we may decide to support other files (like we have in the past), which is why we
+	// expect this ZIP of a single ZIP.
+	for _, zipF := range zipR.File {
+		if zipF.Name == scannerDefsSubZipName {
+			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerDefinitionBlobName); err != nil {
+				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
+			}
+			count++
+			continue
+		}
+		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
+			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV4DefinitionBlobName); err != nil {
+				return errors.Wrap(err, "couldn't handle scanner-v4-defs sub file")
+			}
+			log.Debugf("Successfully processed file: %s", zipF.Name)
+			count++
+		}
+		// Ignore any other files which may be in the ZIP.
+	}
+	if count > 0 {
+		return nil
+	}
+	return errors.New("scanner defs file not found in upload zip; wrong zip uploaded?")
+}
+
+func (h *httpHandler) handleScannerDefsFile(ctx context.Context, zipF *zip.File, blobName string) error {
+	r, err := zipF.Open()
+	if err != nil {
+		return errors.Wrap(err, "opening ZIP reader")
+	}
+	defer utils.IgnoreError(r.Close)
+
+	// POST requests only update the offline feed.
+	b := &storage.Blob{
+		Name:         blobName,
+		LastUpdated:  protocompat.TimestampNow(),
+		ModifiedTime: protocompat.TimestampNow(),
+		Length:       zipF.FileInfo().Size(),
+	}
+
+	if err := h.blobStore.Upsert(sac.WithAllAccess(ctx), b, r); err != nil {
+		return errors.Wrap(err, "writing scanner definitions")
+	}
+
+	return nil
+}
+
+// openFromArchive returns a file object for a name within the definitions
+// bundle. The file object has a file descriptor allocated on the filesystem, but
+// its name is removed. Meaning once the file object is closed, the data will be
+// freed in filesystem by the OS.
+func openFromArchive(archiveFile string, fileName string) (*os.File, func(), error) {
+	// Open zip archive and extract the fileName.
+	zipReader, err := zip.OpenReader(archiveFile)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "opening zip archive")
+	}
+	defer utils.IgnoreError(zipReader.Close)
+	fileReader, err := zipReader.Open(fileName)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "extracting")
+	}
+	defer utils.IgnoreError(fileReader.Close)
+
+	// Create a temporary file and remove it, keeping the file descriptor.
+	tmpDir, err := os.MkdirTemp("", definitionsBaseDir)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating temporary directory")
+	}
+	tmpFile, err := os.Create(filepath.Join(tmpDir, path.Base(fileName)))
+	if err != nil {
+		// Best effort to clean.
+		_ = os.RemoveAll(tmpDir)
+		return nil, nil, errors.Wrap(err, "opening temporary file")
+	}
+	defer func() {
+		if err != nil {
+			_ = tmpFile.Close()
+		}
+	}()
+	cleanup := func() {
+		_ = os.RemoveAll(tmpDir)
+	}
+
+	// Extract the file and copy contents to the temporary file, notice we
+	// intentionally don't Sync(), to benefit from filesystem caching.
+	_, err = io.Copy(tmpFile, fileReader)
+	if err != nil {
+		_ = os.RemoveAll(tmpDir)
+		return nil, nil, errors.Wrap(err, "writing to temporary file")
+	}
+
+	// Reset for caller's convenience.
+	_, err = tmpFile.Seek(0, io.SeekStart)
+	if err != nil {
+		_ = os.RemoveAll(tmpDir)
+		return nil, nil, errors.Wrap(err, "writing to temporary file")
+	}
+	return tmpFile, cleanup, nil
+}
+
+func getOfflineFileVersion(mf *os.File) (string, error) {
+	var m manifest
+	err := json.NewDecoder(mf).Decode(&m)
+	if err != nil {
+		return "", err
+	}
+	return m.Version, nil
+}
+
+func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime time.Time, content io.ReadSeeker) {
+	log.Debugf("Serving vulnerability definitions from %s", filepath.Base(name))
+	http.ServeContent(w, r, name, modTime, content)
+}
+
+func writeErrorNotFound(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNotFound)
+	_, _ = w.Write([]byte("No scanner definitions found"))
+}
+
+func writeErrorBadRequest(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusBadRequest)
+	_, _ = w.Write([]byte("at least one of file or uuid must be specified"))
+}
+
+func writeErrorForFile(w http.ResponseWriter, err error, path string) {
+	if errox.IsAny(err, fs.ErrNotExist, snapshot.ErrBlobNotExist) {
+		writeErrorNotFound(w)
+		return
+	}
+
+	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read vulnerability definition %s: %v", filepath.Base(path), err)
+}
+
+func (h *httpHandler) runCleanupUpdaters(cleanupInterval, cleanupAge *time.Duration) {
+	interval := defaultCleanupInterval
+	if cleanupInterval != nil {
+		interval = *cleanupInterval
+	}
+	age := defaultCleanupAge
+	if cleanupAge != nil {
+		age = *cleanupAge
+	}
+
+	t := time.NewTicker(interval)
+	for range t.C {
+		h.cleanupUpdaters(age)
+	}
+}
+
+func (h *httpHandler) cleanupUpdaters(cleanupAge time.Duration) {
+	now := time.Now()
+
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	for id, updatingHandler := range h.updaters {
+		if now.Sub(updatingHandler.lastRequestedTime) > cleanupAge {
+			// Updater has not been requested for a long time.
+			// Clean it up.
+			updatingHandler.Stop()
+			delete(h.updaters, id)
+		}
+	}
 }
