@@ -400,7 +400,7 @@ func (p *process) checkPodStatus(pod *v1.Pod) *central.UpgradeCheckInFromSensorR
 	} else if waitingState := upgraderContainerStatus.State.Waiting; waitingState != nil {
 		if isImagePullRelatedReason(waitingState.Reason) {
 			s.Error = &central.UpgradeCheckInFromSensorRequest_PodErrorCondition{
-				Message:      fmt.Sprintf("Error pulling image: %s (%s)", waitingState.Reason, waitingState.Message),
+				Message:      fmt.Sprintf("The upgrader had trouble pulling the new \"%s\" image.%s (Reason: %s)", upgraderContainerStatus.Image, getImageErrorRemediation(waitingState.Reason), waitingState.Reason),
 				ImageRelated: true,
 			}
 			log.Warnf("Upgrader pod %s seems to have trouble pulling the image, reason: %s (%s)", pod.Name, waitingState.Reason, waitingState.Message)
