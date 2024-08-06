@@ -25,9 +25,6 @@ func validateHostPath(hostpath *renderer.HostPathPersistence) error {
 	if hostpath == nil {
 		return nil
 	}
-	if err := validateHostPathInstance(hostpath.Central); err != nil {
-		return err
-	}
 	return validateHostPathInstance(hostpath.DB)
 }
 
