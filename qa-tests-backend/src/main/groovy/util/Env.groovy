@@ -18,6 +18,7 @@ class Env {
             "API_HOSTNAME": "localhost",
             "API_PORT": "8000",
             "ROX_USERNAME": "admin",
+            "ROX_POSTGRES_DATASTORE": "true",
     ]
 
     static final IN_CI = (System.getenv("CI") == "true")
