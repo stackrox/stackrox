@@ -5,7 +5,7 @@ package tests
 import (
 	"context"
 	_ "embed"
-	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -13,14 +13,14 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
 )
 
 //go:embed "bad-ca/root.crt"
@@ -33,6 +33,19 @@ var leafCert []byte
 var leafKey []byte
 
 func TestTLSChallenge(t *testing.T) {
+	suite.Run(t, new(TLSChallengeSuite))
+}
+
+type TLSChallengeSuite struct {
+	KubernetesSuite
+}
+
+func (ts *TLSChallengeSuite) SetupSuite() {
+	ts.KubernetesSuite.SetupSuite()
+}
+
+func (ts *TLSChallengeSuite) TestTLSChallenge() {
+
 	const (
 		s                  = namespaces.StackRox // for brevity
 		sensorDeployment   = "sensor"
@@ -43,83 +56,85 @@ func TestTLSChallenge(t *testing.T) {
 		proxyEndpoint      = proxyServiceName + "." + proxyNs + ":443"
 	)
 
-	ctx, cleanupCtx, cancel := testContexts(t, "TestTLSChallenge", 20*time.Minute)
+	ctx, cleanupCtx, cancel := testContexts(ts.T(), "TestTLSChallenge", 20*time.Minute)
 	defer cancel()
 
 	// Check sanity before and after test.
-	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
-	defer waitUntilCentralSensorConnectionIs(t, cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
+	waitUntilCentralSensorConnectionIs(ts.T(), ctx, storage.ClusterHealthStatus_HEALTHY)
+	defer waitUntilCentralSensorConnectionIs(ts.T(), cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
 
-	k8s := createK8sClient(t)
+	logf(ts.T(), "Gathering original central endpoint value from sensor...")
+	originalCentralEndpoint := ts.getDeploymentEnvVal(ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
+	logf(ts.T(), "Original value is %q. (Will restore this value on cleanup.)", originalCentralEndpoint)
+	defer ts.setDeploymentEnvVal(cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, originalCentralEndpoint)
 
-	logf(t, "Gathering original central endpoint value from sensor...")
-	originalCentralEndpoint := getDeploymentEnvVal(t, ctx, k8s, s, sensorDeployment, sensorContainer, centralEndpointVar)
-	logf(t, "Original value is %q. (Will restore this value on cleanup.)", originalCentralEndpoint)
-	defer setDeploymentEnvVal(t, cleanupCtx, k8s, s, sensorDeployment, sensorContainer, centralEndpointVar, originalCentralEndpoint)
+	ts.setupProxy(ctx, proxyNs, originalCentralEndpoint)
+	defer ts.cleanupProxy(cleanupCtx, proxyNs)
 
-	setupProxy(t, ctx, k8s, proxyNs, originalCentralEndpoint)
-	defer cleanupProxy(t, cleanupCtx, k8s, proxyNs)
+	logf(ts.T(), "Pointing sensor at the proxy...")
+	ts.setDeploymentEnvVal(ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
+	logf(ts.T(), "Sensor will now attempt connecting via the nginx proxy.")
 
-	logf(t, "Pointing sensor at the proxy...")
-	setDeploymentEnvVal(t, ctx, k8s, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
-	logf(t, "Sensor will now attempt connecting via the nginx proxy.")
-
-	waitUntilLog(t, ctx, k8s, s, map[string]string{"app": "sensor"}, "sensor", "contain info about successful connection",
+	ts.waitUntilLog(ctx, s, map[string]string{"app": "sensor"}, "sensor", "contain info about successful connection",
 		containsLineMatching(regexp.MustCompile("Info: Add central CA cert with CommonName: 'Custom Root'")),
 		containsLineMatching(regexp.MustCompile("Info: Connecting to Central server "+proxyEndpoint)),
 		containsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
 		containsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
 	)
-	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+	waitUntilCentralSensorConnectionIs(ts.T(), ctx, storage.ClusterHealthStatus_HEALTHY)
 }
 
-func setupProxy(t *testing.T, ctx context.Context, k8s kubernetes.Interface, proxyNs string, centralEndpoint string) {
+func (ts *TLSChallengeSuite) setupProxy(ctx context.Context, proxyNs string, centralEndpoint string) {
 	name := "nginx-loadbalancer"
 	nginxLabels := map[string]string{"app": "nginx"}
 	nginxTLSSecretName := "nginx-tls-conf"
 	nginxConfigName := "nginx-proxy-conf"
-	logf(t, "Setting up nginx proxy in namespace %q...", proxyNs)
-	createProxyNamespace(t, ctx, k8s, proxyNs)
-	installImagePullSecret(t, ctx, k8s, proxyNs)
-	createProxyTLSSecret(t, ctx, k8s, proxyNs, nginxTLSSecretName)
-	createProxyConfigMap(t, ctx, k8s, proxyNs, centralEndpoint, nginxConfigName)
-	createService(t, ctx, k8s, proxyNs, name, nginxLabels, map[int32]int32{443: 8443})
-	createProxyDeployment(t, ctx, k8s, proxyNs, name, nginxLabels, nginxConfigName, nginxTLSSecretName)
-	logf(t, "Nginx proxy is now set up in namespace %q.", proxyNs)
+	logf(ts.T(), "Setting up nginx proxy in namespace %q...", proxyNs)
+	ts.createProxyNamespace(ctx, proxyNs)
+	ts.installImagePullSecret(ctx, proxyNs)
+	ts.createProxyTLSSecret(ctx, proxyNs, nginxTLSSecretName)
+	ts.createProxyConfigMap(ctx, proxyNs, centralEndpoint, nginxConfigName)
+	ts.createService(ctx, proxyNs, name, nginxLabels, map[int32]int32{443: 8443})
+	ts.createProxyDeployment(ctx, proxyNs, name, nginxLabels, nginxConfigName, nginxTLSSecretName)
+	logf(ts.T(), "Nginx proxy is now set up in namespace %q.", proxyNs)
 }
 
-func createProxyNamespace(t *testing.T, ctx context.Context, k8s kubernetes.Interface, proxyNs string) {
-	_, err := k8s.CoreV1().Namespaces().Create(ctx, &v1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: proxyNs}}, metaV1.CreateOptions{})
+func (ts *TLSChallengeSuite) createProxyNamespace(ctx context.Context, proxyNs string) {
+	_, err := ts.k8s.CoreV1().Namespaces().Create(ctx, &v1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: proxyNs}}, metaV1.CreateOptions{})
 	if apiErrors.IsAlreadyExists(err) {
 		return
 	}
-	require.NoError(t, err, "cannot create proxy namespace %q", proxyNs)
+	ts.Require().NoError(err, "cannot create proxy namespace %q", proxyNs)
 }
 
-func installImagePullSecret(t *testing.T, ctx context.Context, k8s kubernetes.Interface, proxyNs string) {
-	auth := fmt.Sprintf("%s:%s", os.Getenv("REGISTRY_USERNAME"), os.Getenv("REGISTRY_PASSWORD"))
-	b64Auth := []byte(base64.StdEncoding.EncodeToString([]byte(auth)))
-	data := map[string][]byte{
-		v1.DockerConfigJsonKey: []byte(fmt.Sprintf(`{"auths":{%q:{"auth":%q}}}`, "https://quay.io", b64Auth)),
-	}
-	ensureSecretExists(t, ctx, k8s, proxyNs, "quay", v1.SecretTypeDockerConfigJson, data)
-
-	patch := []byte(`{"imagePullSecrets":[{"name":"quay"}]}`)
-	_, err := k8s.CoreV1().ServiceAccounts(proxyNs).Patch(ctx, namespaces.Default, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
-	require.NoError(t, err, "cannot patch service account %q in namespace %q", "default", proxyNs)
+func (ts *TLSChallengeSuite) installImagePullSecret(ctx context.Context, proxyNs string) {
+	configBytes, err := json.Marshal(config.DockerConfigJSON{
+		Auths: map[string]config.DockerConfigEntry{
+			"https://quay.io": {
+				Username: os.Getenv("REGISTRY_USERNAME"),
+				Password: os.Getenv("REGISTRY_PASSWORD"),
+			},
+		},
+	})
+	secretName := "quay"
+	ts.Require().NoError(err, "cannot serialize docker config for image pull secret %q in namespace %q", secretName, proxyNs)
+	ts.ensureSecretExists(ctx, proxyNs, secretName, v1.SecretTypeDockerConfigJson, map[string][]byte{v1.DockerConfigJsonKey: configBytes})
+	patch := []byte(fmt.Sprintf(`{"imagePullSecrets":[{"name":%q}]}`, secretName))
+	_, err = ts.k8s.CoreV1().ServiceAccounts(proxyNs).Patch(ctx, "default", types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
+	ts.Require().NoError(err, "cannot patch service account %q in namespace %q", "default", proxyNs)
 }
 
-func createProxyTLSSecret(t *testing.T, ctx context.Context, k8s kubernetes.Interface, proxyNs string, nginxTLSSecretName string) {
+func (ts *TLSChallengeSuite) createProxyTLSSecret(ctx context.Context, proxyNs string, nginxTLSSecretName string) {
 	var certChain []byte
 	certChain = append(certChain, leafCert...)
 	certChain = append(certChain, additionalCA...)
-	ensureSecretExists(t, ctx, k8s, proxyNs, nginxTLSSecretName, v1.SecretTypeTLS, map[string][]byte{
+	ts.ensureSecretExists(ctx, proxyNs, nginxTLSSecretName, v1.SecretTypeTLS, map[string][]byte{
 		v1.TLSCertKey:       certChain,
 		v1.TLSPrivateKeyKey: leafKey,
 	})
 }
 
-func createProxyConfigMap(t *testing.T, ctx context.Context, k8s kubernetes.Interface, proxyNs string, centralEndpoint string, nginxConfigName string) {
+func (ts *TLSChallengeSuite) createProxyConfigMap(ctx context.Context, proxyNs string, centralEndpoint string, nginxConfigName string) {
 	const nginxConfigTmpl = `
 server {
     listen 8443 ssl http2;
@@ -140,12 +155,12 @@ server {
 	}
 }
 `
-	ensureConfigMapExists(t, ctx, k8s, proxyNs, nginxConfigName, map[string]string{
+	ts.ensureConfigMapExists(ctx, proxyNs, nginxConfigName, map[string]string{
 		"nginx-proxy-grpc-tls.conf": fmt.Sprintf(nginxConfigTmpl, centralEndpoint),
 	})
 }
 
-func createProxyDeployment(t *testing.T, ctx context.Context, k8s kubernetes.Interface, proxyNs string, name string, nginxLabels map[string]string, nginxConfigName string, nginxTLSSecretName string) {
+func (ts *TLSChallengeSuite) createProxyDeployment(ctx context.Context, proxyNs string, name string, nginxLabels map[string]string, nginxConfigName string, nginxTLSSecretName string) {
 	d := &appsV1.Deployment{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:   name,
@@ -213,20 +228,20 @@ func createProxyDeployment(t *testing.T, ctx context.Context, k8s kubernetes.Int
 			},
 		},
 	}
-	_, err := k8s.AppsV1().Deployments(proxyNs).Create(ctx, d, metaV1.CreateOptions{})
-	require.NoError(t, err, "cannot create deployment %q in namespace %q", name, proxyNs)
+	_, err := ts.k8s.AppsV1().Deployments(proxyNs).Create(ctx, d, metaV1.CreateOptions{})
+	ts.Require().NoError(err, "cannot create deployment %q in namespace %q", name, proxyNs)
 }
 
-func cleanupProxy(t *testing.T, ctx context.Context, k8s kubernetes.Interface, proxyNs string) {
-	if t.Failed() {
-		logf(t, "Test failed. Collecting k8s artifacts before cleanup.")
-		collectLogs(t, namespaces.StackRox, "tls-challenge-failure")
-		collectLogs(t, proxyNs, "tls-challenge-failure")
+func (ts *TLSChallengeSuite) cleanupProxy(ctx context.Context, proxyNs string) {
+	if ts.T().Failed() {
+		logf(ts.T(), "Test failed. Collecting k8s artifacts before cleanup.")
+		collectLogs(ts.T(), namespaces.StackRox, "tls-challenge-failure")
+		collectLogs(ts.T(), proxyNs, "tls-challenge-failure")
 	}
-	logf(t, "Cleaning up nginx proxy in namespace %q...", proxyNs)
-	err := k8s.CoreV1().Namespaces().Delete(ctx, proxyNs, metaV1.DeleteOptions{})
+	logf(ts.T(), "Cleaning up nginx proxy in namespace %q...", proxyNs)
+	err := ts.k8s.CoreV1().Namespaces().Delete(ctx, proxyNs, metaV1.DeleteOptions{})
 	if apiErrors.IsNotFound(err) {
 		return
 	}
-	require.NoError(t, err, "cannot delete proxy namespace %q", proxyNs)
+	ts.Require().NoError(err, "cannot delete proxy namespace %q", proxyNs)
 }
