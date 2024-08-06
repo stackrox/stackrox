@@ -131,7 +131,7 @@ This URL encoding will be extended to include `cve=<CVE ID>`.
 * Introducing `string` field `CVSS.updater` ensures consistency and limits mistakes which may be made
 with misspelled or differently spelled strings because `updater` values directly come from Scanner vulnerability updater names.
 * `repeated CVSS` field `cvss_metrics` will always include CVSS metrics from all updaters/data sources, including the Scanner's preferred CVSS metric.
-This approach simplifies data querying and filtering, as `cvss_metrics` will be the sole field used for filtering data or making policies.
+  * This approach simplifies data querying and filtering, as `cvss_metrics` will be the sole field used for filtering data or making policies.
 * Encoding the RHSA/RHEA/RHBA's related CVE allows Scanner V4 to relate the advisory back to the CVE which has the highest score and search NVD for that CVE's score.
 * Other type of advisories like ALAS and USN will not have a score from NVD.
 * OSV.dev sometimes does not related non-CVEs (like GHSAs) back to CVEs. When this happens, we cannot determine the CVSS score from NVD.
