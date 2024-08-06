@@ -129,28 +129,38 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 // to run the upgrade. The string returned from this function will be displayed in the UI, so keep it brief.
 func (c accessCheck) auxiliaryInfoOnPermissionDenied(ctx *upgradectx.UpgradeContext) string {
 	var msgs []string
-	var activeSA string
-	if err := c.checkSA(ctx, defaultServiceAccountName); err != nil {
-		msgs = append(msgs, fmt.Sprintf("ServiceAccount %q not found", defaultServiceAccountName))
-		if err := c.checkSA(ctx, fallbackServiceAccountName); err != nil {
-			msgs = append(msgs, fmt.Sprintf("ServiceAccount %q not found", fallbackServiceAccountName))
-		} else {
-			activeSA = fallbackServiceAccountName
+	activeSA, err := c.getUpgraderSAName(ctx)
+	if err != nil {
+		log.Error(errors.Wrap(err, "failed to get upgrader SA name"))
+		// unable to provide any additional info to the user if we don't know the SA
+		return ""
+	}
+	switch activeSA {
+	case defaultServiceAccountName:
+		if err := c.checkDefaultClusterRoleBinding(ctx, activeSA); err != nil {
+			msgs = append(msgs, err.Error())
 		}
-	} else {
-		activeSA = defaultServiceAccountName
+	case "":
+		msgs = append(msgs, fmt.Sprintf("Default ServiceAccount %q not found", defaultServiceAccountName))
+		msgs = append(msgs, fmt.Sprintf("Fallback ServiceAccount %q not found", fallbackServiceAccountName))
+	default:
+		msgs = append(msgs, fmt.Sprintf("Upgrader is not using the default SA %q."+
+			"This secured cluster may not be configured for receiving updates.", defaultServiceAccountName))
+		if err := c.checkDefaultClusterRoleBinding(ctx, activeSA); err != nil {
+			msgs = append(msgs, err.Error())
+		}
 	}
-	if err := c.checkDefaultClusterRoleBinding(ctx, activeSA); err != nil {
-		msgs = append(msgs, err.Error())
-	}
-
 	return fmt.Sprintf("Potential issues: %s.", strings.Join(msgs, "; "))
 }
 
-func (c accessCheck) checkSA(ctx *upgradectx.UpgradeContext, name string) error {
-	saClient := ctx.ClientSet().CoreV1().ServiceAccounts(namespaces.StackRox)
-	_, err := saClient.Get(ctx.Context(), name, metav1.GetOptions{})
-	return err
+// getUpgraderSAName returns the name of the SA that is currently used by the upgrader
+func (c accessCheck) getUpgraderSAName(ctx *upgradectx.UpgradeContext) (string, error) {
+	deplClient := ctx.ClientSet().AppsV1().Deployments(namespaces.StackRox)
+	depl, err := deplClient.Get(ctx.Context(), "sensor-upgrader", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return depl.Spec.Template.Spec.ServiceAccountName, nil
 }
 
 func (c accessCheck) checkDefaultClusterRoleBinding(ctx *upgradectx.UpgradeContext, saName string) error {
