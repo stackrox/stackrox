@@ -1,10 +1,7 @@
 package preflight
 
 import (
-	"strconv"
-
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/set"
@@ -37,9 +34,6 @@ func namespaceAllowed(resource *k8sobjects.ObjectRef) bool {
 	if matchesException(resource) {
 		return true
 	}
-	logging.Info("Resource %v is in namespace %s", resource, resource.Namespace)
-	logging.Info("Pod is in namespace %s", pods.GetPodNamespace(pods.NoSATokenNamespace))
-	logging.Info("namespaceAllowed will return %s", strconv.FormatBool(resource.Namespace == "" || resource.Namespace == pods.GetPodNamespace(pods.NoSATokenNamespace)))
 	return resource.Namespace == "" || resource.Namespace == pods.GetPodNamespace(pods.NoSATokenNamespace)
 }
 
