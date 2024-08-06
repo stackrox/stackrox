@@ -342,6 +342,10 @@ func (ks *KubernetesSuite) SetupSuite() {
 	ks.k8s = createK8sClient(ks.T())
 }
 
+func (ks *KubernetesSuite) logf(format string, args ...any) {
+	logf(ks.T(), format, args...)
+}
+
 type logMatcher interface {
 	Match(reader io.Reader) (bool, error)
 	fmt.Stringer
@@ -378,7 +382,7 @@ func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, p
 		}
 		return nil
 	}
-	logf(ks.T(), "Waiting until %q pods logs "+description+": %s", ls, logMatchers)
+	ks.logf("Waiting until %q pods logs "+description+": %s", ls, logMatchers)
 	mustEventually(ks.T(), ctx, checkLogs, 10*time.Second, fmt.Sprintf("Not all %q pods logs "+description, ls))
 }
 
@@ -538,7 +542,7 @@ func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 func (ks *KubernetesSuite) setDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string, value string) {
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":%q,"value":%q}]}]}}}}`,
 		container, envVar, value))
-	logf(ks.T(), "Setting variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
+	ks.logf("Setting variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
 	_, err := ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
 	ks.Require().NoError(err, "cannot patch deployment %q in namespace %q", deployment, namespace)
 
