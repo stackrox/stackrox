@@ -173,8 +173,11 @@ func (c accessCheck) checkDefaultClusterRoleBinding(ctx *upgradectx.UpgradeConte
 	if crb.RoleRef.Name != "cluster-admin" {
 		return fmt.Errorf("ClusterRoleBinding %q is not bound to the cluster-admin ClusterRole", defaultClusterRoleBinding)
 	}
-	if len(crb.Subjects) > 0 && crb.Subjects[0].Name != saName {
-		return fmt.Errorf("ClusterRoleBinding %q does not include subject %q ServiceAccount", defaultClusterRoleBinding, saName)
+	for _, subject := range crb.Subjects {
+		if subject.Name == saName {
+			return nil
+		}
 	}
-	return nil
+	return fmt.Errorf("ClusterRoleBinding %q does not include subject %q ServiceAccount",
+		defaultClusterRoleBinding, saName)
 }
