@@ -77,6 +77,12 @@ message VulnerabilityReport {
       SEVERITY_CRITICAL = 4;
     }
     message CVSS {
+      enum Source {
+        SOURCE_UNKNOWN = 0;
+        SOURCE_RED_HAT = 1;
+        SOURCE_OSV = 2;
+        SOURCE_NVD = 3;
+      }
       message V2 {
         float base_score = 1;
         string vector = 2;
@@ -87,7 +93,7 @@ message VulnerabilityReport {
       }
       V2 v2 = 1;
       V3 v3 = 2;
-      string updater = 3; <-- New field.
+      Source source = 3; <-- New field.
       string cvss_url = 4; <-- New field
     }
     ...
@@ -102,8 +108,10 @@ message VulnerabilityReport {
 
 There will be a new type plus two new fields added:
 
-* `CVSS.updater`
-  * This specifies the source of the particular CVSS metrics. The value will be the name of the scanner updater, indicating the data source from which the updater is fetching vulnerabilities.
+* `CVSS.Source`
+  * This specifies the supported CVSS metrics data sources.
+* `CVSS.source`
+  * This specifies the source of the particular CVSS metrics.
 * `CVSS.cvss_url`
   * This specifies the CVSS score source URL, aiding both API and UI users in tracking the origin of this metric.
 * `cvss_metrics`
@@ -112,6 +120,45 @@ There will be a new type plus two new fields added:
 The original `cvss` field will remain and will continue to represent the Scanner's preferred CVSS score.
 This is currently the score from the vulnerability's original data source, if available, otherwise NVD.
 
+**JSON example**:
+
+
+```sh
+"9216828": {
+	"id": "9216828",
+	"name": "CVE-2023-48231",
+	"description": "DOCUMENTATION: A heap use-after-free flaw was found in the vim package. ... MITIGATION: Mitigation for this issue is either not available or ..., applicability to widespread installation base or stability.",
+	"issued": {
+		"seconds": -62135596800
+	},
+	"link": "https://access.redhat.com/security/cve/CVE-2023-48231",
+	"severity": "Low",
+	"normalized_severity": 1,
+	"cvss": {
+		"source": "SOURCE_RED_HAT",
+		"v3": {
+			"base_score": 4.3,
+			"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
+			},
+		"cvss_url":"https://access.redhat.com/security/cve/CVE-2023-48231"
+		},
+	"cvss_metrics": [{
+		"source": "SOURCE_RED_HAT",
+		"v3": {
+			"base_score": 4.3,
+			"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
+			},
+		"cvss_url":"https://access.redhat.com/security/cve/CVE-2023-48231"
+		},{
+		"source": "SOURCE_NVD",
+		"v3": {
+			"base_score": 4.3,
+			"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
+			},
+		"cvss_url":"https://nvd.nist.gov/vuln/detail/CVE-2023-48231"
+		}]
+}
+```
 ### Handling RHSA/RHBA/RHEA
 
 Without loss of generality, RHSA/RHBA/RHEA will just be referred to as the more well-known RHSA variant of the three.
@@ -131,9 +178,8 @@ This URL encoding will be extended to include `cve=<CVE ID>`.
 
 ## Consequences
 
-* Introducing `string` field `CVSS.updater` ensures consistency and limits mistakes which may be made
-with misspelled or differently spelled strings because `updater` values directly come from Scanner vulnerability updater names.
-* `repeated CVSS` field `cvss_metrics` will always include CVSS metrics from all updaters/data sources, including the Scanner's preferred CVSS metric.
+* Creating an `enum` for `Source` instead of just using a `string` ensures consistency and limits mistakes which may be made
+* `repeated CVSS` field `cvss_metrics` will always include CVSS metrics from all data sources, including the Scanner's preferred CVSS metric.
   * This approach simplifies data querying and filtering, as `cvss_metrics` will be the sole field used for filtering data or making policies.
 * OSV.dev sometimes does not related non-CVEs (like GHSAs) back to CVEs. When this happens, we cannot determine the CVSS score from NVD.
 * protobufs do not support enums as key types, so we cannot do something like `map<Source, CVSS> cvss_metrics = 13`.
