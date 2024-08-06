@@ -79,7 +79,7 @@ const rules = {
     },
 
     // ESLint naming convention for negative rules.
-    // If your rule only disallows something, prefix it with no-
+    // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
     'no-Td-in-Thead': {
