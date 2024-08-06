@@ -41,7 +41,7 @@ func (namespaceCheck) Check(_ *upgradectx.UpgradeContext, execPlan *plan.Executi
 	for _, act := range execPlan.Actions() {
 		act := act
 		if !namespaceAllowed(&act.ObjectRef) {
-			reporter.Errorf("To-be-%sd object %v is in disallowed namespace %s", act.ActionName, act.ObjectRef, pods.GetPodNamespace(pods.NoSATokenNamespace))
+			reporter.Errorf("To-be-%sd object %v is in disallowed namespace %s", act.ActionName, act.ObjectRef, act.ObjectRef.Namespace)
 		}
 	}
 	return nil
