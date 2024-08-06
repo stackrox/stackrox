@@ -117,7 +117,7 @@ spec:
     - name: image-url
       # We can't provide a StackRox-style tag because it is not known at this time (requires cloning source, etc.)
       # As a workaround, we still provide a unique tag that's based on a revision to this task to comply with its
-      # expected input. We later actually add this tag on a built image with apply-tags task.
+      # expected input. We later actually add this tag on a built image with build-image-manifest-konflux task.
       value: $(params.output-image-repo):konflux-$(params.revision)
     - name: rebuild
       value: $(params.rebuild)
