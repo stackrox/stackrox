@@ -538,6 +538,8 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 				logging.ImageName(existingImg.GetName().GetFullName()),
 				logging.ImageID(imgID),
 				logging.String("request_image", request.GetImageName().GetFullName()),
+				logging.Any("forceScanUpdate", forceScanUpdate),
+				logging.Any("forceSigVerificationUpdate", forceSigVerificationUpdate),
 			)
 		}
 	}
