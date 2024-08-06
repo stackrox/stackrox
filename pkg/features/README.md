@@ -6,30 +6,41 @@ Currently, feature flags use environment variables to power the toggles.
 
 Feature flags can be valuable to ship features in a preview state, to provide the end user a way to disable some functionality or to control any boolean setting.
 
+## Use cases
+
+### Feature release stages
+
+To promote a feature through the release stages, consider the following progression:
+
+1. Until the feature is ready to be tested by customers, the flag should be disabled by default and unchangeable in production.
+2. The flag, disabled by default, can be made changeable to allow customers share feedback on the feature.
+3. When the feature is complete and generally available, the flag can be enabled by default.
+4. After the feature has been tested in production for some time, but not longer, remove the flag.
+
+### Feature deprecation
+
+When an existing feature needs to be removed, a feature flag should be used to gradually deprecate the feature:
+
+1. Create a feature flag, disabled by default, with a variable having `HIDDEN`, `SUPPRESSION` or similar word in the name. Do not use `DISABLED`, because the condition for the enabled feature will read badly.
+2. Put the functionality being deprecated under condition, e.g., `if !featureSuppression.Enabled() { feature }`, and announce the deprecation.
+3. After some grace period, make the flag enabled by default and announce removal.
+
+### Dependencies
+
+This package does not implement any support for managing dependencies between flags. Make sure to document potential dependencies close to the flag definition.
+
 > :warning: Feature flags cannot be used inside migrations or schema changes.
 > Migrations must be merged to the master branch without any feature flag gate, and must not break any current features.
 
 ## Adding a feature flag
 
-To add a feature flag, add a variable with your feature to `list.go`. To register this feature flag variables, you are required to provide the following:
+To add a feature flag, add a variable with your feature to `list.go`. To register feature flag variables, you are required to provide the following:
 
-* Name: This is a short description of what this flag is about
-* Environment Variable name: This is the environment variable which needs to be set to override the default value of this flag. Env var names **must** start with `ROX_`
+* Name: This is a short description of what this flag is about.
+* Environment variable name: This is the environment variable which users set to override the default value of this flag. Env var names **must** start with `ROX_`.
 * Options:
-  * whether the flag is changeable on release builds (default) or not (add `unchangeableInProd` option). See below for more details
-  * default value: disabled (default) or enabled (add `enabled` option)
-
-The variable can be one of two types of feature flag:
-
-### An `unchangeableInProd` feature
-
-This flag cannot be changed from its default value on release builds (i.e. "production"). To enable or disable it, you must make a code change.
-On development builds, the setting _can_ be changed.
-
-### A changeable feature
-
-This is the default feature flag. The value of the flag can be changed in both release and development builds.
-Use this if you want the end user to be able to enable or disable the setting.
+  * `unchangeableInProd` makes the flag unchangeable in release builds. On development builds, the setting _can_ be changed. Consider using this option in the early stage of feature development.
+  * `enabled` makes the flag enabled by default. Use this option when the feature is complete, meets GA requirements, and needs to be enabled.
 
 > :warning: To introduce features that could be disabled in release builds, you must be cautious to ensure that Central returns to "normal" state after disabling the feature.
 > Sometimes it is not as simple as turning off the feature flag to return Central to the "normal" state for various reasons, including (but not limited to) schema and data changes.
