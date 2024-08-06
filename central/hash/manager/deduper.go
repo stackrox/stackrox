@@ -122,9 +122,8 @@ func (d *deduperImpl) StartSync() {
 	d.hashLock.Lock()
 	defer d.hashLock.Unlock()
 
-	for _, v := range d.received {
-		v.processed = false
-	}
+	// We need to process received but not successfully processed events.
+	d.received = make(map[string]*entry)
 
 	// Mark all hashes as unseen when a new sensor connection is created
 	for _, v := range d.successfullyProcessed {
