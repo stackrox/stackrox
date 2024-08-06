@@ -102,7 +102,7 @@ func (s *ComplianceAuditLogReaderTestSuite) TestReaderTailsLog() {
 	s.Equal(expectedEvent, *event)
 
 	// Write a few more log lines and check that they are read and parsed
-	expectedEvents := make([]auditEvent, 0, 4)
+	expectedEvents := make([]auditEvent, 0, 3)
 	lines := make([]string, 0, 3)
 	for i := 0; i < 3; i++ {
 		eventTime = eventTime.Add(60 * time.Second)
