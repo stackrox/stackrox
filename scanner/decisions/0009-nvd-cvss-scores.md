@@ -120,6 +120,9 @@ Scanner V4 currently shows RHSA as the top-level entity, rather than the related
 When this is done, Scanner V4 gives the RHSA the highest CVSS score from the associated CVE(s). We acknowledge this is not
 ideal, and there are plans to resolve this in the future. For now, we will need to support NVD scores in a compatible manner.
 
+Encoding the RHSA/RHEA/RHBA's related CVE allows Scanner V4 to relate the advisory back to the CVE which has the highest score and search NVD for that CVE's score.
+Other type of advisories like ALAS and USN will not have a score from NVD.
+
 The [`claircore.Vulnerability.Severity`](https://github.com/quay/claircore/blob/v1.5.25/vulnerability.go#L24) is currently set to the following:
 
 `severity=<severity>&cvss3_score=<score3>&cvss3_vector=<vector3>cvss2_score=<score2>&cvss2_vector=<vector2>`
@@ -132,8 +135,6 @@ This URL encoding will be extended to include `cve=<CVE ID>`.
 with misspelled or differently spelled strings because `updater` values directly come from Scanner vulnerability updater names.
 * `repeated CVSS` field `cvss_metrics` will always include CVSS metrics from all updaters/data sources, including the Scanner's preferred CVSS metric.
   * This approach simplifies data querying and filtering, as `cvss_metrics` will be the sole field used for filtering data or making policies.
-* Encoding the RHSA/RHEA/RHBA's related CVE allows Scanner V4 to relate the advisory back to the CVE which has the highest score and search NVD for that CVE's score.
-* Other type of advisories like ALAS and USN will not have a score from NVD.
 * OSV.dev sometimes does not related non-CVEs (like GHSAs) back to CVEs. When this happens, we cannot determine the CVSS score from NVD.
 * protobufs do not support enums as key types, so we cannot do something like `map<Source, CVSS> cvss_metrics = 13`.
   * We could just use a `string`, but then we run into the same potential pitfalls mentioned previously.
