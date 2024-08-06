@@ -144,13 +144,14 @@ func (c accessCheck) auxiliaryInfoOnPermissionDenied(ctx *upgradectx.UpgradeCont
 		msgs = append(msgs, fmt.Sprintf("Default ServiceAccount %q not found", defaultServiceAccountName))
 		msgs = append(msgs, fmt.Sprintf("Fallback ServiceAccount %q not found", fallbackServiceAccountName))
 	default:
-		msgs = append(msgs, fmt.Sprintf("Upgrader is not using the default SA %q."+
-			"This secured cluster may not be configured for receiving updates.", defaultServiceAccountName))
+		msgs = append(msgs, fmt.Sprintf("Upgrader is using %q ServiceAccount instead of the expected %q",
+			activeSA, defaultServiceAccountName))
 		if err := c.checkDefaultClusterRoleBinding(ctx, activeSA); err != nil {
 			msgs = append(msgs, err.Error())
 		}
 	}
-	return fmt.Sprintf("Potential issues: %s.", strings.Join(msgs, "; "))
+	return fmt.Sprintf("Potential issues: %s. "+
+		"This secured cluster may be not configured for receiving updates.", strings.Join(msgs, "; "))
 }
 
 // getUpgraderSAName returns the name of the SA that is currently used by the upgrader
