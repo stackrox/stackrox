@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -19,6 +20,8 @@ import (
 
 var (
 	_ DataStore = (*datastoreImpl)(nil)
+
+	log = logging.LoggerForModule()
 
 	discoveredClusterCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -97,9 +100,8 @@ func validateCloudSource(cloudSource *storage.CloudSource) error {
 	if cloudSource.GetName() == "" {
 		errorList.AddString("cloud source name must be defined")
 	}
-	if cloudSource.GetCredentials().GetSecret() == "" &&
-		(cloudSource.GetCredentials().GetClientId() == "" || cloudSource.GetCredentials().GetClientSecret() == "") {
-		errorList.AddString("cloud source credentials must be defined")
+	if err := validateCredentials(cloudSource); err != nil {
+		errorList.AddError(err)
 	}
 	if err := validateType(cloudSource); err != nil {
 		errorList.AddError(err)
@@ -108,6 +110,27 @@ func validateCloudSource(cloudSource *storage.CloudSource) error {
 		errorList.AddWrap(err, "invalid endpoint")
 	}
 	return errorList.ToError()
+}
+
+func validateCredentials(cloudSource *storage.CloudSource) error {
+	creds := cloudSource.GetCredentials()
+	switch cloudSource.GetConfig().(type) {
+	case *storage.CloudSource_PaladinCloud:
+		if creds.GetSecret() == "" {
+			return errors.New("cloud source credentials must be defined")
+		}
+		return nil
+	case *storage.CloudSource_Ocm:
+		// TODO(ROX-25633): fail validation if token is used for authentication.
+		if creds.GetSecret() != "" {
+			log.Warn("secret is deprecated for type OCM - use clientId and clientSecret instead")
+		}
+		if creds.GetSecret() == "" && (creds.GetClientId() == "" || creds.GetClientSecret() == "") {
+			return errors.New("either secret or both clientId and clientSecret must be defined")
+		}
+		return nil
+	}
+	return errors.New("invalid cloud source config type")
 }
 
 func validateType(cloudSource *storage.CloudSource) error {
