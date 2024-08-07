@@ -5705,6 +5705,16 @@
                 "id": 9,
                 "name": "snooze_expiry",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "orphaned",
+                "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "orphaned_time",
+                "type": "google.protobuf.Timestamp"
               }
             ]
           },
