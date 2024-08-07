@@ -11,7 +11,6 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 )
@@ -57,7 +56,7 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 		"ProcessListeningOnPortStorage",
 	)
 
-	allowed, err := pgutils.Retry2(func() (bool, error) {
+	allowed, err := pgutils.Retry2(ctx, func() (bool, error) {
 		return s.checkAccess(ctx, deploymentID)
 	})
 
@@ -69,7 +68,7 @@ func (s *fullStoreImpl) GetProcessListeningOnPort(
 		return nil, nil
 	}
 
-	return pgutils.Retry2(func() ([]*storage.ProcessListeningOnPort, error) {
+	return pgutils.Retry2(ctx, func() ([]*storage.ProcessListeningOnPort, error) {
 		return s.retryableGetPLOP(ctx, deploymentID)
 	})
 }
@@ -183,13 +182,13 @@ func (s *fullStoreImpl) readRows(
 		}
 
 		var msg storage.ProcessListeningOnPortStorage
-		if err := protocompat.Unmarshal(serialized, &msg); err != nil {
+		if err := msg.UnmarshalVT(serialized); err != nil {
 			return nil, err
 		}
 
 		var procMsg storage.ProcessIndicator
 		if procSerialized != nil {
-			if err := protocompat.Unmarshal(procSerialized, &procMsg); err != nil {
+			if err := procMsg.UnmarshalVT(procSerialized); err != nil {
 				return nil, err
 			}
 		}

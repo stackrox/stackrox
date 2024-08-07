@@ -99,11 +99,6 @@ message ListComplianceCheckResultResponse {
   google.protobuf.Timestamp last_scan_time = 5;
 }
 
-// CountComplianceScanResults gives count of scan results
-message CountComplianceScanResults {
-  int32 count = 1;
-}
-
 message ComplianceScanResultsRequest {
   string scan_config_name = 1;
   RawQuery query = 2;

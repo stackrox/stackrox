@@ -40,17 +40,7 @@ main() {
 
     roxctl -e "${api_endpoint}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central backup --output "${dest}"
 
-    # With Postgres we no longer take RocksDB dumps
-    if [ -z "${ROX_POSTGRES_DATASTORE}" ] || [ "${ROX_POSTGRES_DATASTORE}" == "false" ]; then
-      if ! [ -x "$(command -v rocksdbdump)" ]; then
-          go install ./tools/rocksdbdump
-      fi
-
-      rocksdbdump -b "${dest}"/*.zip -o "${dest}"
-    fi
-
     # Pull some data not found from the database
-
     set +e
     curl -s --insecure -u "${ROX_USERNAME}:${ROX_PASSWORD}" "https://${api_endpoint}/v1/imageintegrations" | jq > "${dest}/imageintegrations.json"
     for objects in "policies"; do

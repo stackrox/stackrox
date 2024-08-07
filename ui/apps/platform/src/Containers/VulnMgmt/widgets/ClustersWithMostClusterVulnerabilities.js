@@ -12,12 +12,12 @@ import workflowStateContext from 'Containers/workflowStateContext';
 import Loader from 'Components/Loader';
 import Widget from 'Components/Widget';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import NumberedGrid from 'Components/NumberedGrid';
 import FixableCVECount from 'Components/FixableCVECount';
 import kubeSVG from 'images/kube.svg';
 import istioSVG from 'images/istio.svg';
 import openShiftSVG from 'images/openShift.svg';
 
+import NumberedGrid from './NumberedGrid';
 import ViewAllButton from './ViewAllButton';
 
 const CLUSTER_WITH_MOST_CLUSTER_VULNERABILTIES = gql`

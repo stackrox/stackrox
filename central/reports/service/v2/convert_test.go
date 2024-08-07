@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -191,7 +192,7 @@ func (s *typeConversionTestSuite) TestConvertV2ReportConfigurationToProto() {
 			reportConfig := c.reportConfigGen()
 			expected := c.resultGen()
 			converted := s.service.convertV2ReportConfigurationToProto(reportConfig, creator, accessScopeRules)
-			assert.Equal(t, expected, converted)
+			protoassert.Equal(t, expected, converted)
 		})
 	}
 }
@@ -357,7 +358,7 @@ func (s *typeConversionTestSuite) TestConvertProtoReportConfigurationToV2() {
 			expected := c.resultGen()
 			converted, err := s.service.convertProtoReportConfigurationToV2(reportConfig)
 			assert.NoError(t, err)
-			assert.Equal(t, expected, converted)
+			protoassert.Equal(t, expected, converted)
 		})
 	}
 }
@@ -402,7 +403,7 @@ func (s *typeConversionTestSuite) TestConvertProtoScheduleToV2() {
 	for _, c := range cases {
 		s.T().Run(c.testname, func(t *testing.T) {
 			converted := s.service.convertProtoScheduleToV2(c.schedule)
-			assert.Equal(t, c.result, converted)
+			protoassert.Equal(t, c.result, converted)
 		})
 	}
 }
@@ -433,7 +434,7 @@ func (s *typeConversionTestSuite) TestConvertV2ScheduleToProto() {
 	for _, c := range cases {
 		s.T().Run(c.testname, func(t *testing.T) {
 			converted := s.service.convertV2ScheduleToProto(c.schedule)
-			assert.Equal(t, c.result, converted)
+			protoassert.Equal(t, c.result, converted)
 		})
 	}
 }

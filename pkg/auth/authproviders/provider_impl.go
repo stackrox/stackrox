@@ -89,7 +89,7 @@ func (p *providerImpl) StorageView() *storage.AuthProvider {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 
-	result := p.storedInfo.Clone()
+	result := p.storedInfo.CloneVT()
 	if result == nil {
 		result = &storage.AuthProvider{}
 	}
@@ -264,7 +264,7 @@ func (p *providerImpl) MergeConfigInto(newCfg map[string]string) map[string]stri
 // Does a deep copy of the proto field 'storedInfo' so that it can support nested message fields.
 func cloneWithoutMutex(pr *providerImpl) *providerImpl {
 	return &providerImpl{
-		storedInfo:     pr.storedInfo.Clone(),
+		storedInfo:     pr.storedInfo.CloneVT(),
 		backendFactory: pr.backendFactory,
 		backend:        pr.backend,
 		roleMapper:     pr.roleMapper,
@@ -274,7 +274,7 @@ func cloneWithoutMutex(pr *providerImpl) *providerImpl {
 
 // No need to do a deep copy of the 'storedInfo' field here since the 'from' input was created with a deep copy.
 func copyWithoutMutex(to *providerImpl, from *providerImpl) {
-	to.storedInfo = from.storedInfo.Clone()
+	to.storedInfo = from.storedInfo.CloneVT()
 	to.backendFactory = from.backendFactory
 	to.backend = from.backend
 	to.roleMapper = from.roleMapper

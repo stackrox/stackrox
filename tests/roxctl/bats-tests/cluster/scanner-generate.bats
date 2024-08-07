@@ -51,7 +51,7 @@ assert_number_of_k8s_resources() {
   # additional mounted volume. It's called "trusted-ca-volume" and we use it to identify OpenShift 4 configuration.
   run -0 grep -q 'trusted-ca-volume' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -0 grep -q 'ROX_OPENSHIFT_API' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
-  assert_number_of_k8s_resources 17
+  assert_number_of_k8s_resources 14
 }
 
 @test "[openshift] roxctl scanner generate" {
@@ -60,7 +60,7 @@ assert_number_of_k8s_resources() {
   assert_file_exist "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -0 grep -q 'ROX_OPENSHIFT_API' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -1 grep -q 'trusted-ca-volume' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
-  assert_number_of_k8s_resources 17
+  assert_number_of_k8s_resources 14
 }
 
 @test "[k8s] roxctl scanner generate" {
@@ -72,7 +72,7 @@ assert_number_of_k8s_resources() {
   assert_file_exist "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -1 grep -q 'ROX_OPENSHIFT_API' "${output_dir}/scanner/02-scanner-06-deployment.yaml"
 
-  assert_number_of_k8s_resources 15
+  assert_number_of_k8s_resources 12
 }
 
 @test "[k8s istio-support] roxctl scanner generate" {
@@ -80,7 +80,7 @@ assert_number_of_k8s_resources() {
 
   assert_file_exist "${output_dir}/scanner/02-scanner-07-service.yaml"
   run -0 grep -q "^apiVersion: networking.istio.io/v1alpha3" "${output_dir}/scanner/02-scanner-07-service.yaml"
-  assert_number_of_k8s_resources 17
+  assert_number_of_k8s_resources 14
 }
 
 @test "[k8s scanner-image] roxctl scanner generate" {
@@ -88,4 +88,5 @@ assert_number_of_k8s_resources() {
 
   assert_file_exist "${output_dir}/scanner/02-scanner-06-deployment.yaml"
   run -0 grep -q "bats-tests" "${output_dir}/scanner/02-scanner-06-deployment.yaml"
+  assert_number_of_k8s_resources 12
 }

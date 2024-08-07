@@ -38,7 +38,7 @@ type storeImpl struct {
 }
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storeType) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.upsert(ctx, obj)
 	})
 }
@@ -125,7 +125,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PolicyCategory)
 
 func insertIntoPolicyCategories(batch *pgx.Batch, obj *storage.PolicyCategory) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}

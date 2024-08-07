@@ -30,9 +30,6 @@ const passingColor = COMPLIANCE_PASS_COLOR;
 const failingColor = COMPLIANCE_FAIL_COLOR;
 const NAColor = 'var(--base-400)'; // same as skippedColor in ComplianceByStandards
 
-const linkColor = 'var(--base-600)';
-const textColor = 'var(--base-600)';
-
 const sunburstLegendData = [
     { title: 'Passing', color: passingColor },
     { title: 'Failing', color: failingColor },
@@ -124,7 +121,6 @@ const getSunburstData = (categoryMapping, urlBuilder, searchParam, standardType)
         return {
             name: `${category.name}. ${category.description}`,
             color: getColor(totalPassing, totalFailing),
-            textColor,
             value: categoryValue,
             children: controls.map(({ control, numPassing, numFailing }) => {
                 const value = getPercentagePassing(numPassing, numFailing);
@@ -141,7 +137,6 @@ const getSunburstData = (categoryMapping, urlBuilder, searchParam, standardType)
                 return {
                     name: `${control.name} - ${control.description}`,
                     color: getColor(numPassing, numFailing),
-                    textColor,
                     value,
                     link,
                 };
@@ -212,17 +207,14 @@ const getSunburstRootData = (
         {
             text: `${controlsPassing} Controls Passing`,
             link: controlsPassingLink,
-            color: linkColor,
         },
         {
             text: `${controlsFailing} Controls Failing`,
             link: controlsFailingLink,
-            color: linkColor,
         },
         {
             text: `${controlsNA} Controls N/A`,
             link: controlsNALink,
-            color: linkColor,
         },
     ];
     return sunburstRootData;

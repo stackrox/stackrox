@@ -181,14 +181,16 @@ const TopologyComponent = ({
 
     const selectedIds = selectedNode ? [selectedNode.id] : [];
 
+    const labelledById = 'TopologySideBarLabelledBy';
     return (
         <TopologyView
             sideBar={
-                <TopologySideBar resizable onClose={closeSidebar}>
+                <TopologySideBar aria-labelledby={labelledById} resizable onClose={closeSidebar}>
                     {hasReadAccessForNetworkPolicy &&
                         simulation.isOn &&
                         simulation.type === 'networkPolicy' && (
                             <NetworkPolicySimulatorSidePanel
+                                labelledById={labelledById}
                                 simulator={simulator}
                                 setNetworkPolicyModification={setNetworkPolicyModification}
                                 scopeHierarchy={scopeHierarchy}
@@ -197,6 +199,7 @@ const TopologyComponent = ({
                         )}
                     {selectedNode && selectedNode?.data?.type === 'NAMESPACE' && (
                         <NamespaceSideBar
+                            labelledById={labelledById}
                             namespaceId={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
@@ -205,6 +208,7 @@ const TopologyComponent = ({
                     )}
                     {selectedNode && selectedNode?.data?.type === 'DEPLOYMENT' && (
                         <DeploymentSideBar
+                            labelledById={labelledById}
                             deploymentId={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
@@ -215,6 +219,7 @@ const TopologyComponent = ({
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (
                         <ExternalGroupSideBar
+                            labelledById={labelledById}
                             id={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
@@ -223,6 +228,7 @@ const TopologyComponent = ({
                     )}
                     {selectedNode && isNodeOfType('CIDR_BLOCK', selectedNode) && (
                         <GenericEntitiesSideBar
+                            labelledById={labelledById}
                             id={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
@@ -234,6 +240,7 @@ const TopologyComponent = ({
                     )}
                     {selectedNode && isNodeOfType('EXTERNAL_ENTITIES', selectedNode) && (
                         <GenericEntitiesSideBar
+                            labelledById={labelledById}
                             id={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}
@@ -245,6 +252,7 @@ const TopologyComponent = ({
                     )}
                     {selectedNode && isNodeOfType('INTERNAL_ENTITIES', selectedNode) && (
                         <GenericEntitiesSideBar
+                            labelledById={labelledById}
                             id={selectedNode.id}
                             nodes={model?.nodes || []}
                             edges={model?.edges || []}

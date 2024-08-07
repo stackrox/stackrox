@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(initBundleMeta, foundInitBundleMeta)
+	protoassert.Equal(s.T(), initBundleMeta, foundInitBundleMeta)
 
 	initBundleMetaCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -77,11 +78,6 @@ func (s *ClusterInitBundlesStoreSuite) TestStore() {
 	s.True(initBundleMetaExists)
 	s.NoError(store.Upsert(ctx, initBundleMeta))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, initBundleMeta), sac.ErrResourceAccessDenied)
-
-	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(initBundleMeta, foundInitBundleMeta)
 
 	s.NoError(store.Delete(ctx, initBundleMeta.GetId()))
 	foundInitBundleMeta, exists, err = store.Get(ctx, initBundleMeta.GetId())

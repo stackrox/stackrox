@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/pkg/jsonutil"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -50,6 +49,8 @@ type PolicyUpdates struct {
 	Rationale *string
 	// Description is the new description string
 	Description *string
+	// Severity is the new severity
+	Severity storage.Severity
 	// Disable is true if the policy should be disabled, false if it should be enabled and nil for no change
 	Disable *bool
 }
@@ -101,6 +102,9 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 	if u.Description != nil {
 		policy.Description = *u.Description
 	}
+	if u.Severity != 0 {
+		policy.Severity = u.Severity
+	}
 
 	for _, toRemove := range u.CategoriesToRemove {
 		if !removeCategory(policy, toRemove) {
@@ -119,7 +123,7 @@ func (u *PolicyUpdates) applyToPolicy(policy *storage.Policy) {
 func removeExclusion(policy *storage.Policy, exclusionToRemove *storage.Exclusion) bool {
 	exclusions := policy.GetExclusions()
 	for i, exclusion := range exclusions {
-		if protocompat.Equal(exclusion, exclusionToRemove) {
+		if exclusion.EqualVT(exclusionToRemove) {
 			policy.Exclusions = append(exclusions[:i], exclusions[i+1:]...)
 			return true
 		}
@@ -154,6 +158,11 @@ func ExclusionComparator(first, second *storage.Policy) bool {
 // NameComparator compares both policies' names and returns true if they are equal
 func NameComparator(first, second *storage.Policy) bool {
 	return strings.TrimSpace(first.GetName()) == strings.TrimSpace(second.GetName())
+}
+
+// SeverityComparator compares both policies' severity and returns true if they are equal
+func SeverityComparator(first, second *storage.Policy) bool {
+	return first.GetSeverity() == second.GetSeverity()
 }
 
 // RemediationComparator compares the Remediation section of both policies and returns true if they are equal
@@ -194,8 +203,8 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 	}
 
 	// Clone policies because we mutate them.
-	beforePolicy = beforePolicy.Clone()
-	afterPolicy = afterPolicy.Clone()
+	beforePolicy = beforePolicy.CloneVT()
+	afterPolicy = afterPolicy.CloneVT()
 
 	var updates PolicyUpdates
 
@@ -246,6 +255,13 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 	beforePolicy.Remediation = ""
 	afterPolicy.Remediation = ""
 
+	// Severity
+	if beforePolicy.GetSeverity() != afterPolicy.GetSeverity() {
+		updates.Severity = afterPolicy.Severity
+	}
+	beforePolicy.Severity = 0
+	afterPolicy.Severity = 0
+
 	// Enable/Disable
 	if beforePolicy.GetDisabled() != afterPolicy.GetDisabled() {
 		updates.Disable = boolPtr(afterPolicy.GetDisabled())
@@ -260,7 +276,7 @@ func diffPolicies(beforePolicy, afterPolicy *storage.Policy) (PolicyUpdates, err
 
 	// TODO: Add others as needed
 
-	if !protocompat.Equal(beforePolicy, afterPolicy) {
+	if !beforePolicy.EqualVT(afterPolicy) {
 		return PolicyUpdates{}, errors.New("policies have diff after nil-ing out fields we checked, please update this function " +
 			"to be able to diff more fields")
 	}
@@ -272,7 +288,7 @@ func getExclusionsUpdates(beforePolicy *storage.Policy, afterPolicy *storage.Pol
 	for _, beforeExclusion := range beforePolicy.GetExclusions() {
 		var found bool
 		for afterExclusionIdx, afterExclusion := range afterPolicy.GetExclusions() {
-			if protocompat.Equal(beforeExclusion, afterExclusion) {
+			if beforeExclusion.EqualVT(afterExclusion) {
 				if !matchedAfterExclusionsIdxs.Contains(afterExclusionIdx) { // to account for duplicates
 					found = true
 					matchedAfterExclusionsIdxs.Add(afterExclusionIdx)

@@ -110,6 +110,10 @@ func (t Translator) translate(ctx context.Context, c platform.Central) (chartuti
 
 	v.AddChild("customize", &customize)
 
+	if c.Spec.Network != nil {
+		v.AddChild("network", translation.GetGlobalNetwork(c.Spec.Network))
+	}
+
 	return v.Build()
 }
 

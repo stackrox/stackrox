@@ -11,9 +11,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -62,7 +64,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 	}
 	reg, err := regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
-	assert.Equal(t, "image-registry.openshift-image-registry.svc:5000", reg.Config().RegistryHostname)
+	assert.Equal(t, "image-registry.openshift-image-registry.svc:5000", reg.Config(ctx).RegistryHostname)
 
 	img = &storage.ImageName{
 		Registry: "image-registry.openshift-image-registry.svc.local:5000",
@@ -72,7 +74,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 	}
 	reg, err = regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
-	assert.Equal(t, "image-registry.openshift-image-registry.svc.local:5000", reg.Config().RegistryHostname)
+	assert.Equal(t, "image-registry.openshift-image-registry.svc.local:5000", reg.Config(ctx).RegistryHostname)
 
 	img = &storage.ImageName{
 		Registry: "172.99.12.11:5000",
@@ -82,7 +84,7 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 	}
 	reg, err = regStore.GetRegistryForImageInNamespace(img, "qa")
 	require.NoError(t, err)
-	assert.Equal(t, "172.99.12.11:5000", reg.Config().RegistryHostname)
+	assert.Equal(t, "172.99.12.11:5000", reg.Config(ctx).RegistryHostname)
 }
 
 // TestRegistryStore_SpecificNamespace tests interactions with the registry store
@@ -96,8 +98,8 @@ func TestRegistryStore_SpecificNamespace(t *testing.T) {
 	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dce))
 	reg, err := regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
-	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config().RegistryHostname)
-	assert.Equal(t, reg.Config().Username, "username")
+	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config(ctx).RegistryHostname)
+	assert.Equal(t, reg.Config(ctx).Username, "username")
 
 	// no registry should exist based on img.Remote
 	_, err = regStore.GetRegistryForImageInNamespace(fakeImgName, "qa")
@@ -116,19 +118,21 @@ func TestRegistryStore_MultipleSecretsSameRegistry(t *testing.T) {
 	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceA))
 	reg, err := regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
-	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config().RegistryHostname)
-	assert.Equal(t, reg.Config().Username, dceA.Username)
-	assert.Equal(t, reg.Config().Password, dceA.Password)
+	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config(ctx).RegistryHostname)
+	assert.Equal(t, reg.Config(ctx).Username, dceA.Username)
+	assert.Equal(t, reg.Config(ctx).Password, dceA.Password)
 
 	require.NoError(t, regStore.UpsertRegistry(ctx, fakeNamespace, fakeImgName.GetRegistry(), dceB))
 	reg, err = regStore.GetRegistryForImageInNamespace(fakeImgName, fakeNamespace)
 	require.NoError(t, err)
-	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config().RegistryHostname)
-	assert.Equal(t, reg.Config().Username, dceB.Username)
-	assert.Equal(t, reg.Config().Password, dceB.Password)
+	assert.Equal(t, fakeImgName.GetRegistry(), reg.Config(ctx).RegistryHostname)
+	assert.Equal(t, reg.Config(ctx).Username, dceB.Username)
+	assert.Equal(t, reg.Config(ctx).Password, dceB.Password)
 }
 
 func TestRegistryStore_FailUpsertCheckTLS(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, false)
+
 	ctx := context.Background()
 	regStore := NewRegistryStore(alwaysFailCheckTLS)
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
@@ -141,6 +145,21 @@ func TestRegistryStore_FailUpsertCheckTLS(t *testing.T) {
 	// a subsequent upsert should not return an error and also NOT perform an upsert
 	assert.NoError(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
 	assert.Nil(t, regStore.store[ns])
+}
+
+func TestRegistryStore_LazyNoFailUpsertCheckTLS(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, true)
+
+	ctx := context.Background()
+	regStore := NewRegistryStore(alwaysFailCheckTLS)
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+	ns := "namespace"
+
+	// Upsert should NOT fail on lazy TLS check
+	assert.NoError(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
+	regs := regStore.store[ns]
+	allRegs := regs.GetAll()
+	require.Len(t, allRegs, 1)
 }
 
 func TestRegistryStore_GlobalStore(t *testing.T) {
@@ -157,13 +176,15 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 	reg, err := regStore.GetGlobalRegistryForImage(fakeImgName)
 	require.NoError(t, err, "should be no error on valid get")
 	assert.NotNil(t, reg)
-	assert.Equal(t, reg.Config().Username, dce.Username)
+	assert.Equal(t, reg.Config(ctx).Username, dce.Username)
 
 	// sanity check
 	assert.Zero(t, len(regStore.store), "non-global store should not have been modified")
 }
 
 func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, false)
+
 	ctx := context.Background()
 	regStore := NewRegistryStore(alwaysFailCheckTLS)
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
@@ -175,6 +196,20 @@ func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
 	// a subsequent upsert should not return an error and also NOT perform an upsert
 	require.NoError(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
 	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
+}
+
+func TestRegistryStore_GlobalStoreLazyNoFailUpsertCheckTLS(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, true)
+
+	ctx := context.Background()
+	regStore := NewRegistryStore(alwaysFailCheckTLS)
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+
+	// upsert that fails TLS check should error out and NOT perform an upsert
+	require.NoError(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
+	require.False(t, regStore.globalRegistries.IsEmpty())
+	allRegs := regStore.globalRegistries.GetAll()
+	require.Len(t, allRegs, 1)
 }
 
 func TestRegistryStore_CreateImageIntegrationType(t *testing.T) {

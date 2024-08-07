@@ -24,6 +24,7 @@ FROM installer AS test-yes-entitlement
 
 COPY --from=target-base / /mnt
 COPY ./ /tmp/.konflux
+COPY ./activation-key /activation-key/
 
 ARG TEST_RHEL_PACKAGE
 RUN /tmp/.konflux/subscription-manager-bro.sh register /mnt && \

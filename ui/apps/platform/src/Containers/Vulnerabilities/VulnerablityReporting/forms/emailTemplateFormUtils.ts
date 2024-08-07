@@ -2,9 +2,10 @@ import { getProductBranding } from 'constants/productBranding';
 
 // Helper functions
 
-const { shortName, type: productBrand } = getProductBranding();
+const { type: productBrand } = getProductBranding();
 const productBrandText =
     productBrand === 'RHACS_BRANDING' ? 'Red Hat Advanced Cluster Security (RHACS)' : 'StackRox';
+const shortName = productBrand === 'RHACS_BRANDING' ? 'RHACS' : 'StackRox';
 
 export const defaultEmailSubjectTemplate = `${shortName} Workload CVE Report for <Config name>; Scope: <Collection name>`;
 

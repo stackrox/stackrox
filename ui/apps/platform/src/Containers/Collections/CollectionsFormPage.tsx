@@ -71,7 +71,7 @@ function CollectionsFormPage({
 
     const { analyticsTrack } = useAnalytics();
 
-    const { data, loading, error } = useCollection(collectionId);
+    const { data, isLoading, error } = useCollection(collectionId);
 
     const { toasts, addToast, removeToast } = useToasts();
 
@@ -191,7 +191,7 @@ function CollectionsFormPage({
                 />
             </>
         );
-    } else if (loading) {
+    } else if (isLoading) {
         content = (
             <Bullseye>
                 <Spinner />
@@ -315,6 +315,7 @@ function CollectionsFormPage({
                                 <Alert
                                     className="pf-v5-u-m-md"
                                     title={configError.message}
+                                    component="p"
                                     variant="danger"
                                     isInline
                                 >
@@ -351,6 +352,7 @@ function CollectionsFormPage({
                         key={key}
                         variant={variant}
                         title={title}
+                        component="p"
                         timeout
                         onTimeout={() => removeToast(key)}
                         actionClose={

@@ -45,14 +45,9 @@ export const selectors = {
 
     // General selectors
     filteredViewLabel: '.pf-v5-c-label:contains("Filtered view")',
-    entityTypeToggleItem: (entityType) =>
-        `.pf-v5-c-toggle-group[aria-label="Entity type toggle items"] button:contains("${entityType}")`,
-    summaryCard: (cardTitle) => `.pf-v5-c-card:contains("${cardTitle}")`,
     iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
     bulkActionMenuToggle: 'button:contains("Bulk actions")',
     menuOption: (optionText) => `*[role="menu"] button:contains("${optionText}")`,
-    paginationPrevious: "button[aria-label='Go to previous page']",
-    paginationNext: "button[aria-label='Go to next page']",
     severityIcon: (severity) => `span.pf-v5-c-icon:contains('${severity}')`,
     loadingSpinner: 'svg[role="progressbar"][aria-valuetext="Loading..."]',
 

@@ -3,6 +3,8 @@
 ## IMPORTANT
 All migrations must be backwards compatible in order to ensure a safe and successful rollback.
 
+Please review the [overview](OVERVIEW.md) for details on the upgrade and migration process.
+
 ## Purpose of database migrations
 
 When changing the data model for stored objects, data conversions may be required. All migrations
@@ -18,6 +20,27 @@ is operating on, some database instances may be nil.
 
 A migration can read from any of the databases, make changes to the data or to the datamodel
 (database schema when working with postgres), then persist these changes to the database.
+
+## Migrations and feature flags
+
+The short version is:
+**Do not use feature flags in migration code**.
+The application has to work on the same data model with enabled and disabled feature flags.
+
+If a feature needs a new field (named `new_field` for the purpose of the example) in the stored data,
+the code should be able to support the zero value (0, empty string, nil pointer), or
+this `new_field` needs to be seeded. In the latter case, the data should have an initial seed in the form
+of a migration that populates it from default values, or a mix of existing fields. Once the migration has run,
+the application code should also populate and maintain this field on creation or update of stored objects.
+It is important that this `new_field` should be populated regardless of the fact that the feature is
+activated or not: the feature may have to be temporarily deactivated, and later reactivated, in which case
+the data should still be ready for use by the feature.
+
+If a feature cannot work without DB migration, the data should be migrated prior to any work on the feature.
+
+If a feature can work at lesser development cost without data migration, workaround code can be written
+to work on the existing schema. Once the feature is made Generally Available, a data migration
+can be written, applied and the workaround code replaced with code that uses the new data schema.
 
 ## History of the datastores
 
@@ -307,7 +330,7 @@ schema and conversion functions.
 More examples with test protobuf objects are available in `migrator/migrations/postgreshelper/schema`
 ```go
 func convertVulnerabilityRequestFromProto(obj *storage.VulnerabilityRequest) (*schema.VulnerabilityRequests, error) {
-        serialized, err := obj.Marshal()
+        serialized, err := obj.MarshalVT()
         if err != nil {
                 return nil, err
         }

@@ -1,43 +1,44 @@
 import React from 'react';
 import { SelectOption } from '@patternfly/react-core';
 
-import {
-    PartialCompoundSearchFilterConfig,
-    SearchFilterEntityName,
-} from 'Components/CompoundSearchFilter/types';
-import { getEntities } from 'Components/CompoundSearchFilter/utils/utils';
+import { getEntity } from 'Components/CompoundSearchFilter/utils/utils';
 
 import SimpleSelect from './SimpleSelect';
+import { CompoundSearchFilterConfig } from '../types';
 
-export type SelectedEntity = SearchFilterEntityName | undefined;
+export type SelectedEntity = string | undefined;
 export type EntitySelectorOnChange = (value: string | number | undefined) => void;
 
 export type EntitySelectorProps = {
     selectedEntity: SelectedEntity;
     onChange: EntitySelectorOnChange;
-    config: PartialCompoundSearchFilterConfig;
+    config: CompoundSearchFilterConfig;
+    menuToggleClassName?: string;
 };
 
-function EntitySelector({ selectedEntity, onChange, config }: EntitySelectorProps) {
-    const entities = getEntities(config);
+function EntitySelector({
+    selectedEntity = '',
+    onChange,
+    config,
+    menuToggleClassName,
+}: EntitySelectorProps) {
+    const entity = getEntity(config, selectedEntity);
 
-    if (entities.length === 0) {
+    if (!entity) {
         return null;
     }
 
-    const displayName = selectedEntity ? config[selectedEntity]?.displayName : undefined;
-
     return (
         <SimpleSelect
-            value={displayName}
+            menuToggleClassName={menuToggleClassName}
+            value={entity.displayName}
             onChange={onChange}
             ariaLabelMenu="compound search filter entity selector menu"
             ariaLabelToggle="compound search filter entity selector toggle"
         >
-            {entities.map((entity) => {
-                const displayName = config[entity]?.displayName;
+            {config.map(({ displayName }) => {
                 return (
-                    <SelectOption key={entity} value={entity}>
+                    <SelectOption key={displayName} value={displayName}>
                         {displayName}
                     </SelectOption>
                 );

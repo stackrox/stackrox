@@ -125,7 +125,7 @@ func TestDownloadableReportPruning(t *testing.T) {
 	now := time.Now()
 	for _, c := range testCases {
 		t.Run(c.description, func(t *testing.T) {
-			currConfig := config.Clone()
+			currConfig := config.CloneVT()
 			if c.retentionBytes != 0 {
 				currConfig.ReportRetentionConfig.DownloadableReportGlobalRetentionBytes = c.retentionBytes
 			}

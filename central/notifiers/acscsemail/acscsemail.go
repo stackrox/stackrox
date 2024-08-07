@@ -11,12 +11,19 @@ import (
 	"github.com/stackrox/rox/central/notifiers/metadatagetter"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 )
 
 func newACSCSEmail(notifier *storage.Notifier, client Client, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
@@ -66,6 +73,7 @@ func (e *acscsEmail) AlertNotify(ctx context.Context, alert *storage.Alert) erro
 	subject := notifiers.SummaryForAlert(alert)
 	body, err := email.PlainTextAlert(alert, e.notifier.UiEndpoint, e.mitreStore)
 	if err != nil {
+		e.logError("Generating email content failed", err)
 		return errors.Wrap(err, "failed to generate email text for alert")
 	}
 
@@ -84,6 +92,7 @@ func (e *acscsEmail) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, c
 	subject := email.NetworkPolicySubject(clusterName)
 	body, err := email.FormatNetworkPolicyYAML(yaml, clusterName)
 	if err != nil {
+		e.logError("Generating email content failed", err)
 		return errors.Wrap(err, "failed to format network policy message")
 	}
 
@@ -111,7 +120,16 @@ func (e *acscsEmail) send(ctx context.Context, msg *email.Message) error {
 		RawMessage: msg.ContentBytes(),
 	}
 
-	return e.client.SendMessage(ctx, apiMsg)
+	if err := e.client.SendMessage(ctx, apiMsg); err != nil {
+		e.logError("Sending message to emailservice failed", err)
+		return err
+	}
+
+	return nil
+}
+
+func (e *acscsEmail) logError(msg string, err error) {
+	log.Errorw(msg, logging.Err(err), logging.ErrCode(codes.ACSCSEmailGeneric), logging.NotifierName(e.notifier.GetName()))
 }
 
 func init() {

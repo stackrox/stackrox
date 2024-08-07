@@ -4,13 +4,13 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	"github.com/stackrox/rox/central/enrichment"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/pkg/images/cache"
 	mitreDataStore "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -31,7 +31,7 @@ func initialize() {
 		reprocessor.Singleton(),
 		lifecycle.SingletonManager(),
 		notifierProcessor.Singleton(),
-		enrichment.ImageMetadataCacheSingleton(),
+		cache.ImageMetadataCacheSingleton(),
 		connection.ManagerSingleton())
 }
 

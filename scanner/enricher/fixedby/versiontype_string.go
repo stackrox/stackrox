@@ -12,11 +12,12 @@ func _() {
 	_ = x[normalVersionType-1]
 	_ = x[urlEncodedVersionType-2]
 	_ = x[semverVersionType-3]
+	_ = x[goSemverVersionType-4]
 }
 
-const _versionType_name = "unknownVersionTypenormalVersionTypeurlEncodedVersionTypesemverVersionType"
+const _versionType_name = "unknownVersionTypenormalVersionTypeurlEncodedVersionTypesemverVersionTypegoSemverVersionType"
 
-var _versionType_index = [...]uint8{0, 18, 35, 56, 73}
+var _versionType_index = [...]uint8{0, 18, 35, 56, 73, 92}
 
 func (i versionType) String() string {
 	if i < 0 || i >= versionType(len(_versionType_index)-1) {

@@ -301,14 +301,6 @@ func derivePublicLocalValuesForCentralServices(ctx context.Context, _ string, k8
 			},
 			"resources": k8s.evaluateToObject(ctx, "deployment", "central",
 				`{.spec.template.spec.containers[?(@.name == "central")].resources}`, nil),
-			"persistence": map[string]interface{}{
-				"hostPath": k8s.evaluateToStringP(ctx, "deployment", "central",
-					`{.spec.template.spec.volumes[?(@.hostPath)].hostPath.path}`),
-				"persistentVolumeClaim": map[string]interface{}{
-					"claimName": k8s.evaluateToStringP(ctx, "deployment", "central",
-						`{.spec.template.spec.volumes[?(@.persistentVolumeClaim)].persistentVolumeClaim.claimName}`),
-				},
-			},
 			// Regarding the exposure configuration: Currently we make the assumption that the default port (443) is unchanged.
 			// Can be improved to also fetch the port information from the central-loadbalancer service.
 			"exposure": map[string]interface{}{

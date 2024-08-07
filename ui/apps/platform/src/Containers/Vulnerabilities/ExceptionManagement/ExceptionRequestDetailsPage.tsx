@@ -92,7 +92,7 @@ function ExceptionRequestDetailsPage() {
     );
     const {
         data: vulnerabilityException,
-        loading,
+        isLoading,
         error,
         refetch,
     } = useRestQuery(vulnerabilityExceptionByIdFn);
@@ -121,7 +121,7 @@ function ExceptionRequestDetailsPage() {
         setSuccessMessage(`The vulnerability request was successfully updated.`);
     }
 
-    if (loading && !vulnerabilityException) {
+    if (isLoading && !vulnerabilityException) {
         return (
             <Bullseye>
                 <Spinner />
@@ -156,10 +156,11 @@ function ExceptionRequestDetailsPage() {
         hasWriteAccessForApproving &&
         !expired &&
         (status === 'PENDING' || status === 'APPROVED_PENDING_UPDATE');
-    const showCancelButton = !expired && currentUser.userId === requester.id && status !== 'DENIED';
+    const showCancelButton =
+        !expired && currentUser.userId === requester?.id && status !== 'DENIED';
     const showUpdateButton =
         !expired &&
-        currentUser.userId === requester.id &&
+        currentUser.userId === requester?.id &&
         (status === 'PENDING' || 'APPROVED' || status === 'APPROVED_PENDING_UPDATE');
 
     const relevantCVEs =
@@ -175,11 +176,17 @@ function ExceptionRequestDetailsPage() {
                     variant={AlertVariant.success}
                     isInline
                     title={successMessage}
+                    component="p"
                     actionClose={<AlertActionCloseButton onClose={() => setSuccessMessage(null)} />}
                 />
             )}
             {expired && (
-                <Alert variant={AlertVariant.warning} isInline title="Request Canceled.">
+                <Alert
+                    variant={AlertVariant.warning}
+                    isInline
+                    title="Request Canceled."
+                    component="p"
+                >
                     You are viewing a canceled request. If this cancelation was not intended, please
                     submit a new request
                 </Alert>

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -56,7 +57,7 @@ func (d *datastoreImpl) GetAllSignatureIntegrations(ctx context.Context) ([]*sto
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 	return integrations, nil
@@ -165,7 +166,11 @@ func (d *datastoreImpl) verifyIntegrationIDAndUpdates(ctx context.Context,
 	if err != nil {
 		return false, err
 	}
-	return !getPublicKeyPEMSet(existingIntegration).Equal(getPublicKeyPEMSet(updatedIntegration)), nil
+
+	hasUpdates := !getPublicKeyPEMSet(existingIntegration).Equal(getPublicKeyPEMSet(updatedIntegration)) ||
+		!protoutils.SlicesEqual(existingIntegration.GetCosignCertificates(), updatedIntegration.GetCosignCertificates())
+
+	return hasUpdates, nil
 }
 
 func (d *datastoreImpl) verifyIntegrationIDDoesNotExist(ctx context.Context, id string) error {

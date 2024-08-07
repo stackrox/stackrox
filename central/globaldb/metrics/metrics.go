@@ -18,6 +18,8 @@ func init() {
 		PostgresConnected,
 		PostgresTotalConnections,
 		PostgresMaximumConnections,
+		PostgresTableLiveTuples,
+		PostgresTableDeadTuples,
 	)
 }
 
@@ -99,4 +101,18 @@ var (
 		Name:      "postgres_maximum_db_connections",
 		Help:      "number of total connections allowed to the Postgres database server",
 	})
+
+	PostgresTableLiveTuples = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_live_tuples",
+		Help:      "live tuples for the table",
+	}, []string{"table"})
+
+	PostgresTableDeadTuples = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "postgres_dead_tuples",
+		Help:      "dead tuples for the table",
+	}, []string{"table"})
 )

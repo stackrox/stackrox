@@ -131,7 +131,7 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 					cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
 					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan)
 					c.umh.ObserveSending()
-					c.cache = msg.Clone()
+					c.cache = msg.CloneVT()
 					nodeInventoriesC <- msg
 				}
 				interval := i.Next()

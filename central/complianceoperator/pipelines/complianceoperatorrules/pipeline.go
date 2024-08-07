@@ -56,7 +56,7 @@ func (s *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return err
 	}
 	store := storeMap.Get((*central.SensorEvent_ComplianceOperatorRule)(nil))

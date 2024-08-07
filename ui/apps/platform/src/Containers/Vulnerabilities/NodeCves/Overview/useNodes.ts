@@ -26,13 +26,12 @@ const nodeListQuery = gql`
             cluster {
                 name
             }
-            operatingSystem
+            osImage
             scanTime
         }
     }
 `;
 
-// TODO - Verify these types once the BE is implemented
 type Node = {
     id: string;
     name: string;
@@ -53,8 +52,7 @@ type Node = {
     cluster: {
         name: string;
     };
-    // TODO Swap this to the osImage field
-    operatingSystem: string;
+    osImage: string;
     scanTime: string;
 };
 

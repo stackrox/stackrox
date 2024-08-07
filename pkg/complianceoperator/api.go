@@ -90,7 +90,7 @@ type APIResource struct {
 // GroupVersionKind returns the GroupVersionKind which uniquely identifies the resource kind.
 func (r *APIResource) GroupVersionKind() schema.GroupVersionKind {
 	return schema.GroupVersionKind{
-		Group:   r.Kind,
+		Group:   r.Group,
 		Version: r.Version,
 		Kind:    r.Kind,
 	}

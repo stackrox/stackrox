@@ -77,6 +77,7 @@ function ImportPolicyJSONError({
                                 ? 'Policy already exists'
                                 : 'Policy errors causing import failure'
                         }
+                        component="p"
                         variant="danger"
                         className="pf-v5-u-mt-md"
                         isInline

@@ -1,4 +1,10 @@
 /**
+ * @typedef {import("cypress/types/net-stubbing").RouteMatcherOptions} RouteMatcherOptions
+ * @typedef {import("cypress/types/net-stubbing").RouteHandler} RouteHandler
+ * @typedef {import("cypress/types/net-stubbing").WaitOptions} WaitOptions
+ */
+
+/**
  * For example, given ['searchOptions', 'getDeployments'] return:
  * {
  *     searchOptions: {
@@ -19,6 +25,7 @@
  * @returns Record<string, { method: string, url: string }>
  */
 export function getRouteMatcherMapForGraphQL(opnames) {
+    /** @type Record<string, { method: string, url: string }> */
     const routeMatcherMap = {};
 
     opnames.forEach((opname) => {
@@ -29,6 +36,20 @@ export function getRouteMatcherMapForGraphQL(opnames) {
     });
 
     return routeMatcherMap;
+}
+
+export function toAliases(keys) {
+    return keys.map((key) => `@${key}`);
+}
+
+/**
+ * Given an object with keys that are aliases, return an array of @-prefixed aliases
+ *
+ * @param {Record<string, RouteMatcherOptions>} routeMatcherMap
+ * @returns {string[]} An array of @-prefixed aliases
+ */
+export function aliasesFromRouteMatcher(routeMatcherMap) {
+    return toAliases(Object.keys(routeMatcherMap));
 }
 
 /**
@@ -64,9 +85,7 @@ export function interceptRequests(routeMatcherMap, staticResponseMap) {
  */
 export function waitForResponses(routeMatcherMap, waitOptions = {}) {
     if (routeMatcherMap) {
-        const aliases = Object.keys(routeMatcherMap).map((alias) => `@${alias}`);
-
-        return cy.wait(aliases, waitOptions);
+        return cy.wait(aliasesFromRouteMatcher(routeMatcherMap), waitOptions);
     }
 
     return cy.wrap([]);
@@ -79,6 +98,7 @@ export function waitForResponses(routeMatcherMap, waitOptions = {}) {
  * @param {Record<string, { method: string, url: string }>} [routeMatcherMap]
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  * @param {Parameters<Cypress.Chainable['wait']>[1]} [waitOptions]
+ * @returns {Cypress.Chainable<Interception[] | Interception>}
  */
 export function interactAndWaitForResponses(
     interactionCallback,
@@ -91,4 +111,86 @@ export function interactAndWaitForResponses(
     interactionCallback();
 
     return waitForResponses(routeMatcherMap, waitOptions);
+}
+
+/**
+ * Intercept requests and monitor requests/responses across multiple interactions
+ *
+ * @template {string} RouteKey
+ * @param {Record<RouteKey, RouteMatcherOptions>} routeMatcherMap
+ * @param {Partial<Record<RouteKey, RouteHandler>>} [staticResponseMap]
+ * @returns {Promise<{
+ *    waitForRequests: typeof waitForRequests,
+ *    waitAndYieldRequestBodyVariables: typeof waitAndYieldRequestBodyVariables,
+ * }>} Helper functions used to monitor requests
+ *          after an interaction that causes a request
+ */
+export function interceptAndWatchRequests(routeMatcherMap, staticResponseMap) {
+    interceptRequests(routeMatcherMap, staticResponseMap);
+
+    /**
+     * Wait for requests to complete after an interaction
+     *
+     * @param {RouteKey[]=} keys The keys of the routeMatcherMap to wait for, if not provided, wait for all keys in routeMatcherMap
+     * @param {WaitOptions=} waitOptions Wait options for cy.wait
+     * @returns {Cypress.Chainable<Interception> | Cypress.Chainable<Interception[]>} The interception object or array of interception objects
+     */
+    function waitForRequests(keys, waitOptions) {
+        const aliases =
+            keys && keys.length > 0 ? toAliases(keys) : aliasesFromRouteMatcher(routeMatcherMap);
+
+        return cy.wait(aliases, waitOptions);
+    }
+
+    /**
+     * Wait for requests to complete after an interaction and yield the variables object passed in the request body
+     *
+     * @param {RouteKey[]=} keys The keys of the routeMatcherMap to wait for, if not provided, wait for all keys in routeMatcherMap
+     * @param {WaitOptions=} waitOptions Wait options for cy.wait
+     * @returns {Cypress.Chainable<any> | Cypress.Chainable<any[]>} The request variables object or array of request variables objects that were passed in the
+     *          request body of the intercepted request, if available
+     */
+    function waitAndYieldRequestBodyVariables(keys, waitOptions) {
+        return waitForRequests(keys, waitOptions).then((interception) => {
+            if (Array.isArray(interception)) {
+                return cy.wrap(interception.map(({ request }) => request.body.variables));
+            }
+            return cy.wrap(interception.request.body.variables);
+        });
+    }
+
+    return cy.wrap({
+        waitForRequests,
+        waitAndYieldRequestBodyVariables,
+    });
+}
+
+export function expectRequestedSort(expectedSort) {
+    return (variables) => {
+        const { sortOption } = variables.pagination;
+        expect(sortOption).to.deep.equal(
+            expectedSort,
+            `Expected sort option ${JSON.stringify(expectedSort)} but received ${JSON.stringify(sortOption)}`
+        );
+    };
+}
+
+export function expectRequestedQuery(expectedQuery) {
+    return ({ query }) => {
+        expect(query).to.deep.equal(
+            expectedQuery,
+            `Expected query ${expectedQuery} but received ${query}`
+        );
+    };
+}
+
+export function expectRequestedPagination(expectedPagination) {
+    return (variables) => {
+        const { pagination } = variables;
+        delete pagination.sortOption;
+        expect(pagination).to.deep.equal(
+            expectedPagination,
+            `Expected pagination ${JSON.stringify(expectedPagination)} but received ${JSON.stringify(pagination)}`
+        );
+    };
 }

@@ -1,12 +1,30 @@
 import React from 'react';
 import { Button, ChipGroup, Chip, Flex, FlexItem, ToolbarChip } from '@patternfly/react-core';
 import noop from 'lodash/noop';
+import { Globe } from 'react-feather';
 
 import useURLSearch from 'hooks/useURLSearch';
 import { SearchFilter } from 'types/search';
 import { searchValueAsArray } from 'utils/searchUtils';
 
 import './SearchFilterChips.css';
+
+export type FilterChipProps = {
+    isGlobal?: boolean;
+    name: string;
+};
+
+export function FilterChip({ isGlobal, name }: FilterChipProps) {
+    if (isGlobal) {
+        return (
+            <Flex alignItems={{ default: 'alignItemsCenter' }} flexWrap={{ default: 'nowrap' }}>
+                <Globe height="15px" />
+                {name}
+            </Flex>
+        );
+    }
+    return <Flex>{name}</Flex>;
+}
 
 export type FilterChipGroupDescriptor = {
     /** The name of the chip category that will be displayed in the toolbar */

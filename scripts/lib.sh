@@ -18,7 +18,7 @@ info() {
 }
 
 die() {
-    echo >&2 "$@"
+    echo >&2 "ERROR:" "$@"
     exit 1
 }
 

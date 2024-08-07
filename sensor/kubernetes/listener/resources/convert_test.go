@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -528,7 +529,7 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 			wrap.populateImageMetadata(localImages, pods...)
 			for i, m := range c.expectedMetadata {
 				assert.Equal(t, m.expectedID, wrap.Deployment.Containers[i].Image.Id)
-				assert.Equal(t, m.expectedImageName, wrap.Deployment.Containers[i].Image.Name)
+				protoassert.Equal(t, m.expectedImageName, wrap.Deployment.Containers[i].Image.Name)
 			}
 		})
 	}
@@ -1300,7 +1301,7 @@ func TestConvert(t *testing.T) {
 			if actual != nil {
 				actual.StateTimestamp = 0
 			}
-			assert.Equal(t, c.expectedDeployment, actual)
+			protoassert.Equal(t, c.expectedDeployment, actual)
 		})
 	}
 }

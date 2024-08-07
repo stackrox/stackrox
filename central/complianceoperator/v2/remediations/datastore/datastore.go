@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/remediations/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -27,6 +28,9 @@ type DataStore interface {
 
 	// DeleteRemediationByCluster deletes a remediation by cluster
 	DeleteRemediationsByCluster(ctx context.Context, clusterID string) error
+
+	// SearchRemediations returns the remediations for the given query
+	SearchRemediations(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorRemediationV2, error)
 }
 
 // New returns an instance of DataStore.

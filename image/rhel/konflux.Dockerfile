@@ -63,7 +63,7 @@ FROM registry.access.redhat.com/ubi8/nodejs-18:latest AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
-COPY . .
+COPY --chown=default . .
 
 # This installs yarn from Cachi2 and makes `yarn` executable available.
 # Not using `npm install --global` because it won't get us `yarn` globally.

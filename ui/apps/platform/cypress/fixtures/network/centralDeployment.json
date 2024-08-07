@@ -97,13 +97,6 @@
                     "type": "EmptyDir"
                 },
                 {
-                    "name": "stackrox-db",
-                    "source": "",
-                    "destination": "/var/lib/stackrox",
-                    "readOnly": false,
-                    "type": "EmptyDir"
-                },
-                {
                     "name": "central-config-volume",
                     "source": "central-config",
                     "destination": "/etc/stackrox",

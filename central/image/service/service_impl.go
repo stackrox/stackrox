@@ -6,7 +6,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
@@ -22,13 +22,13 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -98,7 +98,7 @@ type serviceImpl struct {
 	datastore   datastore.DataStore
 	riskManager manager.Manager
 
-	metadataCache expiringcache.Cache
+	metadataCache cache.ImageMetadata
 
 	connManager connection.Manager
 
@@ -333,10 +333,6 @@ func updateImageFromRequest(existingImg *storage.Image, reqImgName *storage.Imag
 	log.Debugf("Updated existing image name from %q to %q", existingImgName.GetFullName(), reqImgName.GetFullName())
 	existingImg.Name = reqImgName
 
-	// Because there is no metadata for the existing image we assume the existing Names are
-	// invalid and reset them. If this was an incorrect assumption, Names will be re-populated
-	// over time via the various reprocessing workflows.
-	existingImg.Names = []*storage.ImageName{reqImgName}
 	return true
 }
 
@@ -634,7 +630,7 @@ func (s *serviceImpl) informScanWaiter(reqID string, img *storage.Image, scanErr
 		return
 	}
 
-	if err := s.scanWaiterManager.Send(reqID, img.Clone(), scanErr); err != nil {
+	if err := s.scanWaiterManager.Send(reqID, img.CloneVT(), scanErr); err != nil {
 		log.Errorw("Failed to send results to scan waiter",
 			logging.String("request_id", reqID), logging.Err(err))
 	}

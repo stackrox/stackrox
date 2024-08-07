@@ -3,6 +3,7 @@ package detector
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
@@ -12,15 +13,13 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
@@ -50,7 +49,7 @@ type enricher struct {
 
 	serviceAccountStore store.ServiceAccountStore
 	localScan           *scan.LocalScan
-	imageCache          expiringcache.Cache
+	imageCache          cache.Image
 	stopSig             concurrency.Signal
 	regStore            *registry.Store
 }
@@ -63,9 +62,18 @@ type cacheValue struct {
 	regStore  *registry.Store
 }
 
-func (c *cacheValue) waitAndGet() *storage.Image {
+func (c *cacheValue) WaitAndGet() *storage.Image {
 	// We need to wait before locking
 	c.signal.Wait()
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	return c.image
+}
+
+func (c *cacheValue) GetIfDone() *storage.Image {
+	if !c.signal.IsDone() {
+		return nil
+	}
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 	return c.image
@@ -143,6 +151,12 @@ outer:
 }
 
 func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
+	if features.UnqualifiedSearchRegistries.Enabled() && features.SensorSingleScanPerImage.Enabled() {
+		// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
+		c.scanAndSetWithLock(ctx, svc, req)
+		return
+	}
+
 	defer c.signal.Signal()
 
 	// Ask Central to scan the image if the image is not local otherwise scan with local scanner
@@ -170,7 +184,60 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	c.image = scannedImage.GetImage()
 }
 
-func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
+func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
+	defer c.signal.Signal()
+
+	// A cacheValue is unique per image, obtain the lock before scanning to avoid sending multiple
+	// scan requests for the same image at the same time.
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	// Check to see if another routine already enriched this name, if so, short circuit.
+	if protoutils.SliceContains(req.containerImage.GetName(), c.image.GetNames()) {
+		log.Debugf("Image scan loaded from cache: %s: Components: (%d) - short circuit", req.containerImage.GetName().GetFullName(), len(c.image.GetScan().GetComponents()))
+		return
+	}
+
+	// Ask Central to scan the image if the image is not local otherwise scan with local scanner
+	scanImageFn := scanImage
+	if c.regStore.IsLocal(req.containerImage.GetName()) {
+		scanImageFn = scanImageLocal
+		log.Debugf("Sending scan to local scanner for image %q", req.containerImage.GetName().GetFullName())
+	} else {
+		log.Debugf("Sending scan to central for image %q", req.containerImage.GetName().GetFullName())
+	}
+
+	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
+	if err != nil {
+		// Ignore the error and set the image to something basic,
+		// so alerting can progress.
+		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
+		c.updateImageNoLock(types.ToImage(req.containerImage))
+		return
+	}
+
+	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
+	c.updateImageNoLock(scannedImage.GetImage())
+}
+
+// updateImageNoLock will replace the internal image with the new image
+// while ensuring any existing image names are kept.
+func (c *cacheValue) updateImageNoLock(image *storage.Image) {
+	if c == nil || image == nil {
+		return
+	}
+
+	existingNames := c.image.GetNames()
+	c.image = image
+
+	if len(existingNames) == 0 {
+		return
+	}
+
+	c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
+}
+
+func newEnricher(cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
@@ -181,19 +248,19 @@ func newEnricher(cache expiringcache.Cache, serviceAccountStore store.ServiceAcc
 	}
 }
 
-func (e *enricher) getImageFromCache(key string) (*storage.Image, bool) {
-	value, _ := e.imageCache.Get(key).(*cacheValue)
-	if value == nil {
+func (e *enricher) getImageFromCache(key cache.Key) (*storage.Image, bool) {
+	value, ok := e.imageCache.Get(key)
+	if !ok {
 		return nil, false
 	}
-	return value.waitAndGet(), true
+	return value.WaitAndGet(), true
 }
 
 func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	// Cache key is either going to be image full name or image ID.
 	// In case of image full name, we can skip. In case of image ID, we should make sure to check if the image's name
 	// is equal / contained in the images `Names` field.
-	key := imagecacheutils.GetImageCacheKey(req.containerImage)
+	key := cache.GetKey(req.containerImage)
 
 	// If the container image says that the image is not pullable, don't even bother trying to scan
 	if req.containerImage.GetNotPullable() {
@@ -236,7 +303,7 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
 	}
 	return imageChanResult{
-		image:        value.waitAndGet(),
+		image:        value.WaitAndGet(),
 		containerIdx: req.containerIdx,
 	}
 }
@@ -279,7 +346,7 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 
 		// This will ensure that when we change the Name of the image
 		// that it will not cause a potential race condition
-		image := *imgResult.image.Clone()
+		image := *imgResult.image.CloneVT()
 		// Overwrite the image Name as a workaround to the fact that we fetch the image by ID
 		// The ID may actually have many names that refer to it. e.g. busybox:latest and busybox:1.31 could have the
 		// exact same ID

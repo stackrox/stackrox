@@ -103,6 +103,7 @@ function AccessScopeForm({ hasAction, alertSubmit, formik }: AccessScopeFormProp
                 setAlertCompute(
                     <Alert
                         title="Compute effective access scope failed"
+                        component="p"
                         variant={AlertVariant.danger}
                         isInline
                     >

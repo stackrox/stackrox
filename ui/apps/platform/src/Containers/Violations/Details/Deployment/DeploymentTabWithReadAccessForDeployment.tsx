@@ -35,6 +35,7 @@ function DeploymentTabWithReadAccessForDeployment({
                     variant="warning"
                     isInline
                     title="There was an error fetching the deployment details. This deployment may no longer exist."
+                    component="p"
                 >
                     {getAxiosErrorMessage(relatedDeploymentFetchError)}
                 </Alert>

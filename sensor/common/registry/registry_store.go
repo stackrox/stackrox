@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
@@ -35,10 +35,6 @@ type Store struct {
 	// store maps a namespace to the names of registries accessible from within the namespace.
 	store map[string]registries.Set
 
-	// knownSecretIDs keeps track of all secret IDs in the cluster. This is used to reconcile with
-	// central in case secrets were deleted while the connection was broken.
-	knownSecretIDs set.StringSet
-
 	// clusterLocalRegistryHosts contains hosts (names and/or IPs) for registries that are local
 	// to this cluster (ie: the OCP internal registry).
 	clusterLocalRegistryHosts      set.StringSet
@@ -50,8 +46,6 @@ type Store struct {
 
 	mutex sync.RWMutex
 
-	checkTLSFunc CheckTLS
-
 	// delegatedRegistryConfig is used to determine if scanning images from a registry
 	// should be done via local scanner or sent to central.
 	delegatedRegistryConfig      *central.DelegatedRegistryConfig
@@ -60,14 +54,7 @@ type Store struct {
 	// centralRegistryIntegration holds registry integrations sync'd from Central.
 	centralRegistryIntegrations registries.Set
 
-	// tlsCheckResults holds results from TLS checks. This prevents repeatedly
-	// performing checks on the same registry. For example, on Sensor startup
-	// if a cluster has 10 pull secrets referencing quay.io, that would normally
-	// result in ten connections to quay.io to test TLS, by caching the results
-	// the number of connections can be reduced to one.
-	//
-	// An expiring cache is used because the TLS state of a registry may change.
-	tlsCheckResults expiringcache.Cache
+	tlsCheckCache *tlsCheckCacheImpl
 }
 
 // CheckTLS defines a function which checks if the given address is using TLS.
@@ -77,32 +64,36 @@ type CheckTLS func(ctx context.Context, origAddr string) (bool, error)
 // NewRegistryStore creates a new registry store.
 // The passed-in CheckTLS is used to check if a registry uses TLS.
 // If checkTLS is nil, tlscheck.CheckTLS is used by default.
-func NewRegistryStore(checkTLS CheckTLS) *Store {
-	regFactory := registries.NewFactory(registries.FactoryOptions{
+func NewRegistryStore(checkTLSFunc CheckTLS) *Store {
+	if checkTLSFunc == nil {
+		checkTLSFunc = tlscheck.CheckTLS
+	}
+	tlsCheckCache := newTLSCheckCache(checkTLSFunc)
+
+	defaultFactory := registries.NewFactory(registries.FactoryOptions{
 		CreatorFuncs: registries.AllCreatorFuncsWithoutRepoList,
 	})
 
+	factory := defaultFactory
+	if features.SensorLazyTLSChecks.Enabled() {
+		factory = newLazyFactory(tlsCheckCache)
+	}
+
 	store := &Store{
-		factory:      regFactory,
-		store:        make(map[string]registries.Set),
-		checkTLSFunc: tlscheck.CheckTLS,
+		factory: factory,
+		store:   make(map[string]registries.Set),
 		globalRegistries: registries.NewSet(
-			regFactory,
+			factory,
 			types.WithMetricsHandler(metrics.Singleton()),
 			types.WithGCPTokenManager(gcp.Singleton()),
 		),
 		centralRegistryIntegrations: registries.NewSet(
-			regFactory,
+			defaultFactory,
 			types.WithMetricsHandler(metrics.Singleton()),
 			types.WithGCPTokenManager(gcp.Singleton()),
 		),
 		clusterLocalRegistryHosts: set.NewStringSet(),
-		tlsCheckResults:           expiringcache.NewExpiringCache(tlsCheckTTL),
-		knownSecretIDs:            set.NewStringSet(),
-	}
-
-	if checkTLS != nil {
-		store.checkTLSFunc = checkTLS
+		tlsCheckCache:             tlsCheckCache,
 	}
 
 	return store
@@ -115,8 +106,7 @@ func (rs *Store) Cleanup() {
 	rs.cleanupRegistries()
 	rs.cleanupClusterLocalRegistryHosts()
 	rs.cleanupDelegatedRegistryConfig()
-
-	rs.tlsCheckResults.RemoveAll()
+	rs.tlsCheckCache.Cleanup()
 }
 
 func (rs *Store) cleanupRegistries() {
@@ -193,26 +183,21 @@ func genIntegrationName(prefix string, namespace string, registry string) string
 	return fmt.Sprintf("%v%v%v", prefix, namespace, registry)
 }
 
-// AddSecretID appends a kubernetes secret ID into a set to keep track of its existence in the cluster.
-func (rs *Store) AddSecretID(id string) {
-	rs.knownSecretIDs.Add(id)
-}
-
-// RemoveSecretID removes a kubernetes secret ID from tracking set.
-func (rs *Store) RemoveSecretID(id string) bool {
-	return rs.knownSecretIDs.Remove(id)
-}
-
 // UpsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
 func (rs *Store) UpsertRegistry(ctx context.Context, namespace, registry string, dce config.DockerConfigEntry) error {
-	secure, skip, err := rs.checkTLS(ctx, registry)
-	if err != nil {
-		return err
-	}
+	var err error
+	secure := true
+	if !features.SensorLazyTLSChecks.Enabled() {
+		var skip bool
+		secure, skip, err = rs.tlsCheckCache.CheckTLS(ctx, registry)
+		if err != nil {
+			return err
+		}
 
-	if skip {
-		log.Debugf("Skipping upsert for %q from %q due to previous TLS check error", registry, namespace)
-		return nil
+		if skip {
+			log.Debugf("Skipping upsert for %q from %q due to previous TLS check error", registry, namespace)
+			return nil
+		}
 	}
 
 	regs := rs.getRegistries(namespace)
@@ -248,7 +233,7 @@ func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namesp
 	regs := rs.getRegistriesInNamespace(namespace)
 	if regs != nil {
 		for _, r := range regs.GetAll() {
-			if r.Config().RegistryHostname == reg {
+			if r.Config(context.Background()).GetRegistryHostname() == reg {
 				return r, nil
 			}
 		}
@@ -259,14 +244,19 @@ func (rs *Store) GetRegistryForImageInNamespace(image *storage.ImageName, namesp
 
 // UpsertGlobalRegistry will store a new registry with the given credentials into the global registry store.
 func (rs *Store) UpsertGlobalRegistry(ctx context.Context, registry string, dce config.DockerConfigEntry) error {
-	secure, skip, err := rs.checkTLS(ctx, registry)
-	if err != nil {
-		return err
-	}
+	var err error
+	secure := true
+	if !features.SensorLazyTLSChecks.Enabled() {
+		var skip bool
+		secure, skip, err = rs.tlsCheckCache.CheckTLS(ctx, registry)
+		if err != nil {
+			return err
+		}
 
-	if skip {
-		log.Debugf("Skipping upsert for global registry %q due to previous TLS check error", registry)
-		return nil
+		if skip {
+			log.Debugf("Skipping upsert for global registry %q due to previous TLS check error", registry)
+			return nil
+		}
 	}
 
 	name := genIntegrationName(globalRegNamePrefix, "", registry)
@@ -288,7 +278,7 @@ func (rs *Store) GetGlobalRegistryForImage(image *storage.ImageName) (types.Imag
 	regs := rs.globalRegistries
 	if regs != nil {
 		for _, r := range regs.GetAll() {
-			if r.Config().RegistryHostname == reg {
+			if r.Config(context.Background()).GetRegistryHostname() == reg {
 				return r, nil
 			}
 		}

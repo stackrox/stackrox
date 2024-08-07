@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	gcpUtils "github.com/stackrox/rox/pkg/cloudproviders/gcp/utils"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"
@@ -69,11 +68,7 @@ func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
 		client *googleStorage.Client
 		err    error
 	)
-	if features.CloudCredentials.Enabled() {
-		client, err = gcpUtils.CreateStorageClientFromConfigWithManager(context.Background(), conf, gcp.Singleton())
-	} else {
-		client, err = gcpUtils.CreateStorageClientFromConfig(context.Background(), conf)
-	}
+	client, err = gcpUtils.CreateStorageClientFromConfigWithManager(context.Background(), conf, gcp.Singleton())
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create GCS client")
 	}

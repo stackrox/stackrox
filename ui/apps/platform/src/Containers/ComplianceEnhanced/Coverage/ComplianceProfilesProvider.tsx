@@ -1,25 +1,27 @@
-import React, { createContext, useCallback } from 'react';
+import React, { createContext, useCallback, useContext } from 'react';
 
 import useRestQuery from 'hooks/useRestQuery';
-
 import {
-    getComplianceProfilesStats,
-    ListComplianceProfileScanStatsResponse,
-} from 'services/ComplianceResultsStatsService';
+    listComplianceScanConfigProfiles,
+    ListComplianceScanConfigsProfileResponse,
+} from 'services/ComplianceScanConfigurationService';
+
+import { createScanConfigFilter } from './compliance.coverage.utils';
+import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 
 type ComplianceProfilesContextValue = {
-    profileScanStats: ListComplianceProfileScanStatsResponse;
+    scanConfigProfilesResponse: ListComplianceScanConfigsProfileResponse;
     isLoading: boolean;
     error: Error | undefined;
 };
 
-const defaultProfileStats: ListComplianceProfileScanStatsResponse = {
-    scanStats: [],
+const defaultProfilesResponse: ListComplianceScanConfigsProfileResponse = {
+    profiles: [],
     totalCount: 0,
 };
 
 const defaultContextValue: ComplianceProfilesContextValue = {
-    profileScanStats: defaultProfileStats,
+    scanConfigProfilesResponse: defaultProfilesResponse,
     isLoading: true,
     error: undefined,
 };
@@ -28,11 +30,16 @@ export const ComplianceProfilesContext =
     createContext<ComplianceProfilesContextValue>(defaultContextValue);
 
 function ComplianceProfilesProvider({ children }: { children: React.ReactNode }) {
-    const fetchProfilesStats = useCallback(() => getComplianceProfilesStats(), []);
-    const { data: profileScanStats, loading: isLoading, error } = useRestQuery(fetchProfilesStats);
+    const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
+
+    const fetchProfiles = useCallback(
+        () => listComplianceScanConfigProfiles(createScanConfigFilter(selectedScanConfigName)),
+        [selectedScanConfigName]
+    );
+    const { data: scanConfigProfilesResponse, isLoading, error } = useRestQuery(fetchProfiles);
 
     const contextValue: ComplianceProfilesContextValue = {
-        profileScanStats: profileScanStats ?? defaultProfileStats,
+        scanConfigProfilesResponse: scanConfigProfilesResponse ?? defaultProfilesResponse,
         isLoading,
         error,
     };

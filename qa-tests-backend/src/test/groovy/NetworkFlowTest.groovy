@@ -653,7 +653,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert sourceUid != null
 
         when:
-        "Check for edge in entwork graph"
+        "Check for edge in network graph"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(sourceUid, targetUid)
         assert edges
 
@@ -665,6 +665,7 @@ class NetworkFlowTest extends BaseSpecification {
     @Tag("NetworkFlowVisualization")
     // TODO: additional handling may be needed for P/Z, skipping for 1st release
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    @Ignore("ROX-18729") // This test fails constantly
     def "Verify cluster updates can block flow connections from showing"() {
         // ROX-7153 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())

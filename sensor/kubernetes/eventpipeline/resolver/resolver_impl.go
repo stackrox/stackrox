@@ -218,7 +218,7 @@ func toEvent(action central.ResourceAction, deployment *storage.Deployment, timi
 		Action: action,
 		Timing: timing,
 		Resource: &central.SensorEvent_Deployment{
-			Deployment: deployment.Clone(),
+			Deployment: deployment.CloneVT(),
 		},
 	}
 }

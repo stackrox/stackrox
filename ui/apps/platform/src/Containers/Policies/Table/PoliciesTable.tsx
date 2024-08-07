@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import {
     Button,
-    ButtonVariant,
     PageSection,
     Pagination,
     Toolbar,
@@ -25,7 +24,6 @@ import { ListPolicy } from 'types/policy.proto';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
-import LinkShim from 'Components/PatternFly/LinkShim';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
 import EnableDisableNotificationModal, {
@@ -413,14 +411,7 @@ function PoliciesTable({
                                         }}
                                     />
                                     <Td dataLabel="Policy">
-                                        <Button
-                                            variant={ButtonVariant.link}
-                                            isInline
-                                            component={LinkShim}
-                                            href={`${policiesBasePath}/${id}`}
-                                        >
-                                            {name}
-                                        </Button>
+                                        <Link to={`${policiesBasePath}/${id}`}>{name}</Link>
                                     </Td>
                                     <Td dataLabel="Status">
                                         <PolicyDisabledIconText isDisabled={disabled} />

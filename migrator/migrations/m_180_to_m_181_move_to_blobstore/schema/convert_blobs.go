@@ -8,7 +8,7 @@ import (
 
 // ConvertBlobFromProto converts a `*storage.Blob` to Gorm model
 func ConvertBlobFromProto(obj *storage.Blob) (*Blobs, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +22,7 @@ func ConvertBlobFromProto(obj *storage.Blob) (*Blobs, error) {
 // ConvertBlobToProto converts Gorm model `Blobs` to its protobuf type object
 func ConvertBlobToProto(m *Blobs) (*storage.Blob, error) {
 	var msg storage.Blob
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := msg.UnmarshalVT(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

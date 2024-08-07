@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/gziputil"
-	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 func getPoliciesFromFile(file string) (*storage.PolicyList, error) {
@@ -25,7 +24,7 @@ func decompressAndUnmarshalPolicies(data []byte) (*storage.PolicyList, error) {
 	}
 
 	var policyList storage.PolicyList
-	if err := protocompat.Unmarshal(runTimePoliciesData, &policyList); err != nil {
+	if err := policyList.UnmarshalVT(runTimePoliciesData); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling decompressed policies data")
 	}
 	return &policyList, nil

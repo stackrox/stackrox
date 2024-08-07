@@ -78,6 +78,7 @@ type GetZipOptions struct {
 	Timeout                  time.Duration
 	ExpandZip                bool
 	OutputDir                string
+	OutputFileName           string
 }
 
 func storeZipFile(respBody io.Reader, fileName, outputDir, bundleType string, log logger.Logger) error {
@@ -118,11 +119,14 @@ func GetZip(opts GetZipOptions, env environment.Environment) error {
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
-	zipFileName, err := download.ParseFilenameFromHeader(resp.Header)
-	if err != nil {
-		zipFileName = fmt.Sprintf("%s.zip", opts.BundleType)
-		env.Logger().WarnfLn("could not obtain output file name from HTTP response: %v.", err)
-		env.Logger().InfofLn("Defaulting to filename %q", zipFileName)
+	zipFileName := opts.OutputFileName
+	if opts.OutputFileName == "" {
+		zipFileName, err = download.ParseFilenameFromHeader(resp.Header)
+		if err != nil {
+			zipFileName = fmt.Sprintf("%s.zip", opts.BundleType)
+			env.Logger().WarnfLn("could not obtain output file name from HTTP response: %v.", err)
+			env.Logger().InfofLn("Defaulting to filename %q", zipFileName)
+		}
 	}
 
 	// If containerized, then write a zip file to stdout

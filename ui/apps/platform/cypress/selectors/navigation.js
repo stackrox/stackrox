@@ -1,6 +1,7 @@
 const navExpandable = 'ul.pf-v5-c-nav__list li.pf-v5-c-nav__item.pf-m-expandable button';
 
 const navigation = {
+    allNavLinks: '.pf-v5-c-nav a',
     navLinks: '.pf-v5-c-nav > ul.pf-v5-c-nav__list > li > a',
     navExpandable,
     navExpandablePlatformConfiguration: `${navExpandable}:contains("Platform Configuration")`,

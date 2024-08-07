@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -88,7 +89,7 @@ func (suite *SecretDataStoreTestSuite) TestSecretsDataStore() {
 	foundSecret, found, err := suite.datastore.GetSecret(suite.ctx, secret.GetId())
 	suite.Require().NoError(err)
 	suite.True(found)
-	suite.Equal(secret, foundSecret)
+	protoassert.Equal(suite.T(), secret, foundSecret)
 
 	nonExistentID := uuid.NewV4().String()
 	_, found, err = suite.datastore.GetSecret(suite.ctx, nonExistentID)

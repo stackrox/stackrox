@@ -11,10 +11,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -180,7 +180,7 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 	}
 
 	evaluator := NewNamespacePermissionEvaluator(clusterID, "namespace", roleStore, bindingStore)
-	assert.Equal(t, expectedResult, evaluator.ForSubject(ctx, inputSubject).ToSlice())
+	protoassert.SlicesEqual(t, expectedResult, evaluator.ForSubject(ctx, inputSubject).ToSlice())
 
 	for _, role := range testRoles {
 		require.NoError(t, roleStore.RemoveRole(ctx, role.GetId()))

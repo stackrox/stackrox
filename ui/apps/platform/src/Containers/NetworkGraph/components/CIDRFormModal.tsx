@@ -223,6 +223,7 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
                         <Alert
                             variant={formCallout.type}
                             title={formCallout.message}
+                            component="p"
                             className="pf-v5-u-mb-md"
                         />
                     )}

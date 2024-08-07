@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
@@ -37,7 +37,6 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceResultsService/GetComplianceScanResults",
-			"/v2.ComplianceResultsService/GetComplianceOverallClusterCount",
 			"/v2.ComplianceResultsService/GetComplianceScanCheckResult",
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResults",
 			"/v2.ComplianceResultsService/GetComplianceScanConfigurationResultsCount",
@@ -101,28 +100,12 @@ func (s *serviceImpl) GetComplianceScanResults(ctx context.Context, query *v2.Ra
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
 	}
 
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, query.GetPagination(), maxPaginationLimit)
 
 	return s.searchComplianceCheckResults(ctx, parsedQuery, countQuery)
-}
-
-// GetComplianceOverallClusterCount returns scan results count
-func (s *serviceImpl) GetComplianceOverallClusterCount(ctx context.Context, query *v2.RawQuery) (*v2.CountComplianceScanResults, error) {
-	parsedQuery, err := search.ParseQuery(query.GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to parse query %v", err)
-	}
-
-	count, err := s.complianceResultsDS.CountByField(ctx, parsedQuery, search.ClusterID)
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to retrieve compliance scan results count for query %v", query)
-	}
-	return &v2.CountComplianceScanResults{
-		Count: int32(count),
-	}, nil
 }
 
 // GetComplianceScanCheckResult returns the specific result by ID
@@ -204,7 +187,7 @@ func (s *serviceImpl) GetComplianceScanConfigurationResults(ctx context.Context,
 		parsedQuery,
 	)
 
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
@@ -230,7 +213,7 @@ func (s *serviceImpl) GetComplianceProfileResults(ctx context.Context, request *
 	)
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
@@ -287,7 +270,7 @@ func (s *serviceImpl) GetComplianceProfileCheckResult(ctx context.Context, reque
 	)
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
@@ -369,7 +352,7 @@ func (s *serviceImpl) GetComplianceProfileClusterResults(ctx context.Context, re
 		parsedQuery,
 	)
 
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)

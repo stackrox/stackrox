@@ -15,6 +15,7 @@ function AccessControlRouteNotFound(): ReactElement {
             <PageSection variant="light">
                 <Alert
                     title="Access Control route not found"
+                    component="p"
                     variant={AlertVariant.warning}
                     isInline
                 >

@@ -113,17 +113,44 @@ func TestFetch(t *testing.T) {
 	tt := []fetchTestcase{
 		{
 			Name: "Happy Case",
-			Hint: "sample hint",
 			Check: func(t *testing.T, rc io.ReadCloser, fp driver.Fingerprint, err error) {
 				if rc == nil {
 					t.Error("wanted non-nil ReadCloser")
 				}
-				if got, want := driver.Fingerprint("sample hint"), fp; got != want {
-					t.Errorf("bad fingerprint: got: %q, want: %q", got, want)
-				}
 				t.Logf("got error: %v", err)
 				if err != nil {
 					t.Error("wanted nil error")
+				}
+			},
+		},
+		{
+			Name:     "With NVD ZIP",
+			FeedPath: filepath.Join("testdata", "feed.zip"),
+			Check: func(t *testing.T, rc io.ReadCloser, fp driver.Fingerprint, err error) {
+				if rc == nil {
+					t.Fatalf("wanted non-nil ReadCloser")
+				}
+				t.Logf("got error: %v", err)
+				if err != nil {
+					t.Fatalf("wanted nil error")
+				}
+				enrichments := map[string]*driver.EnrichmentRecord{}
+				dec := json.NewDecoder(rc)
+				var e *driver.EnrichmentRecord
+				for err = dec.Decode(&e); err == nil; err = dec.Decode(&e) {
+					enrichments[e.Tags[0]] = e
+				}
+				if !errors.Is(err, io.EOF) {
+					t.Fatalf("wanted EOF, found: %v", err)
+				}
+				// Look for some CVEs.
+				_, ok := enrichments["CVE-2023-50612"]
+				if !ok {
+					t.Fatalf("CVE-2023-50612 not found")
+				}
+				_, ok = enrichments["CVE-2023-50609"]
+				if !ok {
+					t.Fatalf("CVE-2023-50609 not found")
 				}
 			},
 		},
@@ -135,9 +162,10 @@ func TestFetch(t *testing.T) {
 }
 
 type fetchTestcase struct {
-	Check func(*testing.T, io.ReadCloser, driver.Fingerprint, error)
-	Name  string
-	Hint  string
+	Check    func(*testing.T, io.ReadCloser, driver.Fingerprint, error)
+	Name     string
+	Hint     string
+	FeedPath string
 }
 
 func (tc fetchTestcase) Run(ctx context.Context, srv *httptest.Server) func(*testing.T) {
@@ -154,6 +182,9 @@ func (tc fetchTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 			ci := "0"
 			// Speed up the test.
 			cfg.CallInterval = &ci
+			if tc.FeedPath != "" {
+				cfg.FeedPath = &tc.FeedPath
+			}
 			return nil
 		}
 		if err := e.Configure(ctx, f, srv.Client()); err != nil {

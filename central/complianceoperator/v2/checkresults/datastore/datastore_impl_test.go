@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -396,7 +397,7 @@ func (s *complianceCheckResultDataStoreTestSuite) TestUpsertResult() {
 	retrieveRec1, found, err := s.storage.Get(s.hasReadCtx, rec1.GetId())
 	s.Require().NoError(err)
 	s.Require().True(found)
-	s.Require().Equal(rec1, retrieveRec1)
+	protoassert.Equal(s.T(), rec1, retrieveRec1)
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TestDeleteResult() {
@@ -880,9 +881,44 @@ func (s *complianceCheckResultDataStoreTestSuite) TestGetComplianceCheckResult()
 	for _, tc := range testCases {
 		result, found, err := s.dataStore.GetComplianceCheckResult(s.testContexts[tc.scopeKey], tc.id)
 		s.Require().NoError(err)
-		s.Require().Equal(tc.expectedResponse, result)
+		protoassert.Equal(s.T(), tc.expectedResponse, result)
 		s.Require().NotEqual(tc.expectedResponse == nil, found)
 	}
+}
+
+func (s *complianceCheckResultDataStoreTestSuite) TestWalkByQueryCheckResult() {
+	s.setupTestData()
+	rec1 := getTestRec(testconsts.Cluster1)
+	rec1.CheckName = "test-check1"
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec1))
+	rec2 := getTestRec(testconsts.Cluster2)
+	rec2.CheckName = "test-check2"
+	s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec2))
+	parsedQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfigName, rec1.GetScanConfigName()).
+		AddExactMatches(search.ClusterID, rec1.ClusterId).
+		ProtoQuery()
+	type repResults struct {
+		ClusterName string
+		CheckName   string
+		Status      string
+	}
+	results, err := s.dataStore.SearchComplianceCheckResults(s.testContexts[testutils.UnrestrictedReadWriteCtx], parsedQuery)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(results)
+	resultsQuery := []*repResults{}
+
+	err = s.dataStore.WalkByQuery(s.testContexts[testutils.UnrestrictedReadCtx], parsedQuery, func(c *storage.ComplianceOperatorCheckResultV2) error {
+		res := &repResults{
+			ClusterName: c.GetClusterName(),
+			CheckName:   c.GetCheckName(),
+			Status:      c.GetStatus().String(),
+		}
+		resultsQuery = append(resultsQuery, res)
+		return nil
+	})
+	s.Require().NoError(err)
+	s.Require().NotEmpty(resultsQuery)
+	s.Require().Equal(resultsQuery[0].CheckName, rec1.GetCheckName())
 }
 
 func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResultStats() {
@@ -1024,6 +1060,7 @@ func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 
 	for k, v := range profileCluster {
 		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_profile_v2 (id, profileid, name, producttype, clusterid, profilerefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), "profile-1", "ocp4-cis-node", "node", k, v)
+
 		s.Require().NoError(err)
 	}
 
@@ -1035,7 +1072,7 @@ func (s *complianceCheckResultDataStoreTestSuite) setupTestData() {
 	for _, rec := range recs {
 		s.Require().NoError(s.dataStore.UpsertResult(s.hasWriteCtx, rec))
 
-		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_v2 (id, scanconfigname, scanname, profile_profileid, clusterid, scanrefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), rec.GetScanConfigName(), rec.GetScanName(), profileCluster[rec.GetClusterId()], rec.GetClusterId(), rec.GetScanRefId())
+		_, err = s.db.DB.Exec(context.Background(), "insert into compliance_operator_scan_v2 (id, scanconfigname, scanname, profile_profilerefid, clusterid, scanrefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), rec.GetScanConfigName(), rec.GetScanName(), profileCluster[rec.GetClusterId()], rec.GetClusterId(), rec.GetScanRefId())
 		s.Require().NoError(err)
 	}
 

@@ -20,6 +20,7 @@ import (
 	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/cosign/v2/pkg/oci"
 	ociremote "github.com/sigstore/cosign/v2/pkg/oci/remote"
+	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	imgUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -79,7 +80,7 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	// Fetch the signatures by injecting the registry specific authentication options to the google/go-containerregistry
 	// client.
 	// Additionally, use a local signed entity to skip fetching the image manifest and only fetch the signature manifest.
-	se := newLocalSignedEntity(image, imgRef, ociremote.WithRemoteOptions(optionsFromRegistry(registry)...))
+	se := newLocalSignedEntity(image, imgRef, ociremote.WithRemoteOptions(optionsFromRegistry(ctx, registry)...))
 	signedPayloads, err := cosign.FetchSignatures(se)
 
 	// Cosign will return an error in case no signature is associated, we don't want to return that error. Since no
@@ -111,13 +112,27 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 				fullImageName, err)
 			continue
 		}
-		// Since we are only focusing on public keys, we are ignoring the certificate / rekor bundles associated with
+
+		certPEM, err := certificateFromSignedPayload(signedPayload)
+		if err != nil {
+			log.Errorf("Error during unmarshalling certificate to PEM for image %q: %v", fullImageName, err)
+		}
+
+		chainPEM, err := certificateChainFromSignedPayload(signedPayload)
+		if err != nil {
+			log.Errorf("Error during unmarshalling certificate chain to PEM for image %q: %v",
+				fullImageName, err)
+		}
+
+		// Since we are only focusing on public keys and certificates, we are ignoring the rekor bundles associated with
 		// the signature.
 		cosignSignatures = append(cosignSignatures, &storage.Signature{
 			Signature: &storage.Signature_Cosign{
 				Cosign: &storage.CosignSignature{
 					RawSignature:     rawSig,
 					SignaturePayload: signedPayload.Payload,
+					CertPem:          certPEM,
+					CertChainPem:     chainPEM,
 				},
 			},
 		})
@@ -129,6 +144,30 @@ func (c *cosignSignatureFetcher) FetchSignatures(ctx context.Context, image *sto
 	}
 
 	return cosignSignatures, nil
+}
+
+func certificateFromSignedPayload(sp cosign.SignedPayload) ([]byte, error) {
+	if sp.Cert == nil {
+		return nil, nil
+	}
+
+	pem, err := cryptoutils.MarshalCertificateToPEM(sp.Cert)
+	if err != nil {
+		return nil, err
+	}
+	return pem, nil
+}
+
+func certificateChainFromSignedPayload(sp cosign.SignedPayload) ([]byte, error) {
+	if len(sp.Chain) == 0 {
+		return nil, nil
+	}
+
+	pem, err := cryptoutils.MarshalCertificatesToPEM(sp.Chain)
+	if err != nil {
+		return nil, err
+	}
+	return pem, nil
 }
 
 // makeTransientErrorRetryable ensures that only transient errors are made retryable.
@@ -149,8 +188,8 @@ func makeTransientErrorRetryable(err error) error {
 	return err
 }
 
-func optionsFromRegistry(registry registryTypes.Registry) []gcrRemote.Option {
-	registryCfg := registry.Config()
+func optionsFromRegistry(ctx context.Context, registry registryTypes.Registry) []gcrRemote.Option {
+	registryCfg := registry.Config(ctx)
 	if registryCfg == nil {
 		return nil
 	}

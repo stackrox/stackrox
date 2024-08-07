@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -82,7 +83,7 @@ func (s *datastorePostgresTestSuite) TestUpsertAndGetDiscoveredCluster() {
 	roundtripCluster, err := s.datastore.GetDiscoveredCluster(s.readCtx, expectedCluster.GetId())
 	s.Require().NoError(err)
 	expectedCluster.LastUpdatedAt = roundtripCluster.LastUpdatedAt
-	s.Assert().Equal(expectedCluster, roundtripCluster)
+	protoassert.Equal(s.T(), expectedCluster, roundtripCluster)
 }
 
 func (s *datastorePostgresTestSuite) TestListDiscoveredClusters() {

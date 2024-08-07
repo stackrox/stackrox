@@ -165,6 +165,7 @@ function ClusterSelection({
                 {formikTouched.clusters && formikValues.clusters.length === 0 && (
                     <Alert
                         title="At least one cluster is required to proceed"
+                        component="p"
                         variant="danger"
                         isInline
                     />

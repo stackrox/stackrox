@@ -1,9 +1,9 @@
 import React, { Dispatch, SetStateAction } from 'react';
-import { Button, ButtonVariant, Card, Text } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
+import { Card, Text } from '@patternfly/react-core';
 import { Tbody, Tr, Td, Table, Th, Thead } from '@patternfly/react-table';
 
 import { riskBasePath } from 'routePaths';
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { ProcessListeningOnPort } from 'services/ProcessListeningOnPortsService';
 import { l4ProtocolLabels } from 'constants/networkFlow';
 import { ListDeployment } from 'types/deployment.proto';
@@ -112,14 +112,7 @@ function ListeningEndpointsTable({
                                 }}
                             />
                             <Td dataLabel="Deployment">
-                                <Button
-                                    variant={ButtonVariant.link}
-                                    isInline
-                                    component={LinkShim}
-                                    href={`${riskBasePath}/${id}`}
-                                >
-                                    {name}
-                                </Button>
+                                <Link to={`${riskBasePath}/${id}`}>{name}</Link>
                             </Td>
                             <Td dataLabel="Cluster">{cluster}</Td>
                             <Td dataLabel="Namespace">{namespace}</Td>

@@ -745,7 +745,12 @@ const SystemConfigForm = ({
                 )}
             </Grid>
             {typeof errorMessage === 'string' && (
-                <Alert variant="danger" isInline title="Failed to save system configuration">
+                <Alert
+                    variant="danger"
+                    isInline
+                    title="Failed to save system configuration"
+                    component="p"
+                >
                     {errorMessage}
                 </Alert>
             )}

@@ -7,7 +7,7 @@ import (
 
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 func TestComponentCountScore(t *testing.T) {
@@ -32,5 +32,5 @@ func TestComponentCountScore(t *testing.T) {
 		Score: 1.25,
 	}
 	score := countMultiplier.Score(context.Background(), image)
-	assert.Equal(t, expectedScore, score)
+	protoassert.Equal(t, expectedScore, score)
 }

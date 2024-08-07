@@ -69,12 +69,11 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 		return errors.New(fmt.Sprintf("Report request for scan configuration %q already in process", scanConfig.GetScanConfigName()))
 	}
 
-	log.Infof("Submitting report for scan config %s at %v for execution.", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822))
 	req := &reportRequest{
 		scanConfig: scanConfig,
-		ctx:        ctx,
+		ctx:        context.WithoutCancel(ctx),
 	}
-
+	log.Infof("Submitting report for scan config %s at %v for execution with req %v.", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822), *req)
 	select {
 	case m.reportRequests <- req:
 		m.runningReportConfigs[scanConfig.GetId()] = req

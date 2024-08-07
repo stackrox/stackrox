@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -14,7 +15,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/fixtures"
 	mitreMocks "github.com/stackrox/rox/pkg/mitre/datastore/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/suite"
@@ -88,7 +91,7 @@ func (s *PolicyServiceTestSuite) compareErrorsToExpected(expectedErrors []*v1.Ex
 	// actual errors == expected errors ignoring order
 	s.Len(exportErrors.GetErrors(), len(expectedErrors))
 	for _, expected := range expectedErrors {
-		s.Contains(exportErrors.GetErrors(), expected)
+		protoassert.SliceContains(s.T(), exportErrors.GetErrors(), expected)
 	}
 }
 
@@ -123,7 +126,7 @@ func (s *PolicyServiceTestSuite) TestExportValidIDSucceeds() {
 	s.NoError(err)
 	s.NotNil(resp)
 	s.Len(resp.GetPolicies(), 1)
-	s.Equal(mockPolicy, resp.Policies[0])
+	protoassert.Equal(s.T(), mockPolicy, resp.Policies[0])
 }
 
 func (s *PolicyServiceTestSuite) TestExportMixedSuccessAndMissing() {
@@ -169,13 +172,13 @@ func (s *PolicyServiceTestSuite) TestExportedPolicyHasNoSortFields() {
 	s.NoError(err)
 	s.NotNil(resp)
 	s.Len(resp.GetPolicies(), 1)
-	s.Equal(expectedPolicy, resp.Policies[0])
+	protoassert.Equal(s.T(), expectedPolicy, resp.Policies[0])
 }
 
 func (s *PolicyServiceTestSuite) TestPoliciesHaveNoUnexpectedSORTFields() {
 	expectedSORTFields := set.NewStringSet("SORTLifecycleStage", "SORTEnforcement", "SORTName")
-	var policy storage.Policy
-	policyType := reflect.TypeOf(policy)
+	var policy *storage.Policy
+	policyType := reflect.TypeOf(policy).Elem()
 	numFields := policyType.NumField()
 	for i := 0; i < numFields; i++ {
 		fieldName := policyType.Field(i).Name
@@ -222,6 +225,86 @@ func (s *PolicyServiceTestSuite) TestDryRunRuntime() {
 	resp, err := s.tested.DryRunPolicy(ctx, runtimePolicy)
 	s.Nil(err)
 	s.Nil(resp.GetAlerts())
+}
+
+func (s *PolicyServiceTestSuite) TestListPoliciesHandlesQueryAndPagination() {
+	ctx := context.Background()
+	basePolicy := fixtures.GetPolicy()
+	policies := make([]*storage.Policy, 4)
+	for i := 0; i < 4; i++ {
+		p := basePolicy.CloneVT()
+		p.Id = fmt.Sprintf("policy-%d", i)
+		policies = append(policies, p)
+	}
+	listPolicies := convertPoliciesToListPolicies(policies)
+	policyDisabledBaseQuery := &v1.Query_BaseQuery{
+		BaseQuery: &v1.BaseQuery{
+			Query: &v1.BaseQuery_MatchFieldQuery{
+				MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Disabled.String(), Value: "false"},
+			},
+		},
+	}
+
+	cases := []struct {
+		name          string
+		request       *v1.RawQuery
+		expectedQuery *v1.Query
+	}{
+		{
+			name:          "Empty query, get all policies",
+			request:       &v1.RawQuery{},
+			expectedQuery: &v1.Query{Pagination: &v1.QueryPagination{Limit: maxPoliciesReturned, Offset: 0}},
+		},
+		{
+			name:          "Empty query, paginate",
+			request:       &v1.RawQuery{Pagination: &v1.Pagination{Limit: 2}},
+			expectedQuery: &v1.Query{Pagination: &v1.QueryPagination{Limit: 2, Offset: 0}},
+		},
+		{
+			name:          "Empty query, paginate and offset",
+			request:       &v1.RawQuery{Pagination: &v1.Pagination{Limit: 20, Offset: 4}},
+			expectedQuery: &v1.Query{Pagination: &v1.QueryPagination{Limit: 20, Offset: 4}},
+		},
+		{
+			name:    "Non-empty query gets parsed properly",
+			request: &v1.RawQuery{Query: search.NewQueryBuilder().AddBools(search.Disabled, false).Query()},
+			expectedQuery: &v1.Query{
+				Query:      policyDisabledBaseQuery,
+				Pagination: &v1.QueryPagination{Limit: maxPoliciesReturned, Offset: 0},
+			},
+		},
+		{
+			name: "Non-empty query gets parsed properly, paginate",
+			request: &v1.RawQuery{
+				Query:      search.NewQueryBuilder().AddBools(search.Disabled, false).Query(),
+				Pagination: &v1.Pagination{Limit: 2},
+			},
+			expectedQuery: &v1.Query{
+				Query:      policyDisabledBaseQuery,
+				Pagination: &v1.QueryPagination{Limit: 2, Offset: 0},
+			},
+		},
+		{
+			name: "Non-empty query gets parsed properly, limit pagination to max and offset",
+			request: &v1.RawQuery{
+				Query:      search.NewQueryBuilder().AddBools(search.Disabled, false).Query(),
+				Pagination: &v1.Pagination{Limit: 2000, Offset: 50},
+			},
+			expectedQuery: &v1.Query{
+				Query:      policyDisabledBaseQuery,
+				Pagination: &v1.QueryPagination{Limit: 1000, Offset: 50},
+			},
+		},
+	}
+	for _, c := range cases {
+		s.T().Run(c.name, func(t *testing.T) {
+			s.policies.EXPECT().SearchRawPolicies(ctx, c.expectedQuery).Return(policies, nil).Times(1)
+			resp, err := s.tested.ListPolicies(ctx, c.request)
+			s.NoError(err)
+			s.NotNil(resp)
+			protoassert.SlicesEqual(s.T(), listPolicies, resp.Policies)
+		})
+	}
 }
 
 func (s *PolicyServiceTestSuite) TestImportPolicy() {
@@ -284,7 +367,7 @@ func (s *PolicyServiceTestSuite) TestImportPolicy() {
 	s.Require().Len(resp.GetResponses(), 1)
 	policyResp := resp.GetResponses()[0]
 	resultPolicy := policyResp.GetPolicy()
-	s.Equal(importedPolicy.GetPolicySections(), resultPolicy.GetPolicySections())
+	protoassert.SlicesEqual(s.T(), importedPolicy.GetPolicySections(), resultPolicy.GetPolicySections())
 }
 
 func (s *PolicyServiceTestSuite) testScopes(query string, mockClusters []*storage.Cluster, expectedScopes ...*storage.Scope) {
@@ -298,7 +381,7 @@ func (s *PolicyServiceTestSuite) testScopes(query string, mockClusters []*storag
 	s.Empty(response.GetAlteredSearchTerms())
 	s.False(response.GetHasNestedFields())
 	s.NotNil(response.GetPolicy())
-	s.ElementsMatch(expectedScopes, response.GetPolicy().GetScope())
+	protoassert.ElementsMatch(s.T(), expectedScopes, response.GetPolicy().GetScope())
 }
 
 func (s *PolicyServiceTestSuite) testMalformedScope(query string) {
@@ -335,7 +418,7 @@ func (s *PolicyServiceTestSuite) testPolicyGroups(query string, expectedPolicyGr
 	s.NotNil(response.GetPolicy())
 	s.Require().Len(response.GetPolicy().GetPolicySections(), 1)
 	policyGroups := response.GetPolicy().GetPolicySections()[0].GetPolicyGroups()
-	s.ElementsMatch(expectedPolicyGroups, policyGroups)
+	protoassert.ElementsMatch(s.T(), expectedPolicyGroups, policyGroups)
 
 	// These tests do not explicitly expect scopes so we should ensure that there are not scopes
 	s.Nil(response.GetPolicy().GetScope())
@@ -680,7 +763,7 @@ func (s *PolicyServiceTestSuite) TestUnconvertableFields() {
 	s.NotNil(response.GetPolicy())
 	s.Require().Len(response.GetPolicy().GetPolicySections(), 1)
 	policyGroups := response.GetPolicy().GetPolicySections()[0].GetPolicyGroups()
-	s.ElementsMatch(expectedPolicyGroup, policyGroups)
+	protoassert.ElementsMatch(s.T(), expectedPolicyGroup, policyGroups)
 }
 
 func (s *PolicyServiceTestSuite) TestNoConvertableFields() {
@@ -734,7 +817,7 @@ func (s *PolicyServiceTestSuite) TestMakePolicyWithCombinations() {
 	s.False(response.GetHasNestedFields())
 	s.Empty(response.GetAlteredSearchTerms())
 	s.Len(response.GetPolicy().GetPolicySections(), 1)
-	s.ElementsMatch(expectedPolicyGroups, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
+	protoassert.ElementsMatch(s.T(), expectedPolicyGroups, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
 }
 
 func (s *PolicyServiceTestSuite) TestEnvironmentXLifecycle() {
@@ -757,7 +840,7 @@ func (s *PolicyServiceTestSuite) TestEnvironmentXLifecycle() {
 	s.NoError(err)
 	s.False(response.GetHasNestedFields())
 	s.Empty(response.GetAlteredSearchTerms())
-	s.ElementsMatch(expectedPolicyGroup, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
+	protoassert.ElementsMatch(s.T(), expectedPolicyGroup, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups())
 	expectedLifecycleStages := []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}
 	s.ElementsMatch(expectedLifecycleStages, response.GetPolicy().GetLifecycleStages())
 }
@@ -789,7 +872,7 @@ func (s *PolicyServiceTestSuite) TestMitreVectors() {
 		Id: "policy1",
 	})
 	s.NoError(err)
-	s.ElementsMatch([]*storage.MitreAttackVector{
+	protoassert.ElementsMatch(s.T(), []*storage.MitreAttackVector{
 		getFakeVector("tactic1", "tech1"),
 		getFakeVector("tactic2", "tech2"),
 	}, response.GetVectors())

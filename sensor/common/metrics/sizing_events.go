@@ -23,7 +23,7 @@ func (s *sizingEventStream) incrementMetric(msg *central.MsgFromSensor) {
 	}
 	messageType = s.metricKey(messageType, eventType)
 
-	messageSize := float64(msg.Size())
+	messageSize := float64(msg.SizeVT())
 	labels := prometheus.Labels{
 		"Type": messageType,
 	}

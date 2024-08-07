@@ -223,10 +223,12 @@ export function formatScanSchedule(schedule: Schedule) {
 
 // report
 
-const { basePageTitle, shortName } = getProductBranding();
+const { reportName } = getProductBranding();
 
-export const customBodyDefault = `${basePageTitle} for Kubernetes has identified non-compliant profile checks for the clusters scanned by your schedule configuration parameters. The attached report lists those checks and associated details to help with remediation.`;
+export function getBodyDefault(profiles: string[]) {
+    return `${reportName} has scanned your clusters for compliance with the profiles in your scan configuration. The attached report lists those checks and associated details to help with remediation. Profiles: ${profiles.join(',')}`;
+}
 
-export function getSubjectDefault(scanName: string) {
-    return `${shortName} Compliance Report for ${scanName}`;
+export function getSubjectDefault(scanName: string, profiles: string[]) {
+    return `${reportName} Compliance Report for ${scanName} with ${profiles.length} Profiles`;
 }

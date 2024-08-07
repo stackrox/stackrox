@@ -33,7 +33,7 @@ func New(db postgres.DB) Store {
 }
 
 func insertIntoNotificationSchedules(ctx context.Context, tx *postgres.Tx, obj *storage.NotificationSchedule) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -53,7 +53,7 @@ func insertIntoNotificationSchedules(ctx context.Context, tx *postgres.Tx, obj *
 
 // Upsert saves the current state of an object in storage.
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.NotificationSchedule) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableUpsert(ctx, obj)
 	})
 }
@@ -88,7 +88,7 @@ func (s *storeImpl) retryableUpsert(ctx context.Context, obj *storage.Notificati
 
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context) (*storage.NotificationSchedule, bool, error) {
-	return pgutils.Retry3(func() (*storage.NotificationSchedule, bool, error) {
+	return pgutils.Retry3(ctx, func() (*storage.NotificationSchedule, bool, error) {
 		return s.retryableGet(ctx)
 	})
 }
@@ -107,7 +107,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.NotificationSche
 	}
 
 	var msg storage.NotificationSchedule
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -123,7 +123,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, _ ops.Op, _ string) (*postg
 
 // Delete removes the singleton from the store
 func (s *storeImpl) Delete(ctx context.Context) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableDelete(ctx)
 	})
 }

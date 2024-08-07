@@ -59,6 +59,7 @@ const CIDRFormRow = ({ idx, onRemoveRow, errors, touched }) => {
             <FlexItem className={buttonClassName}>
                 <Button
                     name={`entities.${idx as string}.entity.delete`}
+                    aria-label="Delete CIDR block"
                     onClick={onRemoveRow}
                     variant="plain"
                     icon={<TrashIcon />}

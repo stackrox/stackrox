@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,7 +27,7 @@ func TestGCMEncryptionDecryption(t *testing.T) {
 		AccessKeyId:     "key-id",
 		SecretAccessKey: "lorem ipsum dolor sit amet",
 	}
-	marshalled, err := originalCreds.Marshal()
+	marshalled, err := originalCreds.MarshalVT()
 	assert.NoError(t, err)
 	marshalledString := string(marshalled)
 
@@ -37,7 +38,7 @@ func TestGCMEncryptionDecryption(t *testing.T) {
 	assert.NoError(t, err)
 	decryptedBytes := []byte(decryptedText)
 	decryptedCreds := &storage.AWSSecurityHub_Credentials{}
-	err = decryptedCreds.Unmarshal(decryptedBytes)
+	err = decryptedCreds.UnmarshalVT(decryptedBytes)
 	assert.NoError(t, err)
-	assert.Equal(t, originalCreds, decryptedCreds)
+	protoassert.Equal(t, originalCreds, decryptedCreds)
 }

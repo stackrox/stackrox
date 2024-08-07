@@ -73,7 +73,7 @@ func (t *teams) getAlertSection(alert *storage.Alert) section {
 		facts = append(facts, fact{Name: "URL", Value: alertLink})
 	}
 
-	alertTime := alert.GetTime().String()
+	alertTime := alert.GetTime().AsTime().Format(time.RFC3339Nano)
 	if len(alertTime) > 0 {
 		facts = append(facts, fact{Name: "Time", Value: alertTime})
 	}

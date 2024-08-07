@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *APITokensStoreSuite) TestStore() {
 	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(tokenMetadata, foundTokenMetadata)
+	protoassert.Equal(s.T(), tokenMetadata, foundTokenMetadata)
 
 	tokenMetadataCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -77,11 +78,6 @@ func (s *APITokensStoreSuite) TestStore() {
 	s.True(tokenMetadataExists)
 	s.NoError(store.Upsert(ctx, tokenMetadata))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, tokenMetadata), sac.ErrResourceAccessDenied)
-
-	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(tokenMetadata, foundTokenMetadata)
 
 	s.NoError(store.Delete(ctx, tokenMetadata.GetId()))
 	foundTokenMetadata, exists, err = store.Get(ctx, tokenMetadata.GetId())

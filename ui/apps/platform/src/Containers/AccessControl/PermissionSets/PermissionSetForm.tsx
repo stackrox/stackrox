@@ -96,6 +96,7 @@ function PermissionSetForm({
                 setAlertSubmit(
                     <Alert
                         title="Failed to save permission set"
+                        component="p"
                         variant={AlertVariant.danger}
                         isInline
                     >
@@ -124,7 +125,7 @@ function PermissionSetForm({
             <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2">
+                        <Title headingLevel="h1">
                             {action === 'create' ? 'Create permission set' : permissionSet.name}
                         </Title>
                     </ToolbarItem>
@@ -183,7 +184,12 @@ function PermissionSetForm({
                 />
             </FormGroup>
             {action === 'create' && (
-                <Alert title="Recommended minimum set of read permissions" variant="info" isInline>
+                <Alert
+                    title="Recommended minimum set of read permissions"
+                    component="p"
+                    variant="info"
+                    isInline
+                >
                     <p>
                         Users might not be able to load certain pages if they do not have a minimum
                         set of read permissions.

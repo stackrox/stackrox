@@ -4,7 +4,7 @@ import { CancellableRequest, isCancellableRequest } from 'services/cancellationU
 
 export type UseRestQueryReturn<ReturnType> = {
     data: ReturnType | undefined;
-    loading: boolean;
+    isLoading: boolean;
     error?: Error;
     refetch: () => void;
 };
@@ -13,7 +13,7 @@ export default function useRestQuery<ReturnType>(
     requestFn: () => CancellableRequest<ReturnType> | Promise<ReturnType>
 ): UseRestQueryReturn<ReturnType> {
     const [data, setData] = useState<ReturnType>();
-    const [loading, setLoading] = useState<boolean>(true);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | undefined>();
 
     const execFetch = useCallback(() => {
@@ -23,19 +23,19 @@ export default function useRestQuery<ReturnType>(
         const cancel = isCancellableRequest(requestResult) ? requestResult.cancel : noop;
 
         setError(undefined);
-        setLoading(true);
+        setIsLoading(true);
 
         request
             .then((result) => {
                 if (isMounted) {
                     setData(result);
-                    setLoading(false);
+                    setIsLoading(false);
                     setError(undefined);
                 }
             })
             .catch((err) => {
                 if (isMounted) {
-                    setLoading(false);
+                    setIsLoading(false);
                     setError(err);
                 }
             });
@@ -48,5 +48,5 @@ export default function useRestQuery<ReturnType>(
 
     useEffect(execFetch, [execFetch]);
 
-    return { data, loading, error, refetch: execFetch };
+    return { data, isLoading, error, refetch: execFetch };
 }

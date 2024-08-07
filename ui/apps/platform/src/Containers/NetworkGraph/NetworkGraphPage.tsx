@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
+    Alert,
+    AlertActionCloseButton,
     Bullseye,
     Button,
     Divider,
@@ -96,6 +98,7 @@ function NetworkGraphPage() {
     const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]>(timeWindows[0]);
     const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
     const [isCIDRBlockFormOpen, setIsCIDRBlockFormOpen] = useState(false);
+    const [isBannerDismissed, setIsBannerDismissed] = useState(false);
 
     const { analyticsTrack } = useAnalytics();
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -291,6 +294,24 @@ function NetworkGraphPage() {
 
     return (
         <>
+            {!isBannerDismissed && (
+                <Alert
+                    variant="info"
+                    isInline
+                    component="p"
+                    title={
+                        <span>
+                            This version of ACS is not compatible with AdminNetworkPolicy (ANP) and
+                            BaselineAdminNetworkPolicy (BANP) or CNI specific network resources. If
+                            those resources are present in the cluster, isolation labels per
+                            deployment and network policies generated might be misrepresented.
+                        </span>
+                    }
+                    actionClose={
+                        <AlertActionCloseButton onClick={() => setIsBannerDismissed(true)} />
+                    }
+                />
+            )}
             <PageTitle title="Network Graph" />
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Toolbar

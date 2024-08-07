@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -205,9 +206,9 @@ func TestUpdatingImageFromRequest(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			pkgTestUtils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, tc.feature)
 
-			clone := tc.existingImg.Clone()
+			clone := tc.existingImg.CloneVT()
 			updateImageFromRequest(clone, tc.reqImgName)
-			assert.Equal(t, tc.expectedName, clone.Name)
+			protoassert.Equal(t, tc.expectedName, clone.Name)
 		})
 	}
 }

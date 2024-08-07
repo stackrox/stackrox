@@ -4,7 +4,7 @@ import (
 	"context"
 	"sort"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/signatureintegration/datastore"
@@ -99,13 +99,13 @@ func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, requestedInt
 }
 
 func (s *serviceImpl) PutSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*v1.Empty, error) {
-	hasUpdatedKeys, err := s.datastore.UpdateSignatureIntegration(ctx, integration)
+	hasUpdates, err := s.datastore.UpdateSignatureIntegration(ctx, integration)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update signature integration")
 	}
 
-	// Only trigger reprocessing of signature verification results when the keys have been updated.
-	if hasUpdatedKeys {
+	// Only trigger reprocessing of signature verification results when the verification data has been updated.
+	if hasUpdates {
 		s.reprocessingLoop.ReprocessSignatureVerifications(false)
 	}
 	return &v1.Empty{}, nil

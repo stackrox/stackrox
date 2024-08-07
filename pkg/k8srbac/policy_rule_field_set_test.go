@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -162,7 +163,7 @@ func TestFieldSetMerge(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			assert.Equal(t, c.mergable, set.Merge(c.to, c.from))
 			if c.mergable {
-				assert.Equal(t, c.expected, c.to)
+				protoassert.Equal(t, c.expected, c.to)
 			}
 		})
 	}

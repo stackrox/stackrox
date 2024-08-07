@@ -411,12 +411,18 @@ function CollectionForm({
                             {configError?.type === 'EmptyCollection' && (
                                 <Alert
                                     title="At least one rule must be configured or one collection must be attached from the section below"
+                                    component="p"
                                     variant="danger"
                                     isInline
                                 />
                             )}
                             {configError?.type === 'InvalidRule' && (
-                                <Alert title={configError.message} variant="danger" isInline>
+                                <Alert
+                                    title={configError.message}
+                                    component="p"
+                                    variant="danger"
+                                    isInline
+                                >
                                     {configError.details}
                                 </Alert>
                             )}
@@ -481,12 +487,18 @@ function CollectionForm({
                             {configError?.type === 'EmptyCollection' && (
                                 <Alert
                                     title="At least one collection must be attached or one rule must be configured from the section above"
+                                    component="p"
                                     variant="danger"
                                     isInline
                                 />
                             )}
                             {configError?.type === 'CollectionLoop' && (
-                                <Alert title={configError.message} variant="danger" isInline>
+                                <Alert
+                                    title={configError.message}
+                                    component="p"
+                                    variant="danger"
+                                    isInline
+                                >
                                     {configError.details}
                                 </Alert>
                             )}

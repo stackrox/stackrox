@@ -74,7 +74,7 @@ func constructGenericRuntimeAlert(
 ) *storage.Alert {
 	return &storage.Alert{
 		Id:             uuid.NewV4().String(),
-		Policy:         policy.Clone(),
+		Policy:         policy.CloneVT(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity:         convert.ToAlertDeployment(deployment),
 		Violations:     violations,
@@ -89,7 +89,7 @@ func constructResourceRuntimeAlert(
 ) *storage.Alert {
 	return &storage.Alert{
 		Id:             uuid.NewV4().String(),
-		Policy:         policy.Clone(),
+		Policy:         policy.CloneVT(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Entity:         convert.ToAlertResource(kubeEvent),
 		Violations:     violations,

@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package common;
+
+import "internalapi/common/resource_collection.proto";
+
+option go_package = "./internalapi/common;common";
+
+enum RuntimeFeature {
+  PROCESSES = 0;
+  NETWORK_CONNECTIONS = 1;
+  NETWORK_ENDPOINTS = 2;
+}
+
+message Status {
+  message ProcessStatus {
+    bool enabled = 1;
+  }
+
+  message NetworkConnectionStatus {
+    bool enabled = 1;
+    bool aggregate_external = 2;
+  }
+
+  message NetworkEndpointStatus {
+    bool enabled = 1;
+    bool processes_listening_on_port = 2;
+  }
+
+  oneof status {
+    ProcessStatus process_status = 1;
+    NetworkConnectionStatus network_connection_status = 2;
+    NetworkEndpointStatus network_endpoint_status = 3;
+  }
+}
+
+message RuntimeFeatureConfig {
+  message RuntimeRule {
+    ResourceCollection resource_collection = 1;
+    Status status = 2;
+  }
+
+  RuntimeFeature feature = 1;
+  Status default_status = 2;
+  repeated RuntimeRule rules = 3;
+}
+
+message CollectorRuntimeConfig {
+  repeated RuntimeFeatureConfig runtime_feature_config = 1;
+}

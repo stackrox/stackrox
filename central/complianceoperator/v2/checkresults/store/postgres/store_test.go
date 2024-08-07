@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -73,7 +74,7 @@ func (s *ComplianceOperatorCheckResultV2StoreSuite) TestStore() {
 	foundComplianceOperatorCheckResultV2, exists, err = store.Get(ctx, complianceOperatorCheckResultV2.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorCheckResultV2, foundComplianceOperatorCheckResultV2)
+	protoassert.Equal(s.T(), complianceOperatorCheckResultV2, foundComplianceOperatorCheckResultV2)
 
 	complianceOperatorCheckResultV2Count, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -87,11 +88,6 @@ func (s *ComplianceOperatorCheckResultV2StoreSuite) TestStore() {
 	s.True(complianceOperatorCheckResultV2Exists)
 	s.NoError(store.Upsert(ctx, complianceOperatorCheckResultV2))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorCheckResultV2), sac.ErrResourceAccessDenied)
-
-	foundComplianceOperatorCheckResultV2, exists, err = store.Get(ctx, complianceOperatorCheckResultV2.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorCheckResultV2, foundComplianceOperatorCheckResultV2)
 
 	s.NoError(store.Delete(ctx, complianceOperatorCheckResultV2.GetId()))
 	foundComplianceOperatorCheckResultV2, exists, err = store.Get(ctx, complianceOperatorCheckResultV2.GetId())
@@ -337,7 +333,7 @@ func (s *ComplianceOperatorCheckResultV2StoreSuite) TestSACGet() {
 			expectedFound := len(testCase.expectedObjects) > 0
 			assert.Equal(t, expectedFound, exists)
 			if expectedFound {
-				assert.Equal(t, objA, actual)
+				protoassert.Equal(t, objA, actual)
 			} else {
 				assert.Nil(t, actual)
 			}
@@ -409,7 +405,7 @@ func (s *ComplianceOperatorCheckResultV2StoreSuite) TestSACGetMany() {
 		s.T().Run(fmt.Sprintf("with %s", name), func(t *testing.T) {
 			actual, missingIndices, err := s.store.GetMany(testCase.context, []string{objA.GetId(), objB.GetId()})
 			assert.NoError(t, err)
-			assert.Equal(t, testCase.expectedObjects, actual)
+			protoassert.SlicesEqual(t, testCase.expectedObjects, actual)
 			assert.Equal(t, testCase.expectedMissingIndices, missingIndices)
 		})
 	}

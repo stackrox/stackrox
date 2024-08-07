@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -117,7 +118,7 @@ func (s *servicePostgresTestSuite) TestGetDiscoveredCluster() {
 		Id: discoveredClusters[0].GetId(),
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal(discoveredClusters[0], resp.GetCluster())
+	protoassert.Equal(s.T(), discoveredClusters[0], resp.GetCluster())
 }
 
 func (s *servicePostgresTestSuite) TestListDiscoveredClusters() {
@@ -126,7 +127,7 @@ func (s *servicePostgresTestSuite) TestListDiscoveredClusters() {
 	// 1. Count discovered clusters without providing a query filter.
 	resp, err := s.service.ListDiscoveredClusters(s.readCtx, &v1.ListDiscoveredClustersRequest{})
 	s.Require().NoError(err)
-	s.Assert().Equal(discoveredClusters, resp.GetClusters())
+	protoassert.SlicesEqual(s.T(), discoveredClusters, resp.GetClusters())
 
 	// 2.a. Filter discovered clusters based on the name - no match.
 	resp, err = s.service.ListDiscoveredClusters(s.readCtx, &v1.ListDiscoveredClustersRequest{
@@ -144,7 +145,7 @@ func (s *servicePostgresTestSuite) TestListDiscoveredClusters() {
 		},
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal([]*v1.DiscoveredCluster{discoveredClusters[0]}, resp.GetClusters())
+	protoassert.SlicesEqual(s.T(), []*v1.DiscoveredCluster{discoveredClusters[0]}, resp.GetClusters())
 
 	// 3. Filter discovered clusters based on the type.
 	resp, err = s.service.ListDiscoveredClusters(s.readCtx, &v1.ListDiscoveredClustersRequest{
@@ -153,7 +154,7 @@ func (s *servicePostgresTestSuite) TestListDiscoveredClusters() {
 		},
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal(discoveredClusters[0:25], resp.GetClusters())
+	protoassert.SlicesEqual(s.T(), discoveredClusters[0:25], resp.GetClusters())
 
 	// 4. Filter discovered clusters based on the status.
 	resp, err = s.service.ListDiscoveredClusters(s.readCtx, &v1.ListDiscoveredClustersRequest{
@@ -162,7 +163,7 @@ func (s *servicePostgresTestSuite) TestListDiscoveredClusters() {
 		},
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal(discoveredClusters[0:25], resp.GetClusters())
+	protoassert.SlicesEqual(s.T(), discoveredClusters[0:25], resp.GetClusters())
 
 	// 5. Filter discovered clusters based on the cloud source id.
 	resp, err = s.service.ListDiscoveredClusters(s.readCtx, &v1.ListDiscoveredClustersRequest{
@@ -171,7 +172,7 @@ func (s *servicePostgresTestSuite) TestListDiscoveredClusters() {
 		},
 	})
 	s.Require().NoError(err)
-	s.Assert().Equal(discoveredClusters[0:25], resp.GetClusters())
+	protoassert.SlicesEqual(s.T(), discoveredClusters[0:25], resp.GetClusters())
 }
 
 func (s *servicePostgresTestSuite) addDiscoveredClusters(num int) []*v1.DiscoveredCluster {

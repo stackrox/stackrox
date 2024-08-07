@@ -1,3 +1,5 @@
+//go:build test_e2e
+
 package tests
 
 import (
@@ -10,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -138,7 +141,7 @@ func validateSuccess(t *testing.T, importPolicyResponse *v1.ImportPolicyResponse
 		expectedPolicy.Id = ""
 		importPolicyResponse.GetPolicy().Id = ""
 	}
-	require.Equal(t, expectedPolicy, importPolicyResponse.GetPolicy())
+	protoassert.Equal(t, expectedPolicy, importPolicyResponse.GetPolicy())
 	require.Empty(t, importPolicyResponse.GetErrors())
 }
 
@@ -148,7 +151,7 @@ func validateFailure(t *testing.T, importPolicyResponse *v1.ImportPolicyResponse
 		policy.Id = ""
 		importPolicyResponse.GetPolicy().Id = ""
 	}
-	require.Equal(t, policy, importPolicyResponse.GetPolicy())
+	protoassert.Equal(t, policy, importPolicyResponse.GetPolicy())
 	require.Len(t, importPolicyResponse.GetErrors(), len(expectedErrTypes))
 	for i, policyErr := range importPolicyResponse.GetErrors() {
 		require.Equal(t, policyErr.GetType(), expectedErrTypes[i])
@@ -183,7 +186,7 @@ func compareErrorsToExpected(t *testing.T, expectedErrors []*v1.ExportPolicyErro
 	// actual errors == expected errors ignoring order
 	require.Len(t, exportErrors.GetErrors(), len(expectedErrors))
 	for _, expected := range expectedErrors {
-		require.Contains(t, exportErrors.GetErrors(), expected)
+		protoassert.SliceContains(t, exportErrors.GetErrors(), expected)
 	}
 }
 
@@ -222,7 +225,7 @@ func validateExclusionOrScopeOrNotifierRemoved(t *testing.T, importResp *v1.Impo
 	importPolicyResponse := importResp.GetResponses()[0]
 	require.True(t, importPolicyResponse.GetSucceeded())
 	addedPolicies = append(addedPolicies, importPolicyResponse.GetPolicy().GetId())
-	require.Equal(t, expectedPolicy, importPolicyResponse.GetPolicy())
+	protoassert.Equal(t, expectedPolicy, importPolicyResponse.GetPolicy())
 	require.Len(t, importPolicyResponse.GetErrors(), 1)
 
 	policyErrors := importResp.GetResponses()[0].Errors
@@ -432,10 +435,10 @@ func verifyImportMultipleSucceeds(t *testing.T) {
 
 	validPolicy := exportPolicy(t, service, knownPolicyID)
 
-	policy1 := validPolicy.Clone()
+	policy1 := validPolicy.CloneVT()
 	policy1.Id = "new policy ID"
 	policy1.Name = "This is a valid policy"
-	policy2 := validPolicy.Clone()
+	policy2 := validPolicy.CloneVT()
 	policy2.Id = "another new policy ID"
 	policy2.Name = "This is another valid policy"
 
@@ -461,11 +464,11 @@ func verifyImportMixedSuccess(t *testing.T) {
 	validPolicy := exportPolicy(t, service, existingPolicy.GetId())
 
 	// Policy 1 should be valid
-	policy1 := validPolicy.Clone()
+	policy1 := validPolicy.CloneVT()
 	policy1.Id = "Probably I should make these UUIDs"
 	policy1.Name = "This is a valid and totally unique policy"
 	// Policy 2 should have a duplicate name error
-	policy2 := validPolicy.Clone()
+	policy2 := validPolicy.CloneVT()
 	policy2.Id = "another new entirely different policy ID"
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -486,7 +489,7 @@ func verifyNotifiersRemoved(t *testing.T) {
 	validPolicy := exportPolicy(t, service, knownPolicyID)
 
 	// Policy 1 should be valid
-	policy := validPolicy.Clone()
+	policy := validPolicy.CloneVT()
 	policy.Id = "verifyNotifiersRemoved policy ID"
 	policy.Name = "verifyNotifiersRemoved is a valid policy"
 	policy.Notifiers = []string{"This is not a notifier"}
@@ -512,7 +515,7 @@ func verifyExclusionsRemoved(t *testing.T) {
 	validPolicy := exportPolicy(t, service, knownPolicyID)
 
 	// Policy 1 should be valid
-	policy := validPolicy.Clone()
+	policy := validPolicy.CloneVT()
 	policy.Id = "verifyExcludedScopesRemoved policy ID"
 	policy.Name = "verifyExcludedScopesRemoved is a valid policy"
 	policy.Exclusions = []*storage.Exclusion{
@@ -546,7 +549,7 @@ func verifyScopesRemoved(t *testing.T) {
 	validPolicy := exportPolicy(t, service, knownPolicyID)
 
 	// Policy 1 should be valid
-	policy := validPolicy.Clone()
+	policy := validPolicy.CloneVT()
 	policy.Id = "verifyScopesRemoved policy ID"
 	policy.Name = "verifyScopesRemoved is a valid policy"
 	policy.Scope = []*storage.Scope{
@@ -576,7 +579,7 @@ func verifyOverwriteNameSucceeds(t *testing.T) {
 	// Create an existing policy so we don't change default policies
 	existingPolicy := createUniquePolicy(t, service)
 
-	newPolicy := existingPolicy.Clone()
+	newPolicy := existingPolicy.CloneVT()
 	newPolicy.Id = uuid.NewV4().String()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
@@ -597,7 +600,7 @@ func verifyOverwriteNameSucceeds(t *testing.T) {
 	validateExportFails(t, service, existingPolicy.GetId(), mockErrors)
 
 	dbPolicy := exportPolicy(t, service, newPolicy.GetId())
-	require.Equal(t, newPolicy, dbPolicy)
+	protoassert.Equal(t, newPolicy, dbPolicy)
 }
 
 func verifyOverwriteIDSucceeds(t *testing.T) {
@@ -607,7 +610,7 @@ func verifyOverwriteIDSucceeds(t *testing.T) {
 	// Create an existing policy so we don't change default policies
 	existingPolicy := createUniquePolicy(t, service)
 
-	newPolicy := existingPolicy.Clone()
+	newPolicy := existingPolicy.CloneVT()
 	newPolicy.Name = uuid.NewV4().String()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
@@ -623,7 +626,7 @@ func verifyOverwriteIDSucceeds(t *testing.T) {
 	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{newPolicy}, false)
 
 	dbPolicy := exportPolicy(t, service, existingPolicy.GetId())
-	require.Equal(t, newPolicy, dbPolicy)
+	protoassert.Equal(t, newPolicy, dbPolicy)
 }
 
 func verifyOverwriteNameAndIDSucceeds(t *testing.T) {
@@ -634,7 +637,7 @@ func verifyOverwriteNameAndIDSucceeds(t *testing.T) {
 	existingPolicyDuplicateName := createUniquePolicy(t, service)
 	existingPolicyDuplicateID := createUniquePolicy(t, service)
 
-	newPolicy := existingPolicyDuplicateID.Clone()
+	newPolicy := existingPolicyDuplicateID.CloneVT()
 	newPolicy.Name = existingPolicyDuplicateName.GetName()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	importResp, err := service.ImportPolicies(ctx, &v1.ImportPoliciesRequest{
@@ -655,7 +658,7 @@ func verifyOverwriteNameAndIDSucceeds(t *testing.T) {
 	validateExportFails(t, service, existingPolicyDuplicateName.GetId(), mockErrors)
 
 	dbPolicy := exportPolicy(t, service, existingPolicyDuplicateID.GetId())
-	require.Equal(t, newPolicy, dbPolicy)
+	protoassert.Equal(t, newPolicy, dbPolicy)
 }
 
 func verifyConvertSearchToPolicy(t *testing.T) {
@@ -695,7 +698,7 @@ func verifyConvertSearchToPolicy(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, response.GetAlteredSearchTerms())
 	require.Len(t, response.GetPolicy().GetPolicySections(), 1)
-	require.ElementsMatch(t, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups(), mockPolicySection.GetPolicyGroups())
+	protoassert.ElementsMatch(t, response.GetPolicy().GetPolicySections()[0].GetPolicyGroups(), mockPolicySection.GetPolicyGroups())
 }
 
 func verifyConvertInvalidSearchToPolicyFails(t *testing.T) {

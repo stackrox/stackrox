@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 func TestFindsBindingsForClusterAdmin(t *testing.T) {
@@ -148,7 +148,7 @@ func TestFindsBindingsForClusterAdmin(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, expected, getSubjectsGrantedClusterAdmin(inputRoles, inputBindings))
+	protoassert.SlicesEqual(t, expected, getSubjectsGrantedClusterAdmin(inputRoles, inputBindings))
 }
 
 func TestFindsRoleswithoutBindings(t *testing.T) {
@@ -242,5 +242,5 @@ func TestFindsRoleswithoutBindings(t *testing.T) {
 	}
 
 	evaluator := NewEvaluator(inputRoles, inputBindings)
-	assert.Equal(t, expected, evaluator.ForSubject(inputSubject).ToSlice())
+	protoassert.SlicesEqual(t, expected, evaluator.ForSubject(inputSubject).ToSlice())
 }

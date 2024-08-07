@@ -36,7 +36,7 @@ func GetFilteredWithStore(ctx context.Context, filter func(*storage.Group) bool,
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 	return groups, nil

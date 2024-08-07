@@ -86,10 +86,10 @@ func (s *storeImpl) insertIntoImages(
 ) error {
 	cloned := parts.image
 	if cloned.GetScan().GetComponents() != nil {
-		cloned = parts.image.Clone()
+		cloned = parts.image.CloneVT()
 		cloned.Scan.Components = nil
 	}
-	serialized, marshalErr := cloned.Marshal()
+	serialized, marshalErr := cloned.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -234,7 +234,7 @@ func copyFromImageComponents(ctx context.Context, tx *postgres.Tx, objs ...*stor
 
 	for idx, obj := range objs {
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -301,7 +301,7 @@ func copyFromImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID s
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -370,7 +370,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 		}
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -431,7 +431,7 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs .
 	}
 
 	for idx, obj := range objs {
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -582,7 +582,7 @@ func copyFromImageCVEEdgesWithVulnStateUpdates(ctx context.Context, tx *postgres
 }
 
 func getImageCVEEdgeRowToInsert(edge *storage.ImageCVEEdge) ([]interface{}, error) {
-	serialized, marshalErr := edge.Marshal()
+	serialized, marshalErr := edge.MarshalVT()
 	if marshalErr != nil {
 		return nil, marshalErr
 	}
@@ -753,7 +753,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Image) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.upsert(ctx, obj)
 	})
 }
@@ -762,7 +762,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.Image) error {
 func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Count, "Image")
 
-	return pgutils.Retry2(func() (int, error) {
+	return pgutils.Retry2(ctx, func() (int, error) {
 		return pgSearch.RunCountRequestForSchema(ctx, schema, q, s.db)
 	})
 }
@@ -771,7 +771,7 @@ func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Image")
 
-	return pgutils.Retry2(func() ([]search.Result, error) {
+	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return pgSearch.RunSearchRequestForSchema(ctx, schema, q, s.db)
 	})
 }
@@ -780,7 +780,7 @@ func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, e
 func (s *storeImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Exists, "Image")
 
-	return pgutils.Retry2(func() (bool, error) {
+	return pgutils.Retry2(ctx, func() (bool, error) {
 		return s.retryableExists(ctx, id)
 	})
 }
@@ -798,7 +798,7 @@ func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "Image")
 
-	return pgutils.Retry3(func() (*storage.Image, bool, error) {
+	return pgutils.Retry3(ctx, func() (*storage.Image, bool, error) {
 		return s.retryableGet(ctx, id)
 	})
 }
@@ -893,7 +893,7 @@ func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID s
 	}
 
 	var image storage.Image
-	if err := image.Unmarshal(data); err != nil {
+	if err := image.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 
@@ -927,7 +927,7 @@ func getImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID string
 			return nil, err
 		}
 		msg := &storage.ImageComponentEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = msg
@@ -964,7 +964,7 @@ func getImageCVEEdges(ctx context.Context, tx *postgres.Tx, imageID string) (map
 			return nil, err
 		}
 		msg := &storage.ImageCVEEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		cveIDToEdgeMap[msg.GetImageCveId()] = msg
@@ -987,7 +987,7 @@ func getImageComponents(ctx context.Context, tx *postgres.Tx, componentIDs []str
 			return nil, err
 		}
 		msg := &storage.ImageComponent{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		idToComponentMap[msg.GetId()] = msg
@@ -1010,7 +1010,7 @@ func getComponentCVEEdges(ctx context.Context, tx *postgres.Tx, componentIDs []s
 			return nil, err
 		}
 		msg := &storage.ComponentCVEEdge{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		componentIDToEdgeMap[msg.GetImageComponentId()] = append(componentIDToEdgeMap[msg.GetImageComponentId()], msg)
@@ -1033,7 +1033,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 			return nil, err
 		}
 		msg := &storage.ImageCVE{}
-		if err := msg.Unmarshal(data); err != nil {
+		if err := msg.UnmarshalVT(data); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg
@@ -1045,7 +1045,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Image")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableDelete(ctx, id)
 	})
 }
@@ -1093,7 +1093,7 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, tx *postgres.Tx, imageI
 func (s *storeImpl) GetIDs(ctx context.Context) ([]string, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetAll, "ImageIDs")
 
-	return pgutils.Retry2(func() ([]string, error) {
+	return pgutils.Retry2(ctx, func() ([]string, error) {
 		return s.retryableGetIDs(ctx)
 	})
 }
@@ -1114,7 +1114,7 @@ func (s *storeImpl) retryableGetIDs(ctx context.Context) ([]string, error) {
 func (s *storeImpl) GetMany(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
-	return pgutils.Retry3(func() ([]*storage.Image, []int, error) {
+	return pgutils.Retry3(ctx, func() ([]*storage.Image, []int, error) {
 		return s.retryableGetMany(ctx, ids)
 	})
 }
@@ -1269,7 +1269,7 @@ func CreateTableAndNewStore(ctx context.Context, db postgres.DB, gormDB *gorm.DB
 func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.Image, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageMetadata")
 
-	return pgutils.Retry3(func() (*storage.Image, bool, error) {
+	return pgutils.Retry3(ctx, func() (*storage.Image, bool, error) {
 		return s.retryableGetImageMetadata(ctx, id)
 	})
 }
@@ -1288,7 +1288,7 @@ func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*
 	}
 
 	var msg storage.Image
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -1298,7 +1298,7 @@ func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*
 func (s *storeImpl) GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.Image, []int, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
-	return pgutils.Retry3(func() ([]*storage.Image, []int, error) {
+	return pgutils.Retry3(ctx, func() ([]*storage.Image, []int, error) {
 		return s.retryableGetManyImageMetadata(ctx, ids)
 	})
 }
@@ -1357,7 +1357,7 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Update, "UpdateVulnState")
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableUpdateVulnState(ctx, cve, imageIDs, state)
 	})
 }

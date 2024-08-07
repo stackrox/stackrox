@@ -273,10 +273,10 @@ function DelegateScanningPage() {
                 {!!alertObj && (
                     <Alert
                         title={alertObj.title}
+                        component="p"
                         variant={alertObj.type}
                         isInline
                         className="pf-v5-u-mb-lg"
-                        component="h2"
                     >
                         {alertObj.body}
                     </Alert>

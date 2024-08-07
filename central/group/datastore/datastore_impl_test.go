@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -109,7 +110,7 @@ func (s *groupDataStoreTestSuite) TestGet() {
 	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId(),
 		AuthProviderId: group.GetProps().GetAuthProviderId()})
 	s.NoError(err)
-	s.Equal(group, g)
+	protoassert.Equal(s.T(), group, g)
 
 	// Test that a non-existing group will yield errox.NotFound.
 	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(nil, false, nil).Times(1)
@@ -190,7 +191,7 @@ func (s *groupDataStoreTestSuite) TestGetFiltered() {
 		groups[1], groups[2], groups[3], groups[4], groups[6],
 	}
 	s.NoError(err)
-	s.ElementsMatch(expectedGroups, actualGroups)
+	protoassert.ElementsMatch(s.T(), expectedGroups, actualGroups)
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesWalk() {
@@ -234,7 +235,7 @@ func (s *groupDataStoreTestSuite) TestWalk() {
 
 	actualGroups, err := s.dataStore.Walk(s.hasWriteCtx, "authProvider1", attributes)
 	s.NoError(err)
-	s.ElementsMatch(expectedGroups, actualGroups)
+	protoassert.ElementsMatch(s.T(), expectedGroups, actualGroups)
 }
 
 func (s *groupDataStoreTestSuite) TestEnforcesAdd() {
@@ -396,25 +397,25 @@ func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() 
 		{
 			"No error when setting up a non-default group when no default exists",
 			[]*storage.Group{},
-			initialGroup.Clone(),
+			initialGroup.CloneVT(),
 			false,
 		},
 		{
 			"No error when setting up a default group when no default exists",
 			[]*storage.Group{},
-			defaultGroup.Clone(),
+			defaultGroup.CloneVT(),
 			false,
 		},
 		{
 			"No error when setting up a non-default group when a default already exists",
 			[]*storage.Group{defaultGroup},
-			initialGroup.Clone(),
+			initialGroup.CloneVT(),
 			false,
 		},
 		{
 			"Error when setting up a default group when a default already exists",
 			[]*storage.Group{defaultGroup},
-			defaultGroup.Clone(),
+			defaultGroup.CloneVT(),
 			true,
 		},
 	}
@@ -435,24 +436,24 @@ func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() 
 			if c.shouldError {
 				// Validate Add returns an error if duplicate default group
 				s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(0)
-				err := s.dataStore.Add(s.hasWriteCtx, c.groupToAdd.Clone())
+				err := s.dataStore.Add(s.hasWriteCtx, c.groupToAdd.CloneVT())
 				s.Error(err)
 				s.ErrorIs(err, errox.AlreadyExists)
 
 				// Validate Mutate with additions returns an error if duplicate default group
 				s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(0)
-				err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.Clone()}, false)
+				err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.CloneVT()}, false)
 				s.Error(err)
 				s.ErrorIs(err, errox.AlreadyExists)
 			} else {
 				s.validRoleAndAuthProvider(c.groupToAdd.GetRoleName(), c.groupToAdd.GetProps().GetAuthProviderId(), storage.Traits_IMPERATIVE, 2)
 				// Validate Add doesn't error if it's a new default
 				s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-				s.NoError(s.dataStore.Add(s.hasWriteCtx, c.groupToAdd.Clone()))
+				s.NoError(s.dataStore.Add(s.hasWriteCtx, c.groupToAdd.CloneVT()))
 
 				// Validate  Mutate with additions doesn't error if it's a new default
 				s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-				s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.Clone()}, false))
+				s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{c.groupToAdd.CloneVT()}, false))
 			}
 		})
 	}
@@ -481,17 +482,17 @@ func (s *groupDataStoreTestSuite) TestUpdateToDefaultGroupIfOneAlreadyExists() {
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Times(0) // No updates should happen
 
 	// Unset Key / Value fields, making it a default group.
-	updatedGroup := initialGroup.Clone()
+	updatedGroup := initialGroup.CloneVT()
 	updatedGroup.GetProps().Key = ""
 	updatedGroup.GetProps().Value = ""
 
 	// Ensure a "AlreadyExists" error is yielded when trying to update the group.
-	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup.Clone(), false)
+	err := s.dataStore.Update(s.hasWriteCtx, updatedGroup.CloneVT(), false)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 
 	// Ensure a "AlreadyExists" error is yielded when trying to update the group using Mutate.
-	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{updatedGroup.Clone()}, []*storage.Group{}, false)
+	err = s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{updatedGroup.CloneVT()}, []*storage.Group{}, false)
 	s.Error(err)
 	s.ErrorIs(err, errox.AlreadyExists)
 }
@@ -549,16 +550,16 @@ func (s *groupDataStoreTestSuite) TestCanUpdateExistingDefaultGroup() {
 
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, g *storage.Group) {
 		g.GetProps().Id = ""
-		s.Equal(newDefaultGroup, g)
+		protoassert.Equal(s.T(), newDefaultGroup, g)
 	})
 	s.storage.EXPECT().UpsertMany(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, groups []*storage.Group) {
 		for _, g := range groups {
 			g.GetProps().Id = ""
-			s.Equal(newDefaultGroup, g)
+			protoassert.Equal(s.T(), newDefaultGroup, g)
 		}
 	})
 
-	s.NoError(s.dataStore.Add(s.hasWriteCtx, newDefaultGroup.Clone()))
+	s.NoError(s.dataStore.Add(s.hasWriteCtx, newDefaultGroup.CloneVT()))
 	s.NoError(s.dataStore.Mutate(s.hasWriteCtx, []*storage.Group{}, []*storage.Group{}, []*storage.Group{newDefaultGroup}, false))
 }
 
@@ -660,7 +661,7 @@ func (s *groupDataStoreTestSuite) TestUpdateImmutableNoForce() {
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
 
-	updatedGroup := expectedGroup.Clone()
+	updatedGroup := expectedGroup.CloneVT()
 	updatedGroup.GetProps().Key = "something"
 	updatedGroup.GetProps().Value = "else"
 
@@ -675,7 +676,7 @@ func (s *groupDataStoreTestSuite) TestUpdateImmutableForce() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.validRoleAndAuthProvider(expectedGroup.GetRoleName(), expectedGroup.GetProps().GetAuthProviderId(), storage.Traits_IMPERATIVE, 1)
 
-	updatedGroup := expectedGroup.Clone()
+	updatedGroup := expectedGroup.CloneVT()
 	updatedGroup.GetProps().Key = "something"
 	updatedGroup.GetProps().Value = "else"
 
@@ -831,7 +832,7 @@ func (s *groupDataStoreTestSuite) TestUpdateDeclarativeViaAPI() {
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(expectedGroup, true, nil).Times(1)
 
-	updatedGroup := expectedGroup.Clone()
+	updatedGroup := expectedGroup.CloneVT()
 	updatedGroup.GetProps().Key = "something"
 	updatedGroup.GetProps().Value = "else"
 
@@ -846,7 +847,7 @@ func (s *groupDataStoreTestSuite) TestUpdateDeclarativeViaConfig() {
 	s.storage.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	s.validRoleAndAuthProvider(expectedGroup.GetRoleName(), expectedGroup.GetProps().GetAuthProviderId(), storage.Traits_DECLARATIVE, 1)
 
-	updatedGroup := expectedGroup.Clone()
+	updatedGroup := expectedGroup.CloneVT()
 	updatedGroup.GetProps().Key = "something"
 	updatedGroup.GetProps().Value = "else"
 
@@ -989,7 +990,7 @@ func (s *groupDataStoreTestSuite) TestUpsertChangeDeclarativeOrigin() {
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(existingGroup, true, nil).Times(1)
 
-	updatedGroup := existingGroup.Clone()
+	updatedGroup := existingGroup.CloneVT()
 	updatedGroup.GetProps().Key = "something"
 	updatedGroup.GetProps().Value = "else"
 	updatedGroup.GetProps().Traits = &storage.Traits{
@@ -1005,7 +1006,7 @@ func (s *groupDataStoreTestSuite) TestUpsertChangeImperativeOrigin() {
 
 	s.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(existingGroup, true, nil).Times(1)
 
-	updatedGroup := existingGroup.Clone()
+	updatedGroup := existingGroup.CloneVT()
 	updatedGroup.GetProps().Key = "something"
 	updatedGroup.GetProps().Value = "else"
 	updatedGroup.GetProps().Traits = &storage.Traits{

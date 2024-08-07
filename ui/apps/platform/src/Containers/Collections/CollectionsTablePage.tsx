@@ -52,7 +52,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
     );
     const {
         data: listData,
-        loading: listLoading,
+        isLoading: listLoading,
         error: listError,
         refetch: listRefetch,
     } = useRestQuery(listQuery);
@@ -60,7 +60,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
     const countQuery = useCallback(() => getCollectionCount(searchFilter), [searchFilter]);
     const {
         data: countData,
-        loading: countLoading,
+        isLoading: countLoading,
         error: countError,
         refetch: countRefetch,
     } = useRestQuery(countQuery);
@@ -131,6 +131,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                         key={key}
                         variant={variant}
                         title={title}
+                        component="p"
                         timeout
                         onTimeout={() => removeToast(key)}
                         actionClose={

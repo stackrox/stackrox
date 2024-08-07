@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/complianceoperator/v2/remediations/store/postgres"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -37,4 +38,9 @@ func (d datastoreImpl) DeleteRemediationsByCluster(ctx context.Context, clusterI
 	query := queryBuilder.AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	_, err := d.store.DeleteByQuery(ctx, query)
 	return err
+}
+
+// SearchRemediations returns the remediations for the given query
+func (d *datastoreImpl) SearchRemediations(ctx context.Context, query *v1.Query) ([]*storage.ComplianceOperatorRemediationV2, error) {
+	return d.store.GetByQuery(ctx, query)
 }

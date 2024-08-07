@@ -3,13 +3,14 @@ package requestinfo
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	pb "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
@@ -113,7 +114,7 @@ func Test_gRPCGateway(t *testing.T) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err := pb.RegisterPingServiceHandlerFromEndpoint(ctx, gateway, lis.Addr().String(),
+	err := pb.RegisterPingServiceHandlerFromEndpoint(ctx, gateway, fmt.Sprintf("passthrough://%s", lis.Addr().String()),
 		[]grpc.DialOption{
 			grpc.WithTransportCredentials(creds),
 			grpc.WithContextDialer(func(ctx context.Context, url string) (net.Conn, error) {

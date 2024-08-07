@@ -15,8 +15,10 @@ import (
 	"github.com/stackrox/rox/tools/roxvet/analyzers/sortslices"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/storeinterface"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/structuredlogs"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/testtags"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/uncheckedifassign"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/undeferredmutexunlocks"
+	"github.com/stackrox/rox/tools/roxvet/analyzers/unmarshalreplace"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/unusedroxctlargs"
 	"github.com/stackrox/rox/tools/roxvet/analyzers/validateimports"
 	"golang.org/x/tools/go/analysis/unitchecker"
@@ -38,8 +40,10 @@ func main() {
 		sortslices.Analyzer,
 		storeinterface.Analyzer,
 		structuredlogs.Analyzer,
+		testtags.Analyzer,
 		uncheckedifassign.Analyzer,
 		undeferredmutexunlocks.Analyzer,
+		unmarshalreplace.Analyzer,
 		unusedroxctlargs.Analyzer,
 		validateimports.Analyzer,
 	)

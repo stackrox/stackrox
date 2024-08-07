@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import {
     Button,
     ButtonVariant,
@@ -199,14 +199,7 @@ function CollectionsTable({
                                 return (
                                     <Tr key={id}>
                                         <Td dataLabel="Collection">
-                                            <Button
-                                                variant={ButtonVariant.link}
-                                                isInline
-                                                component={LinkShim}
-                                                href={`${collectionsBasePath}/${id}`}
-                                            >
-                                                {name}
-                                            </Button>
+                                            <Link to={`${collectionsBasePath}/${id}`}>{name}</Link>
                                         </Td>
                                         <Td dataLabel="Description">
                                             <Truncate

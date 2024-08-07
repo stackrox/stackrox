@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 )
@@ -320,7 +321,7 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			prs := NewPolicyRuleSet(APIGroupsField(), ResourcesField(), VerbsField())
 			prs.Add(c.input...)
-			assert.Equal(t, c.expected, prs.ToSlice())
+			protoassert.SlicesEqual(t, c.expected, prs.ToSlice())
 		})
 	}
 }

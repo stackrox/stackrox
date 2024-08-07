@@ -30,6 +30,15 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
+	pruningDurationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "prune_duration",
+		Help:      "Time to perform a pruning operation",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Type"})
+
 	postgresOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -146,8 +155,8 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "k8s_event_processing_duration",
-		Help:      "Time taken to fully process an event from Kubernetes",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+		Help:      "Time taken in milliseconds to fully process an event from Kubernetes",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 12),
 	}, []string{"Action", "Resource", "Dispatcher"})
 
 	clusterMetricsNodeCountGaugeVec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -318,6 +327,12 @@ func RegisterGRPCError(code string) {
 // SetCacheOperationDurationTime times how long a particular store cache operation took on a particular resource.
 func SetCacheOperationDurationTime(start time.Time, op metrics.Op, t string) {
 	storeCacheOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).
+		Observe(startTimeToMS(start))
+}
+
+// SetPruningDuration times how long it takes to prune an entity
+func SetPruningDuration(start time.Time, e string) {
+	pruningDurationHistogramVec.With(prometheus.Labels{"Type": e}).
 		Observe(startTimeToMS(start))
 }
 

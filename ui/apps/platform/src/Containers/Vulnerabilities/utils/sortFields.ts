@@ -15,6 +15,6 @@ export const CLUSTER_KUBERNETES_VERSION_SORT_FIELD = 'Cluster Kubernetes Version
 
 // Node sort fields
 export const NODE_SORT_FIELD = 'Node';
-export const NODE_TOP_CVSS_SORT_FIELD = 'Node Top CVSS';
+export const NODE_TOP_CVSS_SORT_FIELD = 'CVSS';
 export const NODE_COUNT_SORT_FIELD = 'Node Count';
 export const NODE_SCAN_TIME_SORT_FIELD = 'Node Scan Time';

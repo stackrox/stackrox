@@ -44,7 +44,7 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
             {data.firstDiscoveredInSystem && (
                 <LabelGroup numLabels={1}>
                     <Label>
-                        First discovered in system {getDateTime(data.firstDiscoveredInSystem)}
+                        First discovered in system: {getDateTime(data.firstDiscoveredInSystem)}
                     </Label>
                 </LabelGroup>
             )}

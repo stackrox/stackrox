@@ -2,9 +2,9 @@ name: Cache UI Dependencies
 description: Cache UI Dependencies
 inputs:
   lockFile:
-    description: Where the monorepo lock is written
+    description: Where the yarn lock is written
     required: true
-    default: "ui/monorepo.lock"
+    default: "ui/apps/platform/yarn.lock"
 runs:
   using: composite
   steps:

@@ -13,9 +13,11 @@ import searchContext from 'Containers/searchContext';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { newWorkflowCases } from 'constants/useCaseTypes';
 
-const borderClass = 'border border-primary-300';
-const categoryOptionClass = `bg-primary-200 text-primary-700 ${borderClass}`;
-const valueOptionClass = `bg-base-200 text-base-600 ${borderClass}`;
+const backgroundClass = 'bg-base-100';
+const borderClass = 'border border-base-300';
+const colorClass = 'pf-v5-u-color-100'; // override color from React select style rules
+const categoryOptionClass = `pf-v5-u-font-weight-bold pf-v5-u-background-color-info ${borderClass} ${colorClass}`;
+const valueOptionClass = `${backgroundClass} ${borderClass} ${colorClass}`;
 
 // Render readonly input with placeholder instead of span to prevent insufficient color contrast.
 export const placeholderCreator = (placeholderText) =>
@@ -23,7 +25,7 @@ export const placeholderCreator = (placeholderText) =>
         return (
             <span className="flex h-full items-center pointer-events-none">
                 <input
-                    className="bg-base-100 text-base-600 absolute pf-v5-u-w-100"
+                    className={`${backgroundClass} ${colorClass} absolute pf-v5-u-w-100`}
                     placeholder={placeholderText}
                     readOnly
                 />
@@ -34,17 +36,11 @@ export const placeholderCreator = (placeholderText) =>
 const isCategoryChip = (value) => value.endsWith(':');
 
 export const Option = ({ children, ...rest }) => {
-    let className;
-    if (isCategoryChip(children)) {
-        className = 'bg-primary-200 text-primary-700';
-    } else {
-        className = 'bg-base-200 text-base-600';
-    }
     return (
         <components.Option {...rest}>
             <div className="flex">
                 <span
-                    className={`${className} border-2 border-primary-300 rounded-sm p-1 px-2 text-sm`}
+                    className={`${isCategoryChip(children) ? categoryOptionClass : valueOptionClass} rounded-sm p-1 px-2 text-sm`}
                 >
                     {children}
                 </span>

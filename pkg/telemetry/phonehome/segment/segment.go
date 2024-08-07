@@ -17,7 +17,7 @@ var (
 	_   telemeter.Telemeter = (*segmentTelemeter)(nil)
 	// expiringIDCache stores the computed message IDs to drop duplicates if
 	// requested.
-	expiringIDCache = expiringcache.NewExpiringCache(24*time.Hour, expiringcache.UpdateExpirationOnGets)
+	expiringIDCache = expiringcache.NewExpiringCache[string, bool](24*time.Hour, expiringcache.UpdateExpirationOnGets[string, bool])
 )
 
 type segmentTelemeter struct {
@@ -142,7 +142,7 @@ func isDuplicate(id string) bool {
 	if id == "" {
 		return false
 	}
-	if expiringIDCache.Get(id) == nil {
+	if _, ok := expiringIDCache.Get(id); !ok {
 		expiringIDCache.Add(id, true)
 		return false
 	}

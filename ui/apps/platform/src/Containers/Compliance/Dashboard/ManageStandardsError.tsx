@@ -9,7 +9,7 @@ export type ManageStandardsErrorProp = {
 function ManageStandardsError({ onClose, errorMessage }: ManageStandardsErrorProp): ReactElement {
     return (
         <Modal title="Manage standards" variant="small" isOpen onClose={onClose} showClose>
-            <Alert title="Unable to fetch standards" variant="warning" isInline>
+            <Alert title="Unable to fetch standards" component="p" variant="warning" isInline>
                 {errorMessage}
             </Alert>
         </Modal>

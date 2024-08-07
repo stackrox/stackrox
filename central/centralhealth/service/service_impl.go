@@ -4,7 +4,7 @@ import (
 	"context"
 	"path/filepath"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"

@@ -18,7 +18,7 @@ import { NotifierConfiguration } from 'services/ReportsService.types';
 import NotifierMailingLists from './NotifierMailingLists';
 
 function isEmailNotifier(notifier: NotifierIntegrationBase) {
-    return notifier.type === 'email';
+    return notifier.type === 'email' || notifier.type === 'acscsEmail';
 }
 
 function splitAndTrimMailingListsString(mailingListsString: string): string[] {

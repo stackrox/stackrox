@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc/internal/endpoint"
@@ -925,8 +926,17 @@ func TestBackend(t *testing.T) {
 					client, ok := ctx.Value(oauth2.HTTPClient).(*http.Client)
 					assert.True(t, ok, "context passed to provider creation must contain an HTTP client")
 					if client.Transport != nil || tt.assertInsecureClient {
-						transport, ok := client.Transport.(*http.Transport)
-						assert.Truef(t, ok, "cannot check client transport of %T", client.Transport)
+						var transport *http.Transport
+						switch c := client.Transport.(type) {
+						case *http.Transport:
+							transport = c
+						case *retryablehttp.RoundTripper:
+							if c.Client.HTTPClient.Transport != nil {
+								transport = c.Client.HTTPClient.Transport.(*http.Transport)
+							} else {
+								transport = http.DefaultTransport.(*http.Transport)
+							}
+						}
 						assert.Equal(t, tt.assertInsecureClient, transport.TLSClientConfig.InsecureSkipVerify)
 					}
 					return tt.oidcProvider, nil

@@ -66,7 +66,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         variant="info"
                         isInline
                         title="Editing policy criteria is disabled for system default policies"
-                        component="h3"
+                        component="p"
                         className="pf-v5-u-mt-sm pf-v5-u-mb-md"
                         data-testid="default-policy-alert"
                     >
@@ -78,7 +78,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         variant="warning"
                         isInline
                         title="This policy has active violations, and the policy criteria cannot be changed. To update criteria, disable the policy first."
-                        component="div"
+                        component="p"
                         className="pf-v5-u-mt-sm pf-v5-u-mb-md"
                         data-testid="active-violations-policy-alert"
                     />

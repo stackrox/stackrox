@@ -269,5 +269,5 @@ func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(*storage.ListAlert
 			return fn(listAlert)
 		})
 	}
-	return pgutils.RetryIfPostgres(walkFn)
+	return pgutils.RetryIfPostgres(ctx, walkFn)
 }

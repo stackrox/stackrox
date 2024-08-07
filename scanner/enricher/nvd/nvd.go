@@ -2,6 +2,7 @@
 package nvd
 
 import (
+	"archive/zip"
 	"context"
 	"encoding/json"
 	"errors"
@@ -21,6 +22,7 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -59,6 +61,7 @@ type Enricher struct {
 	feed         *url.URL
 	apiKey       string
 	callInterval time.Duration
+	feedPath     string
 }
 
 // Config is the configuration for Enricher.
@@ -66,6 +69,10 @@ type Config struct {
 	FeedRoot     *string `json:"feed_root" yaml:"feed_root"`
 	APIKey       *string `json:"api_key" yaml:"api_key"`
 	CallInterval *string `json:"call_interval" yaml:"call_interval"`
+
+	// FeedPath fetch NVD API v2 records from JSON files within a zip archive,
+	// instead of fetching from the NVD URL.
+	FeedPath *string `json:"feed_path" `
 }
 
 // NewFactory creates a Factory for the NVD enricher.
@@ -82,6 +89,22 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 	e.c = c
 	if err := f(&cfg); err != nil {
 		return err
+	}
+	// If a feed path is specified, we ignore the remote fetching configuration
+	// parameters (they will not be used).
+	if cfg.FeedPath != nil {
+		st, err := os.Stat(*cfg.FeedPath)
+		if err != nil {
+			return err
+		}
+		if !st.Mode().IsRegular() {
+			return fmt.Errorf("feed file is not a regular file: %s", *cfg.FeedPath)
+		}
+		e.feedPath = *cfg.FeedPath
+		zlog.Info(ctx).
+			Str("feed_path", e.feedPath).
+			Msg("enricher configured with feed path")
+		return nil
 	}
 	if cfg.APIKey != nil {
 		e.apiKey = *cfg.APIKey
@@ -126,8 +149,11 @@ func (*Enricher) Name() string {
 }
 
 // FetchEnrichment implements driver.EnrichmentUpdater.
-func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
+func (e *Enricher) FetchEnrichment(ctx context.Context, _ driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/nvd/Enricher/FetchEnrichment")
+	// Force a new hint, to signal updaters that this is new data.
+	hint := driver.Fingerprint(uuid.NewV4().String())
+	zlog.Info(ctx).Str("hint", string(hint)).Msg("starting fetch")
 	out, err := os.CreateTemp("", "enricher.nvd.")
 	if err != nil {
 		return nil, hint, err
@@ -141,60 +167,127 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 			}
 		}
 	}()
-	var totalCVEs, totalSkippedCVEs int
-	// Doing this serially is slower, but much less complicated than using an
-	// ErrGroup or the like.
-	//
-	// It may become an issue in 25-30 years.
-	startDate := time.Date(firstYear, time.January, 1, 0, 0, 0, 0, time.UTC)
-	now := time.Now().UTC()
-	for startDate.Before(now) {
-		// The maximum allowable range when using any date range parameters is 120 consecutive days.
-		endDate := startDate.Add(120*24*time.Hour - time.Second)
-		if endDate.After(now) {
-			endDate = now
+	enc := json.NewEncoder(out)
+	var totalCVEs, totalSkippedCVEs int // stats for logging
+	if e.feedPath == "" {
+		// Fetching from NVD directly if a feed path is not specified.
+		//
+		// Doing this serially is slower, but much less complicated than using an
+		// ErrGroup or the like.
+		//
+		// It may become an issue in 25-30 years.
+		startDate := time.Date(firstYear, time.January, 1, 0, 0, 0, 0, time.UTC)
+		now := time.Now().UTC()
+		for startDate.Before(now) {
+			// The maximum allowable range when using any date range parameters is 120 consecutive days.
+			endDate := startDate.Add(120*24*time.Hour - time.Second)
+			if endDate.After(now) {
+				endDate = now
+			}
+			var apiResp *schema.CVEAPIJSON20
+			for startIdx := 0; ; startIdx += apiResp.ResultsPerPage {
+				apiResp, err = e.query(ctx, startDate, endDate, startIdx)
+				if err != nil {
+					return nil, hint, err
+				}
+				if apiResp.ResultsPerPage == 0 {
+					break
+				}
+				var cvesFromQuery int
+				// Parse vulnerabilities in the API response.
+				for _, vuln := range apiResp.Vulnerabilities {
+					item := filterFields(vuln.CVE)
+					if item == nil {
+						zlog.Warn(ctx).Str("cve", vuln.CVE.ID).Msg("skipping CVE")
+						totalSkippedCVEs++
+						continue
+					}
+					enrichment, err := json.Marshal(item)
+					if err != nil {
+						return nil, hint, fmt.Errorf("serializing CVE %s: %w", item.ID, err)
+					}
+					r := driver.EnrichmentRecord{
+						Tags:       []string{item.ID},
+						Enrichment: enrichment,
+					}
+					if err := enc.Encode(&r); err != nil {
+						return nil, hint, fmt.Errorf("encoding enrichment: %w", err)
+					}
+					totalCVEs++
+					cvesFromQuery++
+				}
+				zlog.Info(ctx).
+					Int("count", cvesFromQuery).
+					Int("total", totalCVEs).
+					Msg("loaded vulnerabilities")
+				// Rudimentary rate-limiting.
+				time.Sleep(e.callInterval)
+			}
+			startDate = endDate.Add(time.Second)
 		}
-		var apiResp *schema.CVEAPIJSON20
-		for startIdx := 0; ; startIdx += apiResp.ResultsPerPage {
-			apiResp, err = e.query(ctx, startDate, endDate, startIdx)
-			if err != nil {
-				return nil, hint, err
+	} else {
+		// Open a ZIP archive, and search for JSON files containing NVD CVE records. The
+		// payload is expected to be of NVD API v2, with one record per line.
+		zipF, err := zip.OpenReader(e.feedPath)
+		if err != nil {
+			return nil, hint, fmt.Errorf("opening zip: %w", err)
+		}
+		for i := range zipF.File {
+			jsonF := zipF.File[i]
+			if !strings.HasSuffix(jsonF.Name, ".nvd.json") {
+				continue
 			}
-			if apiResp.ResultsPerPage == 0 {
-				break
+			// Iterates over a NVD CVE JSON file.
+			var iterErr error
+			jsonIter := func(yield func(vuln *schema.CVEAPIJSON20DefCVEItem) bool) {
+				iterErr = nil
+				f, err := jsonF.Open()
+				if err != nil {
+					iterErr = fmt.Errorf("opening bundle: %w", err)
+					return
+				}
+				defer func() {
+					_ = f.Close()
+				}()
+				dec := json.NewDecoder(f)
+				var vuln *schema.CVEAPIJSON20DefCVEItem
+				for err := dec.Decode(&vuln); err == nil; err = dec.Decode(vuln) {
+					if !yield(vuln) {
+						break
+					}
+				}
+				if !errors.Is(err, io.EOF) {
+					iterErr = err
+				}
 			}
-			var cvesFromQuery int
-			// Parse vulnerabilities in the API response.
-			enc := json.NewEncoder(out)
-			for _, vuln := range apiResp.Vulnerabilities {
+			jsonIter(func(vuln *schema.CVEAPIJSON20DefCVEItem) bool {
 				item := filterFields(vuln.CVE)
 				if item == nil {
 					zlog.Warn(ctx).Str("cve", vuln.CVE.ID).Msg("skipping CVE")
 					totalSkippedCVEs++
-					continue
+					return true
 				}
-				enrichment, err := json.Marshal(item)
+				var enrichment json.RawMessage
+				enrichment, err = json.Marshal(item)
 				if err != nil {
-					return nil, hint, fmt.Errorf("serializing CVE %s: %w", item.ID, err)
+					err = fmt.Errorf("serializing CVE %s: %w", item.ID, err)
+					return false
 				}
 				r := driver.EnrichmentRecord{
 					Tags:       []string{item.ID},
 					Enrichment: enrichment,
 				}
-				if err := enc.Encode(&r); err != nil {
-					return nil, hint, fmt.Errorf("encoding enrichment: %w", err)
+				if err = enc.Encode(&r); err != nil {
+					err = fmt.Errorf("encoding enrichment: %w", err)
+					return false
 				}
 				totalCVEs++
-				cvesFromQuery++
+				return true
+			})
+			if iterErr != nil {
+				return nil, hint, iterErr
 			}
-			zlog.Info(ctx).
-				Int("count", cvesFromQuery).
-				Int("total", totalCVEs).
-				Msg("loaded vulnerabilities")
-			// Rudimentary rate-limiting.
-			time.Sleep(e.callInterval)
 		}
-		startDate = endDate.Add(time.Second)
 	}
 	zlog.Info(ctx).
 		Int("skipped", totalSkippedCVEs).
@@ -205,7 +298,6 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 		return nil, hint, fmt.Errorf("unable to reset item feed: %w", err)
 	}
 	success = true
-	// Hint is currently ignored, and always the same.
 	return out, hint, nil
 }
 

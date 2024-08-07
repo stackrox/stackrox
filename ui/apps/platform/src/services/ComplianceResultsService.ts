@@ -4,6 +4,7 @@ import { SearchQueryOptions } from 'types/search';
 import {
     buildNestedRawQueryParams,
     ComplianceCheckStatus,
+    ComplianceControl,
     ComplianceScanCluster,
     complianceV2Url,
     ListComplianceProfileResults,
@@ -25,8 +26,7 @@ export type ComplianceCheckResult = {
     checkUid: string;
     description: string;
     instructions: string;
-    standard: string;
-    control: string[];
+    controls: ComplianceControl[];
     rationale: string;
     valuesUsed: string[];
     warnings: string[];
@@ -42,8 +42,7 @@ export type ComplianceClusterCheckStatus = {
     clusters: ClusterCheckStatus[];
     description: string;
     instructions: string;
-    standard: string;
-    control: string[];
+    controls: ComplianceControl[];
     rationale: string;
     valuesUsed: string[];
     warnings: string[];
@@ -56,6 +55,7 @@ export type ListComplianceCheckClusterResponse = {
     profileName: string;
     checkName: string;
     totalCount: number;
+    controls: ComplianceControl[];
 };
 
 export type ListComplianceCheckResultResponse = {

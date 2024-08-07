@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -139,9 +138,6 @@ func Validate(awssh *storage.AWSSecurityHub, validateSecret bool) error {
 				return errors.New("AWS secret access key must not be empty")
 			}
 		}
-		if awssh.GetCredentials().GetStsEnabled() && !features.CloudCredentials.Enabled() {
-			return errors.New("AWS STS support enabled without the associated feature flag being enabled")
-		}
 	}
 
 	return nil
@@ -173,7 +169,7 @@ func (c *configuration) getCredentials() (string, string, error) {
 		return "", "", errors.Errorf("Error decrypting notifier secret for notifier '%s'", c.descriptor.GetName())
 	}
 	creds := &storage.AWSSecurityHub_Credentials{}
-	err = creds.Unmarshal([]byte(decCredsStr))
+	err = creds.UnmarshalVT([]byte(decCredsStr))
 	if err != nil {
 		return "", "", errors.Errorf("Error unmarshalling notifier credentials for notifier '%s'", c.descriptor.GetName())
 	}

@@ -73,7 +73,7 @@ function EditScanConfigDetail({
                         <Alert
                             variant="warning"
                             title="Unable to fetch scan schedule"
-                            component="div"
+                            component="p"
                             isInline
                         >
                             {getAxiosErrorMessage(error)}

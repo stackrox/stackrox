@@ -9,7 +9,7 @@ type feature struct {
 	envVar       string
 	name         string
 	defaultValue bool
-	overridable  bool
+	unchangeable bool
 }
 
 func (f *feature) EnvVar() string {
@@ -25,7 +25,7 @@ func (f *feature) Default() bool {
 }
 
 func (f *feature) Enabled() bool {
-	if !f.overridable {
+	if f.unchangeable {
 		return f.defaultValue
 	}
 

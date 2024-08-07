@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/sac/testutils"
@@ -113,7 +114,7 @@ func (s *namespaceDatastoreSACSuite) TestGetNamespace() {
 			s.Require().NoError(err)
 			if c.ExpectedFound {
 				s.Require().True(found)
-				s.Equal(namespace, res)
+				protoassert.Equal(s.T(), namespace, res)
 			} else {
 				s.False(found)
 				s.Nil(res)

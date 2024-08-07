@@ -27,7 +27,7 @@ export default function useClusterVulnerabilities({
 }: { clusterId: string; query: string } & ClientPagination) {
     return useQuery<
         {
-            cluster: {
+            cluster?: {
                 clusterVulnerabilityCount: number;
                 clusterVulnerabilities: ClusterVulnerability[];
             };

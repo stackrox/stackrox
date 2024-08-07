@@ -15,6 +15,7 @@ import { imageSortFields } from 'constants/sortFields';
 import { IMAGES_QUERY } from 'queries/image';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
+import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
 
 export const defaultImageSort = [
@@ -36,6 +37,14 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Image`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => {
+                const url = getConfigMgmtPathForEntitiesAndId('IMAGE', original.id);
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {original.name.fullName}
+                    </TableCellLink>
+                );
+            },
             accessor: 'name.fullName',
             id: imageSortFields.NAME,
             sortField: imageSortFields.NAME,

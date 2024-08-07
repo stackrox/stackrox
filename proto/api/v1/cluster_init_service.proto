@@ -66,7 +66,7 @@ service ClusterInitService {
   // then request will fail with error that includes all impacted clusters.
   rpc RevokeInitBundle(InitBundleRevokeRequest) returns (InitBundleRevokeResponse) {
     option (google.api.http) = {
-      patch: "/v1/cluster-init/init-bundles/revoke",
+      patch: "/v1/cluster-init/init-bundles/revoke"
       body: "*"
     };
   }

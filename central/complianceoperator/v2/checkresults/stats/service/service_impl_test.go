@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -157,7 +158,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 					search.EmptyQuery(),
 				)
 
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
@@ -182,7 +183,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 					search.EmptyQuery(),
 				)
 
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
@@ -204,7 +205,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterScanSta
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -291,7 +292,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceOverallCluster
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -322,7 +323,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 					search.EmptyQuery(),
 				)
 
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
@@ -354,7 +355,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 					search.NewQueryBuilder().AddStrings(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
 				)
 
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
@@ -390,7 +391,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceClusterStats()
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -529,7 +530,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileScanSta
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().ElementsMatch(tc.expectedResp, results.GetScanStats())
+				protoassert.ElementsMatch(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -562,7 +563,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery(),
 					search.EmptyQuery(),
 				)
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultCountByProfile{
@@ -604,7 +605,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 					search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4-node").ProtoQuery(),
 					expectedQ,
 				)
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultCountByProfile{
@@ -651,7 +652,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileStats()
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -684,7 +685,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 					search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
 					search.EmptyQuery(),
 				)
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultCountByProfile{
@@ -727,7 +728,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 					search.NewQueryBuilder().AddExactMatches(search.ClusterID, fixtureconsts.Cluster1).ProtoQuery(),
 					expectedQ,
 				)
-				countQuery := expectedQ.Clone()
+				countQuery := expectedQ.CloneVT()
 				expectedQ.Pagination = &v1.QueryPagination{Limit: maxPaginationLimit}
 
 				results := []*datastore.ResourceResultCountByProfile{
@@ -775,7 +776,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfilesCluste
 			}
 
 			if tc.expectedResp != nil {
-				s.Require().Equal(tc.expectedResp, results.GetScanStats())
+				protoassert.SlicesEqual(s.T(), tc.expectedResp, results.GetScanStats())
 			}
 		})
 	}
@@ -872,7 +873,7 @@ func (s *ComplianceResultsStatsServiceTestSuite) TestGetComplianceProfileCheckSt
 			results, err := s.service.GetComplianceProfileCheckStats(s.ctx, tc.query)
 			if tc.expectedErr == nil {
 				s.Require().NoError(err)
-				s.Require().Equal(tc.expectedResp, results)
+				protoassert.Equal(s.T(), tc.expectedResp, results)
 			} else {
 				s.Require().Error(tc.expectedErr, err)
 				s.Require().Nil(results)

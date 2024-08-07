@@ -19,6 +19,8 @@ const pluginTypeScriptESLint = require('@typescript-eslint/eslint-plugin');
 
 const { browser: browserGlobals, jest: jestGlobals, node: nodeGlobals } = require('globals');
 
+const accessibilityPlugin = require('./eslint-plugins/accessibilityPlugin');
+
 const parserAndOptions = {
     parser: parserTypeScriptESLint,
     parserOptions: {
@@ -36,6 +38,7 @@ module.exports = [
             'coverage/**',
             'react-app-rewired/**',
             'scripts/**',
+            'eslint-plugins/**',
             'src/setupProxy.js',
             'src/setupTests.js',
             'cypress.d.ts',
@@ -533,8 +536,11 @@ module.exports = [
             'jsx-a11y': pluginAccessibility,
             react: pluginReact,
             'react-hooks': pluginReactHooks,
+            accessibilityPlugin,
         },
         rules: {
+            'accessibilityPlugin/require-Alert-component': 'error',
+
             'no-restricted-imports': [
                 'error',
                 {
@@ -695,7 +701,7 @@ module.exports = [
         },
     },
     {
-        files: ['*.js', 'tailwind-plugins/*.js'], // non-product files
+        files: ['*.js', 'eslint-plugins/*.js', 'tailwind-plugins/*.js'], // non-product files
 
         languageOptions: {
             ...parserAndOptions,

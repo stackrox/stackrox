@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.api.model.Namespace
 import io.fabric8.kubernetes.api.model.NamespaceBuilder
 import io.fabric8.kubernetes.api.model.ObjectFieldSelectorBuilder
 import io.fabric8.kubernetes.api.model.ObjectMeta
+import io.fabric8.kubernetes.api.model.OwnerReference
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.PodBuilder
 import io.fabric8.kubernetes.api.model.PodList
@@ -58,7 +59,6 @@ import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder
 import io.fabric8.kubernetes.api.model.apps.DeploymentList
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
 import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
@@ -117,6 +117,17 @@ class Kubernetes implements OrchestratorMain {
     final int maxWaitTimeSeconds = 90
     final int lbWaitTimeSeconds = 600
     final int intervalTime = 1
+    final List<String> trackedDeploymentLikeResources = [
+            "Deployment",
+            "ReplicaSet",
+            "StatefulSet",
+            "DaemonSet",
+            "ReplicationController",
+            "Pod",
+            "CronJob",
+            "Job",
+            "DeploymentConfig",
+    ]
     String namespace
     KubernetesClient client
 
@@ -296,40 +307,6 @@ class Kubernetes implements OrchestratorMain {
         client.pods().inNamespace(ns).withLabels(labels).delete()
     }
 
-    void deleteAllPodsAndWait(String ns, Map<String, String> labels) {
-        log.debug "Will delete all pods in ${ns} with labels ${labels} and wait for deletion"
-
-        List<Pod> beforePods = evaluateWithRetry(2, 3) {
-            client.pods().inNamespace(ns).withLabels(labels).list().getItems()
-        }
-        beforePods.each { pod ->
-            evaluateWithRetry(2, 3) {
-                client.pods().inNamespace(ns).withName(pod.metadata.name).delete()
-            }
-        }
-
-        Timer t = new Timer(30, 5)
-        Boolean allDeleted = false
-        while (!allDeleted && t.IsValid()) {
-            allDeleted = true
-            beforePods.each { deleted ->
-                Pod pod = evaluateWithRetry(2, 3) {
-                    client.pods().inNamespace(ns).withName(deleted.metadata.name).get()
-                }
-                if (pod == null) {
-                    log.debug "${deleted.metadata.name} is deleted"
-                }
-                else {
-                    log.debug "${deleted.metadata.name} is not deleted"
-                    allDeleted = false
-                }
-            }
-        }
-        if (!allDeleted) {
-            throw new OrchestratorManagerException("Gave up trying to delete all pods")
-        }
-    }
-
     Boolean deletePodAndWait(String ns, String name, int retries, int intervalSeconds) {
         deletePod(ns, name, null)
         log.debug "Deleting pod ${name}"
@@ -344,15 +321,6 @@ class Kubernetes implements OrchestratorMain {
             }
         }
         throw new OrchestratorManagerException("Could not delete pod ${ns}/${name}")
-    }
-
-    Boolean restartPodByLabelWithExecKill(String ns, Map<String, String> labels) {
-        Pod pod = getPodsByLabel(ns, labels).get(0)
-        int prevRestartCount = pod.status.containerStatuses.get(0).restartCount
-        def cmds = ["sh", "-c", "kill -15 1"] as String[]
-        execInContainerByPodName(pod.metadata.name, pod.metadata.namespace, cmds)
-        log.debug "Killed pod ${pod.metadata.name}"
-        return waitForPodRestart(pod.metadata.namespace, pod.metadata.name, prevRestartCount, 25, 5)
     }
 
     def restartPodByLabels(String ns, Map<String, String> labels, int retries, int intervalSecond) {
@@ -540,52 +508,6 @@ class Kubernetes implements OrchestratorMain {
                         .inNamespace(deployment.namespace)
                         .withName(podName)
                         .portForward(port)
-    }
-
-    EnvVar getDeploymentEnv(String ns, String name, String key) {
-        def deployment = client.apps().deployments().inNamespace(ns).withName(name).get()
-        if (deployment == null) {
-            throw new OrchestratorManagerException("Did not find deployment ${ns}/${name}")
-        }
-
-        List<EnvVar> envVars = client.apps().deployments().inNamespace(ns).withName(name).get().spec.template
-                .spec.containers.get(0).env
-        int index = envVars.findIndexOf { EnvVar it -> it.name == key }
-        if (index < 0) {
-            throw new OrchestratorManagerException("Did not find env variable ${key} in ${ns}/${name}")
-        }
-        return envVars.get(index)
-    }
-
-    def updateDeploymentEnv(String ns, String name, String key, String value) {
-        log.debug "Update env var in ${ns}/${name}: ${key} = ${value}"
-        List<EnvVar> envVars = client.apps().deployments().inNamespace(ns).withName(name).get().spec.template
-                .spec.containers.get(0).env
-
-        int index = envVars.findIndexOf { EnvVar it -> it.name == key }
-        if (index > -1) {
-            log.debug "Env var ${key} found on index: ${index}"
-            envVars.get(index).value = value
-        }
-        else {
-            log.debug "Env var ${key} not found. Adding it now"
-            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
-        }
-
-        withRetry(2, 3) {
-            client.apps().deployments().inNamespace(ns).withName(name)
-                .edit { d -> new DeploymentBuilder(d)
-                    .editSpec()
-                    .editTemplate()
-                    .editSpec()
-                    .editContainer(0)
-                    .withEnv(envVars)
-                    .endContainer()
-                    .endSpec()
-                    .endTemplate()
-                    .endSpec()
-                .build() }
-        }
     }
 
     def scaleDeployment(String ns, String name, Integer replicas) {
@@ -877,19 +799,43 @@ class Kubernetes implements OrchestratorMain {
 
     Set<String> getStaticPodCount(String ns = null) {
         return evaluateWithRetry(2, 3) {
-            // This method assumes that a static pod name will contain the node name that the pod is running on
-            def nodeNames = client.nodes().list().items.collect { it.metadata.name }
+            // This method assumes that a static pod will either have no OwnerReferences,
+            // it has an owner not tracked by ACS, or
+            // it is a kube-proxy pod with a non-tracked owner.
             Set<String> staticPods = [] as Set
             PodList podList = ns == null ? client.pods().list() : client.pods().inNamespace(ns).list()
             podList.items.each {
-                for (String node : nodeNames) {
-                    if (it.metadata.name.contains(node)) {
-                        staticPods.add(it.metadata.name[0..it.metadata.name.indexOf(node) - 2])
+                if (!isRunning(it)) {
+                    return
+                }
+                if (it.getMetadata().getOwnerReferences().size() > 0) {
+                    if (ownerIsTracked(it.getMetadata()) || !isKubeProxyPod(it)) {
+                        return
                     }
                 }
+                // Sensor tracks all kube-proxy static-pods as one with name `static-kube-proxy-pods`
+                isKubeProxyPod(it) ? staticPods.add("static-kube-proxy-pods") : staticPods.add(it.metadata.name)
             }
             return staticPods
         }
+    }
+
+    static boolean isKubeProxyPod(Pod pod) {
+        String label = pod.getMetadata().getLabels()["component"]
+        return pod.getMetadata().getNamespace() == "kube-system" && label == "kube-proxy"
+    }
+
+    static boolean isRunning(Pod pod) {
+        return pod.getStatus().getPhase() == "Running"
+    }
+
+    boolean ownerIsTracked(ObjectMeta obj) {
+        for (OwnerReference ref in obj.getOwnerReferences()) {
+            if (!trackedDeploymentLikeResources.contains(ref.kind)) {
+                return false
+            }
+        }
+        return true
     }
 
     /*
@@ -1303,9 +1249,11 @@ class Kubernetes implements OrchestratorMain {
         Namespace Methods
      */
 
-    List<objects.Namespace> getNamespaceDetails() {
-        return evaluateWithRetry(2, 3) {
-            return client.namespaces().list().items.collect {
+    objects.Namespace getNamespaceDetailsByName(String name) {
+        def namespaces = evaluateWithRetry(2, 3) {
+            return client.namespaces().list().items.find {
+                it.getMetadata().getName() == name
+            }.collect {
                 new objects.Namespace(
                         uid: it.metadata.uid,
                         name: it.metadata.name,
@@ -1314,12 +1262,14 @@ class Kubernetes implements OrchestratorMain {
                                 getDaemonSetCount(it.metadata.name) +
                                 getStaticPodCount(it.metadata.name) +
                                 getStatefulSetCount(it.metadata.name) +
+                                getCronJobCount(it.metadata.name) +
                                 getJobCount(it.metadata.name),
                         secretsCount: getSecretCount(it.metadata.name),
                         networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
                 )
             }
         }
+        return namespaces.size() == 0 ? null : namespaces[0]
     }
 
     def addNamespaceAnnotation(String ns, String key, String value) {
@@ -1767,6 +1717,14 @@ class Kubernetes implements OrchestratorMain {
             createClusterRoleBinding(generatePspRoleBinding(namespace))
         }
     }
+    /*
+        CronJobs
+     */
+    List<String> getCronJobCount(String ns) {
+        return evaluateWithRetry(2, 3) {
+            return client.batch().v1().cronjobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
+        }
+    }
 
     /*
         Jobs
@@ -1774,7 +1732,9 @@ class Kubernetes implements OrchestratorMain {
 
     List<String> getJobCount(String ns) {
         return evaluateWithRetry(2, 3) {
-            return client.batch().v1().jobs().inNamespace(ns).list().getItems().collect { it.metadata.name }
+            return client.batch().v1().jobs().inNamespace(ns).list().getItems()
+                    .findAll { it.getMetadata().getOwnerReferences().size() == 0 }
+                    .collect { it.metadata.name }
         }
     }
 
@@ -2059,7 +2019,13 @@ class Kubernetes implements OrchestratorMain {
             log.warn("Error while waiting for deployment/populating deployment info: ", e)
         }
         if (!deployment.skipReplicaWait && !deployment.deploymentUid) {
-            throw new OrchestratorManagerException("The deployment did not start or reach replica ready state")
+            String exceptionMsg = "The deployment did not start or reach replica ready state"
+            if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO == "Never") {
+                exceptionMsg += " - if this job uses image prefetch check that this image "+
+                                "is in the jobs prefetch list e.g. qa-tests-backend/scripts/images-to-prefetch.txt"+
+                                " - " + deployment.image
+            }
+            throw new OrchestratorManagerException(exceptionMsg)
         }
     }
 
@@ -2289,6 +2255,12 @@ class Kubernetes implements OrchestratorMain {
                                                      capabilities: new Capabilities(add: deployment.addCapabilities,
                                                                                     drop: deployment.dropCapabilities)),
         )
+        // Allow override of imagePullPolicy for quay.io images. Typically used
+        // to set to Never to help keep the list of quay.io prebuilt images up
+        // to date for image-prefetcher. Why not all images? See ROX-25258.
+        if (Env.IMAGE_PULL_POLICY_FOR_QUAY_IO && deployment.image =~ /^quay.io/) {
+            container.setImagePullPolicy(Env.IMAGE_PULL_POLICY_FOR_QUAY_IO)
+        }
         if (deployment.livenessProbeDefined) {
             Probe livenessProbe = new Probe(
                 exec: new ExecAction(command: ["touch", "/tmp/healthy"]),

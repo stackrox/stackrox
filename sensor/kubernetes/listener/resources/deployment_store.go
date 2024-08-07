@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/sensor/common/imagecacheutils"
+	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/selector"
 	"github.com/stackrox/rox/sensor/common/store"
 )
@@ -147,7 +147,7 @@ func (ds *DeploymentStore) GetAll() []*storage.Deployment {
 	var ret []*storage.Deployment
 	for _, wrap := range ds.deployments {
 		if wrap != nil {
-			ret = append(ret, wrap.GetDeployment().Clone())
+			ret = append(ret, wrap.GetDeployment().CloneVT())
 		}
 	}
 	return ret
@@ -201,7 +201,7 @@ func (ds *DeploymentStore) findDeploymentIDsByImageNoLock(image *storage.Image) 
 	ids := set.NewStringSet()
 	for _, d := range ds.deployments {
 		for _, c := range d.GetContainers() {
-			if imagecacheutils.CompareImageCacheKey(c.GetImage(), image) {
+			if cache.CompareKeys(c.GetImage(), image) {
 				ids.Add(d.GetId())
 				// The deployment id is already the set, we can break here
 				break
@@ -239,7 +239,7 @@ func (ds *DeploymentStore) Get(id string) *storage.Deployment {
 	defer ds.lock.RUnlock()
 
 	wrap := ds.getWrapNoLock(id)
-	return wrap.GetDeployment().Clone()
+	return wrap.GetDeployment().CloneVT()
 }
 
 // GetSnapshot returns the snapshot of the deployment for the supplied id.
@@ -254,7 +254,7 @@ func (ds *DeploymentStore) GetSnapshot(id string) *storage.Deployment {
 		}
 	}
 	wrap := ds.getWrapNoLock(id)
-	return wrap.GetDeployment().Clone()
+	return wrap.GetDeployment().CloneVT()
 }
 
 // GetBuiltDeployment returns a cloned deployment for supplied id and a flag if it is fully built.
@@ -265,7 +265,7 @@ func (ds *DeploymentStore) GetBuiltDeployment(id string) (*storage.Deployment, b
 	if wrap == nil {
 		return nil, false
 	}
-	return wrap.GetDeployment().Clone(), wrap.isBuilt
+	return wrap.GetDeployment().CloneVT(), wrap.isBuilt
 }
 
 // EnhanceDeploymentReadOnly takes a deployment.storage object and enhances it with available information
@@ -327,7 +327,7 @@ func (ds *DeploymentStore) BuildDeploymentWithDependencies(id string, dependenci
 
 	// If it's the first time we are building, or the snapshot is different, then update and clone the deployment
 	ds.addOrUpdateDeploymentNoLock(wrap)
-	clone := wrap.GetDeployment().Clone()
+	clone := wrap.GetDeployment().CloneVT()
 
 	if features.SensorDeploymentBuildOptimization.Enabled() {
 		ds.deploymentSnapshots[clone.GetId()] = snapshotEntry{

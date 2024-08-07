@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/processbaseline/evaluator/mocks"
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -88,7 +89,7 @@ func TestProcessBaselines(t *testing.T) {
 			mockEvaluator := mocks.NewMockEvaluator(mockCtrl)
 			mockEvaluator.EXPECT().EvaluateBaselinesAndPersistResult(deployment).Return(c.violatingProcesses, c.evaluatorErr)
 			result := NewProcessBaselines(mockEvaluator).Score(context.Background(), deployment, nil)
-			assert.ElementsMatch(t, c.expected.GetFactors(), result.GetFactors())
+			protoassert.ElementsMatch(t, c.expected.GetFactors(), result.GetFactors())
 			assert.InDelta(t, c.expected.GetScore(), result.GetScore(), 0.001)
 		})
 	}

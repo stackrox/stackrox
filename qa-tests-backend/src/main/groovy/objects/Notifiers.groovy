@@ -1,7 +1,5 @@
 package objects
 
-import static util.Helpers.withRetry
-
 import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 
@@ -10,6 +8,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.Policy
 
 import common.Constants
 import services.NotifierService
+import util.Helpers
 import util.SplunkUtil
 
 @Slf4j
@@ -86,14 +85,17 @@ class GenericNotifier extends Notifier {
     }
 
     static getMostRecentViolationAndValidateCommonFields() {
-        def get = new URL("http://localhost:8080").openConnection()
+        Object generic = null
         def jsonSlurper = new JsonSlurper()
-        def object = jsonSlurper.parseText(get.getInputStream().getText())
-        def generic = object[-1]
-        assert generic["headers"]["Headerkey"] == ["headervalue"]
-        assert generic["headers"]["Content-Type"] == ["application/json"]
-        assert generic["headers"]["Authorization"] == ["Basic YWRtaW46YWRtaW4="]
-        assert generic["data"]["fieldkey"] == "fieldvalue"
+        Helpers.withRetry(4, 5) {
+            URLConnection get = new URL("http://localhost:8080").openConnection()
+            def object = jsonSlurper.parseText(get.getInputStream().getText())
+            generic = object[-1]
+            assert generic["headers"]["Headerkey"] == ["headervalue"]
+            assert generic["headers"]["Content-Type"] == ["application/json"]
+            assert generic["headers"]["Authorization"] == ["Basic YWRtaW46YWRtaW4="]
+            assert generic["data"]["fieldkey"] == "fieldvalue"
+        }
 
         return generic
     }
@@ -122,22 +124,21 @@ class SlackNotifier extends Notifier {
 class SplunkNotifier extends Notifier {
     def splunkPort
 
-    SplunkNotifier(boolean legacy, String collectorServiceName, int port, String integrationName = "Splunk Test") {
+    SplunkNotifier(String collectorServiceName, int port, String integrationName = "Splunk Test") {
         splunkPort = port
-        notifier = NotifierService.getSplunkIntegrationConfig(legacy, collectorServiceName, integrationName)
+        def hecToken = SplunkUtil.createHECToken(splunkPort)
+        log.info("Using HEC ingest token: ${hecToken}")
+        notifier = NotifierService.getSplunkIntegrationConfig(collectorServiceName, integrationName, hecToken)
     }
 
     def createNotifier() {
-        log.debug "validating splunk deployment is ready to accept events before creating notifier..."
-        withRetry(20, 2) {
-            SplunkUtil.createSearch(splunkPort)
-        }
         notifier = NotifierService.addNotifier(notifier)
     }
 
     void validateViolationNotification(Policy policy, Deployment deployment, boolean strictIntegrationTesting) {
-        def response = SplunkUtil.waitForSplunkAlerts(splunkPort, 30)
+        def response = SplunkUtil.waitForSplunkAlerts(splunkPort, "search sourcetype=stackrox-alert " + policy.name)
 
+        log.info("Verifying data in Splunk")
         assert response.find { it.deployment.id == deployment.deploymentUid }
         assert response.find { it.deployment.name == deployment.name }
         assert response.find { it.deployment.namespace == deployment.namespace }

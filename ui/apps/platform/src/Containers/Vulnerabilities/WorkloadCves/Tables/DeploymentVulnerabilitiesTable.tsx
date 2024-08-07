@@ -69,7 +69,7 @@ function DeploymentVulnerabilitiesTable({
                     <ExpandRowTh />
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <Th>OS</Th>
-                    <Th>CVE severity</Th>
+                    <Th sort={getSortParams('Severity')}>CVE severity</Th>
                     <Th>
                         CVE status
                         {isFiltered && <DynamicColumnIcon />}

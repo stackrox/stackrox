@@ -38,7 +38,7 @@ function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps)
     const {
         data: dataForFetch,
         error: errorForFetch,
-        loading: isFetching,
+        isLoading: isFetching,
         refetch,
     } = useRestQuery(fetchClusterInitBundles);
 
@@ -62,7 +62,7 @@ function InitBundlesPage({ hasWriteAccessForInitBundles }: InitBundlesPageProps)
                     <Alert
                         variant="warning"
                         title="Unable to fetch cluster init bundles"
-                        component="div"
+                        component="p"
                         isInline
                     >
                         {getAxiosErrorMessage(errorForFetch)}

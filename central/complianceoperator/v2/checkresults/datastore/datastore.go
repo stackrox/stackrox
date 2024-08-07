@@ -49,6 +49,9 @@ type DataStore interface {
 
 	// CountByField retrieves the distinct scan result counts specified by query based on specified search field
 	CountByField(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error)
+
+	// WalkByQuery gets one row at a time and applies function per row
+	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.ComplianceOperatorCheckResultV2) error) error
 }
 
 // New returns the datastore wrapper for compliance operator check results

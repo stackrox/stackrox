@@ -59,7 +59,7 @@ func generateEmbeddedComponent(_ string, cp ComponentParts, imageCVEEdges map[st
 	ret := &storage.EmbeddedImageScanComponent{
 		Name:      cp.Component.GetName(),
 		Version:   cp.Component.GetVersion(),
-		License:   cp.Component.GetLicense().Clone(),
+		License:   cp.Component.GetLicense().CloneVT(),
 		Source:    cp.Component.GetSource(),
 		Location:  cp.Edge.GetLocation(),
 		FixedBy:   cp.Component.GetFixedBy(),

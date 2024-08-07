@@ -112,7 +112,12 @@ function MachineAccessIntegrationForm({
     return (
         <>
             {alertRoles && (
-                <Alert title="Fetch roles failed" variant={AlertVariant.warning} isInline>
+                <Alert
+                    title="Fetch roles failed"
+                    component="p"
+                    variant={AlertVariant.warning}
+                    isInline
+                >
                     {alertRoles}
                 </Alert>
             )}

@@ -4,6 +4,7 @@ import capitalize from 'lodash/capitalize';
 import NotApplicableIconText from 'Components/PatternFly/IconText/NotApplicableIconText';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import TableCellLink from 'Components/TableCellLink';
 import searchContext from 'Containers/searchContext';
 import COMPLIANCE_STATES from 'constants/complianceStates';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
@@ -13,6 +14,7 @@ import { standardLabels } from 'messages/standards';
 import { LIST_STANDARD_NO_NODES as QUERY } from 'queries/standard';
 import { sortVersion, sortStatus } from 'sorters/sorters';
 import queryService from 'utils/queryService';
+import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import ListFrontendPaginated from './ListFrontendPaginated';
 
 const tableColumns = [
@@ -32,6 +34,14 @@ const tableColumns = [
         Header: `Control`,
         headerClassName: `w-1/2 ${defaultHeaderClassName}`,
         className: `w-1/2 ${defaultColumnClassName}`,
+        Cell: ({ original, pdf }) => {
+            const url = getConfigMgmtPathForEntitiesAndId('CONTROL', original.id);
+            return (
+                <TableCellLink pdf={pdf} url={url}>
+                    {original.control}
+                </TableCellLink>
+            );
+        },
         accessor: 'control',
         sortMethod: sortVersion,
     },

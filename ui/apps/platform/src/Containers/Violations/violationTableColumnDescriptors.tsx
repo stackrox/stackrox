@@ -1,11 +1,11 @@
 import React, { ReactElement } from 'react';
+import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 import dateFns from 'date-fns';
 import startCase from 'lodash/startCase';
-import { Button, ButtonVariant, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
+import { Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
-import LinkShim from 'Components/PatternFly/LinkShim';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { lifecycleStageLabels } from 'messages/common';
 import {
@@ -89,9 +89,7 @@ const tableColumnDescriptor = [
             const url = `${violationsBasePath}/${original.id as string}`;
             return (
                 <Tooltip content={original?.policy?.description || 'No description available'}>
-                    <Button variant={ButtonVariant.link} isInline component={LinkShim} href={url}>
-                        {original?.policy?.name}
-                    </Button>
+                    <Link to={url}>{original?.policy?.name}</Link>
                 </Tooltip>
             );
         },

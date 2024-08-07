@@ -7,7 +7,7 @@ import (
 
 // ConvertReportConfigurationFromProto converts a `*storage.ReportConfiguration` to Gorm model
 func ConvertReportConfigurationFromProto(obj *storage.ReportConfiguration) (*ReportConfigurations, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func ConvertNotifierConfigurationFromProto(obj *storage.NotifierConfiguration, i
 // ConvertReportConfigurationToProto converts Gorm model `ReportConfigurations` to its protobuf type object
 func ConvertReportConfigurationToProto(m *ReportConfigurations) (*storage.ReportConfiguration, error) {
 	var msg storage.ReportConfiguration
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := msg.UnmarshalVT(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

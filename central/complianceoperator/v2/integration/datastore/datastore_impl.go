@@ -51,7 +51,7 @@ func (ds *datastoreImpl) GetComplianceIntegrationsView(ctx context.Context, quer
 		return nil, err
 	}
 
-	cloned := query.Clone()
+	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.Cluster).Proto(),
 		search.NewQuerySelect(search.ClusterID).Proto(),

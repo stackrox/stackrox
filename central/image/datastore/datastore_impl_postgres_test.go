@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -231,7 +232,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestUpdateVulnStateWithPostgres() {
 	s.NoError(err)
 	s.True(found)
 
-	cloned := image.Clone()
+	cloned := image.CloneVT()
 	cloned.Id = "cloned"
 	s.NoError(s.datastore.UpsertImage(ctx, cloned))
 	_, found, err = s.datastore.GetImage(ctx, cloned.GetId())
@@ -354,7 +355,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 		}
 	}
 	expectedImage := cloneAndUpdateRiskPriority(testImage)
-	s.Equal(expectedImage, storedImage)
+	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Verify that new scan with less components cleans up the old relations correctly.
 	testImage.Scan.ScanTime = protocompat.TimestampNow()
@@ -372,7 +373,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	s.NoError(err)
 	s.True(found)
 	expectedImage = cloneAndUpdateRiskPriority(testImage)
-	s.Equal(expectedImage, storedImage)
+	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Verify orphaned image components are removed.
 	count, err := s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -384,7 +385,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	s.NoError(err)
 	s.ElementsMatch(cveIDsSet.AsSlice(), pkgSearch.ResultsToIDs(results))
 
-	testImage2 := testImage.Clone()
+	testImage2 := testImage.CloneVT()
 	testImage2.Id = "2"
 	s.NoError(s.datastore.UpsertImage(ctx, testImage2))
 	storedImage, found, err = s.datastore.GetImage(ctx, testImage2.GetId())
@@ -398,7 +399,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 		}
 	}
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
-	s.Equal(expectedImage, storedImage)
+	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Verify that number of image components remains unchanged since both images have same components.
 	count, err = s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -418,7 +419,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	s.NoError(err)
 	s.True(found)
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
-	s.Equal(expectedImage, storedImage)
+	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Set all components to contain same cve.
 	for _, component := range testImage2.GetScan().GetComponents() {
@@ -444,7 +445,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 		}
 	}
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
-	s.Equal(expectedImage, storedImage)
+	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Verify orphaned image components are removed.
 	count, err = s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -466,7 +467,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	s.NoError(err)
 	s.True(found)
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
-	s.Equal(expectedImage, storedImage)
+	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Verify orphaned image components are removed.
 	count, err = s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -488,7 +489,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestImageDeletes() {
 	s.NoError(err)
 	s.True(found)
 	expectedImage = cloneAndUpdateRiskPriority(testImage2)
-	s.Equal(expectedImage, storedImage)
+	protoassert.Equal(s.T(), expectedImage, storedImage)
 
 	// Verify no components exist.
 	count, err = s.componentDataStore.Count(ctx, pkgSearch.EmptyQuery())
@@ -515,11 +516,11 @@ func (s *ImagePostgresDataStoreTestSuite) TestGetManyImageMetadata() {
 	testImage1 := fixtures.GetImageWithUniqueComponents(5)
 	s.NoError(s.datastore.UpsertImage(ctx, testImage1))
 
-	testImage2 := testImage1.Clone()
+	testImage2 := testImage1.CloneVT()
 	testImage2.Id = "2"
 	s.NoError(s.datastore.UpsertImage(ctx, testImage2))
 
-	testImage3 := testImage1.Clone()
+	testImage3 := testImage1.CloneVT()
 	testImage3.Id = "3"
 	s.NoError(s.datastore.UpsertImage(ctx, testImage3))
 
@@ -533,7 +534,7 @@ func (s *ImagePostgresDataStoreTestSuite) TestGetManyImageMetadata() {
 	testImage2.Priority = 1
 	testImage3.Scan.Components = nil
 	testImage3.Priority = 1
-	s.ElementsMatch([]*storage.Image{testImage1, testImage2, testImage3}, storedImages)
+	protoassert.ElementsMatch(s.T(), []*storage.Image{testImage1, testImage2, testImage3}, storedImages)
 }
 
 func getTestImage(id string) *storage.Image {
@@ -606,7 +607,7 @@ func getTestImage(id string) *storage.Image {
 }
 
 func cloneAndUpdateRiskPriority(image *storage.Image) *storage.Image {
-	cloned := image.Clone()
+	cloned := image.CloneVT()
 	cloned.Priority = 1
 	for _, component := range cloned.GetScan().GetComponents() {
 		component.Priority = 1

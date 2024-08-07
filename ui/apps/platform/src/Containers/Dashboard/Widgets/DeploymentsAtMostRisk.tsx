@@ -12,11 +12,11 @@ import NoDataEmptyState from './NoDataEmptyState';
 
 function DeploymentsAtMostRisk() {
     const { searchFilter } = useURLSearch();
-    const { data: deployments, loading, error } = useDeploymentsAtRisk(searchFilter);
+    const { data: deployments, isLoading, error } = useDeploymentsAtRisk(searchFilter);
     const urlQueryString = getUrlQueryStringForSearchFilter(searchFilter);
     return (
         <WidgetCard
-            isLoading={loading}
+            isLoading={isLoading}
             error={error}
             header={
                 <Flex direction={{ default: 'row' }}>

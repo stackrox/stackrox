@@ -20,6 +20,7 @@ import { deploymentSortFields } from 'constants/sortFields';
 import { getRatioOfScannedImages } from './deployments.utils';
 import WorkflowListPage from '../WorkflowListPage';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
+import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 
 export const defaultDeploymentSort = [
     {
@@ -45,6 +46,14 @@ export function getCurriedDeploymentTableColumns() {
                 Header: `Deployment`,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${defaultColumnClassName}`,
+                Cell: ({ original, pdf }) => {
+                    const url = getVulnMgmtPathForEntitiesAndId('DEPLOYMENT', original.id);
+                    return (
+                        <TableCellLink pdf={pdf} url={url}>
+                            {original.name}
+                        </TableCellLink>
+                    );
+                },
                 id: deploymentSortFields.DEPLOYMENT,
                 accessor: 'name',
                 sortField: deploymentSortFields.DEPLOYMENT,

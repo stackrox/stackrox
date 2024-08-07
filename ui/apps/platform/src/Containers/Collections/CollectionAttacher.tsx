@@ -76,6 +76,7 @@ function CollectionAttacher({
                     variant="danger"
                     isInline
                     title="There was an error loading more collections"
+                    component="p"
                 >
                     {getAxiosErrorMessage(fetchMoreError)}
                 </Alert>

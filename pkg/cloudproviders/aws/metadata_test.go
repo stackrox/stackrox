@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
+	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +29,7 @@ func TestGetClusterMetadataFromNodeLabels(t *testing.T) {
 	}, metav1.CreateOptions{})
 	require.NoError(t, err)
 
-	doc := &ec2metadata.EC2InstanceIdentityDocument{
+	doc := &imds.InstanceIdentityDocument{
 		Region:    "us-east-1",
 		AccountID: "1234",
 	}

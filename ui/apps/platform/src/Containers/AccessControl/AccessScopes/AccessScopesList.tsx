@@ -52,6 +52,7 @@ function AccessScopesList({
                 setAlertDelete(
                     <Alert
                         title="Delete access scope failed"
+                        component="p"
                         variant={AlertVariant.danger}
                         isInline
                     >

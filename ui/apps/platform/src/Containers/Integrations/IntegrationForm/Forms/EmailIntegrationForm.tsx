@@ -279,6 +279,7 @@ function EmailIntegrationForm({
                                 <Alert
                                     className="pf-v5-u-mt-md"
                                     title="Security Warning"
+                                    component="p"
                                     variant={AlertVariant.warning}
                                     isInline
                                 >

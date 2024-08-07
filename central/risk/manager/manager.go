@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -141,7 +140,7 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 	}
 
 	// No need to insert if it hasn't changed
-	if exists && protocompat.Equal(oldRisk, risk) {
+	if exists && oldRisk.EqualVT(risk) {
 		return
 	}
 

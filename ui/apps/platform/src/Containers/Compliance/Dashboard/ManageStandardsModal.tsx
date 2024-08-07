@@ -126,6 +126,7 @@ function ManageStandardsModal({
             {errorMessage && (
                 <Alert
                     title="Unable to save changes"
+                    component="p"
                     variant="danger"
                     isInline
                     className="pf-v5-u-mt-lg"

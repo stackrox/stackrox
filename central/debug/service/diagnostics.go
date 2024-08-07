@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	concPool "github.com/sourcegraph/conc/pool"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/central/sensor/telemetry"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -46,7 +47,7 @@ func (s *serviceImpl) getK8sDiagnostics(ctx context.Context, zipWriter *zipWrite
 			continue
 		}
 		gatherPool.Go(func(ctx context.Context) ([]k8sintrospect.File, error) {
-			return pullK8sDiagnosticsFilesFromSensor(ctx, clusterName, sensorConn, opts.since)
+			return pullK8sDiagnosticsFilesFromSensor(ctx, clusterName, sensorConn, opts)
 		})
 	}
 
@@ -149,8 +150,7 @@ func createErrorFile(clusterName string, err error) k8sintrospect.File {
 	}
 }
 
-func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, sensorConn connection.SensorConnection,
-	since time.Time) ([]k8sintrospect.File, error) {
+func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, sensorConn connection.SensorConnection, opts debugDumpOptions) ([]k8sintrospect.File, error) {
 	res := &gatherResult{}
 	callback := gatherResultCallback(res, clusterName)
 
@@ -158,7 +158,10 @@ func pullK8sDiagnosticsFilesFromSensor(ctx context.Context, clusterName string, 
 		return []k8sintrospect.File{createErrorFile(clusterName,
 			errors.New("sensor does not support pulling telemetry data"))}, nil
 	}
-	err := sensorConn.Telemetry().PullKubernetesInfo(ctx, callback, since)
+	err := sensorConn.Telemetry().PullKubernetesInfo(ctx, callback, telemetry.PullKubernetesInfoOpts{
+		WithComplianceOperator: opts.withComplianceOperator,
+		Since:                  opts.since,
+	})
 	if err != nil {
 		log.Warnw("Error pulling kubernetes info from sensor", logging.ClusterName(clusterName), logging.Err(err))
 		return []k8sintrospect.File{

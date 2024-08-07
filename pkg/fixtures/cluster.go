@@ -23,7 +23,7 @@ func GetCluster(name string) *storage.Cluster {
 		DynamicConfig: &storage.DynamicClusterConfig{
 			AdmissionControllerConfig: &storage.AdmissionControllerConfig{
 				Enabled:          false,
-				TimeoutSeconds:   20,
+				TimeoutSeconds:   10,
 				ScanInline:       false,
 				DisableBypass:    false,
 				EnforceOnUpdates: false,

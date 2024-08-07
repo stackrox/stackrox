@@ -1,39 +1,64 @@
-## Description
+### Description
 
-A detailed explanation of the changes in your PR.
+<!--
+A detailed explanation of the changes in your PR. Feel free to remove this
+section if the title of your PR is sufficiently descriptive. To learn more
+about contributing to this project, check "*.md" files under:
+    https://github.com/stackrox/stackrox/tree/master/.github
+-->
 
-Feel free to remove this section if it is overkill for your PR, and the title of your PR is sufficiently descriptive.
+change me!
 
-## Checklist
-- [ ] Investigated and inspected CI test results
-- [ ] Unit test and regression tests added
-- [ ] Evaluated and added CHANGELOG entry if required
-- [ ] Determined and documented upgrade steps
-- [ ] Documented user facing changes (create PR based on [openshift/openshift-docs](https://github.com/openshift/openshift-docs) and merge into [rhacs-docs](https://github.com/openshift/openshift-docs/tree/rhacs-docs))
+### User-facing documentation
 
-If any of these don't apply, please comment below.
+- [ ] CHANGELOG is updated **OR** update is not needed
+- [ ] [documentation PR](https://spaces.redhat.com/display/StackRox/Submitting+a+User+Documentation+Pull+Request) is created and is linked above **OR** is not needed
 
-## Testing Performed
+### Testing and quality
 
-### Here I tell how I validated my change
+<!--
+General Availability requirements: https://github.com/stackrox/stackrox/blob/master/PR_GA.md
+Feature Flags usage: https://github.com/stackrox/stackrox/blob/master/pkg/features/README.md
+-->
 
-TODO(replace-me)  
-Use this space to explain **how you validated** that **your change functions exactly how you expect it**.
-Feel free to attach JSON snippets, curl commands, screenshots, etc. Apply a simple benchmark: would the information you
-provided convince any reviewer or any external reader that you did enough to validate your change.
+- [ ] the change is production ready: the change is GA or otherwise the functionality is gated by a feature flag
+- [ ] CI results are inspected
 
-It is acceptable to assume trust and keep this section light, e.g. as a bullet-point list.
+#### Automated testing
 
-It is acceptable to skip testing in cases when CI is sufficient, or it's a markdown or code comment change only.  
-It is also acceptable to skip testing for changes that are too taxing to test before merging. In such case you are
-responsible for the change after it gets merged which includes reverting, fixing, etc. Make sure you validate the change
-ASAP after it gets merged or explain in PR when the validation will be performed.  
-Explain here why you skipped testing in case you did so.
+<!--
+If no tests have been contributed, please explain why unless it's obvious,
+e.g., the PR is a one-line comment change.
+-->
 
-Have you created automated tests for your change? Explain here which validation activities you did manually and why so.
+- [ ] added unit tests
+- [ ] added e2e tests
+- [ ] added regression tests
+- [ ] added compatibility tests
+- [ ] modified existing tests
 
-### Reminder for reviewers
+#### How I validated my change
 
-In addition to reviewing code here, reviewers **must** also review testing and request further testing in case the
-performed one does not seem sufficient. As a reviewer, you must not approve the change until you understand the
-performed testing and you are satisfied with it.
+<!--
+Use this space to explain **how you validated** that **your change functions
+exactly how you expect it**. Feel free to attach JSON snippets, curl commands,
+screenshots, etc. Apply a simple benchmark: would the information you provided
+convince any reviewer or any external reader that you did enough to validate
+your change.
+
+It is acceptable to assume trust and keep this section light, e.g. as a
+bullet-point list.
+
+It is acceptable to skip testing in cases when CI is sufficient, or it's a
+markdown or code comment change only. It is also acceptable to skip testing for
+changes that are too taxing to test before merging. In such case you are
+responsible for the change after it gets merged which includes reverting,
+fixing, etc. Make sure you validate the change ASAP after it gets merged or
+explain in PR when the validation will be performed. Explain here why you
+skipped testing in case you did so.
+
+Have you created automated tests for your change? Explain here which validation
+activities you did manually and why so.
+-->
+
+change me!

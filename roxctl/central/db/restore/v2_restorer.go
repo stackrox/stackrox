@@ -20,7 +20,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/ioutils"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
@@ -352,7 +351,7 @@ func (r *v2Restorer) initNewProcess(ctx context.Context, file *os.File) (*http.R
 		},
 	}
 
-	headerBytes, err := protocompat.Marshal(header)
+	headerBytes, err := header.MarshalVT()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not marshal restore header")
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -57,7 +58,7 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestReportsConfigDataStore()
 	foundReportConfig, found, err := s.datastore.GetReportConfiguration(s.ctx, reportConfig.GetId())
 	s.Require().NoError(err)
 	s.True(found)
-	s.Equal(reportConfig, foundReportConfig)
+	protoassert.Equal(s.T(), reportConfig, foundReportConfig)
 
 	// Test search by name
 	query := search.NewQueryBuilder().AddStrings(search.ReportName, reportConfig.Name).ProtoQuery()
@@ -113,7 +114,7 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers(
 	foundReportConfig, found, err := s.datastore.GetReportConfiguration(s.ctx, reportConfig.GetId())
 	s.Require().NoError(err)
 	s.True(found)
-	s.Equal(reportConfig, foundReportConfig)
+	protoassert.Equal(s.T(), reportConfig, foundReportConfig)
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
@@ -135,7 +136,7 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
 	foundReportConfig, found, err := s.datastore.GetReportConfiguration(s.ctx, reportConfig.GetId())
 	s.Require().NoError(err)
 	s.True(found)
-	s.Equal(reportConfig, foundReportConfig)
+	protoassert.Equal(s.T(), reportConfig, foundReportConfig)
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) truncateTable(name string) {

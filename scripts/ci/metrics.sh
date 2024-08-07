@@ -272,6 +272,9 @@ batch_load_test_metrics() {
         info "one image prefetches batch processed"
     done
     info "done loading"
+    if [ -f error ]; then
+       die "ERROR during loading one or more batch has failed"
+    fi
 }
 
 _load_one_batch() {
@@ -310,6 +313,7 @@ _load_one_batch() {
         gsutil -m mv "${process_location}" "${storage_done}/"
     else
         info "ERROR processing the batch, leaving in ${process_location}"
+        touch error
     fi
 
     return 0

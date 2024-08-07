@@ -51,6 +51,7 @@ function PermissionSetsList({
                 setAlertDelete(
                     <Alert
                         title="Delete permission set failed"
+                        component="p"
                         variant={AlertVariant.danger}
                         isInline
                     >

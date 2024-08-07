@@ -24,4 +24,10 @@ var (
 	// response body. This timeout must not be chosen too large because it serves
 	// as a connection timeout for proxied registries.
 	RegistryClientTimeout = registerDurationSetting("ROX_REGISTRY_CLIENT_TIMEOUT", 10*time.Second)
+
+	// DedupeImageIntegrations when enabled will lead to deduping registry integrations
+	// in cases where the URL and other relevant configuration for accessing the registry such
+	// as the username, password are duplicated across integrations. This will lead to less
+	// registry calls being made during scanning by ACS.
+	DedupeImageIntegrations = RegisterBooleanSetting("ROX_DEDUPE_IMAGE_INTEGRATIONS", true)
 )

@@ -1,15 +1,6 @@
 import React from 'react';
 import { Link, generatePath } from 'react-router-dom';
-import {
-    Flex,
-    List,
-    ListItem,
-    Text,
-    pluralize,
-    Button,
-    FlexItem,
-    Alert,
-} from '@patternfly/react-core';
+import { Flex, List, ListItem, Text, Button, FlexItem, Alert } from '@patternfly/react-core';
 import { MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
@@ -36,13 +27,18 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
     return (
         <>
             <div className="pf-v5-u-mb-md">
-                <Alert title="Include or exclude selected CVEs" variant="info" isInline>
+                <Alert
+                    title="Include or exclude selected CVEs"
+                    component="p"
+                    variant="info"
+                    isInline
+                >
                     You currently have ({selectedCVEIds.length}) selected. Review your selection
                     below.
                 </Alert>
             </div>
             <List isPlain isBordered>
-                {cves.map(({ cve, summary, numAffectedImages }) => {
+                {cves.map(({ cve, summary }) => {
                     const isSelected = selectedCVEIds.includes(cve);
                     return (
                         <ListItem
@@ -61,7 +57,6 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
                                             {cve}
                                         </Link>
                                     </ExternalLink>
-                                    <Text>Across {pluralize(numAffectedImages, 'image')}</Text>
                                     <FlexItem align={{ default: 'alignRight' }}>
                                         {isSelected ? (
                                             <Button

@@ -40,6 +40,7 @@ type Store interface {
 	Delete(ctx context.Context, id string) error
 	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
+	PruneMany(ctx context.Context, identifiers []string) error
 
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Exists(ctx context.Context, id string) (bool, error)
@@ -92,7 +93,7 @@ func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
 
 func insertIntoClusterInitBundles(batch *pgx.Batch, obj *storage.InitBundleMeta) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -131,7 +132,7 @@ func copyFromClusterInitBundles(ctx context.Context, s pgSearch.Deleter, tx *pos
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 			"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}

@@ -4,6 +4,7 @@ import { gql } from '@apollo/client';
 import { Button } from '@patternfly/react-core';
 
 import ImageActiveIconText from 'Components/PatternFly/IconText/ImageActiveIconText';
+import TableCellLink from 'Components/TableCellLink';
 import TopCvssLabel from 'Components/TopCvssLabel';
 import ImageTableCountLinks from 'Components/workflow/ImageTableCountLinks';
 import CVEStackedPill from 'Components/CVEStackedPill';
@@ -27,6 +28,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import queryService from 'utils/queryService';
 import WatchedImagesDialog from './WatchedImagesDialog';
 import WorkflowListPage from '../WorkflowListPage';
+import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 
 export const defaultImageSort = [
     {
@@ -48,6 +50,14 @@ export function getCurriedImageTableColumns(watchedImagesTrigger, isFeatureFlagE
                 Header: `Image`,
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 word-break-all ${defaultColumnClassName}`,
+                Cell: ({ original, pdf }) => {
+                    const url = getVulnMgmtPathForEntitiesAndId('IMAGE', original.id);
+                    return (
+                        <TableCellLink pdf={pdf} url={url}>
+                            {original.name.fullName}
+                        </TableCellLink>
+                    );
+                },
                 id: imageSortFields.NAME,
                 accessor: 'name.fullName',
                 sortField: imageSortFields.NAME,

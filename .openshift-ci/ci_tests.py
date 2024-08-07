@@ -40,7 +40,6 @@ class NullTest(BaseTest):
 class UpgradeTest(BaseTest):
     TEST_TIMEOUT = 60 * 60 * 2
     TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
-    TEST_LEGACY_OUTPUT_DIR = "/tmp/legacy-postgres-upgrade-test-logs"
     TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
 
     def run(self):
@@ -57,15 +56,6 @@ class UpgradeTest(BaseTest):
             [
                 "tests/upgrade/postgres_sensor_run.sh",
                 UpgradeTest.TEST_SENSOR_OUTPUT_DIR,
-            ],
-            UpgradeTest.TEST_TIMEOUT,
-            post_start_hook=set_dirs_after_start,
-        )
-
-        self.run_with_graceful_kill(
-            [
-                "tests/upgrade/legacy_to_postgres_run.sh",
-                UpgradeTest.TEST_LEGACY_OUTPUT_DIR,
             ],
             UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
@@ -108,13 +98,15 @@ class OperatorE2eTest(BaseTest):
             )
             print("Removing unused catalog source(s)")
             self.run_with_graceful_kill(
-                ["kubectl", "delete", "catalogsource.operators.coreos.com", "--namespace=olm", "--all"],
+                ["kubectl", "delete", "catalogsource.operators.coreos.com",
+                    "--namespace=olm", "--all"],
                 OperatorE2eTest.OLM_SETUP_TIMEOUT_SEC,
             )
             olm_ns = "olm"
         print("Bouncing catalog operator pod to clear its cache")
         self.run_with_graceful_kill(
-            ["kubectl", "delete", "pods", f"--namespace={olm_ns}", "--selector", "app=catalog-operator", "--now=true"],
+            ["kubectl", "delete", "pods",
+                f"--namespace={olm_ns}", "--selector", "app=catalog-operator", "--now=true"],
             OperatorE2eTest.OLM_SETUP_TIMEOUT_SEC,
         )
 
@@ -276,13 +268,19 @@ class ScaleTest(BaseTest):
 
 class ScannerV4Test(BaseTest):
     TEST_TIMEOUT = 240 * 60
+    TEST_OUTPUT_DIR = "/tmp/scanner-v4-logs"
 
     def run(self):
         print("Executing the ScannerV4 Test")
 
+        def set_dirs_after_start():
+            # let post test know where results are
+            self.test_outputs = [ScannerV4Test.TEST_OUTPUT_DIR]
+
         self.run_with_graceful_kill(
-            ["tests/e2e/run-scanner-v4.sh"],
+            ["tests/e2e/run-scanner-v4.sh", ScannerV4Test.TEST_OUTPUT_DIR],
             ScannerV4Test.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
         )
 
 

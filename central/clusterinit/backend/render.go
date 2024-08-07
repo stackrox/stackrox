@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -138,8 +139,8 @@ func (b *InitBundleWithMeta) RenderAsK8sSecrets() ([]byte, error) {
 				Name: serviceTypeStr + "-tls",
 				Annotations: map[string]string{
 					"init-bundle.stackrox.io/name":       b.Meta.GetName(),
-					"init-bundle.stackrox.io/created-at": b.Meta.GetCreatedAt().String(),
-					"init-bundle.stackrox.io/expires-at": b.Meta.GetExpiresAt().String(),
+					"init-bundle.stackrox.io/created-at": b.Meta.GetCreatedAt().AsTime().Format(time.RFC3339Nano),
+					"init-bundle.stackrox.io/expires-at": b.Meta.GetExpiresAt().AsTime().Format(time.RFC3339Nano),
 					"init-bundle.stackrox.io/id":         b.Meta.GetId(),
 				},
 			},

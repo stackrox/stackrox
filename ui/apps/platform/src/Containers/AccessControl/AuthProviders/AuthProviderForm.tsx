@@ -291,7 +291,7 @@ function AuthProviderForm({
             <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2">{formTitle}</Title>
+                        <Title headingLevel="h1">{formTitle}</Title>
                     </ToolbarItem>
                     {action !== 'create' && (
                         <ToolbarItem>
@@ -372,7 +372,7 @@ function AuthProviderForm({
                 </ToolbarContent>
             </Toolbar>
             {saveAuthProviderStatus?.status === 'error' && (
-                <Alert isInline variant="danger" title="Problem saving auth provider">
+                <Alert isInline variant="danger" title="Problem saving auth provider" component="p">
                     <p>{saveAuthProviderStatus?.message}</p>
                 </Alert>
             )}
@@ -388,6 +388,7 @@ function AuthProviderForm({
                                 is working properly.
                             </span>
                         }
+                        component="p"
                     />
                 )}
             {selectedAuthProvider.active && (
@@ -401,6 +402,7 @@ function AuthProviderForm({
                             delete and recreate.
                         </span>
                     }
+                    component="p"
                 />
             )}
             {getIsAuthProviderImmutable(selectedAuthProvider) && (
@@ -413,10 +415,11 @@ function AuthProviderForm({
                             rules.
                         </span>
                     }
+                    component="p"
                 />
             )}
             <FormikProvider value={formik}>
-                <FormSection title="Configuration" titleElement="h3" className="pf-v5-u-mt-0">
+                <FormSection title="Configuration" titleElement="h2" className="pf-v5-u-mt-0">
                     <Grid hasGutter>
                         <GridItem span={12} lg={6}>
                             <FormGroup label="Name" fieldId="name" isRequired>
@@ -475,7 +478,7 @@ function AuthProviderForm({
                 </FormSection>
                 <FormSection
                     title={`Assign roles to your ${selectedAuthProvider.type} users`}
-                    titleElement="h3"
+                    titleElement="h2"
                 >
                     <FormGroup
                         className="pf-v5-u-w-100 pf-v5-u-w-75-on-md pf-v5-u-w-50-on-lg"
@@ -500,6 +503,7 @@ function AuthProviderForm({
                             variant="info"
                             title="Note: the minimum access role is granted to all users who sign in with
                                 this authentication provider."
+                            component="p"
                         >
                             <p>
                                 To give users different roles, add rules. Users are granted all
@@ -514,13 +518,14 @@ function AuthProviderForm({
                     {selectedAuthProvider.type === 'oidc' && (
                         <FormSection
                             title="Required attributes for the authentication provider"
-                            titleElement="h3"
+                            titleElement="h2"
                         >
                             <Alert
                                 isInline
                                 variant="info"
                                 title="Note: the required attributes are used to require attributes being
                                     returned from the authentication provider."
+                                component="p"
                             >
                                 <p>
                                     In case a required attribute is not returned from the
@@ -631,12 +636,13 @@ function AuthProviderForm({
                     {selectedAuthProvider.type === 'oidc' && (
                         <FormSection
                             title="Claim mappings for the authentication provider"
-                            titleElement="h3"
+                            titleElement="h2"
                         >
                             <Alert
                                 isInline
                                 variant="info"
                                 title="Note: the claim mappings are used to map claims returned in underlying identity provider's token to ACS token."
+                                component="p"
                             >
                                 <p>
                                     In case claim mapping is not configured for a certain claim,
@@ -735,7 +741,7 @@ function AuthProviderForm({
                             />
                         </FormSection>
                     )}
-                    <FormSection title="Rules" titleElement="h3" className="pf-v5-u-mt-0">
+                    <FormSection title="Rules" titleElement="h2" className="pf-v5-u-mt-0">
                         <RuleGroups
                             authProviderId={selectedAuthProvider.id}
                             groups={values.groups}

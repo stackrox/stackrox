@@ -31,25 +31,31 @@ import (
 )
 
 const (
-	saAnnotation = "kubernetes.io/service-account.name"
-	defaultSA    = "default"
+	defaultSA = "default"
 
 	openshiftConfigNamespace  = "openshift-config"
 	openshiftConfigPullSecret = "pull-secret"
 )
 
-var dataTypeMap = map[string]storage.SecretType{
-	"-----BEGIN CERTIFICATE-----":              storage.SecretType_PUBLIC_CERTIFICATE,
-	"-----BEGIN NEW CERTIFICATE REQUEST-----":  storage.SecretType_CERTIFICATE_REQUEST,
-	"-----BEGIN PRIVACY-ENHANCED MESSAGE-----": storage.SecretType_PRIVACY_ENHANCED_MESSAGE,
-	"-----BEGIN OPENSSH PRIVATE KEY-----":      storage.SecretType_OPENSSH_PRIVATE_KEY,
-	"-----BEGIN PGP PRIVATE KEY BLOCK-----":    storage.SecretType_PGP_PRIVATE_KEY,
-	"-----BEGIN EC PRIVATE KEY-----":           storage.SecretType_EC_PRIVATE_KEY,
-	"-----BEGIN RSA PRIVATE KEY-----":          storage.SecretType_RSA_PRIVATE_KEY,
-	"-----BEGIN DSA PRIVATE KEY-----":          storage.SecretType_DSA_PRIVATE_KEY,
-	"-----BEGIN PRIVATE KEY-----":              storage.SecretType_CERT_PRIVATE_KEY,
-	"-----BEGIN ENCRYPTED PRIVATE KEY-----":    storage.SecretType_ENCRYPTED_PRIVATE_KEY,
-}
+var (
+	saAnnotations = []string{
+		"kubernetes.io/service-account.name",
+		"openshift.io/internal-registry-auth-token.service-account",
+	}
+
+	dataTypeMap = map[string]storage.SecretType{
+		"-----BEGIN CERTIFICATE-----":              storage.SecretType_PUBLIC_CERTIFICATE,
+		"-----BEGIN NEW CERTIFICATE REQUEST-----":  storage.SecretType_CERTIFICATE_REQUEST,
+		"-----BEGIN PRIVACY-ENHANCED MESSAGE-----": storage.SecretType_PRIVACY_ENHANCED_MESSAGE,
+		"-----BEGIN OPENSSH PRIVATE KEY-----":      storage.SecretType_OPENSSH_PRIVATE_KEY,   // notsecret
+		"-----BEGIN PGP PRIVATE KEY BLOCK-----":    storage.SecretType_PGP_PRIVATE_KEY,       // notsecret
+		"-----BEGIN EC PRIVATE KEY-----":           storage.SecretType_EC_PRIVATE_KEY,        // notsecret
+		"-----BEGIN RSA PRIVATE KEY-----":          storage.SecretType_RSA_PRIVATE_KEY,       // notsecret
+		"-----BEGIN DSA PRIVATE KEY-----":          storage.SecretType_DSA_PRIVATE_KEY,       // notsecret
+		"-----BEGIN PRIVATE KEY-----":              storage.SecretType_CERT_PRIVATE_KEY,      // notsecret
+		"-----BEGIN ENCRYPTED PRIVATE KEY-----":    storage.SecretType_ENCRYPTED_PRIVATE_KEY, // notsecret
+	}
+)
 
 func getSecretType(data string) storage.SecretType {
 	data = strings.TrimSpace(data)
@@ -251,7 +257,14 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	sensorEvents := make([]*central.SensorEvent, 0, len(dockerConfig)+1)
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
 
-	saName := secret.GetAnnotations()[saAnnotation]
+	var saName string
+	for _, saAnnotation := range saAnnotations {
+		if name, ok := secret.GetAnnotations()[saAnnotation]; ok {
+			saName = name
+			break
+		}
+	}
+
 	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
 	// The default service account always contains an API token.
 	// In OpenShift, the default service account also contains credentials for the
@@ -260,20 +273,25 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	isGlobalPullSecret := secret.GetNamespace() == openshiftConfigNamespace && secret.GetName() == openshiftConfigPullSecret
 
 	newIntegrationSet := set.NewStringSet()
-	for registry, dce := range dockerConfig {
+	for registryAddress, dce := range dockerConfig {
+		registryAddr := strings.TrimSpace(registryAddress)
+		if registryAddr != registryAddress {
+			log.Warnf("Spaces have been trimmed from registry adress %q found in secret %s/%s",
+				registryAddress, secret.GetNamespace(), secret.GetName())
+		}
 		if fromDefaultSA {
 			// Store the registry credentials so Sensor can reach it.
-			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
+			err := s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registryAddr, dce)
 			if err != nil {
-				log.Errorf("Unable to upsert registry %q into store: %v", registry, err)
+				log.Errorf("Unable to upsert registry %q into store: %v", registryAddr, err)
 			}
 
-			s.regStore.AddClusterLocalRegistryHost(registry)
+			s.regStore.AddClusterLocalRegistryHost(registryAddr)
 
 		} else if saName == "" {
 			// only send integrations to central that do not have the k8s SA annotation
 			// this will ignore secrets associated with OCP builder, deployer, etc. service accounts
-			ii, err := DockerConfigToImageIntegration(secret, registry, dce)
+			ii, err := DockerConfigToImageIntegration(secret, registryAddr, dce)
 			if err != nil {
 				log.Errorf("unable to create docker config for secret %s: %v", secret.GetName(), err)
 			} else if !managedcentral.IsCentralManaged() {
@@ -304,18 +322,18 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 				// as namespace + secret name + registry.
 				var err error
 				if isGlobalPullSecret {
-					err = s.regStore.UpsertGlobalRegistry(context.Background(), registry, dce)
+					err = s.regStore.UpsertGlobalRegistry(context.Background(), registryAddr, dce)
 				} else {
-					err = s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registry, dce)
+					err = s.regStore.UpsertRegistry(context.Background(), secret.GetNamespace(), registryAddr, dce)
 				}
 				if err != nil {
-					log.Errorf("unable to upsert registry %q into store: %v", registry, err)
+					log.Errorf("unable to upsert registry %q into store: %v", registryAddr, err)
 				}
 			}
 		}
 
 		registries = append(registries, &storage.ImagePullSecret_Registry{
-			Name:     registry,
+			Name:     registryAddr,
 			Username: dce.Username,
 		})
 	}
@@ -393,16 +411,6 @@ func (s *secretDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	oldSecret, ok := oldObj.(*v1.Secret)
 	if !ok {
 		oldSecret = nil
-	}
-
-	parsedID := string(secret.GetUID())
-	switch action {
-	case central.ResourceAction_SYNC_RESOURCE, central.ResourceAction_CREATE_RESOURCE:
-		s.regStore.AddSecretID(parsedID)
-	case central.ResourceAction_REMOVE_RESOURCE:
-		if !s.regStore.RemoveSecretID(parsedID) {
-			log.Warnf("Should have secret (%s:%s) in registryStore known IDs but ID wasn't found", secret.GetName(), parsedID)
-		}
 	}
 
 	switch secret.Type {

@@ -12,5 +12,5 @@ var (
 
 // GetPolicyCategory returns a mock category
 func GetPolicyCategory() *storage.PolicyCategory {
-	return category.Clone()
+	return category.CloneVT()
 }

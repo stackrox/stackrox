@@ -65,6 +65,7 @@ const DeploymentDetails = ({ deployment }) => {
                     variant="warning"
                     isInline
                     title="This data is a snapshot of a deployment that no longer exists"
+                    component="p"
                 />
             )}
             <div className="px-3 pt-5">

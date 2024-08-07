@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/features"
 )
 
 var (
@@ -71,9 +70,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			return err
 		}
 		go s.cveFetcher.HandleClusterConnection()
-		if features.CloudSources.Enabled() {
-			s.cloudSourcesManager.MarkClusterSecured(clusterID)
-		}
+		s.cloudSourcesManager.MarkClusterSecured(clusterID)
 		return nil
 	default:
 		return errors.Errorf("unknown cluster status update message type %T", m)
@@ -82,7 +79,5 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 func (s *pipelineImpl) OnFinish(clusterID string) {
 	s.deploymentEnvsMgr.MarkClusterInactive(clusterID)
-	if features.CloudSources.Enabled() {
-		s.cloudSourcesManager.MarkClusterUnsecured(clusterID)
-	}
+	s.cloudSourcesManager.MarkClusterUnsecured(clusterID)
 }

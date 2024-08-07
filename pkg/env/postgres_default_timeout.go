@@ -19,4 +19,7 @@ var (
 
 	// PostgresDefaultNetworkFlowQueryTimeout sets the default timeout for querying network flows
 	PostgresDefaultNetworkFlowQueryTimeout = registerDurationSetting("ROX_POSTGRES_NETWORK_FLOW_QUERY_TIMEOUT", 3*time.Minute)
+
+	// PostgresDefaultPruningStatementTimeout sets the default timeout for pruning operations
+	PostgresDefaultPruningStatementTimeout = registerDurationSetting("ROX_POSTGRES_DEFAULT_PRUNING_TIMEOUT", 3*time.Minute)
 )

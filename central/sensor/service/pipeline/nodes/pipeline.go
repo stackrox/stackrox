@@ -91,7 +91,7 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return p.processRemove(ctx, node.GetId())
 	}
 
-	node = node.Clone()
+	node = node.CloneVT()
 	node.ClusterId = clusterID
 	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
 	if err == nil && ok {

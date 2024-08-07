@@ -4,6 +4,11 @@
     "title": "api/v2/compliance_integration_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "ComplianceIntegrationService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -25,83 +30,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "query",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "pagination.offset",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "pagination.sortOption.field",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pagination.sortOption.reversed",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "pagination.sortOption.aggregateBy.aggrFunc",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "UNSET",
-              "COUNT",
-              "MIN",
-              "MAX"
-            ],
-            "default": "UNSET"
-          },
-          {
-            "name": "pagination.sortOption.aggregateBy.distinct",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          }
-        ],
-        "tags": [
-          "ComplianceIntegrationService"
-        ]
-      }
-    },
-    "/v2/compliance/integrations/count": {
-      "get": {
-        "summary": "GetComplianceIntegrationsCount returns the number of compliance operator integrations\nmatching the given query",
-        "operationId": "ComplianceIntegrationService_GetComplianceIntegrationsCount",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2CountComplianceIntegrationsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -168,21 +97,15 @@
     "protobufAny": {
       "type": "object",
       "properties": {
-        "typeUrl": {
+        "@type": {
           "type": "string"
-        },
-        "value": {
-          "type": "string",
-          "format": "byte"
         }
-      }
+      },
+      "additionalProperties": {}
     },
-    "runtimeError": {
+    "rpcStatus": {
       "type": "object",
       "properties": {
-        "error": {
-          "type": "string"
-        },
         "code": {
           "type": "integer",
           "format": "int32"
@@ -193,6 +116,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
@@ -292,22 +216,13 @@
       },
       "title": "Next Tag: 11"
     },
-    "v2CountComplianceIntegrationsResponse": {
-      "type": "object",
-      "properties": {
-        "count": {
-          "type": "integer",
-          "format": "int32"
-        }
-      },
-      "title": "CountComplianceIntegrationsResponse gives count of compliance integrations"
-    },
     "v2ListComplianceIntegrationsResponse": {
       "type": "object",
       "properties": {
         "integrations": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ComplianceIntegration"
           }
         },
@@ -334,6 +249,7 @@
         "sortOptions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2SortOption"
           },
           "description": "This field is under development. It is not supported on any REST APIs."

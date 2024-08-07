@@ -10,6 +10,7 @@ import (
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
@@ -46,7 +47,7 @@ func RunSelectRequestForSchema[T any](ctx context.Context, db postgres.DB, schem
 	if query == nil {
 		return nil, nil
 	}
-	return pgutils.Retry2(func() ([]*T, error) {
+	return pgutils.Retry2(ctx, func() ([]*T, error) {
 		return retryableRunSelectRequestForSchema[T](ctx, db, query)
 	})
 }
@@ -64,6 +65,13 @@ func standardizeSelectQueryAndPopulatePath(ctx context.Context, q *v1.Query, sch
 	innerJoins, dbFields := getJoinsAndFields(schema, q)
 	if len(q.GetSelects()) == 0 && q.GetQuery() == nil {
 		return nil, nil
+	}
+
+	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
+		innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	parsedQuery := &query{

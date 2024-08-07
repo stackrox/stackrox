@@ -254,7 +254,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		return err
 	}
 
-	hasIndicatorsQuery := clusterQuery.Clone()
+	hasIndicatorsQuery := clusterQuery.CloneVT()
 	hasIndicatorsQuery.Pagination.Limit = 1
 	result, err := f.processIndicatorStore.Search(ctx, hasIndicatorsQuery)
 	if err != nil {
@@ -315,7 +315,7 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return err
 	}
 

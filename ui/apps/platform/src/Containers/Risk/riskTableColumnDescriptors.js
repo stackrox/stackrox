@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import find from 'lodash/find';
@@ -7,6 +8,7 @@ import { Tooltip } from '@patternfly/react-core';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { sortValue, sortDate } from 'sorters/sorters';
+import { riskBasePath } from 'routePaths';
 
 function DeploymentNameColumn({ original }) {
     const isSuspicious = find(original.baselineStatuses, {
@@ -22,7 +24,7 @@ function DeploymentNameColumn({ original }) {
                 )}
                 {!isSuspicious && <Icon.Circle className="h-2 w-2" />}
             </span>
-            {original.deployment.name}
+            <Link to={`${riskBasePath}/${original.deployment.id}`}>{original.deployment.name}</Link>
         </div>
     );
 }
@@ -30,6 +32,7 @@ function DeploymentNameColumn({ original }) {
 DeploymentNameColumn.propTypes = {
     original: PropTypes.shape({
         deployment: PropTypes.shape({
+            id: PropTypes.string.isRequired,
             name: PropTypes.string.isRequired,
         }).isRequired,
         baselineStatuses: PropTypes.arrayOf(PropTypes.object).isRequired,

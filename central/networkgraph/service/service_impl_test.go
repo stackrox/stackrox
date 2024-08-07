@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
@@ -537,7 +538,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 		},
 	}
 
-	s.Require().ElementsMatch(fooBarDeploymentsOrdered, fooBarDeploymentsShuffled)
+	protoassert.ElementsMatch(s.T(), fooBarDeploymentsOrdered, fooBarDeploymentsShuffled)
 
 	fooBarBazDeploymentsOrdered := []*storage.ListDeployment{
 		{
@@ -605,7 +606,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 		},
 	}
 
-	s.Require().ElementsMatch(fooBarBazDeploymentsOrdered, fooBarBazDeploymentsShuffled)
+	protoassert.ElementsMatch(s.T(), fooBarBazDeploymentsOrdered, fooBarBazDeploymentsShuffled)
 
 	maskedDeploymentsOrdered := []*storage.ListDeployment{
 		{
@@ -655,7 +656,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 		// depY was deleted
 	}
 
-	s.Require().ElementsMatch(maskedDeploymentsOrdered, maskedDeploymentsShuffled)
+	protoassert.ElementsMatch(s.T(), maskedDeploymentsOrdered, maskedDeploymentsShuffled)
 
 	flowsOrdered := []*storage.NetworkFlow{
 		depFlow("depA", "depB"),
@@ -751,7 +752,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 		anyFlow(es3ID.String(), storage.NetworkEntityInfo_EXTERNAL_SOURCE, "depD", storage.NetworkEntityInfo_DEPLOYMENT),
 	}
 
-	s.Require().ElementsMatch(flowsOrdered, flowsShuffled)
+	protoassert.ElementsMatch(s.T(), flowsOrdered, flowsShuffled)
 
 	expected := []string{
 		"foo/depA <- foo/depB",
@@ -1110,7 +1111,7 @@ func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withLis
 			flowStrings = append(flowStrings, flowAsString(src, dst))
 		}
 
-		s.ElementsMatch(srcDeploy.GetListenPorts(), expectedListenPorts[node.GetEntity().GetId()])
+		protoassert.ElementsMatch(s.T(), srcDeploy.GetListenPorts(), expectedListenPorts[node.GetEntity().GetId()])
 	}
 
 	expected := []string{
@@ -1239,7 +1240,7 @@ func (s *NetworkGraphServiceTestSuite) TestPatchExternalNetworkEntity() {
 	actual, err := s.tested.PatchExternalNetworkEntity(ctx, patch)
 	s.NoError(err)
 	entity.Info.GetExternalSource().Name = "newcidr"
-	s.Equal(entity, actual)
+	protoassert.Equal(s.T(), entity, actual)
 
 	// Not found
 	s.entities.EXPECT().GetEntity(ctx, entity.GetInfo().GetId()).Return(nil, false, nil)

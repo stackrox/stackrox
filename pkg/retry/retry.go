@@ -1,6 +1,7 @@
 package retry
 
 import (
+	"context"
 	"math"
 	"time"
 )
@@ -43,11 +44,17 @@ func BetweenAttempts(between func(previousAttemptNumber int)) OptionsModifier {
 	return func(o *retryOptions) { o.between = between }
 }
 
+// WithContext allows providing a context that will be checked for expiry once per attempt.
+func WithContext(ctx context.Context) OptionsModifier {
+	return func(o *retryOptions) { o.ctx = ctx }
+}
+
 // OptionsModifier applies a mutation to a retryOptions.
 type OptionsModifier func(*retryOptions)
 
 type retryOptions struct {
 	function               func() error
+	ctx                    context.Context
 	onFailure              func(error)
 	canRetry               func(error) bool
 	between                func(int)
@@ -57,6 +64,9 @@ type retryOptions struct {
 
 func (t *retryOptions) do() (err error) {
 	for i := 0; i < t.tries; i++ {
+		if t.ctx != nil && t.ctx.Err() != nil {
+			return t.ctx.Err()
+		}
 		// If we've run previously and have an error
 		if err != nil {
 			// Check if we can retry the error, and if so, run onFailure and between.

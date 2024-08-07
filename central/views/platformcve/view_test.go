@@ -13,6 +13,7 @@ import (
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	converterV2 "github.com/stackrox/rox/central/cve/converter/v2"
+	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
@@ -320,6 +321,92 @@ func (s *PlatformCVEViewTestSuite) TestCountPlatformCVECoreSAC() {
 
 				expected := s.compileExpectedCVECores(filterWithSAC)
 				assert.Equal(t, len(expected), actual)
+			})
+		}
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) TestCVECountByType() {
+	for _, tc := range s.testCases() {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			actual, err := s.cveView.CVECountByType(sac.WithAllAccess(tc.ctx), tc.q)
+			if tc.expectedErr != "" {
+				s.ErrorContains(err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
+
+			expected := s.compileExpectedCVECountByType(tc.matchFilter)
+			assert.EqualValues(t, expected, actual)
+		})
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) TestCVECountByTypeSAC() {
+	for _, tc := range s.testCases() {
+		for _, sacTC := range s.sacTestCases(tc.ctx) {
+			s.T().Run(fmt.Sprintf("SAC desc: %s; test desc: %s ", sacTC.desc, tc.desc), func(t *testing.T) {
+				actual, err := s.cveView.CVECountByType(sacTC.ctx, tc.q)
+				if tc.expectedErr != "" {
+					s.ErrorContains(err, tc.expectedErr)
+					return
+				}
+				assert.NoError(t, err)
+
+				// Wrap cluster filter with sac filter.
+				filterWithSAC := matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
+					if sacTC.visibleClusters.Contains(cluster.GetId()) {
+						return tc.matchFilter.matchCluster(cluster)
+					}
+					return false
+				})
+				filterWithSAC.matchCVEParts = tc.matchFilter.matchCVEParts
+
+				expected := s.compileExpectedCVECountByType(filterWithSAC)
+				assert.EqualValues(t, expected, actual)
+			})
+		}
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) TestCVECountByFixability() {
+	for _, tc := range s.testCases() {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			actual, err := s.cveView.CVECountByFixability(sac.WithAllAccess(tc.ctx), tc.q)
+			if tc.expectedErr != "" {
+				s.ErrorContains(err, tc.expectedErr)
+				return
+			}
+			assert.NoError(t, err)
+
+			expected := s.compileExpectedCVECountByFixability(tc.matchFilter)
+			assert.EqualValues(t, expected, actual)
+		})
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) TestCVECountByFixabilitySAC() {
+	for _, tc := range s.testCases() {
+		for _, sacTC := range s.sacTestCases(tc.ctx) {
+			s.T().Run(fmt.Sprintf("SAC desc: %s; test desc: %s ", sacTC.desc, tc.desc), func(t *testing.T) {
+				actual, err := s.cveView.CVECountByFixability(sacTC.ctx, tc.q)
+				if tc.expectedErr != "" {
+					s.ErrorContains(err, tc.expectedErr)
+					return
+				}
+				assert.NoError(t, err)
+
+				// Wrap cluster filter with sac filter.
+				filterWithSAC := matchAllFilter().withClusterFilter(func(cluster *storage.Cluster) bool {
+					if sacTC.visibleClusters.Contains(cluster.GetId()) {
+						return tc.matchFilter.matchCluster(cluster)
+					}
+					return false
+				})
+				filterWithSAC.matchCVEParts = tc.matchFilter.matchCVEParts
+
+				expected := s.compileExpectedCVECountByFixability(filterWithSAC)
+				assert.EqualValues(t, expected, actual)
 			})
 		}
 	}
@@ -734,6 +821,84 @@ func (s *PlatformCVEViewTestSuite) compileExpectedAffectedClusterIDs(filter *fil
 	return affectedClusterIDs.AsSlice()
 }
 
+func (s *PlatformCVEViewTestSuite) compileExpectedCVECountByType(filter *filterImpl) CVECountByType {
+	k8sCVECount := 0
+	openshiftCVECount := 0
+	istioCVECount := 0
+
+	for _, cveParts := range s.cvePartsList {
+		if !filter.matchCVEParts(cveParts) {
+			continue
+		}
+		clusterCount := 0
+
+		for _, child := range cveParts.Children {
+			cluster, exists := s.clusterMap[child.ClusterID]
+			if !exists || !filter.matchCluster(cluster) {
+				continue
+			}
+			clusterCount++
+		}
+		if clusterCount == 0 {
+			// if no clusters matched, then cve is not included in results
+			continue
+		}
+
+		switch cveParts.CVE.GetType() {
+		case storage.CVE_K8S_CVE:
+			k8sCVECount++
+		case storage.CVE_OPENSHIFT_CVE:
+			openshiftCVECount++
+		case storage.CVE_ISTIO_CVE:
+			istioCVECount++
+		}
+	}
+
+	return &cveCountByTypeResponse{
+		KubernetesCVECount: k8sCVECount,
+		OpenshiftCVECount:  openshiftCVECount,
+		IstioCVECount:      istioCVECount,
+	}
+}
+
+func (s *PlatformCVEViewTestSuite) compileExpectedCVECountByFixability(filter *filterImpl) common.ResourceCountByFixability {
+	totalCVECount := 0
+	fixableCVECount := 0
+
+	for _, cveParts := range s.cvePartsList {
+		if !filter.matchCVEParts(cveParts) {
+			continue
+		}
+		clusterCount := 0
+		fixable := false
+
+		for _, child := range cveParts.Children {
+			cluster, exists := s.clusterMap[child.ClusterID]
+			if !exists || !filter.matchCluster(cluster) {
+				continue
+			}
+			clusterCount++
+			if child.Edge.GetIsFixable() {
+				fixable = true
+			}
+		}
+		if clusterCount == 0 {
+			// if no clusters matched, then cve is not included in results
+			continue
+		}
+
+		totalCVECount++
+		if fixable {
+			fixableCVECount++
+		}
+	}
+
+	return &cveCountByFixabilityResponse{
+		CVECount:     totalCVECount,
+		FixableCount: fixableCVECount,
+	}
+}
+
 func applyPaginationProps(baseTc *testCase, paginationTc paginationTestCase) {
 	baseTc.desc = fmt.Sprintf("%s %s", baseTc.desc, paginationTc.desc)
 	baseTc.q.Pagination = paginationTc.q.GetPagination()
@@ -832,6 +997,8 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 	cve2Openshift := generateTestCVE("cve-2", storage.CVE_OPENSHIFT_CVE, 6.3)
 	cve4Openshift := generateTestCVE("cve-4", storage.CVE_OPENSHIFT_CVE, 4.9)
 	cve5Openshift := generateTestCVE("cve-5", storage.CVE_OPENSHIFT_CVE, 7.0)
+	cve1Istio := generateTestCVE("cve-1", storage.CVE_ISTIO_CVE, 7.2)
+	cve5Istio := generateTestCVE("cve-5", storage.CVE_ISTIO_CVE, 4.8)
 
 	// CVEParts
 	cvePartsByType := make(map[storage.CVE_CVEType][]converter.ClusterCVEParts)
@@ -845,6 +1012,8 @@ func getTestData() (map[string]*storage.Cluster, map[storage.CVE_CVEType][]conve
 		converterV2.NewClusterCVEParts(cve2Openshift, []*storage.Cluster{openshift1, openshift2, openshift42}, "4.15"),
 		converterV2.NewClusterCVEParts(cve4Openshift, []*storage.Cluster{openshift2, openshift42}, "4.13"),
 		converterV2.NewClusterCVEParts(cve5Openshift, []*storage.Cluster{openshift41, openshift42}, "4.15"),
+		converterV2.NewClusterCVEParts(cve1Istio, []*storage.Cluster{generic1}, ""),
+		converterV2.NewClusterCVEParts(cve5Istio, []*storage.Cluster{openshift41}, "4.15"),
 	} {
 		cvePartsByType[cveParts.CVE.GetType()] = append(cvePartsByType[cveParts.CVE.GetType()], cveParts)
 	}

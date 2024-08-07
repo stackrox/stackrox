@@ -407,3 +407,12 @@ func setScannerComponentScaling(sv *ValuesBuilder, scaling *platform.ScannerComp
 	autoscalingVB.SetInt32("minReplicas", scaling.MinReplicas)
 	sv.AddChild("autoscaling", &autoscalingVB)
 }
+
+// GetGlobalNetwork converts *platform.GlobalNetworkSpec into *ValuesBuilder
+func GetGlobalNetwork(s *platform.GlobalNetworkSpec) *ValuesBuilder {
+	sv := NewValuesBuilder()
+	if s.Policies != nil {
+		sv.SetBoolValue("enableNetworkPolicies", s.IsNetworkPoliciesEnabled())
+	}
+	return &sv
+}

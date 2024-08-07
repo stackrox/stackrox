@@ -1,6 +1,6 @@
 {{- include "srox.init" . -}}
 
-{{- if ._rox.system.enableNetworkPolicies -}}
+{{- if ._rox.network.enableNetworkPolicies -}}
 {{- if not ._rox.scanner.disable -}}
 
 apiVersion: networking.k8s.io/v1

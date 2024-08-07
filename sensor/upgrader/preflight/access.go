@@ -2,12 +2,14 @@ package preflight
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/sensor/upgrader/plan"
 	"github.com/stackrox/rox/sensor/upgrader/resources"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
+	"golang.org/x/exp/maps"
 	v1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -82,7 +84,7 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 		return err
 	}
 
-	actionResourceErr := make([]string, 0)
+	actionResourceErr := make(map[string]struct{})
 	for i := range resourceAttribs {
 		ra := resourceAttribs[i]
 		sar := &v1.SelfSubjectAccessReview{
@@ -98,15 +100,18 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 			reporter.Warnf("Evaluation error performing access review check for action %s on resource %s: %s", ra.Verb, ra.Resource, sarResult.Status.EvaluationError)
 		}
 		if !sarResult.Status.Allowed && !sarResult.Status.Denied {
-			actionResourceErr = append(actionResourceErr, fmt.Sprintf("%s:%s", ra.Verb, ra.Resource))
+			errEntry := fmt.Sprintf("%s:%s", ra.Verb, ra.Resource)
+			actionResourceErr[errEntry] = struct{}{}
 		} else if !sarResult.Status.Allowed {
 			reporter.Errorf("Action %s on resource %s is not allowed", ra.Verb, ra.Resource)
 		}
 	}
 	if len(actionResourceErr) > 0 {
+		affected := maps.Keys(actionResourceErr)
+		slices.Sort(affected)
 		reporter.Errorf("K8s authorizer did not explicitly allow or deny access to perform "+
 			"the following actions on following resources: %s. This usually means access is denied.",
-			strings.Join(actionResourceErr, ", "))
+			strings.Join(affected, ", "))
 	}
 
 	return nil

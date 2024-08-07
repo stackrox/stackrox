@@ -28,7 +28,7 @@ type CheckDetailsInfoProps = {
 function CheckDetailsInfo({ checkDetails, isLoading, error }: CheckDetailsInfoProps) {
     if (error) {
         return (
-            <Alert title="Unable to fetch check details" isInline variant="danger">
+            <Alert title="Unable to fetch check details" component="p" isInline variant="danger">
                 {getAxiosErrorMessage(error)}
             </Alert>
         );

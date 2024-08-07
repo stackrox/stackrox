@@ -13,6 +13,8 @@ import pathlib
 import re
 import subprocess
 import sys
+from urllib.error import URLError
+from urllib.request import Request, urlopen
 
 from collections import namedtuple
 
@@ -31,6 +33,10 @@ Version = namedtuple("Version", ["major", "minor", "patch"])
 
 # Here we call "release" (or Y-Stream) the first appearance of X.Y.0 version.
 Release = namedtuple("Release", ["major", "minor"])
+
+# API from which we can gather which versions of Stackrox are currently supported
+PRODUCT_LIFECYCLES_API = "https://access.redhat.com/product-life-cycles/api/v1/products?name=" \
+                         "Red%20Hat%20Advanced%20Cluster%20Security%20for%20Kubernetes"
 
 # Default value of N, the number of previous releases to look up.
 # The current release cadence is 9 weeks (sometimes extended but not reduced),
@@ -56,13 +62,20 @@ def main(argv):
     logging.info(
         f"Helm chart versions for the latest {num_releases} releases:")
 
-    print("\n".join(helm_versions))
+    logging.info("\n".join(helm_versions))
     helm_version_specific = get_latest_helm_chart_version_for_specific_release(
         "stackrox-secured-cluster-services", sample_support_exception
     )
     logging.info(
         f"Latest chart version for the {sample_support_exception} "
         f"releases is {helm_version_specific}"
+    )
+    supported_versions_string = [[f"{version.major}.{version.minor}"] for version in get_supported_releases()]
+    supported_central_versions_from_api, supported_sensor_versions_from_api = get_supported_helm_chart_versions()
+    logging.info(
+        f"\nThe product lifecycles API denotes support for the following versions: {supported_versions_string}\n"
+        f"Found helm charts for the following supported versions: "
+        f"central{supported_central_versions_from_api} - sensor{supported_sensor_versions_from_api}"
     )
 
 
@@ -82,6 +95,82 @@ def get_latest_helm_chart_version_for_specific_release(chart_name, release):
         return __get_latest_helm_chart_version_for_specific_release(chart_name, release)
     finally:
         remove_helm_repo()
+
+
+def get_supported_helm_chart_versions():
+    add_helm_repo()
+    try:
+        update_helm_repo()
+        return __get_supported_helm_chart_versions()
+    finally:
+        remove_helm_repo()
+
+
+def __get_supported_helm_chart_versions():
+    supported_central_versions = []
+    supported_sensor_versions = []
+
+    supported_releases = get_supported_releases()
+    for release in supported_releases:
+        if __does_chart_exist("stackrox-central-services", release):
+            supported_central_versions.append(__get_latest_helm_chart_version_for_specific_release(
+                "stackrox-central-services", release)
+            )
+        else:
+            logging.debug(f"Supported version \"{release.major}.{release.minor}\" has no corresponding helm chart for "
+                          f"stackrox-central-services.")
+        if __does_chart_exist("stackrox-secured-cluster-services", release):
+            supported_sensor_versions.append(__get_latest_helm_chart_version_for_specific_release(
+                "stackrox-secured-cluster-services", release)
+            )
+        else:
+            logging.debug(f"Supported version \"{release.major}.{release.minor}\" has no corresponding helm chart for "
+                          f"stackrox-secured-cluster-services.")
+    return supported_central_versions, supported_sensor_versions
+
+
+def get_supported_releases():
+    supported_releases = []
+    data = __get_data_from_product_lifecycles_api()
+    if "data" not in data or len(data["data"]) == 0 or "versions" not in data["data"][0]:
+        logging.debug("Found no RHACS releases in PRODUCT_LIFECYCLES_API")
+        return []
+    releases = data["data"][0]["versions"]
+
+    for release in releases:
+        if "type" in release and release["type"] != "End of life":
+            supported_releases.append(parse_release(release["name"]))
+    return supported_releases
+
+
+def __get_data_from_product_lifecycles_api():
+    req = Request(
+        url=PRODUCT_LIFECYCLES_API,
+        headers={'User-Agent': 'Mozilla/5.0'}
+    )
+    try:
+        with urlopen(req) as response:
+            response_bytes = response.read()
+            response_string = response_bytes.decode('utf-8')
+            data = json.loads(response_string)
+            return data
+    except URLError as exception:
+        logging.debug(f"Failed to open URL {PRODUCT_LIFECYCLES_API} with error:\n{repr(exception)}")
+    except json.JSONDecodeError as exception:
+        logging.debug(f"Failed to load JSON from API response from {PRODUCT_LIFECYCLES_API} with error:"
+                      f"\n{repr(exception)}")
+    except ValueError as exception:
+        logging.debug(f"Failed to decode API response from {PRODUCT_LIFECYCLES_API} with error:\n{repr(exception)}")
+    return []
+
+
+def __does_chart_exist(chart_name, release):
+    charts = read_charts()
+    filtered_charts = filter_charts_by_name(charts, chart_name)
+    for fchart in filtered_charts:
+        if version_to_release(fchart["parsed_app_version"]) == release:
+            return True
+    return False
 
 
 def __get_latest_helm_chart_versions(chart_name, num_releases):
@@ -107,7 +196,7 @@ def __get_latest_helm_chart_version_for_specific_release(chart_name, release):
     logging.info(f"Discovered total {len(charts)} charts")
 
     filtered_charts = filter_charts_by_name(charts, chart_name)
-    print(
+    logging.info(
         f"Found {len(filtered_charts)} charts with the given name {chart_name}")
 
     latest_chart = get_latest_chart_for_specific_release(
@@ -139,6 +228,11 @@ def is_release_version(version):
 def parse_version(version_str):
     nums = [int(s) for s in version_str.split(".")]
     return Version(major=nums[0], minor=nums[1], patch=nums[2])
+
+
+def parse_release(release_str):
+    nums = [int(s) for s in release_str.split(".")]
+    return Release(major=nums[0], minor=nums[1])
 
 
 def filter_charts_by_name(charts, chart_name):

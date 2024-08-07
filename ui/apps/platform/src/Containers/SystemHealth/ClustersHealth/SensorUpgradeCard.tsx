@@ -56,7 +56,7 @@ function SensorUpgradeCard({
             />
             {errorMessageFetching ? (
                 <CardBody>
-                    <Alert isInline variant="warning" title={errorMessageFetching} />
+                    <Alert isInline variant="warning" title={errorMessageFetching} component="p" />
                 </CardBody>
             ) : counts !== null &&
               (counts.HEALTHY === 0 || counts.UNHEALTHY !== 0 || counts.DEGRADED !== 0) ? (

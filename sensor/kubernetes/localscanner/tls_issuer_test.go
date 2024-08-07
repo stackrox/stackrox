@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -193,7 +194,7 @@ func TestLocalScannerTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
 	case response := <-fixture.tlsIssuer.msgFromCentralC:
-		assert.Equal(t, expectedResponse, response)
+		protoassert.Equal(t, expectedResponse, response)
 	}
 
 	_, ok := processMessageDoneSignal.WaitWithTimeout(100 * time.Millisecond)

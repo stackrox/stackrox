@@ -270,8 +270,9 @@ func GetPool(postgresConfig *postgres.Config) (postgres.DB, error) {
 	var err error
 	var postgresDB postgres.DB
 
-	err = pgutils.Retry(func() error {
-		postgresDB, err = postgres.New(context.Background(), postgresConfig)
+	ctx := context.Background()
+	err = pgutils.Retry(ctx, func() error {
+		postgresDB, err = postgres.New(ctx, postgresConfig)
 		return err
 	})
 	if err != nil {

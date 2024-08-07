@@ -33,7 +33,7 @@ func BenchmarkSearchAllPods(b *testing.B) {
 	podsDatastore, err := NewPostgresDB(pool, nil, nil, simpleFilter)
 	require.NoError(b, err)
 
-	podPrototype := fixtures.GetPod().Clone()
+	podPrototype := fixtures.GetPod().CloneVT()
 
 	const numPods = 1000
 	for i := 0; i < numPods; i++ {

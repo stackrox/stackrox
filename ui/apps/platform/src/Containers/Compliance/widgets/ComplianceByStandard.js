@@ -23,9 +23,6 @@ import isGQLLoading from 'utils/gqlLoading';
 
 import { getColor } from './colorsForCompliance';
 
-const linkColor = 'var(--base-600)';
-const textColor = 'var(--base-600)';
-
 // Consistent with getColor helper function.
 const sunburstLegendData = [
     { title: '100%', color: COMPLIANCE_PASS_COLOR },
@@ -76,7 +73,6 @@ const processSunburstData = (match, location, data, standard) => {
             groupMapping[datum.id] = {
                 name: `${datum?.name}. ${datum?.description}`,
                 color: getColor(value),
-                textColor,
                 value,
                 children: [],
             };
@@ -98,7 +94,6 @@ const processSunburstData = (match, location, data, standard) => {
                 group.children.push({
                     name: `${datum?.name} - ${datum?.description}`,
                     color: getColor(value),
-                    textColor,
                     link: url,
                     value,
                 });
@@ -194,7 +189,6 @@ const ComplianceByStandard = ({
                         {
                             text: `${getNumControls(sunburstData)} Controls`,
                             link: url,
-                            color: linkColor,
                         },
                     ];
 

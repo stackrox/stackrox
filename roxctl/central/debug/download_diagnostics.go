@@ -23,8 +23,10 @@ const (
 // downloadDiagnosticsCommand allows downloading the diagnostics bundle.
 func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputDir string
+	var outputFileName string
 	var clusters []string
 	var since string
+	var withComplianceOperator bool
 
 	c := &cobra.Command{
 		Use:   "download-diagnostics",
@@ -42,17 +44,22 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 				values.Add("since", since)
 			}
 
+			if withComplianceOperator {
+				values.Add("compliance-operator", "true")
+			}
+
 			urlParams := values.Encode()
 			if urlParams != "" {
 				path = fmt.Sprintf("%s?%s", path, urlParams)
 			}
 			err := zipdownload.GetZip(zipdownload.GetZipOptions{
-				Path:       path,
-				Method:     http.MethodGet,
-				Timeout:    flags.Timeout(c),
-				BundleType: "diagnostic",
-				ExpandZip:  false,
-				OutputDir:  outputDir,
+				Path:           path,
+				Method:         http.MethodGet,
+				Timeout:        flags.Timeout(c),
+				BundleType:     "diagnostic",
+				ExpandZip:      false,
+				OutputDir:      outputDir,
+				OutputFileName: outputFileName,
 			}, cliEnvironment)
 			if isTimeoutError(err) {
 				cliEnvironment.Logger().ErrfLn(`Timeout has been reached while creating diagnostic bundle.
@@ -67,8 +74,10 @@ To specify timeout, run  'roxctl' command:
 	}
 	flags.AddTimeoutWithDefault(c, diagnosticBundleDownloadTimeout)
 	c.PersistentFlags().StringVar(&outputDir, "output-dir", "", "Output directory in which to store bundle")
+	c.PersistentFlags().StringVar(&outputFileName, "output-file-name", "", "Output file name for the bundle")
 	c.PersistentFlags().StringSliceVar(&clusters, "clusters", nil, "Comma separated list of sensor clusters from which logs should be collected")
 	c.PersistentFlags().StringVar(&since, "since", "", "Timestamp starting when logs should be collected from sensor clusters")
+	c.PersistentFlags().BoolVarP(&withComplianceOperator, "with-compliance-operator", "", false, "Include compliance operator resources in the diagnostic bundle")
 
 	return c
 }

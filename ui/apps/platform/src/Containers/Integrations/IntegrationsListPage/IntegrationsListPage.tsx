@@ -22,7 +22,6 @@ import { actions as cloudSourcesActions } from 'reducers/cloudSources';
 import { integrationsPath } from 'routePaths';
 
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIntegrations from '../hooks/useIntegrations';
 import { getIntegrationLabel } from '../utils/integrationsList';
 import {
@@ -49,7 +48,6 @@ function IntegrationsListPage({
 }): ReactElement {
     const { source, type } = useParams();
     const integrations = useIntegrations({ source, type });
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
 
     const history = useHistory();
@@ -70,7 +68,8 @@ function IntegrationsListPage({
     const isScannerV4 = getIsScannerV4(source, type);
     const isCloudSource = getIsCloudSource(source);
 
-    const isTechPreview = isFeatureFlagEnabled('ROX_SCANNER_V4') && type === 'scannerv4';
+    // There is currently nothing relevant in Tech Preview.
+    const isTechPreview = false;
 
     function onDeleteIntegrations(ids) {
         setDeletingIntegrationIds(ids);

@@ -5,9 +5,6 @@ defs: |
   def envVars(obj; container):
   container(obj; container) | .env | from_entries;
 values:
-  central:
-    persistence:
-      none: true
   imagePullSecrets:
     allowNone: true
 

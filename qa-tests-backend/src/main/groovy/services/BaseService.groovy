@@ -128,7 +128,13 @@ class BaseService {
 
             transportChannel = NettyChannelBuilder
                     .forAddress(Env.mustGetHostname(), Env.mustGetPort())
-                    .enableRetry()
+                    // Here be dragons.
+                    // Enabling retries in grpc java lib is more complicated then we thought.
+                    // Tried:
+                    // - https://github.com/stackrox/stackrox/pull/11652
+                    // - https://github.com/stackrox/stackrox/pull/7636
+                    // - https://github.com/stackrox/stackrox/pull/4921
+                    // .enableRetry()
                     .negotiationType(NegotiationType.TLS)
                     .sslContext(sslContext)
                     .build()

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Trash2 } from 'react-feather';
+import { Link } from 'react-router-dom';
 
 import RowActionButton from 'Components/RowActionButton';
 import {
@@ -8,6 +9,7 @@ import {
     wrapClassName,
     rtTrActionsClassName,
 } from 'Components/Table';
+import { clustersBasePath } from 'routePaths';
 
 import { formatCloudProvider } from './cluster.helpers';
 import ClusterDeletion from './Components/ClusterDeletion';
@@ -46,7 +48,7 @@ export function getColumnsForClusters({
             className: `w-1/7 ${wrapClassName} ${defaultColumnClassName}`,
             Cell: ({ original }) => (
                 <span className="flex items-center" data-testid="cluster-name">
-                    {original.name}
+                    <Link to={`${clustersBasePath}/${original.id}`}>{original.name}</Link>
                     {(original.managedBy === 'MANAGER_TYPE_HELM_CHART' ||
                         (original.managedBy === 'MANAGER_TYPE_UNKNOWN' &&
                             !!original.helmConfig)) && (

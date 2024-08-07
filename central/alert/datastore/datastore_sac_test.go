@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -215,7 +216,7 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 			s.NoError(err1)
 			if c.ExpectedFound {
 				s.True(found1)
-				s.Equal(alert1, readAlert1)
+				protoassert.Equal(s.T(), alert1, readAlert1)
 			} else {
 				s.False(found1)
 				s.Nil(readAlert1)
@@ -224,7 +225,7 @@ func (s *alertDatastoreSACTestSuite) TestGetAlert() {
 			s.NoError(err2)
 			if c.ExpectedFound {
 				s.True(found2)
-				s.Equal(alert2, readAlert2)
+				protoassert.Equal(s.T(), alert2, readAlert2)
 			} else {
 				s.False(found2)
 				s.Nil(readAlert2)

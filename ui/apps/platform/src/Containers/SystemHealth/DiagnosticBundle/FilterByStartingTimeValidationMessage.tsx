@@ -1,5 +1,5 @@
-import React, { ElementType, ReactElement } from 'react';
-import { Flex, FlexItem } from '@patternfly/react-core';
+import React, { ReactElement } from 'react';
+import { Flex, FlexItem, Icon } from '@patternfly/react-core';
 import {
     BanIcon,
     CheckIcon,
@@ -8,30 +8,29 @@ import {
 } from '@patternfly/react-icons';
 import { distanceInWordsStrict } from 'date-fns';
 
-type Style = {
-    Icon: ElementType;
-    fgColor: string;
-};
+const iconDefault = (
+    <Icon>
+        <InfoCircleIcon color="var(--pf-v5-global--info-color--100)" />
+    </Icon>
+);
 
-const styleDefault: Style = {
-    Icon: InfoCircleIcon,
-    fgColor: 'pf-v5-u-info-color-100',
-};
+const iconValid = (
+    <Icon>
+        <CheckIcon color="var(--pf-v5-global--success-color--100)" />
+    </Icon>
+);
 
-const styleValid: Style = {
-    Icon: CheckIcon,
-    fgColor: 'pf-v5-u-success-color-100',
-};
+const iconFuture = (
+    <Icon>
+        <BanIcon color="var(--pf-v5-global--danger-color--100)" />
+    </Icon>
+); // danger because it time is complete and incorrect
 
-const styleFuture: Style = {
-    Icon: BanIcon,
-    fgColor: 'pf-v5-u-danger-color-100', // alert because it time is complete and incorrect
-};
-
-const styleInvalid: Style = {
-    Icon: ExclamationTriangleIcon,
-    fgColor: 'pf-v5-u-warning-color-100', // warning because time might be incomplete
-};
+const iconInvalid = (
+    <Icon>
+        <ExclamationTriangleIcon color="var(--pf-v5-global--warning-color--100)" />
+    </Icon>
+); // warning because time might be incomplete
 
 type FilterByStartingTimeValidationMessageProps = {
     currentTimeObject: Date | null;
@@ -47,7 +46,7 @@ const FilterByStartingTimeValidationMessage = ({
     startingTimeFormat,
     startingTimeObject,
 }: FilterByStartingTimeValidationMessageProps): ReactElement => {
-    let style = styleDefault;
+    let icon: ReactElement = iconDefault;
     let message = 'default time: 20 minutes ago';
 
     if (currentTimeObject && startingTimeObject) {
@@ -56,22 +55,20 @@ const FilterByStartingTimeValidationMessage = ({
         });
 
         if (isStartingTimeValid) {
-            style = styleValid;
+            icon = iconValid;
             message = `about ${timeDifference} ago`;
         } else {
-            style = styleFuture;
+            icon = iconFuture;
             message = `future time: in about ${timeDifference}`;
         }
     } else if (!isStartingTimeValid) {
-        style = styleInvalid;
+        icon = iconInvalid;
         message = `expected format: ${startingTimeFormat}`;
     }
 
-    const { Icon, fgColor } = style;
-
     return (
-        <Flex alignItems={{ default: 'alignItemsCenter' }} className={fgColor}>
-            <Icon />
+        <Flex alignItems={{ default: 'alignItemsCenter' }}>
+            {icon}
             <FlexItem data-testid="starting-time-message">{message}</FlexItem>
         </Flex>
     );

@@ -45,7 +45,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 		)
 		env := environment(report, id)
 		if env != nil {
-			source, location = parsePackageDB(env.GetPackageDb())
+			source, location = ParsePackageDB(env.GetPackageDb())
 			layerIdx = layerIndex(layerSHAToIndex, env)
 		}
 
@@ -84,7 +84,8 @@ func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
 	return nil
 }
 
-func parsePackageDB(packageDB string) (storage.SourceType, string) {
+// ParsePackageDB parses the given packageDB into its source type + filepath.
+func ParsePackageDB(packageDB string) (storage.SourceType, string) {
 	prefix, path, found := strings.Cut(packageDB, ":")
 	if !found {
 		// All currently know language packages have a prefix, so this must be an OS package.

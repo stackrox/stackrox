@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgadmin"
 	"github.com/stackrox/rox/pkg/postgres/pgconfig"
+	pgStats "github.com/stackrox/rox/pkg/postgres/stats"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -64,6 +65,8 @@ SELECT TABLE_NAME
 	totalConnectionQuery = `SELECT state, COUNT(datid) FROM pg_stat_activity WHERE state IS NOT NULL GROUP BY state;`
 
 	maxConnectionQuery = `SELECT current_setting('max_connections')::int;`
+
+	pgStatStatementsMax = 1000
 )
 
 var (
@@ -278,6 +281,20 @@ func CollectPostgresDatabaseStats(postgresConfig *postgres.Config) {
 	}
 }
 
+// CollectPostgresTupleStats -- collect tuple stats for Postgres
+func CollectPostgresTupleStats(ctx context.Context, db postgres.DB) {
+	tupleStats := pgStats.GetPGTupleStats(ctx, db, pgStatStatementsMax)
+	if tupleStats == nil {
+		return
+	}
+
+	for _, tuple := range tupleStats.Tuples {
+		tableLabel := prometheus.Labels{"table": tuple.Table}
+		metrics.PostgresTableLiveTuples.With(tableLabel).Set(float64(tuple.NumLiveTuples))
+		metrics.PostgresTableDeadTuples.With(tableLabel).Set(float64(tuple.NumDeadTuples))
+	}
+}
+
 // CollectPostgresConnectionStats -- collect connection stats for Postgres
 func CollectPostgresConnectionStats(ctx context.Context, db postgres.DB) {
 	// Get the total connections by database
@@ -345,5 +362,6 @@ func startMonitoringPostgres(ctx context.Context, db postgres.DB, postgresConfig
 		_ = CollectPostgresStats(ctx, db)
 		CollectPostgresDatabaseStats(postgresConfig)
 		CollectPostgresConnectionStats(ctx, db)
+		CollectPostgresTupleStats(ctx, db)
 	}
 }

@@ -91,15 +91,6 @@ SCANNER_DB_INIT_BUNDLE_ENABLED ?= false
 .PHONY: all
 all: images
 
-###############################################################
-###### Binaries we depend on (need to be defined on top) ######
-###############################################################
-
-OSSLS_BIN := $(GOBIN)/ossls
-$(OSSLS_BIN):
-	@echo "+ $@"
-	$(SILENT)cd tools/ && go install github.com/stackrox/ossls
-
 #########
 ## Tag ##
 #########

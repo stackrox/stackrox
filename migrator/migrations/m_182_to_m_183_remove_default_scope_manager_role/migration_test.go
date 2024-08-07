@@ -15,6 +15,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -400,26 +401,26 @@ func (s *migrationTestSuite) testDataSetMigration(
 		fetchedAPITokens = append(fetchedAPITokens, obj)
 		return nil
 	}))
-	s.ElementsMatch(expectedAPITokens, fetchedAPITokens)
+	protoassert.ElementsMatch(s.T(), expectedAPITokens, fetchedAPITokens)
 
 	fetchedGroups := make([]*storage.Group, 0)
 	s.NoError(groupStorage.Walk(ctx, func(obj *storage.Group) error {
 		fetchedGroups = append(fetchedGroups, obj)
 		return nil
 	}))
-	s.ElementsMatch(expectedGroups, fetchedGroups)
+	protoassert.ElementsMatch(s.T(), expectedGroups, fetchedGroups)
 
 	fetchedPermissionSets := make([]*storage.PermissionSet, 0)
 	s.NoError(permissionSetStorage.Walk(ctx, func(obj *storage.PermissionSet) error {
 		fetchedPermissionSets = append(fetchedPermissionSets, obj)
 		return nil
 	}))
-	s.ElementsMatch(expectedPermissionSets, fetchedPermissionSets)
+	protoassert.ElementsMatch(s.T(), expectedPermissionSets, fetchedPermissionSets)
 
 	fetchedRoles := make([]*storage.Role, 0)
 	s.NoError(roleStorage.Walk(ctx, func(obj *storage.Role) error {
 		fetchedRoles = append(fetchedRoles, obj)
 		return nil
 	}))
-	s.ElementsMatch(expectedRoles, fetchedRoles)
+	protoassert.ElementsMatch(s.T(), expectedRoles, fetchedRoles)
 }

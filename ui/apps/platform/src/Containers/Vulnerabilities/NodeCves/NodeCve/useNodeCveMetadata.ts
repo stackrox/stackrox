@@ -1,13 +1,10 @@
 import { gql, useQuery } from '@apollo/client';
 
-import { ResourceCountsByCveSeverity } from '../../components/BySeveritySummaryCard';
 import { CveMetadata } from '../../components/CvePageHeader';
 
 const metadataQuery = gql`
-    query getNodeCVEMetadata($cve: String!, $query: String!) {
-        totalNodeCount: nodeCount
-        nodeCount(query: $query)
-        nodeCVE(cve: $cve, subfieldScopeQuery: $query) {
+    query getNodeCVEMetadata($cve: String!) {
+        nodeCVE(cve: $cve) {
             cve
             distroTuples {
                 summary
@@ -15,51 +12,25 @@ const metadataQuery = gql`
                 operatingSystem
             }
             firstDiscoveredInSystem
-            nodeCountBySeverity {
-                critical {
-                    total
-                }
-                important {
-                    total
-                }
-                moderate {
-                    total
-                }
-                low {
-                    total
-                }
-            }
         }
     }
 `;
 
-export default function useNodeCveMetadata(cveId: string, query: string) {
+export default function useNodeCveMetadata(cveId: string) {
     const metadataRequest = useQuery<
         {
-            totalNodeCount: number;
-            nodeCount: number;
-            nodeCVE: CveMetadata & {
-                nodeCountBySeverity: ResourceCountsByCveSeverity;
-            };
+            nodeCVE?: CveMetadata;
         },
-        {
-            cve: string;
-            query: string;
-        }
+        { cve: string }
     >(metadataQuery, {
-        variables: {
-            cve: cveId,
-            query,
-        },
+        variables: { cve: cveId },
     });
 
     const { data, previousData } = metadataRequest;
-    const nodeCount = data?.nodeCount ?? previousData?.nodeCount ?? 0;
     const cveData = data?.nodeCVE ?? previousData?.nodeCVE;
 
     return {
         metadataRequest,
-        nodeCount,
         cveData,
     };
 }

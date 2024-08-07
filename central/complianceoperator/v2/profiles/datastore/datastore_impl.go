@@ -174,7 +174,7 @@ func (d *datastoreImpl) CountDistinctProfiles(ctx context.Context, q *v1.Query, 
 }
 
 func withCountQuery(query *v1.Query, field search.FieldLabel) *v1.Query {
-	cloned := query.Clone()
+	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Proto(),
 	}

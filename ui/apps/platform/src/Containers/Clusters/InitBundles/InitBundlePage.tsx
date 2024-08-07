@@ -21,7 +21,7 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
 
     const {
         data: dataForFetch,
-        loading: isFetching,
+        isLoading: isFetching,
         error: errorForFetch,
     } = useRestQuery(fetchClusterInitBundles);
 
@@ -65,7 +65,7 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
                     <Alert
                         variant="warning"
                         title="Unable to fetch cluster init bundles"
-                        component="div"
+                        component="p"
                         isInline
                     >
                         {getAxiosErrorMessage(errorForFetch)}
@@ -84,7 +84,7 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
                     <Alert
                         variant="warning"
                         title="Unable to find cluster init bundle"
-                        component="div"
+                        component="p"
                         isInline
                     />
                 )}

@@ -74,7 +74,7 @@ func New(db postgres.DB) Store {
 {{- define "insertObject"}}
 {{- $schema := .schema }}
 func {{ template "insertFunctionName" $schema }}(ctx context.Context, tx *postgres.Tx, obj {{$schema.Type}}{{ range $field := $schema.FieldsDeterminedByParent }}, {{$field.Name}} {{$field.Type}}{{end}}) error {
-    serialized, marshalErr := obj.Marshal()
+    serialized, marshalErr := obj.MarshalVT()
     if marshalErr != nil {
         return marshalErr
     }
@@ -111,7 +111,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *{{.Type}}) error {
         return sac.ErrResourceAccessDenied
     }
 
-    return pgutils.Retry(func() error {
+    return pgutils.Retry(ctx, func() error {
         return s.retryableUpsert(ctx, obj)
     })
 }
@@ -153,7 +153,7 @@ func (s *storeImpl) Get(ctx context.Context) (*{{.Type}}, bool, error) {
         return nil, false, nil
     }
 
-    return pgutils.Retry3(func()(*{{.Type}}, bool, error) {
+    return pgutils.Retry3(ctx, func()(*{{.Type}}, bool, error) {
         return s.retryableGet(ctx)
     })
 }
@@ -172,7 +172,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*{{.Type}}, bool, error) 
 	}
 
 	var msg {{.Type}}
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVT(data); err != nil {
         return nil, false, err
 	}
 	return &msg, true, nil
@@ -196,7 +196,7 @@ func (s *storeImpl) Delete(ctx context.Context) error {
         return sac.ErrResourceAccessDenied
     }
 
-    return pgutils.Retry(func() error {
+    return pgutils.Retry(ctx, func() error {
         return s.retryableDelete(ctx)
     })
 }

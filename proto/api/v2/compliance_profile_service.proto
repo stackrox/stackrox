@@ -25,17 +25,6 @@ message ComplianceProfile {
   repeated ComplianceBenchmark standards = 11;
 }
 
-// Next Tag: 8
-message ComplianceProfileSummary {
-  string name = 1;
-  string product_type = 2;
-  string description = 3;
-  string title = 4;
-  int32 rule_count = 5;
-  string profile_version = 6;
-  repeated ComplianceBenchmark standards = 7;
-}
-
 // ListComplianceProfilesResponse provides a list of profiles
 message ListComplianceProfilesResponse {
   repeated ComplianceProfile profiles = 1;
@@ -46,11 +35,6 @@ message ListComplianceProfilesResponse {
 message ListComplianceProfileSummaryResponse {
   repeated ComplianceProfileSummary profiles = 1;
   int32 total_count = 2;
-}
-
-// CountComplianceProfilesResponse gives count of compliance profiles
-message CountComplianceProfilesResponse {
-  int32 count = 1;
 }
 
 message ProfilesForClusterRequest {
@@ -77,10 +61,5 @@ service ComplianceProfileService {
   // ListProfileSummaries returns profiles matching each cluster and the given query
   rpc ListProfileSummaries(ClustersProfileSummaryRequest) returns (ListComplianceProfileSummaryResponse) {
     option (google.api.http) = {get: "/v2/compliance/profiles/summary"};
-  }
-
-  // GetComplianceProfileCount returns the number of profiles matching the given query
-  rpc GetComplianceProfileCount(RawQuery) returns (CountComplianceProfilesResponse) {
-    option (google.api.http) = {get: "/v2/compliance/profiles/count"};
   }
 }

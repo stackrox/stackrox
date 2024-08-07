@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
-import { Button, Flex, FlexItem } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
+import { Flex, FlexItem } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import { SearchResult } from 'services/SearchService';
 import { safeGeneratePath } from 'utils/urlUtils';
 
@@ -23,15 +23,12 @@ function ViewLinks({ searchResult, searchResultCategoryMap }: ViewLinksProps): R
             <Flex spaceItems={{ default: 'spaceItemsMd' }}>
                 {viewLinks.map(({ basePath, linkText }) => (
                     <FlexItem key={linkText}>
-                        <Button
-                            variant="link"
-                            isInline
-                            component={LinkShim}
-                            href={safeGeneratePath(basePath, searchResult, basePath)}
+                        <Link
+                            to={safeGeneratePath(basePath, searchResult, basePath)}
                             className="pf-v5-u-text-nowrap"
                         >
                             {linkText}
-                        </Button>
+                        </Link>
                     </FlexItem>
                 ))}
             </Flex>

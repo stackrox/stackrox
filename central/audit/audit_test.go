@@ -11,6 +11,7 @@ import (
 	identityMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -117,12 +118,12 @@ func (suite *AuditLogTestSuite) TestPermissionsRemoval() {
 	withPermissions := a.newAuditMessage(ctxWithMockIdentity, "this is a test", "/v1./Test",
 		interceptor.AuthStatus{Error: nil}, nil)
 
-	suite.Equal(userInfo, withPermissions.GetUser())
+	protoassert.Equal(suite.T(), userInfo, withPermissions.GetUser())
 
 	a = &audit{withoutPermissions: true}
 	withoutPermissions := a.newAuditMessage(ctxWithMockIdentity, "this is a test", "/v1./Test",
 		interceptor.AuthStatus{Error: nil}, nil)
-	suite.NotEqual(userInfo, withoutPermissions.GetUser())
+	protoassert.NotEqual(suite.T(), userInfo, withoutPermissions.GetUser())
 	suite.Empty(withoutPermissions.GetUser().GetPermissions())
 	for _, userRole := range withoutPermissions.GetUser().GetRoles() {
 		suite.Empty(userRole.GetResourceToAccess())

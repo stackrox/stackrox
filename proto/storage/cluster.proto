@@ -81,7 +81,7 @@ enum CollectionMethod {
   UNSET_COLLECTION = 0;
   NO_COLLECTION = 1;
   KERNEL_MODULE = 2 [deprecated = true];
-  EBPF = 3;
+  EBPF = 3 [deprecated = true];
   CORE_BPF = 4;
 }
 

@@ -61,7 +61,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	}
 
 	var clusterConfig storage.DynamicClusterConfig
-	if err := protocompat.Unmarshal(configData, &clusterConfig); err != nil {
+	if err := clusterConfig.UnmarshalVT(configData); err != nil {
 		return nil, errors.Wrapf(err, "unmarshaling decompressed cluster config data from file %s", configPath)
 	}
 

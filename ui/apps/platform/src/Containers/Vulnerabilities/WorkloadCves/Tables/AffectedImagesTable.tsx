@@ -99,7 +99,7 @@ function AffectedImagesTable({
                 <Tr>
                     <ExpandRowTh />
                     <Th sort={getSortParams('Image')}>Image</Th>
-                    <Th>CVE severity</Th>
+                    <Th sort={getSortParams('Severity')}>CVE severity</Th>
                     <Th>CVSS</Th>
                     <Th>
                         CVE status

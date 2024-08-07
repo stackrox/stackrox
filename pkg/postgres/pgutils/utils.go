@@ -74,7 +74,7 @@ func CreateTableFromModel(ctx context.Context, db *gorm.DB, createStmt *postgres
 	// Partitioned tables are not supported by Gorm migration or models
 	// For partitioned tables the necessary DDL will be contained in PartitionCreate.
 	if !createStmt.Partition {
-		err := Retry(func() error {
+		err := Retry(ctx, func() error {
 			return db.WithContext(ctx).AutoMigrate(createStmt.GormModel)
 		})
 		err = errors.Wrapf(err, "Error creating table for %q: %v", reflect.TypeOf(createStmt.GormModel), err)

@@ -22,7 +22,7 @@ import (
 func main() {
 	startProfilingServer()
 	if err := run(); err != nil {
-		log.WriteToStderrf("Migrator failed: %s", err)
+		log.WriteToStderrf("Migrator failed: %+v", err)
 		os.Exit(1)
 	}
 }

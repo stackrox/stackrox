@@ -164,7 +164,9 @@ function IntegrationsTable({
                             {integrations.map((integration, rowIndex) => {
                                 const { id } = integration;
                                 const canTriggerBackup =
-                                    integration.type === 's3' || integration.type === 'gcs';
+                                    integration.type === 's3' ||
+                                    integration.type === 's3compatible' ||
+                                    integration.type === 'gcs';
                                 const actionItems = [
                                     {
                                         title: 'Trigger backup',
@@ -211,11 +213,8 @@ function IntegrationsTable({
                                             ) {
                                                 return (
                                                     <Td key="name">
-                                                        <Button
-                                                            variant={ButtonVariant.link}
-                                                            isInline
-                                                            component={LinkShim}
-                                                            href={getPathToViewDetails(
+                                                        <Link
+                                                            to={getPathToViewDetails(
                                                                 source,
                                                                 type,
                                                                 id
@@ -225,7 +224,7 @@ function IntegrationsTable({
                                                                 row={integration}
                                                                 column={column}
                                                             />
-                                                        </Button>
+                                                        </Link>
                                                     </Td>
                                                 );
                                             }

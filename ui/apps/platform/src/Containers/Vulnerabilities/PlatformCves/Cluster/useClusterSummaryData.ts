@@ -14,11 +14,11 @@ export const clusterSummaryDataQuery = gql`
     query getClusterVulnSummary($id: ID!, $query: String) {
         cluster(id: $id) {
             id
-            platformCVECountByFixability {
-                ...PlatformCveCountByStatus
+            platformCVECountByFixability(query: $query) {
+                ...PlatformCveCountByStatusFragment
             }
-            platformCVECountByType {
-                ...PlatformCveCountByType
+            platformCVECountByType(query: $query) {
+                ...PlatformCveCountByTypeFragment
             }
         }
     }

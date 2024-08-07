@@ -16,6 +16,7 @@ import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOp
 import { DEPLOYMENTS_QUERY } from 'queries/deployment';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
+import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
 
@@ -38,6 +39,14 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Deployment`,
             headerClassName: `w-1/8 ${defaultHeaderClassName}`,
             className: `w-1/8 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => {
+                const url = getConfigMgmtPathForEntitiesAndId('DEPLOYMENT', original.id);
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {original.name}
+                    </TableCellLink>
+                );
+            },
             accessor: 'name',
             id: deploymentSortFields.DEPLOYMENT,
             sortField: deploymentSortFields.DEPLOYMENT,

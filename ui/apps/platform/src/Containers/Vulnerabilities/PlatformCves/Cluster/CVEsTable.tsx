@@ -20,19 +20,7 @@ import {
 } from '../../utils/sortFields';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import { getPlatformEntityPagePath } from '../../utils/searchUtils';
-
-function displayCveType(cveType: string): string {
-    switch (cveType) {
-        case 'K8S_CVE':
-            return 'Kubernetes';
-        case 'ISTIO_CVE':
-            return 'Istio';
-        case 'OPENSHIFT_CVE':
-            return 'Openshift';
-        default:
-            return cveType;
-    }
-}
+import { displayCveType } from '../utils/stringUtils';
 
 export const sortFields = [
     CVE_SORT_FIELD,
@@ -45,6 +33,7 @@ export const defaultSortOption = { field: CVSS_SORT_FIELD, direction: 'desc' } a
 
 export const clusterVulnerabilityFragment = gql`
     fragment ClusterVulnerabilityFragment on ClusterVulnerability {
+        id
         cve
         isFixable
         cvss
@@ -55,6 +44,7 @@ export const clusterVulnerabilityFragment = gql`
 `;
 
 export type ClusterVulnerability = {
+    id: string;
     cve: string;
     isFixable: boolean;
     cvss: number;
@@ -66,9 +56,10 @@ export type ClusterVulnerability = {
 export type CVEsTableProps = {
     tableState: TableUIState<ClusterVulnerability>;
     getSortParams: UseURLSortResult['getSortParams'];
+    onClearFilters: () => void;
 };
 
-function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
+function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps) {
     const COL_SPAN = 5;
     const expandedRowSet = useSet<string>();
 
@@ -93,10 +84,18 @@ function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
                 tableState={tableState}
                 colSpan={COL_SPAN}
                 emptyProps={{ message: 'No CVEs were detected for this cluster' }}
+                filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((clusterVulnerability, rowIndex) => {
-                        const { cve, isFixable, vulnerabilityType, cvss, scoreVersion, summary } =
-                            clusterVulnerability;
+                        const {
+                            id,
+                            cve,
+                            isFixable,
+                            vulnerabilityType,
+                            cvss,
+                            scoreVersion,
+                            summary,
+                        } = clusterVulnerability;
                         const isExpanded = expandedRowSet.has(cve);
 
                         return (
@@ -110,9 +109,7 @@ function CVEsTable({ tableState, getSortParams }: CVEsTableProps) {
                                         }}
                                     />
                                     <Td dataLabel="CVE" modifier="nowrap">
-                                        <Link to={getPlatformEntityPagePath('CVE', cve)}>
-                                            {cve}
-                                        </Link>
+                                        <Link to={getPlatformEntityPagePath('CVE', id)}>{cve}</Link>
                                     </Td>
                                     <Td dataLabel="CVE status">
                                         <VulnerabilityFixableIconText isFixable={isFixable} />

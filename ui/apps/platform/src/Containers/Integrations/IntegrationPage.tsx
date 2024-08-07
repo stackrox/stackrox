@@ -20,7 +20,6 @@ import { Traits } from 'types/traits.proto';
 import { TraitsOriginLabel } from 'Containers/AccessControl/TraitsOriginLabel';
 import { isUserResource } from 'Containers/AccessControl/traits';
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getIntegrationLabel } from './utils/integrationsList';
 import { getEditDisabledMessage, getIsMachineAccessConfig } from './utils/integrationUtils';
 import usePageState from './hooks/usePageState';
@@ -35,13 +34,13 @@ export type IntegrationPageProps = {
 
 function IntegrationPage({ title, name, traits, children }: IntegrationPageProps): ReactElement {
     const permissions = useIntegrationPermissions();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const {
         pageState,
         params: { source, type, id },
     } = usePageState();
     const typeLabel = getIntegrationLabel(source, type);
-    const isTechPreview = isFeatureFlagEnabled('ROX_SCANNER_V4') && type === 'scannerv4';
+    // There is currently nothing relevant in Tech Preview.
+    const isTechPreview = false;
 
     const integrationsListPath = `${integrationsPath}/${source}/${type}`;
     const integrationEditPath = `${integrationsPath}/${source}/${type}/edit/${id as string}`;

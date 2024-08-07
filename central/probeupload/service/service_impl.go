@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/probesources"
 	"github.com/stackrox/rox/central/probeupload/manager"
@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/probeupload"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -119,7 +118,7 @@ func (s *service) doHandleProbeUpload(req *http.Request) error {
 	}
 
 	var manifest v1.ProbeUploadManifest
-	if err := protocompat.Unmarshal(manifestBytes, &manifest); err != nil {
+	if err := manifest.UnmarshalVT(manifestBytes); err != nil {
 		return errors.Wrap(err, "failed to unmarshal manifest")
 	}
 
@@ -135,8 +134,8 @@ func (s *service) doHandleProbeUpload(req *http.Request) error {
 	}
 
 	for _, file := range manifest.GetFiles() {
-		nextChunk := io.LimitReader(req.Body, file.GetSize_())
-		if err := s.mgr.StoreFile(req.Context(), file.GetName(), nextChunk, file.GetSize_(), file.GetCrc32()); err != nil {
+		nextChunk := io.LimitReader(req.Body, file.GetSize())
+		if err := s.mgr.StoreFile(req.Context(), file.GetName(), nextChunk, file.GetSize(), file.GetCrc32()); err != nil {
 			return errors.Wrapf(err, "failed to write file %s", file.GetName())
 		}
 	}

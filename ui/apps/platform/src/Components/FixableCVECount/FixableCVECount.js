@@ -13,10 +13,6 @@ function stopPropagation(e) {
 }
 
 const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
-    const classes = fixable
-        ? 'text-success-700 hover:text-success-800 underline'
-        : `text-base-600 ${url && !hideLink ? 'underline hover:text-primary-700' : ''}`;
-
     // can't just pluralize() because of special requirements
     //   1 CVE or 2 CVEs
     //   1 Fixable or 2 Fixable
@@ -29,9 +25,7 @@ const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
     const pluralized = count === 1 || fixable ? type : `${type}s`;
 
     const cveText = (
-        <span className={`${classes} ${individualClasses}`}>{`${
-            count === 0 ? 'No' : count
-        } ${pluralized}`}</span>
+        <span className={individualClasses}>{`${count === 0 ? 'No' : count} ${pluralized}`}</span>
     );
     const testId = fixable ? 'fixableCvesLink' : 'allCvesLink';
 
@@ -45,7 +39,7 @@ const CountElement = ({ count, url, fixable, hideLink, individualClasses }) => {
 };
 
 const FixableCVECount = ({ cves, fixable, url, fixableUrl, orientation, hideLink, showZero }) => {
-    const className = `text-sm items-center leading-normal whitespace-nowrap ${getOrientationClassName(
+    const className = `items-center leading-normal whitespace-nowrap ${getOrientationClassName(
         orientation
     )}`;
     const individualClasses = orientation === 'horizontal' ? 'mr-1' : '';

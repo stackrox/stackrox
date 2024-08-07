@@ -13,10 +13,10 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -209,6 +209,6 @@ func TestFilterOutDisabledPolicies(t *testing.T) {
 
 		manager := &managerImpl{removedOrDisabledPolicies: c.removedPolicies}
 		manager.filterOutDisabledPolicies(&testAlerts)
-		assert.Equal(t, c.expectedAlerts, testAlerts)
+		protoassert.SlicesEqual(t, c.expectedAlerts, testAlerts)
 	}
 }

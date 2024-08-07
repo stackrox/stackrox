@@ -18,6 +18,7 @@ import { workflowListPropTypes, workflowListDefaultProps } from 'constants/entit
 import removeEntityContextColumns from 'utils/tableUtils';
 import { namespaceSortFields } from 'constants/sortFields';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
+import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import WorkflowListPage from '../WorkflowListPage';
 
 export const defaultNamespaceSort = [
@@ -40,6 +41,14 @@ const VulnMgmtNamespaces = ({ selectedRowId, search, sort, page, data, totalResu
                 Header: `Namespace`,
                 headerClassName: `w-1/6 ${defaultHeaderClassName}`,
                 className: `w-1/6 ${defaultColumnClassName}`,
+                Cell: ({ original, pdf }) => {
+                    const url = getVulnMgmtPathForEntitiesAndId('NAMESPACE', original.metadata.id);
+                    return (
+                        <TableCellLink pdf={pdf} url={url}>
+                            {original.metadata.name}
+                        </TableCellLink>
+                    );
+                },
                 id: namespaceSortFields.NAMESPACE,
                 accessor: 'metadata.name',
                 sortField: namespaceSortFields.NAMESPACE,

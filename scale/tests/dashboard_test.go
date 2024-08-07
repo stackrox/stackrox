@@ -66,6 +66,7 @@ func BenchmarkDashboard(b *testing.B) {
 
 	alertService := v1.NewAlertServiceClient(connection)
 	deploymentService := v1.NewDeploymentServiceClient(connection)
+	// TODO(ROX-24528): This API is deprecated in 4.5. Remove this test once the API is removed")
 	summaryService := v1.NewSummaryServiceClient(connection)
 
 	b.ResetTimer()

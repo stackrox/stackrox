@@ -8,6 +8,7 @@ import {
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import PolicyStatusIconText from 'Components/PatternFly/IconText/PolicyStatusIconText';
+import TableCellLink from 'Components/TableCellLink';
 import entityTypes from 'constants/entityTypes';
 import { entityListPropTypes, entityListDefaultprops } from 'constants/entityPageProps';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
@@ -16,6 +17,7 @@ import { formatLifecycleStages } from 'Containers/Policies/policies.utils';
 import { POLICIES_QUERY } from 'queries/policy';
 import { sortSeverity } from 'sorters/sorters';
 import queryService from 'utils/queryService';
+import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import ListFrontendPaginated from './ListFrontendPaginated';
 
 import filterByPolicyStatus from './utilities/filterByPolicyStatus';
@@ -38,6 +40,14 @@ const tableColumns = [
         Header: `Policy`,
         headerClassName: `w-1/4 ${defaultHeaderClassName}`,
         className: `w-1/4 ${defaultColumnClassName}`,
+        Cell: ({ original, pdf }) => {
+            const url = getConfigMgmtPathForEntitiesAndId('POLICY', original.id);
+            return (
+                <TableCellLink pdf={pdf} url={url}>
+                    {original.name}
+                </TableCellLink>
+            );
+        },
         accessor: 'name',
         id: policySortFields.POLICY,
         sortField: policySortFields.POLICY,

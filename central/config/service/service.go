@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
@@ -17,6 +17,7 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -33,10 +34,14 @@ var (
 			// This endpoint should therefore remain public.
 			"/v1.ConfigService/GetPublicConfig",
 		},
+		or.Or(
+			user.With(permissions.View(resources.VulnerabilityManagementRequests)),
+			user.With(permissions.View(resources.Administration))): {
+			"/v1.ConfigService/GetVulnerabilityExceptionConfig",
+		},
 		user.With(permissions.View(resources.Administration)): {
 			"/v1.ConfigService/GetConfig",
 			"/v1.ConfigService/GetPrivateConfig",
-			"/v1.ConfigService/GetVulnerabilityExceptionConfig",
 		},
 		user.With(permissions.Modify(resources.Administration)): {
 			"/v1.ConfigService/PutConfig",
@@ -152,12 +157,12 @@ func (s *serviceImpl) GetVulnerabilityExceptionConfig(ctx context.Context, _ *v1
 	if !features.UnifiedCVEDeferral.Enabled() {
 		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.UnifiedCVEDeferral.EnvVar())
 	}
-	privateConfig, err := s.datastore.GetPrivateConfig(ctx)
+	vmExceptionConfig, err := s.datastore.GetVulnerabilityExceptionConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &v1.GetVulnerabilityExceptionConfigResponse{
-		Config: storagetov1.VulnerabilityExceptionConfig(privateConfig.GetVulnerabilityExceptionConfig()),
+		Config: storagetov1.VulnerabilityExceptionConfig(vmExceptionConfig),
 	}, nil
 }
 

@@ -7,7 +7,7 @@ import usePermissions from 'hooks/usePermissions';
 
 import {
     ScanConfigFormValues,
-    customBodyDefault,
+    getBodyDefault,
     getSubjectDefault,
 } from '../compliance.scanConfigs.utils';
 
@@ -32,8 +32,11 @@ function ReportConfiguration(): ReactElement {
             <Divider component="div" />
             <Form className="pf-v5-u-py-lg pf-v5-u-px-lg">
                 <NotifierConfigurationForm
-                    customBodyDefault={customBodyDefault}
-                    customSubjectDefault={getSubjectDefault(formik.values.parameters.name)}
+                    customBodyDefault={getBodyDefault(formik.values.profiles)}
+                    customSubjectDefault={getSubjectDefault(
+                        formik.values.parameters.name,
+                        formik.values.profiles
+                    )}
                     errors={formik.errors}
                     fieldIdPrefixForFormikAndPatternFly="report.notifierConfigurations"
                     hasWriteAccessForIntegration={hasWriteAccessForIntegration}

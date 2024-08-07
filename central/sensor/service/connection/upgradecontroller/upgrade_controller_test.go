@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version/testutils"
@@ -50,7 +51,7 @@ func (f *fakeClusterStorage) UpdateClusterUpgradeStatus(_ context.Context, clust
 	if _, ok := f.values[clusterID]; !ok {
 		return errors.Errorf("WRITE TO UNEXPECTED ID %s", clusterID)
 	}
-	f.values[clusterID] = status.Clone()
+	f.values[clusterID] = status.CloneVT()
 	return nil
 }
 
@@ -88,7 +89,7 @@ func (r *recordingConn) InjectMessage(_ concurrency.Waitable, msg *central.MsgTo
 	}
 	r.lock.Lock()
 	defer r.lock.Unlock()
-	r.triggers = append(r.triggers, msg.GetSensorUpgradeTrigger().Clone())
+	r.triggers = append(r.triggers, msg.GetSensorUpgradeTrigger().CloneVT())
 	return nil
 }
 
@@ -255,7 +256,7 @@ func (suite *UpgradeCtrlTestSuite) TestWithUpToDateSensor() {
 	suite.upgradabilityMustBe(storage.ClusterUpgradeStatus_UP_TO_DATE)
 	// It should send an empty trigger to the sensor of the current version,
 	// which is a signal to clean up the upgrade process if it isn't cleaned up yet.
-	suite.Equal(&central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
+	protoassert.Equal(suite.T(), &central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
 }
 
 func (suite *UpgradeCtrlTestSuite) TestWithOldSensorNoAutoUpgradeFlag() {
@@ -264,7 +265,7 @@ func (suite *UpgradeCtrlTestSuite) TestWithOldSensorNoAutoUpgradeFlag() {
 	suite.upgradabilityMustBe(storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE)
 
 	// It should send an empty trigger, since we don't want the sensor to auto-upgrade
-	suite.Equal(&central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
+	protoassert.Equal(suite.T(), &central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
 
 	// Now, trigger an upgrade.
 	suite.NoError(suite.upgradeCtrl.Trigger(context.Background()))
@@ -372,7 +373,7 @@ func (suite *UpgradeCtrlTestSuite) TestSensorGoesAwayAndComesBackInTheMiddle() {
 	suite.upgradabilityMustBe(storage.ClusterUpgradeStatus_AUTO_UPGRADE_POSSIBLE)
 
 	// It should send an empty trigger, since we don't want the sensor to auto-upgrade
-	suite.Equal(&central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
+	protoassert.Equal(suite.T(), &central.SensorUpgradeTrigger{}, suite.waitForTriggerNumber(1))
 
 	// Now, trigger an upgrade.
 	suite.NoError(suite.upgradeCtrl.Trigger(context.Background()))

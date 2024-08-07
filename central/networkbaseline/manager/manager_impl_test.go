@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/networkbaseline"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -205,14 +206,14 @@ func (suite *ManagerTestSuite) assertBaselinesAre(baselines ...*storage.NetworkB
 	// Assume that the test takes no longer than one minute.
 	obsPeriodEnd := obsPeriodStart.Add(time.Minute)
 	for _, baseline := range suite.ds.baselines {
-		cloned := baseline.Clone()
+		cloned := baseline.CloneVT()
 		actualObsEnd := timestamp.FromProtobuf(cloned.GetObservationPeriodEnd())
 		suite.True(actualObsEnd.After(obsPeriodStart), "Actual obs end: %v, expected obs window: %v-%v", actualObsEnd.GoTime(), obsPeriodStart.GoTime(), obsPeriodEnd.GoTime())
 		suite.True(obsPeriodEnd.After(actualObsEnd), "Actual obs end: %v, expected obs window: %v-%v", actualObsEnd.GoTime(), obsPeriodStart.GoTime(), obsPeriodEnd.GoTime())
 		cloned.ObservationPeriodEnd = nil
 		baselinesWithoutObsPeriod = append(baselinesWithoutObsPeriod, cloned)
 	}
-	suite.ElementsMatch(baselinesWithoutObsPeriod, baselines)
+	protoassert.ElementsMatch(suite.T(), baselinesWithoutObsPeriod, baselines)
 }
 
 func (suite *ManagerTestSuite) TestFlowsUpdateForOtherEntityTypes() {
@@ -728,7 +729,7 @@ func (suite *ManagerTestSuite) TestLockBaseline() {
 	)
 	baseline1 := suite.mustGetBaseline(1)
 	beforeLockUpdateState := baseline1.GetLocked()
-	baseline1Copy := baseline1.Clone()
+	baseline1Copy := baseline1.CloneVT()
 	baseline1Copy.Locked = !beforeLockUpdateState
 	expectOneTimeCallToConnectionManagerWithBaseline(suite, baseline1Copy)
 
@@ -805,7 +806,7 @@ func (suite *ManagerTestSuite) TestBaselineSyncMsg() {
 	suite.Nil(suite.m.ProcessBaselineLockUpdate(managerCtx, depID(1), false))
 
 	baseline1 := suite.mustGetBaseline(1)
-	baseline1Copy := baseline1.Clone()
+	baseline1Copy := baseline1.CloneVT()
 	baseline1Copy.Locked = true
 	// Lock state changed from unlocked to locked, we should sync this baseline to sensor now
 	expectOneTimeCallToConnectionManagerWithBaseline(suite, baseline1Copy)

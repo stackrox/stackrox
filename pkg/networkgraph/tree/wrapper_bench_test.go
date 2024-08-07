@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,7 +25,7 @@ func BenchmarkNetworkTreeWrapper(b *testing.B) {
 
 	b.Run("NetworkTreeWrapper:Get", func(b *testing.B) {
 		for _, e := range entities {
-			require.Equal(b, e, tree.Get(e.GetId()))
+			protoassert.Equal(b, e, tree.Get(e.GetId()))
 		}
 	})
 

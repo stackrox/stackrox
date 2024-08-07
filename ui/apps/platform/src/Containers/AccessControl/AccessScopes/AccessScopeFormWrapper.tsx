@@ -98,6 +98,7 @@ function AccessScopeFormWrapper({
                 setAlertSubmit(
                     <Alert
                         title="Failed to save access scope"
+                        component="p"
                         variant={AlertVariant.danger}
                         isInline
                     >
@@ -123,7 +124,7 @@ function AccessScopeFormWrapper({
             <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pt-0">
                 <ToolbarContent>
                     <ToolbarItem>
-                        <Title headingLevel="h2">
+                        <Title headingLevel="h1">
                             {action === 'create' ? 'Create access scope' : accessScope.name}
                         </Title>
                     </ToolbarItem>

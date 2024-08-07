@@ -56,16 +56,13 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                 const headerTextComponent = (
                     <div className="w-full flex items-center">
                         <div className="flex items-center" data-testid="side-panel-header">
-                            <Link
-                                to={headerUrl}
-                                className="w-full flex text-primary-700 hover:text-primary-800 focus:text-primary-700"
-                            >
+                            <Link to={headerUrl} className="w-full flex pf-v5-u-link-color">
                                 <div className="flex flex-1 items-center pl-4 leading-normal font-700">
                                     {linkText}
                                 </div>
                             </Link>
                             <Link
-                                className="mx-2 text-primary-700 hover:text-primary-800 p-1 bg-primary-300 rounded flex"
+                                className="mx-2 pf-v5-u-link-color p-1 rounded flex"
                                 to={headerUrl}
                                 target="_blank"
                                 aria-label="External link"

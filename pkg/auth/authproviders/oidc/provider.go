@@ -4,8 +4,10 @@ import (
 	"context"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc/internal/endpoint"
 )
@@ -19,7 +21,11 @@ import (
 // slash added or removed.
 func createOIDCProvider(ctx context.Context, helper *endpoint.Helper, providerFactory providerFactoryFunc) (*informedProvider, error) {
 	var err error
-	ctx = oidc.ClientContext(ctx, helper.HTTPClient())
+	retryClient := retryablehttp.NewClient()
+	retryClient.HTTPClient = helper.HTTPClient()
+	retryClient.RetryWaitMin = 10 * time.Second
+
+	ctx = oidc.ClientContext(ctx, retryClient.StandardClient())
 	for _, issuer := range helper.URLsForDiscovery() {
 		var provider oidcProvider
 		if provider, err = providerFactory(ctx, issuer); err == nil {

@@ -49,34 +49,6 @@
 {{ end }}
 
 {{/*
-    Setup configuration for persistence backend.
-    TODO(ROX-16253): Remove PVC
-  */}}
-{{ $volumeCfg := dict }}
-{{ if $centralCfg.persistence.none }}
-  {{ $_ := set $volumeCfg "emptyDir" dict }}
-{{ end }}
-{{ if $centralCfg.persistence.hostPath }}
-  {{ if not $centralCfg.nodeSelector }}
-    {{ include "srox.warn" (list $ "You have selected host path persistence, but not specified a node selector. This is unlikely to work reliably.") }}
-  {{ end }}
-  {{ $_ := set $volumeCfg "hostPath" (dict "path" $centralCfg.persistence.hostPath) }}
-{{ end }}
-{{/* Configure PVC if either any of the settings in `central.persistence.persistentVolumeClaim` are provided,
-     or no other persistence backend has been configured yet. */}}
-{{ if or (not (deepEqual $._rox._configShape.central.persistence.persistentVolumeClaim $centralCfg.persistence.persistentVolumeClaim)) (not $volumeCfg) }}
-  {{ $pvcCfg := $centralCfg.persistence.persistentVolumeClaim }}
-  {{ $_ := include "srox.mergeInto" (list $pvcCfg $._rox._defaults.pvcDefaults (dict "createClaim" $.Release.IsInstall)) }}
-  {{ $_ = set $volumeCfg "persistentVolumeClaim" (dict "claimName" $pvcCfg.claimName) }}
-  {{ if $pvcCfg.createClaim }}
-    {{ $_ = set $centralCfg.persistence "_pvcCfg" $pvcCfg }}
-  {{ end }}
-  {{ if $pvcCfg.storageClass}}
-    {{ $_ = set $._rox._state "referencedStorageClasses" (mustAppend $._rox._state.referencedStorageClasses $pvcCfg.storageClass | uniq) }}
-  {{ end }}
-{{ end }}
-
-{{/*
     Central's DB PVC config setup
   */}}
 {{ $dbVolumeCfg := dict }}
@@ -106,11 +78,6 @@
 {{ end }}
 {{ end }}
 
-{{ $allPersistenceMethods := keys $volumeCfg | sortAlpha }}
-{{ if ne (len $allPersistenceMethods) 1 }}
-  {{ include "srox.fail" (printf "Invalid or no persistence configurations for central: [%s]" (join "," $allPersistenceMethods)) }}
-{{ end }}
-{{ $_ = set $centralCfg.persistence "_volumeCfg" $volumeCfg }}
 {{ if not $centralDBCfg.external }}
 {{ $_ = set $centralDBCfg.persistence "_volumeCfg" $dbVolumeCfg }}
 {{ end }}

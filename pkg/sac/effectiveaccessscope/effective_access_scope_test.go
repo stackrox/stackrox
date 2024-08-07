@@ -6,6 +6,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	labelUtils "github.com/stackrox/rox/pkg/labels"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -766,19 +767,19 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			var clonedClusters []*storage.Cluster
 			for _, c := range clusters {
-				clonedClusters = append(clonedClusters, c.Clone())
+				clonedClusters = append(clonedClusters, c.CloneVT())
 			}
 
 			var clonedNamespaces []*storage.NamespaceMetadata
 			for _, ns := range namespaces {
-				clonedNamespaces = append(clonedNamespaces, ns.Clone())
+				clonedNamespaces = append(clonedNamespaces, ns.CloneVT())
 			}
 
 			result, err := ComputeEffectiveAccessScope(tc.scope.GetRules(), clusters, namespaces, tc.detail)
 			assert.Truef(t, tc.hasError == (err != nil), "error: %v", err)
 			assert.Equal(t, tc.expected, result, tc.scopeDesc)
-			assert.Equal(t, clusters, clonedClusters, "clusters have been modified")
-			assert.Equal(t, namespaces, clonedNamespaces, "namespaces have been modified")
+			protoassert.SlicesEqual(t, clusters, clonedClusters, "clusters have been modified")
+			protoassert.SlicesEqual(t, namespaces, clonedNamespaces, "namespaces have been modified")
 			if tc.expected != nil {
 				assert.Equal(t, tc.scopeStr, result.String())
 

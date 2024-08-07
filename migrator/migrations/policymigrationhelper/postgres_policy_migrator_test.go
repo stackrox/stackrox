@@ -16,6 +16,7 @@ import (
 	policySchema "github.com/stackrox/rox/migrator/migrations/policymigrationhelper/policypostgresstorefortest/schema"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -64,7 +65,7 @@ func (s *postgresPolicyMigratorTestSuite) comparePolicyWithDB(policyID string, p
 	s.True(exists)
 
 	policy.Categories = nil
-	s.EqualValues(policy, newPolicy)
+	protoassert.Equal(s.T(), policy, newPolicy)
 }
 
 // TODO: Remove once the deprecated functions are removed
@@ -154,7 +155,7 @@ func (s *postgresPolicyMigratorTestSuite) TestAllUnmodifiedPoliciesGetUpdated() 
 				policy.Name = fmt.Sprintf("policy-name%d", i) // name is a unique key
 				policy.Description = "sfasdf"
 
-				comparisonPolicy := policy.Clone()
+				comparisonPolicy := policy.CloneVT()
 				comparisonPolicies[policy.Id] = comparisonPolicy
 				policiesToMigrate[policy.Id] = PolicyChanges{
 					FieldsToCompare: []FieldComparator{PolicySectionComparator, ExclusionComparator, RemediationComparator, RationaleComparator},

@@ -39,7 +39,6 @@ import (
 	"github.com/stackrox/rox/pkg/images/defaults"
 	notifierProcessor "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -56,7 +55,7 @@ const (
 )
 
 const (
-	defaultAdmissionControllerTimeout = 3
+	defaultAdmissionControllerTimeout = 10
 )
 
 var (
@@ -167,7 +166,7 @@ func (ds *datastoreImpl) buildCache(ctx context.Context) error {
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return err
 	}
 
@@ -266,7 +265,7 @@ func (ds *datastoreImpl) GetClustersForSAC(ctx context.Context) ([]*storage.Clus
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 
@@ -295,13 +294,13 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 func (ds *datastoreImpl) WalkClusters(ctx context.Context, fn func(obj *storage.Cluster) error) error {
 	walkFn := func() error {
 		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
-			clonedCluster := cluster.Clone()
+			clonedCluster := cluster.CloneVT()
 			ds.populateHealthInfos(ctx, clonedCluster)
 			ds.updateClusterPriority(clonedCluster)
 			return fn(clonedCluster)
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return err
 	}
 	return nil
@@ -883,7 +882,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		cluster = &storage.Cluster{
 			Name:               clusterName,
 			InitBundleId:       bundleID,
-			MostRecentSensorId: hello.GetDeploymentIdentification().Clone(),
+			MostRecentSensorId: hello.GetDeploymentIdentification().CloneVT(),
 		}
 		clusterConfig := helmConfig.GetClusterConfig()
 		configureFromHelmConfig(cluster, clusterConfig)
@@ -891,7 +890,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		// Unless we know for sure that we are not Helm-managed we do store the Helm configuration,
 		// in particular this also applies to the UNKNOWN case.
 		if manager != storage.ManagerType_MANAGER_TYPE_MANUAL {
-			cluster.HelmConfig = clusterConfig.Clone()
+			cluster.HelmConfig = clusterConfig.CloneVT()
 		}
 
 		if _, err := ds.addClusterNoLock(ctx, cluster); err != nil {
@@ -942,17 +941,17 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	clusterConfig := helmConfig.GetClusterConfig()
 	currentCluster := cluster
 
-	cluster = cluster.Clone()
+	cluster = cluster.CloneVT()
 	cluster.ManagedBy = manager
 	cluster.InitBundleId = bundleID
 	if manager == storage.ManagerType_MANAGER_TYPE_MANUAL {
 		cluster.HelmConfig = nil
 	} else {
 		configureFromHelmConfig(cluster, clusterConfig)
-		cluster.HelmConfig = clusterConfig.Clone()
+		cluster.HelmConfig = clusterConfig.CloneVT()
 	}
 
-	if !protocompat.Equal(currentCluster, cluster) {
+	if !currentCluster.EqualVT(cluster) {
 		// Cluster is dirty and needs to be updated in the DB.
 		if err := ds.updateClusterNoLock(ctx, cluster); err != nil {
 			return nil, err
@@ -1033,7 +1032,7 @@ func addDefaults(cluster *storage.Cluster) error {
 }
 
 func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.CompleteClusterConfig) {
-	cluster.DynamicConfig = helmConfig.GetDynamicConfig().Clone()
+	cluster.DynamicConfig = helmConfig.GetDynamicConfig().CloneVT()
 
 	staticConfig := helmConfig.GetStaticConfig()
 	cluster.Labels = helmConfig.GetClusterLabels()
@@ -1045,7 +1044,7 @@ func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.Compl
 	cluster.AdmissionController = staticConfig.GetAdmissionController()
 	cluster.AdmissionControllerUpdates = staticConfig.GetAdmissionControllerUpdates()
 	cluster.AdmissionControllerEvents = staticConfig.GetAdmissionControllerEvents()
-	cluster.TolerationsConfig = staticConfig.GetTolerationsConfig().Clone()
+	cluster.TolerationsConfig = staticConfig.GetTolerationsConfig().CloneVT()
 	cluster.SlimCollector = staticConfig.GetSlimCollector()
 }
 
@@ -1054,11 +1053,11 @@ func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluste
 	walkFn := func() error {
 		clusters = clusters[:0]
 		return ds.clusterStorage.Walk(ctx, func(cluster *storage.Cluster) error {
-			clusters = append(clusters, cluster.Clone())
+			clusters = append(clusters, cluster.CloneVT())
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 	return clusters, nil

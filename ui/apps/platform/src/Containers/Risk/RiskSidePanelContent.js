@@ -27,7 +27,7 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
     if (!selectedDeployment) {
         return (
             <div className="h-full flex-1 bg-base-200 border-r border-l border-b border-base-400 p-3">
-                <Alert variant="warning" isInline title="Deployment not found">
+                <Alert variant="warning" isInline title="Deployment not found" component="p">
                     The selected deployment may have been removed.
                 </Alert>
             </div>
@@ -59,7 +59,7 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
                         </Link>
                     )}
                     {!deploymentRisk ? (
-                        <Alert variant="warning" isInline title="Risk not found">
+                        <Alert variant="warning" isInline title="Risk not found" component="p">
                             Risk for selected deployment may not have been processed.
                         </Alert>
                     ) : (
@@ -80,7 +80,12 @@ function RiskSidePanelContent({ isFetching, selectedDeployment, deploymentRisk, 
                         {!processGroup ||
                         !processGroup.groups ||
                         processGroup.groups.length === 0 ? (
-                            <Alert variant="warning" isInline title="No processes discovered">
+                            <Alert
+                                variant="warning"
+                                isInline
+                                title="No processes discovered"
+                                component="p"
+                            >
                                 <p>
                                     The selected deployment may not have running pods, or Collector
                                     may not be running in your cluster.

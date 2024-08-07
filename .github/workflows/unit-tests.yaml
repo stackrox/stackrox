@@ -183,9 +183,6 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Create combined mono repo lock file
-      uses: ./.github/actions/create-concatenated-ui-monorepo-lock
-
     - name: Cache UI dependencies
       uses: ./.github/actions/cache-ui-dependencies
 

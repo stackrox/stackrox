@@ -7,8 +7,9 @@ import entityTypes from 'constants/entityTypes';
 import networkStatuses from 'constants/networkStatuses';
 import Query from 'Components/ThrowingQuery';
 import Widget from 'Components/Widget';
-import Lollipop from 'Components/visuals/Lollipop';
 import ReactRouterPropTypes from 'react-router-prop-types';
+
+import Lollipop from './Lollipop';
 
 const QUERY = gql`
     query usersWithClusterAdminRoles($query: String) {

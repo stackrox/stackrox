@@ -5,11 +5,19 @@ import { SearchFilter } from 'types/search';
 export type SnoozeCveToggleButtonProps = {
     searchFilter: SearchFilter;
     setSearchFilter: (searchFilter: SearchFilter) => void;
+    snoozedCveCount: number | undefined;
 };
 
-function SnoozeCveToggleButton({ searchFilter, setSearchFilter }: SnoozeCveToggleButtonProps) {
+function SnoozeCveToggleButton({
+    searchFilter,
+    setSearchFilter,
+    snoozedCveCount,
+}: SnoozeCveToggleButtonProps) {
     const isSnoozeFilterActive = searchFilter['CVE Snoozed']?.[0] === 'true';
     const buttonText = isSnoozeFilterActive ? 'Show observed CVEs' : 'Show snoozed CVEs';
+    const showCountBadge =
+        typeof snoozedCveCount === 'number' && snoozedCveCount > 0 && !isSnoozeFilterActive;
+    const badgeCount = showCountBadge ? { isRead: true, count: snoozedCveCount } : undefined;
 
     function toggleSnoozeFilter() {
         const nextFilter = { ...searchFilter };
@@ -22,7 +30,7 @@ function SnoozeCveToggleButton({ searchFilter, setSearchFilter }: SnoozeCveToggl
     }
 
     return (
-        <Button variant="secondary" onClick={toggleSnoozeFilter}>
+        <Button variant="secondary" onClick={toggleSnoozeFilter} countOptions={badgeCount}>
             {buttonText}
         </Button>
     );

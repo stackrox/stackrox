@@ -10,6 +10,7 @@ import (
 	datastoreMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -76,8 +77,8 @@ func (suite *SecretServiceTestSuite) TestGetSecret() {
 
 	actualSecretAndRelationship, err := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
 	suite.NoError(err)
-	suite.Equal(expectedSecret, actualSecretAndRelationship)
-	suite.Equal(expectedRelationship, actualSecretAndRelationship.GetRelationship())
+	protoassert.Equal(suite.T(), expectedSecret, actualSecretAndRelationship)
+	protoassert.Equal(suite.T(), expectedRelationship, actualSecretAndRelationship.GetRelationship())
 }
 
 // Test that when we fail to find a secret, an error is returned.

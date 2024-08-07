@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package common;
+
+import "google/protobuf/any.proto";
+
+option go_package = "./api/common;common";
+option java_package = "io.stackrox.proto.api.common";
+
+// The `Status` type defines a logical error model that is suitable for
+// different programming environments, including REST APIs and RPC APIs.
+message ExtendedRpcStatus {
+  // A simple error code that can be easily handled by the client. The
+  // actual error code is defined by `google.rpc.Code`.
+  int32 code = 1;
+
+  // A developer-facing human-readable error message in English. It should
+  // both explain the error and offer an actionable resolution to it.
+  string message = 2;
+
+  // Additional error information that the client code can use to handle
+  // the error, such as retry info or a help link.
+  repeated google.protobuf.Any details = 3;
+
+  // Backward compatibility to gRPC Gateway V1 returned error payload.
+  // It contains the same string returned in "message" field.
+  string error = 4 [deprecated = true];
+}

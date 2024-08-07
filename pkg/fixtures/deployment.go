@@ -108,6 +108,33 @@ func LightweightDeployment() *storage.Deployment {
 				},
 			},
 		},
+		Priority: 1,
+	}
+}
+
+// DuplicateImageDeployment returns a mock deployment with two containers that have the same image.
+func DuplicateImageDeployment() *storage.Deployment {
+	return &storage.Deployment{
+		Name:        "nginx_server",
+		Id:          fixtureconsts.Deployment1,
+		ClusterId:   fixtureconsts.Cluster1,
+		ClusterName: "prod cluster",
+		Namespace:   "stackrox",
+		Containers: []*storage.Container{
+			{
+				Name:  "nginx-1",
+				Image: types2.ToContainerImage(LightweightDeploymentImage()),
+			},
+			{
+				Name:  "nginx-2",
+				Image: types2.ToContainerImage(LightweightDeploymentImage()),
+			},
+			{
+				Name:  "supervulnerable",
+				Image: types2.ToContainerImage(GetImage()),
+			},
+		},
+		Priority: 1,
 	}
 }
 

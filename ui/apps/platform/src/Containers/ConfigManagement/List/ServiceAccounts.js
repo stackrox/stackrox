@@ -14,6 +14,7 @@ import { SERVICE_ACCOUNTS_QUERY } from 'queries/serviceAccount';
 import { sortValueByLength } from 'sorters/sorters';
 import queryService from 'utils/queryService';
 import URLService from 'utils/URLService';
+import { getConfigMgmtPathForEntitiesAndId } from '../entities';
 import List from './List';
 
 export const defaultServiceAccountSort = [
@@ -34,6 +35,14 @@ const buildTableColumns = (match, location, entityContext) => {
             Header: `Service Accounts`,
             headerClassName: `w-1/10 ${defaultHeaderClassName}`,
             className: `w-1/10 ${defaultColumnClassName}`,
+            Cell: ({ original, pdf }) => {
+                const url = getConfigMgmtPathForEntitiesAndId('SERVICE_ACCOUNT', original.id);
+                return (
+                    <TableCellLink pdf={pdf} url={url}>
+                        {original.name}
+                    </TableCellLink>
+                );
+            },
             accessor: 'name',
             id: serviceAccountSortFields.SERVCE_ACCOUNT,
             sortField: serviceAccountSortFields.SERVCE_ACCOUNT,

@@ -93,7 +93,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
             <Alert
                 variant="info"
                 title="Upon successful installation, the secured clusters might take a few moments to show up."
-                component="div"
+                component="p"
                 isInline
             />
             <PageSection variant="light">
@@ -105,7 +105,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                     <Alert
                         variant="warning"
                         title="Unable to fetch cluster init bundles"
-                        component="div"
+                        component="p"
                         isInline
                     >
                         {errorMessage}

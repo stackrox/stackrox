@@ -1,0 +1,38 @@
+{
+    "data": {
+        "totalNodeCount": 50,
+        "nodeCount": 50,
+        "nodeCVE": {
+            "distroTuples": [
+                {
+                    "operatingSystem": "rhcos:4.14",
+                    "__typename": "NodeVulnerability"
+                },
+                {
+                    "operatingSystem": "rhcos:4.15",
+                    "__typename": "NodeVulnerability"
+                }
+            ],
+            "affectedNodeCountBySeverity": {
+                "critical": {
+                    "total": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "important": {
+                    "total": 19,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "moderate": {
+                    "total": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "low": {
+                    "total": 0,
+                    "__typename": "ResourceCountByFixability"
+                },
+                "__typename": "ResourceCountByCVESeverity"
+            },
+            "__typename": "NodeCVECore"
+        }
+    }
+}

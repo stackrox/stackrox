@@ -47,7 +47,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
     const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
     const listClustersQuery = useCallback(() => listComplianceIntegrations(), []);
-    const { data: clusters, loading: isFetchingClusters } = useRestQuery(listClustersQuery);
+    const { data: clusters, isLoading: isFetchingClusters } = useRestQuery(listClustersQuery);
 
     const listProfilesQuery = useCallback(() => {
         if (clustersUsedForProfileData.length > 0) {
@@ -55,7 +55,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
         }
         return Promise.resolve([]);
     }, [clustersUsedForProfileData]);
-    const { data: profiles, loading: isFetchingProfiles } = useRestQuery(listProfilesQuery);
+    const { data: profiles, isLoading: isFetchingProfiles } = useRestQuery(listProfilesQuery);
 
     async function onSave() {
         setIsCreating(true);

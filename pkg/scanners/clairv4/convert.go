@@ -1,6 +1,7 @@
 package clairv4
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -21,7 +22,7 @@ var vulnNamePattern = regexp.MustCompile(`((CVE|ALAS|DSA)-\d{4}-\d+)|((RHSA|RHBA
 // manifest returns a ClairCore image manifest for the given image.
 func manifest(registry registrytypes.Registry, image *storage.Image) (*claircore.Manifest, error) {
 	// Ensure this exists before bothering to continue.
-	cfg := registry.Config()
+	cfg := registry.Config(context.Background())
 	if cfg == nil {
 		return nil, errors.Errorf("registry configuration does not exist for registry %s", registry.Name())
 	}

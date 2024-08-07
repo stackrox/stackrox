@@ -77,7 +77,7 @@ func (d *datastoreImpl) ComplianceCheckResultStats(ctx context.Context, query *v
 		return nil, err
 	}
 
-	cloned := query.Clone()
+	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Cluster).Proto(),
@@ -127,7 +127,7 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 		return nil, err
 	}
 
-	cloned := query.Clone()
+	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ComplianceOperatorProfileName).Proto(),
 	}
@@ -167,7 +167,7 @@ func (d *datastoreImpl) ComplianceProfileResults(ctx context.Context, query *v1.
 		return nil, err
 	}
 
-	cloned := query.Clone()
+	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ComplianceOperatorProfileName).Proto(),
 		search.NewQuerySelect(search.ComplianceOperatorCheckName).Proto(),
@@ -222,7 +222,7 @@ func (d *datastoreImpl) ComplianceClusterStats(ctx context.Context, query *v1.Qu
 		return nil, err
 	}
 
-	cloned := query.Clone()
+	cloned := query.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.ClusterID).Proto(),
 		search.NewQuerySelect(search.Cluster).Proto(),
@@ -279,6 +279,13 @@ func (d *datastoreImpl) CountByField(ctx context.Context, query *v1.Query, field
 	}
 
 	return 0, errors.Errorf("Unable to group result counts by %q", field)
+}
+
+func (d *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn func(result *storage.ComplianceOperatorCheckResultV2) error) error {
+	wrappedFn := func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
+		return fn(checkResult)
+	}
+	return d.store.WalkByQuery(ctx, query, wrappedFn)
 }
 
 func (d *datastoreImpl) countByCluster(ctx context.Context, query *v1.Query, field search.FieldLabel) (int, error) {
@@ -360,7 +367,7 @@ func (d *datastoreImpl) DeleteResultsByCluster(ctx context.Context, clusterID st
 }
 
 func withCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(field).AggrFunc(aggregatefunc.Count).Distinct().Proto(),
 	}
@@ -368,7 +375,7 @@ func withCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
 }
 
 func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
-	cloned := q.Clone()
+	cloned := q.CloneVT()
 	cloned.Selects = append(cloned.Selects,
 		search.NewQuerySelect(countOn).
 			AggrFunc(aggregatefunc.Count).

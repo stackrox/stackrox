@@ -1,7 +1,5 @@
 import React, { ReactElement, useContext } from 'react';
-import PropTypes from 'prop-types';
 import pluralize from 'pluralize';
-import camelCase from 'lodash/camelCase';
 
 import TableCellLink from 'Components/TableCellLink';
 import workflowStateContext from 'Containers/workflowStateContext';
@@ -34,32 +32,17 @@ function TableCountLink({
 
     const text = `${count} ${pluralize(type, count)}`;
     if (textOnly) {
-        return <div data-testid={`${type}CountText`}>{text}</div>;
+        return <div>{text}</div>;
     }
 
     const newState = workflowState.pushListItem(selectedRowId).pushList(entityType);
     const urlWithSearch = newState.setSearch(search).toUrl();
 
     return (
-        <TableCellLink pdf={textOnly} url={urlWithSearch} testid={`${camelCase(type)}CountLink`}>
+        <TableCellLink pdf={textOnly} url={urlWithSearch}>
             {text}
         </TableCellLink>
     );
 }
-
-TableCountLink.propTypes = {
-    entityType: PropTypes.string.isRequired,
-    selectedRowId: PropTypes.string.isRequired,
-    textOnly: PropTypes.bool,
-    count: PropTypes.number.isRequired,
-    entityTypeText: PropTypes.string,
-    search: PropTypes.shape({}),
-};
-
-TableCountLink.defaultProps = {
-    textOnly: false,
-    entityTypeText: null,
-    search: {},
-};
 
 export default TableCountLink;

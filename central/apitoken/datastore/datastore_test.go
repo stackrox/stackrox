@@ -6,6 +6,7 @@ import (
 
 	storeMocks "github.com/stackrox/rox/central/apitoken/datastore/internal/store/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -69,7 +70,7 @@ func (s *apiTokenDataStoreTestSuite) TestGetTokenOrNil() {
 
 	token, err = s.dataStore.GetTokenOrNil(s.hasReadCtx, "id")
 	s.NoError(err)
-	s.Equal(expectedToken, token)
+	protoassert.Equal(s.T(), expectedToken, token)
 }
 
 func (s *apiTokenDataStoreTestSuite) TestRevokeToken() {

@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -18,6 +17,7 @@ import (
 	basicAuthProvider "github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
@@ -287,7 +287,7 @@ func (l *loginCommand) verifyLoginAuthProviders() error {
 	defer utils.IgnoreError(resp.Body.Close)
 
 	var loginAuthProviders v1.GetLoginAuthProvidersResponse
-	if err := jsonpb.Unmarshal(resp.Body, &loginAuthProviders); err != nil {
+	if err := jsonutil.JSONReaderToProto(resp.Body, &loginAuthProviders); err != nil {
 		return errors.Wrap(err, "unmarshalling login auth providers response")
 	}
 

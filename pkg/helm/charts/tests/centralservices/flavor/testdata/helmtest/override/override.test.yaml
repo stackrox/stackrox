@@ -1,7 +1,3 @@
-values:
-  central:
-    persistence:
-      none: true
 tests:
 - name: should use custom tag
   expect: |

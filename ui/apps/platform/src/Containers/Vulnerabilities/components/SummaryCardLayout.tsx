@@ -56,7 +56,7 @@ export function SummaryCardLayout({
         <LoadingContext.Provider value={{ isLoading }}>
             <div className="pf-v5-u-background-color-100 pf-v5-u-p-lg">
                 {error ? (
-                    <Alert title={errorAlertTitle} isInline variant="danger">
+                    <Alert title={errorAlertTitle} component="p" isInline variant="danger">
                         {getAxiosErrorMessage(error)}
                     </Alert>
                 ) : (

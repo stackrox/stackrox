@@ -150,7 +150,13 @@ class LoginPage extends Component {
                     []
                 ))(authProviderResponse.error_uri);
             return (
-                <Alert variant="danger" isInline title={errorKey} className="pf-v5-u-mb-md">
+                <Alert
+                    variant="danger"
+                    isInline
+                    title={errorKey}
+                    component="p"
+                    className="pf-v5-u-mb-md"
+                >
                     {errorMsg} {errorLink}
                 </Alert>
             );
@@ -180,6 +186,7 @@ class LoginPage extends Component {
                         variant="danger"
                         isInline
                         title="roxct-authorize-error"
+                        component="p"
                         className="pf-v5-u-mb-md"
                     >
                         Only basic auth provider given. Authorizing roxctl only works with non-basic

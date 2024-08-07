@@ -20,8 +20,25 @@ import { getDateTime } from 'utils/dateUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import ExpandableLabelSection from '../../components/ExpandableLabelSection';
-import useClusterExtendedDetails from './useClusterExtendedDetails';
+import useClusterExtendedDetails, { ProviderMetadata } from './useClusterExtendedDetails';
 import { displayClusterType } from '../utils/stringUtils';
+
+function getCloudProviderText(providerMetadata: ProviderMetadata | undefined): string | null {
+    if (!providerMetadata) {
+        return null;
+    }
+    const { region } = providerMetadata;
+    if (providerMetadata.aws) {
+        return `AWS ${region}`;
+    }
+    if (providerMetadata.azure) {
+        return `Azure ${region}`;
+    }
+    if (providerMetadata.google) {
+        return `GCP ${region}`;
+    }
+    return null;
+}
 
 export type ClusterPageDetailsProps = {
     clusterId: string;
@@ -66,18 +83,20 @@ function ClusterPageDetails({ clusterId }: ClusterPageDetailsProps) {
                                                 {displayClusterType(data.cluster.type)}
                                             </DescriptionListDescription>
                                         </DescriptionListGroup>
-                                        {/*
-                                        {data.cluster.cloudProvider && (
+                                        {getCloudProviderText(
+                                            data.cluster.status?.providerMetadata
+                                        ) && (
                                             <DescriptionListGroup>
                                                 <DescriptionListTerm>
                                                     Cloud provider
                                                 </DescriptionListTerm>
                                                 <DescriptionListDescription>
-                                                    {data.cluster.cloudProvider}
+                                                    {getCloudProviderText(
+                                                        data.cluster.status?.providerMetadata
+                                                    )}
                                                 </DescriptionListDescription>
                                             </DescriptionListGroup>
                                         )}
-                                        */}
                                         {data.cluster.status?.orchestratorMetadata?.buildDate && (
                                             <DescriptionListGroup>
                                                 <DescriptionListTerm>

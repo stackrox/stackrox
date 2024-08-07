@@ -66,6 +66,11 @@ const statusDisplays = [
 
 const disabledColor100 = 'var(--pf-v5-global--disabled-color--100)';
 
+const statusHiddenText = {
+    Fixable: 'Fixable hidden',
+    'Not fixable': 'Not fixable hidden',
+} as const;
+
 export type CvesByStatusSummaryCardProps = {
     cveStatusCounts: ResourceCountByCveSeverityAndStatus;
     hiddenStatuses: Set<FixableStatus>;
@@ -103,7 +108,9 @@ function CvesByStatusSummaryCard({
                                             color: isHidden ? disabledColor100 : 'inherit',
                                         }}
                                     >
-                                        {isHidden ? 'Results hidden' : text(cveStatusCounts)}
+                                        {isHidden
+                                            ? statusHiddenText[status]
+                                            : text(cveStatusCounts)}
                                     </Text>
                                 </Flex>
                             </GridItem>

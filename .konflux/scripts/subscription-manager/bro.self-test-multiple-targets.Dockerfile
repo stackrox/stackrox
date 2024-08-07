@@ -15,7 +15,8 @@ FROM registry.access.redhat.com/ubi9/ubi:latest AS installer
 COPY --from=target-base / /mnt/stage1
 COPY --from=target-base / /mnt/stage2
 
-COPY ./subscription-manager-bro.sh ./activation-key /tmp/.konflux/
+COPY ./subscription-manager-bro.sh /tmp/.konflux/
+COPY ./activation-key /activation-key/
 
 # Register both target paths at once.
 RUN /tmp/.konflux/subscription-manager-bro.sh register /mnt/stage1 /mnt/stage2

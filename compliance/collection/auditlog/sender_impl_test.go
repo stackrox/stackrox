@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -152,7 +153,7 @@ func (s *ComplianceAuditLogSenderTestSuite) validateSentMessage(msg *sensor.MsgF
 	events := auditEventsMsg.GetEvents()
 	s.Len(events, 1)
 
-	s.Equal(mockEvent.ToKubernetesEvent("test-cluster"), events[0])
+	protoassert.Equal(s.T(), mockEvent.ToKubernetesEvent("test-cluster"), events[0])
 }
 
 func (s *ComplianceAuditLogSenderTestSuite) fakeAuditEvent(verb, resourceType, resourceName, namespace string) auditEvent {

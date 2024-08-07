@@ -17,7 +17,7 @@ func TransformSortFields(searcher search.Searcher, optionsMap search.OptionsMap)
 			}
 
 			// Local copy to avoid changing input.
-			local := q.Clone()
+			local := q.CloneVT()
 
 			sortOptions := make([]*v1.QuerySortOption, 0, len(local.GetPagination().GetSortOptions()))
 			// replace the multi-word fields with the correct multi-word sort field, if present.

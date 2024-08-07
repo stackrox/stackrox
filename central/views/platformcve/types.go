@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -29,6 +30,8 @@ type CveView interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Get(ctx context.Context, q *v1.Query) ([]CveCore, error)
 	GetClusterIDs(ctx context.Context, q *v1.Query) ([]string, error)
+	CVECountByType(ctx context.Context, q *v1.Query) (CVECountByType, error)
+	CVECountByFixability(ctx context.Context, q *v1.Query) (common.ResourceCountByFixability, error)
 }
 
 // ClusterCountByPlatformType provides ability to retrieve number of clusters of each platform type
@@ -37,4 +40,11 @@ type ClusterCountByPlatformType interface {
 	GetKubernetesClusterCount() int
 	GetOpenshiftClusterCount() int
 	GetOpenshift4ClusterCount() int
+}
+
+// CVECountByType provides the number of platform CVEs of each type
+type CVECountByType interface {
+	GetKubernetesCVECount() int
+	GetOpenshiftCVECount() int
+	GetIstioCVECount() int
 }

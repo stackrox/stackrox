@@ -107,7 +107,13 @@ function MitreAttackVectorsFormSection(): ReactElement {
             className="pf-v5-c-tree-view pf-m-compact pf-m-no-background"
         >
             {mitreAttackVectorsError && (
-                <Alert className="pf-v5-u-my-md" title="Request failed" variant="warning" isInline>
+                <Alert
+                    className="pf-v5-u-my-md"
+                    title="Request failed"
+                    component="p"
+                    variant="warning"
+                    isInline
+                >
                     {mitreAttackVectorsError}
                 </Alert>
             )}

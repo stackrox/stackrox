@@ -20,7 +20,7 @@ export type SnoozeCvesModalProps = {
     action: SnoozeAction;
     cveType: SnoozeableCveType;
     cves: { cve: string }[];
-    onSuccess: () => void;
+    onSuccess: (action: SnoozeAction, duration: ValueOf<typeof durations>) => void;
     onClose: () => void;
 };
 
@@ -40,7 +40,7 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
         },
         onSubmit: (formValues: FormValues, helpers: FormikHelpers<FormValues>) => {
             const callbackOptions = {
-                onSuccess,
+                onSuccess: () => onSuccess(action, formValues.duration),
                 onSettled: () => helpers.setSubmitting(false),
             };
 
@@ -63,6 +63,7 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
             variant="small"
             actions={[
                 <Button
+                    key="perform-modal-action"
                     className="pf-v5-u-display-flex pf-v5-u-align-items-center"
                     isLoading={isSubmitting}
                     isDisabled={isSubmitting || isSuccess}
@@ -71,20 +72,31 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
                 >
                     <span>{action === 'SNOOZE' ? 'Snooze CVEs' : 'Unsnooze CVEs'}</span>
                 </Button>,
-                <Button isDisabled={isSubmitting} variant="link" onClick={onClose}>
+                <Button
+                    key="close-modal"
+                    isDisabled={isSubmitting}
+                    variant="link"
+                    onClick={onClose}
+                >
                     {isSuccess ? 'Close' : 'Cancel'}
                 </Button>,
             ]}
         >
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                 {isSuccess && (
-                    <Alert variant="success" isInline title="Request submitted successfully" />
+                    <Alert
+                        variant="success"
+                        isInline
+                        title="Request submitted successfully"
+                        component="p"
+                    />
                 )}
                 {isError && (
                     <Alert
                         variant="danger"
                         isInline
                         title="There was an error submitting the request"
+                        component="p"
                     >
                         {getAxiosErrorMessage(error)}
                     </Alert>
@@ -100,6 +112,7 @@ function SnoozeCvesModal({ action, cveType, cves, onSuccess, onClose }: SnoozeCv
                                 {durationOptions.map((option) => (
                                     <Radio
                                         id={`snooze-duration-${option}`}
+                                        key={option}
                                         isDisabled={isSubmitting || isSuccess}
                                         isChecked={values.duration === durations[option]}
                                         name={option}

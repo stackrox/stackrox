@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
-import { Button, CardHeader, CardTitle, Flex, FlexItem } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
+import { CardHeader, CardTitle, Flex, FlexItem } from '@patternfly/react-core';
 
-import LinkShim from 'Components/PatternFly/LinkShim/LinkShim';
 import { clustersBasePath } from 'routePaths';
 
 import { ErrorIcon, healthIconMap, SpinnerIcon } from '../CardHeaderIcons';
@@ -42,9 +42,7 @@ function ClustersHealthCardHeader({
                 </FlexItem>
                 {phrase && <FlexItem>{phrase}</FlexItem>}
                 <FlexItem align={{ default: 'alignRight' }}>
-                    <Button variant="link" isInline component={LinkShim} href={clustersBasePath}>
-                        View clusters
-                    </Button>
+                    <Link to={clustersBasePath}>View clusters</Link>
                 </FlexItem>
             </Flex>
         </CardHeader>

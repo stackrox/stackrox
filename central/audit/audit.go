@@ -157,7 +157,7 @@ func calculateAuditStatus(authError interceptor.AuthStatus, requestError error) 
 }
 
 func stripPermissionsFromUserInfo(userInfo *storage.UserInfo) *storage.UserInfo {
-	userInfoWithoutPermissions := userInfo.Clone()
+	userInfoWithoutPermissions := userInfo.CloneVT()
 	userInfoWithoutPermissions.Permissions = nil
 
 	userRolesWithoutPermissions := make([]*storage.UserInfo_Role, 0, len(userInfo.GetRoles()))

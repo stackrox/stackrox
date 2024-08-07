@@ -314,8 +314,20 @@ export function addRegexPrefixToFilters(
 }
 
 // Uses the generatePath function from react-router in addition to adding the query params
-export const generatePathWithQuery = (pathTemplate, params, queryParams) => {
-    const path = safeGeneratePath(pathTemplate, params, pathTemplate);
-    const searchParams = new URLSearchParams(queryParams).toString();
-    return `${path}?${searchParams}`;
+// TODO: Fallback needed?
+export const generatePathWithQuery = (
+    pathTemplate: string,
+    pathParams: Partial<Record<string, unknown>>,
+    options: {
+        customParams?: string | URLSearchParams | string[][] | Record<string, string>;
+        searchFilter?: SearchFilter;
+    } = {}
+): string => {
+    const { customParams = {}, searchFilter = {} } = options;
+    const path = safeGeneratePath(pathTemplate, pathParams, pathTemplate);
+    const customParamsString = new URLSearchParams(customParams).toString();
+    const searchFilterString = getUrlQueryStringForSearchFilter(searchFilter);
+    const queryParams = [customParamsString, searchFilterString].filter(Boolean).join('&');
+
+    return queryParams ? `${path}?${queryParams}` : path;
 };

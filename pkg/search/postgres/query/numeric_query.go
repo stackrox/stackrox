@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/readable"
 )
 
@@ -56,7 +57,7 @@ func parseNumericPrefix(value string) (prefix string, trimmedValue string) {
 func parseNumericStringToFloat(s string) (float64, error) {
 	val, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return 0, err
+		return 0, errox.InvalidArgs.Newf("cannot parse %q as a number", s)
 	}
 	return val, nil
 }

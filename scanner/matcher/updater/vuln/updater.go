@@ -34,8 +34,8 @@ import (
 )
 
 const (
-	ifModifiedSince = `If-Modified-Since`
-	lastModified    = `Last-Modified`
+	ifModifiedSinceHeader = `If-Modified-Since`
+	lastModifiedHeader    = `Last-Modified`
 
 	updateName = `scanner-v4-updater`
 
@@ -281,6 +281,7 @@ func (u *Updater) tryRemoveExiting() {
 	files, err := fs.Glob(os.DirFS(u.root), updateFilePattern)
 	if err != nil {
 		zlog.Warn(ctx).Err(err).Msg("searching for previous update files to remove")
+		return
 	}
 	for _, file := range files {
 		if err := os.Remove(filepath.Join(u.root, file)); err != nil {
@@ -331,7 +332,7 @@ func (u *Updater) Initialized(ctx context.Context) bool {
 	if u.initialized.Load() {
 		return true
 	}
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/Updater.Initialized")
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.Initialized")
 	ts, err := u.metadataStore.GetLastVulnerabilityUpdate(ctx)
 	if err != nil {
 		zlog.
@@ -500,6 +501,8 @@ func (u *Updater) runMultiBundleUpdate(ctx context.Context) error {
 }
 
 func (u *Updater) updateBundle(ctx context.Context, zipF *zip.File, zipTime time.Time, prevTime time.Time) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.updateBundle")
+
 	// Use TryLock to prevent simultaneous updates for the same bundle.
 	lCtx, lDone := u.locker.TryLock(ctx, zipF.Name)
 	defer lDone()
@@ -556,36 +559,39 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.fetch")
 
 	var resp *http.Response
-	var err error
-	for attempt := 0; attempt < u.retryMax; attempt++ {
-		zlog.Info(ctx).Str("url", u.url).Msg("fetching vuln update")
+	defer closeResponse(resp)
+	// After this loop, either resp != nil or we will have returned an error.
+	for attempt := 1; attempt <= u.retryMax; attempt++ {
+		zlog.Info(ctx).
+			Str("url", u.url).
+			Int("attempt", attempt).
+			Msg("fetching vuln update")
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
 		if err != nil {
 			return nil, time.Time{}, err
 		}
-		req.Header.Set(ifModifiedSince, prevTimestamp.Format(http.TimeFormat))
+		req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
 		// Request multi-bundle if multi-bundle is enabled.
 		if features.ScannerV4MultiBundle.Enabled() {
 			req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
 		}
 		resp, err = u.client.Do(req)
+		// If we haven't exhausted our connection refused attempts and the vuln URL is unavailable, retry.
+		if attempt < u.retryMax && isConnectionRefused(err) {
+			zlog.Error(ctx).
+				Err(err).
+				Str("delay", u.retryDelay.String()).
+				Msg("retrying...")
+			time.Sleep(u.retryDelay) // Wait for retryDelay before retrying
+			continue
+		}
+		// If we have exhausted our retry attempts or there is some other kind of error, do not retry.
 		if err != nil {
-			var opErr *net.OpError
-			if errors.As(err, &opErr) && opErr.Op == "dial" && strings.Contains(opErr.Err.Error(), "connection refused") {
-				// Retry when vuln URL is unavailable
-				zlog.Error(ctx).Err(err).Msg("connection refused, retrying...")
-				if attempt < u.retryMax-1 {
-					time.Sleep(u.retryDelay) // Wait for retryDelay before retrying
-					continue
-				}
-			}
-			// For other errors, do not retry
-			closeResponse(resp)
 			return nil, time.Time{}, err
 		}
-		break // no error, no retry
+
+		break // No errors, so don't retry.
 	}
-	defer closeResponse(resp)
 
 	switch resp.StatusCode {
 	case http.StatusOK:
@@ -622,10 +628,10 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 		return nil, time.Time{}, fmt.Errorf("seeking temp update file to start: %w", err)
 	}
 
-	modTime := resp.Header.Get(lastModified)
+	modTime := resp.Header.Get(lastModifiedHeader)
 	timestamp, err := http.ParseTime(modTime)
 	if err != nil {
-		return nil, time.Time{}, fmt.Errorf("parsing Last-Modified header: %w", err)
+		return nil, time.Time{}, fmt.Errorf("parsing %s header: %w", lastModifiedHeader, err)
 	}
 	succeeded = true
 	return f, timestamp, nil
@@ -639,4 +645,9 @@ func closeResponse(resp *http.Response) {
 	if resp != nil && resp.Body != nil {
 		utils.IgnoreError(resp.Body.Close)
 	}
+}
+
+func isConnectionRefused(err error) bool {
+	var opErr *net.OpError
+	return errors.As(err, &opErr) && opErr.Op == "dial" && strings.Contains(opErr.Err.Error(), "connection refused")
 }

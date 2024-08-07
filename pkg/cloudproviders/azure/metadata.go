@@ -100,12 +100,12 @@ func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 func getClusterMetadata(ctx context.Context, metadata *azureInstanceMetadata) *storage.ClusterMetadata {
 	config, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
-		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Obtaining in-cluster Kubernetes config: %s", err)
+		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Obtaining in-cluster Kubernetes config: %s", err)
 		return nil
 	}
 	k8sClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Creating Kubernetes clientset: %s", err)
+		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Creating Kubernetes clientset: %s", err)
 		return nil
 	}
 	return getClusterMetadataFromNodeLabels(ctx, k8sClient, metadata)
@@ -116,7 +116,7 @@ func getClusterMetadataFromNodeLabels(ctx context.Context,
 ) *storage.ClusterMetadata {
 	nodeLabels, err := cpUtils.GetAnyNodeLabels(ctx, k8sClient)
 	if err != nil {
-		logging.GetRateLimitedLogger().ErrorL(loggingRateLimiter, "Failed to get node labels: %s", err)
+		logging.GetRateLimitedLogger().DebugL(loggingRateLimiter, "Failed to get node labels: %s", err)
 		return nil
 	}
 

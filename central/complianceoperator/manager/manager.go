@@ -182,7 +182,7 @@ func (m *managerImpl) addProfileNoLock(profile *storage.ComplianceOperatorProfil
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(context.Background(), walkFn); err != nil {
 		return err
 	}
 
@@ -345,7 +345,7 @@ func (m *managerImpl) IsStandardActive(standardID string) bool {
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil && err != errConditionMet {
+	if err := pgutils.RetryIfPostgres(context.Background(), walkFn); err != nil && err != errConditionMet {
 		log.Errorf("error walking scan setting bindings datastore: %v", err)
 		return false
 	}
@@ -388,7 +388,7 @@ func (m *managerImpl) IsStandardActiveForCluster(standardID, clusterID string) b
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil && err != errConditionMet {
+	if err := pgutils.RetryIfPostgres(context.Background(), walkFn); err != nil && err != errConditionMet {
 		log.Errorf("error walking scan setting bindings datastore: %v", err)
 		return false
 	}
@@ -417,7 +417,8 @@ func (m *managerImpl) GetMachineConfigs(clusterID string) (map[string][]string, 
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	ctx := context.Background()
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 
@@ -434,7 +435,7 @@ func (m *managerImpl) GetMachineConfigs(clusterID string) (map[string][]string, 
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(ctx, walkFn); err != nil {
 		return nil, err
 	}
 	return profilesToScan, nil
@@ -454,7 +455,7 @@ func (m *managerImpl) findProfilesWithRuleNoLock(ruleName string) ([]*storage.Co
 			return nil
 		})
 	}
-	if err := pgutils.RetryIfPostgres(walkFn); err != nil {
+	if err := pgutils.RetryIfPostgres(context.Background(), walkFn); err != nil {
 		return nil, err
 	}
 	return profiles, nil

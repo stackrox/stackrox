@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	v2ComplianceBenchmark "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
@@ -32,7 +32,6 @@ var (
 			"/v2.ComplianceProfileService/GetComplianceProfile",
 			"/v2.ComplianceProfileService/ListComplianceProfiles",
 			"/v2.ComplianceProfileService/ListProfileSummaries",
-			"/v2.ComplianceProfileService/GetComplianceProfileCount",
 		},
 	})
 )
@@ -109,7 +108,7 @@ func (s *serviceImpl) ListComplianceProfiles(ctx context.Context, request *v2.Pr
 	)
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
@@ -149,7 +148,7 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 	}
 
 	// To get total count, need the parsed query without the paging.
-	countQuery := parsedQuery.Clone()
+	countQuery := parsedQuery.CloneVT()
 
 	// Fill in pagination.
 	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), maxPaginationLimit)
@@ -192,22 +191,6 @@ func (s *serviceImpl) ListProfileSummaries(ctx context.Context, request *v2.Clus
 	return &v2.ListComplianceProfileSummaryResponse{
 		Profiles:   storagetov2.ComplianceProfileSummary(profiles, benchmarkMap),
 		TotalCount: int32(totalCount),
-	}, nil
-}
-
-// GetComplianceProfileCount returns counts of profiles matching query
-func (s *serviceImpl) GetComplianceProfileCount(ctx context.Context, request *v2.RawQuery) (*v2.CountComplianceProfilesResponse, error) {
-	parsedQuery, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-	}
-
-	profileCount, err := s.complianceProfilesDS.CountProfiles(ctx, parsedQuery)
-	if err != nil {
-		return nil, errors.Wrap(errox.NotFound, err.Error())
-	}
-	return &v2.CountComplianceProfilesResponse{
-		Count: int32(profileCount),
 	}, nil
 }
 

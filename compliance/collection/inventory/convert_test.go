@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/suite"
@@ -123,7 +124,7 @@ func (s *inventoryConvertTestSuite) TestToStorageComponents() {
 		s.Run(caseName, func() {
 			convertedComponent := toStorageComponents(testCase.inComponent)
 			if testCase.inComponent != nil {
-				s.Equal(testCase.outComponent, convertedComponent)
+				protoassert.Equal(s.T(), testCase.outComponent, convertedComponent)
 			} else {
 				s.Nil(convertedComponent)
 			}
@@ -202,7 +203,7 @@ func (s *inventoryConvertTestSuite) TestConvertRHELComponents() {
 			convertedComponents := convertRHELComponents(testCase.inComponents)
 			if testCase.inComponents != nil {
 				s.Equal(len(testCase.inComponents), len(convertedComponents))
-				s.ElementsMatch(testCase.outComponents, convertedComponents)
+				protoassert.ElementsMatch(s.T(), testCase.outComponents, convertedComponents)
 			} else {
 				s.Nil(convertedComponents)
 			}
@@ -273,7 +274,7 @@ func (s *inventoryConvertTestSuite) TestConvertExecutables() {
 		s.Run(testName, func() {
 			for i, got := range convertExecutables(testCase.exe) {
 				s.Equal(testCase.expected[i].GetPath(), got.GetPath())
-				s.Equal(testCase.expected[i].GetRequiredFeatures(), got.GetRequiredFeatures())
+				protoassert.SlicesEqual(s.T(), testCase.expected[i].GetRequiredFeatures(), got.GetRequiredFeatures())
 			}
 		})
 	}

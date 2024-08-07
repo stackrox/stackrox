@@ -20,6 +20,7 @@ function ReportFormErrorAlert({ error }) {
                     isInline
                     variant={AlertVariant.danger}
                     title={error}
+                    component="p"
                     className="pf-v5-u-mb-sm"
                 />
             )}

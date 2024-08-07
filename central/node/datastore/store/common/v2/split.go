@@ -11,7 +11,7 @@ import (
 // Split splits the input node into a set of parts.
 func Split(node *storage.Node, withComponents bool) *NodeParts {
 	parts := &NodeParts{
-		Node: node.Clone(),
+		Node: node.CloneVT(),
 	}
 
 	if withComponents {

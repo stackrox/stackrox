@@ -18,7 +18,7 @@ import { ComplianceIntegration } from 'services/ComplianceIntegrationService';
 
 import {
     convertFormikParametersToSchedule,
-    customBodyDefault,
+    getBodyDefault,
     getSubjectDefault,
     ScanConfigFormValues,
 } from '../compliance.scanConfigs.utils';
@@ -58,6 +58,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                     {errorMessage && (
                         <Alert
                             title={'Scan configuration request failure'}
+                            component="p"
                             variant="danger"
                             isInline
                         >
@@ -95,11 +96,23 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                 />
                 {isComplianceReportingEnabled && (
                     <NotifierConfigurationView
-                        customBodyDefault={customBodyDefault}
-                        customSubjectDefault={getSubjectDefault(formikValues.parameters.name)}
+                        customBodyDefault={getBodyDefault(formikValues.profiles)}
+                        customSubjectDefault={getSubjectDefault(
+                            formikValues.parameters.name,
+                            formikValues.profiles
+                        )}
                         notifierConfigurations={formikValues.report.notifierConfigurations}
                     />
                 )}
+                <Alert
+                    variant="info"
+                    title="Save for new versus existing scan schedule"
+                    component="p"
+                    isInline
+                >
+                    Compliance Operator runs a new scan schedule immediately upon creation, but does
+                    not run until scheduled time when you save changes to an existing scan schedule.
+                </Alert>
             </Flex>
         </>
     );

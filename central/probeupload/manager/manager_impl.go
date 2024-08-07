@@ -123,7 +123,7 @@ func (m *manager) getFileInfo(ctx context.Context, file string) (*v1.ProbeUpload
 
 	return &v1.ProbeUploadManifest_File{
 		Name:  file,
-		Size_: blob.GetLength(),
+		Size:  blob.GetLength(),
 		Crc32: crc32,
 	}, nil
 }

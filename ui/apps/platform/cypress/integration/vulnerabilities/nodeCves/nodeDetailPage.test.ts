@@ -1,5 +1,37 @@
 import withAuth from '../../../helpers/basicAuth';
+import { assertAvailableFilters } from '../../../helpers/compoundFilters';
 import { hasFeatureFlag } from '../../../helpers/features';
+import {
+    assertCannotFindThePage,
+    visitWithStaticResponseForPermissions,
+} from '../../../helpers/visit';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
+import {
+    getNodeMetadataOpname,
+    getNodeVulnerabilitiesOpname,
+    getNodeVulnSummaryOpname,
+    routeMatcherMapForNodePage,
+    visitFirstNodeLinkFromTable,
+    visitNodeCveOverviewPage,
+} from './NodeCve.helpers';
+
+const nodeBaseUrl = '/main/vulnerabilities/node-cves/nodes';
+const mockNodeId = '1';
+const mockNodeName = 'cypress-node-1';
+
+export const staticResponseMapForNodePage = {
+    [getNodeMetadataOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeMetadataOpname}`,
+    },
+    [getNodeVulnSummaryOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeVulnSummaryOpname}`,
+    },
+    [getNodeVulnerabilitiesOpname]: {
+        fixture: `vulnerabilities/nodeCves/${getNodeVulnerabilitiesOpname}`,
+    },
+};
+
+const mockNodePageUrl = `${nodeBaseUrl}/${mockNodeId}`;
 
 describe('Node CVEs - Node Detail Page', () => {
     withAuth();
@@ -10,12 +42,42 @@ describe('Node CVEs - Node Detail Page', () => {
         }
     });
 
-    it('should restrict access to users with insufficient permissions', () => {
-        // check that users without Node access cannot access the Node Detail page directly
+    it('should restrict access to users with insufficient "Node" permission', () => {
+        visitWithStaticResponseForPermissions(mockNodePageUrl, {
+            body: { resourceToAccess: { Node: 'READ_ACCESS' } },
+        });
+        assertCannotFindThePage();
+    });
+
+    it('should restrict access to users with insufficient "Cluster" permission', () => {
+        visitWithStaticResponseForPermissions(mockNodePageUrl, {
+            body: { resourceToAccess: { Cluster: 'READ_ACCESS' } },
+        });
+        assertCannotFindThePage();
+    });
+
+    it('should allow access to users with sufficient permissions', () => {
+        visitWithStaticResponseForPermissions(
+            mockNodePageUrl,
+            {
+                body: { resourceToAccess: { Node: 'READ_ACCESS', Cluster: 'READ_ACCESS' } },
+            },
+            routeMatcherMapForNodePage,
+            staticResponseMapForNodePage
+        );
+        cy.get('h1').contains(mockNodeName);
     });
 
     it('should only show relevant filters for the Node Detail page', () => {
-        // check the advanced filters and ensure only the relevant filters are displayed
+        visitNodeCveOverviewPage();
+        cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+
+        visitFirstNodeLinkFromTable();
+
+        assertAvailableFilters({
+            CVE: ['Name', 'CVSS', 'Discovered Time'],
+            'Node Component': ['Name', 'Version'],
+        });
     });
 
     it('should link to the correct pages', () => {

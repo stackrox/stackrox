@@ -65,16 +65,16 @@ tests:
 
 - name: "Webhook timeout pads AdmissionController timeout by 2 seconds"
   tests:
-    - name: "default AdmissionController timeout is 20s + 2s padding"
+    - name: "default AdmissionController timeout is 10s + 2s padding"
       expect: |
-        .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 20 + 2)
+        .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 10 + 2)
     - name: "override sets value correctly"
       values:
         admissionControl:
           dynamic:
-            timeout: 10
+            timeout: 7
       expect: |
-        .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 10 + 2)
+        .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 7 + 2)
 
 - name: "Admission control deployment configuration"
   tests:

@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -71,7 +72,7 @@ func (s *signatureDataStoreTestSuite) TestAddSignatureIntegration() {
 	acquiredIntegration, found, err := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
 	s.True(found)
 	s.NoError(err)
-	s.Equal(savedIntegration, acquiredIntegration)
+	protoassert.Equal(s.T(), savedIntegration, acquiredIntegration)
 
 	// 2. Name should be unique
 	integration = newSignatureIntegration("name")
@@ -100,46 +101,57 @@ func (s *signatureDataStoreTestSuite) TestUpdateSignatureIntegration() {
 
 	// 1. Modifications to integration are visible via GetSignatureIntegration
 	savedIntegration.Name = "name2"
-	hasUpdatedKeys, err := s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	hasUpdates, err := s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
 	s.NoError(err)
-	s.False(hasUpdatedKeys)
+	s.False(hasUpdates)
 
 	acquiredIntegration, found, err := s.dataStore.GetSignatureIntegration(s.hasReadCtx, savedIntegration.GetId())
 	s.True(found)
 	s.NoError(err)
-	s.Equal(savedIntegration, acquiredIntegration)
+	protoassert.Equal(s.T(), savedIntegration, acquiredIntegration)
 
 	// 2. Cannot update non-existing integration
 	nonExistingIntegration := newSignatureIntegration("idonotexist")
-	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, nonExistingIntegration)
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, nonExistingIntegration)
 	s.Error(err)
 	s.ErrorIs(err, errox.InvalidArgs)
-	s.False(hasUpdatedKeys)
+	s.False(hasUpdates)
 
 	// 3. Need write permission to update integration
-	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasReadCtx, signatureIntegration)
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasReadCtx, signatureIntegration)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
-	s.False(hasUpdatedKeys)
+	s.False(hasUpdates)
 
-	// 4. Signal updated keys when keys differ
+	// 4. Signal updates when keys differ
 	savedIntegration.GetCosign().GetPublicKeys()[0].PublicKeyPemEnc = `-----BEGIN PUBLIC KEY-----
 MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQMDMgAE+Y+qPqI3geo2hQH8eK7Rn+YWG09T
 ejZ5QFoj9fmxFrUyYhFap6XmTdJtEi8myBmW
 -----END PUBLIC KEY-----`
-	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
 	s.NoError(err)
-	s.True(hasUpdatedKeys)
+	s.True(hasUpdates)
 
-	// 5. Don't signal updated keys when keys are the same
-	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	// 5. Signal updates when certificates differ
+	savedIntegration.CosignCertificates = []*storage.CosignCertificateVerification{
+		{
+			CertificateOidcIssuer: ".*",
+			CertificateIdentity:   ".*",
+		},
+	}
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
 	s.NoError(err)
-	s.False(hasUpdatedKeys)
+	s.True(hasUpdates)
 
-	// 6. Don't signal updated keys when only the name is changed
+	// 6. Don't signal updates when verification data is the same
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	s.NoError(err)
+	s.False(hasUpdates)
+
+	// 7. Don't signal updated keys when only the name is changed
 	savedIntegration.GetCosign().GetPublicKeys()[0].Name = "rename of public key"
-	hasUpdatedKeys, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
+	hasUpdates, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, savedIntegration)
 	s.NoError(err)
-	s.False(hasUpdatedKeys)
+	s.False(hasUpdates)
 }
 
 func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegration() {

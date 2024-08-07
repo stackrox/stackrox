@@ -71,7 +71,6 @@ func TestGoogleMatch(t *testing.T) {
 }
 
 func TestGoogleValidate(t *testing.T) {
-	t.Setenv("ROX_CLOUD_CREDENTIALS", "true")
 	cases := []struct {
 		name    string
 		config  *storage.GoogleConfig

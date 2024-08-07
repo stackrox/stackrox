@@ -2,9 +2,6 @@ defs: |
   def labels(resource):
     resource.metadata.labels;
 values:
-  central:
-    persistence:
-      none: true
   imagePullSecrets:
     allowNone: true
 

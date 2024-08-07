@@ -36,6 +36,7 @@ func main() {
 
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
+	features.LogFeatureFlags()
 	// Start the prometheus metrics server
 	metrics.NewServer(metrics.SensorSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
 	metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
@@ -68,19 +69,14 @@ func main() {
 	utils.CrashOnError(err)
 
 	s.Start()
-
-	if features.CloudCredentials.Enabled() {
-		gcp.Singleton().Start()
-	}
+	gcp.Singleton().Start()
 
 	for {
 		select {
 		case sig := <-sigs:
 			log.Infof("Caught %s signal", sig)
 			s.Stop()
-			if features.CloudCredentials.Enabled() {
-				gcp.Singleton().Stop()
-			}
+			gcp.Singleton().Stop()
 		case <-s.Stopped().Done():
 			if err := s.Stopped().Err(); err != nil {
 				log.Fatalf("Sensor exited with error: %v", err)

@@ -97,7 +97,7 @@ spec:
       kind: ClusterRoleBinding
     - group: apps
       kind: Deployment
-{{- if ._rox.system.enableNetworkPolicies }}
+{{- if ._rox.network.enableNetworkPolicies }}
     - group: networking.k8s.io
       kind: NetworkPolicy
 {{- end }}

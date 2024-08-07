@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgNet "github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,7 +35,7 @@ func runBenchMarkOnOps(b *testing.B, family pkgNet.Family, entities []*storage.N
 
 	b.Run(tcPrefix+":Get", func(b *testing.B) {
 		for _, e := range entities {
-			require.Equal(b, e, radixT.Get(e.GetId()))
+			protoassert.Equal(b, e, radixT.Get(e.GetId()))
 		}
 	})
 

@@ -59,10 +59,13 @@ test_roxctl_cmd() {
 test_roxctl_cmd central generate k8s none --output-format kubectl
 test_roxctl_cmd central generate openshift none
 
-test_roxctl_cmd sensor generate k8s --name k8s-istio-test-cluster  --continue-if-exists
+test_roxctl_cmd sensor generate k8s --name k8s-istio-test-cluster --continue-if-exists
 test_roxctl_cmd sensor get-bundle k8s-istio-test-cluster
 test_roxctl_cmd sensor generate openshift --name os-istio-test-cluster --continue-if-exists
 test_roxctl_cmd sensor get-bundle os-istio-test-cluster
+
+roxctl --insecure-skip-tls-verify -e "$API_ENDPOINT" -p "$ROX_PASSWORD" cluster delete --name k8s-istio-test-cluster
+roxctl --insecure-skip-tls-verify -e "$API_ENDPOINT" -p "$ROX_PASSWORD" cluster delete --name os-istio-test-cluster
 
 if [ $FAILURES -eq 0 ]; then
   echo "Passed"

@@ -77,7 +77,7 @@ func setupTest(b *testing.B, pool *pgtest.TestPostgres, datastore DataStore, num
 		_, err = pool.DB.Exec(context.Background(), "insert into compliance_operator_profile_v2 (id, profileid, name, producttype, clusterid, profilerefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), "profile-1", "ocp4-cis-node", "node", clusterID, profileRefID)
 		require.NoError(b, err)
 
-		_, err = pool.DB.Exec(context.Background(), "insert into compliance_operator_scan_v2 (id, scanconfigname, scanname, profile_profileid, clusterid, scanrefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), scanConfigs[0], scanConfigs[0], profileRefID, clusterID, scanRefID)
+		_, err = pool.DB.Exec(context.Background(), "insert into compliance_operator_scan_v2 (id, scanconfigname, scanname, profile_profilerefid, clusterid, scanrefid) values ($1, $2, $3, $4, $5, $6)", uuid.NewV4().String(), scanConfigs[0], scanConfigs[0], profileRefID, clusterID, scanRefID)
 		require.NoError(b, err)
 	}
 

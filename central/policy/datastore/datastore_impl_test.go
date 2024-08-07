@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -64,13 +65,13 @@ func (s *PolicyDatastoreTestSuite) SetupTest() {
 
 func (s *PolicyDatastoreTestSuite) testImportSuccessResponse(expectedPolicy *storage.Policy, resp *v1.ImportPolicyResponse) {
 	s.True(resp.Succeeded)
-	s.Equal(expectedPolicy, resp.GetPolicy())
+	protoassert.Equal(s.T(), expectedPolicy, resp.GetPolicy())
 	s.Empty(resp.Errors)
 }
 
 func (s *PolicyDatastoreTestSuite) testImportFailResponse(expectedPolicy *storage.Policy, expectedErrTypes, expectedErrorStrings, expectedNames []string, resp *v1.ImportPolicyResponse) {
 	s.False(resp.Succeeded)
-	s.Equal(expectedPolicy, resp.GetPolicy())
+	protoassert.Equal(s.T(), expectedPolicy, resp.GetPolicy())
 	s.Require().Len(resp.GetErrors(), len(expectedErrTypes))
 	s.Require().Len(resp.GetErrors(), len(expectedErrorStrings))
 	s.Require().Len(resp.GetErrors(), len(expectedNames))
@@ -124,7 +125,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicySucceeds() {
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil, false, nil)
 	s.store.EXPECT().GetAll(s.hasReadWriteWorkflowAdministrationAccess).Return(nil, nil)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policy).Return(nil)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.Clone()}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.CloneVT()}, false)
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -147,7 +148,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateID() {
 	s.store.EXPECT().GetAll(s.hasReadWriteWorkflowAdministrationAccess).Return([]*storage.Policy{
 		policy,
 	}, nil)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.Clone()}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.CloneVT()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -177,7 +178,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyDuplicateName() {
 			SORTName: name,
 		},
 	}, nil)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.Clone()}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.CloneVT()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -236,7 +237,7 @@ func (s *PolicyDatastoreTestSuite) TestImportPolicyMixedSuccessAndFailure() {
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policyFail1).Return(errorFail1)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policyFail2).Return(errorFail2)
 
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policySucceed.Clone(), policyFail1.Clone(), policyFail2.Clone()}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policySucceed.CloneVT(), policyFail1.CloneVT(), policyFail2.CloneVT()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 3)
@@ -264,7 +265,7 @@ func (s *PolicyDatastoreTestSuite) TestUnknownError() {
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.GetId()).Return(nil, false, nil)
 	s.store.EXPECT().GetAll(s.hasReadWriteWorkflowAdministrationAccess).Return(nil, nil)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policy).Return(storeError)
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.Clone()}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.CloneVT()}, false)
 	s.NoError(err)
 	s.False(allSucceeded)
 	s.Require().Len(responses, 1)
@@ -308,7 +309,7 @@ func (s *PolicyDatastoreTestSuite) TestImportOverwrite() {
 	s.store.EXPECT().Delete(s.hasReadWriteWorkflowAdministrationAccess, existingPolicy2.GetId()).Return(nil)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policy2).Return(nil)
 
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy1.Clone(), policy2.Clone()}, true)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy1.CloneVT(), policy2.CloneVT()}, true)
 
 	s.NoError(err)
 	s.True(allSucceeded)
@@ -361,7 +362,7 @@ func (s *PolicyDatastoreTestSuite) TestRemoveScopesAndNotifiers() {
 
 	resp := responses[0]
 	s.True(resp.GetSucceeded())
-	s.Equal(resultPolicy, resp.GetPolicy())
+	protoassert.Equal(s.T(), resultPolicy, resp.GetPolicy())
 	s.Require().Len(resp.GetErrors(), 1)
 	importError := resp.GetErrors()[0]
 	s.Equal(importError.GetType(), policies.ErrImportClustersOrNotifiersRemoved)
@@ -404,13 +405,13 @@ func (s *PolicyDatastoreTestSuite) TestDoesNotRemoveScopesAndNotifiers() {
 	s.store.EXPECT().Get(s.hasReadWriteWorkflowAdministrationAccess, policy.Id).Return(nil, false, nil)
 	s.store.EXPECT().Upsert(s.hasReadWriteWorkflowAdministrationAccess, policy).Return(nil)
 
-	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.Clone()}, false)
+	responses, allSucceeded, err := s.datastore.ImportPolicies(s.hasReadWriteWorkflowAdministrationAccess, []*storage.Policy{policy.CloneVT()}, false)
 	s.NoError(err)
 	s.True(allSucceeded)
 	s.Require().Len(responses, 1)
 
 	resp := responses[0]
 	s.True(resp.GetSucceeded())
-	s.Equal(resp.GetPolicy(), policy)
+	protoassert.Equal(s.T(), resp.GetPolicy(), policy)
 	s.Empty(resp.GetErrors())
 }

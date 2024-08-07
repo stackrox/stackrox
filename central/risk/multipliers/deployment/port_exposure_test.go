@@ -6,7 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stretchr/testify/assert"
+	"github.com/stackrox/rox/pkg/protoassert"
 )
 
 func TestPortExposureScore(t *testing.T) {
@@ -23,5 +23,5 @@ func TestPortExposureScore(t *testing.T) {
 		Score: 1.6,
 	}
 	score := portMultiplier.Score(context.Background(), deployment, nil)
-	assert.Equal(t, expectedScore, score)
+	protoassert.Equal(t, expectedScore, score)
 }

@@ -14,6 +14,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 )
@@ -93,7 +94,7 @@ func (s *policyMigrationTestSuite) TestMigration() {
 			s.Require().NoError(result.Error)
 			migratedPolicy, err := schema.ConvertPolicyToProto(&foundPolicies[0])
 			s.Require().NoError(err)
-			s.Equal(afterPolicy, migratedPolicy)
+			protoassert.Equal(s.T(), afterPolicy, migratedPolicy)
 		})
 	}
 

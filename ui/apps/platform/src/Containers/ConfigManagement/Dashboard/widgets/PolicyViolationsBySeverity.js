@@ -24,8 +24,6 @@ const legendData = policySeverities.map((severity) => ({
     color: policySeverityColorMap[severity],
 }));
 
-const linkColor = 'var(--base-600)';
-const textColor = 'var(--base-600)';
 const passingChartColor = 'var(--base-400)';
 
 const QUERY = gql`
@@ -98,7 +96,6 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                     severity,
                     passing: isPassing,
                     color,
-                    textColor,
                     value: 0,
                     labelColor: color,
                     name: `${isPassing ? '' : 'View deployments violating'} "${fullPolicyName}"`,
@@ -123,7 +120,6 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
                 value,
                 labelValue,
                 color,
-                textColor,
             };
         });
     }
@@ -155,7 +151,6 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
         if (criticalCount) {
             links.push({
                 text: `${criticalCount} rated as critical`,
-                color: linkColor,
                 link: url
                     .query({
                         [searchParam]: {
@@ -172,7 +167,6 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
         if (highCount) {
             links.push({
                 text: `${highCount} rated as high`,
-                color: linkColor,
                 link: url
                     .query({
                         [searchParam]: {
@@ -190,7 +184,6 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
         if (mediumCount) {
             links.push({
                 text: `${mediumCount} rated as medium`,
-                color: linkColor,
                 link: url
                     .query({
                         [searchParam]: {
@@ -208,7 +201,6 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
         if (lowCount) {
             links.push({
                 text: `${lowCount} rated as low`,
-                color: linkColor,
                 link: url
                     .query({
                         [searchParam]: {
@@ -226,7 +218,6 @@ const PolicyViolationsBySeverity = ({ match, location }) => {
         if (passingCount) {
             links.push({
                 text: `${passingCount} policies without violations`,
-                color: linkColor,
                 link: url
                     .query({
                         [searchParam]: {

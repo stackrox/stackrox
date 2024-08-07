@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -134,7 +135,7 @@ func (s *ReportServiceTestSuite) TestCreateReportConfiguration() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(requestConfig, result)
+				protoassert.Equal(s.T(), requestConfig, result)
 			}
 		})
 	}
@@ -233,7 +234,7 @@ func (s *ReportServiceTestSuite) TestUpdateReportConfiguration() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(&apiV2.Empty{}, result)
+				protoassert.Equal(s.T(), &apiV2.Empty{}, result)
 			}
 		})
 	}
@@ -299,7 +300,7 @@ func (s *ReportServiceTestSuite) TestListReportConfigurations() {
 
 			configs, err := s.service.ListReportConfigurations(allAccessContext, tc.query)
 			s.NoError(err)
-			s.Equal(expectedResp, configs)
+			protoassert.Equal(s.T(), expectedResp, configs)
 		})
 	}
 }
@@ -355,7 +356,7 @@ func (s *ReportServiceTestSuite) TestGetReportConfigurationByID() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(expectedResp, config)
+				protoassert.Equal(s.T(), expectedResp, config)
 			}
 		})
 	}
@@ -1033,7 +1034,7 @@ func (s *ReportServiceTestSuite) TestRunReport() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(tc.resp, response)
+				protoassert.Equal(s.T(), tc.resp, response)
 			}
 		})
 	}
@@ -1090,7 +1091,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.Requester = &storage.SlimUser{
 					Id:   reportSnapshot.Requester.Id + "-1",
 					Name: reportSnapshot.Requester.Name + "-1",
@@ -1107,7 +1108,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.RunState = storage.ReportStatus_DELIVERED
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1121,7 +1122,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.RunState = storage.ReportStatus_GENERATED
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1135,7 +1136,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1194,7 +1195,7 @@ func (s *ReportServiceTestSuite) TestCancelReport() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(&apiV2.Empty{}, response)
+				protoassert.Equal(s.T(), &apiV2.Empty{}, response)
 			}
 		})
 	}
@@ -1253,7 +1254,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.Requester = &storage.SlimUser{
 					Id:   reportSnapshot.Requester.Id + "-1",
 					Name: reportSnapshot.Requester.Name + "-1",
@@ -1270,7 +1271,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.ReportNotificationMethod = storage.ReportStatus_EMAIL
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1284,7 +1285,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.RunState = storage.ReportStatus_PREPARING
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), reportSnapshot.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1324,7 +1325,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 			},
 			ctx: userContext,
 			mockGen: func() {
-				snap := reportSnapshot.Clone()
+				snap := reportSnapshot.CloneVT()
 				snap.ReportStatus.RunState = storage.ReportStatus_GENERATED
 				s.reportSnapshotDataStore.EXPECT().Get(gomock.Any(), snap.GetReportId()).
 					Return(snap, true, nil).Times(1)
@@ -1343,7 +1344,7 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				s.Equal(&apiV2.Empty{}, response)
+				protoassert.Equal(s.T(), &apiV2.Empty{}, response)
 			}
 		})
 	}

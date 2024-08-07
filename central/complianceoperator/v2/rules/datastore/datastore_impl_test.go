@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -379,8 +380,7 @@ func (s *complianceRuleDataStoreTestSuite) TestGetRulesByCluster() {
 	for _, tc := range testCases {
 		retrievedObjects, err := s.dataStore.GetRulesByCluster(tc.testContext, tc.clusterID)
 		s.Require().NoError(err)
-		s.Require().Equal(tc.expectedCount, len(retrievedObjects))
-		s.Require().Equal(tc.expectedResults, retrievedObjects)
+		protoassert.SlicesEqual(s.T(), tc.expectedResults, retrievedObjects)
 	}
 }
 
@@ -453,8 +453,7 @@ func (s *complianceRuleDataStoreTestSuite) TestSearchRules() {
 	for _, tc := range testCases {
 		retrievedObjects, err := s.dataStore.SearchRules(tc.testContext, tc.query)
 		s.Require().NoError(err)
-		s.Require().Equal(tc.expectedCount, len(retrievedObjects))
-		s.Require().Equal(tc.expectedResults, retrievedObjects)
+		protoassert.SlicesEqual(s.T(), tc.expectedResults, retrievedObjects)
 	}
 }
 

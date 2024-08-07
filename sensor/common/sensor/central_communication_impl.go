@@ -162,7 +162,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		if err != nil {
 			log.Warnf("Failed to load cached cluster ID: %s", err)
 		} else if cachedClusterID != "" {
-			helmManagedCfg = helmManagedCfg.Clone()
+			helmManagedCfg = helmManagedCfg.CloneVT()
 			helmManagedCfg.ClusterId = cachedClusterID
 			log.Infof("Re-using cluster ID %s of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
 		}
@@ -325,7 +325,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 			return errors.Wrapf(errIncorrectDeduperStateOrder, "expected message number %d but received %d", current, msg.GetDeduperState().GetCurrent())
 		}
 
-		log.Infof("Received %d hashes (size=%d), current chunk: %d, total: %d", len(msg.GetDeduperState().GetResourceHashes()), msg.Size(), msg.GetDeduperState().GetCurrent(), msg.GetDeduperState().GetTotal())
+		log.Infof("Received %d hashes (size=%d), current chunk: %d, total: %d", len(msg.GetDeduperState().GetResourceHashes()), msg.SizeVT(), msg.GetDeduperState().GetCurrent(), msg.GetDeduperState().GetTotal())
 		for k, v := range msg.GetDeduperState().GetResourceHashes() {
 			deduperState[k] = v
 		}

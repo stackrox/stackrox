@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -54,7 +55,7 @@ func (s *AlertsSearchSuite) TestSearch() {
 	foundAlert, exists, err = s.store.Get(ctx, alert.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(alert, foundAlert)
+	protoassert.Equal(s.T(), alert, foundAlert)
 
 	// Common alert searches
 	results, err := s.searcher.Search(ctx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).ProtoQuery())

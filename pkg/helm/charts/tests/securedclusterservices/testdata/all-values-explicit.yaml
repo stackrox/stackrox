@@ -45,7 +45,7 @@ admissionControl:
     key: "DUMMY ADMISSION CONTROL KEY"
 
 config:
-  collectionMethod: EBPF
+  collectionMethod: CORE_BPF
   admissionControl:
     listenOnCreates: true
     listenOnUpdates: true

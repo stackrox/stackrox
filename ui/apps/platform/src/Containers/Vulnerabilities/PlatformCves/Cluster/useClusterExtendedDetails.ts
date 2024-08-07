@@ -6,14 +6,24 @@ const clusterExtendedDetailsQuery = gql`
         cluster(id: $id) {
             id
             status {
+                providerMetadata {
+                    aws {
+                        __typename
+                    }
+                    azure {
+                        __typename
+                    }
+                    google {
+                        __typename
+                    }
+                    region
+                }
                 orchestratorMetadata {
                     version
                     buildDate
                 }
             }
             type
-            # TODO - Need to add the following fields to the query
-            # cloudProvider
             labels {
                 key
                 value
@@ -22,17 +32,23 @@ const clusterExtendedDetailsQuery = gql`
     }
 `;
 
+export type ProviderMetadata = {
+    aws: Record<string, unknown> | null;
+    azure: Record<string, unknown> | null;
+    google: Record<string, unknown> | null;
+    region: string;
+};
+
 export type ClusterExtendedDetails = {
     id: string;
     status?: {
+        providerMetadata?: ProviderMetadata;
         orchestratorMetadata?: {
             version: string;
             buildDate: string;
         };
     };
     type: ClusterType;
-    // TODO - Need to add the following fields to the type
-    // cloudProvider: string;
     labels: {
         key: string;
         value: string;

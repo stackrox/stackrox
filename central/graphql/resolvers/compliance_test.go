@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -62,8 +63,8 @@ func (s *ComplianceResolverTestSuite) TestDoesNotTruncateUnknownCollapseBy() {
 
 	truncatedResults, truncatedDomainMap, errorMessage := truncateResults(testResults, testDomainMap, testCollapseBy)
 	s.Empty(errorMessage)
-	s.Equal(testResults, truncatedResults)
-	s.Equal(testDomainMap, truncatedDomainMap)
+	protoassert.SlicesEqual(s.T(), testResults, truncatedResults)
+	protoassert.MapEqual(s.T(), testDomainMap, truncatedDomainMap)
 }
 
 func (s *ComplianceResolverTestSuite) TestDoesNotTruncateInvalidCollapseBy() {
@@ -72,8 +73,8 @@ func (s *ComplianceResolverTestSuite) TestDoesNotTruncateInvalidCollapseBy() {
 
 	truncatedResults, truncatedDomainMap, errorMessage := truncateResults(testResults, testDomainMap, storage.ComplianceAggregation_NAMESPACE)
 	s.Empty(errorMessage)
-	s.Equal(testResults, truncatedResults)
-	s.Equal(testDomainMap, truncatedDomainMap)
+	protoassert.SlicesEqual(s.T(), testResults, truncatedResults)
+	protoassert.MapEqual(s.T(), testDomainMap, truncatedDomainMap)
 }
 
 func (s *ComplianceResolverTestSuite) TestDoesNotTruncateShortResults() {
@@ -83,8 +84,8 @@ func (s *ComplianceResolverTestSuite) TestDoesNotTruncateShortResults() {
 
 	truncatedResults, truncatedDomainMap, errorMessage := truncateResults(testResults, testDomainMap, testCollapseBy)
 	s.Empty(errorMessage)
-	s.Equal(testResults, truncatedResults)
-	s.Equal(testDomainMap, truncatedDomainMap)
+	protoassert.SlicesEqual(s.T(), testResults, truncatedResults)
+	protoassert.MapEqual(s.T(), testDomainMap, truncatedDomainMap)
 }
 
 func (s *ComplianceResolverTestSuite) TestTruncateEmptyResults() {
@@ -93,6 +94,6 @@ func (s *ComplianceResolverTestSuite) TestTruncateEmptyResults() {
 
 	truncatedResults, truncatedDomainMap, errorMessage := truncateResults(testResults, testDomainMap, testCollapseBy)
 	s.Empty(errorMessage)
-	s.Equal(testResults, truncatedResults)
-	s.Equal(testDomainMap, truncatedDomainMap)
+	protoassert.SlicesEqual(s.T(), testResults, truncatedResults)
+	protoassert.MapEqual(s.T(), testDomainMap, truncatedDomainMap)
 }

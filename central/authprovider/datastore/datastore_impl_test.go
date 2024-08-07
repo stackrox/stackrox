@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -181,7 +182,7 @@ func (s *authProviderDataStoreTestSuite) TestGetFiltered() {
 	})
 	s.NoError(err)
 	s.Len(filteredAuthProviders, 1)
-	s.ElementsMatch(filteredAuthProviders, []*storage.AuthProvider{authProviders[0]})
+	protoassert.ElementsMatch(s.T(), filteredAuthProviders, []*storage.AuthProvider{authProviders[0]})
 }
 
 func (s *authProviderDataStoreTestSuite) TestAllowsUpdate() {

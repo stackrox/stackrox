@@ -170,8 +170,6 @@ spec:
         - name: central-license-volume
           mountPath: /run/secrets/stackrox.io/central-license/
           readOnly: true
-        - name: stackrox-db
-          mountPath: /var/lib/stackrox
         - name: central-config-volume
           mountPath: /etc/stackrox
         - name: proxy-config-volume
@@ -284,8 +282,6 @@ spec:
           secretName: central-encryption-key-chain
       {{- end }}
       {{- end }}
-      - name: stackrox-db
-        {{- toYaml ._rox.central.persistence._volumeCfg | nindent 8 }}
       {{- if ._rox.monitoring.openshift.enabled }}
       - name: monitoring-tls
         secret:

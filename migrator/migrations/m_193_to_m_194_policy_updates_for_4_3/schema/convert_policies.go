@@ -10,7 +10,7 @@ import (
 
 // ConvertPolicyFromProto converts a `*storage.Policy` to Gorm model
 func ConvertPolicyFromProto(obj *storage.Policy) (*Policies, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func ConvertPolicyFromProto(obj *storage.Policy) (*Policies, error) {
 // ConvertPolicyToProto converts Gorm model `Policies` to its protobuf type object
 func ConvertPolicyToProto(m *Policies) (*storage.Policy, error) {
 	var msg storage.Policy
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := msg.UnmarshalVT(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

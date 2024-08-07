@@ -103,7 +103,7 @@ func parseSettings(cm *v1.ConfigMap) (*sensor.AdmissionControlSettings, error) {
 	}
 
 	var config storage.DynamicClusterConfig
-	if err := protocompat.Unmarshal(configData, &config); err != nil {
+	if err := config.UnmarshalVT(configData); err != nil {
 		return nil, errors.Wrap(err, "could not parse protobuf-encoded config data from configmap")
 	}
 
@@ -140,7 +140,7 @@ func (w *k8sSettingsWatch) sendSettings(settings *sensor.AdmissionControlSetting
 	case w.outC <- settings:
 	}
 
-	log.Infof("Detected and propagated updated admission controller settings via Kubernetes config map watch, timestamp: %v", settings.GetTimestamp().String())
+	log.Infof("Detected and propagated updated admission controller settings via Kubernetes config map watch, timestamp: %v", settings.GetTimestamp().AsTime().Format(time.RFC3339Nano))
 }
 
 func (w *k8sSettingsWatch) start() error {

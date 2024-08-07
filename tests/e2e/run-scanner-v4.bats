@@ -74,7 +74,7 @@ setup_file() {
     echo "EARLIER_ROXCTL_PATH=$EARLIER_ROXCTL_PATH"
     export EARLIER_ROXCTL_PATH
     if [[ ! -e "${EARLIER_ROXCTL_PATH}/roxctl" ]]; then
-        curl --retry 5 -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_MAIN_IMAGE_TAG}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
+        curl --retry 5 --retry-connrefused -sL "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_MAIN_IMAGE_TAG}/bin/${OS}/roxctl" --output "${EARLIER_ROXCTL_PATH}/roxctl"
         chmod +x "${EARLIER_ROXCTL_PATH}/roxctl"
     fi
 
@@ -186,6 +186,14 @@ teardown() {
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
     fi
 
+    "$ROOT/scripts/ci/collect-service-logs.sh" "${central_namespace}" \
+      "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+
+    if [[ "${central_namespace}" != "${sensor_namespace}" && -n "${sensor_namespace}" ]]; then
+      "$ROOT/scripts/ci/collect-service-logs.sh" "${sensor_namespace}" \
+        "${SCANNER_V4_LOG_DIR}/${BATS_TEST_NUMBER}-${BATS_TEST_NAME}"
+    fi
+
     if [[ -z "${BATS_TEST_COMPLETED:-}" && -z "${BATS_TEST_SKIPPED}" && -n "${central_namespace}" ]]; then
         # Test did not "complete" and was not skipped. Collect some analysis data.
         describe_pods_in_namespace "${central_namespace}"
@@ -217,7 +225,14 @@ teardown_file() {
         MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG
         info "Overriding MAIN_IMAGE_TAG=$EARLIER_MAIN_IMAGE_TAG"
     fi
-    CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
+    local _ROX_CENTRAL_EXTRA_HELM_VALUES_FILE
+    _ROX_CENTRAL_EXTRA_HELM_VALUES_FILE=$(mktemp)
+    cat <<EOF >"$_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE"
+central:
+  persistence:
+    none: true
+EOF
+    ROX_CENTRAL_EXTRA_HELM_VALUES_FILE="${_ROX_CENTRAL_EXTRA_HELM_VALUES_FILE}" CENTRAL_CHART_DIR_OVERRIDE="${_CENTRAL_CHART_DIR_OVERRIDE}" _deploy_stackrox
 
     # Upgrade to HEAD chart without explicit disabling of Scanner v4.
     info "Upgrading StackRox using HEAD Helm chart"

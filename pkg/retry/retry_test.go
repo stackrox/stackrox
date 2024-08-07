@@ -1,6 +1,7 @@
 package retry
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -144,4 +145,33 @@ func (suite *RetryTestSuite) TestAlwaysRetryableNoTries() {
 	suite.Equal(1, runCount)
 	suite.Equal(0, failCount)
 	suite.Equal(0, inBetweenCount)
+}
+
+func (suite *RetryTestSuite) TestWithContext() {
+	runCount := 0
+	failCount := 0
+	inBetweenCount := 0
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// We should only try 3 times, as the context gets cancelled on the third run.
+	suite.Error(WithRetry(func() error {
+		runCount = runCount + 1
+		if runCount == 3 {
+			cancel()
+		}
+		return errors.New("some error")
+	},
+		Tries(99),
+		WithContext(ctx),
+		OnFailedAttempts(func(e error) {
+			failCount = failCount + 1
+		}),
+		BetweenAttempts(func(previousAttempt int) {
+			inBetweenCount = inBetweenCount + 1
+		})),
+	)
+
+	suite.Equal(3, runCount)
+	suite.Equal(2, failCount)
+	suite.Equal(2, inBetweenCount)
 }

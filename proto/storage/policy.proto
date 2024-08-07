@@ -9,6 +9,7 @@ import "storage/scope.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
+//Next tag: 28
 message Policy {
   string id = 1; // @gotags: search:"Policy ID,store,hidden" sql:"pk"
   string name = 2; // @gotags: search:"Policy,store" sql:"unique"
@@ -57,6 +58,13 @@ message Policy {
   bool mitre_vectors_locked = 25;
   // Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
   bool is_default = 26;
+
+  PolicySource source = 27;
+}
+
+enum PolicySource {
+  IMPERATIVE = 0;
+  DECLARATIVE = 1;
 }
 
 enum EventSource {

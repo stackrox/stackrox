@@ -8,6 +8,7 @@ import (
 	"github.com/quay/claircore"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/scanner/indexer/mocks"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -70,7 +71,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenUsername_thenAuthEn
 	req := createRequest(hashID, imageURL, "sample username", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	s.Equal(&v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
+	protoassert.Equal(s.T(), &v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuthDisabled() {
@@ -78,7 +79,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenNoUsername_thenAuth
 	req := createRequest(hashID, imageURL, "", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	s.Equal(&v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
+	protoassert.Equal(s.T(), &v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenIndexerError_thenInternalError() {
@@ -99,7 +100,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_whenDigest_thenNoError(
 	req := createRequest(hashID, iURL, "", false)
 	r, err := s.service.CreateIndexReport(s.ctx, req)
 	s.NoError(err)
-	s.Equal(&v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
+	protoassert.Equal(s.T(), &v4.IndexReport{HashId: hashID, Success: true, Contents: &v4.Contents{}}, r)
 }
 
 func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
@@ -184,7 +185,7 @@ func (s *indexerServiceTestSuite) Test_CreateIndexReport_InvalidInput() {
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
 			got, err := s.service.CreateIndexReport(s.ctx, tt.args.req)
-			s.Equal(tt.want, got)
+			protoassert.Equal(s.T(), tt.want, got)
 			if tt.wantErr == "" {
 				s.NoError(err)
 			} else {
@@ -233,12 +234,13 @@ func (s *indexerServiceTestSuite) Test_GetIndexReport() {
 			Return(&claircore.IndexReport{Success: true, State: "sample state"}, true, nil)
 		r, err := s.service.GetIndexReport(s.ctx, req)
 		s.NoError(err)
-		s.Equal(&v4.IndexReport{
+		protoassert.Equal(s.T(), &v4.IndexReport{
 			Success:  true,
 			HashId:   hashID,
 			State:    "sample state",
 			Contents: &v4.Contents{},
 		}, r)
+
 	})
 }
 

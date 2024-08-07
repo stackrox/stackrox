@@ -58,7 +58,7 @@ func New(db postgres.DB) Store {
 
 func insertIntoPolicyCategoryEdges(_ context.Context, batch *pgx.Batch, obj *storage.PolicyCategoryEdge) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -102,7 +102,7 @@ func (s *storeImpl) copyFromPolicyCategoryEdges(ctx context.Context, tx *postgre
 		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
 		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj in the loop is not used as it only consists of the parent id and the idx.  Putting this here as a stop gap to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -199,7 +199,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.PolicyCategoryE
 }
 
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.PolicyCategoryEdge) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations

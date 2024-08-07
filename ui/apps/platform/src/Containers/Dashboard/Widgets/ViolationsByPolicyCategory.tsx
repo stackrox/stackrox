@@ -59,7 +59,7 @@ function ViolationsByPolicyCategory() {
         queryFilter['Lifecycle Stage'] = LIFECYCLE_STAGES.RUNTIME;
     }
     const query = getRequestQueryStringForSearchFilter(queryFilter);
-    const { data: alertGroups, loading, error } = useAlertGroups(query, 'CATEGORY');
+    const { data: alertGroups, isLoading, error } = useAlertGroups(query, 'CATEGORY');
 
     const isOptionsChanged =
         lifecycle !== defaultConfig.lifecycle ||
@@ -69,7 +69,7 @@ function ViolationsByPolicyCategory() {
 
     return (
         <WidgetCard
-            isLoading={loading}
+            isLoading={isLoading}
             error={error}
             header={
                 <Flex direction={{ default: 'row' }}>

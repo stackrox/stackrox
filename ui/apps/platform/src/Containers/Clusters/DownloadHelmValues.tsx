@@ -1,9 +1,8 @@
 import React, { useState, ReactElement } from 'react';
 import { connect } from 'react-redux';
-import { Button } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, Text, Title } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
 
-import CollapsibleCard from 'Components/CollapsibleCard';
 import useAnalytics, { LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES } from 'hooks/useAnalytics';
 import { actions as notificationActions } from 'reducers/notifications';
 import { downloadClusterHelmValuesYaml } from 'services/ClustersService';
@@ -36,16 +35,12 @@ const DownloadHelmValues = ({
             });
     }
 
+    // Without FlexItem element, Button stretches to column width.
     return (
-        <CollapsibleCard
-            cardClassName="flex-grow border border-base-400 md:self-start"
-            isCollapsible={false}
-            title="Download helm values"
-        >
-            <div className="w-full p-3 leading-normal border-b pb-3 border-primary-300">
-                {description}
-            </div>
-            <div className="flex justify-center items-center p-4">
+        <Flex direction={{ default: 'column' }}>
+            <Title headingLevel="h2">Download helm values</Title>
+            <Text>{description}</Text>
+            <FlexItem>
                 <Button
                     variant="secondary"
                     icon={<DownloadIcon />}
@@ -58,8 +53,8 @@ const DownloadHelmValues = ({
                 >
                     Download Helm values
                 </Button>
-            </div>
-        </CollapsibleCard>
+            </FlexItem>
+        </Flex>
     );
 };
 const mapDispatchToProps = {

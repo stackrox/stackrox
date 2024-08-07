@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
@@ -108,7 +109,7 @@ func (s *processBaselineResultsDatastoreSACSuite) TestGetBaselineResults() {
 			res, err := s.datastore.GetBaselineResults(ctx, processBaselineResult.GetDeploymentId())
 			if c.ExpectedFound {
 				s.NoError(err)
-				s.Equal(processBaselineResult, res)
+				protoassert.Equal(s.T(), processBaselineResult, res)
 			} else {
 				s.Require().Error(err)
 				s.ErrorIs(err, sac.ErrResourceAccessDenied)

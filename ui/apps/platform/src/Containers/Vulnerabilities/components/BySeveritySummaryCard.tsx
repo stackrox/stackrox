@@ -20,6 +20,13 @@ const severityToQuerySeverityKeys = {
     LOW_VULNERABILITY_SEVERITY: 'low',
 } as const;
 
+const severityToHiddenText = {
+    CRITICAL_VULNERABILITY_SEVERITY: 'Critical hidden',
+    IMPORTANT_VULNERABILITY_SEVERITY: 'Important hidden',
+    MODERATE_VULNERABILITY_SEVERITY: 'Moderate hidden',
+    LOW_VULNERABILITY_SEVERITY: 'Low hidden',
+} as const;
+
 const fadedTextColor = 'var(--pf-v5-global--Color--200)';
 
 export type ResourceCountsByCveSeverity = {
@@ -50,20 +57,11 @@ function BySeveritySummaryCard({
                     {severitiesCriticalToLow.map((severity) => {
                         const querySeverityKey = severityToQuerySeverityKeys[severity];
                         const count = severityCounts[querySeverityKey];
-                        const hasNoResults = count.total === 0;
                         const isHidden = hiddenSeverities.has(severity);
-
-                        let textColor = '';
-                        let text = `${count.total} ${vulnerabilitySeverityLabels[severity]}`;
-
-                        if (isHidden) {
-                            textColor = fadedTextColor;
-                            text = 'Results hidden';
-                        } else if (hasNoResults) {
-                            textColor = fadedTextColor;
-                            text = 'No results';
-                        }
-
+                        const textColor = isHidden ? fadedTextColor : '';
+                        const text = isHidden
+                            ? severityToHiddenText[severity]
+                            : `${count.total} ${vulnerabilitySeverityLabels[severity]}`;
                         const Icon = SeverityIcons[severity];
 
                         return (
@@ -73,12 +71,10 @@ function BySeveritySummaryCard({
                                     spaceItems={{ default: 'spaceItemsSm' }}
                                     alignItems={{ default: 'alignItemsCenter' }}
                                 >
-                                    {Icon && (
-                                        <Icon
-                                            title={vulnerabilitySeverityLabels[severity]}
-                                            color={hasNoResults ? textColor : undefined}
-                                        />
-                                    )}
+                                    <Icon
+                                        title={vulnerabilitySeverityLabels[severity]}
+                                        color={isHidden ? textColor : undefined}
+                                    />
                                     <Text style={{ color: textColor }}>{text}</Text>
                                 </Flex>
                             </GridItem>

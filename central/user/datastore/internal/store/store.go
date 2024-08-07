@@ -21,6 +21,6 @@ type Store interface {
 // The information is stored for 1 day.
 func New() Store {
 	return &storeImpl{
-		ec: expiringcache.NewExpiringCache(24 * time.Hour),
+		ec: expiringcache.NewExpiringCache[string, *storage.User](24 * time.Hour),
 	}
 }

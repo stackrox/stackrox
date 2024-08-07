@@ -181,7 +181,7 @@ func (s *flowStoreImpl) readRows(rows pgx.Rows, pred func(*storage.NetworkFlowPr
 
 // GetAllFlows returns the object, if it exists from the store, timestamp and error
 func (s *flowStoreImpl) GetAllFlows(ctx context.Context, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *time.Time, error) {
+	return pgutils.Retry3(ctx, func() ([]*storage.NetworkFlow, *time.Time, error) {
 		return s.retryableGetAllFlows(ctx, since)
 	})
 }
@@ -215,7 +215,7 @@ func (s *flowStoreImpl) retryableGetAllFlows(ctx context.Context, since *time.Ti
 
 // GetMatchingFlows iterates over all of the objects in the store and applies the closure
 func (s *flowStoreImpl) GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error) {
-	return pgutils.Retry3(func() ([]*storage.NetworkFlow, *time.Time, error) {
+	return pgutils.Retry3(ctx, func() ([]*storage.NetworkFlow, *time.Time, error) {
 		return s.retryableGetMatchingFlows(ctx, pred, since)
 	})
 }
@@ -248,7 +248,7 @@ func (s *flowStoreImpl) retryableGetMatchingFlows(ctx context.Context, pred func
 
 // GetFlowsForDeployment returns the flows matching the deployment ID
 func (s *flowStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
-	return pgutils.Retry2(func() ([]*storage.NetworkFlow, error) {
+	return pgutils.Retry2(ctx, func() ([]*storage.NetworkFlow, error) {
 		return s.retryableGetFlowsForDeployment(ctx, deploymentID)
 	})
 }

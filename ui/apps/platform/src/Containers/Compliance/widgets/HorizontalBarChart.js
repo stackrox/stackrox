@@ -142,8 +142,8 @@ class HorizontalBarChart extends Component {
             if (axisLinks[value]) {
                 inner = (
                     <Link
-                        style={{ fill: 'currentColor' }}
-                        className="underline text-sm text-base-600"
+                        style={{ fill: 'var(--pf-v5-global--link--Color)' }}
+                        className="text-sm"
                         to={axisLinks[value]}
                     >
                         {value}

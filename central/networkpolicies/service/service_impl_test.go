@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -232,7 +233,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedResp, actualResp, "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedResp, actualResp, "response should be output from graph generation")
 }
 
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
@@ -273,7 +274,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 1)
 	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_MODIFIED, actualResp.GetPolicies()[0].GetStatus())
@@ -313,7 +314,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
 	suite.Equal("second-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_UNCHANGED, actualResp.GetPolicies()[0].GetStatus())
@@ -357,7 +358,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
 	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_MODIFIED, actualResp.GetPolicies()[0].GetStatus())
@@ -406,7 +407,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
 
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 1)
 	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetOldPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_DELETED, actualResp.GetPolicies()[0].GetStatus())
@@ -452,7 +453,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
 	suite.Equal("second-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_MODIFIED, actualResp.GetPolicies()[0].GetStatus())
@@ -494,7 +495,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	}
 	actualResp, err := suite.tested.SimulateNetworkGraph(suite.requestContext, request)
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
+	protoassert.Equal(suite.T(), expectedGraph, actualResp.GetSimulatedGraph(), "response should be output from graph generation")
 	suite.Require().Len(actualResp.GetPolicies(), 2)
 	suite.Equal("first-policy", actualResp.GetPolicies()[0].GetPolicy().GetName())
 	suite.Equal(v1.NetworkPolicyInSimulation_ADDED, actualResp.GetPolicies()[0].GetStatus())
@@ -519,7 +520,7 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWithoutDeploymentQuery() {
 	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
+	protoassert.SlicesEqual(suite.T(), neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
 }
 
 func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
@@ -565,7 +566,7 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(expectedPolicies, actualResp.GetNetworkPolicies(), "response should be policies applied to deployments")
+	protoassert.SlicesEqual(suite.T(), expectedPolicies, actualResp.GetNetworkPolicies(), "response should be policies applied to deployments")
 }
 
 func (suite *ServiceTestSuite) TestGetAllNetworkPoliciesForNamespace() {
@@ -589,7 +590,7 @@ func (suite *ServiceTestSuite) TestGetAllNetworkPoliciesForNamespace() {
 	actualResp, err := suite.tested.GetNetworkPolicies(suite.requestContext, request)
 
 	suite.NoError(err, "expected graph generation to succeed")
-	suite.Equal(neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
+	protoassert.SlicesEqual(suite.T(), neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
 }
 
 func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment() {
@@ -726,7 +727,7 @@ func (suite *ServiceTestSuite) TestGetAllowedPeersFromCurrentPolicyForDeployment
 				&v1.ResourceByID{Id: deps[0].GetId()})
 			suite.NoError(err, "expected GetAllowedPeersFromCurrentPolicyForDeployment to succeed")
 
-			suite.ElementsMatch(resp.GetAllowedPeers(), testCase.expectedAllowedPeers)
+			protoassert.ElementsMatch(suite.T(), resp.GetAllowedPeers(), testCase.expectedAllowedPeers)
 		})
 	}
 }
@@ -753,9 +754,10 @@ func (suite *ServiceTestSuite) TestGetUndoDeploymentRecord() {
 	resp, err :=
 		suite.tested.GetUndoModificationForDeployment(suite.requestContext, &v1.ResourceByID{Id: "some-deployment"})
 	suite.NoError(err)
-	suite.Equal(
+	protoassert.Equal(suite.T(),
 		&v1.GetUndoModificationForDeploymentResponse{UndoRecord: &storage.NetworkPolicyApplicationUndoRecord{}},
 		resp)
+
 }
 
 func depToInfo(dep *storage.Deployment) *storage.NetworkEntityInfo {

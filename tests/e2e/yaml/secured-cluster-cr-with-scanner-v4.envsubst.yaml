@@ -22,7 +22,6 @@ spec:
           memory: "100Mi"
           cpu: "100m"
       collection: $collection_method
-      forceCollection: true
     compliance:
       resources:
         requests:

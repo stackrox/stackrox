@@ -13,6 +13,7 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -338,7 +339,7 @@ func (s *apMigrationTestSuite) TestMigration() {
 		return nil
 	}))
 
-	s.ElementsMatch(migratedAuthProviders, allAPAfterMigration)
+	protoassert.ElementsMatch(s.T(), migratedAuthProviders, allAPAfterMigration)
 
 	allGroupsAfterMigration := make([]*storage.Group, 0, len(unmigratedGroups))
 	s.NoError(groupStore.Walk(ctx, func(obj *storage.Group) error {
@@ -346,5 +347,5 @@ func (s *apMigrationTestSuite) TestMigration() {
 		return nil
 	}))
 
-	s.ElementsMatch(migratedGroups, allGroupsAfterMigration)
+	protoassert.ElementsMatch(s.T(), migratedGroups, allGroupsAfterMigration)
 }

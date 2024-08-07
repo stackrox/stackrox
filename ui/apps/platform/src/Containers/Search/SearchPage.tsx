@@ -133,7 +133,7 @@ function SearchPage(): ReactElement {
         );
     } else if (searchOptions.length !== 0 && stringifiedSearchFilter.length === 0) {
         content = (
-            <Alert variant="info" isInline title="Enter a new search filter">
+            <Alert variant="info" isInline title="Enter a new search filter" component="p">
                 <p>
                     Instead of a new search, you can go back in browser history to see previous
                     search results.
@@ -146,7 +146,14 @@ function SearchPage(): ReactElement {
         );
     } else if (searchResponse) {
         if (searchResponse.results.length === 0) {
-            content = <Alert variant="info" isInline title="No results match the search filter" />;
+            content = (
+                <Alert
+                    variant="info"
+                    isInline
+                    title="No results match the search filter"
+                    component="p"
+                />
+            );
         } else {
             content = (
                 <SearchNavAndTable
@@ -158,7 +165,12 @@ function SearchPage(): ReactElement {
         }
     } else if (typeof searchResponseErrorMessage === 'string') {
         content = (
-            <Alert variant="danger" isInline title="Request failed for search results">
+            <Alert
+                variant="danger"
+                isInline
+                title="Request failed for search results"
+                component="p"
+            >
                 {searchResponseErrorMessage}
             </Alert>
         );
@@ -178,7 +190,12 @@ function SearchPage(): ReactElement {
                         Search
                     </Title>
                     {typeof searchOptionsErrorMessage === 'string' ? (
-                        <Alert variant="danger" isInline title="Request failed for search options">
+                        <Alert
+                            variant="danger"
+                            isInline
+                            title="Request failed for search options"
+                            component="p"
+                        >
                             {searchOptionsErrorMessage}
                         </Alert>
                     ) : (

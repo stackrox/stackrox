@@ -13,6 +13,7 @@ import services.PolicyService
 import services.SummaryService
 import util.Env
 
+import spock.lang.Ignore
 import spock.lang.Tag
 import spock.lang.Unroll
 import spock.lang.IgnoreIf
@@ -22,15 +23,9 @@ class UpgradesTest extends BaseSpecification {
     private final static String POLICIES_JSON_PATH =
             Env.get("POLICIES_JSON_RELATIVE_PATH", "../pkg/defaults/policies/files")
 
-    private static final String VULNERABILITY_RESOURCE_TYPE =
-            isPostgresRun() ?
-                    "nodeVulnerabilities" :
-                    "vulnerabilities"
+    private static final String VULNERABILITY_RESOURCE_TYPE = "nodeVulnerabilities"
 
-    private static final String COMPONENT_RESOURCE_TYPE =
-            isPostgresRun() ?
-                    "nodeComponents" :
-                    "components"
+    private static final String COMPONENT_RESOURCE_TYPE = "nodeComponents"
 
     private static final COMPLIANCE_QUERY = """query getAggregatedResults(
         \$groupBy: [ComplianceAggregation_Scope!],
@@ -65,6 +60,7 @@ class UpgradesTest extends BaseSpecification {
     }
 
     @Tag("Upgrade")
+    @Ignore("ROX-24528: This API is deprecated in 4.5. Remove this test once the API is removed")
     def "Verify that summary API returns non-zero values on upgrade"() {
         expect:
         "Summary API returns non-zero values on upgrade"

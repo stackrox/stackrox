@@ -15,6 +15,7 @@ import (
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -86,21 +87,21 @@ func (s *ServiceLevelConfigSeparationSuite) TestGetReportConfigurations() {
 	// Empty Query
 	res, err := s.service.GetReportConfigurations(s.ctx, &apiV1.RawQuery{Query: ""})
 	s.Require().NoError(err)
-	s.Require().ElementsMatch(s.v1Configs, res.ReportConfigs)
+	protoassert.ElementsMatch(s.T(), s.v1Configs, res.ReportConfigs)
 
 	// Non empty query
 	res, err = s.service.GetReportConfigurations(s.ctx,
 		&apiV1.RawQuery{Query: fmt.Sprintf("Report Name:%s", s.v1Configs[0].Name)})
 	s.Require().NoError(err)
 	s.Require().Equal(1, len(res.ReportConfigs))
-	s.Require().Equal(s.v1Configs[0], res.ReportConfigs[0])
+	protoassert.Equal(s.T(), s.v1Configs[0], res.ReportConfigs[0])
 }
 
 func (s *ServiceLevelConfigSeparationSuite) TestGetReportConfiguration() {
 	// returns v1 config
 	res, err := s.service.GetReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: s.v1Configs[0].Id})
 	s.Require().NoError(err)
-	s.Require().Equal(s.v1Configs[0], res.ReportConfig)
+	protoassert.Equal(s.T(), s.v1Configs[0], res.ReportConfig)
 
 	// error on requesting v2 config
 	_, err = s.service.GetReportConfiguration(s.ctx, &apiV1.ResourceByID{Id: s.v2Configs[0].Id})
@@ -122,7 +123,7 @@ func (s *ServiceLevelConfigSeparationSuite) TestCountReportConfigurations() {
 
 func (s *ServiceLevelConfigSeparationSuite) TestPostReportConfiguration() {
 	// Error on v2 config
-	config := s.v2Configs[0].Clone()
+	config := s.v2Configs[0].CloneVT()
 	config.Id = ""
 	config.NotifierConfig = s.v1Configs[0].NotifierConfig
 	_, err := s.service.PostReportConfiguration(s.ctx, &apiV1.PostReportConfigurationRequest{ReportConfig: config})
@@ -130,7 +131,7 @@ func (s *ServiceLevelConfigSeparationSuite) TestPostReportConfiguration() {
 
 	// No error on v1 config
 	s.manager.EXPECT().Upsert(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-	config = s.v1Configs[0].Clone()
+	config = s.v1Configs[0].CloneVT()
 	config.Id = ""
 	res, err := s.service.PostReportConfiguration(s.ctx, &apiV1.PostReportConfigurationRequest{ReportConfig: config})
 	s.Require().NoError(err)
@@ -141,7 +142,7 @@ func (s *ServiceLevelConfigSeparationSuite) TestPostReportConfiguration() {
 
 func (s *ServiceLevelConfigSeparationSuite) TestUpdateReportConfiguration() {
 	// Error on v2 config
-	config := s.v2Configs[0].Clone()
+	config := s.v2Configs[0].CloneVT()
 	config.NotifierConfig = s.v1Configs[0].NotifierConfig
 	config.GetVulnReportFilters().SinceLastReport = true
 	_, err := s.service.UpdateReportConfiguration(s.ctx, &apiV1.UpdateReportConfigurationRequest{ReportConfig: config})
@@ -161,7 +162,7 @@ func (s *ServiceLevelConfigSeparationSuite) TestDeleteReportConfiguration() {
 
 	// No error on v1 config ID
 	s.manager.EXPECT().Remove(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-	config := s.v1Configs[0].Clone()
+	config := s.v1Configs[0].CloneVT()
 	config.Id = ""
 	config.Name = "Delete report config"
 	config.Id, err = s.reportConfigDatastore.AddReportConfiguration(s.ctx, config)

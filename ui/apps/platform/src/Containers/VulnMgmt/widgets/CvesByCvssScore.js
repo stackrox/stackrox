@@ -96,8 +96,6 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
                     // severity, // generic Sunburst does not expect this data-specific property
                     name: `${cve} -- ${summary}`,
                     color: vulnerabilitySeverityColorMap[severity],
-                    labelColor: 'var(--base-600)',
-                    textColor: 'var(--base-600)',
                     value: cvss,
                     link: workflowState.pushRelatedEntity(linkTypeToUse, cve).toUrl(),
                 };
@@ -110,7 +108,6 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
                 name: vulnerabilitySeverityLabels[severity],
                 color: vulnerabilitySeverityColorMap[severity],
                 children: getChildren(vulns, severity),
-                textColor: 'var(--base-600)',
                 value: 0,
             };
         });
@@ -122,7 +119,6 @@ const CvesByCvssScore = ({ entityContext, parentContext }) => {
             const text = `${category.length} rated as ${vulnerabilitySeverityLabels[severity]}`;
             return {
                 text,
-                textColor: 'var(--base-600)',
             };
         });
     }

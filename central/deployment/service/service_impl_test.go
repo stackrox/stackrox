@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -119,7 +120,7 @@ func TestLabelsMap(t *testing.T) {
 			assert.NoError(t, err)
 			actualMap, actualValues := labelsMapFromSearchResults(results)
 
-			assert.Equal(t, c.expectedMap, actualMap)
+			protoassert.MapEqual(t, c.expectedMap, actualMap)
 			assert.ElementsMatch(t, c.expectedValues, actualValues)
 		})
 	}

@@ -13,4 +13,4 @@ metadata:
 type: Opaque
 stringData:
   ca.pem: |
-    {{- required "A CA certificate must be specified" ._rox.ca._cert | nindent 4 }}
+    {{- ._rox.ca._cert | nindent 4 }}

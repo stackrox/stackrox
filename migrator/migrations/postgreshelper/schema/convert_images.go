@@ -9,7 +9,7 @@ import (
 
 // ConvertImageFromProto converts a `*storage.Image` to Gorm model
 func ConvertImageFromProto(obj *storage.Image) (*Images, error) {
-	serialized, err := obj.Marshal()
+	serialized, err := obj.MarshalVT()
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func ConvertImageLayerFromProto(obj *storage.ImageLayer, idx int, images_Id stri
 // ConvertImageToProto converts Gorm model `Images` to its protobuf type object
 func ConvertImageToProto(m *Images) (*storage.Image, error) {
 	var msg storage.Image
-	if err := msg.Unmarshal(m.Serialized); err != nil {
+	if err := msg.UnmarshalVT(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

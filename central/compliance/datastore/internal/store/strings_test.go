@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,7 +52,7 @@ func TestStringsRoundTrip(t *testing.T) {
 		},
 	}
 
-	resultsWithoutStrings := results.Clone()
+	resultsWithoutStrings := results.CloneVT()
 	stringsProto := ExternalizeStrings(resultsWithoutStrings)
 	assert.ElementsMatch(t, stringsProto.Strings, []string{"foo", "bar", "baz"})
 
@@ -79,5 +80,5 @@ func TestStringsRoundTrip(t *testing.T) {
 	}
 
 	assert.True(t, ReconstituteStrings(resultsWithoutStrings, stringsProto))
-	assert.Equal(t, results, resultsWithoutStrings)
+	protoassert.Equal(t, results, resultsWithoutStrings)
 }

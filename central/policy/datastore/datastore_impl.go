@@ -237,7 +237,7 @@ func (ds *datastoreImpl) AddPolicy(ctx context.Context, policy *storage.Policy) 
 	policyCategories := policy.GetCategories()
 	// Make sure to reset the policy categories field on a clone before upserting; otherwise the given reference
 	// will be changed and information lost when the reference is being kept in-memory (like in policy sets).
-	clonedPolicy := policy.Clone()
+	clonedPolicy := policy.CloneVT()
 	clonedPolicy.Categories = []string{}
 	err = ds.storage.Upsert(ctx, clonedPolicy)
 	if err != nil {
@@ -267,14 +267,14 @@ func (ds *datastoreImpl) UpdatePolicy(ctx context.Context, policy *storage.Polic
 
 	ds.policyMutex.Lock()
 	defer ds.policyMutex.Unlock()
-	// if feature flag turned on, check if categories need to be created/new policy category edges need to be created/
+	// Check if categories need to be created/new policy category edges need to be created/
 	// existing policy category edges need to be removed?
 	if err := ds.categoriesDatastore.SetPolicyCategoriesForPolicy(ctx, policy.GetId(), policy.GetCategories()); err != nil {
 		return err
 	}
 	// Make sure to reset the policy categories field on a clone before upserting; otherwise the given reference
 	// will be changed and information lost when the reference is being kept in-memory (like in policy sets).
-	clonedPolicy := policy.Clone()
+	clonedPolicy := policy.CloneVT()
 	clonedPolicy.Categories = []string{}
 
 	return ds.storage.Upsert(ctx, clonedPolicy)
@@ -355,7 +355,7 @@ func (ds *datastoreImpl) importPolicy(ctx context.Context, policy *storage.Polic
 	}
 
 	result := &v1.ImportPolicyResponse{
-		Policy: policy.Clone(),
+		Policy: policy.CloneVT(),
 	}
 
 	importErrors, err := ds.validateUniqueNameAndID(ctx, policy, result, overwrite, policyNameToPolicyMap)

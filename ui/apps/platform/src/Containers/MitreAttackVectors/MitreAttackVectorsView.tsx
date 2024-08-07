@@ -29,7 +29,13 @@ function MitreAttackVectorsView({
 
     if (errorMessage) {
         return (
-            <Alert className="pf-v5-u-my-md" title="Request failed" variant="warning" isInline>
+            <Alert
+                className="pf-v5-u-my-md"
+                title="Request failed"
+                component="p"
+                variant="warning"
+                isInline
+            >
                 {errorMessage}
             </Alert>
         );

@@ -181,7 +181,7 @@ ClusterSummary.propTypes = {
     }).isRequired,
     centralVersion: PropTypes.string.isRequired,
     clusterId: PropTypes.string.isRequired,
-    clusterRetentionInfo: PropTypes.oneOf([PropTypes.shape({}), PropTypes.null]).isRequired,
+    clusterRetentionInfo: PropTypes.shape({}),
     isManagerTypeNonConfigurable: PropTypes.bool.isRequired,
 };
 

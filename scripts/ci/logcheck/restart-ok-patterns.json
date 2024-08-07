@@ -52,5 +52,11 @@
         "job": "upgrade",
         "logfile": "sensor-previous",
         "logline": "checking central status failed after"
+    },
+    {
+        "comment": "collector restart due to sensor bounce in compliance test",
+        "job": "compliance-e2e-tests",
+        "logfile": "collector-previous",
+        "logline": "Socket closed"
     }
 ]

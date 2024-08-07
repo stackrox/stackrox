@@ -192,6 +192,7 @@ meta:
     version: null # string
     overrideAPIResources: null # [string]
     extraAPIResources: null # [string]
+network:
+  enableNetworkPolicies: null # bool
 system:
   enablePodSecurityPolicies: null # bool
-  enableNetworkPolicies: null # bool

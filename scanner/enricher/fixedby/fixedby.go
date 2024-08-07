@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
+	"strings"
 
 	"github.com/Masterminds/semver"
 	"github.com/quay/claircore"
@@ -47,6 +48,7 @@ const (
 	normalVersionType
 	urlEncodedVersionType
 	semverVersionType
+	goSemverVersionType
 )
 
 var (
@@ -90,15 +92,13 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 		fixedBy.Package = &p
 
 		// Set the Distribution.
-		// Just use the first one, as we only support single-distribution images.
+		// If we cannot identify the distribution, then use a dummy one,
+		// as we still want to support language-level packages.
+		fixedBy.Distribution = &claircore.Distribution{}
 		for _, d := range vr.Distributions {
+			// Just use the first one, as we only support single-distribution images.
 			fixedBy.Distribution = d
 			break
-		}
-		// If we could not identify the distribution, then just use a dummy one.
-		// Do not fail here, as we still want to support language-level packages.
-		if fixedBy.Distribution == nil {
-			fixedBy.Distribution = &claircore.Distribution{}
 		}
 
 		// Set the Repository.
@@ -127,9 +127,17 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 				Str("package", pkg.Name).
 				Msg("unknown matcher, skipping")
 			continue
-		case semverVersionType:
+		case semverVersionType, goSemverVersionType:
+			pkgVersion := pkg.Version
+			// If this is the "stdlib" package, remove the "go" prefix.
+			// This is what ClairCore does for the version used in the PostgreSQL range checks
+			// https://github.com/quay/claircore/blob/v1.5.28/gobin/exe.go#L57.
+			if versionType == goSemverVersionType && pkg.Name == "stdlib" {
+				pkgVersion = strings.TrimPrefix(pkgVersion, "go")
+			}
+
 			var err error
-			pkgSemver, err = semver.NewVersion(pkg.Version)
+			pkgSemver, err = semver.NewVersion(pkgVersion)
 			if err != nil {
 				zlog.Warn(ctx).
 					Err(err).
@@ -151,7 +159,7 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 			}
 
 			switch versionType {
-			case semverVersionType:
+			case semverVersionType, goSemverVersionType:
 				// The known semver types do not rely on the Vulnerable() function to determine if a package
 				// is affected by a given vulnerability. Instead, it relies on Postgres to compare versions.
 				//
@@ -160,7 +168,6 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 				if v.FixedInVersion == "" {
 					continue
 				}
-
 				vulnSemver, err := semver.NewVersion(v.FixedInVersion)
 				if err != nil {
 					zlog.Warn(ctx).
@@ -172,7 +179,6 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 						Msg("skipping")
 					continue
 				}
-
 				if pkgSemver.LessThan(vulnSemver) {
 					pkgSemver = vulnSemver
 					fixedBy.Package.Version = v.FixedInVersion
@@ -281,7 +287,7 @@ func findMatcher(ctx context.Context, record *claircore.IndexRecord) (matcher, v
 		// For example: v1.2.2023071210521689159162
 		// TODO(ROX-22533): Once ClairCore converges on a version library,
 		// use that.
-		return &gobin.Matcher{}, semverVersionType
+		return &gobin.Matcher{}, goSemverVersionType
 	case (*java.Matcher)(nil).Filter(record):
 		return &java.Matcher{}, urlEncodedVersionType
 	case (*nodejs.Matcher)(nil).Filter(record):

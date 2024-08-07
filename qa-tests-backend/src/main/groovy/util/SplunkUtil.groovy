@@ -16,6 +16,10 @@ import objects.Service
 import objects.SplunkAlert
 import objects.SplunkAlertRaw
 import objects.SplunkAlerts
+import objects.SplunkHECEntry
+import objects.SplunkHECTokens
+import objects.SplunkHealthEntry
+import objects.SplunkHealthResults
 import objects.SplunkSearch
 
 import org.junit.AssumptionViolatedException
@@ -32,13 +36,6 @@ class SplunkUtil {
         // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
         // See https://github.com/splunk/splunk-ansible/issues/349
         "SPLUNK_LAUNCH_CONF": "OPTIMISTIC_ABOUT_FILE_LOCKING=1",]
-    private static final Map<String, String> LEGACY_ENV_VARIABLES = ["SPLUNK_START_ARGS" : "--accept-license",
-        "SPLUNK_USER": "root",
-        "SPLUNK_PASSWORD"   : SPLUNK_ADMIN_PASSWORD,
-        // This is required to get splunk 6.6.2 to start in an OpenShift crio environment
-        // https://docs.splunk.com/Documentation/Splunk/7.0.3/Troubleshooting/FSLockingIssues#
-        // Splunk_Enterprise_does_not_start_due_to_unusable_filesystem
-        "OPTIMISTIC_ABOUT_FILE_LOCKING": "1",]
 
     static List<SplunkAlert> getSplunkAlerts(int port, String searchId) {
         Response response = getSearchResults(port, searchId)
@@ -62,26 +59,16 @@ class SplunkUtil {
         return syslogStrings
     }
 
-    static List<SplunkAlert> waitForSplunkAlerts(int port, int timeoutSeconds) {
-        int intervalSeconds = 3
-        int iterations = timeoutSeconds / intervalSeconds
+    static List<SplunkAlert> waitForSplunkAlerts(int port, String search = "search") {
+        log.info("Waiting for data to arrive in Splunk for search query: " + search)
         List results = []
-        Exception exception = null
-        Timer t = new Timer(iterations, intervalSeconds)
-        while (results.size() == 0 && t.IsValid()) {
-            def searchId = null
-            try {
-                searchId = createSearch(port)
-                exception = null
-            } catch (Exception e) {
-                exception = e
-            }
+        withRetry(40, 15) {
+            def searchId
+            searchId = createSearch(port, search)
             results = getSplunkAlerts(port, searchId)
+            assert results.size() > 0
         }
-
-        if (exception) {
-            throw exception
-        }
+        log.info("Data arrived in Splunk!")
         return results
     }
 
@@ -141,7 +128,30 @@ class SplunkUtil {
         }
     }
 
-    static SplunkDeployment createSplunk(OrchestratorMain orchestrator, String namespace, boolean useLegacySplunk) {
+    static String createHECToken(int port, String tokenName = "stackrox") {
+        Response response = null
+        withRetry(20, 15) {
+            log.info("Attempting to create new HEC ingest token")
+            response =  given().auth()
+                .basic("admin", SPLUNK_ADMIN_PASSWORD)
+                .formParam("name", tokenName)
+                .formParam("output_mode", "json")
+                .post("https://127.0.0.1:${port}/servicesNS/nobody/search/data/inputs/http")
+        }
+        def hec = unmarshalHEC(response?.asString())
+        assert hec.size() == 36 // Splunk has a unified token format based on a hash-like
+        return hec
+    }
+
+    static String unmarshalHEC(String response) {
+        SplunkHECTokens tokens = GSON.fromJson(response, SplunkHECTokens)
+        // This structure only ever contains one entry in the array, so we return after parsing the first one
+        for (SplunkHECEntry entry: tokens.entry) {
+            return entry.content.token
+        }
+    }
+
+    static SplunkDeployment createSplunk(OrchestratorMain orchestrator, String namespace) {
         def uid = UUID.randomUUID()
         def deploymentName = "splunk-${uid}"
         Deployment deployment
@@ -153,14 +163,12 @@ class SplunkUtil {
                     new Deployment()
                             .setNamespace(namespace)
                             .setName(deploymentName)
-                            .setImage(useLegacySplunk ?
-                                    "quay.io/rhacs-eng/qa:splunk-test-repo-6-6-2" :
-                                    "quay.io/rhacs-eng/qa:splunk-test-repo-9-0-5")
+                            .setImage("quay.io/rhacs-eng/qa:splunk-test-repo-9-0-5")
                             .addPort(8000)
                             .addPort(8088)
                             .addPort(8089)
                             .addPort(514)
-                            .setEnv(useLegacySplunk ? LEGACY_ENV_VARIABLES : ENV_VARIABLES)
+                            .setEnv(ENV_VARIABLES)
                             .addLabel("app", deploymentName)
             orchestrator.createDeployment(deployment)
 
@@ -191,6 +199,30 @@ class SplunkUtil {
             throw e
         }
         return new SplunkDeployment(uid, collectorSvc, splunkPortForward, syslogSvc, deployment)
+    }
+
+    static void waitForSplunkBoot(int port) {
+        log.info("Waiting for Splunk to boot...")
+        Response response = null
+        withRetry(30, 10) {
+            response = given().auth()
+                    .basic("admin", SPLUNK_ADMIN_PASSWORD)
+                    .param("output_mode", "json")
+                    .get("https://127.0.0.1:${port}/services/server/health/splunkd/details")
+            assert response != null
+            log.debug("Splunkd status: \n" + response?.asString())
+            SplunkHealthResults results = GSON.fromJson(response?.asString(), SplunkHealthResults)
+            for (SplunkHealthEntry entry: results.entry) {
+                // Splunk status is modeled as green/yellow/red.
+                // We're only interested in the Index Processor and Search Scheduler,
+                // as overall health can be degraded because of IOWait or disk storage.
+                assert entry.content.features.searchScheduler.health == "green"
+                // The IndexProcessor can be yellow because of free disk space. That's okay for the short-lived test.
+                assert (entry.content.features.indexProcessor.health == "green" ||
+                        entry.content.features.indexProcessor.health == "yellow")
+            }
+            log.info("Splunk has completed booting")
+        }
     }
 
     static void tearDownSplunk(OrchestratorMain orchestrator, SplunkDeployment splunkDeployment) {

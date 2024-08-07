@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
@@ -70,7 +71,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge() {
 	s.Require().NoError(err)
 
 	trustInfo := &v1.TrustInfo{}
-	err = protocompat.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
+	err = trustInfo.UnmarshalVT(resp.GetTrustInfoSerialized())
 	s.Require().NoError(err)
 
 	// Verify that additional CAs were received
@@ -100,7 +101,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_Should
 	s.Require().NoError(err)
 
 	trustInfo := &v1.TrustInfo{}
-	err = protocompat.Unmarshal(resp.GetTrustInfoSerialized(), trustInfo)
+	err = trustInfo.UnmarshalVT(resp.GetTrustInfoSerialized())
 	s.Require().NoError(err)
 
 	// Read root CA from response
@@ -194,7 +195,7 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 	s.NoError(err)
 	actual, err := srv.GetDatabaseBackupStatus(ctx, &v1.Empty{})
 	s.NoError(err)
-	s.EqualValues(expected, actual)
+	protoassert.Equal(s.T(), expected, actual)
 }
 
 func (s *serviceImplTestSuite) TestGetCentralCapabilities() {

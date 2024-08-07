@@ -95,6 +95,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
                     isInline
                     variant={AlertVariant.danger}
                     title="Delivery destination & schedule are both required to be configured since the 'Last scheduled report that was successfully sent' option has been selected in Step 1."
+                    component="p"
                 />
             )}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>

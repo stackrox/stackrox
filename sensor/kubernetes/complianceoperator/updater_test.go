@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
@@ -230,7 +231,7 @@ func (s *UpdaterTestSuite) TestCheckRequiredComplianceCRDsExist() {
 				}
 			},
 			expectError:      true,
-			expectedErrorMsg: "required GroupVersionKind \"TailoredProfile/v1alpha1, Kind=TailoredProfile\" not found",
+			expectedErrorMsg: "required GroupVersionKind \"compliance.openshift.io/v1alpha1, Kind=TailoredProfile\" not found",
 			msg:              "checkRequiredComplianceCRDsExist should return an error when detectedKinds is empty",
 		},
 	}
@@ -353,5 +354,5 @@ func (s *UpdaterTestSuite) assertEqual(expected expectedInfo, actual *central.Co
 			TotalReadyPods: expected.ready,
 		}
 	}
-	s.EqualValues(expectedVal, actual)
+	protoassert.Equal(s.T(), expectedVal, actual)
 }

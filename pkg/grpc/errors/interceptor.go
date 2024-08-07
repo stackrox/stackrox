@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stackrox/rox/pkg/errox"
 	errox_grpc "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/logging"

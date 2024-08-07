@@ -17,7 +17,7 @@ func (e *evaluator) ForSubject(subject *storage.Subject) PolicyRuleSet {
 	policyRuleSet := NewPolicyRuleSet(CoreFields()...)
 	for subjectSet, role := range e.bindings {
 		if subjectSet.Contains(subject) {
-			policyRuleSet.Add(role.Clone().GetRules()...)
+			policyRuleSet.Add(role.CloneVT().GetRules()...)
 		}
 	}
 	return policyRuleSet
@@ -34,7 +34,7 @@ func (e *evaluator) RolesForSubject(subject *storage.Subject) []*storage.K8SRole
 	roles := make([]*storage.K8SRole, 0)
 	for subjectSet, role := range e.bindings {
 		if subjectSet.Contains(subject) {
-			roles = append(roles, role.Clone())
+			roles = append(roles, role.CloneVT())
 		}
 	}
 	return roles

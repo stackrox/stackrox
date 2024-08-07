@@ -16,6 +16,8 @@ const (
 
 	EmailGeneric = "email-generic"
 
+	ACSCSEmailGeneric = "acscs-email-generic"
+
 	JIRAGeneric = "jira-generic"
 
 	PagerDutyGeneric = "pagerduty-generic"

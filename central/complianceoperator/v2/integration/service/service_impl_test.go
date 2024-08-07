@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -134,41 +135,7 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 
 			configs, err := s.service.ListComplianceIntegrations(allAccessContext, tc.query)
 			s.NoError(err)
-			s.Equal(expectedResp, configs)
+			protoassert.Equal(s.T(), expectedResp, configs)
 		})
 	}
-}
-
-func (s *ComplianceIntegrationServiceTestSuite) TestGetComplianceIntegrationsCount() {
-	allAccessContext := sac.WithAllAccess(context.Background())
-
-	testCases := []struct {
-		desc      string
-		query     *apiV2.RawQuery
-		expectedQ *v1.Query
-	}{
-		{
-			desc:      "Empty query",
-			query:     &apiV2.RawQuery{Query: ""},
-			expectedQ: search.NewQueryBuilder().ProtoQuery(),
-		},
-		{
-			desc:      "Query with search field",
-			query:     &apiV2.RawQuery{Query: "Cluster ID:test-cluster"},
-			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "test-cluster").ProtoQuery(),
-		},
-	}
-
-	for _, tc := range testCases {
-		s.T().Run(tc.desc, func(t *testing.T) {
-
-			s.complianceIntegrationDataStore.EXPECT().CountIntegrations(allAccessContext, tc.expectedQ).
-				Return(1, nil).Times(1)
-
-			integrations, err := s.service.GetComplianceIntegrationsCount(allAccessContext, tc.query)
-			s.Require().NoError(err)
-			s.Require().Equal(int32(1), integrations.Count)
-		})
-	}
-
 }

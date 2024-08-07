@@ -36,4 +36,5 @@ const (
 	NodeComponents
 	ImageCVECore
 	PlatformCVECore
+	NodeCVECore
 )

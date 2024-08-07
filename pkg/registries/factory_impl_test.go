@@ -1,6 +1,7 @@
 package registries
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -66,7 +67,7 @@ type FakeReg struct {
 
 var _ types.Registry = (*FakeReg)(nil)
 
-func (*FakeReg) Config() *types.Config                                     { return nil }
+func (*FakeReg) Config(ctx context.Context) *types.Config                  { return nil }
 func (*FakeReg) HTTPClient() *http.Client                                  { return nil }
 func (*FakeReg) Match(_ *storage.ImageName) bool                           { return false }
 func (*FakeReg) Metadata(_ *storage.Image) (*storage.ImageMetadata, error) { return nil, nil }

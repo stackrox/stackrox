@@ -14,6 +14,7 @@ export type SimpleSelectProps = {
     isDisabled?: boolean;
     ariaLabelMenu?: string;
     ariaLabelToggle?: string;
+    menuToggleClassName?: string;
 };
 
 function SimpleSelect({
@@ -23,6 +24,7 @@ function SimpleSelect({
     isDisabled = false,
     ariaLabelMenu,
     ariaLabelToggle,
+    menuToggleClassName,
 }: SimpleSelectProps) {
     const [isOpen, setIsOpen] = React.useState(false);
 
@@ -40,6 +42,7 @@ function SimpleSelect({
 
     const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
         <MenuToggle
+            className={menuToggleClassName}
             aria-label={ariaLabelToggle}
             ref={toggleRef}
             onClick={onToggleClick}

@@ -65,7 +65,7 @@ tests:
     imagePullSecrets.allowNone: true
     scanner.disable: false
     scanner.mode: "slim"
-    system.enableNetworkPolicies: true
+    network.enableNetworkPolicies: true
   expect: |
     .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)
     .networkpolicys["scanner"].spec.ingress[1] | .from[0].podSelector.matchLabels.app | assertThat(. == "sensor")
@@ -75,7 +75,7 @@ tests:
     imagePullSecrets.allowNone: true
     scanner.disable: false
     scanner.mode: "slim"
-    system.enableNetworkPolicies: false
+    network.enableNetworkPolicies: false
   expect: |
     .networkpolicys["scanner"] | assertThat(. == null)
 

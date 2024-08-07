@@ -1,8 +1,8 @@
 package protoutils
 
 import (
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // NewWrapper takes in a protocompat.Message and overrides the String method with jsonpb.Marshal
@@ -18,13 +18,13 @@ type Wrapper struct {
 }
 
 func (w *Wrapper) String() string {
-	marshaler := &jsonpb.Marshaler{
-		Indent:       "  ",
-		EmitDefaults: true,
+	marshaler := &protojson.MarshalOptions{
+		Indent:          "  ",
+		EmitUnpopulated: true,
 	}
 	if w.Message == nil {
 		return "<nil>"
 	}
-	s, _ := marshaler.MarshalToString(w.Message)
-	return s
+	s, _ := marshaler.Marshal(w.Message)
+	return string(s)
 }

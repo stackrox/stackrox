@@ -3,6 +3,7 @@ package signatures
 import (
 	"context"
 	"encoding/base64"
+	"os"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -35,11 +36,13 @@ func TestNewCosignSignatureVerifier(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			config := &storage.CosignPublicKeyVerification{
-				PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
-					{
-						Name:            "pemEncKey",
-						PublicKeyPemEnc: c.pemEncKey,
+			config := &storage.SignatureIntegration{
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{
+							Name:            "pemEncKey",
+							PublicKeyPemEnc: c.pemEncKey,
+						},
 					},
 				},
 			}
@@ -70,18 +73,18 @@ func TestCosignSignatureVerifier_VerifySignature_Success(t *testing.T) {
 	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
 		"bfd5c4c20a2fa2aaa7ede3"
 
-	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.CosignPublicKeyVerification{
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "cosignSignatureVerifier",
 				PublicKeyPemEnc: pemPublicKey,
 			},
 		},
-	})
+	}})
 
 	require.NoError(t, err, "creating public key verifier")
 
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
+	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
 	require.NoError(t, err, "creating image with signature")
 
 	status, verifiedImageReferences, err := pubKeyVerifier.VerifySignature(context.Background(), img)
@@ -106,18 +109,18 @@ func TestCosignSignatureVerifier_VerifySignature_Multiple_Names(t *testing.T) {
 	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
 		"bfd5c4c20a2fa2aaa7ede3"
 
-	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.CosignPublicKeyVerification{
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "cosignSignatureVerifier",
 				PublicKeyPemEnc: pemPublicKey,
 			},
 		},
-	})
+	}})
 
 	require.NoError(t, err, "creating public key verifier")
 
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
+	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
 	require.NoError(t, err, "creating image with signature")
 
 	secondImageName := &storage.ImageName{
@@ -153,21 +156,21 @@ func TestCosignSignatureVerifier_VerifySignature_Failure(t *testing.T) {
 	const imgString = "ttl.sh/d8d3892d-48bd-4671-a546-2e70a900b702@sha256:ee89b00528ff4f02f2405e4ee221743ebc3f8e8dd0" +
 		"bfd5c4c20a2fa2aaa7ede3"
 
-	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.CosignPublicKeyVerification{
+	pubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{
 		PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
 			{
 				Name:            "Non matching key",
 				PublicKeyPemEnc: pemNonMatchingPubKey,
 			},
 		},
-	})
+	}})
 
 	require.NoError(t, err, "creating public key verifier")
 
-	emptyPubKeyVerifier, err := newCosignSignatureVerifier(&storage.CosignPublicKeyVerification{})
+	emptyPubKeyVerifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{Cosign: &storage.CosignPublicKeyVerification{}})
 	require.NoError(t, err, "creating empty public key verifier")
 
-	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload)
+	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64SignaturePayload, nil, nil)
 	require.NoError(t, err, "creating image with signature")
 
 	cases := map[string]struct {
@@ -185,7 +188,7 @@ func TestCosignSignatureVerifier_VerifySignature_Failure(t *testing.T) {
 			img:      img,
 			verifier: emptyPubKeyVerifier,
 			status:   storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
-			err:      errNoKeysToVerifyAgainst,
+			err:      errNoVerificationData,
 		},
 	}
 
@@ -202,6 +205,104 @@ func TestCosignSignatureVerifier_VerifySignature_Failure(t *testing.T) {
 	}
 }
 
+func TestCosignVerifier_VerifySignature_Certificate(t *testing.T) {
+	const b64Signature = "t18zuH/3IWewBf4EcwjusIvHv5b7jkdtFglPRfdW/oCXweVSDOyX0uVIjolHl2aSRJkJyE182e/" +
+		"7ib0V7KtJPm8jvJjUWbB7mgANcoVEEEzNvjYeipOPFT7+fMf1F62torp3fLvK08eU/7i2uuHC+ZDUFSkhK6ZHG8XwI/" +
+		"hguWme6fTcJvsO/7F9TlgGni9kJrAnNiFpMxyiP8XQYfqRy2yjuXdmRRmdsVEdiXF4BNfY5tdyaU4LXePYq5KxKRWsQ" +
+		"fgqtHATDNqOXV4c3rxq9LxXn/Sl6g1XPT5iKqf8TBwxUl7H/gIV+LFZKRCVhunz1N9cA/4I8ASxe9SOmsH8kQ=="
+	const b64Payload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnN" +
+		"oLzQ4NTZkNDg1LTg1YjEtNDBkYy1iYTNlLTIzMmU5MzA0OWM1MiJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3Q" +
+		"tZGlnZXN0Ijoic2hhMjU2OmE5N2ExNTMxNTJmY2Q2NDEwYmRmNGZiNjRmNTYyMmVjZjk3YTc1M2YwN2RjYzg5ZGF" +
+		"iMTQ1MDlkMDU5NzM2Y2YifSwidHlwZSI6ImNvc2lnbiBjb250YWluZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGl" +
+		"vbmFsIjpudWxsfQ=="
+	const imgString = "ttl.sh/4856d485-85b1-40dc-ba3e-232e93049c52@sha256:a97a153152fcd6410bdf4fb64f5622ecf97a753f07dcc89dab14509d059736cf"
+	certPEM, err := os.ReadFile("testdata/cert.pem")
+	require.NoError(t, err)
+	chainPEM, err := os.ReadFile("testdata/chain.pem")
+	require.NoError(t, err)
+
+	img, err := generateImageWithCosignSignature(imgString, b64Signature, b64Payload, certPEM, chainPEM)
+	require.NoError(t, err, "creating image with signature")
+
+	cases := map[string]struct {
+		fail   bool
+		status storage.ImageSignatureVerificationResult_Status
+		v      func() (*cosignSignatureVerifier, error)
+	}{
+		"verifying with both cert and chain should work": {
+			status: storage.ImageSignatureVerificationResult_VERIFIED,
+			v: func() (*cosignSignatureVerifier, error) {
+				return newCosignSignatureVerifier(&storage.SignatureIntegration{
+					CosignCertificates: []*storage.CosignCertificateVerification{
+						{
+							CertificatePemEnc:      string(certPEM),
+							CertificateChainPemEnc: string(chainPEM),
+							CertificateIdentity:    ".*",
+							CertificateOidcIssuer:  ".*",
+						},
+					},
+				})
+			},
+		},
+		"verifying with only the chain should work": {
+			status: storage.ImageSignatureVerificationResult_VERIFIED,
+			v: func() (*cosignSignatureVerifier, error) {
+				return newCosignSignatureVerifier(&storage.SignatureIntegration{
+					CosignCertificates: []*storage.CosignCertificateVerification{
+						{
+							CertificateChainPemEnc: string(chainPEM),
+							CertificateIdentity:    ".*",
+							CertificateOidcIssuer:  ".*",
+						},
+					},
+				})
+			},
+		},
+		"verifying with only the cert should not work due to the wrong chain": {
+			status: storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+			fail:   true,
+			v: func() (*cosignSignatureVerifier, error) {
+				return newCosignSignatureVerifier(&storage.SignatureIntegration{
+					CosignCertificates: []*storage.CosignCertificateVerification{
+						{
+							CertificatePemEnc:     string(certPEM),
+							CertificateIdentity:   ".*",
+							CertificateOidcIssuer: ".*",
+						},
+					},
+				})
+			},
+		},
+		"verifying with only the chain but a mismatch in issuer should fail": {
+			status: storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+			fail:   true,
+			v: func() (*cosignSignatureVerifier, error) {
+				return newCosignSignatureVerifier(&storage.SignatureIntegration{
+					CosignCertificates: []*storage.CosignCertificateVerification{
+						{
+							CertificateChainPemEnc: string(chainPEM),
+							CertificateOidcIssuer:  "invalid-issuer",
+							CertificateIdentity:    "invalid-identity",
+						},
+					},
+				})
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			verifier, err := tc.v()
+			require.NoError(t, err)
+			status, _, err := verifier.VerifySignature(context.Background(), img)
+			if tc.fail {
+				assert.Error(t, err)
+			}
+			assert.Equal(t, tc.status, status)
+		})
+	}
+}
+
 func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
 	//#nosec G101 -- This is a false positive
 	const (
@@ -214,7 +315,8 @@ func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
 			"0YWluZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
 	)
 
-	img, err := generateImageWithCosignSignature("docker.io/nginx@"+imgHash, b64CosignSignature, b64CosignSignaturePayload)
+	img, err := generateImageWithCosignSignature("docker.io/nginx@"+imgHash,
+		b64CosignSignature, b64CosignSignaturePayload, nil, nil)
 	require.NoError(t, err, "error creating image")
 
 	sigs, hash, err := retrieveVerificationDataFromImage(img)
@@ -249,7 +351,8 @@ func TestRetrieveVerificationDataFromImage_Failure(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			img, err := generateImageWithCosignSignature("docker.io/nginx:latest", "", "")
+			img, err := generateImageWithCosignSignature(
+				"docker.io/nginx:latest", "", "", nil, nil)
 			require.NoError(t, err, "error creating image")
 			// Since we have no Image Metadata, the Image ID will be returned as SHA. This way we can test for invalid
 			// SHA / no SHA.
@@ -285,7 +388,8 @@ func TestDockerReferenceFromImageName(t *testing.T) {
 	}
 }
 
-func generateImageWithCosignSignature(imgString, b64Sig, b64SigPayload string) (*storage.Image, error) {
+func generateImageWithCosignSignature(imgString, b64Sig, b64SigPayload string,
+	certPEM, chainPEM []byte) (*storage.Image, error) {
 	cimg, err := imgUtils.GenerateImageFromString(imgString)
 	if err != nil {
 		return nil, err
@@ -308,6 +412,8 @@ func generateImageWithCosignSignature(imgString, b64Sig, b64SigPayload string) (
 					Cosign: &storage.CosignSignature{
 						RawSignature:     sigBytes,
 						SignaturePayload: sigPayloadBytes,
+						CertPem:          certPEM,
+						CertChainPem:     chainPEM,
 					},
 				},
 			},

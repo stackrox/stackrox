@@ -187,7 +187,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     variant="info"
                     isInline
                     title="Lifecycle stages"
-                    component="h3"
+                    component="p"
                     className="pf-v5-u-my-md"
                 >
                     <Flex
@@ -258,7 +258,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                             isInline
                             variant="warning"
                             title="Policy has active violations, and the lifecycle stage cannot be changed. To update the lifecycle, clone and create a new policy."
-                            component="div"
+                            component="p"
                         />
                     )}
                     <FormGroup

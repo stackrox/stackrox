@@ -1,7 +1,8 @@
-import { generatePath } from 'react-router-dom';
-
 import axios from 'services/instance';
-import { SearchQueryOptions } from 'types/search';
+import { SearchFilter, SearchQueryOptions } from 'types/search';
+import qs from 'qs';
+
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import {
     buildNestedRawQueryParams,
@@ -75,13 +76,14 @@ export function getComplianceClusterStats(
  */
 export function getComplianceProfileCheckStats(
     profileName: string,
-    checkName: string
+    checkName: string,
+    scanConfigSearchFilter: SearchFilter
 ): Promise<ComplianceCheckResultStatusCount> {
-    const url = generatePath(
-        `${complianceV2Url}/scan/stats/profiles/:profileName/checks/:checkName`,
-        { profileName, checkName }
-    );
+    const query = getRequestQueryStringForSearchFilter(scanConfigSearchFilter);
+    const params = qs.stringify({ query: { query } }, { arrayFormat: 'repeat', allowDots: true });
     return axios
-        .get<ListComplianceProfileResults>(url)
+        .get<ListComplianceProfileResults>(
+            `${complianceResultsStatsBaseUrl}/profiles/${profileName}/checks/${checkName}?${params}`
+        )
         .then((response) => response.data?.profileResults?.[0]);
 }

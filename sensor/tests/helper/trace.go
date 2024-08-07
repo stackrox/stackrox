@@ -28,14 +28,14 @@ func (tr *NetworkFlowTraceWriter) Write(data []byte) (int, error) {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 	message := &sensor.NetworkConnectionInfoMessage{}
-	if err := message.Unmarshal(data); err != nil {
+	if err := message.UnmarshalVT(data); err != nil {
 		return 0, err
 	}
 	select {
 	case <-tr.ctx.Done():
 		return 0, errors.New("Context done")
 	case tr.messageC <- message:
-		return message.Size(), nil
+		return message.SizeVT(), nil
 	}
 }
 
@@ -59,13 +59,13 @@ func (tr *ProcessIndicatorTraceWriter) Write(data []byte) (int, error) {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 	message := &sensor.SignalStreamMessage{}
-	if err := message.Unmarshal(data); err != nil {
+	if err := message.UnmarshalVT(data); err != nil {
 		return 0, err
 	}
 	select {
 	case <-tr.ctx.Done():
 		return 0, errors.New("Context done")
 	case tr.messageC <- message:
-		return message.Size(), nil
+		return message.SizeVT(), nil
 	}
 }

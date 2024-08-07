@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	siStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/pkg/auth/permissions"

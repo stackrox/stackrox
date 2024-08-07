@@ -80,7 +80,7 @@ function ContainerConfiguration({ container }: ContainerConfigurationProps): Rea
                 ) : (
                     secrets.map((secret, i) => (
                         <DescriptionListItem
-                            key={secret.name}
+                            key={`${secret.name}_${secret.path}`}
                             term={`secrets[${i}]`}
                             desc={<ContainerSecretDescriptionList secret={secret} />}
                         />

@@ -3,28 +3,17 @@ import { Button, NumberInput, SelectOption } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 import clamp from 'lodash/clamp';
 
-import { ensureString } from '../utils/utils';
+import { conditions, ensureString } from '../utils/utils';
 
 import SimpleSelect from './SimpleSelect';
 
+export type ConditionNumber = { condition: string; number: number };
+
 export type ConditionNumberProps = {
-    value: {
-        condition: string;
-        number: number;
-    };
+    value: ConditionNumber;
     onChange: (value: { condition: string; number: number }) => void;
     onSearch: (value: { condition: string; number: number }) => void;
 };
-
-export const conditionMap = {
-    'Is greater than': '>',
-    'Is greater than or equal to': '>=',
-    'Is equal to': '=',
-    'Is less than or equal to': '<=',
-    'Is less than': '<',
-};
-
-const conditions = Object.keys(conditionMap);
 
 const minValue = 0;
 const maxValue = 10;

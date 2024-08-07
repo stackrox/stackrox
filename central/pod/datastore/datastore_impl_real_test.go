@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/filter"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -132,7 +133,7 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 	// Verify that the correct listening endpoints have been deleted
 	s.Len(newPlops, 1)
 
-	s.Equal(newPlops[0], &storage.ProcessListeningOnPort{
+	protoassert.Equal(s.T(), newPlops[0], &storage.ProcessListeningOnPort{
 		PodId:         fixtureconsts.PodName2,
 		PodUid:        fixtureconsts.PodUID2,
 		DeploymentId:  fixtureconsts.Deployment1,
@@ -165,5 +166,5 @@ func (s *PodDatastoreSuite) TestRemovePod() {
 	indicatorsFromDB := s.getProcessIndicatorsFromDB()
 	s.Len(indicatorsFromDB, 1)
 
-	s.Equal(indicatorsFromDB[0], indicator3)
+	protoassert.Equal(s.T(), indicatorsFromDB[0], indicator3)
 }

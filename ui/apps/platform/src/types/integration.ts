@@ -26,7 +26,7 @@ export type AuthProviderType = 'apitoken' | 'clusterInitBundle' | 'machineAccess
     | 'iap'
 */
 
-export type BackupIntegrationType = 'gcs' | 's3';
+export type BackupIntegrationType = 'gcs' | 's3' | 's3compatible';
 
 export type ImageIntegrationType =
     | 'artifactory'

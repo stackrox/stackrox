@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,7 +84,7 @@ func TestParseArgs(t *testing.T) {
 		},
 	}
 	parsedArgs := parseArgs(args)
-	assert.Equal(t, expectedArgs, parsedArgs)
+	protoassert.SlicesEqual(t, expectedArgs, parsedArgs)
 }
 
 func TestGetProcessFromCmdLineBytes(t *testing.T) {

@@ -10,21 +10,20 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: download-artifact-try1
+    - id: download-artifact-try1
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
       continue-on-error: true
-    - name: download-artifact-try2
+    - id: download-artifact-try2
       if: steps.download-artifact-try1.outcome == 'failure'
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
       continue-on-error: true
-    - name: download-artifact-try3
-      if: steps.download-artifact-try2.outcome == 'failure'
+    - if: steps.download-artifact-try2.outcome == 'failure'
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.name }}

@@ -61,6 +61,12 @@ var (
 		},
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",
+			allowlist: set.NewStringSet(
+				// The cacheValue lock used while images are being scanned
+				// is expected to be held longer then 10s, to avoid panics in
+				// dev builds using stdlib sync in the detector instead.
+				"github.com/stackrox/rox/sensor/common/detector",
+			),
 		},
 		"github.com/gogo/protobuf/proto": {
 			replacement: "pkg/proto*",
@@ -262,7 +268,9 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/defaults/policies",
 			"pkg/env",
 			"pkg/errorhelpers",
-			"pkg/features",
+			// DO NOT ADD "pkg/features" to the packages allowed for the migrator.
+			// Migration code should not depend on features being activated or not.
+			// See the migrator README for more details.
 			"pkg/fileutils",
 			"pkg/fsutils",
 			"pkg/grpc/routes",
@@ -284,6 +292,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 			"pkg/probeupload",
 			"pkg/process/normalize",
 			"pkg/process/id",
+			"pkg/protoassert",
 			"pkg/protocompat",
 			"pkg/protoconv",
 			"pkg/protoutils",
@@ -348,6 +357,11 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	if validImportRoot == "sensor/common" {
 		// Need this for unit tests.
 		allowedPackages = appendPackageWithChildren(allowedPackages, "sensor/debugger")
+	}
+
+	if validImportRoot == "central" {
+		// Need this for unit tests.
+		allowedPackages = appendPackageWithChildren(allowedPackages, "tests/bad-ca")
 	}
 
 	for _, imp := range imports {

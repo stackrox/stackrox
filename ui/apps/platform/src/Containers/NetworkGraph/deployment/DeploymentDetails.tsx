@@ -15,9 +15,8 @@ import {
     LabelGroup,
     Stack,
     StackItem,
-    Text,
     TextContent,
-    TextVariants,
+    Title,
     EmptyStateHeader,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, ExclamationTriangleIcon } from '@patternfly/react-icons';
@@ -55,15 +54,14 @@ function DetailSection({ title, children }) {
         setIsExpanded(_isExpanded);
     };
 
+    // TextContent so heading has black instead of blue color.
     return (
         <ExpandableSection
             isExpanded={isExpanded}
             onToggle={(_event, _isExpanded: boolean) => onToggle(_isExpanded)}
             toggleContent={
                 <TextContent>
-                    <Text component={TextVariants.h1} className="pf-v5-u-font-size-lg">
-                        {title}
-                    </Text>
+                    <Title headingLevel="h2">{title}</Title>
                 </TextContent>
             }
         >
@@ -284,8 +282,8 @@ function DeploymentDetails({
                         </DescriptionList>
                     </DetailSection>
                 </li>
-                <Divider component="li" className="pf-v5-u-mb-sm" />
                 <li>
+                    <Divider className="pf-v5-u-mb-sm" />
                     <DetailSection title="Deployment overview">
                         <Stack hasGutter>
                             <StackItem>
@@ -377,8 +375,8 @@ function DeploymentDetails({
                         </Stack>
                     </DetailSection>
                 </li>
-                <Divider component="li" className="pf-v5-u-mb-sm" />
                 <li>
+                    <Divider className="pf-v5-u-mb-sm" />
                     <DetailSection title="Port configurations">
                         {deployment.ports.length ? (
                             <Stack hasGutter>
@@ -400,8 +398,8 @@ function DeploymentDetails({
                         )}
                     </DetailSection>
                 </li>
-                <Divider component="li" className="pf-v5-u-mb-sm" />
                 <li>
+                    <Divider className="pf-v5-u-mb-sm" />
                     <DetailSection title="Container configurations">
                         {deployment.containers.length ? (
                             <Stack hasGutter>

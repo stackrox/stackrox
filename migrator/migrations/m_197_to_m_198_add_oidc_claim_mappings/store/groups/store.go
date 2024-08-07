@@ -58,7 +58,7 @@ func pkGetter(obj *storeType) string {
 }
 
 func insertIntoGroups(batch *pgx.Batch, obj *storage.Group) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -101,7 +101,7 @@ func copyFromGroups(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 			"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stackrox/rox/central/deployment/cache"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/deployment/datastore/internal/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -13,7 +14,6 @@ import (
 	processIndicatorFilter "github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
-	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -26,7 +26,7 @@ type DeploymentTestStoreParams struct {
 	ProcessBaselinesDataStore         pbDS.DataStore
 	NetworkGraphFlowClustersDataStore nfDS.ClusterDataStore
 	RisksDataStore                    riskDS.DataStore
-	DeletedDeploymentCache            expiringcache.Cache
+	DeletedDeploymentCache            cache.DeletedDeployments
 	ProcessIndicatorFilter            filter.Filter
 	ClusterRanker                     *ranking.Ranker
 	NamespaceRanker                   *ranking.Ranker

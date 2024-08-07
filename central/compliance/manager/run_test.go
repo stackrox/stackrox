@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	pkgStandards "github.com/stackrox/rox/pkg/compliance/checks/standards"
 	pkgFramework "github.com/stackrox/rox/pkg/compliance/framework"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -122,9 +123,9 @@ func (s *RunTestSuite) TestFoldNodeResults() {
 
 	complianceRunResults := testRun.collectResults(testRunData, testNodeResults)
 	s.Require().Contains(complianceRunResults.NodeResults, testNodeID)
-	s.Equal(expectedNodeRunResults, complianceRunResults.NodeResults[testNodeID])
+	protoassert.Equal(s.T(), expectedNodeRunResults, complianceRunResults.NodeResults[testNodeID])
 
-	s.Equal(expectedClusterRunResults, complianceRunResults.GetClusterResults())
+	protoassert.Equal(s.T(), expectedClusterRunResults, complianceRunResults.GetClusterResults())
 }
 
 func (s *RunTestSuite) TestNoteMissing() {
@@ -170,7 +171,7 @@ func (s *RunTestSuite) TestNoteDoesNotReplace() {
 	// The existing result must not have changed
 	s.Require().Contains(clusterResults, existingResultName)
 	returnedResult := clusterResults[existingResultName]
-	s.Equal(existingResult, returnedResult)
+	protoassert.Equal(s.T(), existingResult, returnedResult)
 }
 
 func (s *RunTestSuite) TestMergesMultipleClusterResults() {
@@ -238,6 +239,6 @@ func (s *RunTestSuite) TestMergesMultipleClusterResults() {
 	testResult := clusterResults[testName]
 	s.Equal(storage.ComplianceState_COMPLIANCE_STATE_SUCCESS, testResult.GetOverallState())
 	s.Len(testResult.GetEvidence(), 2)
-	s.Contains(testResult.GetEvidence(), evidenceOne)
-	s.Contains(testResult.GetEvidence(), evidenceTwo)
+	protoassert.SliceContains(s.T(), testResult.GetEvidence(), evidenceOne)
+	protoassert.SliceContains(s.T(), testResult.GetEvidence(), evidenceTwo)
 }

@@ -74,6 +74,13 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *Field) {
 func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 	for i := 0; i < original.NumField(); i++ {
 		field := original.Field(i)
+
+		// Currently only proto structs are supported. We need to skip
+		// internal fields, because they contain recursive references.
+		if protoreflect.IsInternalGeneratorField(field) {
+			continue
+		}
+
 		jsonTag := strings.TrimSuffix(field.Tag.Get("json"), ",omitempty")
 		if jsonTag == "-" {
 			continue
@@ -98,7 +105,7 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 		}
 
 		// Special case proto timestamp because we actually want to index seconds
-		if field.Type.String() == "*types.Timestamp" {
+		if field.Type == protocompat.TimestampPtrType {
 			fieldName, searchField := s.getSearchField(fullPath+".seconds", searchTag)
 			if searchField == nil {
 				continue

@@ -25,7 +25,7 @@ function getTooltipContent(severity: string, severityCount?: number, entity?: st
     if (entity) {
         return `${severityCount} ${severity} severity cve count across this ${entity}`;
     }
-    return `image count with ${severity} severity`;
+    return `Image count with ${severity} severity`;
 }
 
 function getClassNameForCount(count?: number) {

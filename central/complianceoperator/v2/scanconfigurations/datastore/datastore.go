@@ -47,16 +47,23 @@ type DataStore interface {
 	// CountScanConfigurations scan config based on a query
 	CountScanConfigurations(ctx context.Context, q *v1.Query) (int, error)
 
-	// Remove deleted cluster from scan config
+	// RemoveClusterFromScanConfig deleted cluster from scan config
 	RemoveClusterFromScanConfig(ctx context.Context, clusterID string) error
+
+	// GetProfilesNames gets the list of distinct profile names for the query
+	GetProfilesNames(ctx context.Context, q *v1.Query) ([]string, error)
+
+	// CountDistinctProfiles returns count of distinct profiles matching query
+	CountDistinctProfiles(ctx context.Context, q *v1.Query) (int, error)
 }
 
 // New returns an instance of DataStore.
-func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store) DataStore {
+func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store, pool postgres.DB) DataStore {
 	ds := &datastoreImpl{
 		storage:       scanConfigStore,
 		statusStorage: scanConfigStatusStore,
 		keyedMutex:    concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
+		db:            pool,
 	}
 	return ds
 }
@@ -65,5 +72,5 @@ func New(scanConfigStore pgStore.Store, scanConfigStatusStore statusStore.Store)
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
 	statusStorage := statusStore.New(pool)
-	return New(store, statusStorage)
+	return New(store, statusStorage, pool)
 }

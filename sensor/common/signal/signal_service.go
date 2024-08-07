@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
@@ -160,7 +160,7 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 				continue
 			}
 			if s.writer != nil {
-				if data, err := signalStreamMsg.Marshal(); err == nil {
+				if data, err := signalStreamMsg.MarshalVT(); err == nil {
 					if _, err := s.writer.Write(data); err != nil {
 						log.Warnf("Error writing msg: %v", err)
 					}

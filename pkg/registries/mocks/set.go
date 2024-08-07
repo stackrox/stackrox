@@ -66,6 +66,20 @@ func (mr *MockSetMockRecorder) GetAll() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockSet)(nil).GetAll))
 }
 
+// GetAllUnique mocks base method.
+func (m *MockSet) GetAllUnique() []types.ImageRegistry {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllUnique")
+	ret0, _ := ret[0].([]types.ImageRegistry)
+	return ret0
+}
+
+// GetAllUnique indicates an expected call of GetAllUnique.
+func (mr *MockSetMockRecorder) GetAllUnique() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllUnique", reflect.TypeOf((*MockSet)(nil).GetAllUnique))
+}
+
 // GetRegistryByImage mocks base method.
 func (m *MockSet) GetRegistryByImage(image *storage.Image) types.Registry {
 	m.ctrl.T.Helper()

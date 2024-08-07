@@ -15,6 +15,7 @@ import (
 	oldAPITokenStore "github.com/stackrox/rox/migrator/migrations/m_174_to_m_175_enable_search_on_api_tokens/oldapitokenpostgresstore"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -179,20 +180,20 @@ func (s *apiTokenMigrationTestSuite) TestMigration() {
 
 	res2x1, err2x1 := s.newTokenStore.GetByQuery(ctx, token1Query)
 	s.NoError(err2x1)
-	s.ElementsMatch([]*storage.TokenMetadata{token1}, res2x1)
+	protoassert.ElementsMatch(s.T(), []*storage.TokenMetadata{token1}, res2x1)
 	res2x2, err2x2 := s.newTokenStore.GetByQuery(ctx, token2Query)
 	s.NoError(err2x2)
-	s.ElementsMatch([]*storage.TokenMetadata{token2}, res2x2)
+	protoassert.ElementsMatch(s.T(), []*storage.TokenMetadata{token2}, res2x2)
 	res2x3, err2x3 := s.newTokenStore.GetByQuery(ctx, token3Query)
 	s.NoError(err2x3)
-	s.ElementsMatch([]*storage.TokenMetadata{token3}, res2x3)
+	protoassert.ElementsMatch(s.T(), []*storage.TokenMetadata{token3}, res2x3)
 	res2x4, err2x4 := s.newTokenStore.GetByQuery(ctx, token4Query)
 	s.NoError(err2x4)
-	s.ElementsMatch([]*storage.TokenMetadata{token4}, res2x4)
+	protoassert.ElementsMatch(s.T(), []*storage.TokenMetadata{token4}, res2x4)
 	res2x5, err2x5 := s.newTokenStore.GetByQuery(ctx, token5Query)
 	s.NoError(err2x5)
-	s.ElementsMatch([]*storage.TokenMetadata{token5}, res2x5)
+	protoassert.ElementsMatch(s.T(), []*storage.TokenMetadata{token5}, res2x5)
 	res2x6, err2x6 := s.newTokenStore.GetByQuery(ctx, token6Query)
 	s.NoError(err2x6)
-	s.ElementsMatch([]*storage.TokenMetadata{token6}, res2x6)
+	protoassert.ElementsMatch(s.T(), []*storage.TokenMetadata{token6}, res2x6)
 }

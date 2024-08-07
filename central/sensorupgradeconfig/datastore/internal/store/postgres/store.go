@@ -50,7 +50,7 @@ func New(db postgres.DB) Store {
 }
 
 func insertIntoSensorUpgradeConfigs(ctx context.Context, tx *postgres.Tx, obj *storage.SensorUpgradeConfig) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -77,7 +77,7 @@ func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SensorUpgradeConfig
 		return sac.ErrResourceAccessDenied
 	}
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableUpsert(ctx, obj)
 	})
 }
@@ -119,7 +119,7 @@ func (s *storeImpl) Get(ctx context.Context) (*storage.SensorUpgradeConfig, bool
 		return nil, false, nil
 	}
 
-	return pgutils.Retry3(func() (*storage.SensorUpgradeConfig, bool, error) {
+	return pgutils.Retry3(ctx, func() (*storage.SensorUpgradeConfig, bool, error) {
 		return s.retryableGet(ctx)
 	})
 }
@@ -138,7 +138,7 @@ func (s *storeImpl) retryableGet(ctx context.Context) (*storage.SensorUpgradeCon
 	}
 
 	var msg storage.SensorUpgradeConfig
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -162,7 +162,7 @@ func (s *storeImpl) Delete(ctx context.Context) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableDelete(ctx)
 	})
 }

@@ -8,6 +8,7 @@ import (
 	undoDeploymentStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore/mocks"
 	undoStoreMocks "github.com/stackrox/rox/central/networkpolicies/datastore/internal/undostore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -114,7 +115,7 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	result, found, err := s.dataStore.GetNetworkPolicy(s.hasNS1ReadCtx, FakeID1)
 	s.NoError(err)
 	s.True(found)
-	s.Equal(result, netPolNm1)
+	protoassert.Equal(s.T(), result, netPolNm1)
 
 	// Test we can get with NS2 permissions.
 	s.storage.EXPECT().Get(gomock.Any(), FakeID2).Return(netPolNm2, true, nil)
@@ -122,7 +123,7 @@ func (s *netPolDataStoreTestSuite) TestGetNetworkPolicies() {
 	result, found, err = s.dataStore.GetNetworkPolicy(s.hasNS2ReadCtx, FakeID2)
 	s.NoError(err)
 	s.True(found)
-	s.Equal(result, netPolNm2)
+	protoassert.Equal(s.T(), result, netPolNm2)
 
 	// Test we cannot do the opposite.
 	s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)

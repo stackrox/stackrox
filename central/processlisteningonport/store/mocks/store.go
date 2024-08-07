@@ -192,6 +192,20 @@ func (mr *MockStoreMockRecorder) GetProcessListeningOnPort(ctx, deploymentID any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessListeningOnPort", reflect.TypeOf((*MockStore)(nil).GetProcessListeningOnPort), ctx, deploymentID)
 }
 
+// PruneMany mocks base method.
+func (m *MockStore) PruneMany(ctx context.Context, identifiers []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PruneMany", ctx, identifiers)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PruneMany indicates an expected call of PruneMany.
+func (mr *MockStoreMockRecorder) PruneMany(ctx, identifiers any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PruneMany", reflect.TypeOf((*MockStore)(nil).PruneMany), ctx, identifiers)
+}
+
 // Search mocks base method.
 func (m *MockStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()

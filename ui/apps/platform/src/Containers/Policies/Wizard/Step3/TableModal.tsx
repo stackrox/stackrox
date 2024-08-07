@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
     Button,
     ButtonVariant,
@@ -13,7 +14,6 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import isEqual from 'lodash/isEqual';
 import pluralize from 'pluralize';
 
-import LinkShim from 'Components/PatternFly/LinkShim';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
 import { IntegrationTableColumnDescriptor } from 'Containers/Integrations/utils/tableColumnDescriptor';
 import useTableSelection from 'hooks/useTableSelection';
@@ -137,17 +137,12 @@ function TableModal({
                                                         if (column.Header === 'Name') {
                                                             return (
                                                                 <Td key="name">
-                                                                    <Button
-                                                                        variant={ButtonVariant.link}
-                                                                        isInline
-                                                                        component={LinkShim}
-                                                                        href={link}
-                                                                    >
+                                                                    <Link to={link}>
                                                                         <TableCellValue
                                                                             row={row}
                                                                             column={column}
                                                                         />
-                                                                    </Button>
+                                                                    </Link>
                                                                 </Td>
                                                             );
                                                         }

@@ -23,6 +23,7 @@ import (
 type DataStore interface {
 	GetConfig(context.Context) (*storage.Config, error)
 	GetPrivateConfig(context.Context) (*storage.PrivateConfig, error)
+	GetVulnerabilityExceptionConfig(ctx context.Context) (*storage.VulnerabilityExceptionConfig, error)
 	GetPublicConfig() (*storage.PublicConfig, error)
 	UpsertConfig(context.Context, *storage.Config) error
 }
@@ -76,6 +77,7 @@ func NewForTest(_ *testing.T, db postgres.DB) DataStore {
 
 var (
 	administrationSAC = sac.ForResource(resources.Administration)
+	vmRequestsSAC     = sac.ForResource(resources.VulnerabilityManagementRequests)
 )
 
 type datastoreImpl struct {
@@ -135,6 +137,25 @@ func (d *datastoreImpl) GetPrivateConfig(ctx context.Context) (*storage.PrivateC
 
 	conf, _, err := d.store.Get(ctx)
 	return conf.GetPrivateConfig(), err
+}
+
+func (d *datastoreImpl) GetVulnerabilityExceptionConfig(ctx context.Context) (*storage.VulnerabilityExceptionConfig, error) {
+	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		if ok, err := vmRequestsSAC.ReadAllowed(ctx); err != nil {
+			return nil, err
+		} else if !ok {
+			return nil, nil
+		}
+	}
+
+	adminCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)))
+	conf, _, err := d.store.Get(adminCtx)
+	return conf.GetPrivateConfig().GetVulnerabilityExceptionConfig(), err
 }
 
 // GetConfig returns Central's config

@@ -11,9 +11,10 @@ SCRIPT_NAME="$(basename -- "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 SECRET_NAME_IN_KONFLUX="subscription-manager-activation-key"
-SECRET_KONFLUX_WORKSPACE_PATH="/workspace/${SECRET_NAME_IN_KONFLUX}"
+# The mount is provided by the buildah task when the ACTIVATION_KEY parameter is set to a valid secret name.
+SECRET_MOUNT_PATH="/activation-key"
 SECRET_KEY="activation-key"
-SECRET_LOCAL_PATH="${SCRIPT_DIR}/${SECRET_KEY}"
+SECRET_LOCAL_PATH="${SECRET_MOUNT_PATH}/${SECRET_KEY}"
 SECRET_INFO_URL='https://docs.engineering.redhat.com/pages/viewpage.action?pageId=407312060'
 
 RED_HAT_ORG_ID="11009103"
@@ -46,8 +47,6 @@ function main {
     case "$cmd" in
     "help" | "--help" | "-h")
         fn=usage ;;
-    "smuggle")
-        fn=smuggle ;;
     "register")
         fn=register ;;
     "cleanup")
@@ -73,7 +72,7 @@ function main {
 function usage {
     local example_target_dir="/mnt"
 
-    echo "Usage: $SCRIPT_NAME smuggle|register|cleanup|self-test"
+    echo "Usage: $SCRIPT_NAME register|cleanup|self-test"
     echo
     echo "This script enables access to RHEL RPMs during Konflux builds. The intended usage is as follows."
     echo
@@ -82,11 +81,8 @@ function usage {
     echo "the actual activation key as a value."
     echo "   Find where to get the secret from ${SECRET_INFO_URL}"
 
-    echo -n "2. In a Tekton pipeline step before the container build, copy the subscription manager activation "
-    echo "key secret to the source workspace. Use:"
-    echo "   \$ <source-workspace>/$SCRIPT_NAME smuggle"
-    echo -n "   This expects the '$SECRET_NAME_IN_KONFLUX' secret to be mounted as a workspace with the same name "
-    echo "('$SECRET_KONFLUX_WORKSPACE_PATH')."
+    echo -n "2. In the Tekton pipeline 'build-container' step that uses the 'buildah' task, provide the "
+    echo "'$SECRET_NAME_IN_KONFLUX' secret name for the 'ACTIVATION_KEY' parameter."
 
     echo "3. Arrange Dockerfile stages to have UBI (normal) as an installer and other RHEL/UBI (any) as a target."
     echo "   Make sure to match major versions: 8/8 is ok but 9/8 or 8/9 will result in errors."
@@ -112,13 +108,8 @@ function usage {
     echo
     echo "When altering this script, use the 'self-test' command as a (regression) test tool:"
     echo "   \$ $SCRIPT_NAME self-test"
-    echo "For it to work, you need to put a valid activation key in ${SECRET_LOCAL_PATH} file."
+    echo "For it to work, you need to put a valid activation key in ${SCRIPT_DIR}/${SECRET_KEY} file."
     echo "Find out where to get it from ${SECRET_INFO_URL}"
-}
-
-function smuggle {
-    mkdir -p "$(dirname "${SECRET_LOCAL_PATH}" )"
-    cp --verbose "${SECRET_KONFLUX_WORKSPACE_PATH}/${SECRET_KEY}" "${SECRET_LOCAL_PATH}"
 }
 
 function register {

@@ -29,8 +29,12 @@ jobs:
       run: |
         source './scripts/ci/lib.sh'
 
-        # If goarch is updated, be sure to update architectures in push-manifests below.
-        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64", "ppc64le", "s390x"] }, "push_manifests": { "name":["default"] } }'
+        # If goarch is updated, be sure to update architectures in "push-scanner-manifests" below.
+        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64"] }, "push_manifests": { "name":["default"] } }'
+
+        if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+          matrix="$(jq '.build_and_push.goarch += ["ppc64le", "s390x"]' <<< "$matrix")"
+        fi;
 
         # Conditionally add a prerelease build (binaries built with GOTAGS=release)
         if ! is_tagged; then
@@ -115,6 +119,51 @@ jobs:
         name: go-binary-${{ matrix.name }}-${{ matrix.goos }}-${{ matrix.goarch }}
         path: go-binary.tgz
 
+  scan-scanner-go-binary:
+    needs: pre-build-scanner-go-binary
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.69
+    if: contains(github.event.pull_request.labels.*.name, 'scan-go-binaries')
+    env:
+      ARTIFACT_DIR: junit-reports/
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: go-binary-default-linux-amd64
+
+    - name: Unpack Go binary
+      run: |
+        tar xvzf go-binary.tgz
+
+    - name: Scan
+      run: |
+        ./scripts/ci/govulncheck.sh scanner/image/scanner/bin/scanner
+
+    - name: Publish Test Report
+      uses: test-summary/action@v2
+      if: always()
+      with:
+        paths: 'junit-reports/**/*.xml'
+
+    - name: Report junit failures in jira
+      uses: ./.github/actions/junit2jira
+      if: always()
+      with:
+        jira-token: ${{ secrets.JIRA_TOKEN }}
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+        directory: 'junit-reports'
+
   build-and-push-scanner:
     needs:
     - define-scanner-job-matrix
@@ -147,7 +196,15 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+
+    - name: Login to docker.io to mitigate rate limiting on downloading images
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_CI_ACCOUNT_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_CI_ACCOUNT_PASSWORD }}
+
     - name: Set up QEMU
+      if: matrix.goarch != 'amd64'
       uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
@@ -181,7 +238,7 @@ jobs:
         source ./scripts/ci/lib.sh
         push_scanner_image_set ${{ matrix.goarch }}
 
-  push-manifests:
+  push-scanner-manifests:
     needs:
     - define-scanner-job-matrix
     - build-and-push-scanner
@@ -230,18 +287,77 @@ jobs:
         source ./scripts/ci/lib.sh
 
         # If this is updated, be sure to update goarch in define-scanner-job-matrix above.
-        architectures="amd64,arm64,ppc64le,s390x"
+        architectures="amd64,arm64"
+        if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
+          architectures="amd64,arm64,ppc64le,s390x"
+        fi
         if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
           architectures="amd64"
         fi
 
         push_scanner_image_manifest_lists "$architectures"
 
+  scan-images-with-roxctl:
+    if: github.event_name == 'push'
+    needs:
+    - build-and-push-scanner
+    - push-scanner-manifests
+    name: Check images for vulnerabilities
+    runs-on: ubuntu-latest
+    permissions:
+      # Needed for stackrox/central-login to create the JWT token.
+      id-token: write
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          [
+            "scanner-v4",
+            "scanner-v4-db",
+          ]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - uses: ./.github/actions/handle-tagged-build
+
+    - name: Central login
+      uses: stackrox/central-login@v1
+      with:
+        endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
+
+    - name: Install roxctl
+      uses: stackrox/roxctl-installer-action@v1
+      with:
+        central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
+        central-token: ${{ env.ROX_API_TOKEN }}
+
+    - name: Scan images for vulnerabilities
+      run: |
+        release_tag=$(make tag)
+        roxctl image scan --retries=10 --retry-delay=15 --force --severity=IMPORTANT,CRITICAL --output=sarif \
+          --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
+          > results.sarif
+
+    - name: Upload roxctl scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        category: ${{ matrix.image }}
+        sarif_file: results.sarif
+
   run-e2e-tests:
     name: Run standalone E2E test
     # The test requires the DB init bundle.
     if: ${{ contains(github.event.pull_request.labels.*.name, 'pr-scanner-db-init-bundle') }}
     needs:
-      - push-manifests
+      - push-scanner-manifests
     uses: ./.github/workflows/scanner-e2e-test.yaml
     secrets: inherit

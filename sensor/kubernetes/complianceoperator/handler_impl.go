@@ -77,6 +77,9 @@ func (m *handlerImpl) Stop(_ error) {
 func (m *handlerImpl) Notify(_ common.SensorComponentEvent) {}
 
 func (m *handlerImpl) Capabilities() []centralsensor.SensorCapability {
+	if syncScanConfigsOnStartup.BooleanSetting() {
+		return []centralsensor.SensorCapability{centralsensor.ComplianceV2ScanConfigSync}
+	}
 	return nil
 }
 
@@ -87,6 +90,7 @@ func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	}
 	// Sync Scan Configs is done during the syncing process between Sensor and Central
 	if _, ok := req.GetRequest().(*central.ComplianceRequest_SyncScanConfigs); ok {
+		log.Info("received scan config sync from central")
 		return m.handleSyncScanCfgRequest(req.GetSyncScanConfigs())
 	}
 
@@ -257,7 +261,7 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	var updatedScanSettingBinding *unstructured.Unstructured
 	// It is possible that we successfully created the scan setting but had issues on the binding.
 	if ssbObj != nil {
-		updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssObj, request)
+		updatedScanSettingBinding, err = updateScanSettingBindingFromUpdateRequest(ssbObj, request)
 		if err != nil {
 			return m.composeAndSendApplyScanConfigResponse(requestID, err)
 		}
@@ -472,6 +476,7 @@ func (m *handlerImpl) handleSyncScanCfgRequest(request *central.SyncComplianceSc
 		case <-m.stopSignal.Done():
 			return
 		case <-m.complianceIsReady.Done():
+			log.Debugf("compliance is ready. Starting the reconciliation of %d scan configs", len(request.GetScanConfigs()))
 			if err := m.processSyncScanCfg(request); err != nil {
 				log.Error(err)
 				return

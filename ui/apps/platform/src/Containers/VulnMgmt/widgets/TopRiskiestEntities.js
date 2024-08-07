@@ -9,7 +9,6 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import TextSelect from 'Components/TextSelect';
 import Widget from 'Components/Widget';
 import CVEStackedPill from 'Components/CVEStackedPill';
-import NumberedList from 'Components/NumberedList';
 import NoComponentVulnMessage from 'Components/NoComponentVulnMessage';
 import { checkForPermissionErrorMessage } from 'utils/permissionUtils';
 import queryService from 'utils/queryService';
@@ -23,6 +22,7 @@ import {
     entityNounSentenceCaseSingular,
 } from '../entitiesForVulnerabilityManagement';
 
+import NumberedList from './NumberedList';
 import ViewAllButton from './ViewAllButton';
 
 const TOP_RISKIEST_IMAGE_VULNS = gql`

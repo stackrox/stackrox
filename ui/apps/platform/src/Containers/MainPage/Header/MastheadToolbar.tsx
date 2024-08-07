@@ -1,10 +1,6 @@
 import React, { ReactElement } from 'react';
 import { useLocation } from 'react-router-dom';
-import {
-    PageHeaderTools,
-    PageHeaderToolsGroup,
-    PageHeaderToolsItem,
-} from '@patternfly/react-core/deprecated';
+import { Flex, FlexItem } from '@patternfly/react-core';
 
 import useCases from 'constants/useCaseTypes';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
@@ -33,41 +29,40 @@ function MastheadToolbar(): ReactElement {
     const showOrchestratorComponentsToggle =
         useCase === useCases.RISK || location.pathname === searchPath;
 
+    // TODO: (PatternFly) need more robust mobile experience than just hiding tools
+    // <PageHeaderToolsGroup visibility={{ default: 'hidden', md: 'visible' }}>
     return (
-        <PageHeaderTools>
-            {/* TODO: (PatternFly) need more robust mobile experience  than just hiding tools */}
-            <PageHeaderToolsGroup visibility={{ default: 'hidden', md: 'visible' }}>
-                {showOrchestratorComponentsToggle && (
-                    <PageHeaderToolsItem>
-                        <OrchestratorComponentsToggle />
-                    </PageHeaderToolsItem>
-                )}
-                {isRouteEnabledForSearch && (
-                    <PageHeaderToolsItem>
-                        <GlobalSearchButton />
-                    </PageHeaderToolsItem>
-                )}
-                <PageHeaderToolsItem>
-                    <CLIDownloadMenu />
-                </PageHeaderToolsItem>
-                {/*
-                  * TODO: remove this comment, which hides the light-mode/dark-mode toggle,
-                  *       after we update to use PatternFly themes for dark mode
-                <PageHeaderToolsItem>
-                    <ThemeToggleButton />
-                </PageHeaderToolsItem>
-                */}
-                <PageHeaderToolsItem>
-                    <ClusterStatusProblems />
-                </PageHeaderToolsItem>
-                <PageHeaderToolsItem>
-                    <HelpMenu />
-                </PageHeaderToolsItem>
-                <PageHeaderToolsItem>
-                    <UserMenu />
-                </PageHeaderToolsItem>
-            </PageHeaderToolsGroup>
-        </PageHeaderTools>
+        <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+            {showOrchestratorComponentsToggle && (
+                <FlexItem>
+                    <OrchestratorComponentsToggle />
+                </FlexItem>
+            )}
+            {isRouteEnabledForSearch && (
+                <FlexItem>
+                    <GlobalSearchButton />
+                </FlexItem>
+            )}
+            <FlexItem>
+                <CLIDownloadMenu />
+            </FlexItem>
+            {/*
+                * TODO: remove this comment, which hides the light-mode/dark-mode toggle,
+                *       after we update to use PatternFly themes for dark mode
+            <FlexItem>
+                <ThemeToggleButton />
+            </FlexItem>
+            */}
+            <FlexItem>
+                <ClusterStatusProblems />
+            </FlexItem>
+            <FlexItem>
+                <HelpMenu />
+            </FlexItem>
+            <FlexItem>
+                <UserMenu />
+            </FlexItem>
+        </Flex>
     );
 }
 

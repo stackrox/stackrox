@@ -97,6 +97,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 isInline
                 variant={AlertVariant.danger}
                 title={getAxiosErrorMessage(error)}
+                component="p"
                 className="pf-v5-u-mb-lg"
             />
         );
@@ -112,6 +113,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                         isInline
                         variant={AlertVariant.warning}
                         title="There was an error loading network policy data"
+                        component="p"
                     >
                         {getAxiosErrorMessage(networkPolicyError)}
                     </Alert>

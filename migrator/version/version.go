@@ -58,7 +58,7 @@ func ReadVersionGormDB(ctx context.Context, db *gorm.DB) (*migrations.MigrationV
 
 // UpdateVersionPostgres - updates the version allowing for outer transaction
 func UpdateVersionPostgres(ctx context.Context, db postgres.DB, updatedVersion *storage.Version) {
-	err := pgutils.Retry(func() error {
+	err := pgutils.Retry(ctx, func() error {
 		_, err := db.Exec(ctx, "DELETE FROM versions")
 		if err != nil {
 			return err
@@ -86,7 +86,7 @@ func SetVersionGormDB(ctx context.Context, db *gorm.DB, updatedVersion *storage.
 		pkgSchema.ApplySchemaForTable(ctx, db, pkgSchema.VersionsSchema.Table)
 	}
 
-	err := pgutils.Retry(func() error {
+	err := pgutils.Retry(ctx, func() error {
 		return db.Transaction(func(tx *gorm.DB) error {
 			// Gorm broke Save, so we have to do delete/insert:  https://github.com/go-gorm/gorm/pull/6149/files
 			result := tx.Exec("DELETE FROM versions")

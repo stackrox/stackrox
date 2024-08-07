@@ -33,7 +33,7 @@ function getLabelData(data) {
         url,
         yOffset: -13,
         xOffset: 10,
-        style: { fill: 'var(--primary-800)', cursor: 'pointer' },
+        style: { fill: 'var(--pf-v5-global--link--Color)', cursor: 'pointer' },
     }));
 }
 

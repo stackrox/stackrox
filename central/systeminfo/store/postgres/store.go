@@ -45,19 +45,19 @@ func New(db postgres.DB) Store {
 }
 
 func (s *storeImpl) Get(ctx context.Context) (*storage.SystemInfo, bool, error) {
-	return pgutils.Retry3(func() (*storage.SystemInfo, bool, error) {
+	return pgutils.Retry3(ctx, func() (*storage.SystemInfo, bool, error) {
 		return s.get(ctx)
 	})
 }
 
 func (s *storeImpl) Upsert(ctx context.Context, obj *storage.SystemInfo) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableUpsert(ctx, obj)
 	})
 }
 
 func (s *storeImpl) Delete(ctx context.Context) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		return s.retryableDelete(ctx)
 	})
 }
@@ -82,7 +82,7 @@ func (s *storeImpl) get(ctx context.Context) (*storage.SystemInfo, bool, error) 
 	}
 
 	var msg storage.SystemInfo
-	if err := msg.Unmarshal(data); err != nil {
+	if err := msg.UnmarshalVT(data); err != nil {
 		return nil, false, err
 	}
 	return &msg, true, nil
@@ -148,7 +148,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 }
 
 func insert(ctx context.Context, tx *postgres.Tx, obj *storage.SystemInfo) error {
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}

@@ -59,7 +59,7 @@ test_e2e() {
     [[ ! -f FAIL ]] || die "e2e API tests failed"
 
     if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Temporarily skipping proxy test on OCP. TODO(ROX-24688)"
+        info "Temporarily skipping proxy test on OCP. TODO(ROX-25172)"
     else
         # Give some time for previous tests to finish up
         wait_for_api
@@ -72,35 +72,23 @@ test_e2e() {
 
     collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
 
-    if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Temporarily skipping E2E destructive tests on OCP. TODO(ROX-24688)"
-    else
-        # Give some time for previous tests to finish up
-        wait_for_api
+    # Give some time for previous tests to finish up
+    wait_for_api
 
-        info "E2E destructive tests"
-        make -C tests destructive-tests || touch FAIL
-        store_test_results "tests/destructive-tests-results" "destructive-tests-results"
-        [[ ! -f FAIL ]] || die "destructive e2e tests failed"
-    fi
+    info "E2E destructive tests"
+    make -C tests destructive-tests || touch FAIL
+    store_test_results "tests/destructive-tests-results" "destructive-tests-results"
+    [[ ! -f FAIL ]] || die "destructive e2e tests failed"
 
-    if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Temporarily skipping postgres backup restoration test on OCP. TODO(ROX-24688)"
-    else
-        # Give some time for previous tests to finish up
-        wait_for_api
-        restore_4_1_postgres_backup
-    fi
+    # Give some time for previous tests to finish up
+    wait_for_api
+    restore_4_1_postgres_backup
 
-    if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Temporarily skipping E2E external backup tests on OCP. TODO(ROX-24688)"
-    else
-        wait_for_api
-        info "E2E external backup tests"
-        make -C tests external-backup-tests || touch FAIL
-        store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
-        [[ ! -f FAIL ]] || die "external backup e2e tests failed"
-    fi
+    wait_for_api
+    info "E2E external backup tests"
+    make -C tests external-backup-tests || touch FAIL
+    store_test_results "tests/external-backup-tests-results" "external-backup-tests-results"
+    [[ ! -f FAIL ]] || die "external backup e2e tests failed"
 }
 
 test_preamble() {
@@ -111,7 +99,7 @@ test_preamble() {
 
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
     export ROXDEPLOY_CONFIG_FILE_MAP="$ROOT/scripts/ci/endpoints/endpoints.yaml"
-    export TRUSTED_CA_FILE="$ROOT/tests/bad-ca/untrusted-root-badssl-com.pem"
+    export TRUSTED_CA_FILE="$ROOT/tests/bad-ca/root.crt"
 }
 
 prepare_for_endpoints_test() {
@@ -122,7 +110,7 @@ prepare_for_endpoints_test() {
     setup_client_CA_auth_provider
     setup_generated_certs_for_test "$gencerts_dir"
     if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Skipping resource patching for skipped endpoints_test.go. TODO(ROX-24688)"
+        info "Skipping resource patching for skipped endpoints_test.go. TODO(ROX-25172)"
     else
         patch_resources_for_test
     fi

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -206,7 +207,7 @@ func TestParseRawQuery(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedQuery, actualQuery)
+			protoassert.Equal(t, tc.expectedQuery, actualQuery)
 		})
 	}
 }

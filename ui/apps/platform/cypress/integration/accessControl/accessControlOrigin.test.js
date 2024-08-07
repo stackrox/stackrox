@@ -42,7 +42,7 @@ describe('Access Control declarative resources', () => {
         const entityName = 'access-scope-test-name';
         clickEntityNameInTable(accessScopesKey, entityName);
 
-        cy.get(`h2:contains("${entityName}")`);
+        cy.get(`h1:contains("${entityName}")`);
         cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
         cy.get('.pf-v5-c-label:contains("Declarative")').should('exist');
@@ -87,7 +87,7 @@ describe('Access Control declarative resources', () => {
         const entityName = 'auth-provider-1';
         clickEntityNameInTable(authProvidersKey, entityName);
 
-        cy.get(`h2:contains("${entityName}")`);
+        cy.get(`h1:contains("${entityName}")`);
         cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
         cy.get('.pf-v5-c-label:contains("Declarative")').should('exist');
@@ -128,7 +128,7 @@ describe('Access Control declarative resources', () => {
         const entityName = 'permission-set-test-name';
         clickEntityNameInTable(permissionSetsKey, entityName);
 
-        cy.get(`h2:contains("${entityName}")`);
+        cy.get(`h1:contains("${entityName}")`);
         cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
         cy.get('.pf-v5-c-label:contains("Declarative")').should('exist');
@@ -164,7 +164,7 @@ describe('Access Control declarative resources', () => {
         const entityName = 'test-role-name';
         clickEntityNameInTable(rolesKey, entityName);
 
-        cy.get(`h2:contains("${entityName}")`);
+        cy.get(`h1:contains("${entityName}")`);
         cy.get(`li.pf-v5-c-breadcrumb__item:nth-child(2):contains("${entityName}")`);
 
         cy.get('.pf-v5-c-label:contains("Declarative")').should('exist');

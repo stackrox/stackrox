@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -56,12 +57,21 @@ func (c *Config) GetInsecure() bool {
 	return false
 }
 
+// GetRegistryHostname returns RegistryHostname if Config is non-nil, empty string otherwise.
+func (c *Config) GetRegistryHostname() string {
+	if c != nil {
+		return c.RegistryHostname
+	}
+
+	return ""
+}
+
 // Registry is the interface that all image registries must implement
 type Registry interface {
 	Match(image *storage.ImageName) bool
 	Metadata(image *storage.Image) (*storage.ImageMetadata, error)
 	Test() error
-	Config() *Config
+	Config(ctx context.Context) *Config
 	Name() string
 	HTTPClient() *http.Client
 }

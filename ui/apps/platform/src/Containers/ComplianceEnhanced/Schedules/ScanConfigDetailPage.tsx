@@ -24,17 +24,17 @@ function ScanConfigDetailPage({
         return { request, cancel };
     }, [scanConfigId]);
 
-    const { data, loading, error } = useRestQuery(scanConfigFetcher);
+    const { data, isLoading, error } = useRestQuery(scanConfigFetcher);
 
     if (pageAction === 'edit' && hasWriteAccessForCompliance) {
-        return <EditScanConfigDetail scanConfig={data} isLoading={loading} error={error} />;
+        return <EditScanConfigDetail scanConfig={data} isLoading={isLoading} error={error} />;
     }
 
     return (
         <ViewScanConfigDetail
             hasWriteAccessForCompliance={hasWriteAccessForCompliance}
             scanConfig={data}
-            isLoading={loading}
+            isLoading={isLoading}
             error={error}
         />
     );

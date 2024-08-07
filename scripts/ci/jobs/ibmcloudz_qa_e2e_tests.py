@@ -12,7 +12,6 @@ from clusters import AutomationFlavorsCluster
 os.environ["DEPLOY_STACKROX_VIA_OPERATOR"] = "true"
 os.environ["LOAD_BALANCER"] = "route"
 os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
-os.environ["ROX_POSTGRES_DATASTORE"] = "true"
 os.environ["USE_MIDSTREAM_IMAGES"] = "true"
 os.environ["REMOTE_CLUSTER_ARCH"] = "s390x"
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"

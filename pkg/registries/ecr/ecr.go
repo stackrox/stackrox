@@ -1,21 +1,26 @@
 package ecr
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-	"github.com/aws/aws-sdk-go/aws/session"
-	awsECR "github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	awsECR "github.com/aws/aws-sdk-go-v2/service/ecr"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 var log = logging.LoggerForModule()
@@ -79,15 +84,15 @@ func sanitizeConfiguration(ecr *storage.ECRConfig) error {
 }
 
 // Config returns an up to date docker registry configuration.
-func (e *ecr) Config() *types.Config {
+func (e *ecr) Config(ctx context.Context) *types.Config {
 	// No need for synchronization if there is no transport.
 	if e.transport == nil {
-		return e.Registry.Config()
+		return e.Registry.Config(ctx)
 	}
-	if err := e.transport.ensureValid(); err != nil {
+	if err := e.transport.ensureValid(ctx); err != nil {
 		log.Errorf("Failed to ensure access token validity for image integration %q: %v", e.transport.name, err)
 	}
-	return e.Registry.Config()
+	return e.Registry.Config(ctx)
 }
 
 // Test tests the current registry and makes sure that it is working properly.
@@ -159,7 +164,9 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 		return reg, nil
 	}
 
-	client, err := createECRClient(conf)
+	// TODO(ROX-25474) refactor to pass parent context.
+	ctx := context.Background()
+	client, err := createECRClient(ctx, conf)
 	if err != nil {
 		log.Error("Failed to create ECR client: ", err)
 		return nil, err
@@ -174,26 +181,25 @@ func newRegistry(integration *storage.ImageIntegration, disableRepoList bool,
 }
 
 // createECRClient creates an AWS ECR SDK client based on the integration config.
-func createECRClient(conf *storage.ECRConfig) (*awsECR.ECR, error) {
-	awsConfig := &aws.Config{
-		Region: aws.String(conf.GetRegion()),
+func createECRClient(ctx context.Context, conf *storage.ECRConfig) (*awsECR.Client, error) {
+	opts := []func(*config.LoadOptions) error{
+		config.WithRegion(conf.GetRegion()),
+		config.WithHTTPClient(&http.Client{Transport: proxy.RoundTripper()}),
 	}
-
-	endpoint := conf.GetEndpoint()
-	if endpoint != "" {
-		awsConfig.Endpoint = aws.String(endpoint)
-	}
-
 	if !conf.GetUseIam() {
-		awsConfig.Credentials = credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
+		opts = append(opts,
+			config.WithCredentialsProvider(
+				credentials.NewStaticCredentialsProvider(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), ""),
+			),
+		)
 	}
-	sess, err := session.NewSession(awsConfig)
+	awsConfig, err := config.LoadDefaultConfig(ctx, opts...)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to load the aws config")
 	}
 
 	if conf.GetUseAssumeRole() {
-		if endpoint != "" {
+		if conf.GetEndpoint() != "" {
 			return nil, errox.InvalidArgs.CausedBy("AssumeRole and Endpoint cannot both be enabled")
 		}
 		if conf.GetAssumeRoleId() == "" {
@@ -201,14 +207,21 @@ func createECRClient(conf *storage.ECRConfig) (*awsECR.ECR, error) {
 		}
 
 		roleToAssumeArn := fmt.Sprintf("arn:aws:iam::%s:role/%s", conf.RegistryId, conf.AssumeRoleId)
-		stsCred := stscreds.NewCredentials(sess, roleToAssumeArn, func(p *stscreds.AssumeRoleProvider) {
-			assumeRoleExternalID := conf.GetAssumeRoleExternalId()
-			if assumeRoleExternalID != "" {
-				p.ExternalID = &assumeRoleExternalID
-			}
-		})
-
-		return awsECR.New(sess, &aws.Config{Credentials: stsCred}), nil
+		stsClient := sts.NewFromConfig(awsConfig)
+		awsConfig.Credentials = stscreds.NewAssumeRoleProvider(stsClient, roleToAssumeArn,
+			func(p *stscreds.AssumeRoleOptions) {
+				if externalID := conf.GetAssumeRoleExternalId(); externalID != "" {
+					p.ExternalID = aws.String(externalID)
+				}
+			},
+		)
 	}
-	return awsECR.New(sess), nil
+
+	var clientOpts []func(*awsECR.Options)
+	if endpoint := conf.GetEndpoint(); endpoint != "" {
+		clientOpts = append(clientOpts, func(o *awsECR.Options) {
+			o.BaseEndpoint = aws.String(urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash))
+		})
+	}
+	return awsECR.NewFromConfig(awsConfig, clientOpts...), nil
 }

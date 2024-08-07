@@ -22,7 +22,7 @@ func TestPagination(t *testing.T) {
 
 	stuff = []int{1, 2}
 	result, _ = paginate(&v1.QueryPagination{Offset: 2, Limit: 2}, stuff, nil)
-	assert.Equal(t, ([]int)(nil), result)
+	assert.Nil(t, result)
 
 	stuff = []int{}
 	result, _ = paginate(&v1.QueryPagination{Offset: 2, Limit: 2}, stuff, nil)

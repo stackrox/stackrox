@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/central/clusterinit/backend/access"
 	"github.com/stackrox/rox/central/clusterinit/backend/certificate/mocks"
@@ -26,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -211,8 +213,8 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 		s.Require().True(stringutils.ConsumeSuffix(&name, "-tls"))
 		s.Equal(initBundle.Meta.GetName(), obj.GetAnnotations()["init-bundle.stackrox.io/name"])
 		s.Equal(initBundle.Meta.GetId(), obj.GetAnnotations()["init-bundle.stackrox.io/id"])
-		s.Equal(initBundle.Meta.GetCreatedAt().String(), obj.GetAnnotations()["init-bundle.stackrox.io/created-at"])
-		s.Equal(initBundle.Meta.GetExpiresAt().String(), obj.GetAnnotations()["init-bundle.stackrox.io/expires-at"])
+		s.Equal(initBundle.Meta.GetCreatedAt().AsTime().Format(time.RFC3339Nano), obj.GetAnnotations()["init-bundle.stackrox.io/created-at"])
+		s.Equal(initBundle.Meta.GetExpiresAt().AsTime().Format(time.RFC3339Nano), obj.GetAnnotations()["init-bundle.stackrox.io/expires-at"])
 
 		val, ok, err := unstructured.NestedString(obj.UnstructuredContent(), "stringData", "ca.pem")
 		s.Require().NoError(err)
@@ -253,7 +255,7 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 		}
 	}
 	s.Require().NotNilf(initBundleMeta, "failed to find newly generated init bundle with ID %s in listing", id)
-	s.Require().Equal(initBundle.Meta, initBundleMeta, "init bundle meta data changed between generation and listing")
+	protoassert.Equal(s.T(), initBundle.Meta, initBundleMeta, "init bundle meta data changed between generation and listing")
 
 	// Verify it is not revoked.
 	s.Require().False(initBundleMeta.IsRevoked, "newly generated init bundle is revoked")

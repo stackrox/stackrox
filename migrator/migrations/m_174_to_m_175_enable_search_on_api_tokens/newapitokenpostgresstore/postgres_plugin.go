@@ -68,7 +68,7 @@ func New(db postgres.DB) Store {
 
 func insertIntoAPITokens(_ context.Context, batch *pgx.Batch, obj *storage.TokenMetadata) error {
 
-	serialized, marshalErr := obj.Marshal()
+	serialized, marshalErr := obj.MarshalVT()
 	if marshalErr != nil {
 		return marshalErr
 	}
@@ -114,7 +114,7 @@ func (s *storeImpl) copyFromAPITokens(ctx context.Context, tx *postgres.Tx, objs
 			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
 			"to simply use the object.  %s", obj)
 
-		serialized, marshalErr := obj.Marshal()
+		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
@@ -224,7 +224,7 @@ func (s *storeImpl) upsert(ctx context.Context, objs ...*storage.TokenMetadata) 
 
 // UpsertMany saves the state of multiple objects in the storage.
 func (s *storeImpl) UpsertMany(ctx context.Context, objs []*storage.TokenMetadata) error {
-	return pgutils.Retry(func() error {
+	return pgutils.Retry(ctx, func() error {
 		// Lock since copyFrom requires a delete first before being executed.  If multiple processes are updating
 		// same subset of rows, both deletes could occur before the copyFrom resulting in unique constraint
 		// violations

@@ -107,3 +107,14 @@ message ComplianceProfileCheckRequest {
   string check_name = 2;
   RawQuery query = 3;
 }
+
+// Next Tag: 8
+message ComplianceProfileSummary {
+  string name = 1;
+  string product_type = 2;
+  string description = 3;
+  string title = 4;
+  int32 rule_count = 5;
+  string profile_version = 6;
+  repeated ComplianceBenchmark standards = 7;
+}

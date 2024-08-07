@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -75,7 +76,7 @@ func (suite *ServiceAccountDataStoreTestSuite) TestServiceAccountsDataStore() {
 	foundSA, found, err := suite.datastore.GetServiceAccount(suite.ctx, sa.GetId())
 	suite.Require().NoError(err)
 	suite.True(found)
-	suite.Equal(sa, foundSA)
+	protoassert.Equal(suite.T(), sa, foundSA)
 
 	nonexistentID := uuid.Nil.String()
 	_, found, err = suite.datastore.GetServiceAccount(suite.ctx, nonexistentID)

@@ -123,7 +123,7 @@ func AwareDialContext(ctx context.Context, address string) (net.Conn, error) {
 		return defaultDialer.DialContext(ctx, "tcp", address)
 	}
 
-	fakeHTTPReq, err := http.NewRequest(http.MethodGet, fmt.Sprintf("tcp://%s", address), nil)
+	fakeHTTPReq, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("tcp://%s", address), nil)
 	if err != nil {
 		return nil, utils.ShouldErr(errors.Wrapf(err, "failed to instantiate fake HTTP request for address %q", address))
 	}
@@ -155,7 +155,8 @@ func AwareDialContextTLS(ctx context.Context, address string, tlsClientConf *tls
 		tlsClientConf.ServerName = host
 	}
 	tlsConn := tls.Client(conn, tlsClientConf)
-	if err := tlsConn.Handshake(); err != nil {
+	// The handshake must be done with a timeout to avoid infinite blocking of Sensor sync.
+	if err := tlsConn.HandshakeContext(ctx); err != nil {
 		utils.IgnoreError(tlsConn.Close)
 		return nil, err
 	}

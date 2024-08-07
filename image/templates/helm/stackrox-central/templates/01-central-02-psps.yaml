@@ -54,12 +54,6 @@ spec:
     - 'projected'
     - 'secret'
     - 'downwardAPI'
-    - 'persistentVolumeClaim'
-    - 'hostPath'
-  {{ if ._rox.central.persistence.hostPath -}}
-  allowedHostPaths:
-    - pathPrefix: {{ ._rox.central.persistence.hostPath }}
-  {{- end}}
   hostNetwork: false
   hostIPC: false
   hostPID: false

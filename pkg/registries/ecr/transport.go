@@ -1,12 +1,13 @@
 package ecr
 
 import (
+	"context"
 	"encoding/base64"
 	"net/http"
 	"strings"
 	"time"
 
-	awsECR "github.com/aws/aws-sdk-go/service/ecr"
+	awsECR "github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -20,14 +21,15 @@ type awsTransport struct {
 	registry.Transport
 	name      string
 	config    *docker.Config
-	client    *awsECR.ECR
+	client    *awsECR.Client
 	expiresAt *time.Time
 	mutex     sync.RWMutex
 }
 
-func newAWSTransport(name string, config *docker.Config, client *awsECR.ECR) *awsTransport {
+func newAWSTransport(name string, config *docker.Config, client *awsECR.Client) *awsTransport {
 	transport := &awsTransport{name: name, config: config, client: client}
-	if err := transport.refreshNoLock(); err != nil {
+	ctx := context.Background()
+	if err := transport.refreshNoLock(ctx); err != nil {
 		log.Error("Failed to refresh ECR token: ", err)
 	}
 	return transport
@@ -39,7 +41,7 @@ func (t *awsTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// a) we only need a write lock every 12 hours to refresh the token.
 	// b) refreshing the token multiple times is idempotent.
 	// c) we do not want to block the entire read path for performance reasons.
-	if err := t.ensureValid(); err != nil {
+	if err := t.ensureValid(req.Context()); err != nil {
 		return nil, err
 	}
 	return concurrency.WithRLock2(&t.mutex,
@@ -48,9 +50,9 @@ func (t *awsTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 // ensureValid refreshes the access token if it is invalid.
-func (t *awsTransport) ensureValid() error {
+func (t *awsTransport) ensureValid(ctx context.Context) error {
 	if !concurrency.WithRLock1(&t.mutex, t.isValidNoLock) {
-		if err := concurrency.WithLock1(&t.mutex, t.refreshNoLock); err != nil {
+		if err := concurrency.WithLock1(&t.mutex, func() error { return t.refreshNoLock(ctx) }); err != nil {
 			return err
 		}
 	}
@@ -61,9 +63,9 @@ func (t *awsTransport) isValidNoLock() bool {
 	return t.expiresAt != nil && time.Now().Before(t.expiresAt.Add(-earlyExpiry))
 }
 
-func (t *awsTransport) refreshNoLock() error {
+func (t *awsTransport) refreshNoLock(ctx context.Context) error {
 	log.Debugf("Refreshing ECR token for image integration %q", t.name)
-	authToken, err := t.client.GetAuthorizationToken(&awsECR.GetAuthorizationTokenInput{})
+	authToken, err := t.client.GetAuthorizationToken(ctx, &awsECR.GetAuthorizationTokenInput{})
 	if err != nil {
 		return errors.Wrap(err, "failed to get authorization token")
 	}

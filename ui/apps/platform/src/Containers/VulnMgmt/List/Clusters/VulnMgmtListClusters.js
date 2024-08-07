@@ -8,6 +8,7 @@ import {
     defaultColumnClassName,
 } from 'Components/Table';
 import DateTimeField from 'Components/DateTimeField';
+import TableCellLink from 'Components/TableCellLink';
 import ClusterTableCountLinks from 'Components/workflow/ClusterTableCountLinks';
 import entityTypes from 'constants/entityTypes';
 import CVEStackedPill from 'Components/CVEStackedPill';
@@ -18,6 +19,7 @@ import { clusterSortFields } from 'constants/sortFields';
 import { LIST_PAGE_SIZE } from 'constants/workflowPages.constants';
 import removeEntityContextColumns from 'utils/tableUtils';
 import { vulMgmtPolicyQuery } from '../../Entity/VulnMgmtPolicyQueryUtil';
+import { getVulnMgmtPathForEntitiesAndId } from '../../VulnMgmt.utils/entities';
 import WorkflowListPage from '../WorkflowListPage';
 
 export const defaultClusterSort = [
@@ -66,6 +68,14 @@ const VulnMgmtClusters = ({ selectedRowId, search, sort, page, data, totalResult
                 Header: `Cluster`,
                 headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                 className: `w-1/8 ${defaultColumnClassName}`,
+                Cell: ({ original, pdf }) => {
+                    const url = getVulnMgmtPathForEntitiesAndId('CLUSTER', original.id);
+                    return (
+                        <TableCellLink pdf={pdf} url={url}>
+                            {original.name}
+                        </TableCellLink>
+                    );
+                },
                 id: clusterSortFields.CLUSTER,
                 accessor: 'name',
                 sortField: clusterSortFields.CLUSTER,

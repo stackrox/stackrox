@@ -4,6 +4,11 @@
     "title": "api/v2/compliance_scan_configuration_service.proto",
     "version": "version not set"
   },
+  "tags": [
+    {
+      "name": "ComplianceScanConfigurationService"
+    }
+  ],
   "consumes": [
     "application/json"
   ],
@@ -25,7 +30,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -99,7 +104,7 @@
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -118,129 +123,81 @@
         ]
       }
     },
-    "/v2/compliance/scan/configurations/reports/run": {
-      "put": {
-        "summary": "RunReport runs an on demand compliance report for the scan configuration",
-        "operationId": "ComplianceScanConfigurationService_RunReport",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2ComplianceRunReportResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v2ComplianceRunReportRequest"
-            }
-          }
-        ],
-        "tags": [
-          "ComplianceScanConfigurationService"
-        ]
-      }
-    },
-    "/v2/compliance/scan/configurations/{id}": {
+    "/v2/compliance/scan/configurations/clusters/{clusterId}/profiles/collection": {
       "get": {
         "summary": "GetComplianceScanConfiguration retrieves the specified compliance scan configurations",
-        "operationId": "ComplianceScanConfigurationService_GetComplianceScanConfiguration",
+        "operationId": "ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
+              "$ref": "#/definitions/v2ListComplianceScanConfigsClusterProfileResponse"
             }
           },
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ComplianceScanConfigurationService"
-        ]
-      },
-      "delete": {
-        "summary": "DeleteComplianceScanConfiguration removes the compliance scan configuration with given Name",
-        "operationId": "ComplianceScanConfigurationService_DeleteComplianceScanConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ComplianceScanConfigurationService"
-        ]
-      },
-      "put": {
-        "summary": "UpdateComplianceScanConfiguration updates a compliance scan configuration",
-        "operationId": "ComplianceScanConfigurationService_UpdateComplianceScanConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
+            "name": "clusterId",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v2ComplianceScanConfiguration"
-            }
+            "name": "query.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "query.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "query.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "query.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -248,51 +205,21 @@
         ]
       }
     },
-    "/v2/compliance/scan/configurations/{id}/run": {
-      "post": {
-        "summary": "RunComplianceScanConfiguration launches scan for the specified scan\nconfiguration, which will invoke scans to run for the applicable\nprofiles across the configured clusters.",
-        "operationId": "ComplianceScanConfigurationService_RunComplianceScanConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "ComplianceScanConfigurationService"
-        ]
-      }
-    },
-    "/v2/compliance/scan/count/configurations": {
+    "/v2/compliance/scan/configurations/profiles/collection": {
       "get": {
-        "operationId": "ComplianceScanConfigurationService_GetComplianceScanConfigurationsCount",
+        "summary": "ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters",
+        "operationId": "ComplianceScanConfigurationService_ListComplianceScanConfigProfiles",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v2ComplianceScanConfigurationsCount"
+              "$ref": "#/definitions/v2ListComplianceScanConfigsProfileResponse"
             }
           },
           "default": {
             "description": "An unexpected error response.",
             "schema": {
-              "$ref": "#/definitions/runtimeError"
+              "$ref": "#/definitions/rpcStatus"
             }
           }
         },
@@ -353,6 +280,167 @@
           "ComplianceScanConfigurationService"
         ]
       }
+    },
+    "/v2/compliance/scan/configurations/reports/run": {
+      "put": {
+        "summary": "RunReport runs an on demand compliance report for the scan configuration",
+        "operationId": "ComplianceScanConfigurationService_RunReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceRunReportResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceRunReportRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}": {
+      "get": {
+        "summary": "GetComplianceScanConfiguration retrieves the specified compliance scan configurations",
+        "operationId": "ComplianceScanConfigurationService_GetComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      },
+      "delete": {
+        "summary": "DeleteComplianceScanConfiguration removes the compliance scan configuration with given Name",
+        "operationId": "ComplianceScanConfigurationService_DeleteComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      },
+      "put": {
+        "summary": "UpdateComplianceScanConfiguration updates a compliance scan configuration",
+        "operationId": "ComplianceScanConfigurationService_UpdateComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ComplianceScanConfigurationServiceUpdateComplianceScanConfigurationBody"
+            }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}/run": {
+      "post": {
+        "summary": "RunComplianceScanConfiguration launches scan for the specified scan\nconfiguration, which will invoke scans to run for the applicable\nprofiles across the configured clusters.",
+        "operationId": "ComplianceScanConfigurationService_RunComplianceScanConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -375,24 +463,36 @@
       },
       "title": "Additional scan status gathered from ComplianceSuite"
     },
+    "ComplianceScanConfigurationServiceUpdateComplianceScanConfigurationBody": {
+      "type": "object",
+      "properties": {
+        "scanName": {
+          "type": "string"
+        },
+        "scanConfig": {
+          "$ref": "#/definitions/v2BaseComplianceScanConfigurationSettings"
+        },
+        "clusters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "title": "Next available tag: 5"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
-        "typeUrl": {
+        "@type": {
           "type": "string"
-        },
-        "value": {
-          "type": "string",
-          "format": "byte"
         }
-      }
+      },
+      "additionalProperties": {}
     },
-    "runtimeError": {
+    "rpcStatus": {
       "type": "object",
       "properties": {
-        "error": {
-          "type": "string"
-        },
         "code": {
           "type": "integer",
           "format": "int32"
@@ -403,6 +503,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
@@ -450,6 +551,7 @@
         "notifiers": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2NotifierConfiguration"
           }
         }
@@ -476,6 +578,59 @@
         }
       },
       "title": "ClusterScanStatus holds status based on cluster in the event that a scan configuration\nwas successfully applied to some clusters but not others.\nNext available tag: 5"
+    },
+    "v2ComplianceBenchmark": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "shortName": {
+          "type": "string",
+          "title": "This is extracted from the annotation.\nExample: from https://control.compliance.openshift.io/CIS-OCP we should have CIS-OCP"
+        }
+      }
+    },
+    "v2ComplianceProfileSummary": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "productType": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "ruleCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "profileVersion": {
+          "type": "string"
+        },
+        "standards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceBenchmark"
+          }
+        }
+      },
+      "title": "Next Tag: 8"
     },
     "v2ComplianceRunReportRequest": {
       "type": "object",
@@ -544,6 +699,7 @@
         "clusterStatus": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ClusterScanStatus"
           }
         },
@@ -565,15 +721,6 @@
         }
       },
       "title": "Next available tag: 9"
-    },
-    "v2ComplianceScanConfigurationsCount": {
-      "type": "object",
-      "properties": {
-        "count": {
-          "type": "integer",
-          "format": "int32"
-        }
-      }
     },
     "v2EmailNotifierConfiguration": {
       "type": "object",
@@ -598,12 +745,51 @@
     "v2Empty": {
       "type": "object"
     },
+    "v2ListComplianceScanConfigsClusterProfileResponse": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceProfileSummary"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v2ListComplianceScanConfigsProfileResponse": {
+      "type": "object",
+      "properties": {
+        "profiles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceProfileSummary"
+          }
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
     "v2ListComplianceScanConfigurationsResponse": {
       "type": "object",
       "properties": {
         "configurations": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
           }
         },
@@ -641,11 +827,24 @@
         "sortOptions": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v2SortOption"
           },
           "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
+    },
+    "v2RawQuery": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "pagination": {
+          "$ref": "#/definitions/v2Pagination"
+        }
+      },
+      "description": "RawQuery represents the search query string.\nThe format of the query string is \"<field name>:<value,value,...>+<field name>:<value, value,...>+...\"\nFor example:\nTo search for deployments named \"central\" and \"sensor\" in the namespace \"stackrox\", the query string would be\n\"Deployment:central,sensor+Namespace:stackrox\"\nRawQuery is used in ListAPIs to search for a particular object."
     },
     "v2Schedule": {
       "type": "object",

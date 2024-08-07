@@ -3,6 +3,7 @@ import static util.Helpers.withRetry
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.proto.storage.ClusterOuterClass
+import io.stackrox.proto.storage.ExternalBackupOuterClass.S3URLStyle
 import io.stackrox.proto.storage.NotifierOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
@@ -180,15 +181,15 @@ class IntegrationsTest extends BaseSpecification {
     @Tag("Integration")
     // splunk is not supported on P/Z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
-    def "Verify Splunk Integration (legacy mode: #legacy)"() {
+    def "Verify Splunk Integration"() {
         given:
         "the integration is tested"
-        SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator,
-                Constants.ORCHESTRATOR_NAMESPACE, true)
+        SplunkUtil.SplunkDeployment parts = SplunkUtil.createSplunk(orchestrator, Constants.ORCHESTRATOR_NAMESPACE)
+        SplunkUtil.waitForSplunkBoot(parts.splunkPortForward.localPort)
 
         when:
         "call the grpc API for the splunk integration."
-        SplunkNotifier notifier = new SplunkNotifier(legacy, parts.collectorSvc.name, parts.splunkPortForward.localPort)
+        SplunkNotifier notifier = new SplunkNotifier(parts.collectorSvc.name, parts.splunkPortForward.localPort)
         notifier.createNotifier()
 
         and:
@@ -231,10 +232,6 @@ class IntegrationsTest extends BaseSpecification {
             SplunkUtil.tearDownSplunk(orchestrator, parts)
         }
         notifier.deleteNotifier()
-
-        where:
-        "Data inputs are"
-        legacy << [false, true]
     }
 
     @Unroll
@@ -517,6 +514,35 @@ class IntegrationsTest extends BaseSpecification {
         "GCS"                 | Env.mustGetGCSBucketName()   | "us-east-1"                    |
                 "storage.googleapis.com"                             | Env.mustGetGCPAccessKeyID() |
                 Env.mustGetGCPAccessKey()
+    }
+
+    @Unroll
+    @Tag("Integration")
+    def "Verify S3 Compatible Integration: #integrationName"() {
+        when:
+        "the integration is tested"
+        def backup = ExternalBackupService.getS3CompatibleIntegrationConfig(integrationName, endpoint, urlStyle)
+
+        then:
+        "verify test integration"
+        // Test integration for S3 compatible performs test backup (and rollback).
+        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+
+        where:
+        "configurations are:"
+
+        // Cloudflare R2 requires an active credit card subscription to access the buckets.
+        // See BitWarden item `06917dbc-17be-40f9-b8e1-b1a1015ce473` for the account details.
+        integrationName                          | endpoint
+        | urlStyle
+        "Cloudflare R2/path-based/no-prefix"     | Env.mustGetCloudflareR2Endpoint()
+        | S3URLStyle.S3_URL_STYLE_PATH
+        "Cloudflare R2/path-based/https"         | "https://${Env.mustGetCloudflareR2Endpoint()}"
+        | S3URLStyle.S3_URL_STYLE_PATH
+        "Cloudflare R2/virtual-hosted/no-prefix" | Env.mustGetCloudflareR2Endpoint()
+        | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
+        "Cloudflare R2/virtual-hosted/https"     | "https://${Env.mustGetCloudflareR2Endpoint()}"
+        | S3URLStyle.S3_URL_STYLE_VIRTUAL_HOSTED
     }
 
     @Unroll

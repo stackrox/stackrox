@@ -15,7 +15,8 @@ FROM registry.access.redhat.com/ubi8/ubi:latest AS installer
 COPY --from=target-base / /mnt
 
 # Copy our helper script and the activation key to the installer.
-COPY ./subscription-manager-bro.sh ./activation-key /tmp/.konflux/
+COPY ./subscription-manager-bro.sh /tmp/.konflux/
+COPY ./activation-key /activation-key/
 
 # Sanity-check the installer is not entitled (yet).
 RUN ! dnf -y --installroot=/mnt module enable postgresql:15 && \

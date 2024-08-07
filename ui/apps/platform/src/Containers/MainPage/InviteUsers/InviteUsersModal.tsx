@@ -220,6 +220,7 @@ function InviteUsersModal(): ReactElement | null {
                 {authProviders.length === 0 && (
                     <Alert
                         title="No auth providers are available."
+                        component="p"
                         variant="warning"
                         isInline
                         className="pf-v5-u-mb-lg"
@@ -240,6 +241,7 @@ function InviteUsersModal(): ReactElement | null {
                         {apiError && (
                             <Alert
                                 title="Problem inviting the specified users"
+                                component="p"
                                 variant="danger"
                                 isInline
                                 className="pf-v5-u-mb-lg"

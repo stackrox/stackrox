@@ -31,7 +31,7 @@ function NotifierIntegrationsSection(): ReactElement {
             {descriptors.filter(featureFlagDependencyFilter).map((descriptor) => {
                 const { image, label, type } = descriptor;
                 if (!canUseAcscsEmailIntegration && type === 'acscsEmail') {
-                    return <></>;
+                    return null;
                 }
                 return (
                     <IntegrationTile

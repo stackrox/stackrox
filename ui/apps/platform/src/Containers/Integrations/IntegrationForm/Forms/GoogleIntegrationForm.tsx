@@ -17,7 +17,6 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -104,8 +103,6 @@ function GoogleIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GoogleImageIntegration>): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isCloudCredentialsEnabled = isFeatureFlagEnabled('ROX_CLOUD_CREDENTIALS');
     const formInitialValues = { ...defaultValues, ...initialValues };
     if (initialValues) {
         formInitialValues.config = { ...formInitialValues.config, ...initialValues };
@@ -232,22 +229,20 @@ function GoogleIntegrationForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {isCloudCredentialsEnabled && (
-                        <FormLabelGroup
-                            fieldId="config.google.wifEnabled"
-                            touched={touched}
-                            errors={errors}
-                        >
-                            <Checkbox
-                                label="Use workload identity"
-                                id="config.google.wifEnabled"
-                                isChecked={values.config.google.wifEnabled}
-                                onChange={(event, value) => onChange(value, event)}
-                                onBlur={handleBlur}
-                                isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                    )}
+                    <FormLabelGroup
+                        fieldId="config.google.wifEnabled"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
+                            label="Use workload identity"
+                            id="config.google.wifEnabled"
+                            isChecked={values.config.google.wifEnabled}
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
+                        />
+                    </FormLabelGroup>
                     {!isCreating && isEditable && (
                         <FormLabelGroup
                             label=""
@@ -260,36 +255,24 @@ function GoogleIntegrationForm({
                                 label="Update stored credentials"
                                 id="updatePassword"
                                 isChecked={
-                                    !(
-                                        isCloudCredentialsEnabled && values.config.google.wifEnabled
-                                    ) && values.updatePassword
+                                    !values.config.google.wifEnabled && values.updatePassword
                                 }
                                 onChange={(event, value) => onUpdateCredentialsChange(value, event)}
                                 onBlur={handleBlur}
-                                isDisabled={
-                                    !isEditable ||
-                                    (isCloudCredentialsEnabled && values.config.google.wifEnabled)
-                                }
+                                isDisabled={!isEditable || values.config.google.wifEnabled}
                             />
                         </FormLabelGroup>
                     )}
                     <FormLabelGroup
                         label="Service account key (JSON)"
-                        isRequired={
-                            values.updatePassword &&
-                            isCloudCredentialsEnabled &&
-                            !values.config.google.wifEnabled
-                        }
+                        isRequired={values.updatePassword && !values.config.google.wifEnabled}
                         fieldId="config.google.serviceAccount"
                         touched={touched}
                         errors={errors}
                     >
                         <TextArea
                             className="json-input"
-                            isRequired={
-                                values.updatePassword &&
-                                !(isCloudCredentialsEnabled && values.config.google.wifEnabled)
-                            }
+                            isRequired={values.updatePassword && !values.config.google.wifEnabled}
                             type="text"
                             id="config.google.serviceAccount"
                             name="config.google.serviceAccount"
@@ -299,10 +282,10 @@ function GoogleIntegrationForm({
                             isDisabled={
                                 !isEditable ||
                                 !values.updatePassword ||
-                                (isCloudCredentialsEnabled && values.config.google.wifEnabled)
+                                values.config.google.wifEnabled
                             }
                             placeholder={getGoogleCredentialsPlaceholder(
-                                isCloudCredentialsEnabled && values.config.google.wifEnabled,
+                                values.config.google.wifEnabled,
                                 values.updatePassword
                             )}
                         />

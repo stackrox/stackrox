@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -20,7 +21,7 @@ func (f *fakeRegistry) Match(_ *storage.ImageName) bool {
 	return f.match
 }
 
-func (f *fakeRegistry) Config() *registryTypes.Config {
+func (f *fakeRegistry) Config(_ context.Context) *registryTypes.Config {
 	if f.registryHostName == "" {
 		return nil
 	}
@@ -64,9 +65,10 @@ func TestGetMatchingImageIntegrations(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			res := GetMatchingImageIntegrations(tc.registries, imgName)
+			res := GetMatchingImageIntegrations(ctx, tc.registries, imgName)
 			assert.Equal(t, tc.expectedRegistries, res)
 		})
 	}

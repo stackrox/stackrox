@@ -13,6 +13,7 @@ import {
     visitWorkloadCveOverview,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
+import { paginateNext, paginatePrevious } from '../../../helpers/tableHelpers';
 
 describe('Workload CVE List deferral and false positive flows', () => {
     withAuth();
@@ -62,7 +63,7 @@ describe('Workload CVE List deferral and false positive flows', () => {
         // Move to the next page and
         // - check that the select all checkbox is enabled
         // - check that the bulk action menu is enabled
-        cy.get(selectors.paginationNext).click();
+        paginateNext();
         cy.get(selectors.isUpdatingTable).should('not.exist');
         cy.get(selectors.tableRowSelectAllCheckbox).should('not.be.disabled');
         cy.get(selectors.bulkActionMenuToggle).should('not.be.disabled');
@@ -78,7 +79,7 @@ describe('Workload CVE List deferral and false positive flows', () => {
         // - check that the bulk action menu is disabled
         // - check that the select all checkbox is disabled
         // - check that no table rows are checked
-        cy.get(selectors.paginationPrevious).click();
+        paginatePrevious();
         cy.get(selectors.isUpdatingTable).should('not.exist');
         cy.get(selectors.bulkActionMenuToggle).should('be.disabled');
         cy.get(selectors.tableRowSelectAllCheckbox).should('be.disabled');

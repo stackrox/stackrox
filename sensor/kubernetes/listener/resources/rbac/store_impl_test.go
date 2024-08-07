@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/store/mocks"
@@ -418,7 +419,7 @@ func TestStore_DispatcherEvents(t *testing.T) {
 	for _, event := range eventsInOrder {
 		require.NoError(t, event.createK8sResource())
 		actual := dispatcher.ProcessEvent(event.k8sEvent, nil, event.action)
-		assert.ElementsMatch(t, event.unorderedMessages, actual.ForwardMessages)
+		protoassert.ElementsMatch(t, event.unorderedMessages, actual.ForwardMessages)
 	}
 }
 

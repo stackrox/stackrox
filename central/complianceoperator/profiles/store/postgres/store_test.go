@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -63,7 +64,7 @@ func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
 	foundComplianceOperatorProfile, exists, err = store.Get(ctx, complianceOperatorProfile.GetId())
 	s.NoError(err)
 	s.True(exists)
-	s.Equal(complianceOperatorProfile, foundComplianceOperatorProfile)
+	protoassert.Equal(s.T(), complianceOperatorProfile, foundComplianceOperatorProfile)
 
 	complianceOperatorProfileCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
@@ -77,11 +78,6 @@ func (s *ComplianceOperatorProfilesStoreSuite) TestStore() {
 	s.True(complianceOperatorProfileExists)
 	s.NoError(store.Upsert(ctx, complianceOperatorProfile))
 	s.ErrorIs(store.Upsert(withNoAccessCtx, complianceOperatorProfile), sac.ErrResourceAccessDenied)
-
-	foundComplianceOperatorProfile, exists, err = store.Get(ctx, complianceOperatorProfile.GetId())
-	s.NoError(err)
-	s.True(exists)
-	s.Equal(complianceOperatorProfile, foundComplianceOperatorProfile)
 
 	s.NoError(store.Delete(ctx, complianceOperatorProfile.GetId()))
 	foundComplianceOperatorProfile, exists, err = store.Get(ctx, complianceOperatorProfile.GetId())

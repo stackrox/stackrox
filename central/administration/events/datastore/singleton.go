@@ -5,7 +5,6 @@ import (
 	pgStore "github.com/stackrox/rox/central/administration/events/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/administration/events/datastore/internal/writer"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -17,9 +16,6 @@ var (
 
 // Singleton returns a datastore instance to handle events.
 func Singleton() DataStore {
-	if !features.AdministrationEvents.Enabled() {
-		return nil
-	}
 	once.Do(func() {
 		store := pgStore.New(globaldb.GetPostgres())
 		searcher := search.New(store)
