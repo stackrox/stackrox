@@ -1,8 +1,6 @@
 package preflight
 
 import (
-	"strconv"
-
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -37,15 +35,14 @@ func namespaceAllowed(resource *k8sobjects.ObjectRef) bool {
 	if matchesException(resource) {
 		return true
 	}
-	logging.Infof("Object \"%v\" in namespace \"%s\"\n in pod with namespace \"%s\", function will return \"%s\"", resource, resource.Namespace, pods.GetPodNamespace(pods.NoSATokenNamespace), strconv.FormatBool((resource.Namespace == "") || (resource.Namespace == namespaces.StackRox) || (resource.Namespace == pods.GetPodNamespace(pods.NoSATokenNamespace))))
-	return (resource.Namespace == "") || (resource.Namespace == namespaces.StackRox) || (resource.Namespace == pods.GetPodNamespace(pods.NoSATokenNamespace))
+	return (resource.Namespace == "") || (resource.Namespace == pods.GetPodNamespace(pods.NoSATokenNamespace))
 }
 
 func (namespaceCheck) Check(_ *upgradectx.UpgradeContext, execPlan *plan.ExecutionPlan, reporter checkReporter) error {
 	for _, act := range execPlan.Actions() {
 		act := act
 		if !namespaceAllowed(&act.ObjectRef) {
-			logging.Warn("namespaceAllowed returned false for object \"", act.ObjectRef, "\" in namespace \"", act.ObjectRef.Namespace, "\" and the pod is in namespace \"", pods.GetPodNamespace(pods.NoSATokenNamespace), "\"")
+			logging.Warnf("namespaceAllowed returned false for object \"%v\" in namespace \"%s\" and the pod is in namespace \"%s\"", act.ObjectRef, act.ObjectRef.Namespace, pods.GetPodNamespace(pods.NoSATokenNamespace))
 			reporter.Errorf("To-be-%sd object %v is in disallowed namespace %s", act.ActionName, act.ObjectRef, act.ObjectRef.Namespace)
 		}
 	}
