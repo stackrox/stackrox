@@ -11,11 +11,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/docker/config"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -130,26 +128,7 @@ func TestRegistryStore_MultipleSecretsSameRegistry(t *testing.T) {
 	assert.Equal(t, reg.Config(ctx).Password, dceB.Password)
 }
 
-func TestRegistryStore_FailUpsertCheckTLS(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, false)
-
-	ctx := context.Background()
-	regStore := NewRegistryStore(alwaysFailCheckTLS)
-	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
-	ns := "namespace"
-
-	// upsert that fails TLS check should error out and NOT perform an upsert
-	assert.Error(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
-	assert.Nil(t, regStore.store[ns])
-
-	// a subsequent upsert should not return an error and also NOT perform an upsert
-	assert.NoError(t, regStore.UpsertRegistry(ctx, ns, fakeImgName.GetRegistry(), dce))
-	assert.Nil(t, regStore.store[ns])
-}
-
 func TestRegistryStore_LazyNoFailUpsertCheckTLS(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, true)
-
 	ctx := context.Background()
 	regStore := NewRegistryStore(alwaysFailCheckTLS)
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
@@ -182,25 +161,7 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 	assert.Zero(t, len(regStore.store), "non-global store should not have been modified")
 }
 
-func TestRegistryStore_GlobalStoreFailUpsertCheckTLS(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, false)
-
-	ctx := context.Background()
-	regStore := NewRegistryStore(alwaysFailCheckTLS)
-	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
-
-	// upsert that fails TLS check should error out and NOT perform an upsert
-	require.Error(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
-	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
-
-	// a subsequent upsert should not return an error and also NOT perform an upsert
-	require.NoError(t, regStore.UpsertGlobalRegistry(ctx, fakeImgName.GetRegistry(), dce))
-	assert.True(t, regStore.globalRegistries.IsEmpty(), "global store should not be populated")
-}
-
 func TestRegistryStore_GlobalStoreLazyNoFailUpsertCheckTLS(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.SensorLazyTLSChecks, true)
-
 	ctx := context.Background()
 	regStore := NewRegistryStore(alwaysFailCheckTLS)
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
@@ -213,10 +174,10 @@ func TestRegistryStore_GlobalStoreLazyNoFailUpsertCheckTLS(t *testing.T) {
 }
 
 func TestRegistryStore_CreateImageIntegrationType(t *testing.T) {
-	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, false, "")
+	ii := createImageIntegration("http://example.com", config.DockerConfigEntry{}, "")
 	assert.Equal(t, ii.Type, types.DockerType)
 
-	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, true, "")
+	ii = createImageIntegration("https://registry.redhat.io", config.DockerConfigEntry{}, "")
 	assert.Equal(t, ii.Type, types.RedHatType)
 }
 
@@ -333,19 +294,23 @@ func TestRegistryStore_GenImgIntName(t *testing.T) {
 	tt := []struct {
 		prefix    string
 		namespace string
+		name      string
 		registry  string
 		expected  string
 	}{
-		{"", "", "", ""},
-		{"PRE", "", "", "PRE"},
-		{"PRE", "", "REG", "PRE/reg:REG"},
-		{"PRE", "NAME", "", "PRE/ns:NAME"},
-		{"PRE", "NAME", "REG", "PRE/ns:NAME/reg:REG"},
+		{"", "", "", "", ""},
+		{"PRE", "", "", "", "PRE"},
+		{"PRE", "", "", "REG", "PRE/reg:REG"},
+		{"PRE", "NAMESP", "", "", "PRE/ns:NAMESP"},
+		{"PRE", "NAMESP", "", "REG", "PRE/ns:NAMESP/reg:REG"},
+		{"PRE", "", "NAME", "", "PRE/name:NAME"},
+		{"PRE", "NAMESP", "NAME", "", "PRE/ns:NAMESP/name:NAME"},
+		{"PRE", "NAMESP", "NAME", "REG", "PRE/ns:NAMESP/name:NAME/reg:REG"},
 	}
 
 	for i, test := range tt {
 		t.Run(fmt.Sprintf("%v", i), func(t *testing.T) {
-			actual := genIntegrationName(test.prefix, test.namespace, test.registry)
+			actual := genIntegrationName(test.prefix, test.namespace, test.name, test.registry)
 			assert.Equal(t, test.expected, actual)
 		})
 	}

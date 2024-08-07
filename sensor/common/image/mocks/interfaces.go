@@ -73,19 +73,19 @@ func (mr *MockregistryStoreMockRecorder) GetMatchingCentralRegistryIntegrations(
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchingCentralRegistryIntegrations", reflect.TypeOf((*MockregistryStore)(nil).GetMatchingCentralRegistryIntegrations), arg0)
 }
 
-// GetRegistryForImageInNamespace mocks base method.
-func (m *MockregistryStore) GetRegistryForImageInNamespace(arg0 *storage.ImageName, arg1 string) (types.ImageRegistry, error) {
+// GetRegistries mocks base method.
+func (m *MockregistryStore) GetRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]types.ImageRegistry, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegistryForImageInNamespace", arg0, arg1)
-	ret0, _ := ret[0].(types.ImageRegistry)
+	ret := m.ctrl.Call(m, "GetRegistries", image, namespace, imagePullSecrets)
+	ret0, _ := ret[0].([]types.ImageRegistry)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetRegistryForImageInNamespace indicates an expected call of GetRegistryForImageInNamespace.
-func (mr *MockregistryStoreMockRecorder) GetRegistryForImageInNamespace(arg0, arg1 any) *gomock.Call {
+// GetRegistries indicates an expected call of GetRegistries.
+func (mr *MockregistryStoreMockRecorder) GetRegistries(image, namespace, imagePullSecrets any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistryForImageInNamespace", reflect.TypeOf((*MockregistryStore)(nil).GetRegistryForImageInNamespace), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistries", reflect.TypeOf((*MockregistryStore)(nil).GetRegistries), image, namespace, imagePullSecrets)
 }
 
 // IsLocal mocks base method.
@@ -189,16 +189,16 @@ func (m *MocklocalScan) EXPECT() *MocklocalScanMockRecorder {
 }
 
 // EnrichLocalImageInNamespace mocks base method.
-func (m *MocklocalScan) EnrichLocalImageInNamespace(arg0 context.Context, arg1 scan.LocalScanCentralClient, arg2 *storage.ContainerImage, arg3, arg4 string, arg5 bool) (*storage.Image, error) {
+func (m *MocklocalScan) EnrichLocalImageInNamespace(arg0 context.Context, arg1 scan.LocalScanCentralClient, arg2 *scan.LocalScanRequest) (*storage.Image, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnrichLocalImageInNamespace", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret := m.ctrl.Call(m, "EnrichLocalImageInNamespace", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*storage.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // EnrichLocalImageInNamespace indicates an expected call of EnrichLocalImageInNamespace.
-func (mr *MocklocalScanMockRecorder) EnrichLocalImageInNamespace(arg0, arg1, arg2, arg3, arg4, arg5 any) *gomock.Call {
+func (mr *MocklocalScanMockRecorder) EnrichLocalImageInNamespace(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichLocalImageInNamespace", reflect.TypeOf((*MocklocalScan)(nil).EnrichLocalImageInNamespace), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichLocalImageInNamespace", reflect.TypeOf((*MocklocalScan)(nil).EnrichLocalImageInNamespace), arg0, arg1, arg2)
 }
