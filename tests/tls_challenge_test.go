@@ -98,7 +98,7 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 func (ts *TLSChallengeSuite) setupProxy(proxyNs string, centralEndpoint string) {
 	name := "nginx-loadbalancer"
 	nginxLabels := map[string]string{"app": "nginx"}
-	nginxTLSSecretName := "nginx-tls-conf"
+	nginxTLSSecretName := "nginx-tls-conf" //nolint:gosec // G101
 	nginxConfigName := "nginx-proxy-conf"
 	ts.logf("Setting up nginx proxy in namespace %q...", proxyNs)
 	ts.createProxyNamespace(proxyNs)
