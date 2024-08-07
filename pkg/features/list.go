@@ -122,4 +122,7 @@ var (
 
 	// PolicyViolationsAdvancedFilters enables improved filtering capabilities for Policy Violations
 	PolicyViolationsAdvancedFilters = registerFeature("Enables improved filtering capabilities for Policy Violations", "ROX_POLICY_VIOLATIONS_ADVANCED_FILTERS", enabled)
+
+	// PolicyAsCode enables the import and management of external policies.
+	PolicyAsCode = registerFeature("Enables the import and management of external policies", "ROX_POLICY_AS_CODE", unchangeableInProd)
 )
