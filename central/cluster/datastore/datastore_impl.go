@@ -3,7 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
@@ -359,8 +359,9 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 	// convert it to scientific notation - see cluster name in sensor secret.
 	// Because the fix in the Helm chart is tricky, we reject all names that
 	// could be parsable to a number.
-	if _, err := strconv.ParseFloat(cluster.GetName(), 64); err == nil {
-		return "", errors.New("cluster name must not be a number")
+	startsWithLetter := regexp.MustCompile(`^[a-zA-Z]`)
+	if !startsWithLetter.MatchString(cluster.GetName()) {
+		return "", errors.New("cluster name must start with a letter")
 	}
 
 	cluster.Id = uuid.NewV4().String()
