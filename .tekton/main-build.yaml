@@ -44,7 +44,6 @@ spec:
     # TODO(ROX-25572): re-add { "type": "npm", "path": "ui/apps/platform" },
     value: |
       [
-        # { "type": "npm", "path": "ui/apps/platform" },
         { "type": "gomod", "path": "." }
       ]
   - name: build-source-image
