@@ -1325,8 +1325,8 @@ type NodeCVE struct {
 	Snoozed         bool                   `protobuf:"varint,7,opt,name=snoozed,proto3" json:"snoozed,omitempty" search:"CVE Snoozed"`                                       // @gotags: search:"CVE Snoozed"
 	SnoozeStart     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=snooze_start,json=snoozeStart,proto3" json:"snooze_start,omitempty"`
 	SnoozeExpiry    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"`  // @gotags: search:"CVE Snooze Expiry,hidden"
-	Orphaned        bool                   `protobuf:"varint,10,opt,name=orphaned,proto3" json:"orphaned,omitempty" search:"CVE Orphaned, hidden"`                            // @gotags: search:"CVE Orphaned, hidden"
-	OrphanedTime    *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=orphaned_time,json=orphanedTime,proto3" json:"orphaned_time,omitempty" search:"CVE Orphaned Time, hidden"` // @gotags: search:"CVE Orphaned Time, hidden"
+	Orphaned        bool                   `protobuf:"varint,10,opt,name=orphaned,proto3" json:"orphaned,omitempty" search:"CVE Orphaned,hidden"`                            // @gotags: search:"CVE Orphaned,hidden"
+	OrphanedTime    *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=orphaned_time,json=orphanedTime,proto3" json:"orphaned_time,omitempty" search:"CVE Orphaned Time,hidden"` // @gotags: search:"CVE Orphaned Time,hidden"
 }
 
 func (x *NodeCVE) Reset() {
