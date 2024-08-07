@@ -11,6 +11,11 @@ spec:
       value: 'Build for $(params.revision) has failed'
     - name: key-name
       value: 'acs-release-automation-testing'
+    when:
+    # Run when any task has Failed
+    - input: $(tasks.status)
+      operator: in
+      values: ["Failed"]
     taskRef:
       params:
       - name: name
