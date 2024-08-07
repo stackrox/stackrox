@@ -30,7 +30,8 @@ func x[T error](err error) T {
 }
 
 // ConcealSensitive strips sensitive data from some known error types and
-// returns a new error.
+// returns a new error if something has been concealed, and otherwise the
+// original error is returned.
 func ConcealSensitive(err error) error {
 	original := err
 	for err != nil {
