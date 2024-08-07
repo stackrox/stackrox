@@ -1,6 +1,5 @@
 package orchestratormanager
 
-import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration
@@ -26,8 +25,6 @@ interface OrchestratorMain {
     Boolean deletePod(String ns, String podName, Long gracePeriodSecs)
     Boolean deletePodAndWait(String ns, String podName, int retries, int intervalSeconds)
     def deleteAllPods(String ns, Map<String, String> labels)
-    void deleteAllPodsAndWait(String ns, Map<String, String> labels)
-    Boolean restartPodByLabelWithExecKill(String ns, Map<String, String> labels)
     def restartPodByLabels(String ns, Map<String, String> labels, int retries, int intervalSecond)
     def waitForAllPodsToBeRemoved(String ns, Map<String, String>labels, int iterations, int intervalSeconds)
     def waitForPodsReady(String ns, Map<String, String> labels, int minReady, int iterations, int intervalSeconds)
@@ -56,8 +53,6 @@ interface OrchestratorMain {
     def getDeploymentCount(String ns)
     Set<String> getDeploymentSecrets(Deployment deployment)
     def createPortForward(int port, Deployment deployment)
-    def updateDeploymentEnv(String ns, String name, String key, String value)
-    EnvVar getDeploymentEnv(String ns, String name, String key)
     def scaleDeployment(String ns, String name, Integer replicas)
     List<String> getDeployments(String ns)
     boolean deploymentReady(String ns, String name)
