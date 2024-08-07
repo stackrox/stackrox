@@ -114,6 +114,7 @@ func rootCmd(ctx context.Context) *cobra.Command {
 	}
 	cmd.AddCommand(scanCmd(ctx))
 	cmd.AddCommand(scaleCmd(ctx))
+	cmd.AddCommand(nodeScanCmd(ctx))
 	return &cmd
 }
 
