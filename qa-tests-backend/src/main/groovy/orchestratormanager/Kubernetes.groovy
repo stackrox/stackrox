@@ -59,7 +59,6 @@ import io.fabric8.kubernetes.api.model.apps.DaemonSetBuilder
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder
 import io.fabric8.kubernetes.api.model.apps.DeploymentList
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
 import io.fabric8.kubernetes.api.model.apps.StatefulSet as K8sStatefulSet
@@ -308,40 +307,6 @@ class Kubernetes implements OrchestratorMain {
         client.pods().inNamespace(ns).withLabels(labels).delete()
     }
 
-    void deleteAllPodsAndWait(String ns, Map<String, String> labels) {
-        log.debug "Will delete all pods in ${ns} with labels ${labels} and wait for deletion"
-
-        List<Pod> beforePods = evaluateWithRetry(2, 3) {
-            client.pods().inNamespace(ns).withLabels(labels).list().getItems()
-        }
-        beforePods.each { pod ->
-            evaluateWithRetry(2, 3) {
-                client.pods().inNamespace(ns).withName(pod.metadata.name).delete()
-            }
-        }
-
-        Timer t = new Timer(30, 5)
-        Boolean allDeleted = false
-        while (!allDeleted && t.IsValid()) {
-            allDeleted = true
-            beforePods.each { deleted ->
-                Pod pod = evaluateWithRetry(2, 3) {
-                    client.pods().inNamespace(ns).withName(deleted.metadata.name).get()
-                }
-                if (pod == null) {
-                    log.debug "${deleted.metadata.name} is deleted"
-                }
-                else {
-                    log.debug "${deleted.metadata.name} is not deleted"
-                    allDeleted = false
-                }
-            }
-        }
-        if (!allDeleted) {
-            throw new OrchestratorManagerException("Gave up trying to delete all pods")
-        }
-    }
-
     Boolean deletePodAndWait(String ns, String name, int retries, int intervalSeconds) {
         deletePod(ns, name, null)
         log.debug "Deleting pod ${name}"
@@ -356,15 +321,6 @@ class Kubernetes implements OrchestratorMain {
             }
         }
         throw new OrchestratorManagerException("Could not delete pod ${ns}/${name}")
-    }
-
-    Boolean restartPodByLabelWithExecKill(String ns, Map<String, String> labels) {
-        Pod pod = getPodsByLabel(ns, labels).get(0)
-        int prevRestartCount = pod.status.containerStatuses.get(0).restartCount
-        def cmds = ["sh", "-c", "kill -15 1"] as String[]
-        execInContainerByPodName(pod.metadata.name, pod.metadata.namespace, cmds)
-        log.debug "Killed pod ${pod.metadata.name}"
-        return waitForPodRestart(pod.metadata.namespace, pod.metadata.name, prevRestartCount, 25, 5)
     }
 
     def restartPodByLabels(String ns, Map<String, String> labels, int retries, int intervalSecond) {
@@ -552,52 +508,6 @@ class Kubernetes implements OrchestratorMain {
                         .inNamespace(deployment.namespace)
                         .withName(podName)
                         .portForward(port)
-    }
-
-    EnvVar getDeploymentEnv(String ns, String name, String key) {
-        def deployment = client.apps().deployments().inNamespace(ns).withName(name).get()
-        if (deployment == null) {
-            throw new OrchestratorManagerException("Did not find deployment ${ns}/${name}")
-        }
-
-        List<EnvVar> envVars = client.apps().deployments().inNamespace(ns).withName(name).get().spec.template
-                .spec.containers.get(0).env
-        int index = envVars.findIndexOf { EnvVar it -> it.name == key }
-        if (index < 0) {
-            throw new OrchestratorManagerException("Did not find env variable ${key} in ${ns}/${name}")
-        }
-        return envVars.get(index)
-    }
-
-    def updateDeploymentEnv(String ns, String name, String key, String value) {
-        log.debug "Update env var in ${ns}/${name}: ${key} = ${value}"
-        List<EnvVar> envVars = client.apps().deployments().inNamespace(ns).withName(name).get().spec.template
-                .spec.containers.get(0).env
-
-        int index = envVars.findIndexOf { EnvVar it -> it.name == key }
-        if (index > -1) {
-            log.debug "Env var ${key} found on index: ${index}"
-            envVars.get(index).value = value
-        }
-        else {
-            log.debug "Env var ${key} not found. Adding it now"
-            envVars.add(new EnvVarBuilder().withName(key).withValue(value).build())
-        }
-
-        withRetry(2, 3) {
-            client.apps().deployments().inNamespace(ns).withName(name)
-                .edit { d -> new DeploymentBuilder(d)
-                    .editSpec()
-                    .editTemplate()
-                    .editSpec()
-                    .editContainer(0)
-                    .withEnv(envVars)
-                    .endContainer()
-                    .endSpec()
-                    .endTemplate()
-                    .endSpec()
-                .build() }
-        }
     }
 
     def scaleDeployment(String ns, String name, Integer replicas) {
