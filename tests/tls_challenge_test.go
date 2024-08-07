@@ -20,15 +20,15 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
-	s                  = namespaces.StackRox // for brevity
-	proxyNs            = "qa-tls-challenge"  // Must match the additionalCA X509v3 Subject Alternative Name
-	sensorDeployment   = "sensor"
-	sensorContainer    = "sensor"
-	centralEndpointVar = "ROX_CENTRAL_ENDPOINT"
+	s                        = namespaces.StackRox // for brevity
+	proxyNs                  = "qa-tls-challenge"  // Must match the additionalCA X509v3 Subject Alternative Name
+	proxyImagePullSecretName = "quay"
+	sensorDeployment         = "sensor"
+	sensorContainer          = "sensor"
+	centralEndpointVar       = "ROX_CENTRAL_ENDPOINT"
 )
 
 //go:embed "bad-ca/root.crt"
@@ -127,12 +127,8 @@ func (ts *TLSChallengeSuite) installImagePullSecret(proxyNs string) {
 			},
 		},
 	})
-	secretName := "quay"
-	ts.Require().NoError(err, "cannot serialize docker config for image pull secret %q in namespace %q", secretName, proxyNs)
-	ts.ensureSecretExists(ts.ctx, proxyNs, secretName, v1.SecretTypeDockerConfigJson, map[string][]byte{v1.DockerConfigJsonKey: configBytes})
-	patch := []byte(fmt.Sprintf(`{"imagePullSecrets":[{"name":%q}]}`, secretName))
-	_, err = ts.k8s.CoreV1().ServiceAccounts(proxyNs).Patch(ts.ctx, "default", types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
-	ts.Require().NoError(err, "cannot patch service account %q in namespace %q", "default", proxyNs)
+	ts.Require().NoError(err, "cannot serialize docker config for image pull secret %q in namespace %q", proxyImagePullSecretName, proxyNs)
+	ts.ensureSecretExists(ts.ctx, proxyNs, proxyImagePullSecretName, v1.SecretTypeDockerConfigJson, map[string][]byte{v1.DockerConfigJsonKey: configBytes})
 }
 
 func (ts *TLSChallengeSuite) createProxyTLSSecret(proxyNs string, nginxTLSSecretName string) {
@@ -187,6 +183,9 @@ func (ts *TLSChallengeSuite) createProxyDeployment(proxyNs string, name string, 
 					Labels: nginxLabels,
 				},
 				Spec: v1.PodSpec{
+					ImagePullSecrets: []v1.LocalObjectReference{
+						{Name: proxyImagePullSecretName},
+					},
 					Containers: []v1.Container{
 						{
 							Image: "quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1",
