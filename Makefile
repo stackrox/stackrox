@@ -27,6 +27,8 @@ SILENT ?= @
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
+# The version is converted to be compatible with SemVer.
+# Specifically, development version ".x" is changed to ".0" (e.g. 4.5.x-123 -> 4.5.0-123).
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@')$(MAIN_TAG_SUFFIX)
 endif
 
