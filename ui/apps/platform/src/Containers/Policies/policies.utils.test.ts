@@ -25,18 +25,15 @@ describe('policies.utils', () => {
                                 label: { key: 'app', value: 'archlinux' },
                             },
                         },
-                        image: null,
                         expiration: null,
                     },
                     {
                         name: '',
-                        deployment: null,
                         image: { name: 'docker.io/library/archlinux:latest' },
                         expiration: null,
                     },
                     {
                         name: '',
-                        deployment: null,
                         image: { name: 'docker.io/library/ghost:latest' },
                         expiration: null,
                     },
@@ -131,18 +128,15 @@ describe('policies.utils', () => {
                                 label: { key: 'app', value: 'archlinux' },
                             },
                         },
-                        image: null,
                         expiration: null,
                     },
                     {
                         name: '',
-                        deployment: null,
                         image: { name: 'docker.io/library/archlinux:latest' },
                         expiration: null,
                     },
                     {
                         name: '',
-                        deployment: null,
                         image: { name: 'docker.io/library/ghost:latest' },
                         expiration: null,
                     },
@@ -372,20 +366,6 @@ describe('policies.utils', () => {
                 criteriaLocked: false,
                 mitreVectorsLocked: false,
                 isDefault: false,
-                excludedImageNames: [
-                    'docker.io/library/archlinux:latest',
-                    'docker.io/library/ghost:latest',
-                ],
-                excludedDeploymentScopes: [
-                    {
-                        name: 'archlinux',
-                        scope: {
-                            cluster: '5c5c9aae-9c92-4648-88a2-9e593c225fa1',
-                            namespace: 'kube-*',
-                            label: { key: 'app', value: 'archlinux' },
-                        },
-                    },
-                ],
             };
 
             const clientPolicy: ClientPolicy = {
@@ -409,18 +389,15 @@ describe('policies.utils', () => {
                                 label: { key: 'app', value: 'archlinux' },
                             },
                         },
-                        image: null,
                         expiration: null,
                     },
                     {
                         name: '',
-                        deployment: null,
                         image: { name: 'docker.io/library/archlinux:latest' },
                         expiration: null,
                     },
                     {
                         name: '',
-                        deployment: null,
                         image: { name: 'docker.io/library/ghost:latest' },
                         expiration: null,
                     },

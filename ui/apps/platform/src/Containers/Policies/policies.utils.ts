@@ -1,6 +1,7 @@
 import pluralize from 'pluralize';
 import qs from 'qs';
 import cloneDeep from 'lodash/cloneDeep';
+import omit from 'lodash/omit';
 
 import {
     policyConfigurationDescriptor,
@@ -21,10 +22,10 @@ import {
     Policy,
     ClientPolicy,
     ValueObj,
-    ClientPolicyValue,
+    PolicyScope,
+    PolicyGroup,
     PolicyDeploymentExclusion,
     PolicyImageExclusion,
-    PolicyScope,
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
@@ -157,11 +158,13 @@ export function formatEventSource(eventSource: PolicyEventSource): string {
 export function getExcludedDeployments(exclusions: PolicyExclusion[]): PolicyExcludedDeployment[] {
     const excludedDeploymentScopes: PolicyExcludedDeployment[] = [];
 
-    exclusions.forEach(({ deployment }) => {
-        if (deployment?.name || deployment?.scope) {
-            excludedDeploymentScopes.push(deployment);
-        }
-    });
+    exclusions
+        .filter((e): e is PolicyDeploymentExclusion => 'deployment' in e)
+        .forEach(({ deployment }) => {
+            if (deployment?.name || deployment?.scope) {
+                excludedDeploymentScopes.push(deployment);
+            }
+        });
 
     return excludedDeploymentScopes;
 }
@@ -169,11 +172,13 @@ export function getExcludedDeployments(exclusions: PolicyExclusion[]): PolicyExc
 export function getExcludedImageNames(exclusions: PolicyExclusion[]): string[] {
     const excludedImageNames: string[] = [];
 
-    exclusions.forEach(({ image }) => {
-        if (image?.name) {
-            excludedImageNames.push(image.name);
-        }
-    });
+    exclusions
+        .filter((e): e is PolicyImageExclusion => 'image' in e)
+        .forEach(({ image }) => {
+            if (image?.name) {
+                excludedImageNames.push(image.name);
+            }
+        });
 
     return excludedImageNames;
 }
@@ -375,29 +380,35 @@ export function parseValueStr(value, fieldName): ValueObj {
     };
 }
 
-function preFormatNestedPolicyFields(policy: Policy): ClientPolicy {
-    if (!policy.policySections) {
-        // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
-        // If this was intentional, convert the expression to 'unknown' first.
-        return policy as unknown as ClientPolicy;
-    }
+function getFormattedClientPolicyFields(policy: Policy): {
+    serverPolicySections: ClientPolicy['serverPolicySections'];
+    policySections: ClientPolicy['policySections'];
+} {
+    const serverPolicySections = cloneDeep(policy.policySections ?? []);
 
-    // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
-    // If this was intentional, convert the expression to 'unknown' first.
-    const clientPolicy = cloneDeep(policy) as unknown as ClientPolicy;
-    clientPolicy.serverPolicySections = policy.policySections;
-    // itreating through each value in a policy group in a policy section to parse value string
-    policy.policySections.forEach((policySection, sectionIdx) => {
-        const { policyGroups } = policySection;
-        policyGroups.forEach((policyGroup, groupIdx) => {
-            const { values, fieldName } = policyGroup;
-            values.forEach((value, valueIdx) => {
-                clientPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[valueIdx] =
-                    parseValueStr(value.value, fieldName) as ClientPolicyValue;
-            });
-        });
-    });
-    return clientPolicy;
+    // Convert PolicySection->PolicyGroup->PolicyValue values to the client side ValueObj
+    const policySections: ClientPolicy['policySections'] = serverPolicySections.map(
+        (policySection) => ({
+            ...policySection,
+            policyGroups: policySection.policyGroups.map((policyGroup) => {
+                const { fieldName, values } = policyGroup;
+                const clientValues =
+                    fieldName === imageSigningCriteriaName
+                        ? [{ arrayValue: values.map((v) => v.value) }]
+                        : values.map(({ value }) => parseValueStr(value, fieldName));
+
+                return {
+                    ...policyGroup,
+                    values: clientValues,
+                };
+            }),
+        })
+    );
+
+    return {
+        serverPolicySections,
+        policySections,
+    };
 }
 
 export function formatValueStr(valueObj: ValueObj, fieldName: string): string {
@@ -419,146 +430,68 @@ export function formatValueStr(valueObj: ValueObj, fieldName: string): string {
     return valueStr ?? '';
 }
 
-function postFormatNestedPolicyFields(policy: ClientPolicy): Policy {
-    if (!policy.policySections) {
-        // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
-        // If this was intentional, convert the expression to 'unknown' first.
-        return policy as unknown as Policy;
-    }
-
-    // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
-    // If this was intentional, convert the expression to 'unknown' first.
-    const serverPolicy = cloneDeep(policy) as unknown as Policy;
-    if (policy.criteriaLocked) {
-        serverPolicy.policySections = policy.serverPolicySections;
-    } else {
-        // itereating through each value in a policy group in a policy section to format to a flat value string
-        policy.policySections.forEach((policySection, sectionIdx) => {
-            const { policyGroups } = policySection;
-            policyGroups.forEach((policyGroup, groupIdx) => {
-                const { values } = policyGroup;
-                values.forEach((value, valueIdx) => {
-                    serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
-                        valueIdx
-                    ] = {
-                        value: formatValueStr(value as ValueObj, policyGroup.fieldName),
-                    };
-                });
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                delete serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].fieldKey;
-            });
-        });
-    }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    delete serverPolicy.serverPolicySections;
-    return serverPolicy;
-}
-
 /*
  * Split server exclusions property into client-wizard excludedDeploymentScopes and excludedImageNames properties.
  */
-function preFormatExclusionField(policy: Policy): ClientPolicy {
-    const { exclusions } = policy;
-    // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
-    // If this was intentional, convert the expression to 'unknown' first.
-    const clientPolicy = { ...policy } as unknown as ClientPolicy;
+function getExclusionFields({ exclusions }: Policy): {
+    excludedImageNames: ClientPolicy['excludedImageNames'];
+    excludedDeploymentScopes: ClientPolicy['excludedDeploymentScopes'];
+} {
+    const excludedImageNames = exclusions
+        .filter((o): o is PolicyImageExclusion => 'image' in o)
+        .map((ie) => ie.image.name);
 
-    clientPolicy.excludedImageNames = [];
+    const excludedDeploymentScopes = exclusions
+        .filter((o): o is PolicyDeploymentExclusion => 'deployment' in o)
+        .map((d) => d.deployment);
 
-    const excludedImageNames = exclusions.filter((o) => !!o.image?.name) as PolicyImageExclusion[];
-    if (excludedImageNames.length > 0) {
-        clientPolicy.excludedImageNames = excludedImageNames.map((o) => o.image.name);
-    }
-
-    clientPolicy.excludedDeploymentScopes = exclusions
-        .filter((o) => !!o.deployment?.name || !!o.deployment?.scope)
-        .map((o) => o.deployment as PolicyExcludedDeployment);
-
-    return clientPolicy;
+    return {
+        excludedImageNames,
+        excludedDeploymentScopes,
+    };
 }
 
 /*
  * Merge client-wizard excludedDeploymentScopes and excludedImageNames properties into server exclusions property.
  */
-export function postFormatExclusionField(policy: ClientPolicy): Policy {
-    // TS2352: Conversion of type 'ClientPolicy' to type 'Policy' may be a mistake because neither type sufficiently overlaps with the other.
-    // If this was intentional, convert the expression to 'unknown' first.
-    const serverPolicy = { ...policy } as unknown as Policy;
-    serverPolicy.exclusions = [];
+export function getServerPolicyExclusions(policy: ClientPolicy): Policy['exclusions'] {
+    const exclusions: Policy['exclusions'] = [];
 
-    const { excludedDeploymentScopes } = policy;
-    if (excludedDeploymentScopes && excludedDeploymentScopes.length) {
-        serverPolicy.exclusions = serverPolicy.exclusions.concat(
-            excludedDeploymentScopes.map(
-                (deployment) => ({ deployment }) as PolicyDeploymentExclusion
-            )
-        );
-    }
-
-    const { excludedImageNames } = policy;
-    if (excludedImageNames && excludedImageNames.length > 0) {
-        serverPolicy.exclusions = serverPolicy.exclusions.concat(
-            excludedImageNames.map((name) => ({ image: { name } }) as PolicyImageExclusion)
-        );
-    }
-
-    return serverPolicy;
-}
-
-export function preFormatImageSigningPolicyGroup(policy: Policy): ClientPolicy {
-    if (!policy.policySections) {
-        // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
-        // If this was intentional, convert the expression to 'unknown' first.
-        return policy as unknown as ClientPolicy;
-    }
-
-    // TS2352: Conversion of type 'Policy' to type 'ClientPolicy' may be a mistake because neither type sufficiently overlaps with the other.
-    // If this was intentional, convert the expression to 'unknown' first.
-    const clientPolicy = cloneDeep(policy) as unknown as ClientPolicy;
-    policy.policySections.forEach((policySection, sectionIdx) => {
-        const { policyGroups } = policySection;
-        policyGroups.forEach((policyGroup, groupIdx) => {
-            const { values, fieldName } = policyGroup;
-            if (fieldName === imageSigningCriteriaName) {
-                const arrayValue = values.map((v) => v.value);
-                clientPolicy.policySections[sectionIdx].policyGroups[groupIdx].values = [
-                    {
-                        arrayValue,
-                    },
-                ];
-            }
-        });
+    policy.excludedDeploymentScopes.forEach((deployment) => {
+        exclusions.push({ deployment });
     });
 
-    return clientPolicy;
+    policy.excludedImageNames.forEach((name) => {
+        exclusions.push({ image: { name } });
+    });
+
+    return exclusions;
 }
 
-export function postFormatImageSigningPolicyGroup(policy: ClientPolicy): Policy {
-    if (!policy.policySections) {
-        return policy as unknown as Policy;
-    }
+function getFormattedServerPolicyFields(policy: ClientPolicy): Policy['policySections'] {
+    const clientPolicySections = cloneDeep(policy.policySections ?? []);
 
-    const serverPolicy = cloneDeep(policy) as unknown as Policy;
-    policy.policySections.forEach((policySection, sectionIdx) => {
-        const { policyGroups } = policySection;
-        policyGroups.forEach((policyGroup, groupIdx) => {
-            const { values } = policyGroup;
+    const policySections: Policy['policySections'] = clientPolicySections.map((policySection) => ({
+        ...policySection,
+        policyGroups: policySection.policyGroups.map((policyGroup) => {
+            const { fieldName } = policyGroup;
+            let values: PolicyGroup['values'] = [];
             if (policyGroup.fieldName === imageSigningCriteriaName) {
-                const { arrayValue } = values[0];
-                arrayValue?.forEach((value, valueIdx) => {
-                    serverPolicy.policySections[sectionIdx].policyGroups[groupIdx].values[
-                        valueIdx
-                    ] = {
-                        value,
+                const { arrayValue } = policyGroup.values[0];
+                values = arrayValue?.map((value) => ({ value })) ?? [];
+            } else {
+                values = policyGroup.values.map((value) => {
+                    return {
+                        value: formatValueStr(value, fieldName),
                     };
                 });
             }
-        });
-    });
 
-    return serverPolicy;
+            return { ...policyGroup, values };
+        }),
+    }));
+
+    return policySections;
 }
 
 // Impure function assumes caller has cloned the scope!
@@ -665,18 +598,37 @@ function trimClientWizardPolicy(policyUntrimmed: ClientPolicy): ClientPolicy {
 }
 
 export function getClientWizardPolicy(policy: Policy): ClientPolicy {
-    let formattedPolicy = preFormatExclusionField(policy);
-    formattedPolicy = preFormatNestedPolicyFields(formattedPolicy);
-    formattedPolicy = preFormatImageSigningPolicyGroup(formattedPolicy);
-    return formattedPolicy;
+    const { excludedImageNames, excludedDeploymentScopes } = getExclusionFields(policy);
+    const { serverPolicySections, policySections } = getFormattedClientPolicyFields(policy);
+
+    const clientPolicy = {
+        ...cloneDeep(policy),
+        excludedImageNames,
+        excludedDeploymentScopes,
+        serverPolicySections,
+        policySections,
+    };
+
+    return clientPolicy;
 }
 
 // Called before POST dryrunjob request and before POST or PUT policies request for Save.
 export function getServerPolicy(policyUntrimmed: ClientPolicy): Policy {
-    const policy = trimClientWizardPolicy(policyUntrimmed);
-    let serverPolicy = postFormatExclusionField(policy);
-    serverPolicy = postFormatImageSigningPolicyGroup(serverPolicy as ClientPolicy);
-    serverPolicy = postFormatNestedPolicyFields(serverPolicy as ClientPolicy);
+    const trimmedClientPolicy = trimClientWizardPolicy(policyUntrimmed);
+    const exclusions = getServerPolicyExclusions(trimmedClientPolicy);
+    const policySections = getFormattedServerPolicyFields(trimmedClientPolicy);
+
+    const fieldsToOmit = [
+        'excludedImageNames',
+        'excludedDeploymentScopes',
+        'serverPolicySections',
+    ] as const;
+
+    const serverPolicy = {
+        ...omit(trimmedClientPolicy, fieldsToOmit),
+        exclusions,
+        policySections,
+    };
     return serverPolicy;
 }
 
