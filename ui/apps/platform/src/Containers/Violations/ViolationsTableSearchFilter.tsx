@@ -28,7 +28,10 @@ import {
     ID as DeploymentID,
     Name as DeploymentName,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
-import { InactiveDeployment as AlertInactiveDeployment } from 'Components/CompoundSearchFilter/attributes/alert';
+import {
+    InactiveDeployment as AlertInactiveDeployment,
+    ViolationTime as AlertViolationTime,
+} from 'Components/CompoundSearchFilter/attributes/alert';
 
 const searchFilterConfig: CompoundSearchFilterConfig = [
     {
@@ -45,7 +48,7 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
     {
         displayName: 'Policy violation',
         searchCategory: 'ALERTS',
-        attributes: [AlertInactiveDeployment],
+        attributes: [AlertInactiveDeployment, AlertViolationTime],
     },
     {
         displayName: 'Cluster',

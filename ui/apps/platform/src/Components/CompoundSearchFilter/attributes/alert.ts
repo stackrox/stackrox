@@ -15,4 +15,11 @@ export const InactiveDeployment: CompoundSearchFilterAttribute = {
     },
 };
 
-export const alertAttributes = [InactiveDeployment];
+export const ViolationTime: CompoundSearchFilterAttribute = {
+    displayName: 'Violation time',
+    filterChipLabel: 'Violation time',
+    searchTerm: 'Violation Time',
+    inputType: 'date-picker',
+};
+
+export const alertAttributes = [InactiveDeployment, ViolationTime];
