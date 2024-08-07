@@ -6,7 +6,7 @@ import (
 
 // ServiceCommunicateClient is used to generate the mocks for testing the gRPC client
 //
-//go:generate mockgen-wrapper
+//go:generate mockgen-wrapper ServiceCommunicateClient
 type ServiceCommunicateClient interface {
 	central.SensorService_CommunicateClient
 }
