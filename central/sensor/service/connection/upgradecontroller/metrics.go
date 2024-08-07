@@ -2,6 +2,7 @@ package upgradecontroller
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -15,5 +16,15 @@ var (
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "upgrader_triggered_total",
 		Help:      "Number of times the upgrader was triggered.",
-	}, []string{"centralVersion", "sensorVersion", "triggerOrigin", "upgradeType", "triggerSucceeded"})
+	}, []string{"centralVersion", "sensorVersion", "triggerOrigin", "upgradeType"})
 )
+
+func registerUpgraderTriggered(sensorVersion, origin string, process *storage.ClusterUpgradeStatus_UpgradeProcessStatus, upgraderActive bool) {
+	if upgraderActive {
+		upgraderTriggered.With(prometheus.Labels{
+			"centralVersion": process.GetTargetVersion(),
+			"sensorVersion":  sensorVersion,
+			"triggerOrigin":  origin,
+			"upgradeType":    process.GetType().String()}).Inc()
+	}
+}

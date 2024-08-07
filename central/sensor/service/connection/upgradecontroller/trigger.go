@@ -1,10 +1,7 @@
 package upgradecontroller
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -116,12 +113,7 @@ func (u *upgradeController) doTriggerCertRotation() (common.MessageInjector, *ce
 	cluster := u.getCluster()
 	process := newCertRotationProcess()
 	u.makeProcessActive(cluster, process)
-	upgraderTriggered.With(prometheus.Labels{
-		"centralVersion":   process.GetTargetVersion(),
-		"sensorVersion":    u.getSensorVersion(),
-		"triggerOrigin":    "cert-rotation",
-		"upgradeType":      process.GetType().String(),
-		"triggerSucceeded": fmt.Sprintf("%t", u.active != nil)}).Inc()
+	registerUpgraderTriggered(u.getSensorVersion(), "cert-rotation", process, u.active != nil)
 	return u.activeSensorConn.conn, u.active.trigger, nil
 }
 
@@ -151,12 +143,6 @@ func (u *upgradeController) doTriggerUpgrade() (common.MessageInjector, *central
 	}
 
 	u.makeProcessActive(cluster, process)
-	upgraderTriggered.With(prometheus.Labels{
-		"centralVersion":   process.GetTargetVersion(),
-		"sensorVersion":    u.getSensorVersion(),
-		"triggerOrigin":    "ui-click",
-		"upgradeType":      process.GetType().String(),
-		"triggerSucceeded": fmt.Sprintf("%t", u.active != nil)}).Inc()
-
+	registerUpgraderTriggered(u.getSensorVersion(), "ui-click", process, u.active != nil)
 	return u.activeSensorConn.conn, u.active.trigger, nil
 }

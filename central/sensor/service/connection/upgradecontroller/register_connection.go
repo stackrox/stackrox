@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -89,12 +88,7 @@ func (u *upgradeController) maybeTriggerAutoUpgrade() {
 		log.Errorf("Cannot automatically trigger auto-upgrade for sensor in cluster %s: %v", u.clusterID, err)
 	} else {
 		u.makeProcessActive(cluster, process)
-		upgraderTriggered.With(prometheus.Labels{
-			"centralVersion":   process.GetTargetVersion(),
-			"sensorVersion":    u.getSensorVersion(),
-			"triggerOrigin":    "new-connection-reconciliation",
-			"upgradeType":      process.GetType().String(),
-			"triggerSucceeded": fmt.Sprintf("%t", u.active != nil)}).Inc()
+		registerUpgraderTriggered(u.getSensorVersion(), "new-connection-reconciliation", process, u.active != nil)
 	}
 }
 

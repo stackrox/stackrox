@@ -1,10 +1,7 @@
 package upgradecontroller
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -70,12 +67,7 @@ func (u *upgradeController) initialize() error {
 	u.upgradeStatus = upgradeStatus
 	process := upgradeStatus.GetMostRecentProcess()
 	u.makeProcessActive(cluster, process)
-	upgraderTriggered.With(prometheus.Labels{
-		"centralVersion":   process.GetTargetVersion(),
-		"sensorVersion":    u.getSensorVersion(),
-		"triggerOrigin":    "central-initialization",
-		"upgradeType":      process.GetType().String(),
-		"triggerSucceeded": fmt.Sprintf("%t", u.active != nil)}).Inc()
+	registerUpgraderTriggered(u.getSensorVersion(), "central-initialization", process, u.active != nil)
 
 	if err := u.flushUpgradeStatus(); err != nil {
 		return errors.Wrap(err, "persisting upgrade status to DB")
