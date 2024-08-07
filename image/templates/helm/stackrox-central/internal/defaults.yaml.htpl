@@ -163,7 +163,6 @@ defaults:
       name: [< required "" .ScannerDBImageRemote >]
       tag: [< required "" .ScannerImageTag >]
 
-[<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   scannerV4:
     disable: true
     image:
@@ -314,7 +313,6 @@ defaults:
         name: [< required "" .ScannerV4DBImageRemote >]
         tag: [< required "" .ScannerV4ImageTag >]
     exposeMonitoring: false
-[<- end >]
 
   network:
     enableNetworkPolicies: true
@@ -328,9 +326,7 @@ dbPVCDefaults:
   claimName: "central-db"
   size: "100Gi"
 
-[<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
 scannerV4DBPVCDefaults:
   claimName: "scanner-v4-db"
   size: "50Gi"
   createClaim: true
-[<- end >]

@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/services"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -79,16 +78,14 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling scanner-db-tls secret failed")
 	}
 
-	if features.ScannerV4Support.Enabled() {
-		if err := r.reconcileScannerV4IndexerTLSSecret(ctx); err != nil {
-			return errors.Wrap(err, "reconciling scanner-v4-indexer-tls secret")
-		}
-		if err := r.reconcileScannerV4MatcherTLSSecret(ctx); err != nil {
-			return errors.Wrap(err, "reconciling scanner-v4-matcher-tls secret")
-		}
-		if err := r.reconcileScannerV4DBTLSSecret(ctx); err != nil {
-			return errors.Wrap(err, "reconciling scanner-v4-db-tls secret")
-		}
+	if err := r.reconcileScannerV4IndexerTLSSecret(ctx); err != nil {
+		return errors.Wrap(err, "reconciling scanner-v4-indexer-tls secret")
+	}
+	if err := r.reconcileScannerV4MatcherTLSSecret(ctx); err != nil {
+		return errors.Wrap(err, "reconciling scanner-v4-matcher-tls secret")
+	}
+	if err := r.reconcileScannerV4DBTLSSecret(ctx); err != nil {
+		return errors.Wrap(err, "reconciling scanner-v4-db-tls secret")
 	}
 
 	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.

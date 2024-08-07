@@ -1,34 +1,38 @@
+licenseKey: true
 imagePullSecrets:
   username: true
   password: true
-mainImagePullSecrets:
-  username: true
-  password: true
-collectorImagePullSecrets:
-  username: true
-  password: true
+env:
+  proxyConfig: true
 ca:
   cert: true
-sensor:
+  key: true
+central:
+  config: true
+  endpointsConfig: true
+  nodeSelector: true
+  jwtSigner:
+    key: true
   serviceTLS:
     cert: true
     key: true
-  resources: true
-  nodeSelector: true
-admissionControl:
-  serviceTLS:
+  defaultTLS:
     cert: true
     key: true
+  adminPassword:
+    value: true
+    htpasswd: true
   resources: true
-  nodeSelector: true
-collector:
-  serviceTLS:
-    cert: true
-    key: true
-  resources: true
-  complianceResources: true
-  nodeScanningResources: true
-  nodeSelector: true
+  db:
+    postgresConfig: true
+    hbaConfig: true
+    nodeSelector: true
+    serviceTLS:
+      cert: true
+      key: true
+    password:
+      value: true
+    resources: true
 scanner:
   resources: true
   dbResources: true
@@ -42,7 +46,6 @@ scanner:
   dbServiceTLS:
     cert: true
     key: true
-[<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
 scannerV4:
   indexer:
     nodeSelector: true
@@ -50,14 +53,19 @@ scannerV4:
     serviceTLS:
       cert: true
       key: true
-  db:
-    postgresConfig: true
-    hbaConfig: true
-    password:
-      value: true
+  matcher:
     nodeSelector: true
     resources: true
     serviceTLS:
       cert: true
       key: true
-[<- end >]
+  db:
+    nodeSelector: true
+    resources: true
+    postgresConfig: true
+    hbaConfig: true
+    password:
+      value: true
+    serviceTLS:
+      cert: true
+      key: true
