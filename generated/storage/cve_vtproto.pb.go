@@ -210,6 +210,8 @@ func (m *NodeCVE) CloneVT() *NodeCVE {
 	r.Snoozed = m.Snoozed
 	r.SnoozeStart = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.SnoozeStart).CloneVT())
 	r.SnoozeExpiry = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.SnoozeExpiry).CloneVT())
+	r.Orphaned = m.Orphaned
+	r.OrphanedTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.OrphanedTime).CloneVT())
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -633,6 +635,12 @@ func (this *NodeCVE) EqualVT(that *NodeCVE) bool {
 		return false
 	}
 	if !(*timestamppb1.Timestamp)(this.SnoozeExpiry).EqualVT((*timestamppb1.Timestamp)(that.SnoozeExpiry)) {
+		return false
+	}
+	if this.Orphaned != that.Orphaned {
+		return false
+	}
+	if !(*timestamppb1.Timestamp)(this.OrphanedTime).EqualVT((*timestamppb1.Timestamp)(that.OrphanedTime)) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1440,6 +1448,26 @@ func (m *NodeCVE) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.OrphanedTime != nil {
+		size, err := (*timestamppb1.Timestamp)(m.OrphanedTime).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x5a
+	}
+	if m.Orphaned {
+		i--
+		if m.Orphaned {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x50
+	}
 	if m.SnoozeExpiry != nil {
 		size, err := (*timestamppb1.Timestamp)(m.SnoozeExpiry).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -2102,6 +2130,13 @@ func (m *NodeCVE) SizeVT() (n int) {
 	}
 	if m.SnoozeExpiry != nil {
 		l = (*timestamppb1.Timestamp)(m.SnoozeExpiry).SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.Orphaned {
+		n += 2
+	}
+	if m.OrphanedTime != nil {
+		l = (*timestamppb1.Timestamp)(m.OrphanedTime).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -4298,6 +4333,62 @@ func (m *NodeCVE) UnmarshalVT(dAtA []byte) error {
 				m.SnoozeExpiry = &timestamppb.Timestamp{}
 			}
 			if err := (*timestamppb1.Timestamp)(m.SnoozeExpiry).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Orphaned", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Orphaned = bool(v != 0)
+		case 11:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OrphanedTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.OrphanedTime == nil {
+				m.OrphanedTime = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.OrphanedTime).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
