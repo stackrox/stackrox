@@ -34,6 +34,8 @@ deploy_stackrox() {
 
     export_central_basic_auth_creds
     wait_for_api "${central_namespace}"
+    export_central_ca
+
     setup_client_TLS_certs "${tls_client_certs}"
     record_build_info "${central_namespace}"
 
@@ -452,6 +454,20 @@ export_central_basic_auth_creds() {
     ROX_USERNAME="admin"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
     ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
+}
+
+export_central_ca() {
+    require_environment "API_ENDPOINT"
+    require_environment "ROX_PASSWORD"
+
+    TMPDIR=$(mktemp -d)
+    ROX_CA_CERT_FILE="$TMPDIR/central_ca.pem"
+
+    ci_export ROX_CA_CERT_FILE "$ROX_CA_CERT_FILE"
+    info "Storing central certificate in $ROX_CA_CERT_FILE"
+
+    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+        central cert --insecure-skip-tls-verify 1>"$ROX_CA_CERT_FILE"
 }
 
 deploy_optional_e2e_components() {
