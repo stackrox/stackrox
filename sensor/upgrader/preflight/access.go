@@ -16,9 +16,10 @@ import (
 )
 
 const (
-	defaultServiceAccountName  = `sensor-upgrader`
-	fallbackServiceAccountName = `sensor`
-	defaultClusterRoleBinding  = namespaces.StackRox + ":upgrade-sensors"
+	defaultServiceAccountName   = `sensor-upgrader`
+	fallbackServiceAccountName  = `sensor`
+	defaultClusterRoleBinding   = namespaces.StackRox + ":upgrade-sensors"
+	upgraderTroubleshootingLink = "https://docs.openshift.com/acs/upgrading/upgrade-roxctl.html#upgrade-secured-clusters"
 )
 
 type accessCheck struct{}
@@ -114,12 +115,19 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 		}
 	}
 	if len(actionResourceErr) > 0 {
+		reporter.Errorf("This usually means that access is denied. "+
+			"Have you configured this Secured Cluster for automatically receiving updates? "+
+			"More info <a href=%q>More info on troubleshooting</a>.", upgraderTroubleshootingLink)
+
 		affected := maps.Keys(actionResourceErr)
 		slices.Sort(affected)
-		reporter.Errorf("K8s authorizer did not explicitly allow or deny access to perform "+
-			"the following actions on following resources: %s. This usually means access is denied. "+
-			"%s",
-			strings.Join(affected, ", "), c.auxiliaryInfoOnPermissionDenied(ctx))
+		log.Warnf("Kubernetes authorizer did not explicitly allow or deny "+
+			"access to perform the following actions on the following resources: %s."+
+			"This usually means that access is denied.", strings.Join(affected, ", "))
+		issues := c.auxiliaryInfoOnPermissionDenied(ctx)
+		for i, issue := range issues {
+			log.Warnf("Discovered issue (%d of %d): %s", i+1, len(issues), issue)
+		}
 	}
 
 	return nil
@@ -127,13 +135,13 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 
 // auxiliaryInfoOnPermissionDenied returns string that should help understand why the upgrader does not have permission
 // to run the upgrade. The string returned from this function will be displayed in the UI, so keep it brief.
-func (c accessCheck) auxiliaryInfoOnPermissionDenied(ctx *upgradectx.UpgradeContext) string {
+func (c accessCheck) auxiliaryInfoOnPermissionDenied(ctx *upgradectx.UpgradeContext) []string {
 	var msgs []string
 	activeSA, err := c.getUpgraderSAName(ctx)
 	if err != nil {
 		log.Error(errors.Wrap(err, "failed to get upgrader SA name"))
 		// unable to provide any additional info to the user if we don't know the SA
-		return ""
+		return msgs
 	}
 	switch activeSA {
 	case defaultServiceAccountName:
@@ -150,8 +158,7 @@ func (c accessCheck) auxiliaryInfoOnPermissionDenied(ctx *upgradectx.UpgradeCont
 			msgs = append(msgs, err.Error())
 		}
 	}
-	return fmt.Sprintf("Potential issues: %s. "+
-		"This secured cluster may be not configured for receiving updates.", strings.Join(msgs, "; "))
+	return msgs
 }
 
 // getUpgraderSAName returns the name of the SA that is currently used by the upgrader
