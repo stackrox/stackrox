@@ -17,8 +17,6 @@ image:
   scannerDb:
     name: [< required "" .ScannerDBSlimImageRemote >]
     tag: [< required "" .ScannerImageTag >]
-  [<- end >]
-  [<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   scannerV4:
     name: [< required "" .ScannerV4ImageRemote >]
     tag: [< required "" .ScannerV4ImageTag >]
@@ -33,13 +31,12 @@ image:
     registry: {{ ._rox.image.registry }}
   collector:
     registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
+  # TODO: Shouldn't the [<- if not .KubectlOutput >] check be here?
   scanner:
     registry: {{ ._rox.image.registry }}
   [<- if not .KubectlOutput >]
   scannerDb:
     registry: {{ ._rox.image.registry }}
-  [<- end >]
-  [<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   scannerV4:
     registry: {{ ._rox.image.registry }}
   scannerV4DB:
@@ -60,13 +57,12 @@ image:
     {{- else }}
     repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
     {{- end }}
+  # TODO: Shouldn't [<- if not .KubectlOutput >] be here?
   scanner:
     repository: {{ list ._rox.image.scanner.registry ._rox.image.scanner.name | compact | join "/" }}
   [<- if not .KubectlOutput >]
   scannerDb:
     repository: {{ list ._rox.image.scannerDb.registry ._rox.image.scannerDb.name | compact | join "/" }}
-  [<- end >]
-  [<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   scannerV4:
     repository: {{ list ._rox.image.scannerV4.registry ._rox.image.scannerV4.name | compact | join "/" }}
   scannerV4DB:
@@ -119,13 +115,12 @@ image:
     fullRef: "{{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}"
   collector:
     fullRef: "{{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}"
+  # TODO: Shouldn't the check for [<- if not .KubectlOutput >] be here?
   scanner:
     fullRef: "{{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}"
   [<- if not .KubectlOutput >]
   scannerDb:
     fullRef: "{{ printf "%s:%s" ._rox.image.scannerDb.repository ._rox.image.scannerDb.tag }}"
-  [<- end >]
-  [<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   scannerV4:
     fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4.repository ._rox.image.scannerV4.tag }}"
   scannerV4DB:

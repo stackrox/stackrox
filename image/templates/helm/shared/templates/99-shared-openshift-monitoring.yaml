@@ -1,6 +1,5 @@
 {{- include "srox.init" . -}}
 {{- if ._rox.monitoring.openshift.enabled -}}
-[<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   {{- if (or ._rox.scannerV4._indexerEnabled ._rox.scannerV4._matcherEnabled) }}
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -63,5 +62,4 @@ subjects:
     name: scanner-v4
     namespace: "{{ .Release.Namespace }}"
   {{- end }}
-[<- end >]
 {{- end }}

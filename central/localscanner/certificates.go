@@ -17,9 +17,7 @@ var v2ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_S
 var v4ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
 var allSupportedServiceTypes = func() set.FrozenSet[storage.ServiceType] {
 	types := v2ServiceTypes.Unfreeze()
-	if features.ScannerV4Support.Enabled() {
-		types = types.Union(v4ServiceTypes.Unfreeze())
-	}
+	types = types.Union(v4ServiceTypes.Unfreeze())
 	return types.Freeze()
 }()
 
