@@ -1,0 +1,6 @@
+/* Render as grid row in Masthead element above toggle, main, and content elements. */
+.pf-v5-c-masthead .Toastify,
+.pf-v5-c-masthead .pf-v5-c-banner {
+    grid-column-start: 1;
+    grid-column-end: -1; /* from end, independent of number of columns */
+}
