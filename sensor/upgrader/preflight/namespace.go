@@ -37,8 +37,8 @@ func namespaceAllowed(resource *k8sobjects.ObjectRef) bool {
 	if matchesException(resource) {
 		return true
 	}
-	logging.Infof("Object \"%v\" in namespace \"%s\"\n in pod with namespace \"%s\", function will return \"%s\"", resource, resource.Namespace, pods.GetPodNamespace(pods.NoSATokenNamespace), strconv.FormatBool((resource.Namespace == "") || (resource.Namespace == pods.GetPodNamespace(pods.NoSATokenNamespace))))
-	return (resource.Namespace == "") || (resource.Namespace == pods.GetPodNamespace(pods.NoSATokenNamespace))
+	logging.Infof("Object \"%v\" in namespace \"%s\"\n in pod with namespace \"%s\", function will return \"%s\"", resource, resource.Namespace, pods.GetPodNamespace(pods.NoSATokenNamespace), strconv.FormatBool((resource.Namespace == "") || (resource.Namespace == namespaces.StackRox) || (resource.Namespace == pods.GetPodNamespace(pods.NoSATokenNamespace))))
+	return (resource.Namespace == "") || (resource.Namespace == namespaces.StackRox) || (resource.Namespace == pods.GetPodNamespace(pods.NoSATokenNamespace))
 }
 
 func (namespaceCheck) Check(_ *upgradectx.UpgradeContext, execPlan *plan.ExecutionPlan, reporter checkReporter) error {
