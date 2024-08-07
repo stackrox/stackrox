@@ -5,6 +5,21 @@ metadata:
 spec:
 
   finally:
+  - name: slack-notification
+    params:
+    - name: message
+      value: 'Build for $(params.revision) has failed'
+    - name: key-name
+      value: 'acs-release-automation-testing'
+    taskRef:
+      params:
+      - name: name
+        value: slack-webhook-notification
+      - name: bundle
+        value: quay.io/redhat-appstudio-tekton-catalog/task-slack-webhook-notification:0.1@sha256:b8d030cb64503eb661fdd89710edf9c2f79f7f156b48f10b79a4ff228d6d4c6a
+      - name: kind
+        value: task
+      resolver: bundles
   - name: show-sbom
     params:
     - name: IMAGE_URL
