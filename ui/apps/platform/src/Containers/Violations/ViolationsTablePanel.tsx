@@ -4,12 +4,13 @@ import {
     AlertActionCloseButton,
     AlertGroup,
     Divider,
-    Flex,
-    FlexItem,
     Title,
     PageSection,
     Pagination,
     pluralize,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from '@patternfly/react-core';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
@@ -29,9 +30,12 @@ import { excludeDeployments } from 'services/PoliciesService';
 import { ListAlert } from 'types/alert.proto';
 import { TableColumn } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { SearchFilter } from 'types/search';
 
+import { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
+import ViolationsTableSearchFilter from './ViolationsTableSearchFilter';
 
 export type ActionItem = {
     title: string | ReactElement;
@@ -51,6 +55,9 @@ type ViolationsTablePanelProps = {
     setPerPage: (perPage) => void;
     getSortParams: GetSortParams;
     columns: TableColumn[];
+    isAdvancedFiltersEnabled?: boolean;
+    searchFilter: SearchFilter;
+    onSearch: OnSearchCallback;
 };
 
 function ViolationsTablePanel({
@@ -64,6 +71,9 @@ function ViolationsTablePanel({
     excludableAlerts,
     getSortParams,
     columns,
+    isAdvancedFiltersEnabled = false,
+    searchFilter,
+    onSearch,
 }: ViolationsTablePanelProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
@@ -186,53 +196,57 @@ function ViolationsTablePanel({
                     </Alert>
                 ))}
             </AlertGroup>
-            <Flex
-                className="pf-v5-u-pb-md"
-                alignSelf={{ default: 'alignSelfCenter' }}
-                fullWidth={{ default: 'fullWidth' }}
-            >
-                <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
-                    <Title headingLevel="h2" className="pf-v5-u-color-100">
-                        {pluralize(violationsCount, 'result')} found
-                    </Title>
-                </FlexItem>
-                {hasActions && (
-                    <FlexItem>
-                        <Select
-                            onToggle={(_event, toggleOpen) => onToggleSelect(toggleOpen)}
-                            isOpen={isSelectOpen}
-                            placeholderText="Row actions"
-                            onSelect={closeSelect}
-                            isDisabled={!hasSelections}
-                        >
-                            <SelectOption
-                                key="1"
-                                value={`Mark as resolved (${numResolveable})`}
-                                isDisabled={!hasWriteAccessForAlert || numResolveable === 0}
-                                onClick={showResolveConfirmationDialog}
-                            />
-                            <SelectOption
-                                key="2"
-                                value={`Exclude deployments from policy (${numScopesToExclude})`}
-                                isDisabled={
-                                    !hasWriteAccessForExcludeDeploymentsFromPolicy ||
-                                    numScopesToExclude === 0
-                                }
-                                onClick={showExcludeConfirmationDialog}
-                            />
-                        </Select>
-                    </FlexItem>
-                )}
-                <FlexItem align={{ default: 'alignRight' }}>
-                    <Pagination
-                        itemCount={violationsCount}
-                        page={currentPage}
-                        onSetPage={changePage}
-                        perPage={perPage}
-                        onPerPageSelect={changePerPage}
-                    />
-                </FlexItem>
-            </Flex>
+            {isAdvancedFiltersEnabled && (
+                <>
+                    <ViolationsTableSearchFilter searchFilter={searchFilter} onSearch={onSearch} />
+                    <Divider component="div" />
+                </>
+            )}
+            <Toolbar>
+                <ToolbarContent>
+                    <ToolbarItem>
+                        <Title headingLevel="h2" className="pf-v5-u-color-100">
+                            {pluralize(violationsCount, 'result')} found
+                        </Title>
+                    </ToolbarItem>
+                    {hasActions && (
+                        <ToolbarItem align={{ default: 'alignRight' }}>
+                            <Select
+                                onToggle={(_event, toggleOpen) => onToggleSelect(toggleOpen)}
+                                isOpen={isSelectOpen}
+                                placeholderText="Row actions"
+                                onSelect={closeSelect}
+                                isDisabled={!hasSelections}
+                            >
+                                <SelectOption
+                                    key="1"
+                                    value={`Mark as resolved (${numResolveable})`}
+                                    isDisabled={!hasWriteAccessForAlert || numResolveable === 0}
+                                    onClick={showResolveConfirmationDialog}
+                                />
+                                <SelectOption
+                                    key="2"
+                                    value={`Exclude deployments from policy (${numScopesToExclude})`}
+                                    isDisabled={
+                                        !hasWriteAccessForExcludeDeploymentsFromPolicy ||
+                                        numScopesToExclude === 0
+                                    }
+                                    onClick={showExcludeConfirmationDialog}
+                                />
+                            </Select>
+                        </ToolbarItem>
+                    )}
+                    <ToolbarItem align={{ default: 'alignRight' }} variant="pagination">
+                        <Pagination
+                            itemCount={violationsCount}
+                            page={currentPage}
+                            onSetPage={changePage}
+                            perPage={perPage}
+                            onPerPageSelect={changePerPage}
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
             <Divider component="div" />
             <PageSection isFilled padding={{ default: 'noPadding' }} hasOverflowScroll>
                 <Table variant="compact" isStickyHeader>

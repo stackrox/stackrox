@@ -9,7 +9,10 @@ import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import VIOLATION_STATES from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
+import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useURLSort from 'hooks/useURLSort';
 import { SortOption } from 'types/table';
@@ -26,6 +29,9 @@ import './ViolationsTablePage.css';
 const searchCategory = 'ALERTS';
 
 function ViolationsTablePage(): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_POLICY_VIOLATIONS_ADVANCED_FILTERS');
+
     // Handle changes to applied search options.
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -62,6 +68,10 @@ function ViolationsTablePage(): ReactElement {
         sortFields,
         defaultSortOption,
     });
+
+    const onSearch = (payload: OnSearchPayload) => {
+        onURLSearch(searchFilter, setSearchFilter, payload);
+    };
 
     useEffectAfterFirstRender(() => {
         if (hasExecutableFilter && !isViewFiltered) {
@@ -159,15 +169,19 @@ function ViolationsTablePage(): ReactElement {
         <>
             <PageSection variant="light" id="violations-table">
                 <Title headingLevel="h1">Violations</Title>
-                <Divider className="pf-v5-u-py-md" />
-                <SearchFilterInput
-                    className="theme-light pf-search-shim"
-                    handleChangeSearchFilter={setSearchFilter}
-                    placeholder="Filter violations"
-                    searchCategory={searchCategory}
-                    searchFilter={searchFilter}
-                    searchOptions={searchOptions}
-                />
+                {!isAdvancedFiltersEnabled && (
+                    <>
+                        <Divider className="pf-v5-u-py-md" />
+                        <SearchFilterInput
+                            className="theme-light pf-search-shim"
+                            handleChangeSearchFilter={setSearchFilter}
+                            placeholder="Filter violations"
+                            searchCategory={searchCategory}
+                            searchFilter={searchFilter}
+                            searchOptions={searchOptions}
+                        />
+                    </>
+                )}
             </PageSection>
             <PageSection variant="default">
                 {currentPageAlertsErrorMessage ? (
@@ -191,6 +205,9 @@ function ViolationsTablePage(): ReactElement {
                             setPerPage={setPerPage}
                             getSortParams={getSortParams}
                             columns={columns}
+                            isAdvancedFiltersEnabled={isAdvancedFiltersEnabled}
+                            searchFilter={searchFilter}
+                            onSearch={onSearch}
                         />
                     </PageSection>
                 )}
