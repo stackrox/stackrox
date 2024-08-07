@@ -2,6 +2,7 @@ package errox
 
 import (
 	"net"
+	"net/url"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -34,8 +35,16 @@ func TestConcealSensitive(t *testing.T) {
 			&net.OpError{Op: "operation", Err: NotFound, Addr: &net.IPAddr{IP: net.IPv4(1, 2, 3, 4)}},
 			"operation: not found",
 		},
+		"url.Error": {
+			&url.Error{Err: &net.OpError{Op: "operation", Err: NotFound, Addr: &net.IPAddr{IP: net.IPv4(1, 2, 3, 4)}}, Op: "Get", URL: "URL"},
+			// The url.Error details are not dropped, because url.Error is a
+			// known error type. The wrapped net.OpError is concealed.
+			"Get \"URL\": operation: not found",
+		},
 		"wrapped": {
 			errors.WithMessage(&net.AddrError{Err: "invalid IP address", Addr: "secret"}, "dropped message"),
+			// The "dropped message" is dropped, because the type of the wrapper
+			// is unknown.
 			"address error: invalid IP address",
 		},
 	}

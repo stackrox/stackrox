@@ -1,7 +1,9 @@
 package errox
 
 import (
+	"fmt"
 	"net"
+	"net/url"
 
 	"github.com/pkg/errors"
 )
@@ -19,25 +21,39 @@ func IsAny(err error, targets ...error) bool {
 	return false
 }
 
+func x[T error](err error) T {
+	var e T
+	if errors.Is(err, e) {
+		return e
+	}
+	return e
+}
+
 // ConcealSensitive strips sensitive data from some known error types and
 // returns a new error.
 func ConcealSensitive(err error) error {
-	if err == nil {
-		return nil
-	}
-	if e := (*net.AddrError)(nil); errors.As(err, &e) {
-		return errors.New("address error: " + e.Err)
-	}
-	if e := (*net.DNSError)(nil); errors.As(err, &e) {
-		return errors.New("lookup error: " + e.Err)
-	}
-	if e := (*net.OpError)(nil); errors.As(err, &e) {
-		s := e.Op
-		if e.Net != "" {
-			s += " " + e.Net
+	original := err
+	for err != nil {
+		// Here are reimplementations of the *.Error() methods of the original
+		// errors, without including potentially sensitive data to the message.
+		switch e := err.(type) {
+		case *net.AddrError:
+			return errors.New("address error: " + e.Err)
+		case *net.DNSError:
+			return errors.New("lookup error: " + e.Err)
+		case *net.OpError:
+			s := e.Op
+			if e.Net != "" {
+				s += " " + e.Net
+			}
+			if e.Err != nil {
+				s += ": " + ConcealSensitive(e.Err).Error()
+			}
+			return errors.New(s)
+		case *url.Error:
+			return errors.New(fmt.Sprintf("%s %q: %s", e.Op, e.URL, ConcealSensitive(e.Err)))
 		}
-		s += ": " + e.Err.Error()
-		return errors.New(s)
+		err = errors.Unwrap(err)
 	}
-	return err
+	return original
 }
