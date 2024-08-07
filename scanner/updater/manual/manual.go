@@ -15,6 +15,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
+	updater2 "github.com/stackrox/rox/pkg/scannerv4/updater"
 	"github.com/stackrox/rox/pkg/utils"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -39,7 +40,7 @@ type Vulnerability struct {
 }
 
 const (
-	Name = "stackrox-manual"
+
 	// DefaultURL Default URL to fetch the vulnerabilities JSON.
 	DefaultURL = "https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml"
 )
@@ -68,7 +69,7 @@ func NewUpdater(c *http.Client, uri string) (*updater, error) {
 }
 
 func (u *updater) Name() string {
-	return Name
+	return updater2.Name
 }
 
 // Fetch fetching data from a configurable URI.

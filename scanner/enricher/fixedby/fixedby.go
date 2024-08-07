@@ -28,13 +28,11 @@ import (
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/fixedby"
 )
 
 const (
-	// Type is the type of data returned from the Enricher's Enrich method.
-	Type = "message/vnd.stackrox.scannerv4.fixedby; enricher=fixedby"
-
-	// This appears above and must be the same.
+	// This appears in [fixedby.Type] and must be the same.
 	name = "fixedby"
 )
 
@@ -249,15 +247,15 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 	}
 
 	if len(m) == 0 {
-		return Type, nil, nil
+		return fixedby.Type, nil, nil
 	}
 
 	b, err := json.Marshal(m)
 	if err != nil {
-		return Type, nil, err
+		return fixedby.Type, nil, err
 	}
 
-	return Type, []json.RawMessage{b}, nil
+	return fixedby.Type, []json.RawMessage{b}, nil
 }
 
 func parseURLEncoding(v string) string {
