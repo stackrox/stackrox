@@ -67,7 +67,7 @@ func (u *upgradeController) initialize() error {
 	u.upgradeStatus = upgradeStatus
 	process := upgradeStatus.GetMostRecentProcess()
 	u.makeProcessActive(cluster, process)
-	registerUpgraderTriggered(u.getSensorVersion(), "central-initialization", process, u.active != nil)
+	registerUpgraderTriggered(u.getSensorVersion(), "central-initialization", u.clusterID, process, u.active != nil)
 
 	if err := u.flushUpgradeStatus(); err != nil {
 		return errors.Wrap(err, "persisting upgrade status to DB")
