@@ -1,7 +1,7 @@
 {
     "data": {
-        "totalNodeCount": 19,
-        "nodeCount": 19,
+        "totalNodeCount": 50,
+        "nodeCount": 50,
         "nodeCVE": {
             "distroTuples": [
                 {
