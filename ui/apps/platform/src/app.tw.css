@@ -114,9 +114,22 @@ h6 {
     z-index: 9000;
 }
 
+/* Specify PatternFly light-on-dark colors explicitly for toast because variables have light-on-dark colors in Masthead. */
+
 .toast-selector {
-    @apply text-base !important;
+    background-color: #ffffff;
+    color: #151515;
     font-family: var(--pf-v5-global--FontFamily--sans-serif);
+    font-size: var(--pf-v5-global--FontSize--sm);
+}
+
+.Toastify__close-button--default {
+    color: #151515;
+    opacity: 1;
+}
+
+.Toastify__progress-bar {
+    display: none; /* Prevent axe DevTools issue: ARIA progressbar node must have an accessible name */
 }
 
 .pill {
