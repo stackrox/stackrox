@@ -45,8 +45,8 @@ import MachineAccessIntegrationForm from './Forms/MachineAccessIntegrationForm';
 import SignatureIntegrationForm from './Forms/SignatureIntegrationForm';
 
 // cloud source integrations
-import PaladinCloudIntegrationForm from './Forms/PaladinCloudIntegrationForm';
-import OcmIntegrationForm from './Forms/OcmIntegrationForm';
+import PaladinCloudIntegrationForm from './Forms/CloudSourceIntegrations/PaladinCloudIntegrationForm';
+import OcmIntegrationForm from './Forms/CloudSourceIntegrations/OcmIntegrationForm';
 
 import './IntegrationForm.css';
 

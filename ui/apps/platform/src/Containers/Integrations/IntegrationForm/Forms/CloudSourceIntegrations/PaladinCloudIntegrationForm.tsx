@@ -9,9 +9,9 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import { CloudSourceIntegration } from 'services/CloudSourceService';
 import merge from 'lodash/merge';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
-import IntegrationFormActions from '../IntegrationFormActions';
-import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import IntegrationFormActions from '../../IntegrationFormActions';
+import useIntegrationForm from '../../useIntegrationForm';
+import { IntegrationFormProps } from '../../integrationFormTypes';
 
 export const validationSchema = yup.object().shape({
     cloudSource: yup.object().shape({
@@ -53,6 +53,8 @@ export const defaultValues: CloudSourceIntegrationFormValues = {
         type: 'TYPE_PALADIN_CLOUD',
         credentials: {
             secret: '',
+            clientId: '',
+            clientSecret: '',
         },
         skipTestIntegration: true,
         paladinCloud: {

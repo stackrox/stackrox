@@ -5,6 +5,8 @@ export type CloudSourceType = 'TYPE_UNSPECIFIED' | 'TYPE_PALADIN_CLOUD' | 'TYPE_
 
 export type CloudSourceCredentials = {
     secret: string;
+    clientId: string;
+    clientSecret: string;
 };
 
 export type PaladinCloudConfig = {
