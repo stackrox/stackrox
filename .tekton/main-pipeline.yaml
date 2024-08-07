@@ -285,7 +285,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    timeout: 2h0m0s
+    timeout: 3h30m0s
 
   - name: build-container-ppc64le
     params:
@@ -328,7 +328,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    timeout: 2h0m0s
+    timeout: 3h30m0s
 
   - name: build-container-arm64
     params:
@@ -371,7 +371,7 @@ spec:
     - input: $(tasks.init.results.build)
       operator: in
       values: [ "true" ]
-    timeout: 2h0m0s
+    timeout: 3h30m0s
 
   - name: build-image-manifest
     params:
