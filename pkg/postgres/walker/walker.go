@@ -314,10 +314,11 @@ func getSearchOptions(ctx walkerContext, searchTag string) (SearchField, []Deriv
 	derivedSearchFieldsMap := search.GetFieldsDerivedFrom(field)
 	if len(derivedSearchFieldsMap) > 0 {
 		derivedSearchFields = make([]DerivedSearchField, 0, len(derivedSearchFieldsMap))
-		for fieldName, derivationType := range derivedSearchFieldsMap {
+		for fieldName, derivedTypeData := range derivedSearchFieldsMap {
 			derivedSearchFields = append(derivedSearchFields, DerivedSearchField{
-				DerivedFrom:    fieldName,
-				DerivationType: derivationType,
+				DerivedFrom:     fieldName,
+				DerivationType:  derivedTypeData.DerivationType,
+				DerivedDataType: derivedTypeData.DerivedDataType,
 			})
 		}
 	}
