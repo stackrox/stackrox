@@ -54,7 +54,7 @@ type TLSChallengeSuite struct {
 
 func (ts *TLSChallengeSuite) SetupSuite() {
 	ts.KubernetesSuite.SetupSuite()
-	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(ts.T(), "TestTLSChallenge", 20*time.Minute)
+	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(ts.T(), "TestTLSChallenge", 15*time.Minute)
 
 	// Check sanity before test.
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
