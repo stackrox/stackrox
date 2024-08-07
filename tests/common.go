@@ -83,6 +83,13 @@ func testContexts(t *testing.T, name string, timeout time.Duration) (testCtx con
 	return
 }
 
+// mustGetEnv calls os.GetEnv and fails the test if result is empty.
+func mustGetEnv(t *testing.T, varName string) string {
+	val := os.Getenv(varName)
+	require.NotEmptyf(t, val, "Environment variable %q must be set.", varName)
+	return val
+}
+
 func retrieveDeployment(service v1.DeploymentServiceClient, deploymentID string) (*storage.Deployment, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

@@ -7,7 +7,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -122,8 +121,8 @@ func (ts *TLSChallengeSuite) installImagePullSecret() {
 	configBytes, err := json.Marshal(config.DockerConfigJSON{
 		Auths: map[string]config.DockerConfigEntry{
 			"https://quay.io": {
-				Username: os.Getenv("REGISTRY_USERNAME"),
-				Password: os.Getenv("REGISTRY_PASSWORD"),
+				Username: mustGetEnv(ts.T(), "REGISTRY_USERNAME"),
+				Password: mustGetEnv(ts.T(), "REGISTRY_PASSWORD"),
 			},
 		},
 	})
