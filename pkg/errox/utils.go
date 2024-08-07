@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -21,12 +22,18 @@ func IsAny(err error, targets ...error) bool {
 	return false
 }
 
-func x[T error](err error) T {
-	var e T
-	if errors.Is(err, e) {
-		return e
-	}
-	return e
+// wrapErrors is a copy from the standard errors package.
+type wrapErrors struct {
+	msg  string
+	errs []error
+}
+
+func (e *wrapErrors) Error() string {
+	return e.msg
+}
+
+func (e *wrapErrors) Unwrap() []error {
+	return e.errs
 }
 
 // ConcealSensitive strips sensitive data from some known error types and
@@ -53,6 +60,20 @@ func ConcealSensitive(err error) error {
 			return errors.New(s)
 		case *url.Error:
 			return errors.New(fmt.Sprintf("%s %q: %s", e.Op, e.URL, ConcealSensitive(e.Err)))
+		}
+		if errs, ok := err.(interface{ Unwrap() []error }); ok {
+			unwrapped := errs.Unwrap()
+			concealed := make([]error, 0, len(unwrapped))
+			msg := make([]string, 0, len(unwrapped))
+			for _, e := range unwrapped {
+				e = ConcealSensitive(e)
+				concealed = append(concealed, e)
+				msg = append(msg, e.Error())
+			}
+			return &wrapErrors{
+				fmt.Sprintf("multiple errors: [%v]", strings.Join(msg, ", ")),
+				concealed,
+			}
 		}
 		err = errors.Unwrap(err)
 	}
