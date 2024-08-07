@@ -3,6 +3,7 @@ run:
   build-tags:
   - integration
   - sql_integration
+  - test_e2e
   modules-download-mode: readonly
   go: "1.21"
 
