@@ -18,6 +18,8 @@ export const getEntityTypeCountsOpname = 'getNodeCVEEntityCounts';
 
 // Node CVE page
 export const getNodeCveMetadataOpname = 'getNodeCVEMetadata';
+export const getNodeCveSummaryOpname = 'getNodeCVESummaryData';
+export const getAffectedNodesOpname = 'getAffectedNodes';
 
 // Node page
 export const getNodeMetadataOpname = 'getNodeMetadata';
@@ -45,10 +47,18 @@ export const routeMatcherMapForEntityCounts = {
     },
 };
 
-export const routeMatcherMapForNodeCveMetadata = {
+export const routeMatcherMapForNodeCvePage = {
     [getNodeCveMetadataOpname]: {
         method: 'POST',
         url: graphql(getNodeCveMetadataOpname),
+    },
+    [getNodeCveSummaryOpname]: {
+        method: 'POST',
+        url: graphql(getNodeCveSummaryOpname),
+    },
+    [getAffectedNodesOpname]: {
+        method: 'POST',
+        url: graphql(getAffectedNodesOpname),
     },
 };
 
@@ -75,6 +85,18 @@ export function visitNodeCveOverviewPage(
 ) {
     const paramString = params ? `?${new URLSearchParams(params).toString()}` : '';
     visit(`/main/vulnerabilities/node-cves${paramString}`, routeMatcherMap, staticResponseMap);
+}
+
+export function visitNodeCvePage(
+    mockCveName: string,
+    routeMatcherMap?: Record<string, RouteMatcherOptions>,
+    staticResponseMap?: Record<string, RouteHandler>,
+    params?: Record<string, string>
+) {
+    const paramString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    const mockNodeCvePageUrl = `${nodeCveBaseUrl}/${mockCveName}${paramString}`;
+
+    return visit(mockNodeCvePageUrl, routeMatcherMap, staticResponseMap);
 }
 
 export function visitNodeCvePageWithStaticPermissions(

@@ -20,8 +20,8 @@
                                 "isFixable": false,
                                 "fixedByVersion": "",
                                 "__typename": "NodeVulnerability",
-                                "vulnerabilityId": "CVE-2022-1996#rhcos:4.14",
-                                "cve": "CVE-2022-1996",
+                                "vulnerabilityId": "CYPRESS-CVE-2022-1996#rhcos:4.14",
+                                "cve": "CYPRESS-CVE-2022-1996",
                                 "cvss": 9.100000381469727,
                                 "scoreVersion": "V3"
                             }
@@ -50,8 +50,8 @@
                                 "isFixable": false,
                                 "fixedByVersion": "",
                                 "__typename": "NodeVulnerability",
-                                "vulnerabilityId": "CVE-2022-1996#rhcos:4.15",
-                                "cve": "CVE-2022-1996",
+                                "vulnerabilityId": "CYPRESS-CVE-2022-1996#rhcos:4.15",
+                                "cve": "CYPRESS-CVE-2022-1996",
                                 "cvss": 9.100000381469727,
                                 "scoreVersion": "V3"
                             }
