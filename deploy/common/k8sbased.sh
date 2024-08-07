@@ -772,6 +772,10 @@ function launch_sensor {
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
+        TMPDIR=$(mktemp -d)
+        ROX_CA_CERT_FILE="$TMPDIR/central_ca.pem"
+        export ROX_CA_CERT_FILE
+        roxctl -p "${ROX_ADMIN_PASSWORD}" --endpoint "${API_ENDPOINT}" central cert --insecure-skip-tls-verify 1>"$ROX_CA_CERT_FILE"
         roxctl -p "${ROX_ADMIN_PASSWORD}" --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \
