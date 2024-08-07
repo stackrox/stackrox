@@ -106,7 +106,7 @@ describe('Workload CVE overview page tests', () => {
 
             const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
             const prioritizeByNamespaceButton = 'a:contains("Prioritize by namespace view")';
-            const defaultFiltersButton = 'button:contains("Deault filters")';
+            const defaultFiltersButton = 'button:contains("Default filters")';
 
             function assertCveElementsArePresent() {
                 cy.get(cvesBySeverityHeader);
