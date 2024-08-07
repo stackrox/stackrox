@@ -71,7 +71,7 @@ func ConcealSensitive(err error) error {
 				msg = append(msg, e.Error())
 			}
 			return &wrapErrors{
-				fmt.Sprintf("multiple errors: [%v]", strings.Join(msg, ", ")),
+				fmt.Sprintf("[%s]", strings.Join(msg, ", ")),
 				concealed,
 			}
 		}
