@@ -42,7 +42,7 @@ func (namespaceCheck) Check(_ *upgradectx.UpgradeContext, execPlan *plan.Executi
 	for _, act := range execPlan.Actions() {
 		act := act
 		if !namespaceAllowed(&act.ObjectRef) {
-			logging.Warnf("namespaceAllowed returned false for object \"%v\" in namespace \"%s\" and the pod is in namespace \"%s\"", act.ObjectRef, act.ObjectRef.Namespace, pods.GetPodNamespace(pods.NoSATokenNamespace))
+			logging.Warnf("namespaceAllowed returned false for object \"%v\" in namespace %q and the pod is in namespace %q", act.ObjectRef, act.ObjectRef.Namespace, pods.GetPodNamespace(pods.NoSATokenNamespace))
 			reporter.Errorf("To-be-%sd object %v is in disallowed namespace %s", act.ActionName, act.ObjectRef, act.ObjectRef.Namespace)
 		}
 	}
