@@ -12,7 +12,7 @@ import (
 
 //go:generate mockgen-wrapper
 type registryStore interface {
-	GetRegistryForImageInNamespace(*storage.ImageName, string) (registryTypes.ImageRegistry, error)
+	GetRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error)
 	GetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegistry, error)
 	GetMatchingCentralRegistryIntegrations(*storage.ImageName) []registryTypes.ImageRegistry
 	IsLocal(*storage.ImageName) bool
@@ -24,5 +24,5 @@ type centralClient interface {
 }
 
 type localScan interface {
-	EnrichLocalImageInNamespace(context.Context, scan.LocalScanCentralClient, *storage.ContainerImage, string, string, bool) (*storage.Image, error)
+	EnrichLocalImageInNamespace(context.Context, scan.LocalScanCentralClient, *scan.LocalScanRequest) (*storage.Image, error)
 }
