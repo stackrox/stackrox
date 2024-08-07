@@ -27,7 +27,7 @@
     "includePaths": [
       // Instruct Renovate not try to update Dockerfiles other than konflux.Dockerfile (or konflux.anything.Dockerfile)
       // to have less PR noise.
-      "**/konflux.*Dockerfile",
+      "**/*konflux*.Dockerfile",
     ],
   },
   "enabledManagers": [
@@ -35,6 +35,4 @@
     "tekton",
     "dockerfile",
   ],
-  // TODO: remove once debugged. See https://redhat-internal.slack.com/archives/C04PZ7H0VA8/p1721809083784519
-  "printConfig": true
 }
