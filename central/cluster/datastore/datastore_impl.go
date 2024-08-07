@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -352,6 +353,14 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 
 	if cluster.GetName() == "" {
 		return "", errors.New("cannot add a cluster without name")
+	}
+	// This check is added to avoid problems with rendering of helm templates.
+	// If a number is added as a cluster name, Helm may treat is as such and
+	// convert it to scientific notation - see cluster name in sensor secret.
+	// Because the fix in the Helm chart is tricky, we reject all names that
+	// could be parsable to a number.
+	if _, err := strconv.ParseFloat(cluster.GetName(), 64); err == nil {
+		return "", errors.New("cluster name must not be a number")
 	}
 
 	cluster.Id = uuid.NewV4().String()
