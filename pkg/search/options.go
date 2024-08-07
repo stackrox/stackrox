@@ -3,6 +3,7 @@ package search
 import (
 	"strings"
 
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -312,10 +313,11 @@ var (
 	CVECount        = newDerivedFieldLabel("CVE Count", CVEID, CountDerivationType)
 	ProfileCount    = newDerivedFieldLabel("Compliance Profile Name Count", ComplianceOperatorProfileName, CountDerivationType)
 	// Translative derived fields with reversed sorting. These fields are supported only in pagination.
-	NodePriority       = newDerivedFieldLabel("Node Risk Priority", NodeRiskScore, SimpleReverseSortDerivationType)
-	DeploymentPriority = newDerivedFieldLabel("Deployment Risk Priority", DeploymentRiskScore, SimpleReverseSortDerivationType)
-	ImagePriority      = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
-	ComponentPriority  = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
+	NodePriority        = newDerivedFieldLabel("Node Risk Priority", NodeRiskScore, SimpleReverseSortDerivationType)
+	DeploymentPriority  = newDerivedFieldLabel("Deployment Risk Priority", DeploymentRiskScore, SimpleReverseSortDerivationType)
+	ImagePriority       = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
+	ComponentPriority   = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
+	CompliancePassCount = newDerivedFieldLabelWithType("Pass Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
 
 	// Max-based derived fields.  These fields are primarily used in pagination.  If used in a select it will correspond
 	// to the type of the reference field and simply provide the max function on that field.
@@ -525,14 +527,23 @@ func newDerivedFieldLabel(s string, derivedFrom FieldLabel, derivationType Deriv
 	})
 }
 
+func newDerivedFieldLabelWithType(s string, derivedFrom FieldLabel, derivationType DerivationType, dataType postgres.DataType) FieldLabel {
+	return newFieldLabelWithMetadata(s, &DerivedFieldLabelMetadata{
+		DerivedFrom:     derivedFrom,
+		DerivationType:  derivationType,
+		DerivedDataType: dataType,
+	})
+}
+
 func (f FieldLabel) String() string {
 	return string(f)
 }
 
 // DerivedFieldLabelMetadata includes metadata showing that a field is derived.
 type DerivedFieldLabelMetadata struct {
-	DerivedFrom    FieldLabel
-	DerivationType DerivationType
+	DerivedFrom     FieldLabel
+	DerivationType  DerivationType
+	DerivedDataType postgres.DataType
 }
 
 // DerivationType represents a type of derivation.
@@ -545,4 +556,5 @@ const (
 	CountDerivationType DerivationType = iota
 	SimpleReverseSortDerivationType
 	MaxDerivationType
+	CustomFieldType
 )

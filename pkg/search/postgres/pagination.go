@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -55,7 +56,7 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 			// Derived types map to functions on a field.  For example,
 			// a CountDerivationType will ultimately use
 			// count(field_x) in group bys, having, or order by clauses.
-			// Similarly a MaxDerivationType will result in max(field_x) being
+			// Similarly, a MaxDerivationType will result in max(field_x) being
 			// applied to those SQL clauses.
 			switch fieldMetadata.derivedMetadata.DerivationType {
 			case searchPkg.CountDerivationType:
@@ -66,6 +67,17 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 				descending = !so.GetReversed()
 			case searchPkg.MaxDerivationType:
 				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Max, "")
+				descending = so.GetReversed()
+			case searchPkg.CustomFieldType:
+				//selectField = selectQueryField(so.GetField(), so.GetField(), false, aggregatefunc.Unset, "")
+				selectField = pgsearch.SelectQueryField{
+					SelectPath:   strings.Join(strings.Fields(so.GetField()), "_"),
+					Alias:        strings.Join(strings.Fields(so.GetField()), "_"),
+					FieldType:    fieldMetadata.derivedMetadata.DerivedDataType,
+					DerivedField: false,
+				}
+				log.Infof("SHREWS => %v", selectField)
+				log.Infof("SHREWS => %v", so)
 				descending = so.GetReversed()
 			default:
 				log.Errorf("Unsupported derived field %s found in query", so.GetField())
