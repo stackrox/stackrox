@@ -46,12 +46,6 @@ type Scanner interface {
 	// GetMatcherMetadata returns metadata from the matcher.
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
-	// CreateNodeIndexReport indexes the node the target indexer is running on
-	CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error)
-
-	// IndexAndScanNode indexes the node and matches vulnerabilities in one call
-	IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityReport, error)
-
 	// Close cleans up any resources used by the implementation.
 	Close() error
 }
@@ -60,7 +54,6 @@ type Scanner interface {
 type gRPCScanner struct {
 	indexer         v4.IndexerClient
 	matcher         v4.MatcherClient
-	nodeIndexer     v4.NodeIndexerClient
 	gRPCConnections []*grpc.ClientConn
 }
 
@@ -87,12 +80,10 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 	}
 	indexerClient := v4.NewIndexerClient(iConn)
 	matcherClient := v4.NewMatcherClient(mConn)
-	nodeindexerClient := v4.NewNodeIndexerClient(iConn)
 	return &gRPCScanner{
 		gRPCConnections: connList,
 		indexer:         indexerClient,
 		matcher:         matcherClient,
-		nodeIndexer:     nodeindexerClient,
 	}, nil
 }
 
@@ -272,27 +263,6 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, err
 
 func getImageManifestID(ref name.Digest) string {
 	return fmt.Sprintf("/v4/containerimage/%s", ref.DigestStr())
-}
-
-func (c *gRPCScanner) CreateNodeIndexReport(ctx context.Context) (*v4.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "CreateNodeIndexReport")
-
-	r := &v4.CreateNodeIndexReportRequest{}
-	return c.nodeIndexer.CreateNodeIndexReport(ctx, r)
-}
-
-func (c *gRPCScanner) IndexAndScanNode(ctx context.Context) (*v4.VulnerabilityReport, error) {
-	nr, err := c.CreateNodeIndexReport(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("creating node index report: %w", err)
-	}
-	rc := &v4.Contents{
-		Packages:      nr.GetContents().GetPackages(),
-		Distributions: nr.GetContents().GetDistributions(),
-		Repositories:  nr.GetContents().GetRepositories(),
-		Environments:  nr.GetContents().GetEnvironments(),
-	}
-	return c.getVulnerabilities(ctx, "/v4/containerimage/"+nr.GetHashId(), rc)
 }
 
 // retryWithBackoff is a utility function to wrap backoff.Retry to handle common
