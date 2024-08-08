@@ -353,27 +353,27 @@ func TestEndpoints(t *testing.T) {
 	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
 		t.Skip("Skipping endpoints test on OCP: TODO(ROX-24688)")
 	}
-	userCert, err := tls.LoadX509KeyPair(os.Getenv("CLIENT_CERT_PATH"), os.Getenv("CLIENT_KEY_PATH"))
+	userCert, err := tls.LoadX509KeyPair(mustGetEnv(t, "CLIENT_CERT_PATH"), mustGetEnv(t, "CLIENT_KEY_PATH"))
 	require.NoError(t, err, "failed to load user certificate")
 
-	serviceCert, err := tls.LoadX509KeyPair(os.Getenv("SERVICE_CERT_FILE"), os.Getenv("SERVICE_KEY_FILE"))
+	serviceCert, err := tls.LoadX509KeyPair(mustGetEnv(t, "SERVICE_CERT_FILE"), mustGetEnv(t, "SERVICE_KEY_FILE"))
 	require.NoError(t, err, "failed to load service certificate")
 
 	trustPool := x509.NewCertPool()
-	serviceCAPEMBytes, err := os.ReadFile(os.Getenv("SERVICE_CA_FILE"))
+	serviceCAPEMBytes, err := os.ReadFile(mustGetEnv(t, "SERVICE_CA_FILE"))
 	require.NoError(t, err, "failed to load service CA file")
 	serviceCACert, err := helpers.ParseCertificatePEM(serviceCAPEMBytes)
 	require.NoError(t, err, "failed to parse service CA cert")
 	trustPool.AddCert(serviceCACert)
 
-	defaultCAPEMBytes, err := os.ReadFile(os.Getenv("DEFAULT_CA_FILE"))
+	defaultCAPEMBytes, err := os.ReadFile(mustGetEnv(t, "DEFAULT_CA_FILE"))
 	require.NoError(t, err, "failed to load default CA file")
 	defaultCACert, err := helpers.ParseCertificatePEM(defaultCAPEMBytes)
 	require.NoError(t, err, "failed to parse default CA cert")
 	trustPool.AddCert(defaultCACert)
 
 	defaultCertDNSName := os.Getenv("ROX_TEST_CENTRAL_CN")
-	require.NotEmpty(t, defaultCertDNSName, "missing default certificate DNS name")
+	require.NotEmpty(t, defaultCertDNSName, "missing default certificate DNS name: $ROX_TEST_CENTRAL_CN")
 
 	testCtx := &endpointsTestContext{
 		allServerNames: []string{defaultCertDNSName, "central.stackrox"},

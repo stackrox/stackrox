@@ -7,7 +7,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -20,15 +19,15 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
-	s                  = namespaces.StackRox // for brevity
-	proxyNs            = "qa-tls-challenge"  // Must match the additionalCA X509v3 Subject Alternative Name
-	sensorDeployment   = "sensor"
-	sensorContainer    = "sensor"
-	centralEndpointVar = "ROX_CENTRAL_ENDPOINT"
+	s                        = namespaces.StackRox // for brevity
+	proxyNs                  = "qa-tls-challenge"  // Must match the additionalCA X509v3 Subject Alternative Name
+	proxyImagePullSecretName = "quay"
+	sensorDeployment         = "sensor"
+	sensorContainer          = "sensor"
+	centralEndpointVar       = "ROX_CENTRAL_ENDPOINT"
 )
 
 //go:embed "bad-ca/root.crt"
@@ -54,7 +53,7 @@ type TLSChallengeSuite struct {
 
 func (ts *TLSChallengeSuite) SetupSuite() {
 	ts.KubernetesSuite.SetupSuite()
-	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(ts.T(), "TestTLSChallenge", 20*time.Minute)
+	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(ts.T(), "TestTLSChallenge", 15*time.Minute)
 
 	// Check sanity before test.
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
@@ -63,7 +62,7 @@ func (ts *TLSChallengeSuite) SetupSuite() {
 	ts.originalCentralEndpoint = ts.getDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
 	ts.logf("Original value is %q. (Will restore this value on cleanup.)", ts.originalCentralEndpoint)
 
-	ts.setupProxy(proxyNs, ts.originalCentralEndpoint)
+	ts.setupProxy(ts.originalCentralEndpoint)
 }
 
 func (ts *TLSChallengeSuite) TearDownSuite() {
@@ -95,22 +94,22 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 }
 
-func (ts *TLSChallengeSuite) setupProxy(proxyNs string, centralEndpoint string) {
+func (ts *TLSChallengeSuite) setupProxy(centralEndpoint string) {
 	name := "nginx-loadbalancer"
 	nginxLabels := map[string]string{"app": "nginx"}
 	nginxTLSSecretName := "nginx-tls-conf" //nolint:gosec // G101
 	nginxConfigName := "nginx-proxy-conf"
 	ts.logf("Setting up nginx proxy in namespace %q...", proxyNs)
-	ts.createProxyNamespace(proxyNs)
-	ts.installImagePullSecret(proxyNs)
-	ts.createProxyTLSSecret(proxyNs, nginxTLSSecretName)
-	ts.createProxyConfigMap(proxyNs, centralEndpoint, nginxConfigName)
+	ts.createProxyNamespace()
+	ts.installImagePullSecret()
+	ts.createProxyTLSSecret(nginxTLSSecretName)
+	ts.createProxyConfigMap(centralEndpoint, nginxConfigName)
 	ts.createService(ts.ctx, proxyNs, name, nginxLabels, map[int32]int32{443: 8443})
-	ts.createProxyDeployment(proxyNs, name, nginxLabels, nginxConfigName, nginxTLSSecretName)
+	ts.createProxyDeployment(name, nginxLabels, nginxConfigName, nginxTLSSecretName)
 	ts.logf("Nginx proxy is now set up in namespace %q.", proxyNs)
 }
 
-func (ts *TLSChallengeSuite) createProxyNamespace(proxyNs string) {
+func (ts *TLSChallengeSuite) createProxyNamespace() {
 	_, err := ts.k8s.CoreV1().Namespaces().Create(ts.ctx, &v1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: proxyNs}}, metaV1.CreateOptions{})
 	if apiErrors.IsAlreadyExists(err) {
 		return
@@ -118,24 +117,20 @@ func (ts *TLSChallengeSuite) createProxyNamespace(proxyNs string) {
 	ts.Require().NoError(err, "cannot create proxy namespace %q", proxyNs)
 }
 
-func (ts *TLSChallengeSuite) installImagePullSecret(proxyNs string) {
+func (ts *TLSChallengeSuite) installImagePullSecret() {
 	configBytes, err := json.Marshal(config.DockerConfigJSON{
 		Auths: map[string]config.DockerConfigEntry{
 			"https://quay.io": {
-				Username: os.Getenv("REGISTRY_USERNAME"),
-				Password: os.Getenv("REGISTRY_PASSWORD"),
+				Username: mustGetEnv(ts.T(), "REGISTRY_USERNAME"),
+				Password: mustGetEnv(ts.T(), "REGISTRY_PASSWORD"),
 			},
 		},
 	})
-	secretName := "quay"
-	ts.Require().NoError(err, "cannot serialize docker config for image pull secret %q in namespace %q", secretName, proxyNs)
-	ts.ensureSecretExists(ts.ctx, proxyNs, secretName, v1.SecretTypeDockerConfigJson, map[string][]byte{v1.DockerConfigJsonKey: configBytes})
-	patch := []byte(fmt.Sprintf(`{"imagePullSecrets":[{"name":%q}]}`, secretName))
-	_, err = ts.k8s.CoreV1().ServiceAccounts(proxyNs).Patch(ts.ctx, "default", types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
-	ts.Require().NoError(err, "cannot patch service account %q in namespace %q", "default", proxyNs)
+	ts.Require().NoError(err, "cannot serialize docker config for image pull secret %q in namespace %q", proxyImagePullSecretName, proxyNs)
+	ts.ensureSecretExists(ts.ctx, proxyNs, proxyImagePullSecretName, v1.SecretTypeDockerConfigJson, map[string][]byte{v1.DockerConfigJsonKey: configBytes})
 }
 
-func (ts *TLSChallengeSuite) createProxyTLSSecret(proxyNs string, nginxTLSSecretName string) {
+func (ts *TLSChallengeSuite) createProxyTLSSecret(nginxTLSSecretName string) {
 	var certChain []byte
 	certChain = append(certChain, leafCert...)
 	certChain = append(certChain, additionalCA...)
@@ -145,7 +140,7 @@ func (ts *TLSChallengeSuite) createProxyTLSSecret(proxyNs string, nginxTLSSecret
 	})
 }
 
-func (ts *TLSChallengeSuite) createProxyConfigMap(proxyNs string, centralEndpoint string, nginxConfigName string) {
+func (ts *TLSChallengeSuite) createProxyConfigMap(centralEndpoint string, nginxConfigName string) {
 	const nginxConfigTmpl = `
 server {
     listen 8443 ssl http2;
@@ -171,7 +166,7 @@ server {
 	})
 }
 
-func (ts *TLSChallengeSuite) createProxyDeployment(proxyNs string, name string, nginxLabels map[string]string, nginxConfigName string, nginxTLSSecretName string) {
+func (ts *TLSChallengeSuite) createProxyDeployment(name string, nginxLabels map[string]string, nginxConfigName string, nginxTLSSecretName string) {
 	d := &appsV1.Deployment{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:   name,
@@ -187,6 +182,9 @@ func (ts *TLSChallengeSuite) createProxyDeployment(proxyNs string, name string, 
 					Labels: nginxLabels,
 				},
 				Spec: v1.PodSpec{
+					ImagePullSecrets: []v1.LocalObjectReference{
+						{Name: proxyImagePullSecretName},
+					},
 					Containers: []v1.Container{
 						{
 							Image: "quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1",

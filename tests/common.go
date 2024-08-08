@@ -69,7 +69,7 @@ func testContexts(t *testing.T, name string, timeout time.Duration) (testCtx con
 		overallCancel func()
 		testCancel    func()
 	)
-	cleanupTimeout := 15 * time.Minute
+	cleanupTimeout := 10 * time.Minute
 	t.Logf("Running %s with a timeout of %s plus %s for cleanup", name, timeout, cleanupTimeout)
 	overallTimeout := timeout + cleanupTimeout
 	overallErr := fmt.Errorf("overall %s test+cleanup timeout of %s reached", name, overallTimeout)
@@ -81,6 +81,13 @@ func testContexts(t *testing.T, name string, timeout time.Duration) (testCtx con
 		overallCancel()
 	}
 	return
+}
+
+// mustGetEnv calls os.GetEnv and fails the test if result is empty.
+func mustGetEnv(t *testing.T, varName string) string {
+	val := os.Getenv(varName)
+	require.NotEmptyf(t, val, "Environment variable %q must be set.", varName)
+	return val
 }
 
 func retrieveDeployment(service v1.DeploymentServiceClient, deploymentID string) (*storage.Deployment, error) {
