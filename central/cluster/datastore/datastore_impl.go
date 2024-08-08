@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
@@ -33,6 +32,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
+	pkgCluster "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -60,8 +60,7 @@ const (
 )
 
 var (
-	clusterSAC       = sac.ForResource(resources.Cluster)
-	startsWithLetter = regexp.MustCompile(`^[a-zA-Z]`)
+	clusterSAC = sac.ForResource(resources.Cluster)
 )
 
 type datastoreImpl struct {
@@ -355,13 +354,9 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 	if cluster.GetName() == "" {
 		return "", errors.New("cannot add a cluster without name")
 	}
-	// This check is added to avoid problems with rendering of helm templates.
-	// If a number is added as a cluster name, Helm may treat is as such and
-	// convert it to scientific notation - see cluster name in sensor secret.
-	// Because the fix in the Helm chart is tricky, we reject all names that
-	// could be parsable to a number.
-	if !startsWithLetter.MatchString(cluster.GetName()) {
-		return "", errors.New("cluster name must start with a letter")
+	if valid, err := pkgCluster.IsNameValid(cluster.GetName()); !valid {
+		return "", errors.Wrap(err, "invalid cluster name")
+
 	}
 
 	cluster.Id = uuid.NewV4().String()

@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/distribution/reference"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 // Validate validates a cluster object
@@ -77,4 +79,31 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	cluster.CentralApiEndpoint = centralEndpoint
 
 	return errorList
+}
+
+func IsNameValid(name string) (bool, error) {
+	// This check is added to avoid problems with rendering of helm templates.
+	// If a number is added as a cluster name, Helm may treat is as such and
+	// convert it to scientific notation - see cluster name in sensor secret.
+	// Because the fix in the Helm chart is tricky, we reject all names that
+	// could be parsable to a number or any other Helm construct.
+	if len(name) == 0 {
+		return false, errors.New("cluster name cannot be empty")
+	}
+	if errs := validation.IsDNS1123Subdomain(name); len(errs) != 0 {
+		return false, errors.New(strings.Join(errs, "; "))
+	}
+	if _, err := strconv.ParseFloat(name, 64); err == nil {
+		return false, errors.New("cluster name cannot be a number")
+	}
+	if _, err := strconv.ParseInt(name, 0, 64); err == nil {
+		return false, errors.New("cluster name cannot be an octal number")
+	}
+	if name == "true" || name == "false" {
+		return false, errors.New("cluster name cannot be a representation of a boolean value")
+	}
+	if name == "null" {
+		return false, errors.New("cluster name cannot be a representation of a null value")
+	}
+	return true, nil
 }
