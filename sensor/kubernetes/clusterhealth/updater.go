@@ -3,7 +3,6 @@ package clusterhealth
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -15,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
@@ -254,17 +253,6 @@ func (u *updaterImpl) getScannerHealthInfo(analyzerDeployName string, dbDeployNa
 	return &result
 }
 
-func getSensorNamespace() string {
-	// The corresponding environment variable is configured to contain pod namespace by sensor YAML/helm file.
-	const nsEnvVar = "POD_NAMESPACE"
-	ns := os.Getenv(nsEnvVar)
-	if ns == "" {
-		ns = namespaces.StackRox
-		log.Warnf("%s environment variable is unset/empty, using %q as fallback for sensor namespace", nsEnvVar, ns)
-	}
-	return ns
-}
-
 func (u *updaterImpl) ctx() context.Context {
 	return concurrency.AsContext(&u.stopSig)
 }
@@ -283,7 +271,7 @@ func NewUpdater(client kubernetes.Interface, updateInterval time.Duration) commo
 		updates:        make(chan *message.ExpiringMessage),
 		stopSig:        concurrency.NewSignal(),
 		updateInterval: interval,
-		namespace:      getSensorNamespace(),
+		namespace:      pods.GetPodNamespace(pods.NoSATokenNamespace),
 		updateTicker:   updateTicker,
 	}
 }

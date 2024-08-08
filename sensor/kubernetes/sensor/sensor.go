@@ -15,9 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/protoutils"
-	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
@@ -186,17 +185,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		components = append(components, upgradeCmdHandler)
 	}
 
-	sensorNamespace, err := satoken.LoadNamespaceFromFile()
-	if err != nil {
-		log.Errorf("Failed to determine namespace from service account token file: %s", err)
-	}
-	if sensorNamespace == "" {
-		sensorNamespace = os.Getenv("POD_NAMESPACE")
-	}
-	if sensorNamespace == "" {
-		sensorNamespace = namespaces.StackRox
-		log.Warnf("Unable to determine Sensor namespace, defaulting to %s", sensorNamespace)
-	}
+	sensorNamespace := pods.GetPodNamespace(pods.ConsiderSATokenNamespace)
 
 	if admCtrlSettingsMgr != nil {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
