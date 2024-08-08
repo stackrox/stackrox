@@ -3,11 +3,10 @@ package v4
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -21,6 +20,10 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 )
+
+// The layer carries a hardcoded digest, as it is exclusively used for passing
+// ClairCore checks, not for Scanners matching
+var layerDigest = fmt.Sprintf("sha256:%s", strings.Repeat("a", 64))
 
 // NodeIndexer represents a node indexer.
 //
@@ -49,18 +52,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 		Files:         map[string]claircore.File{},
 	}
 
-	h := getRandomSHA256()
-	ch, err := claircore.ParseDigest(`sha256:` + h)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing Clair Core digest")
-	}
-	report.Hash = ch
-
-	// SA1029 FIXME: Find a better way to pass the manifest ID through the stack
-	//nolint:staticcheck
-	ctx = context.WithValue(ctx, "manifest_id", h)
-
-	layer, err := constructLayer(ctx, `sha256:`+h)
+	layer, err := constructLayer(ctx, layerDigest, env.NodeScanningV4HostPath.Setting())
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +72,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 		return nil, err
 	}
 
-	ir, err := coalesceReport(ctx, h, reps, pcks)
+	ir, err := coalesceReport(ctx, layerDigest, reps, pcks)
 	if err != nil {
 		return nil, err
 	}
@@ -97,9 +89,14 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 	return v4Report, nil
 }
 
-func coalesceReport(ctx context.Context, h string, reps []*claircore.Repository, pcks []*claircore.Package) (*claircore.IndexReport, error) {
+func coalesceReport(ctx context.Context, layerDigest string, reps []*claircore.Repository, pcks []*claircore.Package) (*claircore.IndexReport, error) {
+	ch, err := claircore.ParseDigest(layerDigest)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing Clair Core digest")
+	}
+
 	la := &ccindexer.LayerArtifacts{
-		Hash: claircore.MustParseDigest(`sha256:` + h),
+		Hash: ch,
 	}
 	la.Repos = append(la.Repos, reps...)
 	la.Pkgs = append(la.Pkgs, pcks...)
@@ -177,24 +174,12 @@ func runRepositoryScanner(ctx context.Context, l *claircore.Layer) ([]*claircore
 	return reps, nil
 }
 
-// TODO(ROX-25614): Deprecate in favor of deterministic SHA generation
-func getRandomSHA256() string {
-	data := make([]byte, 10)
-	_, err := rand.Read(data)
-	if err != nil {
-		return ""
-	}
-	return fmt.Sprintf("%x", sha256.Sum256(data))
-}
-
-func constructLayer(ctx context.Context, digest string) (*claircore.Layer, error) {
-	hostPath := env.NodeScanningV4HostPath.Setting()
+func constructLayer(ctx context.Context, digest string, hostPath string) (*claircore.Layer, error) {
 	zlog.Info(ctx).Msgf("Realizing mount path: %s", hostPath)
 	desc := &claircore.LayerDescription{
 		Digest:    digest,
 		URI:       hostPath,
 		MediaType: "application/vnd.claircore.filesystem",
-		Headers:   nil,
 	}
 
 	l := claircore.Layer{}
