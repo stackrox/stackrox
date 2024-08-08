@@ -139,8 +139,8 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 
 	s.NotNil(report)
 	s.True(report.Success)
-	s.Len(report.GetContents().GetPackages(), 106, "Expected number of installed pacakges differs")
-	s.Len(report.GetContents().GetRepositories(), 2, "Expected number of discoverd repositories differs")
+	s.Len(report.GetContents().GetPackages(), 106, "Expected number of installed packages differs")
+	s.Len(report.GetContents().GetRepositories(), 2, "Expected number of discovered repositories differs")
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
