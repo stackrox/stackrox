@@ -79,7 +79,7 @@ describe('Machine Access Configs', () => {
         getInputByLabel('Key').clear().type('key');
         getInputByLabel('Value').clear().type('value');
         getSelectButtonByLabel('Role').click();
-        getSelectOption('Admin').click();
+        getSelectOption('Configuration Controller').click();
 
         saveCreatedIntegrationInForm(integrationSource, integrationType);
 
