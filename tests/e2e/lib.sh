@@ -459,6 +459,7 @@ export_central_basic_auth_creds() {
 
 export_central_ca() {
     if [[ -f "${ROX_CA_CERT_FILE:-}" ]]; then
+        info "Using central CA from ${ROX_CA_CERT_FILE}"
         return
     fi
     require_environment "API_ENDPOINT"

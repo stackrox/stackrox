@@ -59,6 +59,7 @@ test_upgrade() {
     export_central_basic_auth_creds
     wait_for_api
     setup_client_TLS_certs
+    export_central_ca
 
     info "Deploying sensor"
     "$TEST_ROOT/$DEPLOY_DIR/sensor.sh"
