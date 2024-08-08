@@ -116,11 +116,11 @@ func CompareVersionsOr(versionA, versionB string, incomparableRes int) int {
 	// for example: 3.0.58.x-1 > 3.0.58.0-rc.1
 	maxInt := strconv.Itoa(math.MaxInt32)
 
-	if kindA == NightlyKind || kindA == DevelopmentKind {
+	if isDevVersionIsGreaterThanRelease(versionA) && (kindA == NightlyKind || kindA == DevelopmentKind) {
 		versionA = strings.Replace(versionA, "x", maxInt, 1)
 		versionA = strings.Replace(versionA, ".0-", fmt.Sprintf(".%s-", maxInt), 1)
 	}
-	if kindB == NightlyKind || kindB == DevelopmentKind {
+	if isDevVersionIsGreaterThanRelease(versionB) && (kindB == NightlyKind || kindB == DevelopmentKind) {
 		versionB = strings.Replace(versionB, "x", maxInt, 1)
 		versionB = strings.Replace(versionB, ".0-", fmt.Sprintf(".%s-", maxInt), 1)
 	}
@@ -141,6 +141,26 @@ func CompareVersionsOr(versionA, versionB string, incomparableRes int) int {
 	return incomparableRes
 }
 
+// isDevVersionIsGreaterThanRelease accounts for a change in version behavior starting at 4.5
+// After 4.5, dev versions are semver compatible and are considered smaller than release versions
+func isDevVersionIsGreaterThanRelease(version string) bool {
+	if len(version) < 3 {
+		return false
+	}
+
+	major, err := strconv.Atoi(string(version[0]))
+	if err != nil {
+		return false
+	}
+
+	minor, err := strconv.Atoi(string(version[2]))
+	if err != nil {
+		return false
+	}
+
+	return !(major >= 4 && minor >= 5)
+}
+
 func getEffectVersion(version string) string {
 	// Remove hashTag
 	version = hashTagRegex.ReplaceAllString(version, "")
@@ -148,10 +168,14 @@ func getEffectVersion(version string) string {
 	version = strings.Replace(version, "-rc", "", 1)
 	// Remove "-nightly", 3.0.58.x-nightly-20210405 -> 3.0.58.x-20210405
 	version = strings.Replace(version, "-nightly", "", 1)
-	// 3.0.58.x-189-dirty -> 3.0.58.2147483647-189-dirty to make dev build greater than release and rc build
-	version = strings.Replace(version, "x", strconv.Itoa(math.MaxInt32), 1)
-	// 3.0.58.0-189-dirty -> 3.0.58.2147483647-189-dirty to make dev build greater than release and rc build
-	version = strings.Replace(version, ".0-", fmt.Sprintf(".%s-", strconv.Itoa(math.MaxInt32)), 1)
+
+	if isDevVersionIsGreaterThanRelease(version) {
+		// 3.0.58.x-189-dirty -> 3.0.58.2147483647-189-dirty to make dev build greater than release and rc build
+		version = strings.Replace(version, "x", strconv.Itoa(math.MaxInt32), 1)
+		// 3.0.58.0-189-dirty -> 3.0.58.2147483647-189-dirty to make dev build greater than release and rc build
+		version = strings.Replace(version, ".0-", fmt.Sprintf(".%s-", strconv.Itoa(math.MaxInt32)), 1)
+	}
+
 	// 3.0.58.2147483647-189-dirty -> 3.0.58.2147483647.189.dirty
 	version = strings.ReplaceAll(version, "-", ".")
 	// 3.0.58.2147483647.189.dirty -> 3.0.58.2147483647.189.1, dirty version is greater than its base dev build

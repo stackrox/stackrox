@@ -335,10 +335,23 @@ func TestCompareAnyVersion(t *testing.T) {
 			expectedResult: 1,
 		},
 		{
-			// Even though 4.6.1 > 4.6.0, dev builds are always considered greater than release builds
-			// with the same x.y (i.e. major and minor) numbers.
+			// Even though 4.4.1 > 4.4.0, dev builds are considered greater than release builds
+			// with the same x.y (i.e. major and minor) numbers until 4.5+.
+			versionA:       "4.4.1",
+			versionB:       "4.4.0-3-gabc1233456",
+			expectedResult: -1,
+		},
+		{
+			// Starting with 4.5, dev builds are considered less than point releases.
+			// This is semver compatible.
+			// This changed because the git tag for dev builds is now a.b+1.x instead of a.b.x
 			versionA:       "4.6.1",
 			versionB:       "4.6.0-3-gabc1233456",
+			expectedResult: 1,
+		},
+		{
+			versionA:       "4.5.1",
+			versionB:       "4.6.1-3-gabc1233456",
 			expectedResult: -1,
 		},
 	}
