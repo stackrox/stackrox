@@ -22,7 +22,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Deprecated Fatures
 - ROX-25677: The format for specifying durations in JSON requests to
   `v1/nodecves/suppress`, `v1/clustercves/suppress` and `v1/imagecves/suppress`
-  will be restricted to a simpler format.
+  will be restricted to a [proto JSON format](https://protobuf.dev/programming-guides/proto3/#json:~:text=are%20also%20accepted.-,Duration,-string).
   Only a numeric value representing seconds (with optional fractional seconds for nanosecond precision)
   followed by the s suffix will be accepted (e.g., "0.300s", "-5400s", or "9900").
   This replaces the current format, which allows a string with a potentially signed sequence of decimal numbers,
