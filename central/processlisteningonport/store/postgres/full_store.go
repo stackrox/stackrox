@@ -45,7 +45,7 @@ const getByDeploymentStmt = "SELECT plop.serialized, " +
 
 const getClusterAndNamespaceStmt = "SELECT namespace, clusterid FROM deployments WHERE id = $1"
 
-// const getCountsByDeploymentId = "SELECT deploymentid, namespace, clusterid, count(*) as count FROM listening_endpoints where closed = false GROUP BY deploymentid, namespace, clusterid"
+// SQL query to get the count of listening endpoints in each deployment. namespace and clusterid are only obtained for SAC purposes
 const getCountsByDeploymentId = "SELECT d.id, d.namespace, d.clusterid, COALESCE(COUNT(le.deploymentid), 0) AS count " +
 	"FROM deployments d LEFT JOIN listening_endpoints le ON d.id = le.deploymentid AND d.namespace = le.namespace AND d.clusterid = le.clusterid AND le.closed = false GROUP BY d.id, d.namespace, d.clusterid"
 
