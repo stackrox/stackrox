@@ -1094,49 +1094,64 @@ func getIPAndPort(address *sensor.NetworkAddress) net.NetworkPeerID {
 	return tuple
 }
 
+func getConnection(conn *sensor.NetworkConnection) *connection {
+	var incoming bool
+	switch conn.Role {
+	case sensor.ClientServerRole_ROLE_SERVER:
+		incoming = true
+	case sensor.ClientServerRole_ROLE_CLIENT:
+		incoming = false
+	default:
+		return nil
+	}
+
+	remote := net.NumericEndpoint{
+		IPAndPort: getIPAndPort(conn.GetRemoteAddress()),
+		L4Proto:   net.L4ProtoFromProtobuf(conn.GetProtocol()),
+	}
+	local := getIPAndPort(conn.GetLocalAddress())
+
+	// Special handling for UDP ports - role reported by collector may be unreliable, so look at which port is more
+	// likely to be ephemeral. In case a port is set to 0, collector couldn't retrieve this value, we assume the
+	// connection works in the direction opposite of this port.
+	if remote.L4Proto == net.UDP {
+		incoming = netutil.IsEphemeralPort(remote.IPAndPort.Port) > netutil.IsEphemeralPort(local.Port)
+	}
+
+	return &connection{
+		local:       local,
+		remote:      remote,
+		containerID: conn.GetContainerId(),
+		incoming:    incoming,
+	}
+}
+
 func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
 	updatedConnections := make(map[connection]timestamp.MicroTS)
 
 	flowMetrics.NetworkFlowMessagesPerNode.With(prometheus.Labels{"Hostname": hostname}).Inc()
 
 	for _, conn := range networkInfo.GetUpdatedConnections() {
-		var incoming bool
-		switch conn.Role {
-		case sensor.ClientServerRole_ROLE_SERVER:
-			flowMetrics.NetworkFlowsPerNodeByType.With(prometheus.Labels{"Hostname": hostname, "Type": "incoming", "Protocol": conn.Protocol.String()}).Inc()
-			incoming = true
-		case sensor.ClientServerRole_ROLE_CLIENT:
-			flowMetrics.NetworkFlowsPerNodeByType.With(prometheus.Labels{"Hostname": hostname, "Type": "outgoing", "Protocol": conn.Protocol.String()}).Inc()
-			incoming = false
-		default:
+		c := getConnection(conn)
+		if c == nil {
 			continue
 		}
 
-		remote := net.NumericEndpoint{
-			IPAndPort: getIPAndPort(conn.GetRemoteAddress()),
-			L4Proto:   net.L4ProtoFromProtobuf(conn.GetProtocol()),
-		}
-		local := getIPAndPort(conn.GetLocalAddress())
-
-		// Special handling for UDP ports - role reported by collector may be unreliable, so look at which port is more
-		// likely to be ephemeral.
-		if remote.L4Proto == net.UDP {
-			incoming = netutil.IsEphemeralPort(remote.IPAndPort.Port) > netutil.IsEphemeralPort(local.Port)
+		var connType string
+		if c.incoming {
+			connType = "incoming"
+		} else {
+			connType = "outgoing"
 		}
 
-		c := connection{
-			local:       local,
-			remote:      remote,
-			containerID: conn.GetContainerId(),
-			incoming:    incoming,
-		}
+		flowMetrics.NetworkFlowsPerNodeByType.With(prometheus.Labels{"Hostname": hostname, "Type": connType, "Protocol": conn.Protocol.String()}).Inc()
 
 		// timestamp will be set to close timestamp for closed connections, and zero for newly added connection.
 		ts := timestamp.FromProtobuf(conn.CloseTimestamp)
 		if ts == 0 {
 			ts = timestamp.InfiniteFuture
 		}
-		updatedConnections[c] = ts
+		updatedConnections[*c] = ts
 	}
 
 	return updatedConnections

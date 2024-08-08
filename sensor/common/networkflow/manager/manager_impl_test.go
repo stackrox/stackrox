@@ -1122,3 +1122,104 @@ func Test_connection_IsExternal(t *testing.T) {
 		})
 	}
 }
+
+func Test_getConnection_direction(t *testing.T) {
+	tests := []struct {
+		localPort  uint32
+		remotePort uint32
+		protocol   storage.L4Protocol
+		role       sensor.ClientServerRole
+		expected   bool
+	}{
+		{
+			localPort:  0,
+			remotePort: 53,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_UDP,
+			role:       sensor.ClientServerRole_ROLE_CLIENT,
+			expected:   false,
+		}, {
+			localPort:  0,
+			remotePort: 53,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_UDP,
+			role:       sensor.ClientServerRole_ROLE_SERVER,
+			expected:   false,
+		}, {
+			localPort:  53,
+			remotePort: 0,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_UDP,
+			role:       sensor.ClientServerRole_ROLE_CLIENT,
+			expected:   true,
+		}, {
+			localPort:  53,
+			remotePort: 0,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_UDP,
+			role:       sensor.ClientServerRole_ROLE_SERVER,
+			expected:   true,
+		}, {
+			localPort:  50000,
+			remotePort: 53,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_UDP,
+			role:       sensor.ClientServerRole_ROLE_CLIENT,
+			expected:   false,
+		}, {
+			localPort:  50000,
+			remotePort: 53,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_UDP,
+			role:       sensor.ClientServerRole_ROLE_SERVER,
+			expected:   false,
+		}, {
+			localPort:  53,
+			remotePort: 50000,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_UDP,
+			role:       sensor.ClientServerRole_ROLE_CLIENT,
+			expected:   true,
+		}, {
+			localPort:  53,
+			remotePort: 50000,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_UDP,
+			role:       sensor.ClientServerRole_ROLE_SERVER,
+			expected:   true,
+		}, {
+			localPort:  50000,
+			remotePort: 53,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_TCP,
+			role:       sensor.ClientServerRole_ROLE_CLIENT,
+			expected:   false,
+		}, {
+			localPort:  50000,
+			remotePort: 53,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_TCP,
+			role:       sensor.ClientServerRole_ROLE_SERVER,
+			expected:   true,
+		}, {
+			localPort:  53,
+			remotePort: 50000,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_TCP,
+			role:       sensor.ClientServerRole_ROLE_CLIENT,
+			expected:   false,
+		}, {
+			localPort:  53,
+			remotePort: 50000,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_TCP,
+			role:       sensor.ClientServerRole_ROLE_SERVER,
+			expected:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		networkConn := sensor.NetworkConnection{
+			SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
+			LocalAddress: &sensor.NetworkAddress{
+				Port: tt.localPort,
+			},
+			RemoteAddress: &sensor.NetworkAddress{
+				Port: tt.remotePort,
+			},
+			Protocol: tt.protocol,
+			Role:     tt.role,
+		}
+		conn := getConnection(&networkConn)
+		assert.NotNil(t, conn)
+		assert.Equal(t, tt.expected, conn.incoming, "local: %d, remote: %d, protocol: %s, role: %s", tt.localPort, tt.remotePort, storage.L4Protocol_name[int32(tt.protocol)], sensor.ClientServerRole_name[int32(tt.role)])
+	}
+}
