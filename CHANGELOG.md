@@ -27,7 +27,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   followed by the s suffix will be accepted (e.g., "0.300s", "-5400s", or "9900").
   This replaces the current format, which allows a string with a potentially signed sequence of decimal numbers,
   each with an optional fraction and a unit suffix (e.g., "300ms", "-1.5h", or "2h45m").
-  The currently valid time units "ns", "us" (or "µs"), "ms", "m", and "h" will no longer be supported in their existing form.
+  The currently valid time units "ns", "us" (or "µs"), "ms", "m", and "h" will no longer be supported.
 
 ### Technical Changes
 - ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
