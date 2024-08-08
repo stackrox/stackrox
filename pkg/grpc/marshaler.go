@@ -1,16 +1,15 @@
 package grpc
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
+	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/protoadapt"
 )
 
 // Deprecated: customMarshaler is a hack for keeping backward compatibility for duration objects.
@@ -24,18 +23,34 @@ func (c customMarshaler) Unmarshal(data []byte, v interface{}) error {
 	if unmarshalError == nil {
 		return nil
 	}
+	return c.unmarshalBackwardCompatible(data, v, unmarshalError)
+}
+
+func (c customMarshaler) unmarshalBackwardCompatible(data []byte, v interface{}, unmarshalError error) error {
 	suppressCVERequest, ok := v.(*v1.SuppressCVERequest)
 	if !ok {
 		return unmarshalError
 	}
-	log.Warnf("DEPRECATED: The duration format only supports seconds: %q", unmarshalError)
-	messageV1 := protoadapt.MessageV1Of(suppressCVERequest)
-	err := jsonpb.Unmarshal(bytes.NewBuffer(data), messageV1)
+	goStruct := SuppressCVERequestGo{}
+	err := json.Unmarshal(data, &goStruct)
 	if err != nil {
+		log.Warnf(err.Error())
 		// We want users choose the new format.
 		return unmarshalError
 	}
+	suppressCVERequest.Cves = goStruct.CVES
+	duration, err := time.ParseDuration(goStruct.Duration)
+	if err != nil {
+		return unmarshalError
+	}
+	suppressCVERequest.Duration = protocompat.DurationProto(duration)
+	log.Warnf("DEPRECATED: The duration format only supports seconds: %q", unmarshalError)
 	return nil
+}
+
+type SuppressCVERequestGo struct {
+	CVES     []string
+	Duration string
 }
 
 func (c customMarshaler) NewDecoder(r io.Reader) runtime.Decoder {
