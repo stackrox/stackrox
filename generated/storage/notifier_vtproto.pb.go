@@ -127,6 +127,15 @@ func (m *Notifier_Syslog) CloneVT() isNotifier_Config {
 	return r
 }
 
+func (m *Notifier_MicrosoftSentinel) CloneVT() isNotifier_Config {
+	if m == nil {
+		return (*Notifier_MicrosoftSentinel)(nil)
+	}
+	r := new(Notifier_MicrosoftSentinel)
+	r.MicrosoftSentinel = m.MicrosoftSentinel.CloneVT()
+	return r
+}
+
 func (m *AWSSecurityHub_Credentials) CloneVT() *AWSSecurityHub_Credentials {
 	if m == nil {
 		return (*AWSSecurityHub_Credentials)(nil)
@@ -426,6 +435,28 @@ func (m *Syslog_TcpConfig) CloneVT() isSyslog_Endpoint {
 	return r
 }
 
+func (m *MicrosoftSentinel) CloneVT() *MicrosoftSentinel {
+	if m == nil {
+		return (*MicrosoftSentinel)(nil)
+	}
+	r := new(MicrosoftSentinel)
+	r.Endpoint = m.Endpoint
+	r.DataCollectionRuleId = m.DataCollectionRuleId
+	r.StreamName = m.StreamName
+	r.DirectoryTenantId = m.DirectoryTenantId
+	r.ApplicationClientId = m.ApplicationClientId
+	r.Secret = m.Secret
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *MicrosoftSentinel) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
 func (this *Notifier) EqualVT(that *Notifier) bool {
 	if this == that {
 		return true
@@ -693,6 +724,31 @@ func (this *Notifier_Syslog) EqualVT(thatIface isNotifier_Config) bool {
 		}
 		if q == nil {
 			q = &Syslog{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *Notifier_MicrosoftSentinel) EqualVT(thatIface isNotifier_Config) bool {
+	that, ok := thatIface.(*Notifier_MicrosoftSentinel)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.MicrosoftSentinel, that.MicrosoftSentinel; p != q {
+		if p == nil {
+			p = &MicrosoftSentinel{}
+		}
+		if q == nil {
+			q = &MicrosoftSentinel{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1175,6 +1231,40 @@ func (this *Syslog_TcpConfig) EqualVT(thatIface isSyslog_Endpoint) bool {
 	return true
 }
 
+func (this *MicrosoftSentinel) EqualVT(that *MicrosoftSentinel) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.Endpoint != that.Endpoint {
+		return false
+	}
+	if this.DataCollectionRuleId != that.DataCollectionRuleId {
+		return false
+	}
+	if this.StreamName != that.StreamName {
+		return false
+	}
+	if this.DirectoryTenantId != that.DirectoryTenantId {
+		return false
+	}
+	if this.ApplicationClientId != that.ApplicationClientId {
+		return false
+	}
+	if this.Secret != that.Secret {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *MicrosoftSentinel) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*MicrosoftSentinel)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
 func (m *Notifier) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -1454,6 +1544,27 @@ func (m *Notifier_Syslog) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x1
 		i--
 		dAtA[i] = 0x92
+	}
+	return len(dAtA) - i, nil
+}
+func (m *Notifier_MicrosoftSentinel) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Notifier_MicrosoftSentinel) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.MicrosoftSentinel != nil {
+		size, err := m.MicrosoftSentinel.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
 	}
 	return len(dAtA) - i, nil
 }
@@ -2326,6 +2437,81 @@ func (m *Syslog_TcpConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
+func (m *MicrosoftSentinel) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MicrosoftSentinel) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MicrosoftSentinel) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.Secret) > 0 {
+		i -= len(m.Secret)
+		copy(dAtA[i:], m.Secret)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Secret)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if len(m.ApplicationClientId) > 0 {
+		i -= len(m.ApplicationClientId)
+		copy(dAtA[i:], m.ApplicationClientId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ApplicationClientId)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.DirectoryTenantId) > 0 {
+		i -= len(m.DirectoryTenantId)
+		copy(dAtA[i:], m.DirectoryTenantId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.DirectoryTenantId)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.StreamName) > 0 {
+		i -= len(m.StreamName)
+		copy(dAtA[i:], m.StreamName)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.StreamName)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.DataCollectionRuleId) > 0 {
+		i -= len(m.DataCollectionRuleId)
+		copy(dAtA[i:], m.DataCollectionRuleId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.DataCollectionRuleId)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Endpoint) > 0 {
+		i -= len(m.Endpoint)
+		copy(dAtA[i:], m.Endpoint)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Endpoint)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *Notifier) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -2475,6 +2661,18 @@ func (m *Notifier_Syslog) SizeVT() (n int) {
 	_ = l
 	if m.Syslog != nil {
 		l = m.Syslog.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *Notifier_MicrosoftSentinel) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.MicrosoftSentinel != nil {
+		l = m.MicrosoftSentinel.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -2823,6 +3021,40 @@ func (m *Syslog_TcpConfig) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *MicrosoftSentinel) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Endpoint)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.DataCollectionRuleId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.StreamName)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.DirectoryTenantId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.ApplicationClientId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.Secret)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
 func (m *Notifier) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3444,6 +3676,47 @@ func (m *Notifier) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.NotifierSecret = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MicrosoftSentinel", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Config.(*Notifier_MicrosoftSentinel); ok {
+				if err := oneof.MicrosoftSentinel.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &MicrosoftSentinel{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Config = &Notifier_MicrosoftSentinel{MicrosoftSentinel: v}
+			}
 			iNdEx = postIndex
 		case 50:
 			if wireType != 2 {
@@ -5660,6 +5933,249 @@ func (m *Syslog) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MicrosoftSentinel) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MicrosoftSentinel: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MicrosoftSentinel: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Endpoint", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Endpoint = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DataCollectionRuleId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DataCollectionRuleId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StreamName", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.StreamName = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DirectoryTenantId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DirectoryTenantId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ApplicationClientId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ApplicationClientId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Secret", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Secret = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
