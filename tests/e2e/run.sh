@@ -110,7 +110,7 @@ prepare_for_endpoints_test() {
     setup_client_CA_auth_provider
     setup_generated_certs_for_test "$gencerts_dir"
     if [[ ${ORCHESTRATOR_FLAVOR:-} == "openshift" ]]; then
-        info "Skipping resource patching for skipped endpoints_test.go. TODO(ROX-25172)"
+        info "Skipping resource patching for skipped endpoints_test.go. TODO(ROX-24688)"
     else
         patch_resources_for_test
     fi
