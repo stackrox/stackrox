@@ -105,7 +105,7 @@ func coalesceReport(ctx context.Context, layerDigest string, reps []*claircore.R
 
 	ir, err := coal.Coalesce(ctx, artifacts)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to coalesce report")
 	}
 	return ir, nil
 }
