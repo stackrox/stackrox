@@ -113,7 +113,7 @@ func IsNameValid(name string) (bool, error) {
 		return false, errors.New("cluster name cannot be a number")
 	}
 	if _, err := strconv.ParseInt(name, 0, 64); err == nil {
-		return false, errors.New("cluster name cannot be an octal number")
+		return false, errors.New("cluster name cannot be a number")
 	}
 	if name == "true" || name == "false" {
 		return false, errors.New("cluster name cannot be a representation of a boolean value")
