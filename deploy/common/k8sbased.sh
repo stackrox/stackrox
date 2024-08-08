@@ -592,8 +592,9 @@ function launch_central {
 
 function export_central_ca {
     if [[ -f "${ROX_CA_CERT_FILE:-}" ]]; then
-        echo "Using central CA from ${ROX_CA_CERT_FILE}"
-        return
+        echo "Current central CA file: ${ROX_CA_CERT_FILE} ($(md5sum "${ROX_CA_CERT_FILE}"))"
+        # echo "Using central CA from ${ROX_CA_CERT_FILE}"
+        # return
     fi
 
     ROX_CA_CERT_FILE="$(mktemp -d)/central_ca.pem"
@@ -602,6 +603,7 @@ function export_central_ca {
 
     roxctl -e "$API_ENDPOINT" -p "$ROX_ADMIN_PASSWORD" \
         central cert --insecure-skip-tls-verify 1>"$ROX_CA_CERT_FILE"
+    echo "md5sum $(md5sum "${ROX_CA_CERT_FILE}")"
 }
 
 function launch_sensor {

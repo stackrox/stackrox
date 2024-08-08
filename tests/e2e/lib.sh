@@ -458,8 +458,9 @@ export_central_basic_auth_creds() {
 
 export_central_ca() {
     if [[ -f "${ROX_CA_CERT_FILE:-}" ]]; then
-        info "Using central CA from ${ROX_CA_CERT_FILE}"
-        return
+        echo "Current central CA file: ${ROX_CA_CERT_FILE} ($(md5sum "${ROX_CA_CERT_FILE}"))"
+        # info "Using central CA from ${ROX_CA_CERT_FILE}"
+        # return
     fi
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
@@ -469,6 +470,7 @@ export_central_ca() {
 
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
         central cert --insecure-skip-tls-verify 1>"$ROX_CA_CERT_FILE"
+    info "md5sum $(md5sum "${ROX_CA_CERT_FILE}")"
 }
 
 deploy_optional_e2e_components() {
