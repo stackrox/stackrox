@@ -22,7 +22,7 @@ type ocmClient struct {
 }
 
 // NewClient creates a client to interact with OCM APIs.
-func NewClient(config *storage.CloudSource, options ...opts.ClientOpts) (*ocmClient, error) {
+func NewClient(ctx context.Context, config *storage.CloudSource, options ...opts.ClientOpts) (*ocmClient, error) {
 	opt := opts.DefaultOpts()
 	for _, option := range options {
 		option(opt)
@@ -31,7 +31,8 @@ func NewClient(config *storage.CloudSource, options ...opts.ClientOpts) (*ocmCli
 	connection, err := sdkClient.NewConnectionBuilder().
 		RetryLimit(opt.Retries).
 		URL(urlfmt.FormatURL(config.GetOcm().GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)).
-		Tokens(config.GetCredentials().GetSecret()).Agent(clientconn.GetUserAgent()).Build()
+		Client(config.GetCredentials().GetClientId(), config.GetCredentials().GetClientSecret()).
+		Tokens(config.GetCredentials().GetSecret()).Agent(clientconn.GetUserAgent()).BuildContext(ctx)
 
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "creating OCM connection")

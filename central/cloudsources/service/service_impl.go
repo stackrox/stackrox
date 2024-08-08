@@ -46,7 +46,8 @@ var authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 	},
 })
 
-type cloudSourceClientFactory = func(source *storage.CloudSource, opts ...opts.ClientOpts) (cloudsources.Client, error)
+type cloudSourceClientFactory = func(ctx context.Context,
+	source *storage.CloudSource, opts ...opts.ClientOpts) (cloudsources.Client, error)
 
 type serviceImpl struct {
 	v1.UnimplementedCloudSourcesServiceServer
@@ -223,7 +224,7 @@ func (s *serviceImpl) TestCloudSource(ctx context.Context, req *v1.TestCloudSour
 func (s *serviceImpl) testCloudSource(ctx context.Context, storageCloudSource *storage.CloudSource) error {
 	// Use a lower timeout as well as no retries for the test call. This is required to ensure that the UI request
 	// does not time out, which has a default timeout of 10 seconds.
-	client, err := s.clientFactory(storageCloudSource, opts.WithTimeout(8*time.Second), opts.WithRetries(0))
+	client, err := s.clientFactory(ctx, storageCloudSource, opts.WithTimeout(8*time.Second), opts.WithRetries(0))
 	if err != nil {
 		return err
 	}
