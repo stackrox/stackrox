@@ -18,8 +18,8 @@ const baseException: BaseVulnerabilityException = {
         name: 'admin',
     },
     approvers: [],
-    createdAt: '2023-10-01T19:16:49.155480945Z',
-    lastUpdated: '2023-10-01T19:16:49.155480945Z',
+    createdAt: '2023-10-01T19:16:48.155480945Z',
+    lastUpdated: '2023-10-01T19:16:48.155480945Z',
     comments: [
         {
             createdAt: '2023-10-23T19:16:49.155480945Z',

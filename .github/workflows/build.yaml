@@ -109,7 +109,7 @@ jobs:
           name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
           path: |
             ui/build
-            ui/apps/platform/yarn.lock
+            ui/apps/platform/package-lock.json
 
   pre-build-cli:
     runs-on: ubuntu-latest

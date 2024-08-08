@@ -40,9 +40,9 @@ spec:
   # - name: hermetic
   #   value: "true"
   - name: prefetch-input
+    # TODO(ROX-25572): re-add { "type": "npm", "path": "ui/apps/platform" },
     value: |
       [
-        { "type": "npm", "path": ".konflux/bootstrap-yarn" },
         { "type": "gomod", "path": "." }
       ]
   - name: build-source-image
@@ -59,7 +59,7 @@ spec:
 
   # The pipeline regularly takes >1h to finish.
   timeouts:
-    pipeline: 1h30m0s
+    pipeline: 2h15m0s
 
   pipelineRef:
     name: main-pipeline

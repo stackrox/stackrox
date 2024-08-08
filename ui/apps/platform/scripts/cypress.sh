@@ -32,7 +32,7 @@ export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
 
 if [ $2 == "--spec" ]; then
     if [ $# -ne 3 ]; then
-        echo "usage: yarn cypress-spec <spec-file>"
+        echo "usage: npm run cypress-spec <spec-file>"
         exit 1
     fi
     cypress run --spec "cypress/integration/$3"
