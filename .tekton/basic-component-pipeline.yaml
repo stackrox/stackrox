@@ -173,7 +173,14 @@ spec:
     - name: IMAGE_TAG_STYLE
       value: $(params.image-tag-style)
     taskRef:
-      name: determine-image-tag-oci-ta
+      params:
+      - name: name
+        value: acs-determinage-image-tag
+      - name: bundle
+        value: quay.io/tommartensen/rhtap-tasks@sha256:acfe06b65307724fd3025d13cc6d4d100bff591878f3235b71b9a561f34f10bf
+      - name: kind
+        value: task
+      resolver: bundles
 
   - name: prefetch-dependencies
     params:
