@@ -56,3 +56,10 @@ spec:
 
   pipelineRef:
     name: basic-component-pipeline
+
+  timeouts:
+    # The tasks regularly takes 1h to finish.
+    tasks: 1h
+    # Reserve time for final tasks to run.
+    finally: 10m
+    pipeline: 1h10m
