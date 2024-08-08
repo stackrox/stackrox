@@ -94,7 +94,7 @@ message VulnerabilityReport {
       V2 v2 = 1;
       V3 v3 = 2;
       Source source = 3; <-- New field.
-      string cvss_url = 4; <-- New field
+      string url = 4; <-- New field
     }
     ...
     string severity = 6;
@@ -112,7 +112,7 @@ There will be a new type plus two new fields added:
   * This specifies the supported CVSS metrics data sources.
 * `CVSS.source`
   * This specifies the source of the particular CVSS metrics.
-* `CVSS.cvss_url`
+* `CVSS.url`
   * This specifies the CVSS score source URL, aiding both API and UI users in tracking the origin of this metric.
 * `cvss_metrics`
   * This is a list of each unique CVSS metric based on the source.
@@ -140,7 +140,7 @@ This is currently the score from the vulnerability's original data source, if av
 			"base_score": 4.3,
 			"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
 			},
-		"cvss_url":"https://access.redhat.com/security/cve/CVE-2023-48231"
+		"url":"https://access.redhat.com/security/cve/CVE-2023-48231"
 		},
 	"cvss_metrics": [{
 		"source": "SOURCE_RED_HAT",
@@ -148,14 +148,14 @@ This is currently the score from the vulnerability's original data source, if av
 			"base_score": 4.3,
 			"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
 			},
-		"cvss_url":"https://access.redhat.com/security/cve/CVE-2023-48231"
+		"url":"https://access.redhat.com/security/cve/CVE-2023-48231"
 		},{
 		"source": "SOURCE_NVD",
 		"v3": {
 			"base_score": 4.3,
 			"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
 			},
-		"cvss_url":"https://nvd.nist.gov/vuln/detail/CVE-2023-48231"
+		"url":"https://nvd.nist.gov/vuln/detail/CVE-2023-48231"
 		}]
 }
 ```
