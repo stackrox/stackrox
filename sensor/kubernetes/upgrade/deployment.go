@@ -46,7 +46,7 @@ func (p *process) determineImage() (string, error) {
 
 	// If the image is not specified, sensor uses the same image it's using to launch the upgrader.
 	// This code path will be hit during cert rotation.
-	sensorDeployment, err := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace(pods.NoSATokenNamespace)).Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
+	sensorDeployment, err := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace()).Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "failed to fetch sensor deployment from Kube")
 	}
