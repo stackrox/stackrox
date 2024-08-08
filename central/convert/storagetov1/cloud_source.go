@@ -31,7 +31,7 @@ func CloudSource(cloudSource *storage.CloudSource) *v1.CloudSource {
 			},
 		}
 	}
-	secrets.ScrubSecretsFromStructWithReplacement(v1CloudSource, secrets.ScrubReplacementStr)
+	secrets.ScrubSecretsFromStructWithReplacement(v1CloudSource, secrets.ScrubReplacementStr, secrets.WithScrubZeroValues(false))
 	return v1CloudSource
 }
 
