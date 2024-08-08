@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -18,6 +19,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -82,13 +85,10 @@ const (
 )
 
 func BenchmarkDeploymentExport(b *testing.B) {
-	_ = b
 	testHelper := &testutils.ExportServicePostgresTestHelper{}
 	err := testHelper.SetupTest(b)
-	if err != nil {
-		b.Error(err)
-	}
-	defer testHelper.TearDownTest(b)
+	require.NoError(b, err)
+	b.Cleanup(func() { testHelper.TearDownTest(b) })
 
 	testHelper.InjectDataAndRunBenchmark(b, false, getDeploymentBenchmark(testHelper))
 }
@@ -98,13 +98,10 @@ func getDeploymentBenchmark(testHelper *testutils.ExportServicePostgresTestHelpe
 }
 
 func BenchmarkImageExport(b *testing.B) {
-	_ = b
 	testHelper := &testutils.ExportServicePostgresTestHelper{}
 	err := testHelper.SetupTest(b)
-	if err != nil {
-		b.Error(err)
-	}
-	defer testHelper.TearDownTest(b)
+	require.NoError(b, err)
+	b.Cleanup(func() { testHelper.TearDownTest(b) })
 
 	testHelper.InjectDataAndRunBenchmark(b, true, getImageBenchmark(testHelper))
 }
@@ -114,13 +111,10 @@ func getImageBenchmark(testHelper *testutils.ExportServicePostgresTestHelper) fu
 }
 
 func BenchmarkDeploymentWithImageExport(b *testing.B) {
-	_ = b
 	testHelper := &testutils.ExportServicePostgresTestHelper{}
 	err := testHelper.SetupTest(b)
-	if err != nil {
-		b.Error(err)
-	}
-	defer testHelper.TearDownTest(b)
+	require.NoError(b, err)
+	b.Cleanup(func() { testHelper.TearDownTest(b) })
 
 	testHelper.InjectDataAndRunBenchmark(b, true, getDeploymentWithImageBenchmark(testHelper))
 }
@@ -137,6 +131,24 @@ type wrappedHandler struct {
 func (h *wrappedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wrappedRequest := r.WithContext(h.ctx)
 	h.handler.ServeHTTP(w, wrappedRequest)
+}
+
+func getRequestJSON(
+	query string,
+	targetNamespace string,
+) ([]byte, error) {
+	vals := map[string]interface{}{"query": query}
+	if targetNamespace != "" {
+		query := "Namespace:" + targetNamespace
+		vals["variables"] = map[string]interface{}{
+			"query": query,
+		}
+	}
+	jsonBytes, err := json.Marshal(vals)
+	if err != nil {
+		return nil, err
+	}
+	return jsonBytes, nil
 }
 
 func getGraphQLServer(testHelper *testutils.ExportServicePostgresTestHelper) (*httptest.Server, error) {
@@ -173,6 +185,30 @@ func getGraphQLServer(testHelper *testutils.ExportServicePostgresTestHelper) (*h
 	return server, nil
 }
 
+func prepareGraphQLCall(
+	testHelper *testutils.ExportServicePostgresTestHelper,
+	jsonBytes []byte,
+) (*http.Client, *http.Request, error) {
+	server, err := getGraphQLServer(testHelper)
+	if err != nil {
+		return nil, nil, err
+	}
+	client := server.Client()
+	requestData := bytes.NewBuffer(jsonBytes)
+	req, reqErr := http.NewRequest(http.MethodPost, server.URL, requestData)
+	if reqErr != nil {
+		return nil, nil, err
+	}
+	return client, req, nil
+}
+
+func consumeResponse(b *testing.B, resp *http.Response) {
+	defer func() { assert.NoError(b, resp.Body.Close()) }()
+	assert.Equal(b, http.StatusOK, resp.StatusCode)
+	_, err := io.ReadAll(resp.Body)
+	assert.NoError(b, err)
+}
+
 func getGraphQLBenchmark(
 	testHelper *testutils.ExportServicePostgresTestHelper,
 	query string,
@@ -181,39 +217,21 @@ func getGraphQLBenchmark(
 		testCases := testutils.GetExportTestCases()
 		for _, testCase := range testCases {
 			b.Run(testCase.Name, func(ib *testing.B) {
-				vals := map[string]interface{}{"query": query}
-				if testCase.TargetNamespace != "" {
-					query := "Namespace:" + testCase.TargetNamespace
-					vals["variables"] = map[string]interface{}{
-						"query": query,
-					}
-				}
-				jsonBytes, err := json.Marshal(vals)
-				if err != nil {
-					ib.Error(err)
-				}
+				jsonBytes, err := getRequestJSON(query, testCase.TargetNamespace)
+				require.NoError(ib, err)
 				ib.ResetTimer()
 				for i := 0; i < ib.N; i++ {
 					ib.StopTimer()
-					server, err := getGraphQLServer(testHelper)
-					if err != nil {
-						ib.Error(err)
-					}
+					// A new server is needed for each loop run, otherwise
+					// the GraphQL loader will cache the objects loaded
+					// during the first loop run, which is not the behaviour
+					// we're trying to test.
+					client, req, err := prepareGraphQLCall(testHelper, jsonBytes)
+					require.NoError(ib, err)
 					ib.StartTimer()
-					client := server.Client()
-					requestData := bytes.NewBuffer(jsonBytes)
-					req, reqErr := http.NewRequest(http.MethodPost, server.URL, requestData)
-					if reqErr != nil {
-						ib.Error(reqErr)
-					}
 					resp, callErr := client.Do(req)
-					if callErr != nil {
-						ib.Error(callErr)
-					}
-					_ = resp.Body.Close()
-					if resp.StatusCode != http.StatusOK {
-						ib.Error(resp.Status)
-					}
+					assert.NoError(ib, callErr)
+					consumeResponse(ib, resp)
 				}
 			})
 		}

@@ -198,6 +198,11 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 				NotPullable:    false,
 				IsClusterLocal: false,
 			}
+			// region ensure enum values are valid
+			// Note: the unique initializer considers enum fields as int32
+			// and fills them with values that are mostly out of the valid
+			// range. These get reverted to fixed valid values so decoders
+			// do not break.
 			container.Image = containerImage
 			for _, v := range container.Volumes {
 				v.MountPropagation = storage.Volume_NONE
@@ -213,6 +218,7 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 					exposureInfo.Level = storage.PortConfig_INTERNAL
 				}
 			}
+			// endregion ensure enum values are valid
 			containers = append(containers, container)
 		}
 		deployment.Containers = containers
@@ -221,6 +227,7 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 		} else {
 			deployment.Namespace = namepsace90pct
 		}
+		// Set the enum values to valid data.
 		for _, portConfig := range deployment.Ports {
 			portConfig.Exposure = storage.PortConfig_INTERNAL
 			for _, exposureInfo := range portConfig.ExposureInfos {
