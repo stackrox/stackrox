@@ -8,7 +8,7 @@ spec:
   - name: slack-notification
     params:
     - name: message
-      value: ':x: Build for <https://console.redhat.com/application-pipeline/workspaces/rh-acs/applications/acs/pipelineruns/$(context.pipelineRun.name)|Konflux pipeline> for build to \`$(params.output-image-repo)\` for revision <https://github.com/stackrox/stackrox/$(params.revision)|$(params.revision)> has failed.'
+      value: ':x: Build for <https://console.redhat.com/application-pipeline/workspaces/rh-acs/applications/acs/pipelineruns/$(context.pipelineRun.name)|Konflux pipeline> for build to `$(params.output-image-repo)` for revision <https://github.com/stackrox/stackrox/$(params.revision)|$(params.revision)> has failed.'
     - name: key-name
       value: 'acs-release-automation-testing'
     when:
