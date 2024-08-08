@@ -351,12 +351,8 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 		return "", errors.Errorf("cannot add a cluster that has already been assigned an id: %q", cluster.GetId())
 	}
 
-	if cluster.GetName() == "" {
-		return "", errors.New("cannot add a cluster without name")
-	}
 	if err := pkgCluster.IsNameValid(cluster.GetName()); err != nil {
 		return "", errox.InvalidArgs.CausedBy(err)
-
 	}
 
 	cluster.Id = uuid.NewV4().String()
