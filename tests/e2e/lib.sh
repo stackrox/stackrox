@@ -337,6 +337,7 @@ deploy_sensor() {
             ci_export ADMISSION_CONTROLLER "true"
         else
             echo "Deploying sensor using kubectl ... "
+            export_central_ca
             if [[ -n "${IS_RACE_BUILD:-}" ]]; then
                 # builds with -race are slow at generating the sensor bundle
                 # https://stack-rox.atlassian.net/browse/ROX-6987
@@ -457,6 +458,9 @@ export_central_basic_auth_creds() {
 }
 
 export_central_ca() {
+    if [[ -f "$ROX_CA_CERT_FILE" ]]; then
+        return
+    fi
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
 
