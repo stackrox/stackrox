@@ -9,10 +9,10 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/sensorupgrader"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/upgrader/common"
 	"k8s.io/client-go/rest"
 )
 
@@ -46,7 +46,7 @@ func (c *UpgraderConfig) Validate() error {
 	if c.K8sRESTConfig == nil {
 		errs.AddString("kubernetes REST config not present")
 	}
-	if c.Owner != nil && c.Owner.Namespace != common.Namespace {
+	if c.Owner != nil && c.Owner.Namespace != pods.GetPodNamespace(pods.NoSATokenNamespace) {
 		errs.AddStringf("owner %v is in disallowed namespace", c.Owner)
 	}
 	return errs.ToError()

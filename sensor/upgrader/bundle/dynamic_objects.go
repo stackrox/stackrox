@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	v1 "k8s.io/api/core/v1"
@@ -87,7 +88,7 @@ func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents 
 	}
 
 	obj.SetName(objDesc.Name)
-	obj.SetNamespace(common.Namespace)
+	obj.SetNamespace(pods.GetPodNamespace(pods.NoSATokenNamespace))
 
 	lbls := obj.GetLabels()
 	if lbls == nil {
