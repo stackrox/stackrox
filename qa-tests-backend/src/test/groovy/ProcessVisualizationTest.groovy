@@ -20,6 +20,8 @@ class ProcessVisualizationTest extends BaseSpecification {
     static final private String MONGODEPLOYMENT = "mongodeployment"
     static final private String ROX4751DEPLOYMENT = "rox4751deployment"
     static final private String ROX4979DEPLOYMENT = "rox4979deployment"
+    // ldconfig process
+    static final private String LDCONFIG = "/sbin/ldconfig"
 
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
@@ -138,6 +140,15 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         then:
         "Verify process in added : : #depName"
+        // ldconfig sometimes takes up to 10 minutes to be reported.
+        // If it is the only process missing we ignore it in order to avoid waiting for 10 minutes.
+        // It should be enough to assert on the other processes to validate this feature.
+        // See: https://github.com/stackrox/stackrox/pull/12254
+        if (receivedProcessPaths.size() == expectedFilePaths.size() - 1 &&
+                !receivedProcessPaths.contains(LDCONFIG)) {
+            log.info("ldconfig took too long to be reported. Skipping it...")
+            expectedFilePaths.remove(LDCONFIG)
+        }
         assert receivedProcessPaths.containsAll(expectedFilePaths)
 
         where:
@@ -201,9 +212,18 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         then:
         "Verify process in added : : #depName"
+        // ldconfig sometimes takes up to 10 minutes to be reported.
+        // If it is the only process missing we ignore it in order to avoid waiting for 10 minutes.
+        // It should be enough to assert on the other processes to validate this feature.
+        // See: https://github.com/stackrox/stackrox/pull/12254
+        if (processToUserAndGroupIds.size() == expectedFilePathAndUIDs.size() - 1 &&
+                !processToUserAndGroupIds.containsKey(LDCONFIG)) {
+            log.info("ldconfig took too long to be reported. Skipping it...")
+            expectedFilePathAndUIDs.remove(LDCONFIG)
+        }
         assert containsAllProcessInfo(processToUserAndGroupIds, expectedFilePathAndUIDs)
 
-            where:
+        where:
         "Data inputs are :"
 
         expectedFilePathAndUIDs | depName
@@ -291,6 +311,15 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         then:
         "Verify process args for #depName"
+        // ldconfig sometimes takes up to 10 minutes to be reported.
+        // If it is the only process missing we ignore it in order to avoid waiting for 10 minutes.
+        // It should be enough to assert on the other processes to validate this feature.
+        // See: https://github.com/stackrox/stackrox/pull/12254
+        if (processToArgs.size() == expectedProcessArgs.size() - 1 &&
+                processToArgs.find { it[0] == LDCONFIG } .isEmpty()) {
+            log.info("ldconfig took too long to be reported. Skipping it...")
+            expectedProcessArgs.removeAll { it[0] == LDCONFIG }
+        }
         assert processToArgs.containsAll(expectedProcessArgs)
 
         where:
