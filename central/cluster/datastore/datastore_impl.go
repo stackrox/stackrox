@@ -354,7 +354,7 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 	if cluster.GetName() == "" {
 		return "", errors.New("cannot add a cluster without name")
 	}
-	if valid, err := pkgCluster.IsNameValid(cluster.GetName()); !valid {
+	if err := pkgCluster.IsNameValid(cluster.GetName()); err != nil {
 		return "", errors.Wrap(err, "invalid cluster name")
 
 	}

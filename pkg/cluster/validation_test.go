@@ -163,9 +163,7 @@ func TestIsNameValid(t *testing.T) {
 	}
 	for _, tt := range shouldPass {
 		t.Run(fmt.Sprintf("name-%s-should-be-valid", tt), func(t *testing.T) {
-			got, err := IsNameValid(tt)
-			assert.True(t, got)
-			assert.NoError(t, err)
+			assert.NoError(t, IsNameValid(tt))
 		})
 	}
 
@@ -191,9 +189,7 @@ func TestIsNameValid(t *testing.T) {
 	}
 	for _, tt := range shouldFail {
 		t.Run(fmt.Sprintf("name-%s-should-be-invalid", tt), func(t *testing.T) {
-			got, err := IsNameValid(tt)
-			assert.False(t, got)
-			assert.Error(t, err)
+			assert.Error(t, IsNameValid(tt))
 		})
 	}
 }

@@ -94,32 +94,32 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	return errorList
 }
 
-func IsNameValid(name string) (bool, error) {
+func IsNameValid(name string) error {
 	// This check is added to avoid problems with rendering of helm templates.
 	// If a number is added as a cluster name, Helm may treat is as such and
 	// convert it to scientific notation - see cluster name in sensor secret.
 	// Because the fix in the Helm chart is tricky, we reject all names that
 	// could be parsable to a number or any other Helm construct.
 	if len(name) == 0 {
-		return false, errors.New("cluster name cannot be empty")
+		return errors.New("cluster name cannot be empty")
 	}
 	if len(name) > maxClusterNameLength {
-		return false, fmt.Errorf("cluster name may be maximally %d characters long", maxClusterNameLength)
+		return fmt.Errorf("cluster name may be maximally %d characters long", maxClusterNameLength)
 	}
 	if !clusterNameRegexp.MatchString(name) {
-		return false, errors.New(clusterNameErrMsg)
+		return errors.New(clusterNameErrMsg)
 	}
 	if _, err := strconv.ParseFloat(name, 64); err == nil {
-		return false, errors.New("cluster name cannot be a number")
+		return errors.New("cluster name cannot be a number")
 	}
 	if _, err := strconv.ParseInt(name, 0, 64); err == nil {
-		return false, errors.New("cluster name cannot be a number")
+		return errors.New("cluster name cannot be a number")
 	}
 	if name == "true" || name == "false" {
-		return false, errors.New("cluster name cannot be a representation of a boolean value")
+		return errors.New("cluster name cannot be a representation of a boolean value")
 	}
 	if name == "null" {
-		return false, errors.New("cluster name cannot be a representation of a null value")
+		return errors.New("cluster name cannot be a representation of a null value")
 	}
-	return true, nil
+	return nil
 }
