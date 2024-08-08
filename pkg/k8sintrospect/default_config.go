@@ -1,6 +1,7 @@
 package k8sintrospect
 
 import (
+	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -24,6 +25,12 @@ func DefaultConfig() Config {
 			},
 			{
 				GVK: schema.GroupVersionKind{Version: "v1", Kind: "Service"},
+			},
+			{
+				GVK: v1alpha1.SecuredClusterGVK,
+			},
+			{
+				GVK: v1alpha1.CentralGVK,
 			},
 		},
 	}
