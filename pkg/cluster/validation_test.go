@@ -157,6 +157,9 @@ func TestIsNameValid(t *testing.T) {
 		"foo",
 		"12324.example.com",
 		"e123",
+		"foo_bar",
+		"foo-bar_baz-boom",
+		"foo______bar",
 	}
 	for _, tt := range shouldPass {
 		t.Run(fmt.Sprintf("name-%s-should-be-valid", tt), func(t *testing.T) {
@@ -182,6 +185,9 @@ func TestIsNameValid(t *testing.T) {
 		"false",
 		"null",
 		"{}",
+		"_foo",
+		"-foo",
+		"foo-",
 	}
 	for _, tt := range shouldFail {
 		t.Run(fmt.Sprintf("name-%s-should-be-invalid", tt), func(t *testing.T) {

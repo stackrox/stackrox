@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -12,8 +13,20 @@ import (
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
-	"k8s.io/apimachinery/pkg/util/validation"
 )
+
+const (
+	// maxClusterNameLength is inspired by Subdomain vaildation as in RFC 1123
+	maxClusterNameLength int = 253
+	// Taken from RFC 1123 Subdomain Regex
+	// (source: https://github.com/kubernetes/apimachinery/blob/v0.29.3/pkg/util/validation/validation.go#L236)
+	// and modified by: (1) allowing underscores and (2) uppercase characters.
+	labelFmt          string = "[a-zA-Z0-9]([-_a-zA-Z0-9]*[a-zA-Z0-9])?"
+	subdomainFmt      string = labelFmt + "(\\." + labelFmt + ")*"
+	clusterNameErrMsg string = "cluster name must consist of alphanumeric characters, '-', or '_', and must start and end with an alphanumeric character"
+)
+
+var clusterNameRegexp = regexp.MustCompile("^" + subdomainFmt + "$")
 
 // Validate validates a cluster object
 func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
@@ -90,8 +103,11 @@ func IsNameValid(name string) (bool, error) {
 	if len(name) == 0 {
 		return false, errors.New("cluster name cannot be empty")
 	}
-	if errs := validation.IsDNS1123Subdomain(name); len(errs) != 0 {
-		return false, errors.New(strings.Join(errs, "; "))
+	if len(name) > maxClusterNameLength {
+		return false, fmt.Errorf("cluster name may be maximally %d characters long", maxClusterNameLength)
+	}
+	if !clusterNameRegexp.MatchString(name) {
+		return false, errors.New(clusterNameErrMsg)
 	}
 	if _, err := strconv.ParseFloat(name, 64); err == nil {
 		return false, errors.New("cluster name cannot be a number")
