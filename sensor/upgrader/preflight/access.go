@@ -118,7 +118,7 @@ func (c accessCheck) Check(ctx *upgradectx.UpgradeContext, execPlan *plan.Execut
 	if len(actionResourceErr) > 0 {
 		reporter.Errorf("This usually means that access is denied. "+
 			"Have you configured this Secured Cluster for automatically receiving updates? "+
-			"More info <a href=%q>More info on troubleshooting</a>.", upgraderTroubleshootingLink)
+			"Troubleshooting: %s", upgraderTroubleshootingLink)
 
 		affected := maps.Keys(actionResourceErr)
 		slices.Sort(affected)
