@@ -232,6 +232,11 @@ func TestScrubSecretsWithoutPasswordSetWithReplacement(t *testing.T) {
 	ScrubSecretsFromStructWithReplacement(testStruct, ScrubReplacementStr)
 	assert.NotEmpty(t, testStruct.Password)
 	assert.Equal(t, testStruct.Name, "name")
+
+	testStruct = &toplevel{Name: "name", Password: ""}
+	ScrubSecretsFromStructWithReplacement(testStruct, ScrubReplacementStr, WithScrubZeroValues(false))
+	assert.Empty(t, testStruct.Password)
+	assert.Equal(t, testStruct.Name, "name")
 }
 
 func TestScrubSecretsFromStructWithReplacement(t *testing.T) {
