@@ -337,7 +337,6 @@ deploy_sensor() {
             ci_export ADMISSION_CONTROLLER "true"
         else
             echo "Deploying sensor using kubectl ... "
-            export_central_ca
             if [[ -n "${IS_RACE_BUILD:-}" ]]; then
                 # builds with -race are slow at generating the sensor bundle
                 # https://stack-rox.atlassian.net/browse/ROX-6987
@@ -366,7 +365,7 @@ deploy_sensor_via_operator() {
     local central_endpoint="central.${central_namespace}.svc:443"
 
     info "Deploying sensor via operator into namespace ${sensor_namespace} (central is expected in namespace ${central_namespace})"
-
+    export_central_ca
     if ! kubectl get ns "${sensor_namespace}" >/dev/null 2>&1; then
         kubectl create ns "${sensor_namespace}"
     fi
@@ -465,10 +464,7 @@ export_central_ca() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_PASSWORD"
 
-    TMPDIR=$(mktemp -d)
-    ROX_CA_CERT_FILE="$TMPDIR/central_ca.pem"
-
-    ci_export ROX_CA_CERT_FILE "$ROX_CA_CERT_FILE"
+    ci_export ROX_CA_CERT_FILE "$(mktemp -d)/central_ca.pem"
     info "Storing central certificate in $ROX_CA_CERT_FILE"
 
     roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
@@ -1185,6 +1181,7 @@ db_backup_and_restore_test() {
 
     # Ensure central is ready for requests after any previous tests
     wait_for_api "${central_namespace}"
+    export_central_ca
 
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
