@@ -9,6 +9,7 @@ function CodeCompareIcon() {
             width="1em"
             viewBox="0 0 512 512"
             role="img"
+            aria-hidden="true"
             style={{ verticalAlign: '-0.125em' }}
         >
             {/* <!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --> */}

@@ -11,31 +11,33 @@ type SimulationFrameProps = {
 function SimulationFrame({ isSimulating, children }: SimulationFrameProps) {
     let style = {};
     if (isSimulating) {
-        style = { position: 'relative', border: '5px solid rgb(115,188,247)' };
+        style = { position: 'relative', border: '5px solid var(--pf-v5-global--info-color--100' };
     } else {
         style = {};
     }
+    // Simulation frame and rectangle at upper left have same colors as inline info alert:
+    // border and icon have same color
+    // background color
+    // text has same (ordinary) color as title or body for sufficient color contrast
     return (
         <div className="pf-ri__topology-section" style={style}>
             {children}
             {isSimulating && (
                 <Flex
-                    className="pf-v5-u-p-sm"
+                    className="pf-v5-u-p-sm pf-v5-u-background-color-info"
                     style={{
-                        backgroundColor: 'rgb(224,233,242)',
                         position: 'absolute',
                         left: '0',
                         top: '0',
                         zIndex: 100,
                     }}
                     alignItems={{ default: 'alignItemsCenter' }}
+                    spaceItems={{ default: 'spaceItemsSm' }}
                 >
                     <FlexItem>
                         <ScreenIcon className="pf-v5-u-info-color-100" />
                     </FlexItem>
-                    <FlexItem>
-                        <div className="pf-v5-u-info-color-100">Simulated view</div>
-                    </FlexItem>
+                    <FlexItem>Simulated view</FlexItem>
                 </Flex>
             )}
         </div>
