@@ -9,6 +9,7 @@ import ImageIntegrationsSection from './ImageIntegrationsSection';
 import NotifierIntegrationsSection from './NotifierIntegrationsSection';
 import SignatureIntegrationsSection from './SignatureIntegrationsSection';
 import CloudSourceIntegrationsSection from './CloudSourceIntegrationsSection';
+import OcmDeprecatedTokenBanner from '../Banners/OcmDeprecatedToken';
 
 function IntegrationTilesPage(): ReactElement {
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
@@ -18,6 +19,8 @@ function IntegrationTilesPage(): ReactElement {
 
     return (
         <>
+            {/*TODO(ROX-25633): Remove the banner again.*/}
+            <OcmDeprecatedTokenBanner />
             <PageSection variant="light" component="div">
                 <Title headingLevel="h1">Integrations</Title>
             </PageSection>
