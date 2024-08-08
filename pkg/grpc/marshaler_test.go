@@ -54,12 +54,12 @@ func (s *supressCveServiceTestErrorImpl) AuthFuncOverride(ctx context.Context, f
 }
 
 func (s *supressCveServiceTestErrorImpl) SuppressCVEs(_ context.Context, req *v1.SuppressCVERequest) (*v1.Empty, error) {
-	return nil, status.Errorf(codes.Canceled, req.Duration.String())
+	return nil, status.Errorf(codes.Canceled, req.String())
 }
 
 func (a *MarshalerTest) TestDurationParsing() {
 	url := "https://localhost:8080/v1/nodecves/suppress"
-	jsonPayload := `{"code":1, "details": [], "error": "seconds:86400", "message":"seconds:86400"}`
+	jsonPayload := `{"code":1, "details": [], "error":"cves:\"XYZ\"  duration:{seconds:86400}", "message":"cves:\"XYZ\"  duration:{seconds:86400}"}`
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
