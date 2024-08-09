@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/k8sutil"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	coreV1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/networking/v1"
@@ -249,7 +248,7 @@ func TestToRoxNetworkPolicyRoundTrip(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			protoNetworkPolicy := KubernetesNetworkPolicyWrap{NetworkPolicy: np}.ToRoxNetworkPolicy()
 			k8sPolicy := RoxNetworkPolicyWrap{NetworkPolicy: protoNetworkPolicy}.ToKubernetesNetworkPolicy()
-			protoassert.Equal(t, np, k8sPolicy)
+			assert.Equal(t, np.String(), k8sPolicy.String())
 		})
 	}
 }
@@ -295,7 +294,7 @@ func TestYamlKubernetesNetworkPolicyRoundTrip(t *testing.T) {
 
 			assert.NoError(t, err, "k8s policy generation should succeed")
 			assert.Equal(t, 1, len(k8sPolicies), "expected one policy from the yaml")
-			protoassert.Equal(t, np, k8sPolicies[0])
+			assert.Equal(t, np, k8sPolicies[0])
 		})
 	}
 }
@@ -310,7 +309,7 @@ func TestYamlRoxNetworkPolicyRoundTrip(t *testing.T) {
 
 			assert.NoError(t, err, "rox policy generation should succeed")
 			assert.Equal(t, 1, len(roxPolicies), "expected one policy from the yaml")
-			protoassert.Equal(t, np, RoxNetworkPolicyWrap{NetworkPolicy: roxPolicies[0]}.ToKubernetesNetworkPolicy())
+			assert.Equal(t, np, RoxNetworkPolicyWrap{NetworkPolicy: roxPolicies[0]}.ToKubernetesNetworkPolicy())
 		})
 	}
 }

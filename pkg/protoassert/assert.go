@@ -3,14 +3,19 @@ package protoassert
 import (
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
-func Equal(t testing.TB, expected, actual proto.Message, msgAndArgs ...interface{}) bool {
+type message interface {
+	proto.Message
+	String() string
+}
+
+func Equal(t testing.TB, expected, actual message, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	if proto.Equal(expected, actual) {
 		return true
@@ -22,12 +27,12 @@ func Equal(t testing.TB, expected, actual proto.Message, msgAndArgs ...interface
 	return assert.JSONEq(t, e, a, msgAndArgs)
 }
 
-func NotEqual(t testing.TB, expected, actual proto.Message, msgAndArgs ...interface{}) bool {
+func NotEqual(t testing.TB, expected, actual message, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	return assert.False(t, proto.Equal(expected, actual), msgAndArgs)
 }
 
-func SlicesEqual[T proto.Message](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
+func SlicesEqual[T message](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	areEqual := assert.Len(t, actual, len(expected))
 	for i, e := range expected {
@@ -40,7 +45,7 @@ func SlicesEqual[T proto.Message](t testing.TB, expected, actual []T, msgAndArgs
 	return areEqual
 }
 
-func SliceContains[T proto.Message](t testing.TB, slice []T, element T, msgAndArgs ...interface{}) bool {
+func SliceContains[T message](t testing.TB, slice []T, element T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	for _, e := range slice {
 		if proto.Equal(e, element) {
@@ -50,7 +55,7 @@ func SliceContains[T proto.Message](t testing.TB, slice []T, element T, msgAndAr
 	return assert.Failf(t, "Slice does not contain element", "%q %v", element.String(), msgAndArgs)
 }
 
-func SliceNotContains[T proto.Message](t testing.TB, slice []T, element T, msgAndArgs ...interface{}) bool {
+func SliceNotContains[T message](t testing.TB, slice []T, element T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	for _, e := range slice {
 		if proto.Equal(e, element) {
@@ -60,7 +65,7 @@ func SliceNotContains[T proto.Message](t testing.TB, slice []T, element T, msgAn
 	return true
 }
 
-func ElementsMatch[T proto.Message](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
+func ElementsMatch[T message](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	areEqual := assert.Len(t, actual, len(expected))
 	for _, e := range expected {
@@ -75,7 +80,7 @@ func ElementsMatch[T proto.Message](t testing.TB, expected, actual []T, msgAndAr
 	return areEqual
 }
 
-func MapSliceEqual[K comparable, T proto.Message](t testing.TB, expected, actual map[K][]T, msgAndArgs ...interface{}) bool {
+func MapSliceEqual[K comparable, T message](t testing.TB, expected, actual map[K][]T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	expectedKeys := maps.Keys(expected)
 	actualKeys := maps.Keys(actual)
@@ -90,7 +95,7 @@ func MapSliceEqual[K comparable, T proto.Message](t testing.TB, expected, actual
 	return areEqual
 }
 
-func MapEqual[K comparable, T proto.Message](t testing.TB, expected, actual map[K]T, msgAndArgs ...interface{}) bool {
+func MapEqual[K comparable, T message](t testing.TB, expected, actual map[K]T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	expectedKeys := maps.Keys(expected)
 	actualKeys := maps.Keys(actual)
@@ -105,21 +110,19 @@ func MapEqual[K comparable, T proto.Message](t testing.TB, expected, actual map[
 	return areEqual
 }
 
-func toJson(m proto.Message) (string, error) {
+func toJson(m message) (string, error) {
 	if m == nil {
 		return "", nil
 	}
 
-	marshaller := &jsonpb.Marshaler{
-		EnumsAsInts:  false,
-		EmitDefaults: false,
-		Indent:       "  ",
+	marshaller := &protojson.MarshalOptions{
+		Indent: "  ",
 	}
 
-	s, err := marshaller.MarshalToString(m)
+	s, err := marshaller.Marshal(m)
 	if err != nil {
 		return "", err
 	}
 
-	return s, nil
+	return string(s), nil
 }
