@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/golang/protobuf/proto"
 	cTLS "github.com/google/certificate-transparency-go/tls"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -145,7 +144,7 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		},
 		AdditionalCas: additionalCAs,
 	}
-	trustInfoBytes, err := proto.Marshal(trustInfo)
+	trustInfoBytes, err := trustInfo.MarshalVT()
 	if err != nil {
 		return nil, errors.Errorf("Could not marshal trust info: %s", err)
 	}
