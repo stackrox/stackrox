@@ -647,17 +647,17 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 			s.NoError(postUpdateErr)
 			s.True(postUpdateFound)
 			if c.ExpectError {
-				protoassert.Equal(s.T(), oldSensorExpiry, preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				protoassert.Equal(s.T(), oldSensorCertNotBefore, preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(oldSensorExpiry.AsTime(), preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
+				s.Equal(oldSensorCertNotBefore, preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
 				s.ErrorIs(updateErr, c.ExpectedError)
-				protoassert.Equal(s.T(), oldSensorExpiry, postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				protoassert.Equal(s.T(), oldSensorCertNotBefore, postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(oldSensorExpiry.AsTime(), postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
+				s.Equal(oldSensorCertNotBefore.AsTime(), postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore().AsTime())
 			} else {
-				protoassert.Equal(s.T(), oldSensorExpiry, preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				protoassert.Equal(s.T(), oldSensorCertNotBefore, preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(oldSensorExpiry.AsTime(), preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
+				s.Equal(oldSensorCertNotBefore.AsTime(), preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore().AsTime())
 				s.NoError(updateErr)
-				protoassert.Equal(s.T(), newSensorExpiry, postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-				protoassert.Equal(s.T(), newSensorCertNotBefore, postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(newSensorExpiry.AsTime(), postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
+				s.Equal(newSensorCertNotBefore.AsTime(), postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore().AsTime())
 			}
 			// Revert to pre-test state
 			err := s.datastore.UpdateClusterCertExpiryStatus(globalReadWriteCtx, clusterID, oldCertExpiryStatus)
@@ -665,8 +665,8 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 			fetchedCluster, found, err := s.datastore.GetCluster(globalReadWriteCtx, clusterID)
 			s.Require().NoError(err)
 			s.Require().True(found)
-			protoassert.Equal(s.T(), oldSensorExpiry, fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry())
-			protoassert.Equal(s.T(), oldSensorCertNotBefore, fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+			s.Equal(oldSensorExpiry.AsTime(), fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
+			s.Equal(oldSensorCertNotBefore.AsTime(), fetchedCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore().AsTime())
 		})
 	}
 }
@@ -726,19 +726,19 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 			if c.ExpectError {
 				s.Equal(oldHealthStatus.GetCollectorHealthStatus(), preUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(oldHealthStatus.GetOverallHealthStatus(), preUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				protoassert.Equal(s.T(), oldHealthStatus.GetLastContact(), preUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(oldHealthStatus.GetLastContact().AsTime(), preUpdateCluster.GetHealthStatus().GetLastContact().AsTime())
 				s.ErrorIs(updateErr, c.ExpectedError)
 				s.Equal(oldHealthStatus.GetCollectorHealthStatus(), postUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(oldHealthStatus.GetOverallHealthStatus(), postUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				protoassert.Equal(s.T(), oldHealthStatus.GetLastContact(), preUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(oldHealthStatus.GetLastContact().AsTime(), preUpdateCluster.GetHealthStatus().GetLastContact().AsTime())
 			} else {
 				s.Equal(oldHealthStatus.GetCollectorHealthStatus(), preUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(oldHealthStatus.GetOverallHealthStatus(), preUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				protoassert.Equal(s.T(), oldHealthStatus.GetLastContact(), preUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(oldHealthStatus.GetLastContact().AsTime(), preUpdateCluster.GetHealthStatus().GetLastContact().AsTime())
 				s.NoError(updateErr)
 				s.Equal(newHealthStatus.GetCollectorHealthStatus(), postUpdateCluster.GetHealthStatus().GetCollectorHealthStatus())
 				s.Equal(newHealthStatus.GetOverallHealthStatus(), postUpdateCluster.GetHealthStatus().GetOverallHealthStatus())
-				protoassert.Equal(s.T(), newHealthStatus.GetLastContact(), postUpdateCluster.GetHealthStatus().GetLastContact())
+				s.Equal(newHealthStatus.GetLastContact().AsTime(), postUpdateCluster.GetHealthStatus().GetLastContact().AsTime())
 			}
 			// Revert to pre-test state
 			err := s.datastore.UpdateClusterHealth(globalReadWriteCtx, clusterID, oldHealthStatus)
@@ -748,7 +748,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterHealth() {
 			s.Require().True(found)
 			s.Require().Equal(oldHealthStatus.GetCollectorHealthStatus(), fetchedCluster.GetHealthStatus().GetCollectorHealthStatus())
 			s.Require().Equal(oldHealthStatus.GetOverallHealthStatus(), fetchedCluster.GetHealthStatus().GetOverallHealthStatus())
-			protoassert.Equal(s.T(), oldHealthStatus.GetLastContact(), preUpdateCluster.GetHealthStatus().GetLastContact())
+			s.Equal(oldHealthStatus.GetLastContact().AsTime(), preUpdateCluster.GetHealthStatus().GetLastContact().AsTime())
 		})
 	}
 }
@@ -956,28 +956,28 @@ func (s *clusterDatastoreSACSuite) TestUpdateAuditLogFileStates() {
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), preUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
 					s.Require().NotNil(preUpdateCluster.GetAuditLogState()[k])
-					protoassert.Equal(s.T(), oldAuditLogFileState[k].GetCollectLogsSince(), preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Equal(oldAuditLogFileState[k].GetCollectLogsSince().AsTime(), preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince().AsTime())
 				}
 				s.ErrorIs(updateErr, c.ExpectedError)
 				s.Require().Equal(len(oldAuditLogFileState), len(postUpdateCluster.GetAuditLogState()))
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), postUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
 					s.Require().NotNil(postUpdateCluster.GetAuditLogState()[k])
-					protoassert.Equal(s.T(), oldAuditLogFileState[k].GetCollectLogsSince(), postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Equal(oldAuditLogFileState[k].GetCollectLogsSince().AsTime(), postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince().AsTime())
 				}
 			} else {
 				s.Require().Equal(len(oldAuditLogFileState), len(preUpdateCluster.GetAuditLogState()))
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), preUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
 					s.Require().NotNil(preUpdateCluster.GetAuditLogState()[k])
-					protoassert.Equal(s.T(), oldAuditLogFileState[k].GetCollectLogsSince(), preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Equal(oldAuditLogFileState[k].GetCollectLogsSince().AsTime(), preUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince().AsTime())
 				}
 				s.NoError(updateErr)
 				s.Require().Equal(len(newAuditLogFileState), len(postUpdateCluster.GetAuditLogState()))
 				for k := range newAuditLogFileState {
 					s.Require().Equal(newAuditLogFileState[k].GetLastAuditId(), postUpdateCluster.GetAuditLogState()[k].GetLastAuditId())
 					s.Require().NotNil(postUpdateCluster.GetAuditLogState()[k])
-					protoassert.Equal(s.T(), newAuditLogFileState[k].GetCollectLogsSince(), postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Equal(newAuditLogFileState[k].GetCollectLogsSince().AsTime(), postUpdateCluster.GetAuditLogState()[k].GetCollectLogsSince().AsTime())
 				}
 				// Revert to pre-test state
 				err := s.datastore.UpdateAuditLogFileStates(globalReadWriteCtx, clusterID, oldAuditLogFileState)
@@ -989,7 +989,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateAuditLogFileStates() {
 				for k := range oldAuditLogFileState {
 					s.Require().Equal(oldAuditLogFileState[k].GetLastAuditId(), fetchedCluster.GetAuditLogState()[k].GetLastAuditId())
 					s.Require().NotNil(fetchedCluster.GetAuditLogState()[k])
-					protoassert.Equal(s.T(), oldAuditLogFileState[k].GetCollectLogsSince(), fetchedCluster.GetAuditLogState()[k].GetCollectLogsSince())
+					s.Equal(oldAuditLogFileState[k].GetCollectLogsSince().AsTime(), fetchedCluster.GetAuditLogState()[k].GetCollectLogsSince().AsTime())
 				}
 			}
 		})
