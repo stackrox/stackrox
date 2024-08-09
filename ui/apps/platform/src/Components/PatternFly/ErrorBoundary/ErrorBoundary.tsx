@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { withRouter } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import Raven from 'raven-js';
 
 import ErrorBoundaryPage from './ErrorBoundaryPage';
@@ -23,7 +23,7 @@ type State =
           errorInfo: ErrorInfo;
       };
 
-class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryClass extends Component<Props, State> {
     constructor(props: Props) {
         super(props);
 
@@ -58,4 +58,9 @@ class ErrorBoundary extends Component<Props, State> {
     }
 }
 
-export default withRouter(ErrorBoundary);
+function ErrorBoundary({ children }: { children: ReactNode }) {
+    const location = useLocation();
+    return <ErrorBoundaryClass location={location.pathname}>{children}</ErrorBoundaryClass>;
+}
+
+export default ErrorBoundary;

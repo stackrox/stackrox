@@ -144,36 +144,24 @@ function RiskAcceptancePage(): ReactElement {
                     </Tabs>
                 </div>
                 <Switch>
-                    <Route
-                        exact
-                        path={vulnManagementPendingApprovalsPath}
-                        render={() => (
-                            <>
-                                <PageTitle title="Pending Approvals" />
-                                <TabContentList activeKeyTab={activeKeyTab} />
-                            </>
-                        )}
-                    />
-                    <Route
-                        exact
-                        path={vulnManagementApprovedDeferralsPath}
-                        render={() => (
-                            <>
-                                <PageTitle title="Approved Deferrals" />
-                                <TabContentList activeKeyTab={activeKeyTab} />
-                            </>
-                        )}
-                    />
-                    <Route
-                        exact
-                        path={vulnManagementApprovedFalsePositivesPath}
-                        render={() => (
-                            <>
-                                <PageTitle title="Approved False Positives" />
-                                <TabContentList activeKeyTab={activeKeyTab} />
-                            </>
-                        )}
-                    />
+                    <Route exact path={vulnManagementPendingApprovalsPath}>
+                        <>
+                            <PageTitle title="Pending Approvals" />
+                            <TabContentList activeKeyTab={activeKeyTab} />
+                        </>
+                    </Route>
+                    <Route exact path={vulnManagementApprovedDeferralsPath}>
+                        <>
+                            <PageTitle title="Approved Deferrals" />
+                            <TabContentList activeKeyTab={activeKeyTab} />
+                        </>
+                    </Route>
+                    <Route exact path={vulnManagementApprovedFalsePositivesPath}>
+                        <>
+                            <PageTitle title="Approved False Positives" />
+                            <TabContentList activeKeyTab={activeKeyTab} />
+                        </>
+                    </Route>
                 </Switch>
             </PageSection>
         </>

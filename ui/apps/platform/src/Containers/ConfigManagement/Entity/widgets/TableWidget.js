@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 
 import Widget from 'Components/Widget';
@@ -9,7 +8,7 @@ import TablePagination from 'Components/TablePagination';
 import Table from 'Components/Table';
 import URLService from 'utils/URLService';
 
-const TableWidget = ({ match, location, history, header, entityType, ...rest }) => {
+const TableWidget = ({ header, entityType, ...rest }) => {
     const [page, setPage] = useState(0);
     const {
         columns,
@@ -25,6 +24,11 @@ const TableWidget = ({ match, location, history, header, entityType, ...rest }) 
         defaultSorted,
         ...widgetProps
     } = { ...rest };
+
+    const history = useHistory();
+    const location = useLocation();
+    const match = useRouteMatch();
+
     const headerComponents = (
         <TablePagination page={page} dataLength={rows.length} setPage={setPage} />
     );
@@ -61,13 +65,10 @@ const TableWidget = ({ match, location, history, header, entityType, ...rest }) 
 
 TableWidget.propTypes = {
     header: PropTypes.oneOfType([PropTypes.element, PropTypes.string]).isRequired,
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
     entityType: PropTypes.string,
 };
 
 TableWidget.defaultProps = {
     entityType: '',
 };
-export default withRouter(TableWidget);
+export default TableWidget;

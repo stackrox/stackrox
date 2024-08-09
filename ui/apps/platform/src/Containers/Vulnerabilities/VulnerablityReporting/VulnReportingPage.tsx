@@ -31,12 +31,13 @@ function VulnReportingPage() {
             <Route
                 exact
                 path={vulnerabilityReportsPath}
-                render={(props) => {
+                // eslint-disable-next-line react/no-children-prop
+                children={() => {
                     if (pageAction === 'create' && hasWriteAccessForReport) {
-                        return <CreateVulnReportPage {...props} />;
+                        return <CreateVulnReportPage />;
                     }
                     if (pageAction === undefined) {
-                        return <VulnReportsPage {...props} />;
+                        return <VulnReportsPage />;
                     }
                     return <Redirect to={vulnerabilityReportsPath} />;
                 }}
@@ -44,14 +45,15 @@ function VulnReportingPage() {
             <Route
                 exact
                 path={vulnerabilityReportPath}
-                render={(props) => {
+                // eslint-disable-next-line react/no-children-prop
+                children={() => {
                     if (pageAction === 'edit' && hasWriteAccessForReport) {
-                        return <EditVulnReportPage {...props} />;
+                        return <EditVulnReportPage />;
                     }
                     if (pageAction === 'clone' && hasWriteAccessForReport) {
-                        return <CloneVulnReportPage {...props} />;
+                        return <CloneVulnReportPage />;
                     }
-                    return <ViewVulnReportPage {...props} />;
+                    return <ViewVulnReportPage />;
                 }}
             />
         </Switch>

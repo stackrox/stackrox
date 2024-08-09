@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
 import lowerCase from 'lodash/lowerCase';
 import startCase from 'lodash/startCase';
 
@@ -72,4 +71,4 @@ ListHeader.defaultProps = {
     standard: null,
 };
 
-export default withRouter(ListHeader);
+export default ListHeader;

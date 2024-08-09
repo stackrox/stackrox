@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Link, withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { Link, useLocation, useRouteMatch } from 'react-router-dom';
 import { resourceLabels } from 'messages/common';
 import URLService from 'utils/URLService';
 import pluralize from 'pluralize';
@@ -10,7 +9,10 @@ import { SEARCH_WITH_CONTROLS as QUERY } from 'queries/search';
 import queryService from 'utils/queryService';
 import { getResourceCountFromAggregatedResults } from 'utils/complianceUtils';
 
-const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match, location }) => {
+const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType }) => {
+    const match = useRouteMatch();
+    const location = useLocation();
+
     function getLinkToListType(listEntityType) {
         return URLService.getURL(match, location)
             .base(entityType, entityId)
@@ -87,8 +89,6 @@ const ResourceTabs = ({ entityType, entityId, resourceTabs, selectedType, match,
 };
 
 ResourceTabs.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     entityId: PropTypes.string.isRequired,
     selectedType: PropTypes.string,
@@ -100,4 +100,4 @@ ResourceTabs.defaultProps = {
     selectedType: null,
 };
 
-export default withRouter(ResourceTabs);
+export default ResourceTabs;

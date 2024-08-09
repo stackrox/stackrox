@@ -44,19 +44,22 @@ function WorkloadCvesPage() {
             )}
             <Switch>
                 {hasReadAccessForNamespaces && (
-                    <Route path={vulnerabilityNamespaceViewPath} component={NamespaceViewPage} />
+                    <Route path={vulnerabilityNamespaceViewPath}>
+                        <NamespaceViewPage />
+                    </Route>
                 )}
-                <Route path={vulnerabilitiesWorkloadCveSinglePath} component={ImageCvePage} />
-                <Route path={vulnerabilitiesWorkloadCveImageSinglePath} component={ImagePage} />
-                <Route
-                    path={vulnerabilitiesWorkloadCveDeploymentSinglePath}
-                    component={DeploymentPage}
-                />
-                <Route
-                    exact
-                    path={vulnerabilitiesWorkloadCvesPath}
-                    component={WorkloadCvesOverviewPage}
-                />
+                <Route path={vulnerabilitiesWorkloadCveSinglePath}>
+                    <ImageCvePage />
+                </Route>
+                <Route path={vulnerabilitiesWorkloadCveImageSinglePath}>
+                    <ImagePage />
+                </Route>
+                <Route path={vulnerabilitiesWorkloadCveDeploymentSinglePath}>
+                    <DeploymentPage />
+                </Route>
+                <Route exact path={vulnerabilitiesWorkloadCvesPath}>
+                    <WorkloadCvesOverviewPage />
+                </Route>
                 <Route>
                     <PageSection variant="light">
                         <PageTitle title="Workload CVEs - Not Found" />

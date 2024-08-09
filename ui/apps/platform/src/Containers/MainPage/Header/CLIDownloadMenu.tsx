@@ -1,5 +1,4 @@
 import React, { useState, ReactElement } from 'react';
-import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { DownloadIcon } from '@patternfly/react-icons';
 import { Flex, FlexItem } from '@patternfly/react-core';
@@ -114,4 +113,4 @@ const mapDispatchToProps = {
     removeToast: actions.removeOldestNotification,
 };
 
-export default withRouter(connect(null, mapDispatchToProps)(CLIDownloadMenu));
+export default connect(null, mapDispatchToProps)(CLIDownloadMenu);

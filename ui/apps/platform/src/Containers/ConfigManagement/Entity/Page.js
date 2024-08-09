@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import { useRouteMatch, useLocation } from 'react-router-dom';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
@@ -20,9 +19,11 @@ import Tabs from './EntityTabs';
 import SidePanel from '../SidePanel/SidePanel';
 import Entity from '../Entity';
 
-const EntityPage = ({ match, location }) => {
+const EntityPage = () => {
     const [isExporting, setIsExporting] = useState(false);
     const { isDarkMode } = useTheme();
+    const location = useLocation();
+    const match = useRouteMatch();
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
     const pageState = new WorkflowState(
@@ -116,9 +117,4 @@ const EntityPage = ({ match, location }) => {
     );
 };
 
-EntityPage.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-};
-
-export default withRouter(EntityPage);
+export default EntityPage;

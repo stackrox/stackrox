@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { Link, withRouter } from 'react-router-dom';
+import { Link, useHistory, useLocation, useRouteMatch } from 'react-router-dom';
 import { ExternalLink } from 'react-feather';
 
 import Query from 'Components/CacheFirstQuery';
@@ -22,7 +21,11 @@ import DeploymentPage from '../Entity/Deployment';
 
 const MAX_CONTROL_TITLE = 120;
 
-const ComplianceListSidePanel = ({ entityType, entityId, match, location, history }) => {
+const ComplianceListSidePanel = ({ entityType, entityId }) => {
+    const history = useHistory();
+    const location = useLocation();
+    const match = useRouteMatch();
+
     function getEntityPage() {
         switch (entityType) {
             case resourceTypes.NODE:
@@ -93,11 +96,8 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
 };
 
 ComplianceListSidePanel.propTypes = {
-    history: ReactRouterPropTypes.history.isRequired,
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     entityId: PropTypes.string.isRequired,
 };
 
-export default withRouter(ComplianceListSidePanel);
+export default ComplianceListSidePanel;

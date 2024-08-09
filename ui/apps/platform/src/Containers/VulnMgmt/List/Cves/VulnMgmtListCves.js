@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { gql } from '@apollo/client';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 
 import {
     defaultHeaderClassName,
@@ -280,7 +280,6 @@ export function renderCveDescription(row) {
 }
 
 const VulnMgmtCves = ({
-    history,
     selectedRowId,
     search,
     sort,
@@ -292,6 +291,7 @@ const VulnMgmtCves = ({
     refreshTrigger,
     setRefreshTrigger,
 }) => {
+    const history = useHistory();
     const { analyticsTrack } = useAnalytics();
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
@@ -654,4 +654,4 @@ const mapDispatchToProps = {
     removeToast: notificationActions.removeOldestNotification,
 };
 
-export default withRouter(connect(null, mapDispatchToProps)(VulnMgmtCves));
+export default connect(null, mapDispatchToProps)(VulnMgmtCves);

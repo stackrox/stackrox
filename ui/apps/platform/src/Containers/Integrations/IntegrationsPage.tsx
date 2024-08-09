@@ -21,7 +21,9 @@ const Page = (): ReactElement => {
     // Redirect from list or view page to cluster init bundles list.
     return (
         <Switch>
-            <Route exact path={integrationsPath} component={IntegrationTilesPage} />
+            <Route exact path={integrationsPath}>
+                <IntegrationTilesPage />
+            </Route>
             <Route
                 path={[
                     `${integrationsPath}/authProviders/clusterInitBundle`,
@@ -29,11 +31,21 @@ const Page = (): ReactElement => {
                 ]}
                 render={() => <Redirect to={clustersInitBundlesPath} />}
             />
-            <Route exact path={integrationsListPath} component={IntegrationsListPage} />
-            <Route path={integrationCreatePath} component={CreateIntegrationPage} />
-            <Route path={integrationEditPath} component={EditIntegrationPage} />
-            <Route path={integrationDetailsPath} component={IntegrationDetailsPage} />
-            <Route component={IntegrationsNotFoundPage} />
+            <Route exact path={integrationsListPath}>
+                <IntegrationsListPage />
+            </Route>
+            <Route path={integrationCreatePath}>
+                <CreateIntegrationPage />
+            </Route>
+            <Route path={integrationEditPath}>
+                <EditIntegrationPage />
+            </Route>
+            <Route path={integrationDetailsPath}>
+                <IntegrationDetailsPage />
+            </Route>
+            <Route>
+                <IntegrationsNotFoundPage />
+            </Route>
         </Switch>
     );
 };

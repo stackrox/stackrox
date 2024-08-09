@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import merge from 'lodash/merge';
 
@@ -50,8 +49,10 @@ function setStandardsMapping(data, key, type) {
     return mapping;
 }
 
-const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, className }) => {
+const StandardsAcrossEntity = ({ entityType, bodyClassName, className }) => {
     const searchParam = useContext(searchContext);
+    const match = useRouteMatch();
+    const location = useLocation();
     const headerText = `Passing standards across ${entityNounOrdinaryCasePlural[entityType]}`;
 
     function processData(data, type) {
@@ -133,8 +134,6 @@ const StandardsAcrossEntity = ({ match, location, entityType, bodyClassName, cla
 };
 
 StandardsAcrossEntity.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     entityType: PropTypes.string.isRequired,
     bodyClassName: PropTypes.string,
     className: PropTypes.string,
@@ -145,4 +144,4 @@ StandardsAcrossEntity.defaultProps = {
     className: '',
 };
 
-export default withRouter(StandardsAcrossEntity);
+export default StandardsAcrossEntity;

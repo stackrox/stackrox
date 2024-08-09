@@ -1,13 +1,12 @@
 import React, { useContext, useRef, useLayoutEffect } from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { useHistory } from 'react-router-dom';
 import resolvePath from 'object-resolve-path';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';
 import Table from 'Components/Table';
 import TablePagination from 'Components/TablePagination';
 import URLSearchInput from 'Components/URLSearchInput';
-import { withRouter } from 'react-router-dom';
 import { searchCategories } from 'constants/entityTypes';
 import createPDFTable from 'utils/pdfUtils';
 import CheckboxTable from 'Components/CheckboxTable';
@@ -21,7 +20,6 @@ import {
 const EntityList = ({
     autoFocusSearchInput,
     entityType,
-    history,
     idAttribute,
     rowData,
     searchOptions,
@@ -44,6 +42,7 @@ const EntityList = ({
 }) => {
     const tableRef = useRef(null);
     const workflowState = useContext(workflowStateContext);
+    const history = useHistory();
 
     function toggleTableRow(id) {
         const newSelection = toggleRow(id, selection);
@@ -173,7 +172,6 @@ EntityList.propTypes = {
     autoFocusSearchInput: PropTypes.bool,
     entityType: PropTypes.string.isRequired,
     idAttribute: PropTypes.string.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
     rowData: PropTypes.arrayOf(PropTypes.shape({})),
     searchOptions: PropTypes.arrayOf(PropTypes.string),
     sort: PropTypes.arrayOf(PropTypes.shape({})),
@@ -215,4 +213,4 @@ EntityList.defaultProps = {
     pageSize: null,
 };
 
-export default withRouter(EntityList);
+export default EntityList;
