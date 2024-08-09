@@ -51,13 +51,13 @@ var (
 // LocalScan wraps the functions required for enriching local images. This allows us to inject different values for testing purposes.
 type LocalScan struct {
 	// NOTE: If you change these, make sure to also change the respective values within the tests.
-	scanImg                           func(context.Context, *storage.Image, registryTypes.ImageRegistry, scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error)
-	fetchSignaturesWithRetry          func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
-	scannerClientSingleton            func() scannerclient.ScannerClient
-	getGlobalRegistryForImage         func(*storage.ImageName) (registryTypes.ImageRegistry, error)
-	createNoAuthImageRegistry         func(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error)
-	getMatchingCentralRegIntegrations func(*storage.ImageName) []registryTypes.ImageRegistry
-	getRegistries                     func(*storage.ImageName, string, []string) ([]registryTypes.ImageRegistry, error)
+	scanImg                   func(context.Context, *storage.Image, registryTypes.ImageRegistry, scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error)
+	fetchSignaturesWithRetry  func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
+	scannerClientSingleton    func() scannerclient.ScannerClient
+	createNoAuthImageRegistry func(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error)
+	getCentralRegistries      func(*storage.ImageName) []registryTypes.ImageRegistry
+	getPullSecretRegistries   func(*storage.ImageName, string, []string) ([]registryTypes.ImageRegistry, error)
+	getGlobalRegistry         func(*storage.ImageName) (registryTypes.ImageRegistry, error)
 
 	// scanSemaphore limits the number of active scans.
 	scanSemaphore        *semaphore.Weighted
@@ -78,9 +78,9 @@ type LocalScanRequest struct {
 }
 
 type registryStore interface {
-	GetRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error)
-	GetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegistry, error)
-	GetMatchingCentralRegistryIntegrations(*storage.ImageName) []registryTypes.ImageRegistry
+	GetPullSecretRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error)
+	GetGlobalRegistry(*storage.ImageName) (registryTypes.ImageRegistry, error)
+	GetCentralRegistries(*storage.ImageName) []registryTypes.ImageRegistry
 }
 
 // LocalScanCentralClient interface to central's client
@@ -96,17 +96,17 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		},
 	})
 	return &LocalScan{
-		scanImg:                           scanImage,
-		fetchSignaturesWithRetry:          signatures.FetchImageSignaturesWithRetries,
-		scannerClientSingleton:            scannerclient.GRPCClientSingleton,
-		getRegistries:                     registryStore.GetRegistries,
-		getGlobalRegistryForImage:         registryStore.GetGlobalRegistryForImage,
-		scanSemaphore:                     semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
-		maxSemaphoreWaitTime:              defaultMaxSemaphoreWaitTime,
-		createNoAuthImageRegistry:         createNoAuthImageRegistry,
-		getMatchingCentralRegIntegrations: registryStore.GetMatchingCentralRegistryIntegrations,
-		regFactory:                        regFactory,
-		mirrorStore:                       mirrorStore,
+		scanImg:                   scanImage,
+		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
+		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
+		scanSemaphore:             semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
+		regFactory:                regFactory,
+		mirrorStore:               mirrorStore,
+		createNoAuthImageRegistry: createNoAuthImageRegistry,
+		getCentralRegistries:      registryStore.GetCentralRegistries,
+		getPullSecretRegistries:   registryStore.GetPullSecretRegistries,
+		getGlobalRegistry:         registryStore.GetGlobalRegistry,
 	}
 }
 
@@ -206,7 +206,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 
 	// For each pull source, obtain the associated registries and attempt to obtain metadata, stopping on first success.
 	for _, pullSource := range pullSources {
-		registries, err := s.getImageRegistries(ctx, namespace, pullSource.GetName(), req.ImagePullSecrets)
+		registries, err := s.getRegistries(ctx, namespace, pullSource.GetName(), req.ImagePullSecrets)
 		if err != nil {
 			log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
 			errs.AddError(err)
@@ -251,15 +251,14 @@ func enrichImageDataSource(sourceImage *storage.ContainerImage, reg registryType
 	targetImg.GetMetadata().DataSource = ds
 }
 
-// getImageRegistries will return registries that match the provided image, starting with image integrations sync'd from Central,
+// getRegistries will return registries that match the provided image, starting with image integrations sync'd from Central,
 // then namespace pull secrets, and lastly any global pull secrets (such as the OCP global pull secret). If no registries
 // are found will return a new registry that has no credentials.
-func (s *LocalScan) getImageRegistries(ctx context.Context, namespace string, imgName *storage.ImageName, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error) {
+func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName *storage.ImageName, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error) {
 	var regs []registryTypes.ImageRegistry
 
 	// Add registries from Central's image integrations.
-	centralIntegrations := s.getMatchingCentralRegIntegrations(imgName)
-	if len(centralIntegrations) > 0 {
+	if centralIntegrations := s.getCentralRegistries(imgName); len(centralIntegrations) > 0 {
 		regs = append(regs, centralIntegrations...)
 	}
 
@@ -267,14 +266,14 @@ func (s *LocalScan) getImageRegistries(ctx context.Context, namespace string, im
 	if namespace != "" {
 		// If namespace provided pull appropriate registry.
 		// An err indicates no registry was found, only append if was no err.
-		if sRegs, err := s.getRegistries(imgName, namespace, imagePullSecrets); err == nil {
+		if sRegs, err := s.getPullSecretRegistries(imgName, namespace, imagePullSecrets); err == nil {
 			regs = append(regs, sRegs...)
 		}
 	}
 
 	// Add global pull secret registry.
 	// An err indicates no registry was found, only append if was no err.
-	if reg, err := s.getGlobalRegistryForImage(imgName); err == nil {
+	if reg, err := s.getGlobalRegistry(imgName); err == nil {
 		regs = append(regs, reg)
 	}
 

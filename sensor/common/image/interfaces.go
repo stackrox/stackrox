@@ -12,9 +12,9 @@ import (
 
 //go:generate mockgen-wrapper
 type registryStore interface {
-	GetRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error)
-	GetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegistry, error)
-	GetMatchingCentralRegistryIntegrations(*storage.ImageName) []registryTypes.ImageRegistry
+	GetPullSecretRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error)
+	GetGlobalRegistry(*storage.ImageName) (registryTypes.ImageRegistry, error)
+	GetCentralRegistries(*storage.ImageName) []registryTypes.ImageRegistry
 	IsLocal(*storage.ImageName) bool
 }
 
