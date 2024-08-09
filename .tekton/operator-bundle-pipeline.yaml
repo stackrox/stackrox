@@ -87,7 +87,7 @@ spec:
     type: string
   - name: image-tag-style
     description: Image tag style to be used, valid options are 'main' or 'operator'.
-    default: 'main'
+    default: 'operator'
     type: string
 
   results:
