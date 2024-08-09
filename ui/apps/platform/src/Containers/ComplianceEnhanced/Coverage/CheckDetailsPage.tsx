@@ -70,7 +70,7 @@ function CheckDetails() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: [CLUSTER_QUERY],
         defaultSortOption: { field: CLUSTER_QUERY, direction: 'asc' },
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion(TAB_NAV_QUERY, TAB_NAV_VALUES);
@@ -138,7 +138,7 @@ function CheckDetails() {
 
     function onClearFilters() {
         setSearchFilter({});
-        setPage(1, 'replace');
+        setPage(1);
     }
 
     const onCheckStatusSelect = (

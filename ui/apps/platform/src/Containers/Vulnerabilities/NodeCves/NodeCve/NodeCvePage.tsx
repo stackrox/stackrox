@@ -88,7 +88,7 @@ function NodeCvePage() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
@@ -201,7 +201,7 @@ function NodeCvePage() {
                         getSortParams={getSortParams}
                         onClearFilters={() => {
                             setSearchFilter({});
-                            setPage(1, 'replace');
+                            setPage(1);
                         }}
                     />
                 </div>

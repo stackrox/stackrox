@@ -29,6 +29,17 @@ const createWrapper = (props) => {
     };
 };
 
+beforeAll(() => {
+    jest.useFakeTimers();
+});
+
+function actAndRunTicks(callback) {
+    return act(() => {
+        callback();
+        jest.runAllTicks();
+    });
+}
+
 test('should update pagination parameters in the URL', async () => {
     let params;
     let testLocation;
@@ -52,7 +63,7 @@ test('should update pagination parameters in the URL', async () => {
     expect(params.get('perPage')).toBe(null);
 
     // Check new and existing values when URL parameter is set
-    act(() => {
+    actAndRunTicks(() => {
         const { setPage } = result.current;
         setPage(2);
     });
@@ -63,7 +74,7 @@ test('should update pagination parameters in the URL', async () => {
     expect(params.get('perPage')).toBe(null);
 
     // Check that updating the perPage parameter also resets the page parameter to 1
-    act(() => {
+    actAndRunTicks(() => {
         const { setPerPage } = result.current;
         setPerPage(20);
     });
@@ -97,7 +108,7 @@ test('should not add history states when setting values with a "replace" action'
     expect(params.get('perPage')).toBe(null);
 
     // Update the page parameter with a 'replace' action
-    act(() => {
+    actAndRunTicks(() => {
         const { setPage } = result.current;
         setPage(2, 'replace');
     });
@@ -109,7 +120,7 @@ test('should not add history states when setting values with a "replace" action'
     expect(params.get('perPage')).toBe(null);
 
     // Update the perPage parameter with a 'replace' action
-    act(() => {
+    actAndRunTicks(() => {
         const { setPerPage } = result.current;
         setPerPage(20, 'replace');
     });
@@ -144,7 +155,7 @@ test('should only add a single history state when setting perPage without an act
     expect(params.get('perPage')).toBe(null);
 
     // Update the page parameter
-    act(() => {
+    actAndRunTicks(() => {
         const { setPage } = result.current;
         setPage(2);
     });
@@ -156,7 +167,7 @@ test('should only add a single history state when setting perPage without an act
     expect(params.get('perPage')).toBe(null);
 
     // Update the perPage parameter and check the length of the history stack
-    act(() => {
+    actAndRunTicks(() => {
         const { setPerPage } = result.current;
         setPerPage(20);
     });

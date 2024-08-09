@@ -135,7 +135,7 @@ function DeploymentPageVulnerabilities({
             field: 'Severity',
             direction: 'desc',
         },
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
@@ -234,7 +234,7 @@ function DeploymentPageVulnerabilities({
                     isBox
                     onChange={() => {
                         setSearchFilter({});
-                        setPage(1, 'replace');
+                        setPage(1);
                     }}
                 />
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
@@ -245,7 +245,7 @@ function DeploymentPageVulnerabilities({
                             searchFilter={searchFilter}
                             onFilterChange={(newFilter, searchPayload) => {
                                 setSearchFilter(newFilter);
-                                setPage(1, 'replace');
+                                setPage(1);
                                 trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                             }}
                         />
@@ -316,7 +316,7 @@ function DeploymentPageVulnerabilities({
                                 vulnerabilityState={currentVulnerabilityState}
                                 onClearFilters={() => {
                                     setSearchFilter({});
-                                    setPage(1, 'replace');
+                                    setPage(1);
                                 }}
                             />
                         </div>

@@ -80,7 +80,7 @@ function DeploymentsTableContainer({
                     showCveDetailFields={showCveDetailFields}
                     onClearFilters={() => {
                         setSearchFilter({});
-                        pagination.setPage(1, 'replace');
+                        pagination.setPage(1);
                     }}
                 />
             </div>

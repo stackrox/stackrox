@@ -74,7 +74,7 @@ function NodeCvesOverviewPage() {
         sortFields: activeEntityTabKey === 'CVE' ? cveSortFields : nodeSortFields,
         defaultSortOption:
             activeEntityTabKey === 'CVE' ? cveDefaultSortOption : nodeDefaultSortOption,
-        onSort: () => pagination.setPage(1, 'replace'),
+        onSort: () => pagination.setPage(1),
     });
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -88,10 +88,7 @@ function NodeCvesOverviewPage() {
 
     function onEntityTabChange(entityTab: 'CVE' | 'Node') {
         pagination.setPage(1);
-        setSortOption(
-            entityTab === 'CVE' ? cveDefaultSortOption : nodeDefaultSortOption,
-            'replace'
-        );
+        setSortOption(entityTab === 'CVE' ? cveDefaultSortOption : nodeDefaultSortOption);
 
         analyticsTrack({
             event: NODE_CVE_ENTITY_CONTEXT_VIEWED,
@@ -109,7 +106,7 @@ function NodeCvesOverviewPage() {
 
     function onClearFilters() {
         setSearchFilter({});
-        pagination.setPage(1, 'replace');
+        pagination.setPage(1);
     }
 
     const { data } = useNodeCveEntityCounts(querySearchFilter);
@@ -125,7 +122,7 @@ function NodeCvesOverviewPage() {
             searchFilterConfig={searchFilterConfig}
             onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
-                pagination.setPage(1, 'replace');
+                pagination.setPage(1);
                 trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
             }}
         />

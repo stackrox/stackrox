@@ -169,7 +169,7 @@ function CVEsTableContainer({
                     createTableActions={createTableActions}
                     onClearFilters={() => {
                         setSearchFilter({});
-                        pagination.setPage(1, 'replace');
+                        pagination.setPage(1);
                     }}
                 />
             </div>

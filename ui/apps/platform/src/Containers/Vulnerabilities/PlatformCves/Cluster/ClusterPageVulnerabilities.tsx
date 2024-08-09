@@ -51,7 +51,7 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
 
     const { data, loading, error } = useClusterVulnerabilities({
@@ -144,7 +144,7 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                         getSortParams={getSortParams}
                         onClearFilters={() => {
                             setSearchFilter({});
-                            setPage(1, 'replace');
+                            setPage(1);
                         }}
                     />
                 </div>

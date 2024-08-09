@@ -56,7 +56,7 @@ function ClusterDetailsPage() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: [CHECK_NAME_QUERY],
         defaultSortOption: { field: CHECK_NAME_QUERY, direction: 'asc' },
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
     const { searchFilter, setSearchFilter } = useURLSearch();
 
@@ -123,7 +123,7 @@ function ClusterDetailsPage() {
 
     function onClearFilters() {
         setSearchFilter({});
-        setPage(1, 'replace');
+        setPage(1);
     }
 
     if (scanConfigProfilesError) {
