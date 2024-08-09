@@ -173,7 +173,7 @@ spec:
     - name: IMAGE_TAG_STYLE
       value: $(params.image-tag-style)
     taskRef:
-      name: determine-image-tag-oci-ta
+      name: determine-image-tag
 
   - name: prefetch-dependencies
     params:
