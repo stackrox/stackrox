@@ -15,6 +15,7 @@ import (
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -316,7 +317,7 @@ func (c *clairify) getInitialScanResults(img *storage.Image) (*clairV1.LayerEnve
 	var opts types.GetImageDataOpts
 	layerEnv, err := c.httpClient.RetrieveImageDataBySHA(sha, &opts)
 	if err != nil {
-		return nil, err
+		return nil, errox.ConcealSensitive(err)
 	}
 	for _, note := range layerEnv.Notes {
 		if note == clairV1.CertifiedRHELScanUnavailable {
@@ -326,6 +327,9 @@ func (c *clairify) getInitialScanResults(img *storage.Image) (*clairV1.LayerEnve
 			log.Debugf("Image %v is out of Red Hat Scanner Certification scope. Retrying fetch for uncertified results", v1ImageToClairifyImage(img))
 			opts.UncertifiedRHELResults = true
 			layerEnv, err = c.httpClient.RetrieveImageDataBySHA(sha, &opts)
+			if err != nil {
+				err = errox.ConcealSensitive(err)
+			}
 		}
 	}
 
@@ -375,11 +379,11 @@ func (c *clairify) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 
 func (c *clairify) scanImage(image *storage.Image, opts types.GetImageDataOpts) (*clairV1.LayerEnvelope, error) {
 	if err := c.addScan(image, opts.UncertifiedRHELResults); err != nil {
-		return nil, err
+		return nil, errox.ConcealSensitive(err)
 	}
 	layerEnv, err := c.getScan(image, &opts)
 	if err != nil {
-		return nil, err
+		return nil, errox.ConcealSensitive(err)
 	}
 
 	return layerEnv, nil
