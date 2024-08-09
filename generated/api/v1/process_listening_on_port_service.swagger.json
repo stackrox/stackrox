@@ -16,6 +16,29 @@
     "application/json"
   ],
   "paths": {
+    "/v1/listening_endpoints/count": {
+      "get": {
+        "summary": "CountListeningEndpoints returns the number listening endpoints for each deployment",
+        "operationId": "ListeningEndpointsService_CountListeningEndpoints",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CountProcessesListeningOnPortsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ListeningEndpointsService"
+        ]
+      }
+    },
     "/v1/listening_endpoints/deployment/{deploymentId}": {
       "get": {
         "summary": "GetListeningEndpoints returns the listening endpoints and the processes that opened them for a given deployment",
@@ -214,6 +237,18 @@
             "$ref": "#/definitions/ProcessSignalLineageInfo"
           },
           "title": "Process LineageInfo"
+        }
+      }
+    },
+    "v1CountProcessesListeningOnPortsResponse": {
+      "type": "object",
+      "properties": {
+        "counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int32"
+          }
         }
       }
     },

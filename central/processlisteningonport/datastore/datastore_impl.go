@@ -265,6 +265,22 @@ func (ds *datastoreImpl) AddProcessListeningOnPort(
 	return ds.storage.UpsertMany(ctx, updatePlopObjects)
 }
 
+func (ds *datastoreImpl) CountProcessListeningOnPort(ctx context.Context) (map[string]int32, error) {
+
+	counts, err := ds.storage.CountProcessListeningOnPort(ctx)
+
+	if err != nil {
+		log.Warnf("In CountProcessListeningOnPort. Query returned err: %+v", err)
+		return nil, err
+	}
+
+	if counts == nil {
+		log.Debugf("In CountProcessListeningOnPort. Query returned nil")
+	}
+
+	return counts, nil
+}
+
 func (ds *datastoreImpl) GetProcessListeningOnPort(
 	ctx context.Context,
 	deploymentID string,

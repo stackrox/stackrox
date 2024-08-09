@@ -2,6 +2,7 @@ package services
 
 import groovy.util.logging.Slf4j
 import io.stackrox.proto.api.v1.ListeningEndpointsServiceGrpc
+import io.stackrox.proto.api.v1.ProcessListeningOnPortService.CountProcessesListeningOnPortsResponse
 import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsResponse
 import io.stackrox.proto.api.v1.ProcessListeningOnPortService.GetProcessesListeningOnPortsRequest
 
@@ -23,5 +24,13 @@ class ProcessesListeningOnPortsService extends BaseService {
                         .getListeningEndpoints(request)
 
         return processesListeningOnPorts
+    }
+
+    static CountProcessesListeningOnPortsResponse countProcessesListeningOnPortsResponse() {
+        try {
+            return getProcessesListeningOnPortsService().countListeningEndpoints()
+        } catch (Exception e) {
+            log.warn("Failed to fetch listening endpoint counts", e)
+        }
     }
 }

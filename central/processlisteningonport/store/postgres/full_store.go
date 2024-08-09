@@ -45,6 +45,16 @@ const getByDeploymentStmt = "SELECT plop.serialized, " +
 
 const getClusterAndNamespaceStmt = "SELECT namespace, clusterid FROM deployments WHERE id = $1"
 
+// SQL query to get the count of listening endpoints in each deployment. namespace and clusterid are only obtained for SAC purposes
+const getCountsByDeploymentId = "SELECT d.id, d.namespace, d.clusterid, COALESCE(COUNT(le.deploymentid), 0) AS count " +
+	"FROM deployments d LEFT JOIN listening_endpoints le ON d.id = le.deploymentid AND d.namespace = le.namespace AND d.clusterid = le.clusterid AND le.closed = false GROUP BY d.id, d.namespace, d.clusterid"
+
+func (s *fullStoreImpl) CountProcessListeningOnPort(ctx context.Context) (map[string]int32, error) {
+	return pgutils.Retry2(ctx, func() (map[string]int32, error) {
+		return s.retryableCountPLOP(ctx)
+	})
+}
+
 // Manually written function to get PLOP joined with ProcessIndicators
 func (s *fullStoreImpl) GetProcessListeningOnPort(
 	ctx context.Context,
@@ -126,6 +136,30 @@ func (s *fullStoreImpl) checkAccesssForRows(
 	}
 
 	return true, nil
+}
+
+func (s *fullStoreImpl) retryableCountPLOP(ctx context.Context) (map[string]int32, error) {
+	var rows pgx.Rows
+	var err error
+
+	rows, err = s.db.Query(ctx, getCountsByDeploymentId)
+
+	if err != nil {
+		// Do not be alarmed if the error is simply NoRows
+		err = pgutils.ErrNilIfNoRows(err)
+		if err != nil {
+			log.Warnf("%s: %s", getCountsByDeploymentId, err)
+		}
+		return nil, err
+	}
+	defer rows.Close()
+
+	results, err := s.readCountRows(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return results, rows.Err()
 }
 
 func (s *fullStoreImpl) retryableGetPLOP(
@@ -268,4 +302,28 @@ func (s *fullStoreImpl) readRows(
 	}
 
 	return plops, nil
+}
+
+func (s *fullStoreImpl) readCountRows(
+	ctx context.Context,
+	rows pgx.Rows,
+) (map[string]int32, error) {
+	var counts = make(map[string]int32)
+
+	for rows.Next() {
+		var deploymentID string
+		var namespace string
+		var clusterID string
+		var count int32
+
+		if err := rows.Scan(&deploymentID, &namespace, &clusterID, &count); err != nil {
+			return nil, pgutils.ErrNilIfNoRows(err)
+		}
+
+		if ok, err := plopSAC.ReadAllowed(ctx, sac.ClusterScopeKey(clusterID), sac.NamespaceScopeKey(namespace)); err == nil && ok {
+			counts[deploymentID] = count
+		}
+	}
+
+	return counts, nil
 }
