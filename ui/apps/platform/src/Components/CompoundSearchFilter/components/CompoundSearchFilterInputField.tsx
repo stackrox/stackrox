@@ -1,14 +1,14 @@
 import React from 'react';
-import { Button, DatePicker, Flex, SearchInput, SelectOption } from '@patternfly/react-core';
-import { ArrowRightIcon } from '@patternfly/react-icons';
+import { SearchInput, SelectOption } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
-import { getDate } from 'utils/dateUtils';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
 import { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
 import {
     conditionMap,
+    dateConditionMap,
+    ensureConditionDate,
     ensureConditionNumber,
     ensureString,
     ensureStringArray,
@@ -20,13 +20,15 @@ import {
 import CheckboxSelect from './CheckboxSelect';
 import ConditionNumber from './ConditionNumber';
 import SearchFilterAutocomplete from './SearchFilterAutocomplete';
+import ConditionDate from './ConditionDate';
 
 export type InputFieldValue =
     | string
     | number
     | undefined
     | string[]
-    | { condition: string; number: number };
+    | { condition: string; number: number }
+    | { condition: string; date: string };
 export type InputFieldOnChange = (value: InputFieldValue) => void;
 
 export type CompoundSearchFilterInputFieldProps = {
@@ -39,22 +41,6 @@ export type CompoundSearchFilterInputFieldProps = {
     onChange: InputFieldOnChange;
     config: CompoundSearchFilterConfig;
 };
-
-function dateParse(date: string): Date {
-    const split = date.split('/');
-    if (split.length !== 3) {
-        return new Date('Invalid Date');
-    }
-    const month = split[0];
-    const day = split[1];
-    const year = split[2];
-    if (month.length !== 2 || day.length !== 2 || year.length !== 4) {
-        return new Date('Invalid Date');
-    }
-    return new Date(
-        `${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00`
-    );
-}
 
 function CompoundSearchFilterInputField({
     selectedEntity,
@@ -99,39 +85,22 @@ function CompoundSearchFilterInputField({
         );
     }
     if (attribute.inputType === 'date-picker') {
-        const dateValue = ensureString(value);
-
         return (
-            <Flex spaceItems={{ default: 'spaceItemsNone' }}>
-                <DatePicker
-                    aria-label="Filter by date"
-                    buttonAriaLabel="Filter by date toggle"
-                    value={dateValue}
-                    onChange={(_event, _value) => {
-                        onChange(_value);
-                    }}
-                    dateFormat={getDate}
-                    dateParse={dateParse}
-                    placeholder="MM/DD/YYYY"
-                />
-                <Button
-                    variant="control"
-                    aria-label="Apply date input to search"
-                    onClick={() => {
-                        const date = dateParse(dateValue);
-                        if (!Number.isNaN(date.getTime())) {
-                            onSearch({
-                                action: 'ADD',
-                                category: attribute.searchTerm,
-                                value: dateValue,
-                            });
-                            onChange('');
-                        }
-                    }}
-                >
-                    <ArrowRightIcon />
-                </Button>
-            </Flex>
+            <ConditionDate
+                value={ensureConditionDate(value)}
+                onChange={(newValue) => {
+                    onChange(newValue);
+                }}
+                onSearch={(newValue) => {
+                    const { condition, date } = newValue;
+                    onSearch({
+                        action: 'ADD',
+                        category: attribute.searchTerm,
+                        value: `${dateConditionMap[condition]}${date}`,
+                    });
+                    onChange({ ...newValue, date: '' });
+                }}
+            />
         );
     }
     if (attribute.inputType === 'condition-number') {
