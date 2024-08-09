@@ -32,6 +32,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -72,6 +73,7 @@ var (
 	pruningCtx            = sac.WithAllAccess(context.Background())
 	lastClusterPruneTime  time.Time
 	lastLogImbuePruneTime time.Time
+	pruningTimeout        = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
 )
 
 // GarbageCollector implements a generic garbage collection mechanism.
@@ -421,7 +423,10 @@ func (g *garbageCollectorImpl) removeProcesses(processesToRemove []string, proce
 	log.Infof("[Pruning] Found %d orphaned processes (from formerly deleted %s). Deleting...",
 		len(processesToRemove), processParent)
 
-	return g.processes.PruneProcessIndicators(pruningCtx, processesToRemove)
+	pruneCtxWithTimeout, cancel := contextutil.ContextWithTimeoutIfNotExists(pruningCtx, pruningTimeout)
+	defer cancel()
+
+	return g.processes.PruneProcessIndicators(pruneCtxWithTimeout, processesToRemove)
 }
 
 func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.FrozenStringSet) {
@@ -880,51 +885,46 @@ func (g *garbageCollectorImpl) collectAlerts(config *storage.PrivateConfig) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(pruningCtx, alertQueryTimeout)
-	defer cancel()
-
 	prunedAlertCount := 0
 	// Go through the various queries and remove those batches.
 	for key, query := range queryMap {
 		log.Debugf("Pruning for key %q", key)
-		var alertsToPrune []string
-		// The alert searcher is opinionated and adds some default query parameters.
-		// Those should not be included for pruning.  Simpler to just use `WalkByQuery`
-		err := g.alerts.WalkByQuery(ctx, query, func(alert *storage.Alert) error {
-			alertsToPrune = append(alertsToPrune, alert.GetId())
-
-			return nil
-		})
+		alertsToPrune, err := g.getAlertsToPrune(query)
 		if err != nil {
+			// log and keep going.  If we found some to prune, prune them.
 			log.Errorf("Unable to prune alerts for query %v", query)
-			continue
 		}
 
-		localBatchSize := alertDeleteBatchSize
+		func() {
+			pruneCtxWithTimeout, pruneCancel := contextutil.ContextWithTimeoutIfNotExists(pruningCtx, pruningTimeout)
+			defer pruneCancel()
 
-		for {
-			if len(alertsToPrune) == 0 {
-				break
-			}
-
-			if len(alertsToPrune) < localBatchSize {
-				localBatchSize = len(alertsToPrune)
-			}
-
-			alertBatch := alertsToPrune[:localBatchSize]
-			log.Infof("[Alert pruning] Removing %d alerts for %q", len(alertBatch), key)
-			if err := g.alerts.DeleteAlerts(pruningCtx, alertBatch...); err != nil {
+			log.Infof("[Alert pruning] Removing %d alerts for %q", len(alertsToPrune), key)
+			if err := g.alerts.PruneAlerts(pruneCtxWithTimeout, alertsToPrune...); err != nil {
 				log.Error(err)
 			} else {
-				prunedAlertCount = prunedAlertCount + len(alertBatch)
+				prunedAlertCount = prunedAlertCount + len(alertsToPrune)
 			}
-
-			// Move the slice forward to start the next batch
-			alertsToPrune = alertsToPrune[localBatchSize:]
-		}
+		}()
 	}
 
 	log.Infof("Pruned %d alerts based on retention configuration", prunedAlertCount)
+}
+
+func (g *garbageCollectorImpl) getAlertsToPrune(query *v1.Query) ([]string, error) {
+	ctx, queryCancel := context.WithTimeout(pruningCtx, alertQueryTimeout)
+	defer queryCancel()
+
+	// The alert searcher is opinionated and adds some default query parameters.
+	// Those should not be included for pruning.  Simpler to just use `WalkByQuery`
+	var alertsToPrune []string
+	err := g.alerts.WalkByQuery(ctx, query, func(alert *storage.Alert) error {
+		alertsToPrune = append(alertsToPrune, alert.GetId())
+
+		return nil
+	})
+
+	return alertsToPrune, err
 }
 
 func (g *garbageCollectorImpl) removeOrphanedRisks() {

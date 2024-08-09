@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -84,13 +86,18 @@ const (
 )
 
 var (
+	pruningTimeout = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
+
 	log = logging.LoggerForModule()
 )
 
 // PruneActiveComponents - prunes active components.
 // TODO (ROX-12710):  This will no longer be necessary when the foreign keys are added back
 func PruneActiveComponents(ctx context.Context, pool postgres.DB) {
-	if _, err := pool.Exec(ctx, pruneActiveComponentsStmt); err != nil {
+	pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, pruningTimeout)
+	defer cancel()
+
+	if _, err := pool.Exec(pruneCtx, pruneActiveComponentsStmt); err != nil {
 		log.Errorf("failed to prune active components: %v", err)
 	}
 }
@@ -98,7 +105,10 @@ func PruneActiveComponents(ctx context.Context, pool postgres.DB) {
 // PruneClusterHealthStatuses - prunes cluster health statuses.
 // TODO (ROX-12711):  This will no longer be necessary when the foreign keys are added back
 func PruneClusterHealthStatuses(ctx context.Context, pool postgres.DB) {
-	if _, err := pool.Exec(ctx, pruneClusterHealthStatusesStmt); err != nil {
+	pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, pruningTimeout)
+	defer cancel()
+
+	if _, err := pool.Exec(pruneCtx, pruneClusterHealthStatusesStmt); err != nil {
 		log.Errorf("failed to prune cluster health statuses: %v", err)
 	}
 }
@@ -175,16 +185,22 @@ func GetOrphanedProcessIDsByPod(ctx context.Context, pool postgres.DB, orphanWin
 
 // PruneReportHistory prunes report history as per specified retentionDuration and a few static criteria.
 func PruneReportHistory(ctx context.Context, pool postgres.DB, retentionDuration time.Duration) {
+	pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, pruningTimeout)
+	defer cancel()
+
 	query := fmt.Sprintf(pruneOldReportHistory, int(retentionDuration.Minutes()))
-	if _, err := pool.Exec(ctx, query); err != nil {
+	if _, err := pool.Exec(pruneCtx, query); err != nil {
 		log.Errorf("failed to prune report history: %v", err)
 	}
 }
 
 // PruneLogImbues prunes old log imbues.
 func PruneLogImbues(ctx context.Context, pool postgres.DB, orphanWindow time.Duration) {
+	pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, pruningTimeout)
+	defer cancel()
+
 	query := fmt.Sprintf(pruneLogImbues, int(orphanWindow.Minutes()))
-	if _, err := pool.Exec(ctx, query); err != nil {
+	if _, err := pool.Exec(pruneCtx, query); err != nil {
 		log.Errorf("failed to prune log imbues: %v", err)
 	}
 }
@@ -200,9 +216,12 @@ func PruneAdministrationEvents(ctx context.Context, pool postgres.DB, retentionD
 
 // PruneDiscoveredClusters prunes discovered clusters that haven't been updated since the retention duration.
 func PruneDiscoveredClusters(ctx context.Context, pool postgres.DB, retentionDuration time.Duration) {
+	pruneCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, pruningTimeout)
+	defer cancel()
+
 	query := fmt.Sprintf(pruneDiscoveredClusters, schema.DiscoveredClustersTableName,
 		int(retentionDuration.Minutes()))
-	if _, err := pool.Exec(ctx, query); err != nil {
+	if _, err := pool.Exec(pruneCtx, query); err != nil {
 		log.Errorf("failed to prune discovered clusters: %v", err)
 	}
 }

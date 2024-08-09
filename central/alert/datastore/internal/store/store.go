@@ -24,4 +24,5 @@ type Store interface {
 	UpsertMany(ctx context.Context, alerts []*storage.Alert) error
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, ids []string) error
+	PruneMany(ctx context.Context, ids []string) error
 }

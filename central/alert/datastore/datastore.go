@@ -39,6 +39,7 @@ type DataStore interface {
 	MarkAlertsResolvedBatch(ctx context.Context, id ...string) ([]*storage.Alert, error)
 
 	DeleteAlerts(ctx context.Context, ids ...string) error
+	PruneAlerts(ctx context.Context, ids ...string) error
 }
 
 // New returns a new soleInstance of DataStore using the input store, and searcher.

@@ -219,6 +219,21 @@ func (ds *datastoreImpl) DeleteAlerts(ctx context.Context, ids ...string) error 
 	return nil
 }
 
+func (ds *datastoreImpl) PruneAlerts(ctx context.Context, ids ...string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "PruneAlerts")
+
+	if ok, err := alertSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	if err := ds.storage.PruneMany(ctx, ids); err != nil {
+		return errors.Wrap(err, "pruning alert")
+	}
+	return nil
+}
+
 func sacKeyForAlert(alert *storage.Alert) []sac.ScopeKey {
 	scopedObj := getNSScopedObjectFromAlert(alert)
 	if scopedObj == nil {
