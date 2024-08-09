@@ -3,7 +3,6 @@ package protoconv
 import (
 	"time"
 
-	golangTimestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -18,17 +17,6 @@ const (
 	timeFormat         = "2006-01-02T15:04Z"
 	extendedTimeFormat = "2006-01-02T15:04:03Z"
 )
-
-// ConvertGoGoProtoTimeToGolangProtoTime converts the Gogo Timestamp to the golang protobuf timestamp.
-func ConvertGoGoProtoTimeToGolangProtoTime(gogo *timestamppb.Timestamp) *golangTimestamp.Timestamp {
-	if gogo == nil {
-		return nil
-	}
-	return &golangTimestamp.Timestamp{
-		Seconds: gogo.GetSeconds(),
-		Nanos:   gogo.GetNanos(),
-	}
-}
 
 // ConvertTimestampToTimeOrNow converts a proto timestamp to a golang Time, and returns time.Now() if there is an error.
 func ConvertTimestampToTimeOrNow(gogo *timestamppb.Timestamp) time.Time {
