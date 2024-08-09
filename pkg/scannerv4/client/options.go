@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"net"
 
@@ -12,13 +13,13 @@ var (
 	defaultOptions = options{
 		indexerOpts: connOptions{
 			mTLSSubject:   mtls.ScannerV4IndexerSubject,
-			address:       ":8443",
+			address:       "",
 			serverName:    fmt.Sprintf("scanner-v4-indexer.%s.svc", env.Namespace.Setting()),
 			skipTLSVerify: false,
 		},
 		matcherOpts: connOptions{
 			mTLSSubject:   mtls.ScannerV4MatcherSubject,
-			address:       ":8443",
+			address:       "",
 			serverName:    fmt.Sprintf("scanner-v4-matcher.%s.svc", env.Namespace.Setting()),
 			skipTLSVerify: false,
 		},
@@ -152,13 +153,20 @@ func makeOptions(opts ...Option) (options, error) {
 }
 
 func validateOptions(o options) error {
-	// If this check is removed, make sure we still properly use the DNS name resolver.
-	if _, _, err := net.SplitHostPort(o.indexerOpts.address); err != nil {
-		return fmt.Errorf("invalid indexer address (want [host]:port): %w", err)
+	if o.indexerOpts.address == "" && o.matcherOpts.address == "" {
+		return errors.New("at least one of indexer address or matcher address must be specified")
 	}
-	// If this check is removed, make sure we still properly use the DNS name resolver.
-	if _, _, err := net.SplitHostPort(o.matcherOpts.address); err != nil {
-		return fmt.Errorf("invalid matcher address (want [host]:port): %w", err)
+	if o.indexerOpts.address != "" {
+		// If this check is removed, make sure we still properly use the DNS name resolver.
+		if _, _, err := net.SplitHostPort(o.indexerOpts.address); err != nil {
+			return fmt.Errorf("invalid indexer address (want [host]:port): %w", err)
+		}
+	}
+	if o.matcherOpts.address != "" {
+		// If this check is removed, make sure we still properly use the DNS name resolver.
+		if _, _, err := net.SplitHostPort(o.matcherOpts.address); err != nil {
+			return fmt.Errorf("invalid matcher address (want [host]:port): %w", err)
+		}
 	}
 	return nil
 }

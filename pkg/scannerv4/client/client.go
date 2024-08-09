@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"time"
@@ -19,6 +20,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+var (
+	errIndexerNotConfigured = errors.New("indexer not configured")
+	errMatcherNotConfigured = errors.New("matcher not configured")
 )
 
 // Scanner is the interface that contains the StackRox Scanner
@@ -63,25 +69,53 @@ func NewGRPCScanner(ctx context.Context, opts ...Option) (Scanner, error) {
 	if err != nil {
 		return nil, err
 	}
-	var connList []*grpc.ClientConn
-	conn, err := createGRPCConn(ctx, o.indexerOpts)
-	if err != nil {
-		return nil, err
-	}
-	iConn, mConn := conn, conn
-	connList = append(connList, conn)
-	if !o.comboMode {
-		mConn, err = createGRPCConn(ctx, o.matcherOpts)
+
+	if o.comboMode {
+		// Both o.indexerOpts and o.matcherOpts are the same, so just choose one.
+		conn, err := createGRPCConn(ctx, o.indexerOpts)
 		if err != nil {
-			utils.IgnoreError(conn.Close)
 			return nil, err
 		}
-		connList = append(connList, mConn)
+		return &gRPCScanner{
+			gRPCConnections: []*grpc.ClientConn{conn},
+			indexer:         v4.NewIndexerClient(conn),
+			matcher:         v4.NewMatcherClient(conn),
+		}, nil
 	}
-	indexerClient := v4.NewIndexerClient(iConn)
-	matcherClient := v4.NewMatcherClient(mConn)
+
+	var success bool
+	conns := make([]*grpc.ClientConn, 0, 2)
+	defer func() {
+		if !success {
+			for _, conn := range conns {
+				utils.IgnoreError(conn.Close)
+			}
+		}
+	}()
+
+	var indexerClient v4.IndexerClient
+	if o.indexerOpts.address != "" {
+		conn, err := createGRPCConn(ctx, o.indexerOpts)
+		if err != nil {
+			return nil, err
+		}
+		conns = append(conns, conn)
+		indexerClient = v4.NewIndexerClient(conn)
+	}
+
+	var matcherClient v4.MatcherClient
+	if o.matcherOpts.address != "" {
+		conn, err := createGRPCConn(ctx, o.matcherOpts)
+		if err != nil {
+			return nil, err
+		}
+		conns = append(conns, conn)
+		matcherClient = v4.NewMatcherClient(conn)
+	}
+
+	success = true
 	return &gRPCScanner{
-		gRPCConnections: connList,
+		gRPCConnections: conns,
 		indexer:         indexerClient,
 		matcher:         matcherClient,
 	}, nil
@@ -144,6 +178,10 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 
 // GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.
 func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error) {
+	if c.indexer == nil {
+		return nil, false, errIndexerNotConfigured
+	}
+
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/client",
 		"method", "GetImageIndex",
@@ -170,6 +208,10 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.Ind
 
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint GetOrCreateIndexReport.
 func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.IndexReport, error) {
+	if c.indexer == nil {
+		return nil, errIndexerNotConfigured
+	}
+
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/client",
 		"method", "GetOrCreateImageIndex",
@@ -210,6 +252,13 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 // IndexAndScanImage gets or creates an index report for the image, then call the
 // matcher to return a vulnerability report.
 func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.VulnerabilityReport, error) {
+	if c.indexer == nil {
+		return nil, errIndexerNotConfigured
+	}
+	if c.matcher == nil {
+		return nil, errMatcherNotConfigured
+	}
+
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/client",
 		"method", "IndexAndScanImage",
@@ -224,6 +273,10 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 }
 
 func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+	if c.matcher == nil {
+		return nil, errMatcherNotConfigured
+	}
+
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "scanner/client",
 		"method", "GetVulnerabilities",
@@ -248,6 +301,10 @@ func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, con
 }
 
 func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, error) {
+	if c.matcher == nil {
+		return nil, errMatcherNotConfigured
+	}
+
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetMatcherMetadata")
 	var m *v4.Metadata
 	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetMetadata", func() error {

@@ -108,6 +108,9 @@ var (
 	// ScannerV4DBSubject is the identity used in certificates for Scanner V4 DB.
 	ScannerV4DBSubject = Subject{ServiceType: storage.ServiceType_SCANNER_V4_DB_SERVICE, Identifier: "Scanner V4 DB"}
 
+	// ScannerV4Subject is the identity used in certificates for Scanner V4 running in combo-mode (testing, only).
+	ScannerV4Subject = Subject{ServiceType: storage.ServiceType_SCANNER_V4_SERVICE, Identifier: "Scanner V4"}
+
 	readCACertOnce     sync.Once
 	caCert             *x509.Certificate
 	caCertDER          []byte
