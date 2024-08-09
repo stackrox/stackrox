@@ -1,5 +1,7 @@
 package netutil
 
+import "math"
+
 type (
 	// EphemeralPortConfidence is a numeric value indicating the confidence that a port is an ephemeral port. The higher
 	// the value, the more confident we are that the port is ephemeral.
@@ -17,6 +19,10 @@ const (
 // is the client by determining for which port there is the higher confidence that it is ephemeral.
 func IsEphemeralPort(port uint16) EphemeralPortConfidence {
 	switch {
+	// Port 0 means collector failed to get the port number, this happens
+	// in connectionless UDP messages sometimes.
+	case port == 0:
+		return math.MaxInt
 	// IANA range
 	case port >= 49152:
 		return 4
