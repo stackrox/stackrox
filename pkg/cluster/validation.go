@@ -94,12 +94,13 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	return errorList
 }
 
+// IsNameValid  is added to avoid problems with rendering of helm templates.
+// The cluster names may be cast to various types in Helm and that
+// may lead to the name being changed - e.g., a number may be represented
+// in scientific notation.
+// Because the fix in the Helm chart is tricky, we reject all names that
+// could be parsable to a number or any other Helm construct.
 func IsNameValid(name string) error {
-	// This check is added to avoid problems with rendering of helm templates.
-	// If a number is added as a cluster name, Helm may treat is as such and
-	// convert it to scientific notation - see cluster name in sensor secret.
-	// Because the fix in the Helm chart is tricky, we reject all names that
-	// could be parsable to a number or any other Helm construct.
 	if len(name) == 0 {
 		return errors.New("cluster name cannot be empty")
 	}
