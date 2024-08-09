@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
+	timestamp "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func TestGoTimeToMicroTS(t *testing.T) {
