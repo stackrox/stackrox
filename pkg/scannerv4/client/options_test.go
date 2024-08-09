@@ -8,15 +8,44 @@ import (
 )
 
 func TestOptions(t *testing.T) {
-	t.Run("When no setters then options should be default", func(t *testing.T) {
+	t.Run("When no setters, then should fail", func(t *testing.T) {
 		o, err := makeOptions()
-		assert.NoError(t, err)
+		assert.Error(t, err)
 		assert.Equal(t, defaultOptions, o)
 	})
 
+	t.Run("When just indexer address set, then should succeed", func(t *testing.T) {
+		address := "localhost:9090"
+		o, err := makeOptions(
+			WithIndexerAddress(address),
+		)
+		assert.NoError(t, err)
+		assert.Equal(t, address, o.indexerOpts.address)
+	})
+
+	t.Run("When just matcher address set, then should succeed", func(t *testing.T) {
+		address := "localhost:9091"
+		o, err := makeOptions(
+			WithMatcherAddress("localhost:9091"),
+		)
+		assert.NoError(t, err)
+		assert.Equal(t, address, o.matcherOpts.address)
+	})
+
+	t.Run("When both addresses set, then should succeed", func(t *testing.T) {
+		indexerAddress := "localhost:9090"
+		matcherAddress := "localhost:9091"
+		o, err := makeOptions(
+			WithIndexerAddress(indexerAddress),
+			WithMatcherAddress(matcherAddress),
+		)
+		assert.NoError(t, err)
+		assert.Equal(t, indexerAddress, o.indexerOpts.address)
+		assert.Equal(t, matcherAddress, o.matcherOpts.address)
+	})
+
 	t.Run("When non-default setters for both indexer and matcher then options should be set", func(t *testing.T) {
-		// Randomly choosing scanner TLS.
-		subject := mtls.ScannerSubject
+		subject := mtls.ScannerV4Subject
 		address := "localhost:9000"
 		serverName := "newServer"
 
@@ -39,7 +68,11 @@ func TestOptions(t *testing.T) {
 	})
 
 	t.Run("When skip TLS is set, then both indexer and matcher comply", func(t *testing.T) {
-		o, err := makeOptions(SkipTLSVerification)
+		o, err := makeOptions(
+			// Just set a random address
+			WithAddress("localhost:9090"),
+			SkipTLSVerification,
+		)
 		assert.NoError(t, err)
 		assert.True(t, o.indexerOpts.skipTLSVerify)
 		assert.True(t, o.matcherOpts.skipTLSVerify)
