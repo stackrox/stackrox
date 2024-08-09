@@ -1156,6 +1156,21 @@ func Test_getConnection_direction(t *testing.T) {
 			role:       sensor.ClientServerRole_ROLE_SERVER,
 			expected:   true,
 		}, {
+			// Having both ports set to 0 should be impossible, it means we've
+			// failed to get lots of information about the connection and is
+			// more likely the event will not leave collector.
+			localPort:  0,
+			remotePort: 0,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_UDP,
+			role:       sensor.ClientServerRole_ROLE_CLIENT,
+			expected:   false,
+		}, {
+			localPort:  0,
+			remotePort: 0,
+			protocol:   storage.L4Protocol_L4_PROTOCOL_UDP,
+			role:       sensor.ClientServerRole_ROLE_SERVER,
+			expected:   false,
+		}, {
 			localPort:  50000,
 			remotePort: 53,
 			protocol:   storage.L4Protocol_L4_PROTOCOL_UDP,
@@ -1218,7 +1233,8 @@ func Test_getConnection_direction(t *testing.T) {
 			Protocol: tt.protocol,
 			Role:     tt.role,
 		}
-		conn := getConnection(&networkConn)
+		conn, err := processConnection(&networkConn)
+		assert.NoError(t, err)
 		assert.NotNil(t, conn)
 		assert.Equal(t, tt.expected, conn.incoming, "local: %d, remote: %d, protocol: %s, role: %s", tt.localPort, tt.remotePort, storage.L4Protocol_name[int32(tt.protocol)], sensor.ClientServerRole_name[int32(tt.role)])
 	}

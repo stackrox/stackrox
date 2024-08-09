@@ -1094,7 +1094,7 @@ func getIPAndPort(address *sensor.NetworkAddress) net.NetworkPeerID {
 	return tuple
 }
 
-func getConnection(conn *sensor.NetworkConnection) *connection {
+func processConnection(conn *sensor.NetworkConnection) (*connection, error) {
 	var incoming bool
 	switch conn.Role {
 	case sensor.ClientServerRole_ROLE_SERVER:
@@ -1102,7 +1102,7 @@ func getConnection(conn *sensor.NetworkConnection) *connection {
 	case sensor.ClientServerRole_ROLE_CLIENT:
 		incoming = false
 	default:
-		return nil
+		return nil, errors.New("Received connection that was not marked as server or client")
 	}
 
 	remote := net.NumericEndpoint{
@@ -1118,12 +1118,13 @@ func getConnection(conn *sensor.NetworkConnection) *connection {
 		incoming = netutil.IsEphemeralPort(remote.IPAndPort.Port) > netutil.IsEphemeralPort(local.Port)
 	}
 
-	return &connection{
+	c := &connection{
 		local:       local,
 		remote:      remote,
 		containerID: conn.GetContainerId(),
 		incoming:    incoming,
 	}
+	return c, nil
 }
 
 func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
@@ -1132,16 +1133,15 @@ func getUpdatedConnections(hostname string, networkInfo *sensor.NetworkConnectio
 	flowMetrics.NetworkFlowMessagesPerNode.With(prometheus.Labels{"Hostname": hostname}).Inc()
 
 	for _, conn := range networkInfo.GetUpdatedConnections() {
-		c := getConnection(conn)
-		if c == nil {
+		c, err := processConnection(conn)
+		if err != nil {
+			log.Warnf("Failed to process connection: %s", err)
 			continue
 		}
 
-		var connType string
+		connType := "outgoing"
 		if c.incoming {
 			connType = "incoming"
-		} else {
-			connType = "outgoing"
 		}
 
 		flowMetrics.NetworkFlowsPerNodeByType.With(prometheus.Labels{"Hostname": hostname, "Type": connType, "Protocol": conn.Protocol.String()}).Inc()
