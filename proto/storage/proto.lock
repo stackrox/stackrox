@@ -15310,6 +15310,10 @@
               {
                 "name": "SCANNER_V4_DB_SERVICE",
                 "integer": 15
+              },
+              {
+                "name": "SCANNER_V4_SERVICE",
+                "integer": 16
               }
             ]
           }
