@@ -167,7 +167,7 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      name: determine-image-tag-oci-ta
+      name: determine-image-tag
 
   - name: fetch-scanner-vuln-mappings
     params:
@@ -178,7 +178,7 @@ spec:
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
     taskRef:
-      name: fetch-scanner-vuln-mappings-oci-ta
+      name: fetch-scanner-vuln-mappings
 
   - name: prefetch-dependencies
     params:

@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
-  name: fetch-external-networks-oci-ta
+  name: fetch-external-networks
   namespace: rh-acs-tenant
 # TODO(ROX-22196): Refactor to a task bundle
 spec:
