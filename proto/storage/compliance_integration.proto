@@ -21,4 +21,5 @@ message ComplianceIntegration {
   repeated string status_errors = 5;
   bool operator_installed = 6; // @gotags: search:"Compliance Operator Installed,hidden"
   COStatus operator_status = 7; //@gotags: search:"Compliance Operator Status"
+  string new_field_to_test_make_target = 8;
 }

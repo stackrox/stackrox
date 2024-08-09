@@ -3283,6 +3283,11 @@
                 "id": 7,
                 "name": "operator_status",
                 "type": "COStatus"
+              },
+              {
+                "id": 8,
+                "name": "new_field_to_test_make_target",
+                "type": "string"
               }
             ]
           }
