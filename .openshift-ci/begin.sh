@@ -20,6 +20,8 @@ if [[ -z "${SHARED_DIR:-}" ]]; then
     exit 0 # not fatal but worth highlighting
 fi
 
+set_ci_shared_export MAIN_TAG_SUFFIX "-fast"
+
 if [[ "${JOB_NAME:-}" =~ -ocp- ]]; then
     info "Setting worker node type and count for OCP 4 jobs"
     set_ci_shared_export WORKER_NODE_COUNT 2

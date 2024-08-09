@@ -1,0 +1,164 @@
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: provision-ephemeral-cluster-example
+spec:
+  pipelineSpec:
+    tasks:
+      - name: provision-eaas-space
+        taskRef:
+          resolver: git
+          params:
+            - name: url
+              value: https://github.com/konflux-ci/build-definitions.git
+            - name: revision
+              value: main
+            - name: pathInRepo
+              value: task/eaas-provision-space/0.1/eaas-provision-space.yaml
+        params:
+          - name: ownerName
+            value: $(context.pipelineRun.name)
+          - name: ownerUid
+            value: $(context.pipelineRun.uid)
+      - name: provision-cluster
+        runAfter:
+          - provision-eaas-space
+        taskSpec:
+          results:
+            - name: clusterName
+              value: "$(steps.create-cluster.results.clusterName)"
+          volumes:
+            - name: credentials
+              emptyDir: {}
+          steps:
+            - name: get-supported-versions
+              ref:
+                resolver: git
+                params:
+                  - name: url
+                    value: https://github.com/konflux-ci/build-definitions.git
+                  - name: revision
+                    value: main
+                  - name: pathInRepo
+                    value: stepactions/eaas-get-supported-ephemeral-cluster-versions/0.1/eaas-get-supported-ephemeral-cluster-versions.yaml
+              params:
+                - name: eaasSpaceSecretRef
+                  value: $(tasks.provision-eaas-space.results.secretRef)
+                - name: insecureSkipTLSVerify
+                  value: "true"
+            - name: pick-version
+              ref:
+                resolver: git
+                params:
+                  - name: url
+                    value: https://github.com/konflux-ci/build-definitions.git
+                  - name: revision
+                    value: main
+                  - name: pathInRepo
+                    value: stepactions/eaas-get-latest-openshift-version-by-prefix/0.1/eaas-get-latest-openshift-version-by-prefix.yaml
+              params:
+                - name: prefix
+                  value: "$(steps.get-supported-versions.results.versions[0])."
+            - name: create-cluster
+              ref:
+                resolver: git
+                params:
+                  - name: url
+                    value: https://github.com/konflux-ci/build-definitions.git
+                  - name: revision
+                    value: main
+                  - name: pathInRepo
+                    value: stepactions/eaas-create-ephemeral-cluster-hypershift-aws/0.1/eaas-create-ephemeral-cluster-hypershift-aws.yaml
+              params:
+                - name: eaasSpaceSecretRef
+                  value: $(tasks.provision-eaas-space.results.secretRef)
+                - name: version
+                  value: "$(steps.pick-version.results.version)"
+                - name: insecureSkipTLSVerify
+                  value: "true"
+                - name: instanceType
+                  value: m5.large
+            - name: get-kubeconfig
+              ref:
+                resolver: git
+                params:
+                  - name: url
+                    value: https://github.com/konflux-ci/build-definitions.git
+                  - name: revision
+                    value: main
+                  - name: pathInRepo
+                    value: stepactions/eaas-get-ephemeral-cluster-credentials/0.1/eaas-get-ephemeral-cluster-credentials.yaml
+              params:
+                - name: eaasSpaceSecretRef
+                  value: $(tasks.provision-eaas-space.results.secretRef)
+                - name: clusterName
+                  value: "$(steps.create-cluster.results.clusterName)"
+                - name: credentials
+                  value: credentials
+                - name: insecureSkipTLSVerify
+                  value: "true"
+            - name: copy-secrets
+              ref:
+                resolver: git
+                params:
+                  - name: url
+                    value: https://github.com/konflux-ci/build-definitions.git
+                  - name: revision
+                    value: main
+                  - name: pathInRepo
+                    value: stepactions/eaas-copy-secrets-to-ephemeral-cluster/0.1/eaas-copy-secrets-to-ephemeral-cluster.yaml
+              params:
+                - name: credentials
+                  value: credentials
+                - name: kubeconfig
+                  value: "$(steps.get-kubeconfig.results.kubeconfig)"
+                - name: labelSelector
+                  value: my-selector=true
+                - name: namespace
+                  value: default
+      - name: verify
+        runAfter:
+          - provision-cluster
+        taskSpec:
+          volumes:
+            - name: credentials
+              emptyDir: {}
+          steps:
+            - name: get-kubeconfig
+              ref:
+                resolver: git
+                params:
+                  - name: url
+                    value: https://github.com/konflux-ci/build-definitions.git
+                  - name: revision
+                    value: main
+                  - name: pathInRepo
+                    value: stepactions/eaas-get-ephemeral-cluster-credentials/0.1/eaas-get-ephemeral-cluster-credentials.yaml
+              params:
+                - name: eaasSpaceSecretRef
+                  value: $(tasks.provision-eaas-space.results.secretRef)
+                - name: clusterName
+                  value: "$(tasks.provision-cluster.results.clusterName)"
+                - name: credentials
+                  value: credentials
+                - name: insecureSkipTLSVerify
+                  value: "true"
+            - name: verify-basic-commands
+              image: quay.io/redhat-appstudio/appstudio-utils@sha256:586149e3f18d966f681d956ab074b4e1d8433663d615ed86e19a3804ba952dfe
+              env:
+                - name: KUBECONFIG
+                  value: "/credentials/$(steps.get-kubeconfig.results.kubeconfig)"
+              volumeMounts:
+                - name: credentials
+                  mountPath: /credentials
+              script: |
+                #!/bin/bash
+                set -exo pipefail
+                oc get nodes
+                oc get namespaces
+                oc get -n default secrets
+                oc run test-pod --image=nginx
+                oc get pods test-pod
+                oc get pods
+                oc delete pod test-pod
