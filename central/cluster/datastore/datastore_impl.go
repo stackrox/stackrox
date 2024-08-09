@@ -32,6 +32,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
+	pkgCluster "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
@@ -350,8 +351,8 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 		return "", errors.Errorf("cannot add a cluster that has already been assigned an id: %q", cluster.GetId())
 	}
 
-	if cluster.GetName() == "" {
-		return "", errors.New("cannot add a cluster without name")
+	if err := pkgCluster.IsNameValid(cluster.GetName()); err != nil {
+		return "", errox.InvalidArgs.CausedBy(err)
 	}
 
 	cluster.Id = uuid.NewV4().String()

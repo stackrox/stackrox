@@ -70,7 +70,7 @@ func renderBaseFiles(cluster *storage.Cluster, renderOpts clusters.RenderOptions
 
 	baseFiles, err := renderer.RenderSensor(fields, &certs, opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get required cluster information")
+		return nil, errors.Wrap(err, "unable to render sensor")
 	}
 
 	return baseFiles, nil
@@ -151,6 +151,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	baseFiles, err := renderBaseFiles(cluster, renderOpts, certs)
 	if err != nil {
+		log.Errorf("error rendering cluster zip files: %v", err)
 		httputil.WriteGRPCStyleError(w, codes.Internal, err)
 		return
 	}

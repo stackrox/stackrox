@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -146,6 +147,53 @@ func TestFullValidation(t *testing.T) {
 			for _, expectedErr := range c.expectedErrors {
 				assert.Contains(t, gotErrors.String(), expectedErr)
 			}
+		})
+	}
+}
+
+func TestIsNameValid(t *testing.T) {
+	shouldPass := []string{
+		"a1234",
+		"foo",
+		"12324.example.com",
+		"e123",
+		"foo_bar",
+		"foo-bar_baz-boom",
+		"foo______bar",
+		"foo bar baz",
+	}
+	for _, tt := range shouldPass {
+		t.Run(fmt.Sprintf("name-%s-should-be-valid", tt), func(t *testing.T) {
+			assert.NoError(t, IsNameValid(tt))
+		})
+	}
+
+	shouldFail := []string{
+		"",
+		"123",
+		"-123",
+		"NaN",
+		"Inf",
+		"0o123",
+		"0xFFAA",
+		"0b0101010101",
+		"1.23e7",
+		"0.34",
+		"9999998989898989898989898",
+		"true",
+		"false",
+		"null",
+		"{}",
+		"_foo",
+		"-foo",
+		"foo-",
+		" foo",
+		"foo ",
+		"two  spaces",
+	}
+	for _, tt := range shouldFail {
+		t.Run(fmt.Sprintf("name-%s-should-be-invalid", tt), func(t *testing.T) {
+			assert.Error(t, IsNameValid(tt))
 		})
 	}
 }

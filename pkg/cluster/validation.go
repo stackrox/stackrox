@@ -2,6 +2,8 @@ package cluster
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/distribution/reference"
@@ -12,6 +14,19 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
+
+const (
+	// maxClusterNameLength is inspired by Subdomain vaildation as in RFC 1123
+	maxClusterNameLength int = 253
+	// Taken from RFC 1123 Subdomain Regex
+	// (source: https://github.com/kubernetes/apimachinery/blob/d794766488ac2892197a7cc8d0b4b46b0edbda80/pkg/util/validation/validation.go#L205-L224)
+	// and modified by: (1) allowing underscores, (2) spaces, and (3) uppercase characters.
+	labelFmt          string = "[a-zA-Z0-9]([-_a-zA-Z0-9]*[a-zA-Z0-9])?"
+	subdomainFmt      string = labelFmt + "([\\. ]" + labelFmt + ")*"
+	clusterNameErrMsg string = "cluster name must consist of alphanumeric characters, spaces, '-', or '_', and must start and end with an alphanumeric character"
+)
+
+var clusterNameRegexp = regexp.MustCompile("^" + subdomainFmt + "$")
 
 // Validate validates a cluster object
 func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
@@ -77,4 +92,35 @@ func ValidatePartial(cluster *storage.Cluster) *errorhelpers.ErrorList {
 	cluster.CentralApiEndpoint = centralEndpoint
 
 	return errorList
+}
+
+// IsNameValid  is added to avoid problems with rendering of helm templates.
+// The cluster names may be cast to various types in Helm and that
+// may lead to the name being changed - e.g., a number may be represented
+// in scientific notation.
+// Because the fix in the Helm chart is tricky, we reject all names that
+// could be parsable to a number or any other Helm construct.
+func IsNameValid(name string) error {
+	if len(name) == 0 {
+		return errors.New("cluster name cannot be empty")
+	}
+	if len(name) > maxClusterNameLength {
+		return fmt.Errorf("cluster name cannot be longer than %d characters", maxClusterNameLength)
+	}
+	if !clusterNameRegexp.MatchString(name) {
+		return errors.New(clusterNameErrMsg)
+	}
+	if _, err := strconv.ParseFloat(name, 64); err == nil {
+		return errors.New("cluster name cannot be a number")
+	}
+	if _, err := strconv.ParseInt(name, 0, 64); err == nil {
+		return errors.New("cluster name cannot be a number")
+	}
+	if name == "true" || name == "false" {
+		return errors.New("cluster name cannot be a representation of a boolean value")
+	}
+	if name == "null" {
+		return errors.New("cluster name cannot be a representation of a null value")
+	}
+	return nil
 }
