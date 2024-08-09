@@ -160,6 +160,7 @@ func TestIsNameValid(t *testing.T) {
 		"foo_bar",
 		"foo-bar_baz-boom",
 		"foo______bar",
+		"foo bar baz",
 	}
 	for _, tt := range shouldPass {
 		t.Run(fmt.Sprintf("name-%s-should-be-valid", tt), func(t *testing.T) {
@@ -186,6 +187,9 @@ func TestIsNameValid(t *testing.T) {
 		"_foo",
 		"-foo",
 		"foo-",
+		" foo",
+		"foo ",
+		"two  spaces",
 	}
 	for _, tt := range shouldFail {
 		t.Run(fmt.Sprintf("name-%s-should-be-invalid", tt), func(t *testing.T) {

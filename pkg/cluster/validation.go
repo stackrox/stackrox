@@ -22,8 +22,8 @@ const (
 	// (source: https://github.com/kubernetes/apimachinery/blob/v0.29.3/pkg/util/validation/validation.go#L236)
 	// and modified by: (1) allowing underscores and (2) uppercase characters.
 	labelFmt          string = "[a-zA-Z0-9]([-_a-zA-Z0-9]*[a-zA-Z0-9])?"
-	subdomainFmt      string = labelFmt + "(\\." + labelFmt + ")*"
-	clusterNameErrMsg string = "cluster name must consist of alphanumeric characters, '-', or '_', and must start and end with an alphanumeric character"
+	subdomainFmt      string = labelFmt + "([\\. ]" + labelFmt + ")*"
+	clusterNameErrMsg string = "cluster name must consist of alphanumeric characters, spaces, '-', or '_', and must start and end with an alphanumeric character"
 )
 
 var clusterNameRegexp = regexp.MustCompile("^" + subdomainFmt + "$")
