@@ -59,7 +59,7 @@ test_exec sshd
 echo "For: Shell Spawned by Java Application"
 cp /bin/bash /bin/java
 # Uses csh and a separate file to avoid running as a coreutils-prog-shebang process
-/bin/java -x run-csh.sh
+/bin/java -x run-bash.sh
 
 echo "For: Red Hat Package Manager Execution"
 yum --version
