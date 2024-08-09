@@ -31,11 +31,6 @@ import (
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/fixedby"
 )
 
-const (
-	// This appears in [fixedby.Type] and must be the same.
-	name = "fixedby"
-)
-
 // versionType represents the type of the versions associated with a matcher.
 //
 //go:generate stringer -type=versionType
@@ -64,7 +59,7 @@ type matcher interface {
 type Enricher struct{}
 
 // Name implements driver.Enricher and driver.EnrichmentUpdater.
-func (e Enricher) Name() string { return name }
+func (e Enricher) Name() string { return fixedby.Name }
 
 // Enrich returns a mapping from package ID to the minimum version which fixes all vulnerabilities.
 func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
