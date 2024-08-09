@@ -20,6 +20,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 - ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
   - To revert back to synchronous TLS checks set `ROX_SENSOR_LAZY_TLS_CHECKS` to `false` on Sensor.
+- ROX-25610: Central validates now Secured Cluster name when adding new cluster. Now, the cluster name must:
+  - consist of alphanumeric characters, spaces, '-', or '_', and must start and end with an alphanumeric character,
+  - be maximally 253 characters long,
+  - not use values that may be treated by Helm as non-string types, e.g., "true", or "null".
 
 ## [4.5.0]
 
