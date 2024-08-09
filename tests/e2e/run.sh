@@ -35,6 +35,7 @@ test_e2e() {
     "$ROOT/tests/complianceoperator/create.sh"
 
     deploy_stackrox
+    export_central_cert
     deploy_optional_e2e_components
 
     rm -f FAIL
