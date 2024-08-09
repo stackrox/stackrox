@@ -24,7 +24,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
 
     // Arch specific test images
     static final private String TRIGGER_MOST_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
-        "us.gcr.io/acs-san-stackroxci/qa/trigger-policy-violations/most:0.19":
+        "us.gcr.io/acs-san-stackroxci/qa/trigger-policy-violations/most:0.20":
         "quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most-v1")
     static final private String TRIGGER_ALPINE_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         "us.gcr.io/acs-san-stackroxci/qa/trigger-policy-violations/alpine:0.6":
@@ -176,7 +176,7 @@ class BuiltinPoliciesTest extends BaseSpecification {
         "Shell Spawned by Java Application"                          | TRIGGER_MOST
         // ROX-22691: The test for systemctl execution is disabled until the trigger-most image is rebuilt to not use
         // the --version argument which now no longer triggers the violation
-        // "systemctl Execution"                                        | TRIGGER_MOST
+        "systemctl Execution"                                        | TRIGGER_MOST
         "systemd Execution"                                          | TRIGGER_MOST
         "Ubuntu Package Manager Execution"                           | TRIGGER_MOST
         "Wget in Image"                                              | TRIGGER_MOST
