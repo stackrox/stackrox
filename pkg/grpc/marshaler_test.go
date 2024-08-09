@@ -55,7 +55,8 @@ func (s *supressCveServiceTestErrorImpl) AuthFuncOverride(ctx context.Context, f
 }
 
 func (s *supressCveServiceTestErrorImpl) SuppressCVEs(_ context.Context, req *v1.SuppressCVERequest) (*v1.Empty, error) {
-	return nil, status.Error(codes.Canceled, req.String())
+	duration := req.Duration.AsDuration().String()
+	return nil, status.Error(codes.Canceled, strings.Join(append(req.Cves, duration), ", "))
 }
 
 func (a *MarshalerTest) TestDurationParsing() {
@@ -69,7 +70,7 @@ func (a *MarshalerTest) TestDurationParsing() {
 	a.Assert().NoError(api.Start().Wait())
 	a.T().Cleanup(func() { api.Stop() })
 
-	b := strings.NewReader(`{"cves": ["ABC", "XYZ"],  "duration": "24h"}`)
+	b := strings.NewReader(`{"cves": ["ABC", "XYZ"], "duration": "24h"}`)
 
 	req, err := http.NewRequest(http.MethodPatch, url, b)
 	a.NoError(err)
@@ -80,7 +81,7 @@ func (a *MarshalerTest) TestDurationParsing() {
 	body, err := io.ReadAll(resp.Body)
 	a.Require().NoError(err)
 
-	str := `cves:"ABC"  cves:"XYZ"  duration:{seconds:86400}`
+	str := `ABC, XYZ, 24h0m0s`
 	expected := fmt.Sprintf(`{"code":1, "details": [], "error":%q, "message":%q}`, str, str)
 	a.Assert().JSONEq(expected, string(body))
 }
