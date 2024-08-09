@@ -1,0 +1,32 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - config.stackrox.io
+  resources:
+  - policies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.stackrox.io
+  resources:
+  - policies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.stackrox.io
+  resources:
+  - policies/status
+  verbs:
+  - get
+  - patch
+  - update
