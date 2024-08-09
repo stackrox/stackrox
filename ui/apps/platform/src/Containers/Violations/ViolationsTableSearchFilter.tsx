@@ -13,6 +13,7 @@ import {
     Category as PolicyCategory,
     Name as PolicyName,
     LifecycleStage as PolicyLifecycleStage,
+    Severity as PolicySeverity,
 } from 'Components/CompoundSearchFilter/attributes/policy';
 import {
     ID as ClusterID,
@@ -31,7 +32,7 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
     {
         displayName: 'Policy',
         searchCategory: 'ALERTS',
-        attributes: [PolicyName, PolicyCategory, PolicyLifecycleStage],
+        attributes: [PolicyName, PolicyCategory, PolicySeverity, PolicyLifecycleStage],
     },
     {
         displayName: 'Cluster',
