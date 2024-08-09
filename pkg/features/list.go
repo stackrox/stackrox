@@ -46,6 +46,11 @@ var (
 	// SensorDeploymentBuildOptimization enables a performance improvement by skipping deployments processing when no dependency or spec changed
 	SensorDeploymentBuildOptimization = registerFeature("Enables a performance improvement by skipping deployments processing when no dependency or spec changed", "ROX_DEPLOYMENT_BUILD_OPTIMIZATION", enabled)
 
+	// region unconventional features
+
+	// The following features are not following the convention.
+	// They have to be *disabled* to activate the new behavior.
+
 	// DeploymentVolumeSearch enables search on the volume fields of deployments
 	_ = registerFeature("Enables search on the volume fields of deployments", "ROX_DEPLOYMENT_VOLUME_SEARCH", enabled)
 
@@ -57,6 +62,8 @@ var (
 
 	// SecretFileSearch enables search on the file fields of secrets
 	_ = registerFeature("Enables search on the file fields of secrets", "ROX_SECRET_FILE_SEARCH", enabled)
+
+	// endregion unconventional features
 
 	// SensorCapturesIntermediateEvents enables sensor to capture intermediate events when it is disconnected from central
 	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", enabled)
