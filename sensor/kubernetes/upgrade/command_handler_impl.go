@@ -125,7 +125,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 		}
 
 		// If we receive a trigger with a different ID (or no ID), we should always terminate the current process,
-		// regardless of whether or not we can successfully launch a new one.
+		// regardless of whether we can successfully launch a new one.
 		oldProcess.Terminate(errors.New("upgrade process is no longer current"))
 	}
 

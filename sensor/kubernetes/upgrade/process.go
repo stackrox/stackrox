@@ -272,14 +272,14 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 		log.Info("Deleted leftover upgrader deployment")
 	}
 
-	serviceAccountName := p.chooseServiceAccount()
-	log.Infof("Using service account %s for upgrade process %s", serviceAccountName, p.GetID())
-
 	// Fetch Sensor deployment to carry through some features of the pod spec
 	sensorDeployment, err := deploymentsClient.Get(p.ctx(), sensorDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing sensor deployment")
 	}
+
+	serviceAccountName := p.chooseServiceAccount()
+	log.Infof("Using service account %q for upgrade process %q", serviceAccountName, p.GetID())
 
 	newDeployment, err := p.createDeployment(serviceAccountName, sensorDeployment)
 	if err != nil {
