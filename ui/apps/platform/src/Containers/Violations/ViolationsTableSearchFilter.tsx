@@ -26,12 +26,18 @@ import {
     ID as DeploymentID,
     Name as DeploymentName,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
+import { InactiveDeployment as AlertInactiveDeployment } from 'Components/CompoundSearchFilter/attributes/alert';
 
 const searchFilterConfig: CompoundSearchFilterConfig = [
     {
         displayName: 'Policy',
         searchCategory: 'ALERTS',
         attributes: [PolicyName, PolicyCategory, PolicyLifecycleStage],
+    },
+    {
+        displayName: 'Policy violation',
+        searchCategory: 'ALERTS',
+        attributes: [AlertInactiveDeployment],
     },
     {
         displayName: 'Cluster',
