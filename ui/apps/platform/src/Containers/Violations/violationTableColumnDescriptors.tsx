@@ -101,7 +101,7 @@ const tableColumnDescriptor = [
         Cell: EntityTableCell,
     },
     {
-        Header: 'Type',
+        Header: 'Kind',
         accessor: 'commonEntityInfo.resourceType',
         Cell: ({ value, original }): string => {
             const deployment = original?.deployment || {};

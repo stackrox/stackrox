@@ -42,7 +42,7 @@ describe('Violations', () => {
 
         cy.get('th[scope="col"]:contains("Policy")');
         cy.get('th[scope="col"]:contains("Entity")');
-        cy.get('th[scope="col"]:contains("Type")');
+        cy.get('th[scope="col"]:contains("Kind")');
         cy.get('th[scope="col"]:contains("Enforced")');
         cy.get('th[scope="col"]:contains("Severity")');
         cy.get('th[scope="col"]:contains("Categories")');
@@ -51,7 +51,7 @@ describe('Violations', () => {
 
         // check Deployment type
         cy.get('tbody tr:nth-child(1) td[data-label="Entity"]').should('contain', 'ip-masq-agent'); // table cell also has cluster/namespace
-        cy.get('tbody tr:nth-child(1) td[data-label="Type"]').should('have.text', 'Deployment');
+        cy.get('tbody tr:nth-child(1) td[data-label="Kind"]').should('have.text', 'Deployment');
         cy.get('tbody tr:nth-child(1) td[data-label="Lifecycle"]').should('have.text', 'Runtime');
 
         // check audit log type
@@ -60,10 +60,13 @@ describe('Violations', () => {
             'have.text',
             'in "aaa_remote"'
         ); // table cell also has cluster
-        cy.get('tbody tr:nth-child(2) td[data-label="Type"]').should(
+        cy.get('tbody tr:nth-child(2) td[data-label="Kind"]').should(
             'have.text',
             'Security Context Constraits'
         );
+
+        // check that Kind of Deployment is correctly display for workloads other than deployment
+        cy.get('tbody tr:nth-child(3) td[data-label="Kind"]').should('have.text', 'CronJob');
     });
 
     it('should go to the detail page on row click', () => {
@@ -138,6 +141,9 @@ describe('Violations', () => {
         clickDeploymentTabWithFixture('alerts/deploymentForAlertFirstInAlerts.json');
 
         cy.get(selectors.deployment.overview);
+        cy.get(selectors.deployment.overview)
+            .find('.pf-v5-c-description-list__term:contains("Deployment kind")')
+            .siblings('.pf-v5-c-description-list__description:contains("DaemonSet")');
         cy.get(selectors.deployment.containerConfiguration);
         cy.get(`${selectors.deployment.containerConfiguration} *[aria-label="Commands"]`).should(
             'not.exist'
