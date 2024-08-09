@@ -1,4 +1,5 @@
 import React, { ElementType, ReactElement, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { Redirect, Route, Switch, useLocation } from 'react-router-dom';
 import { PageSection } from '@patternfly/react-core';
 
@@ -51,6 +52,7 @@ import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import usePermissions, { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
+import { selectors } from 'reducers';
 
 import asyncComponent from './AsyncComponent';
 import InviteUsersModal from './InviteUsers/InviteUsersModal';
@@ -245,6 +247,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     }, [location, analyticsPageVisit]);
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForInviting = hasReadWriteAccess('Access');
+    const showInviteModal = useSelector(selectors.inviteSelector);
 
     const { isDarkMode } = useTheme();
 
@@ -270,7 +273,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                         })}
                     <Route component={NotFoundPage} />
                 </Switch>
-                {hasWriteAccessForInviting && <InviteUsersModal />}
+                {hasWriteAccessForInviting && showInviteModal && <InviteUsersModal />}
             </ErrorBoundary>
         </div>
     );
