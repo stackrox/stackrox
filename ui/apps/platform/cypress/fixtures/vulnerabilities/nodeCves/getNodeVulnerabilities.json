@@ -2,7 +2,7 @@
     "data": {
         "node": {
             "id": "1",
-            "nodeVulnerabilityCount": 1,
+            "nodeVulnerabilityCount": 100,
             "nodeVulnerabilities": [
                 {
                     "cve": "CYPRESS-CVE-2022-1996",
