@@ -104,10 +104,12 @@ func insertIntoNodeCves(batch *pgx.Batch, obj *storage.NodeCVE) error {
 		obj.GetImpactScore(),
 		obj.GetSnoozed(),
 		protocompat.NilOrTime(obj.GetSnoozeExpiry()),
+		obj.GetOrphaned(),
+		protocompat.NilOrTime(obj.GetOrphanedTime()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO node_cves (Id, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, OperatingSystem, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO node_cves (Id, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, OperatingSystem, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, Orphaned, OrphanedTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, Orphaned = EXCLUDED.Orphaned, OrphanedTime = EXCLUDED.OrphanedTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -135,6 +137,8 @@ func copyFromNodeCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 		"impactscore",
 		"snoozed",
 		"snoozeexpiry",
+		"orphaned",
+		"orphanedtime",
 		"serialized",
 	}
 
@@ -160,6 +164,8 @@ func copyFromNodeCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, 
 			obj.GetImpactScore(),
 			obj.GetSnoozed(),
 			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
+			obj.GetOrphaned(),
+			protocompat.NilOrTime(obj.GetOrphanedTime()),
 			serialized,
 		})
 

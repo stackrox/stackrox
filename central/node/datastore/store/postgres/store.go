@@ -331,6 +331,8 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, obj
 		"impactscore",
 		"snoozed",
 		"snoozeexpiry",
+		"orphaned",
+		"orphanedtime",
 		"serialized",
 	}
 
@@ -369,6 +371,8 @@ func copyFromNodeCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, obj
 			obj.GetImpactScore(),
 			obj.GetSnoozed(),
 			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
+			obj.GetOrphaned(),
+			protocompat.NilOrTime(obj.GetOrphanedTime()),
 			serialized,
 		})
 
