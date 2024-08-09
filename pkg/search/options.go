@@ -3,6 +3,7 @@ package search
 import (
 	"strings"
 
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -310,10 +311,17 @@ var (
 	CVECount        = newDerivedFieldLabel("CVE Count", CVEID, CountDerivationType)
 	ProfileCount    = newDerivedFieldLabel("Compliance Profile Name Count", ComplianceOperatorProfileName, CountDerivationType)
 	// Translative derived fields with reversed sorting. These fields are supported only in pagination.
-	NodePriority       = newDerivedFieldLabel("Node Risk Priority", NodeRiskScore, SimpleReverseSortDerivationType)
-	DeploymentPriority = newDerivedFieldLabel("Deployment Risk Priority", DeploymentRiskScore, SimpleReverseSortDerivationType)
-	ImagePriority      = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
-	ComponentPriority  = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
+	NodePriority                 = newDerivedFieldLabel("Node Risk Priority", NodeRiskScore, SimpleReverseSortDerivationType)
+	DeploymentPriority           = newDerivedFieldLabel("Deployment Risk Priority", DeploymentRiskScore, SimpleReverseSortDerivationType)
+	ImagePriority                = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
+	ComponentPriority            = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
+	CompliancePassCount          = newDerivedFieldLabelWithType("Pass Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceFailCount          = newDerivedFieldLabelWithType("Fail Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceErrorCount         = newDerivedFieldLabelWithType("Error Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceInfoCount          = newDerivedFieldLabelWithType("Info Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceManualCount        = newDerivedFieldLabelWithType("Manual Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceNotApplicableCount = newDerivedFieldLabelWithType("Not Applicable Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceInconsistentCount  = newDerivedFieldLabelWithType("Inconsistent Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
 
 	// Max-based derived fields.  These fields are primarily used in pagination.  If used in a select it will correspond
 	// to the type of the reference field and simply provide the max function on that field.
@@ -466,24 +474,27 @@ var (
 
 func init() {
 	derivedFields = set.NewStringSet()
-	derivationsByField = make(map[string]map[string]DerivationType)
+	derivationsByField = make(map[string]map[string]DerivedTypeData)
 	for k, metadata := range allFieldLabels {
 		if metadata != nil {
 			derivedFields.Add(strings.ToLower(k))
 			derivedFromLower := strings.ToLower(string(metadata.DerivedFrom))
 			subMap, exists := derivationsByField[derivedFromLower]
 			if !exists {
-				subMap = make(map[string]DerivationType)
+				subMap = make(map[string]DerivedTypeData)
 				derivationsByField[derivedFromLower] = subMap
 			}
-			subMap[k] = metadata.DerivationType
+			subMap[k] = DerivedTypeData{
+				DerivationType:  metadata.DerivationType,
+				DerivedDataType: metadata.DerivedDataType,
+			}
 		}
 	}
 }
 
 var (
 	allFieldLabels     = make(map[string]*DerivedFieldLabelMetadata)
-	derivationsByField map[string]map[string]DerivationType
+	derivationsByField map[string]map[string]DerivedTypeData
 	derivedFields      set.StringSet
 )
 
@@ -494,7 +505,7 @@ func IsValidFieldLabel(s string) bool {
 }
 
 // GetFieldsDerivedFrom gets the fields derived from the given search field.
-func GetFieldsDerivedFrom(s string) map[string]DerivationType {
+func GetFieldsDerivedFrom(s string) map[string]DerivedTypeData {
 	return derivationsByField[strings.ToLower(s)]
 }
 
@@ -523,14 +534,29 @@ func newDerivedFieldLabel(s string, derivedFrom FieldLabel, derivationType Deriv
 	})
 }
 
+func newDerivedFieldLabelWithType(s string, derivedFrom FieldLabel, derivationType DerivationType, dataType postgres.DataType) FieldLabel {
+	return newFieldLabelWithMetadata(s, &DerivedFieldLabelMetadata{
+		DerivedFrom:     derivedFrom,
+		DerivationType:  derivationType,
+		DerivedDataType: dataType,
+	})
+}
+
 func (f FieldLabel) String() string {
 	return string(f)
 }
 
 // DerivedFieldLabelMetadata includes metadata showing that a field is derived.
 type DerivedFieldLabelMetadata struct {
-	DerivedFrom    FieldLabel
-	DerivationType DerivationType
+	DerivedFrom     FieldLabel
+	DerivationType  DerivationType
+	DerivedDataType postgres.DataType
+}
+
+// DerivedTypeData includes metadata showing that a field is derived.
+type DerivedTypeData struct {
+	DerivationType  DerivationType
+	DerivedDataType postgres.DataType
 }
 
 // DerivationType represents a type of derivation.
@@ -543,4 +569,5 @@ const (
 	CountDerivationType DerivationType = iota
 	SimpleReverseSortDerivationType
 	MaxDerivationType
+	CustomFieldType
 )

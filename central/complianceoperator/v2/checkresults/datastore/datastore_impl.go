@@ -143,7 +143,7 @@ func (d *datastoreImpl) ComplianceProfileResultStats(ctx context.Context, query 
 	if cloned.GetPagination().GetSortOptions() == nil {
 		cloned.Pagination.SortOptions = []*v1.QuerySortOption{
 			{
-				Field: search.ComplianceOperatorProfileName.String(),
+				Field: search.CompliancePassCount.String(),
 			},
 		}
 	}

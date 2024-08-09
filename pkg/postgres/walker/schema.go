@@ -519,8 +519,9 @@ type Field struct {
 // DerivedSearchField represents a search field that's derived.
 // It includes the name of the derived field, as well as the derivation type.
 type DerivedSearchField struct {
-	DerivedFrom    string
-	DerivationType search.DerivationType
+	DerivedFrom     string
+	DerivationType  search.DerivationType
+	DerivedDataType postgres.DataType
 }
 
 // Getter returns the path to the object. If variable is true, then the value is just
