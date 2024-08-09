@@ -6,5 +6,5 @@ var (
 	NodeScanningV4HostPath = RegisterSetting("ROX_NODE_SCANNING_V4_HOST_PATH", WithDefault("/host"))
 
 	// NodeScanningV4Enabled defines whether Compliance will actually run scanning code
-	NodeScanningV4Enabled = RegisterBooleanSetting("ROX_NODE_SCANNING_V4_ENABLED", true) // FIXME: Default to false
+	NodeScanningV4Enabled = RegisterBooleanSetting("ROX_NODE_SCANNING_V4_ENABLED", false)
 )
