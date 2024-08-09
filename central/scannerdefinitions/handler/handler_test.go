@@ -47,7 +47,6 @@ type handlerTestSuite struct {
 	ctx       context.Context
 	datastore datastore.Datastore
 	testDB    *pgtest.TestPostgres
-	tmpDir    string
 }
 
 func TestHandler(t *testing.T) {
@@ -59,10 +58,7 @@ func (s *handlerTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 	blobStore := store.New(s.testDB.DB)
 	s.datastore = datastore.NewDatastore(blobStore, nil)
-	var err error
-	s.tmpDir, err = os.MkdirTemp("", "handler-test")
-	s.Require().NoError(err)
-	s.T().Setenv("TMPDIR", s.tmpDir)
+	s.T().Setenv("TMPDIR", s.T().TempDir())
 }
 
 func (s *handlerTestSuite) SetupTest() {
@@ -154,7 +150,7 @@ func (s *handlerTestSuite) mustWriteBlob(content string, modTime time.Time) {
 	modifiedTime, err := protocompat.ConvertTimeToTimestampOrError(modTime)
 	s.Require().NoError(err)
 	blob := &storage.Blob{
-		Name:         offlineScannerDefinitionBlobName,
+		Name:         offlineScannerV2DefsBlobName,
 		Length:       int64(len(content)),
 		ModifiedTime: modifiedTime,
 		LastUpdated:  protocompat.TimestampNow(),
@@ -223,7 +219,7 @@ func (s *handlerTestSuite) mockHandleZipContents(zipPath string) error {
 	defer utils.IgnoreError(zipR.Close)
 	for _, zipF := range zipR.File {
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			err = s.mockHandleDefsFile(zipF, offlineScannerV4DefinitionBlobName)
+			err = s.mockHandleDefsFile(zipF, offlineScannerV4DefsBlobName)
 			s.Require().NoError(err)
 			return nil
 		}
