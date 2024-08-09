@@ -104,7 +104,7 @@ func IsNameValid(name string) error {
 		return errors.New("cluster name cannot be empty")
 	}
 	if len(name) > maxClusterNameLength {
-		return fmt.Errorf("cluster name may be maximally %d characters long", maxClusterNameLength)
+		return fmt.Errorf("cluster name cannot be longer than %d characters", maxClusterNameLength)
 	}
 	if !clusterNameRegexp.MatchString(name) {
 		return errors.New(clusterNameErrMsg)
