@@ -20,7 +20,7 @@ const (
 	maxClusterNameLength int = 253
 	// Taken from RFC 1123 Subdomain Regex
 	// (source: https://github.com/kubernetes/apimachinery/blob/d794766488ac2892197a7cc8d0b4b46b0edbda80/pkg/util/validation/validation.go#L205-L224)
-	// and modified by: (1) allowing underscores and (2) uppercase characters.
+	// and modified by: (1) allowing underscores, (2) spaces, and (3) uppercase characters.
 	labelFmt          string = "[a-zA-Z0-9]([-_a-zA-Z0-9]*[a-zA-Z0-9])?"
 	subdomainFmt      string = labelFmt + "([\\. ]" + labelFmt + ")*"
 	clusterNameErrMsg string = "cluster name must consist of alphanumeric characters, spaces, '-', or '_', and must start and end with an alphanumeric character"
