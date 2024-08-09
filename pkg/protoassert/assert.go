@@ -10,14 +10,16 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type message interface {
+type message[V any] interface {
+	*V
 	proto.Message
 	String() string
+	EqualVT(other *V) bool
 }
 
-func Equal(t testing.TB, expected, actual message, msgAndArgs ...interface{}) bool {
+func Equal[V any, T message[V]](t testing.TB, expected, actual T, msgAndArgs ...interface{}) bool {
 	t.Helper()
-	if proto.Equal(expected, actual) {
+	if expected.EqualVT(actual) {
 		return true
 	}
 	e, err := toJson(expected)
@@ -27,12 +29,12 @@ func Equal(t testing.TB, expected, actual message, msgAndArgs ...interface{}) bo
 	return assert.JSONEq(t, e, a, msgAndArgs)
 }
 
-func NotEqual(t testing.TB, expected, actual message, msgAndArgs ...interface{}) bool {
+func NotEqual[V any, T message[V]](t testing.TB, expected, actual T, msgAndArgs ...interface{}) bool {
 	t.Helper()
-	return assert.False(t, proto.Equal(expected, actual), msgAndArgs)
+	return assert.False(t, expected.EqualVT(actual), msgAndArgs)
 }
 
-func SlicesEqual[T message](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
+func SlicesEqual[V any, T message[V]](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	areEqual := assert.Len(t, actual, len(expected))
 	for i, e := range expected {
@@ -45,7 +47,7 @@ func SlicesEqual[T message](t testing.TB, expected, actual []T, msgAndArgs ...in
 	return areEqual
 }
 
-func SliceContains[T message](t testing.TB, slice []T, element T, msgAndArgs ...interface{}) bool {
+func SliceContains[V any, T message[V]](t testing.TB, slice []T, element T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	for _, e := range slice {
 		if proto.Equal(e, element) {
@@ -55,7 +57,7 @@ func SliceContains[T message](t testing.TB, slice []T, element T, msgAndArgs ...
 	return assert.Failf(t, "Slice does not contain element", "%q %v", element.String(), msgAndArgs)
 }
 
-func SliceNotContains[T message](t testing.TB, slice []T, element T, msgAndArgs ...interface{}) bool {
+func SliceNotContains[V any, T message[V]](t testing.TB, slice []T, element T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	for _, e := range slice {
 		if proto.Equal(e, element) {
@@ -65,7 +67,7 @@ func SliceNotContains[T message](t testing.TB, slice []T, element T, msgAndArgs 
 	return true
 }
 
-func ElementsMatch[T message](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
+func ElementsMatch[V any, T message[V]](t testing.TB, expected, actual []T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	areEqual := assert.Len(t, actual, len(expected))
 	for _, e := range expected {
@@ -80,7 +82,7 @@ func ElementsMatch[T message](t testing.TB, expected, actual []T, msgAndArgs ...
 	return areEqual
 }
 
-func MapSliceEqual[K comparable, T message](t testing.TB, expected, actual map[K][]T, msgAndArgs ...interface{}) bool {
+func MapSliceEqual[K comparable, V any, T message[V]](t testing.TB, expected, actual map[K][]T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	expectedKeys := maps.Keys(expected)
 	actualKeys := maps.Keys(actual)
@@ -95,7 +97,7 @@ func MapSliceEqual[K comparable, T message](t testing.TB, expected, actual map[K
 	return areEqual
 }
 
-func MapEqual[K comparable, T message](t testing.TB, expected, actual map[K]T, msgAndArgs ...interface{}) bool {
+func MapEqual[K comparable, V any, T message[V]](t testing.TB, expected, actual map[K]T, msgAndArgs ...interface{}) bool {
 	t.Helper()
 	expectedKeys := maps.Keys(expected)
 	actualKeys := maps.Keys(actual)
@@ -110,7 +112,7 @@ func MapEqual[K comparable, T message](t testing.TB, expected, actual map[K]T, m
 	return areEqual
 }
 
-func toJson(m message) (string, error) {
+func toJson(m proto.Message) (string, error) {
 	if m == nil {
 		return "", nil
 	}

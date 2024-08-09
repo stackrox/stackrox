@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	grpctestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -176,7 +175,7 @@ func TestGetScannerV4CertExpiry(t *testing.T) {
 				} else {
 					expectedExpiry, err := protocompat.ConvertTimeToTimestampOrError(*tc.expiryExpected)
 					require.NoError(t, err)
-					protoassert.Equal(t, expectedExpiry, actual.Expiry)
+					assert.Equal(t, expectedExpiry.AsTime(), actual.Expiry.AsTime())
 				}
 			}
 		})
