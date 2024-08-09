@@ -19,7 +19,9 @@ export function TheadClustersHealth({
     return (
         <Thead>
             <Tr>
-                <Th width={35} />
+                <Th width={35}>
+                    <span className="pf-v5-screen-reader">Clusters</span>
+                </Th>
                 <Th width={10} className="pf-v5-u-text-align-right">
                     {dataLabelHealthy || 'Healthy'}
                 </Th>

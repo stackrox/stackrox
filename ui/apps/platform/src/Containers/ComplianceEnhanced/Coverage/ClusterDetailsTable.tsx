@@ -123,9 +123,9 @@ function ClusterDetailsTable({
                 <Thead>
                     <Tr>
                         <Th sort={getSortParams(CHECK_NAME_QUERY)}>Check</Th>
-                        <Td modifier="fitContent" width={10}>
+                        <Th modifier="fitContent" width={10}>
                             Controls
-                        </Td>
+                        </Th>
                         <Th modifier="fitContent" width={10}>
                             Compliance status
                         </Th>

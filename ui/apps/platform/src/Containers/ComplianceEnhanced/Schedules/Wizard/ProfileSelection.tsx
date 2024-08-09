@@ -185,8 +185,12 @@ function ProfileSelection({
                 <Table>
                     <Thead noWrap>
                         <Tr>
-                            <Td />
-                            <Td />
+                            <Th>
+                                <span className="pf-v5-screen-reader">Row selection</span>
+                            </Th>
+                            <Th>
+                                <span className="pf-v5-screen-reader">Row expansion</span>
+                            </Th>
                             <Th>Profile</Th>
                             <Th>Rule set</Th>
                             <Th>Applicability</Th>

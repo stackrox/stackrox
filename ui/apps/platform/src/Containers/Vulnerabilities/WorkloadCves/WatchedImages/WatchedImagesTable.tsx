@@ -45,7 +45,9 @@ function WatchedImagesTable({
                     <Thead noWrap>
                         <Tr>
                             <Th>Image</Th>
-                            <Th aria-label="Remove watched image" />
+                            <Th>
+                                <span className="pf-v5-screen-reader">Remove watched image</span>
+                            </Th>
                         </Tr>
                     </Thead>
                     <Tbody>
