@@ -57,8 +57,8 @@ function ConditionDate({ value, onChange, onSearch }: ConditionDateProps) {
                 aria-label="Filter by date"
                 buttonAriaLabel="Filter by date toggle"
                 value={value.date}
-                onChange={(_event, _value) => {
-                    onChange({ ...value, date: _value });
+                onChange={(_, newValue) => {
+                    onChange({ ...value, date: newValue });
                 }}
                 dateFormat={getDate}
                 dateParse={dateParse}
