@@ -44,48 +44,48 @@ func (m *MockregistryStore) EXPECT() *MockregistryStoreMockRecorder {
 	return m.recorder
 }
 
-// GetGlobalRegistryForImage mocks base method.
-func (m *MockregistryStore) GetGlobalRegistryForImage(arg0 *storage.ImageName) (types.ImageRegistry, error) {
+// GetCentralRegistries mocks base method.
+func (m *MockregistryStore) GetCentralRegistries(arg0 *storage.ImageName) []types.ImageRegistry {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGlobalRegistryForImage", arg0)
+	ret := m.ctrl.Call(m, "GetCentralRegistries", arg0)
+	ret0, _ := ret[0].([]types.ImageRegistry)
+	return ret0
+}
+
+// GetCentralRegistries indicates an expected call of GetCentralRegistries.
+func (mr *MockregistryStoreMockRecorder) GetCentralRegistries(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCentralRegistries", reflect.TypeOf((*MockregistryStore)(nil).GetCentralRegistries), arg0)
+}
+
+// GetGlobalRegistry mocks base method.
+func (m *MockregistryStore) GetGlobalRegistry(arg0 *storage.ImageName) (types.ImageRegistry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetGlobalRegistry", arg0)
 	ret0, _ := ret[0].(types.ImageRegistry)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetGlobalRegistryForImage indicates an expected call of GetGlobalRegistryForImage.
-func (mr *MockregistryStoreMockRecorder) GetGlobalRegistryForImage(arg0 any) *gomock.Call {
+// GetGlobalRegistry indicates an expected call of GetGlobalRegistry.
+func (mr *MockregistryStoreMockRecorder) GetGlobalRegistry(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalRegistryForImage", reflect.TypeOf((*MockregistryStore)(nil).GetGlobalRegistryForImage), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalRegistry", reflect.TypeOf((*MockregistryStore)(nil).GetGlobalRegistry), arg0)
 }
 
-// GetMatchingCentralRegistryIntegrations mocks base method.
-func (m *MockregistryStore) GetMatchingCentralRegistryIntegrations(arg0 *storage.ImageName) []types.ImageRegistry {
+// GetPullSecretRegistries mocks base method.
+func (m *MockregistryStore) GetPullSecretRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]types.ImageRegistry, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMatchingCentralRegistryIntegrations", arg0)
-	ret0, _ := ret[0].([]types.ImageRegistry)
-	return ret0
-}
-
-// GetMatchingCentralRegistryIntegrations indicates an expected call of GetMatchingCentralRegistryIntegrations.
-func (mr *MockregistryStoreMockRecorder) GetMatchingCentralRegistryIntegrations(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMatchingCentralRegistryIntegrations", reflect.TypeOf((*MockregistryStore)(nil).GetMatchingCentralRegistryIntegrations), arg0)
-}
-
-// GetRegistries mocks base method.
-func (m *MockregistryStore) GetRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]types.ImageRegistry, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegistries", image, namespace, imagePullSecrets)
+	ret := m.ctrl.Call(m, "GetPullSecretRegistries", image, namespace, imagePullSecrets)
 	ret0, _ := ret[0].([]types.ImageRegistry)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetRegistries indicates an expected call of GetRegistries.
-func (mr *MockregistryStoreMockRecorder) GetRegistries(image, namespace, imagePullSecrets any) *gomock.Call {
+// GetPullSecretRegistries indicates an expected call of GetPullSecretRegistries.
+func (mr *MockregistryStoreMockRecorder) GetPullSecretRegistries(image, namespace, imagePullSecrets any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegistries", reflect.TypeOf((*MockregistryStore)(nil).GetRegistries), image, namespace, imagePullSecrets)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPullSecretRegistries", reflect.TypeOf((*MockregistryStore)(nil).GetPullSecretRegistries), image, namespace, imagePullSecrets)
 }
 
 // IsLocal mocks base method.

@@ -7,10 +7,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -74,6 +77,8 @@ func alwaysInsecureCheckTLS(_ context.Context, _ string) (bool, error) {
 }
 
 func TestOpenShiftRegistrySecret_311(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d := newSecretDispatcher(regStore)
 
@@ -86,8 +91,8 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 		FullName: "docker-registry.default.svc.cluster.local:5000/stackrox/nginx:1.18.0",
 	}
 
-	reg, err := regStore.GetRegistryForImageInNamespace(imgName, "dummy")
-	assert.Nil(t, reg)
+	regs, err := regStore.GetPullSecretRegistries(imgName, "dummy", nil)
+	assert.Nil(t, regs)
 	assert.Error(t, err)
 
 	imgName = &storage.ImageName{
@@ -97,8 +102,8 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 		FullName: "docker-registry.default.svc.cluster.local:5000/stackrox/nginx:1.18.0",
 	}
 
-	reg, err = regStore.GetRegistryForImageInNamespace(imgName, "test-ns")
-	assert.NotNil(t, reg)
+	regs, err = regStore.GetPullSecretRegistries(imgName, "test-ns", nil)
+	assert.NotNil(t, regs)
 	assert.NoError(t, err)
 
 	expectedRegConfig := &types.Config{
@@ -110,11 +115,14 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	assert.Equal(t, "docker-registry.default.svc.cluster.local:5000", reg.Config(ctx).RegistryHostname)
-	assert.Equal(t, expectedRegConfig, reg.Config(ctx))
+	require.Len(t, regs, 1)
+	assert.Equal(t, expectedRegConfig.RegistryHostname, regs[0].Config(ctx).RegistryHostname)
+	assert.Equal(t, expectedRegConfig, regs[0].Config(ctx))
 }
 
 func TestOpenShiftRegistrySecret_4x(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d := newSecretDispatcher(regStore)
 
@@ -127,8 +135,8 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 		FullName: "image-registry.openshift-image-registry.svc:5000/stackrox/nginx:1.18.0",
 	}
 
-	reg, err := regStore.GetRegistryForImageInNamespace(imgName, "dummy")
-	assert.Nil(t, reg)
+	regs, err := regStore.GetPullSecretRegistries(imgName, "dummy", nil)
+	assert.Nil(t, regs)
 	assert.Error(t, err)
 
 	imgName = &storage.ImageName{
@@ -138,8 +146,8 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 		FullName: "image-registry.openshift-image-registry.svc:5000/stackrox/nginx:1.18.0",
 	}
 
-	reg, err = regStore.GetRegistryForImageInNamespace(imgName, "test-ns")
-	assert.NotNil(t, reg)
+	regs, err = regStore.GetPullSecretRegistries(imgName, "test-ns", nil)
+	assert.NotNil(t, regs)
 	assert.NoError(t, err)
 
 	expectedRegConfig := &types.Config{
@@ -151,13 +159,16 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	assert.Equal(t, "image-registry.openshift-image-registry.svc:5000", reg.Config(ctx).RegistryHostname)
-	assert.Equal(t, expectedRegConfig, reg.Config(ctx))
+	require.Len(t, regs, 1)
+	assert.Equal(t, expectedRegConfig.RegistryHostname, regs[0].Config(ctx).RegistryHostname)
+	assert.Equal(t, expectedRegConfig, regs[0].Config(ctx))
 }
 
 // TestForceLocalScanning tests that dockerconfig secrets are stored
 // in the regStore as expected when local scanning is forced
 func TestForceLocalScanning(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+
 	fakeNamespace := "fake-namespace"
 	dockerConfigSecret := &v1.Secret{
 		TypeMeta:   metav1.TypeMeta{Kind: "Secret", APIVersion: "v1"},
@@ -188,8 +199,8 @@ func TestForceLocalScanning(t *testing.T) {
 	d := newSecretDispatcher(regStore)
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
-	reg, err := regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
-	assert.Nil(t, reg)
+	regs, err := regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
+	assert.Nil(t, regs)
 	assert.Error(t, err)
 
 	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "true")
@@ -200,8 +211,8 @@ func TestForceLocalScanning(t *testing.T) {
 	d = newSecretDispatcher(regStore)
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
-	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
-	assert.Nil(t, reg)
+	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
+	assert.Nil(t, regs)
 	assert.Error(t, err)
 
 	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "true")
@@ -209,10 +220,11 @@ func TestForceLocalScanning(t *testing.T) {
 
 	// feature is enabled, registry secret should be stored
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
-	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
-	assert.NotNil(t, reg)
+	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
+	assert.NotNil(t, regs)
 	assert.NoError(t, err)
-	assert.Equal(t, reg.Config(context.Background()).Username, "hello")
+	require.Len(t, regs, 1)
+	assert.Equal(t, regs[0].Config(context.Background()).Username, "hello")
 
 	regStore = registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d = newSecretDispatcher(regStore)
@@ -220,34 +232,34 @@ func TestForceLocalScanning(t *testing.T) {
 	// secrets with an k8s service-account.name other than default should not be stored
 	dockerConfigSecret.Annotations = map[string]string{saAnnotations[0]: "something"}
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
-	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
+	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
 	assert.False(t, regStore.IsLocal(fakeImage))
-	assert.Nil(t, reg)
+	assert.Nil(t, regs)
 	assert.Error(t, err)
 
 	// secrets with an OCP internal-registry-auth-token.service-account other than default should not be stored
 	dockerConfigSecret.Annotations = map[string]string{saAnnotations[1]: "something"}
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
-	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
+	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
 	assert.False(t, regStore.IsLocal(fakeImage))
-	assert.Nil(t, reg)
+	assert.Nil(t, regs)
 	assert.Error(t, err)
 
 	// secrets with an saAnnotation of `default` should still be stored
 	dockerConfigSecret.Annotations = map[string]string{saAnnotations[0]: "default"}
 	regStore.Cleanup()
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
-	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
+	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
 	assert.True(t, regStore.IsLocal(fakeImage))
-	assert.NotNil(t, reg)
+	assert.NotNil(t, regs)
 	assert.NoError(t, err)
 
 	dockerConfigSecret.Annotations = map[string]string{saAnnotations[1]: "default"}
 	regStore.Cleanup()
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
-	reg, err = regStore.GetRegistryForImageInNamespace(fakeImage, fakeNamespace)
+	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
 	assert.True(t, regStore.IsLocal(fakeImage))
-	assert.NotNil(t, reg)
+	assert.NotNil(t, regs)
 	assert.NoError(t, err)
 }
 

@@ -83,18 +83,18 @@ func (suite *scanTestSuite) TestLocalEnrichment() {
 	scan := LocalScan{
 		scanImg:                  successfulScan,
 		fetchSignaturesWithRetry: successfulFetchSignatures,
-		getRegistries: func(*storage.ImageName, string, []string) ([]registryTypes.ImageRegistry, error) {
+		getPullSecretRegistries: func(*storage.ImageName, string, []string) ([]registryTypes.ImageRegistry, error) {
 			getRegistriesTriggered = true
 			return []registryTypes.ImageRegistry{&fakeRegistry{fail: false}}, nil
 		},
-		getGlobalRegistryForImage: func(*storage.ImageName) (registryTypes.ImageRegistry, error) {
+		getGlobalRegistry: func(*storage.ImageName) (registryTypes.ImageRegistry, error) {
 			return &fakeRegistry{fail: false}, nil
 		},
-		scannerClientSingleton:            emptyScannerClientSingleton,
-		scanSemaphore:                     semaphore.NewWeighted(10),
-		getMatchingCentralRegIntegrations: fakeRegStore.GetMatchingCentralRegistryIntegrations,
-		mirrorStore:                       mirrorStore,
-		maxSemaphoreWaitTime:              defaultMaxSemaphoreWaitTime,
+		scannerClientSingleton: emptyScannerClientSingleton,
+		scanSemaphore:          semaphore.NewWeighted(10),
+		getCentralRegistries:   fakeRegStore.GetMatchingCentralRegistryIntegrations,
+		mirrorStore:            mirrorStore,
+		maxSemaphoreWaitTime:   defaultMaxSemaphoreWaitTime,
 	}
 
 	// Original values will be restored within the teardown function. This will be done after each test.
@@ -166,15 +166,15 @@ func (suite *scanTestSuite) TestEnrichImageFailures() {
 
 		suite.Run(name, func() {
 			scan := LocalScan{
-				scanImg:                           c.scanImg,
-				fetchSignaturesWithRetry:          c.fetchSignaturesWithRetry,
-				getRegistries:                     c.getRegistries,
-				getGlobalRegistryForImage:         emptyGetGlobalRegistryForImage,
-				scannerClientSingleton:            emptyScannerClientSingleton,
-				scanSemaphore:                     semaphore.NewWeighted(10),
-				getMatchingCentralRegIntegrations: fakeRegStore.GetMatchingCentralRegistryIntegrations,
-				mirrorStore:                       mirrorStore,
-				maxSemaphoreWaitTime:              defaultMaxSemaphoreWaitTime,
+				scanImg:                  c.scanImg,
+				fetchSignaturesWithRetry: c.fetchSignaturesWithRetry,
+				getPullSecretRegistries:  c.getRegistries,
+				getGlobalRegistry:        emptyGetGlobalRegistryForImage,
+				scannerClientSingleton:   emptyScannerClientSingleton,
+				scanSemaphore:            semaphore.NewWeighted(10),
+				getCentralRegistries:     fakeRegStore.GetMatchingCentralRegistryIntegrations,
+				mirrorStore:              mirrorStore,
+				maxSemaphoreWaitTime:     defaultMaxSemaphoreWaitTime,
 			}
 			mirrorStore.EXPECT().PullSources(containerImg.GetName().GetFullName())
 			img, err := scan.EnrichLocalImageInNamespace(context.Background(), c.fakeImageServiceClient, genScanReq(containerImg, "fake-namespace", "", false))
@@ -199,15 +199,15 @@ func (suite *scanTestSuite) TestMetadataBeingSet() {
 			}
 			return nil, nil
 		},
-		getGlobalRegistryForImage: emptyGetGlobalRegistryForImage,
-		getRegistries: func(image *storage.ImageName, ns string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error) {
+		getGlobalRegistry: emptyGetGlobalRegistryForImage,
+		getPullSecretRegistries: func(image *storage.ImageName, ns string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error) {
 			return []registryTypes.ImageRegistry{&fakeRegistry{fail: false}}, nil
 		},
-		scannerClientSingleton:            emptyScannerClientSingleton,
-		scanSemaphore:                     semaphore.NewWeighted(10),
-		getMatchingCentralRegIntegrations: fakeRegStore.GetMatchingCentralRegistryIntegrations,
-		mirrorStore:                       mirrorStore,
-		maxSemaphoreWaitTime:              defaultMaxSemaphoreWaitTime,
+		scannerClientSingleton: emptyScannerClientSingleton,
+		scanSemaphore:          semaphore.NewWeighted(10),
+		getCentralRegistries:   fakeRegStore.GetMatchingCentralRegistryIntegrations,
+		mirrorStore:            mirrorStore,
+		maxSemaphoreWaitTime:   defaultMaxSemaphoreWaitTime,
 	}
 
 	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
@@ -232,16 +232,16 @@ func (suite *scanTestSuite) TestEnrichLocalImageInNamespace() {
 	mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
 
 	scan := LocalScan{
-		scanImg:                           successfulScan,
-		fetchSignaturesWithRetry:          successfulFetchSignatures,
-		getRegistries:                     fakeRegStore.GetRegistries,
-		getGlobalRegistryForImage:         fakeRegStore.GetGlobalRegistryForImage,
-		scannerClientSingleton:            emptyScannerClientSingleton,
-		scanSemaphore:                     semaphore.NewWeighted(10),
-		createNoAuthImageRegistry:         successCreateNoAuthImageRegistry,
-		getMatchingCentralRegIntegrations: fakeRegStore.GetMatchingCentralRegistryIntegrations,
-		mirrorStore:                       mirrorStore,
-		maxSemaphoreWaitTime:              defaultMaxSemaphoreWaitTime,
+		scanImg:                   successfulScan,
+		fetchSignaturesWithRetry:  successfulFetchSignatures,
+		getPullSecretRegistries:   fakeRegStore.GetRegistries,
+		getGlobalRegistry:         fakeRegStore.GetGlobalRegistryForImage,
+		scannerClientSingleton:    emptyScannerClientSingleton,
+		scanSemaphore:             semaphore.NewWeighted(10),
+		createNoAuthImageRegistry: successCreateNoAuthImageRegistry,
+		getCentralRegistries:      fakeRegStore.GetMatchingCentralRegistryIntegrations,
+		mirrorStore:               mirrorStore,
+		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 	}
 
 	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
@@ -302,14 +302,14 @@ func (suite *scanTestSuite) TestEnrichErrorBadImage() {
 	mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
 	imageServiceClient := &echoImageServiceClient{}
 	scan := LocalScan{
-		scannerClientSingleton:            emptyScannerClientSingleton,
-		scanSemaphore:                     semaphore.NewWeighted(10),
-		getMatchingCentralRegIntegrations: emptyGetMatchingCentralIntegrations,
-		mirrorStore:                       mirrorStore,
-		getGlobalRegistryForImage:         emptyGetGlobalRegistryForImage,
-		createNoAuthImageRegistry:         failCreateNoAuthImageRegistry,
-		scanImg:                           scanImage,
-		maxSemaphoreWaitTime:              defaultMaxSemaphoreWaitTime,
+		scannerClientSingleton:    emptyScannerClientSingleton,
+		scanSemaphore:             semaphore.NewWeighted(10),
+		getCentralRegistries:      emptyGetMatchingCentralIntegrations,
+		mirrorStore:               mirrorStore,
+		getGlobalRegistry:         emptyGetGlobalRegistryForImage,
+		createNoAuthImageRegistry: failCreateNoAuthImageRegistry,
+		scanImg:                   scanImage,
+		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 	}
 
 	imgNameStr := "   is an invalid image"
@@ -368,13 +368,13 @@ func (suite *scanTestSuite) TestEnrichMultipleRegistries() {
 	mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
 
 	scan := &LocalScan{
-		scanImg:                   successfulScan,
-		fetchSignaturesWithRetry:  successfulFetchSignatures,
-		scannerClientSingleton:    emptyScannerClientSingleton,
-		scanSemaphore:             semaphore.NewWeighted(10),
-		getGlobalRegistryForImage: emptyGetGlobalRegistryForImage,
-		mirrorStore:               mirrorStore,
-		getMatchingCentralRegIntegrations: func(in *storage.ImageName) []registryTypes.ImageRegistry {
+		scanImg:                  successfulScan,
+		fetchSignaturesWithRetry: successfulFetchSignatures,
+		scannerClientSingleton:   emptyScannerClientSingleton,
+		scanSemaphore:            semaphore.NewWeighted(10),
+		getGlobalRegistry:        emptyGetGlobalRegistryForImage,
+		mirrorStore:              mirrorStore,
+		getCentralRegistries: func(in *storage.ImageName) []registryTypes.ImageRegistry {
 			return []registryTypes.ImageRegistry{reg1, reg2}
 		},
 		maxSemaphoreWaitTime: defaultMaxSemaphoreWaitTime,
@@ -409,7 +409,7 @@ func (suite *scanTestSuite) TestEnrichNoRegistries() {
 	scan := LocalScan{
 		scanImg:                  successfulScan,
 		fetchSignaturesWithRetry: successfulFetchSignatures,
-		getRegistries:            fakeRegStore.GetRegistries,
+		getPullSecretRegistries:  fakeRegStore.GetRegistries,
 		scannerClientSingleton:   emptyScannerClientSingleton,
 		scanSemaphore:            semaphore.NewWeighted(10),
 		mirrorStore:              mirrorStore,
@@ -417,9 +417,9 @@ func (suite *scanTestSuite) TestEnrichNoRegistries() {
 			createNoAuthRegistryInvoked = true
 			return &fakeRegistry{}, nil
 		},
-		getMatchingCentralRegIntegrations: emptyGetMatchingCentralIntegrations,
-		getGlobalRegistryForImage:         emptyGetGlobalRegistryForImage,
-		maxSemaphoreWaitTime:              defaultMaxSemaphoreWaitTime,
+		getCentralRegistries: emptyGetMatchingCentralIntegrations,
+		getGlobalRegistry:    emptyGetGlobalRegistryForImage,
+		maxSemaphoreWaitTime: defaultMaxSemaphoreWaitTime,
 	}
 
 	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
@@ -438,13 +438,13 @@ func (suite *scanTestSuite) TestEnrichNoRegistries() {
 func (suite *scanTestSuite) TestEnrichNoRegistriesFailure() {
 	mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
 	scan := LocalScan{
-		scannerClientSingleton:            emptyScannerClientSingleton,
-		scanSemaphore:                     semaphore.NewWeighted(10),
-		getMatchingCentralRegIntegrations: emptyGetMatchingCentralIntegrations,
-		getGlobalRegistryForImage:         emptyGetGlobalRegistryForImage,
-		createNoAuthImageRegistry:         failCreateNoAuthImageRegistry,
-		mirrorStore:                       mirrorStore,
-		maxSemaphoreWaitTime:              defaultMaxSemaphoreWaitTime,
+		scannerClientSingleton:    emptyScannerClientSingleton,
+		scanSemaphore:             semaphore.NewWeighted(10),
+		getCentralRegistries:      emptyGetMatchingCentralIntegrations,
+		getGlobalRegistry:         emptyGetGlobalRegistryForImage,
+		createNoAuthImageRegistry: failCreateNoAuthImageRegistry,
+		mirrorStore:               mirrorStore,
+		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 	}
 
 	containerImg, err := utils.GenerateImageFromString("docker.io/nginx")
@@ -468,13 +468,13 @@ func (suite *scanTestSuite) TestGetImageRegistries() {
 	expected := []registryTypes.ImageRegistry{reg1, reg2, reg3, reg4}
 
 	scan := &LocalScan{
-		getMatchingCentralRegIntegrations: func(in *storage.ImageName) []registryTypes.ImageRegistry {
+		getCentralRegistries: func(in *storage.ImageName) []registryTypes.ImageRegistry {
 			return []registryTypes.ImageRegistry{reg1, reg2}
 		},
-		getRegistries: func(in *storage.ImageName, s string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error) {
+		getPullSecretRegistries: func(in *storage.ImageName, s string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error) {
 			return []registryTypes.ImageRegistry{reg3}, nil
 		},
-		getGlobalRegistryForImage: func(in *storage.ImageName) (registryTypes.ImageRegistry, error) {
+		getGlobalRegistry: func(in *storage.ImageName) (registryTypes.ImageRegistry, error) {
 			return reg4, nil
 		},
 		createNoAuthImageRegistry: func(ctx context.Context, in *storage.ImageName, f registries.Factory) (registryTypes.ImageRegistry, error) {
@@ -482,13 +482,13 @@ func (suite *scanTestSuite) TestGetImageRegistries() {
 		},
 	}
 
-	regs, err := scan.getImageRegistries(context.Background(), "fake-namespace", nil, nil)
+	regs, err := scan.getRegistries(context.Background(), "fake-namespace", nil, nil)
 	suite.Require().NoError(err)
 	suite.Assert().Len(regs, 4)
 	suite.Assert().Equal(expected[:4], regs)
 
 	// with no namespace, reg3 should not be returned
-	regs, err = scan.getImageRegistries(context.Background(), "", nil, nil)
+	regs, err = scan.getRegistries(context.Background(), "", nil, nil)
 	suite.Require().NoError(err)
 	suite.Assert().Len(regs, 3)
 	suite.Assert().Equal([]registryTypes.ImageRegistry{reg1, reg2, reg4}, regs)
@@ -508,12 +508,12 @@ func (suite *scanTestSuite) TestMultiplePullSources() {
 			}
 			return successfulScan(ctx, i, ir, c)
 		},
-		fetchSignaturesWithRetry:          successfulFetchSignatures,
-		scannerClientSingleton:            emptyScannerClientSingleton,
-		scanSemaphore:                     semaphore.NewWeighted(10),
-		mirrorStore:                       mirrorStore,
-		getMatchingCentralRegIntegrations: emptyGetMatchingCentralIntegrations,
-		getGlobalRegistryForImage: func(in *storage.ImageName) (registryTypes.ImageRegistry, error) {
+		fetchSignaturesWithRetry: successfulFetchSignatures,
+		scannerClientSingleton:   emptyScannerClientSingleton,
+		scanSemaphore:            semaphore.NewWeighted(10),
+		mirrorStore:              mirrorStore,
+		getCentralRegistries:     emptyGetMatchingCentralIntegrations,
+		getGlobalRegistry: func(in *storage.ImageName) (registryTypes.ImageRegistry, error) {
 			if in.GetFullName() == mirror1 {
 				return &fakeRegistry{fail: true}, nil
 			}
@@ -553,13 +553,13 @@ func (suite *scanTestSuite) TestNotes() {
 	imageServiceClient := &echoImageServiceClient{}
 
 	scan := LocalScan{
-		scannerClientSingleton:            emptyScannerClientSingleton,
-		scanSemaphore:                     semaphore.NewWeighted(10),
-		getMatchingCentralRegIntegrations: emptyGetMatchingCentralIntegrations,
-		mirrorStore:                       mirrorStore,
-		getGlobalRegistryForImage:         emptyGetGlobalRegistryForImage,
-		createNoAuthImageRegistry:         failCreateNoAuthImageRegistry,
-		maxSemaphoreWaitTime:              defaultMaxSemaphoreWaitTime,
+		scannerClientSingleton:    emptyScannerClientSingleton,
+		scanSemaphore:             semaphore.NewWeighted(10),
+		getCentralRegistries:      emptyGetMatchingCentralIntegrations,
+		mirrorStore:               mirrorStore,
+		getGlobalRegistry:         emptyGetGlobalRegistryForImage,
+		createNoAuthImageRegistry: failCreateNoAuthImageRegistry,
+		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 	}
 
 	suite.Run("missing metadata", func() {
