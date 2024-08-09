@@ -24,8 +24,9 @@ var (
 )
 
 type datastoreImpl struct {
-	store store.Store
-	set   m2m.TokenExchangerSet
+	store         store.Store
+	set           m2m.TokenExchangerSet
+	issuerFetcher m2m.ServiceAccountIssuerFetcher
 
 	mutex sync.RWMutex
 }
@@ -151,12 +152,12 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 		}
 	}
 
-	kubeSAIssuer, err := m2m.GetKubeServiceAccountIssuer()
-	if err != nil {
-		return errors.Join(tokenExchangerErrors, err)
-	}
-
 	if features.PolicyAsCode.Enabled() {
+		kubeSAIssuer, err := d.issuerFetcher.GetServiceAccountIssuer()
+		if err != nil {
+			return errors.Join(tokenExchangerErrors, err)
+		}
+
 		// Unconditionally add K8s service account exchanger
 		// This is required for config-controller auth
 		err = d.set.UpsertTokenExchanger(ctx, &storage.AuthMachineToMachineConfig{

@@ -8,15 +8,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GetKubeServiceAccountIssuer calls GetServiceAccountIssuer with reader that reads
-// the service account token from the standard path
-func GetKubeServiceAccountIssuer() (string, error) {
-	return GetServiceAccountIssuer(&kubeServiceAccountTokenReader{})
+//go:generate mockgen-wrapper
+type ServiceAccountIssuerFetcher interface {
+	GetServiceAccountIssuer() (string, error)
+}
+
+type serviceAccountTokenReader interface {
+	readToken() (string, error)
+}
+
+type KubeServiceAccountIssuerFetcher struct {
+	reader serviceAccountTokenReader
 }
 
 // GetServiceAccountIssuer takes a base64-encoded JWT and returns the "iss" (issuer) claim value
-func GetServiceAccountIssuer(reader ServiceAccountTokenReader) (string, error) {
-	token, err := reader.ReadServiceAccountToken()
+func (k KubeServiceAccountIssuerFetcher) GetServiceAccountIssuer() (string, error) {
+	token, err := k.reader.readToken()
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to read kube service account token")
 	}
@@ -34,13 +41,9 @@ func GetServiceAccountIssuer(reader ServiceAccountTokenReader) (string, error) {
 	return claims.Issuer, nil
 }
 
-type ServiceAccountTokenReader interface {
-	ReadServiceAccountToken() (string, error)
-}
-
 type kubeServiceAccountTokenReader struct{}
 
-func (k *kubeServiceAccountTokenReader) ReadServiceAccountToken() (string, error) {
+func (k kubeServiceAccountTokenReader) readToken() (string, error) {
 	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
 		return "", fmt.Errorf("error reading service account token file: %w", err)
@@ -49,4 +52,8 @@ func (k *kubeServiceAccountTokenReader) ReadServiceAccountToken() (string, error
 	return string(token), nil
 }
 
-var staticServiceAccountReader ServiceAccountTokenReader = &kubeServiceAccountTokenReader{}
+func NewServiceAccountIssuerFetcher() KubeServiceAccountIssuerFetcher {
+	return KubeServiceAccountIssuerFetcher{
+		reader: kubeServiceAccountTokenReader{},
+	}
+}

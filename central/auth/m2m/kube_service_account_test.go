@@ -7,7 +7,10 @@ import (
 )
 
 func TestGetKubeServiceAccountIssuer(t *testing.T) {
-	issuer, err := GetServiceAccountIssuer(&mockServiceAccountTokenReader{})
+	fetcher := KubeServiceAccountIssuerFetcher{
+		reader: &mockServiceAccountTokenReader{},
+	}
+	issuer, err := fetcher.GetServiceAccountIssuer()
 	assert.NoError(t, err, "Did not expect error extracting issuer from token")
 	assert.Equal(t, "https://kubernetes.default.svc.cluster.local", issuer)
 }
@@ -16,6 +19,6 @@ var STATIC_TOKEN string = `eyJhbGciOiJSUzI1NiIsImtpZCI6InlnWGFLSGdzY0lSZ1pxQzJ2a
 
 type mockServiceAccountTokenReader struct{}
 
-func (k *mockServiceAccountTokenReader) ReadServiceAccountToken() (string, error) {
+func (k *mockServiceAccountTokenReader) readToken() (string, error) {
 	return STATIC_TOKEN, nil
 }

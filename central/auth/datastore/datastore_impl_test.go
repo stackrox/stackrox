@@ -69,17 +69,26 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 
 	s.addRoles()
 
-	s.mockSet = mocks.NewMockTokenExchangerSet(gomock.NewController(s.T()))
+	controller := gomock.NewController(s.T())
+	s.mockSet = mocks.NewMockTokenExchangerSet(controller)
 	s.mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	s.mockSet.EXPECT().RemoveTokenExchanger(gomock.Any()).Return(nil).AnyTimes()
 	s.mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
 	s.mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-	s.authDataStore = New(store, s.mockSet)
+
+	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
+	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return("https://localhost", nil).AnyTimes()
+
+	s.authDataStore = New(store, s.mockSet, issuerFetcher)
 }
 
 func (s *datastorePostgresTestSuite) TearDownTest() {
 	s.pool.Teardown(s.T())
 	s.pool.Close()
+}
+
+func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
+	s.NoError(s.authDataStore.InitializeTokenExchangers())
 }
 
 func (s *datastorePostgresTestSuite) TestAddFKConstraint() {
