@@ -1,5 +1,6 @@
 // If you're adding a new attribute, make sure to add it to "policyAttributes" as well
 
+import { severityLabels } from 'messages/common';
 import { CompoundSearchFilterAttribute } from '../types';
 
 export const Name: CompoundSearchFilterAttribute = {
@@ -16,6 +17,21 @@ export const Category: CompoundSearchFilterAttribute = {
     inputType: 'autocomplete',
 };
 
+export const Severity: CompoundSearchFilterAttribute = {
+    displayName: 'Severity',
+    filterChipLabel: 'Policy severity',
+    searchTerm: 'Severity',
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { label: severityLabels.CRITICAL_SEVERITY, value: 'CRITICAL_SEVERITY' },
+            { label: severityLabels.HIGH_SEVERITY, value: 'HIGH_SEVERITY' },
+            { label: severityLabels.MEDIUM_SEVERITY, value: 'MEDIUM_SEVERITY' },
+            { label: severityLabels.LOW_SEVERITY, value: 'LOW_SEVERITY' },
+        ],
+    },
+};
+
 export const LifecycleStage: CompoundSearchFilterAttribute = {
     displayName: 'Lifecycle stage',
     filterChipLabel: 'Lifecycle stage',
@@ -30,4 +46,4 @@ export const LifecycleStage: CompoundSearchFilterAttribute = {
     },
 };
 
-export const policyAttributes = [Name, Category, LifecycleStage];
+export const policyAttributes = [Name, Category, Severity, LifecycleStage];
