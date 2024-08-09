@@ -28,12 +28,18 @@ func TestSensorUpgradeService(t *testing.T) {
 	suite.Run(t, new(SensorUpgradeServiceTestSuite))
 }
 
-var _ suite.SetupTestSuite = (*SensorUpgradeServiceTestSuite)(nil)
+var _ suite.SetupSubTest = (*SensorUpgradeServiceTestSuite)(nil)
 
-func (s *SensorUpgradeServiceTestSuite) SetupTest() {
+func (s *SensorUpgradeServiceTestSuite) SetupSubTest() {
+	// Each subtest must use its own T object, thus the controller must be reinitialized for each subtest
 	s.mockCtrl = gomock.NewController(s.T())
 	s.dataStore = datastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.manager = managerMocks.NewMockManager(s.mockCtrl)
+}
+
+func (s *SensorUpgradeServiceTestSuite) SetupTest() {
+	// Not every test has subtest, so the same setup procedure must be repeated for standalone tests
+	s.SetupSubTest()
 }
 
 func configWith(v bool) *storage.SensorUpgradeConfig {
@@ -44,41 +50,65 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 	testCases := map[string]struct {
 		req               *v1.UpdateSensorUpgradeConfigRequest
 		managedCentral    bool
+		upgraderEnabled   bool
 		expectedErr       error
 		upsertTimesCalled int
 	}{
-		"Error: No config": {
+		"Nil config should yield an error": {
+			upgraderEnabled:   true,
 			req:               &v1.UpdateSensorUpgradeConfigRequest{Config: nil},
 			expectedErr:       errox.InvalidArgs,
 			upsertTimesCalled: 0,
 		},
-		"Error: can't set toggle = true on managed centrals": {
-			managedCentral: true,
+		"Enabling upgrader through the config should work on managed centrals": {
+			managedCentral:  true,
+			upgraderEnabled: true,
+			req: &v1.UpdateSensorUpgradeConfigRequest{
+				Config: configWith(true),
+			},
+			expectedErr:       nil,
+			upsertTimesCalled: 1,
+		},
+		"Enabling upgrader through the config should fail on managed centrals if upgrader is explicitly disabled": {
+			managedCentral:  true,
+			upgraderEnabled: false,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
 				Config: configWith(true),
 			},
 			expectedErr:       errox.InvalidArgs,
 			upsertTimesCalled: 0,
 		},
-		"Success: can set toggle = false on managed centrals": {
-			managedCentral: true,
+		"Disabling upgrader through the config should work on managed centrals": {
+			managedCentral:  true,
+			upgraderEnabled: true,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
 				Config: configWith(false),
 			},
 			upsertTimesCalled: 1,
 		},
-		"Success: can set toggle = true on non-managed centrals": {
-			managedCentral: false,
+		"Enabling upgrader through the config should work on non-CS centrals": {
+			managedCentral:  false,
+			upgraderEnabled: true,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
 				Config: configWith(true),
 			},
 			upsertTimesCalled: 1,
 		},
-		"Success: can set toggle = false on non-managed centrals": {
-			managedCentral: false,
+		"Disabling upgrader through the config should work on non-CS centrals": {
+			managedCentral:  false,
+			upgraderEnabled: true,
 			req: &v1.UpdateSensorUpgradeConfigRequest{
 				Config: configWith(false),
 			},
+			upsertTimesCalled: 1,
+		},
+		"Disabling upgrader through the config should not yield an error on non-CS centrals even if upgrader is explicitly disabled": {
+			managedCentral:  false,
+			upgraderEnabled: false,
+			req: &v1.UpdateSensorUpgradeConfigRequest{
+				Config: configWith(false),
+			},
+			expectedErr:       nil,
 			upsertTimesCalled: 1,
 		},
 	}
@@ -86,6 +116,7 @@ func (s *SensorUpgradeServiceTestSuite) Test_UpdateSensorUpgradeConfig() {
 	for caseName, testCase := range testCases {
 		s.Run(caseName, func() {
 			s.T().Setenv(env.ManagedCentral.EnvVar(), strconv.FormatBool(testCase.managedCentral))
+			s.T().Setenv(env.SensorUpgraderEnabled.EnvVar(), strconv.FormatBool(testCase.upgraderEnabled))
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
 			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), gomock.Any()).Times(1)
 			serviceInstance, err := New(s.dataStore, s.manager)
@@ -133,21 +164,21 @@ func (s *SensorUpgradeServiceTestSuite) Test_GetSensorUpgradeConfig_WithValueNot
 		expectedAutoUpdate     bool
 		expectedFeatureEnabled v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus
 	}{
-		"true": {
+		"false": {
 			expectedAutoUpdate:     false,
 			expectedFeatureEnabled: v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED,
 		},
-		"false": {
+		"true": {
 			expectedAutoUpdate:     true,
 			expectedFeatureEnabled: v1.GetSensorUpgradeConfigResponse_SUPPORTED,
 		},
 	}
 
 	for envValue, expectations := range testCases {
-		s.Run(fmt.Sprintf("ROX_MANAGED_CENTRAL=%v", envValue), func() {
+		s.Run(fmt.Sprintf("%s=%v", env.SensorUpgraderEnabled.EnvVar(), envValue), func() {
 			s.dataStore.EXPECT().GetSensorUpgradeConfig(gomock.Any()).Times(1).Return(nil, nil)
 			s.dataStore.EXPECT().UpsertSensorUpgradeConfig(gomock.Any(), &UpgradeConfigMatcher{expectations.expectedAutoUpdate})
-			s.T().Setenv(env.ManagedCentral.EnvVar(), envValue)
+			s.T().Setenv(env.SensorUpgraderEnabled.EnvVar(), envValue)
 
 			instance, err := New(s.dataStore, s.manager)
 			s.NoError(err)
