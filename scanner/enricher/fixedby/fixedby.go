@@ -28,14 +28,7 @@ import (
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/zlog"
-)
-
-const (
-	// Type is the type of data returned from the Enricher's Enrich method.
-	Type = "message/vnd.stackrox.scannerv4.fixedby; enricher=fixedby"
-
-	// This appears above and must be the same.
-	name = "fixedby"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/fixedby"
 )
 
 // versionType represents the type of the versions associated with a matcher.
@@ -66,7 +59,7 @@ type matcher interface {
 type Enricher struct{}
 
 // Name implements driver.Enricher and driver.EnrichmentUpdater.
-func (e Enricher) Name() string { return name }
+func (e Enricher) Name() string { return fixedby.Name }
 
 // Enrich returns a mapping from package ID to the minimum version which fixes all vulnerabilities.
 func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
@@ -249,15 +242,15 @@ func (e Enricher) Enrich(ctx context.Context, _ driver.EnrichmentGetter, vr *cla
 	}
 
 	if len(m) == 0 {
-		return Type, nil, nil
+		return fixedby.Type, nil, nil
 	}
 
 	b, err := json.Marshal(m)
 	if err != nil {
-		return Type, nil, err
+		return fixedby.Type, nil, err
 	}
 
-	return Type, []json.RawMessage{b}, nil
+	return fixedby.Type, []json.RawMessage{b}, nil
 }
 
 func parseURLEncoding(v string) string {

@@ -21,9 +21,9 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
-	"github.com/stackrox/rox/scanner/enricher/fixedby"
-	"github.com/stackrox/rox/scanner/enricher/nvd"
-	"github.com/stackrox/rox/scanner/updater/manual"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/fixedby"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
+	"github.com/stackrox/rox/pkg/scannerv4/updater"
 )
 
 var (
@@ -651,7 +651,7 @@ func severityAndScores(ctx context.Context, vuln *claircore.Vulnerability, nvdVu
 	switch {
 	case rhelUpdaterPattern.MatchString(vuln.Updater):
 		return rhelSeverityAndScores(vuln)
-	case osvUpdaterPattern.MatchString(vuln.Updater), strings.EqualFold(vuln.Updater, manual.Name):
+	case osvUpdaterPattern.MatchString(vuln.Updater), strings.EqualFold(vuln.Updater, updater.Name):
 		sev, err := cvssVector(vuln.Severity)
 		if err != nil {
 			zlog.Debug(ctx).
