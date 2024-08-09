@@ -9,6 +9,8 @@ import {
     CompoundSearchFilterEntity,
     OnSearchPayload,
     SelectSearchFilterAttribute,
+    SelectSearchFilterGroupedOptions,
+    SelectSearchFilterOptions,
 } from '../types';
 
 export const conditionMap = {
@@ -141,6 +143,18 @@ export function isSelectType(
     return attribute.inputType === 'select';
 }
 
+export function hasGroupedSelectOptions(
+    inputProps: SelectSearchFilterAttribute['inputProps']
+): inputProps is SelectSearchFilterGroupedOptions {
+    return 'groupOptions' in inputProps;
+}
+
+export function hasSelectOptions(
+    inputProps: SelectSearchFilterAttribute['inputProps']
+): inputProps is SelectSearchFilterOptions {
+    return 'options' in inputProps;
+}
+
 /**
  * Helper function to convert a search filter config object into an
  * array of FilterChipGroupDescriptor objects for use in the SearchFilterChips component
@@ -160,12 +174,13 @@ export function makeFilterChipDescriptors(
                 };
 
                 if (isSelectType(attribute)) {
+                    const options = hasGroupedSelectOptions(attribute.inputProps)
+                        ? attribute.inputProps.groupOptions.flatMap((group) => group.options)
+                        : attribute.inputProps.options;
                     return {
                         ...baseConfig,
                         render: (filter: string) => {
-                            const option = attribute.inputProps.options.find(
-                                (option) => option.value === filter
-                            );
+                            const option = options.find((option) => option.value === filter);
                             return <FilterChip name={option?.label || 'N/A'} />;
                         },
                     };
