@@ -23,7 +23,7 @@ export type LifecycleStage = 'DEPLOY' | 'BUILD' | 'RUNTIME';
 
 export type PolicyEventSource = 'NOT_APPLICABLE' | 'DEPLOYMENT_EVENT' | 'AUDIT_LOG_EVENT';
 
-type BasePolicy = {
+export type BasePolicy = {
     rationale: string;
     remediation: string;
     categories: string[];
@@ -53,10 +53,8 @@ export type Policy = {
 
 export type PolicyExclusion = PolicyDeploymentExclusion | PolicyImageExclusion;
 
-// TODO prefer initial values instead of optional properties while adding a new policy?
 export type PolicyDeploymentExclusion = {
     deployment: PolicyExcludedDeployment;
-    image: null;
 } & PolicyBaseExclusion;
 
 export type PolicyExcludedDeployment = {
@@ -65,16 +63,16 @@ export type PolicyExcludedDeployment = {
 };
 
 export type PolicyImageExclusion = {
-    deployment: null;
     image: {
         name: string;
     };
 } & PolicyBaseExclusion;
 
 // TODO prefer initial values instead of optional properties while adding a new policy?
+// TODO These are undefined at runtime - make optional here?
 export type PolicyBaseExclusion = {
-    name: string;
-    expiration: string | null; // ISO 8601 date string
+    name?: string;
+    expiration?: string | null; // ISO 8601 date string
 };
 
 // TODO prefer initial values instead of optional properties while adding a new policy?
@@ -139,9 +137,8 @@ export type ValueObj = {
 };
 
 export type ClientPolicyValue = {
-    value?: ValueObj;
     arrayValue?: string[];
-};
+} & ValueObj;
 
 // TODO supersedes MitreAttackVectorId in src/services/MitreService.ts
 export type PolicyMitreAttackVector = {
