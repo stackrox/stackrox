@@ -14,13 +14,3 @@ func LoadTokenFromFile() (string, error) {
 	}
 	return string(bytes.TrimSpace(contents)), nil
 }
-
-// LoadNamespaceFromFile loads the Kubernetes service account namespace (which is the same as the pod namespace)
-// from the canonical file location and returns the namespace or an error.
-func LoadNamespaceFromFile() (string, error) {
-	contents, err := os.ReadFile(ServiceAccountTokenNamespacePath)
-	if err != nil {
-		return "", err
-	}
-	return string(bytes.TrimSpace(contents)), nil
-}

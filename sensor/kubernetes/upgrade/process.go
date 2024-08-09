@@ -188,7 +188,7 @@ func (p *process) waitForDeploymentDeletion(name string, uid types.UID) error {
 }
 
 func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) error {
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace(pods.NoSATokenNamespace))
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
 	listOpts := metav1.ListOptions{
 		FieldSelector: fmt.Sprintf("metadata.name=%s", name),
 	}
@@ -242,7 +242,7 @@ func (p *process) waitForDeploymentDeletionOnce(name string, uid types.UID) erro
 }
 
 func (p *process) createUpgraderDeploymentIfNecessary() error {
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace(pods.NoSATokenNamespace))
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
 
 	upgraderDeployment, err := deploymentsClient.Get(p.ctx(), upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
@@ -341,7 +341,7 @@ func (p *process) watchUpgraderDeployment() {
 func (p *process) pollAndUpdateProgress() ([]*central.UpgradeCheckInFromSensorRequest_UpgraderPodState, bool, error) {
 	errs := errorhelpers.NewErrorList("polling")
 
-	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace(pods.NoSATokenNamespace))
+	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
 	foundDeployment, err := deploymentsClient.Get(p.ctx(), upgraderDeploymentName, metav1.GetOptions{})
 	if err != nil {
 		if k8sErrors.IsNotFound(err) {
@@ -419,7 +419,7 @@ func (p *process) GetID() string {
 }
 
 func (p *process) chooseServiceAccount() string {
-	saClient := p.k8sClient.CoreV1().ServiceAccounts(pods.GetPodNamespace(pods.NoSATokenNamespace))
+	saClient := p.k8sClient.CoreV1().ServiceAccounts(pods.GetPodNamespace())
 
 	sensorUpgraderSA, err := saClient.Get(p.ctx(), preferredServiceAccountName, metav1.GetOptions{})
 	if err != nil {
