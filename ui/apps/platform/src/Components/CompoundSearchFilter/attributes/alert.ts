@@ -3,14 +3,14 @@
 import { CompoundSearchFilterAttribute } from '../types';
 
 export const InactiveDeployment: CompoundSearchFilterAttribute = {
-    displayName: 'Inactive deployment',
-    filterChipLabel: 'Inactive deployment',
+    displayName: 'Deployment status',
+    filterChipLabel: 'Deployment status',
     searchTerm: 'Inactive Deployment',
     inputType: 'select',
     inputProps: {
         options: [
-            { value: 'true', label: 'True' },
-            { value: 'false', label: 'False' },
+            { value: 'false', label: 'Active' },
+            { value: 'true', label: 'Inactive' },
         ],
     },
 };
