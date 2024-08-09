@@ -93,7 +93,9 @@ function RequestCVEsTable({
                 <Table variant="compact">
                     <Thead noWrap>
                         <Tr>
-                            <Td />
+                            <Th>
+                                <span className="pf-v5-screen-reader">Row expansion</span>
+                            </Th>
                             <Th sort={getSortParams('CVE')}>CVE</Th>
                             <Th>Images by severity</Th>
                             <Th sort={getSortParams('CVSS', aggregateByCVSS)}>CVSS</Th>

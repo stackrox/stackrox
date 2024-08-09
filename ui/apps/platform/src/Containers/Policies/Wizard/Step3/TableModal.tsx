@@ -116,7 +116,6 @@ function TableModal({
                                                     </Th>
                                                 );
                                             })}
-                                            <Td />
                                         </Tr>
                                     </Thead>
                                     <Tbody>

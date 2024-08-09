@@ -78,9 +78,7 @@ function ListeningEndpointsTable({
                             },
                         }}
                         width={10}
-                    >
-                        {/* Header for expanded column */}
-                    </Th>
+                    />
                     <Th width={30} sort={getSortParams('Deployment')}>
                         Deployment
                     </Th>

@@ -184,13 +184,17 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                 <Table aria-label="Simple table" variant="compact">
                     <Thead>
                         <Tr>
-                            <Td>{/* Header for expanded column */}</Td>
+                            <Th>
+                                <span className="pf-v5-screen-reader">Row expansion</span>
+                            </Th>
                             <Th width={25} sort={getSortParams('Report Completion Time')}>
                                 Completed
                             </Th>
                             <Th width={25}>Status</Th>
                             <Th width={50}>Requestor</Th>
-                            <Td>{/* Header for table actions column */}</Td>
+                            <Th>
+                                <span className="pf-v5-screen-reader">Row actions</span>
+                            </Th>
                         </Tr>
                     </Thead>
                     {reportSnapshots.length === 0 && (

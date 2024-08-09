@@ -141,7 +141,11 @@ function CVEsTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
                     <Th>First discovered</Th>
-                    {canSelectRows && <Th aria-label="CVE actions" />}
+                    {canSelectRows && (
+                        <Th>
+                            <span className="pf-v5-screen-reader">CVE actions</span>
+                        </Th>
+                    )}
                 </Tr>
             </Thead>
             <TbodyUnified
