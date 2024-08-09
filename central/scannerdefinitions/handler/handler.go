@@ -38,24 +38,34 @@ import (
 )
 
 const (
-	definitionsBaseDir = "scannerdefinitions"
+	// tmpDirPattern is the pattern for the directory in which all Scanner data is written.
+	tmpDirPattern = "scannerdefinitions-*"
 
-	// scannerDefsSubZipName represents the offline zip bundle for CVEs for Scanner.
-	scannerDefsSubZipName  = "scanner-defs.zip"
-	scannerUpdateURLSuffix = "diff.zip"
+	// scannerV2DiffFile is the name of the file which contains Scanner v2 diff data.
+	scannerV2DiffFile = "diff.zip"
+	// scannerV2DefsFileis the name of the file which contains offline Scanner v2 data.
+	scannerV2DefsFile = "scanner-defs.zip"
+	// offlineScannerV2DefsBlobName represents the blob name of offline/fallback data file for Scanner v2.
+	offlineScannerV2DefsBlobName = "/offline/scanner/scanner-defs.zip"
 
-	scannerV4DefsSubZipName = "scanner-v4-defs.zip"
 	// scannerV4DefsPrefix helps to search the v4 offline zip bundle for CVEs
 	scannerV4DefsPrefix    = "scanner-v4-defs"
+	scannerV4ManifestFile  = "manifest.json"
 	scannerV4VulnSubDir    = "v4/vulnerability-bundles"
 	scannerV4MappingSubDir = "v4/redhat-repository-mappings"
 	scannerV4MappingFile   = "mapping.zip"
+	// offlineScannerV4DefsBlobName represents the blob name of offline/fallback data file for Scanner V4.
+	offlineScannerV4DefsBlobName = "/offline/scanner/v4/scanner-v4-defs.zip"
 
-	// offlineScannerDefinitionBlobName represents the blob name of offline/fallback zip bundle for CVEs for Scanner.
-	offlineScannerDefinitionBlobName = "/offline/scanner/" + scannerDefsSubZipName
+	// scannerV4AcceptHeader defines the custom HTTP header to identify the content type Scanner V4 desires.
+	// This is used instead of Accept, as we do not map this 1:1 with the returned content type.
+	scannerV4AcceptHeader = "X-Scanner-V4-Accept"
+	// scannerV4MultiBundleContentType is the custom content type representing Scanner V4 wants
+	// the "multi-bundle" ZIP data returned.
+	scannerV4MultiBundleContentType = "application/vnd.stackrox.scanner-v4.multi-bundle+zip"
 
-	// offlineScannerV4DefinitionBlobName represents the blob name of offline/fallback zip bundle for CVEs for Scanner V4.
-	offlineScannerV4DefinitionBlobName = "/offline/scanner/v4/" + scannerV4DefsSubZipName
+	// tmpUploadFile is the name of the file to which uploaded data is written, temporarily.
+	tmpUploadFile = "offline-defs.zip"
 
 	defaultCleanupInterval = 4 * time.Hour
 	defaultCleanupAge      = 1 * time.Hour
@@ -80,6 +90,8 @@ var (
 
 	log = logging.LoggerForModule()
 
+	// v4FileMapping maps a URL query parameter to its associated
+	// Scanner V4 map file.
 	v4FileMapping = map[string]string{
 		"name2repos": "repomapping/container-name-repos-map.json",
 		"repo2cpe":   "repomapping/repository-to-cpe.json",
@@ -92,6 +104,8 @@ type requestedUpdater struct {
 	lastRequestedTime time.Time
 }
 
+// manifest represents the manifest.json file
+// containing Scanner V4 related metadata.
 type manifest struct {
 	Version string `json:"version"`
 }
@@ -109,9 +123,7 @@ type httpHandler struct {
 func init() {
 	var err error
 	scannerUpdateBaseURL, err = url.Parse("https://definitions.stackrox.io")
-	if err != nil {
-		panic(err)
-	}
+	utils.CrashOnError(err) // This is very unexpected.
 }
 
 // New creates a new http.Handler to handle vulnerability data.
@@ -133,11 +145,11 @@ func New(blobStore blob.Datastore, opts handlerOpts) http.Handler {
 
 func (h *httpHandler) initializeUpdaters(cleanupInterval, cleanupAge *time.Duration) {
 	var err error
-	h.onlineVulnDir, err = os.MkdirTemp("", definitionsBaseDir)
+	h.onlineVulnDir, err = os.MkdirTemp("", tmpDirPattern)
 	utils.CrashOnError(err) // Fundamental problem if we cannot create a temp directory.
 
 	h.updaters = make(map[string]*requestedUpdater)
-	go h.runCleanupUpdaters(cleanupInterval, cleanupAge)
+	go h.cleanUpdatersPeriodic(cleanupInterval, cleanupAge)
 }
 
 func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -188,7 +200,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		opts.name = uuid
 		opts.urlPath = uuid
 		opts.fileName = fileName
-		opts.offlineBlobName = offlineScannerDefinitionBlobName
+		opts.offlineBlobName = offlineScannerV2DefsBlobName
 	case fileName != "" && v == "":
 		// If only file is requested, then this is request for Scanner v4 mapping file.
 		v4FileName, exists := v4FileMapping[fileName]
@@ -199,7 +211,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		uType = mappingUpdaterType
 		opts.name = fileName
 		opts.fileName = v4FileName
-		opts.offlineBlobName = offlineScannerV4DefinitionBlobName
+		opts.offlineBlobName = offlineScannerV4DefsBlobName
 	case fileName == "" && v != "":
 		// If only version is provided, this is for Scanner V4 vuln file
 		if version.GetVersionKind(v) == version.NightlyKind {
@@ -209,7 +221,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		uType = vulnerabilityUpdaterType
 		bundle := "vulns.json.zst"
 		contentType = "application/zstd"
-		if r.Header.Get("X-Scanner-V4-Accept") == "application/vnd.stackrox.scanner-v4.multi-bundle+zip" {
+		if r.Header.Get(scannerV4AcceptHeader) == scannerV4MultiBundleContentType {
 			bundle = "vulnerabilities.zip"
 			contentType = "application/zip"
 		}
@@ -217,7 +229,7 @@ func (h *httpHandler) get(w http.ResponseWriter, r *http.Request) {
 		opts.urlPath = path.Join(v, bundle)
 		opts.vulnVersion = v
 		opts.vulnBundle = bundle
-		opts.offlineBlobName = offlineScannerV4DefinitionBlobName
+		opts.offlineBlobName = offlineScannerV4DefsBlobName
 	default:
 		writeErrorBadRequest(w)
 		return
@@ -316,7 +328,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		// so close it here.
 		defer utils.IgnoreError(openedFile.Close)
 		// check version information in manifest
-		mf, cleanUp, err := openFromArchive(openedFile.Name(), "manifest.json")
+		mf, cleanUp, err := openFromArchive(openedFile.Name(), scannerV4ManifestFile)
 		if err != nil {
 			return nil, err
 		}
@@ -420,7 +432,7 @@ func (h *httpHandler) getUpdater(t updaterType, urlPath string) *requestedUpdate
 			updateURL = scannerUpdateBaseURL.JoinPath(scannerV4VulnSubDir, urlPath)
 			ext = ".json.zst"
 		default: // uuid
-			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerUpdateURLSuffix)
+			updateURL = scannerUpdateBaseURL.JoinPath(urlPath, scannerV2DiffFile)
 			ext = ".zip"
 		}
 		filePath := filepath.Join(h.onlineVulnDir, fileName)
@@ -450,7 +462,7 @@ func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	tempFile := filepath.Join(tempDir, "tempfile.zip")
+	tempFile := filepath.Join(tempDir, tmpUploadFile)
 	if err := fileutils.CopySrcToFile(tempFile, r.Body); err != nil {
 		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrapf(err, "copying HTTP POST body to %s", tempFile))
 		return
@@ -483,7 +495,7 @@ func validateV4DefsVersion(zipPath string) error {
 				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
 			}
 			utils.IgnoreError(defs.Close)
-			mf, removeDefs, err := openFromArchive(defs.Name(), "manifest.json")
+			mf, removeDefs, err := openFromArchive(defs.Name(), scannerV4ManifestFile)
 			if err != nil {
 				return errors.Wrap(err, "couldn't open v4 offline defs manifest.json")
 			}
@@ -518,15 +530,15 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context, zipPath
 	// In the future, we may decide to support other files (like we have in the past), which is why we
 	// expect this ZIP of a single ZIP.
 	for _, zipF := range zipR.File {
-		if zipF.Name == scannerDefsSubZipName {
-			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerDefinitionBlobName); err != nil {
+		if zipF.Name == scannerV2DefsFile {
+			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV2DefsBlobName); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
 			}
 			count++
 			continue
 		}
 		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
-			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV4DefinitionBlobName); err != nil {
+			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV4DefsBlobName); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-v4-defs sub file")
 			}
 			log.Debugf("Successfully processed file: %s", zipF.Name)
@@ -580,7 +592,7 @@ func openFromArchive(archiveFile string, fileName string) (*os.File, func(), err
 	defer utils.IgnoreError(fileReader.Close)
 
 	// Create a temporary file and remove it, keeping the file descriptor.
-	tmpDir, err := os.MkdirTemp("", definitionsBaseDir)
+	tmpDir, err := os.MkdirTemp("", tmpDirPattern)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating temporary directory")
 	}
@@ -649,7 +661,7 @@ func writeErrorForFile(w http.ResponseWriter, err error, path string) {
 	httputil.WriteGRPCStyleErrorf(w, codes.Internal, "could not read vulnerability definition %s: %v", filepath.Base(path), err)
 }
 
-func (h *httpHandler) runCleanupUpdaters(cleanupInterval, cleanupAge *time.Duration) {
+func (h *httpHandler) cleanUpdatersPeriodic(cleanupInterval, cleanupAge *time.Duration) {
 	interval := defaultCleanupInterval
 	if cleanupInterval != nil {
 		interval = *cleanupInterval
