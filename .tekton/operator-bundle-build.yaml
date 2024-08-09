@@ -46,8 +46,6 @@ spec:
     value: '0'
   - name: clone-fetch-tags
     value: 'true'
-  - name: image-tag-style
-    value: 'operator'
 
   workspaces:
   - name: git-auth
