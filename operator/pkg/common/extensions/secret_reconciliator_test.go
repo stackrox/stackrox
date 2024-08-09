@@ -9,8 +9,8 @@ import (
 	"github.com/stackrox/rox/operator/pkg/common/labels"
 	"github.com/stackrox/rox/operator/pkg/types"
 	"github.com/stackrox/rox/operator/pkg/utils/testutils"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -192,7 +192,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_PassingVa
 	err = s.client.Get(context.Background(), key, secret)
 	s.Require().NoError(err)
 
-	protoassert.Equal(s.T(), initSecret, secret)
+	assert.Equal(s.T(), initSecret, secret)
 }
 
 func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingManaged_FailingValidation_ShouldFix() {
@@ -246,7 +246,7 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_Passing
 	secret := &v1.Secret{}
 	err = s.client.Get(context.Background(), key, secret)
 	s.Require().NoError(err)
-	protoassert.Equal(s.T(), initSecret, secret)
+	assert.Equal(s.T(), initSecret, secret)
 }
 
 func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_FailingValidation_ShouldDoNothingAndFail() {
@@ -274,5 +274,5 @@ func (s *secretReconcilerTestSuite) Test_ShouldExist_OnExistingUnmanaged_Failing
 	err = s.client.Get(context.Background(), key, secret)
 	s.Require().NoError(err)
 
-	protoassert.Equal(s.T(), initSecret, secret)
+	assert.Equal(s.T(), initSecret, secret)
 }
