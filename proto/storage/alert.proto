@@ -221,6 +221,7 @@ message ListAlertDeployment {
   bool inactive = 7; // @gotags: search:"Inactive Deployment"
   // This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.
   string namespace_id = 8 [deprecated = true]; // This field has moved to CommonEntityInfo
+  string deployment_type = 9;
 }
 
 enum ViolationState {

@@ -1294,6 +1294,9 @@
         "namespaceId": {
           "type": "string",
           "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.\n\nThis field has moved to CommonEntityInfo"
+        },
+        "deploymentType": {
+          "type": "string"
         }
       }
     },

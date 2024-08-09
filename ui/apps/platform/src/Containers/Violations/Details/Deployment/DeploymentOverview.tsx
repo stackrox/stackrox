@@ -31,7 +31,7 @@ function DeploymentOverview({
                 }
             />
             <DescriptionListItem term="Deployment name" desc={alertDeployment.name} />
-            <DescriptionListItem term="Deployment type" desc={alertDeployment.type} />
+            <DescriptionListItem term="Deployment kind" desc={alertDeployment.type} />
             <DescriptionListItem term="Cluster" desc={alertDeployment.clusterName} />
             <DescriptionListItem term="Namespace" desc={alertDeployment.namespace} />
             {deployment && (

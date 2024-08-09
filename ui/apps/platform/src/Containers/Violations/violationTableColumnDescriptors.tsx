@@ -12,6 +12,7 @@ import {
     BLOCKING_ENFORCEMENT_ACTIONS,
     ENFORCEMENT_ACTIONS_AS_PAST_TENSE,
 } from 'constants/enforcementActions';
+import { resourceTypes } from 'constants/entityTypes';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { violationsBasePath } from 'routePaths';
 import { ListAlert } from 'types/alert.proto';
@@ -100,9 +101,20 @@ const tableColumnDescriptor = [
         Cell: EntityTableCell,
     },
     {
-        Header: 'Type',
+        Header: 'Kind',
         accessor: 'commonEntityInfo.resourceType',
-        Cell: ({ value }): string => startCase(value.toLowerCase()),
+        Cell: ({ value, original }): string => {
+            const deployment = original?.deployment || {};
+            if (
+                value === resourceTypes.DEPLOYMENT &&
+                deployment.deploymentType &&
+                typeof deployment.deploymentType === 'string' &&
+                deployment.deploymentType.length > 0
+            ) {
+                return deployment.deploymentType as string;
+            }
+            return startCase(value.toLowerCase());
+        },
     },
     {
         Header: 'Enforced',
