@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -23,8 +24,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/registry/metrics"
 )
 
-// TODO: Ensure locks are minimally scoped
-
 const (
 	defaultSA = "default"
 
@@ -40,19 +39,28 @@ var (
 	bgContext = context.Background()
 )
 
-// secretNamesToRegistries is an alias for a map of secret names to registries.
-// TODO: Consider converting this to a set of types.ImageRegistry
-type secretNameToRegistries = map[string][]types.ImageRegistry
+// namespaceToSecretName is an alias for a map of namespace to another map keyed by secret name.
+type namespaceToSecretName = map[string]secretNameToHostname
+
+// secretNameToHostname is an alias for a map of secret name to another map keyed by registry hostname.
+type secretNameToHostname = map[string]hostnameToRegistry
+
+// hostnameToRegistry is an alias for a map of registry hostname to image registry.
+type hostnameToRegistry = map[string]types.ImageRegistry
 
 // Store stores cluster-internal registries by namespace.
 type Store struct {
 	factory registries.Factory
-	// store maps a namespace, to secret names, to the names of registries associated with the named secret.
+
+	// storeByHost maps a namespace to registries accessible from within the namespace.
 	storeByHost map[string]registries.Set
-	storeByName map[string]secretNameToRegistries
-	// TODO: namespace -> secretName -> []regs
-	// TODO: namespace -> secretName -> registryAddr -> reg
-	// by doing this do not need to rely on Config() to get host, instead rely on map key (this an advantage?)
+
+	// storeByName maps a namespace to secret names to host names to a registry. This intention
+	// of this mapping is to closely resemble how pull secrets are represented in k8s.
+	storeByName namespaceToSecretName
+
+	// storeMutux controls access to storeByHost or storeByName (whichever is active)
+	storeMutux sync.RWMutex
 
 	// clusterLocalRegistryHosts contains hosts (names and/or IPs) for registries that are local
 	// to this cluster (ie: the OCP internal registry).
@@ -62,8 +70,6 @@ type Store struct {
 	// globalRegistries holds registries that are not bound to a namespace and can be used
 	// for processing images from any namespace, example: the OCP Global Pull Secret.
 	globalRegistries registries.Set
-
-	mutex sync.RWMutex
 
 	// delegatedRegistryConfig is used to determine if scanning images from a registry
 	// should be done via local scanner or sent to central.
@@ -98,7 +104,7 @@ func NewRegistryStore(checkTLSFunc CheckTLS) *Store {
 	store := &Store{
 		factory:     factory,
 		storeByHost: make(map[string]registries.Set),
-		storeByName: make(map[string]secretNameToRegistries),
+		storeByName: make(namespaceToSecretName),
 		globalRegistries: registries.NewSet(
 			factory,
 			types.WithMetricsHandler(metrics.Singleton()),
@@ -131,11 +137,11 @@ func (rs *Store) cleanupRegistries() {
 	rs.centralRegistryIntegrations.Clear()
 	rs.globalRegistries.Clear()
 
-	rs.mutex.Lock()
-	defer rs.mutex.Unlock()
+	rs.storeMutux.Lock()
+	defer rs.storeMutux.Unlock()
 
 	rs.storeByHost = make(map[string]registries.Set)
-	rs.storeByName = make(map[string]secretNameToRegistries)
+	rs.storeByName = make(namespaceToSecretName)
 }
 
 func (rs *Store) cleanupClusterLocalRegistryHosts() {
@@ -153,8 +159,8 @@ func (rs *Store) cleanupDelegatedRegistryConfig() {
 }
 
 func (rs *Store) getRegistries(namespace string) registries.Set {
-	rs.mutex.Lock()
-	defer rs.mutex.Unlock()
+	rs.storeMutux.Lock()
+	defer rs.storeMutux.Unlock()
 
 	regs := rs.storeByHost[namespace]
 	if regs == nil {
@@ -225,8 +231,8 @@ func (rs *Store) upsertRegistry(namespace, registry string, dce config.DockerCon
 
 // getRegistriesInNamespace returns all the registries within a given namespace.
 func (rs *Store) getRegistriesInNamespace(namespace string) registries.Set {
-	rs.mutex.RLock()
-	defer rs.mutex.RUnlock()
+	rs.storeMutux.RLock()
+	defer rs.storeMutux.RUnlock()
 
 	return rs.storeByHost[namespace]
 }
@@ -441,19 +447,15 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 	isGlobalPullSecret := namespace == openshiftConfigNamespace && secretName == openshiftConfigPullSecret
 
 	// To avoid partial upserts - hold the lock until the entire secret upserted.
-	rs.mutex.Lock()
-	defer rs.mutex.Unlock()
-	// TODO: Move the lock to after the loop and inserts, lock while adding the secrets into the overall map
+	rs.storeMutux.Lock()
+	defer rs.storeMutux.Unlock()
+
 	for registryAddress, dce := range dockerConfig {
 		registryAddr := strings.TrimSpace(registryAddress)
 
-		// TODO: Is this a correct assumption? that if any service account name is present then the resulting
-		// host is that of the cluster local registry!?
-		// - to determine, write a script that pulls all secrets from an OCP 4.15 and OCP 4.16 cluster
-		// - filter any secrets that are missing the known annotations
-		// - then consolidate the host names and print em
-		// - can probably do this by just dumping the unique entries in cluster local registry hosts
 		if serviceAcctName != "" {
+			// We assume that registries found in the dockercfg secret managed OCP for any
+			// service account only references hostnames for the OCP internal registry.
 			rs.upsertPullSecretByNameNoLock(namespace, secretName, registryAddr, dce)
 			rs.addClusterLocalRegistryHost(registryAddr)
 			continue
@@ -477,21 +479,29 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 
 func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registryAddr string, dce config.DockerConfigEntry) {
 	registryAddr = urlfmt.TrimHTTPPrefixes(registryAddr)
+
 	name := genIntegrationName(pullSecretNamePrefix, namespace, secretName, registryAddr)
 	ii := createImageIntegration(registryAddr, dce, name)
+
 	reg, err := rs.factory.CreateRegistry(ii, types.WithGCPTokenManager(gcp.Singleton()))
 	if err != nil {
-		log.Errorf("Create registry for pull secret %q, namespace %q, address %q: %v", secretName, namespace, registryAddr, err)
+		log.Errorf("Creating registry for pull secret %q, namespace %q, address %q: %v", secretName, namespace, registryAddr, err)
 		return
-		// return errors.Errorf("Create registry for pull secret %q, namespace %q, address %q: %v", secretName, namespace, registryAddr, err)
 	}
 
-	secretNameToRegs, ok := rs.storeByName[namespace]
+	secretNameToHost, ok := rs.storeByName[namespace]
 	if !ok {
-		secretNameToRegs = make(secretNameToRegistries)
-		rs.storeByName[namespace] = secretNameToRegs
+		secretNameToHost = make(secretNameToHostname)
+		rs.storeByName[namespace] = secretNameToHost
 	}
-	secretNameToRegs[secretName] = append(secretNameToRegs[secretName], reg)
+
+	hostToRegistry, ok := secretNameToHost[secretName]
+	if !ok {
+		hostToRegistry = make(hostnameToRegistry)
+		secretNameToHost[secretName] = hostToRegistry
+	}
+
+	hostToRegistry[registryAddr] = reg
 }
 
 // DeleteSecret returns true when a secret is deleted from the store, false otherwise.
@@ -501,18 +511,18 @@ func (rs *Store) DeleteSecret(namespace, secretName string) bool {
 		return false
 	}
 
-	rs.mutex.Lock()
-	defer rs.mutex.Unlock()
+	rs.storeMutux.Lock()
+	defer rs.storeMutux.Unlock()
 
-	secretNameToRegs := rs.storeByName[namespace]
-	if secretNameToRegs == nil {
+	secretNameToHost := rs.storeByName[namespace]
+	if secretNameToHost == nil {
 		return false
 	}
 
-	if _, ok := secretNameToRegs[secretName]; ok {
-		delete(secretNameToRegs, secretName)
+	if _, ok := secretNameToHost[secretName]; ok {
+		delete(secretNameToHost, secretName)
 
-		if len(secretNameToRegs) == 0 {
+		if len(secretNameToHost) == 0 {
 			// If there are no more secrets for this namespace, delete the namespace entry as well.
 			delete(rs.storeByName, namespace)
 		}
@@ -522,40 +532,60 @@ func (rs *Store) DeleteSecret(namespace, secretName string) bool {
 	return false
 }
 
-// GetPullSecretRegistries returns the registries associated with the provided pull secrets found in namespace.
-// TODO: IF imagepullsecrets is empty, should we just pull all secrets for the namespace?
+// GetPullSecretRegistries returns the matching registries associated with the provided pull secrets found in namespace.
+// If no pull secrets are provided, all matching registries from the namespace are returned.
 func (rs *Store) GetPullSecretRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]types.ImageRegistry, error) {
-	// TODO: convert this to handle when namespace is empty
-	// if namespace == "" {
-	// 	return nil, nil
-	// }
-
 	if !features.SensorPullSecretsByName.Enabled() {
 		reg, err := rs.getRegistryForImageInNamespace(image, namespace)
-		if reg == nil {
+		if err != nil {
 			return nil, err
 		}
-		// TODO: Cleanup?
-		return []types.ImageRegistry{reg}, err
+
+		return []types.ImageRegistry{reg}, nil
 	}
 
 	var allRegs []types.ImageRegistry
 	registryHostname := image.GetRegistry()
 
-	rs.mutex.RLock()
-	defer rs.mutex.RUnlock()
+	rs.storeMutux.RLock()
+	defer rs.storeMutux.RUnlock()
 
-	secretNameToRegs, ok := rs.storeByName[namespace]
+	secretNameToHost, ok := rs.storeByName[namespace]
 	if !ok {
-		return nil, nil // TODO: Should return an error?
+		return nil, nil
 	}
-	for _, secretName := range imagePullSecrets {
-		for _, r := range secretNameToRegs[secretName] { // TEST this - what if !ok, does the
-			if r.Config(bgContext).GetRegistryHostname() == registryHostname {
-				allRegs = append(allRegs, r)
+
+	if len(imagePullSecrets) > 0 {
+		// If pull secrets were provided, find the matching registries within
+		// those secrets.
+		for _, secretName := range imagePullSecrets {
+			for host, reg := range secretNameToHost[secretName] {
+				if host == registryHostname {
+					allRegs = append(allRegs, reg)
+				}
+			}
+		}
+
+		return allRegs, nil
+	}
+
+	// If no pull secrets were provided, we assume that all matching registries
+	// from the namespace are desired.
+
+	// To make the output deterministic we sort the secret names.
+	secretNames := make([]string, 0, len(secretNameToHost))
+	for secretName := range secretNameToHost {
+		secretNames = append(secretNames, secretName)
+	}
+	slices.Sort(secretNames)
+
+	for _, secretName := range secretNames {
+		hostToRegistry := secretNameToHost[secretName]
+		for host, reg := range hostToRegistry {
+			if host == registryHostname {
+				allRegs = append(allRegs, reg)
 			}
 		}
 	}
-
 	return allRegs, nil
 }

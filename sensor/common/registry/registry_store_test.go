@@ -418,9 +418,9 @@ func TestDataRaceAtCleanup(t *testing.T) {
 	wg.Wait()
 }
 
-// TestRegistryStore_ServiceAccounts ensures that secrets
+// TestRegistryStore_UpsertsByServiceAccount ensures that secrets
 // are upserted as expected based on associated service account names
-func TestRegistryStore_ServiceAccounts(t *testing.T) {
+func TestRegistryStore_UpsertsByServiceAccount(t *testing.T) {
 	imagePullSecrets := []string{"sec1", "sec2", "sec3"}
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 	dcA := config.DockerConfig{fakeImgName.GetRegistry(): dce}
@@ -523,6 +523,8 @@ func TestRegistryStore_ServiceAccounts(t *testing.T) {
 	})
 }
 
+// TestRegistryStore_SecretDelete ensures that secrets are deleted (or not deleted)
+// as expected.
 func TestRegistryStore_SecretDelete(t *testing.T) {
 	imagePullSecrets := []string{fakeSecretName, "sec1", "sec2"}
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
@@ -579,4 +581,43 @@ func TestRegistryStore_SecretDelete(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, regs, 0)
 	})
+}
+
+// TestRegistryStore_GetPullSecretRegistries ensures that the correct
+// registries are returned given a set of pull secrets (or no pull secrets)
+func TestRegistryStore_GetPullSecretRegistries(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
+
+	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+
+	imagePullSecrets := []string{"secB", "secA"}
+	dceA := config.DockerConfigEntry{Username: "usernameA", Password: "passwordA"}
+	dceB := config.DockerConfigEntry{Username: "usernameB", Password: "passwordB"}
+	dcA := config.DockerConfig{fakeImgName.GetRegistry(): dceA}
+	dcB := config.DockerConfig{fakeImgName.GetRegistry(): dceB}
+
+	regStore.UpsertSecret(fakeNamespace, "secA", dcA, "")
+	regStore.UpsertSecret(fakeNamespace, "secB", dcB, "")
+
+	regs, err := regStore.GetPullSecretRegistries(fakeImgName, fakeNamespace, imagePullSecrets)
+	require.NoError(t, err)
+	assert.Len(t, regs, 2)
+	assert.Equal(t, "passwordB", regs[0].Config(bgCtx).Password)
+	assert.Equal(t, "passwordA", regs[1].Config(bgCtx).Password)
+
+	regs, err = regStore.GetPullSecretRegistries(fakeImgName, fakeNamespace, []string{"secA"})
+	require.NoError(t, err)
+	assert.Len(t, regs, 1)
+	assert.Equal(t, "passwordA", regs[0].Config(bgCtx).Password)
+
+	regs, err = regStore.GetPullSecretRegistries(fakeImgName, fakeNamespace, []string{"secB"})
+	require.NoError(t, err)
+	assert.Len(t, regs, 1)
+	assert.Equal(t, "passwordB", regs[0].Config(bgCtx).Password)
+
+	regs, err = regStore.GetPullSecretRegistries(fakeImgName, fakeNamespace, nil)
+	require.NoError(t, err)
+	assert.Len(t, regs, 2)
+	assert.Equal(t, "passwordA", regs[0].Config(bgCtx).Password)
+	assert.Equal(t, "passwordB", regs[1].Config(bgCtx).Password)
 }
