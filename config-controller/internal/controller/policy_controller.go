@@ -87,7 +87,9 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 			policyCR.Status.Accepted = true
 			policyCR.Status.Message = "Successfully updated policy"
-			r.Client.Status().Update(ctx, policyCR)
+			if err = r.Client.Status().Update(ctx, policyCR); err != nil {
+				return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on policy %s", req.Name))
+			}
 			return ctrl.Result{}, nil
 		}
 	}
@@ -96,12 +98,16 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		wrappedErr := errors.Wrap(err, fmt.Sprintf("Failed to create policy %s", req.Name))
 		policyCR.Status.Accepted = false
 		policyCR.Status.Message = wrappedErr.Error()
-		r.Client.Status().Update(ctx, policyCR)
+		if err = r.Client.Status().Update(ctx, policyCR); err != nil {
+			return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on policy %s", req.Name))
+		}
 		return ctrl.Result{}, wrappedErr
 	} else {
 		policyCR.Status.Accepted = true
 		policyCR.Status.Message = "Successfully created policy"
-		r.Client.Status().Update(ctx, policyCR)
+		if err = r.Client.Status().Update(ctx, policyCR); err != nil {
+			return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on policy %s", req.Name))
+		}
 	}
 
 	// Report status
@@ -116,7 +122,13 @@ func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return errors.Wrap(err, "could not establish gRPC connection to Central")
 	}
 	r.conn = conn
-	return ctrl.NewControllerManagedBy(mgr).
+	err = ctrl.NewControllerManagedBy(mgr).
 		For(&configstackroxiov1alpha1.Policy{}).
 		Complete(r)
+
+	if err != nil {
+		return errors.Wrap(err, "Failed to construct controller manager")
+	}
+
+	return nil
 }

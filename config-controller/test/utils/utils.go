@@ -22,7 +22,8 @@ import (
 	"os/exec"
 	"strings"
 
-	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive
+	. "github.com/onsi/ginkgo/v2" //nolint:golint
+	"github.com/pkg/errors"
 )
 
 const (
@@ -133,7 +134,7 @@ func GetNonEmptyLines(output string) []string {
 func GetProjectDir() (string, error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		return wd, err
+		return wd, errors.Wrap(err, "Failed to get working dir")
 	}
 	wd = strings.Replace(wd, "/test/e2e", "", -1)
 	return wd, nil
