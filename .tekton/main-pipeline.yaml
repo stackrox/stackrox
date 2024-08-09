@@ -265,8 +265,6 @@ spec:
     params:
     - name: BINARY_IMAGE
       value: $(tasks.build-container.results.IMAGE_URL)
-    - name: BASE_IMAGES
-      value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -290,8 +288,6 @@ spec:
 
   - name: deprecated-base-image-check
     params:
-    - name: BASE_IMAGES_DIGESTS
-      value: $(tasks.build-container.results.BASE_IMAGES_DIGESTS)
     - name: IMAGE_URL
       value: $(tasks.build-container.results.IMAGE_URL)
     - name: IMAGE_DIGEST
