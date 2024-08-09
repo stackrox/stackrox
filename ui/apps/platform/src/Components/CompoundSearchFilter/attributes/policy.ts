@@ -16,4 +16,18 @@ export const Category: CompoundSearchFilterAttribute = {
     inputType: 'autocomplete',
 };
 
-export const policyAttributes = [Name, Category];
+export const LifecycleStage: CompoundSearchFilterAttribute = {
+    displayName: 'Lifecycle stage',
+    filterChipLabel: 'Lifecycle stage',
+    searchTerm: 'Lifecycle Stage',
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { value: 'DEPLOY', label: 'Deploy' },
+            { value: 'BUILD', label: 'Build' },
+            { value: 'RUNTIME', label: 'Runtime' },
+        ],
+    },
+};
+
+export const policyAttributes = [Name, Category, LifecycleStage];
