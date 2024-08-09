@@ -11,7 +11,9 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
+	"github.com/stackrox/rox/compliance/collection/intervals"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
+	v4 "github.com/stackrox/rox/compliance/index/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -30,16 +32,18 @@ import (
 type Compliance struct {
 	nodeNameProvider NodeNameProvider
 	nodeScanner      NodeScanner
+	nodeIndexer      v4.NodeIndexer
 	umh              UnconfirmedMessageHandler
 	cache            *sensor.MsgFromCompliance
 }
 
 // NewComplianceApp contsructs the Compliance app object
-func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner,
+func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, nodeIndexer v4.NodeIndexer,
 	srh UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
 		nodeNameProvider: nnp,
 		nodeScanner:      scanner,
+		nodeIndexer:      nodeIndexer,
 		umh:              srh,
 		cache:            nil,
 	}
@@ -91,6 +95,11 @@ func (c *Compliance) Start() {
 		}
 	}
 
+	if env.NodeScanningV4Enabled.BooleanSetting() {
+		log.Infof("Node Index v4 enabled")
+		c.manageNodeIndexLoop(ctx)
+	}
+
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
 	// Wait for a signal to terminate
@@ -100,6 +109,29 @@ func (c *Compliance) Start() {
 	cancel()
 	stoppedSig.Wait()
 	log.Info("Successfully closed Sensor communication")
+}
+
+// TODO(ROX-24117): This report should be sent to central for enrichment
+func (c *Compliance) manageNodeIndexLoop(ctx context.Context) {
+	go func() {
+		i := intervals.NewNodeScanIntervalFromEnv() // TODO(25698): This should be a shared setting, not v2 only
+		t := time.NewTicker(i.Initial())
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				log.Infof("Creating Node Index Report")
+				report, err := c.nodeIndexer.IndexNode(ctx)
+				if err != nil {
+					log.Errorf("Error running node scan: %v", err)
+					continue
+				}
+				log.Infof("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
+			}
+
+		}
+	}()
 }
 
 func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
