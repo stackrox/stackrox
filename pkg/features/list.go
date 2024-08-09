@@ -61,9 +61,6 @@ var (
 	// SensorCapturesIntermediateEvents enables sensor to capture intermediate events when it is disconnected from central
 	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", enabled)
 
-	// ScannerV4Support enables various capabilities associated with ACS + Clair consolidated scanner.
-	ScannerV4Support = registerFeature("Enable Scanner V4 Support", "ROX_SCANNER_V4_SUPPORT", enabled, unchangeableInProd)
-
 	// ScannerV4 indicates Scanner V4 is installed and should be used as the default image scanner in Central/Sensor.
 	ScannerV4 = registerFeature("Enables Scanner V4 runtime functionality", "ROX_SCANNER_V4")
 

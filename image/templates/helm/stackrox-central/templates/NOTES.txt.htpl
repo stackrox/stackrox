@@ -10,12 +10,10 @@ Central Services Configuration Summary:
   Kubernetes Namespace:                        {{ .Release.Namespace }}
   Helm Release Name:                           {{ .Release.Name }}
   OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}
-[<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
   Scanner V4:                                  {{ if ._rox._scannerV4Enabled -}} enabled {{- else -}} disabled {{- end }}
 {{- if and ._rox._scannerV4Enabled ._rox._scannerV4Volume }}
   Scanner V4 DB Volume:                        {{ ._rox._scannerV4Volume }}
 {{- end }}
-[<- end >]
 
 {{ if include "srox.checkGenerated" (list . "central.adminPassword.value") -}}
 An administrator password has been generated automatically. Use username 'admin' and the following

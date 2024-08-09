@@ -46,10 +46,8 @@
 {{ $configShapeScanner := $.Files.Get "internal/scanner-config-shape.yaml" | fromYaml }}
 {{ $_ = include "srox.mergeInto" (list $configShape $configShapeScanner) }}
 
-[<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
 {{ $configShapeScannerV4 := $.Files.Get "internal/scanner-v4-config-shape.yaml" | fromYaml }}
 {{ $_ = include "srox.mergeInto" (list $configShape $configShapeScannerV4) }}
-[<- end >]
 
 {{ $_ = include "srox.mergeInto" (list $rox $configShape (tpl ($.Files.Get "internal/bootstrap-defaults.yaml.tpl") . | fromYaml)) }}
 
@@ -274,8 +272,6 @@
   {{ include "srox.scannerInit" (list $ $scannerCfg) }}
 {{ end }}
 
-[< if .FeatureFlags.ROX_SCANNER_V4_SUPPORT ->]
-
 {{/*
    ScannerV4 setup.
   */}}
@@ -287,13 +283,10 @@
   {{ include "srox.scannerV4Volume" $ }}
 {{ end }}
 
-[<- end >]
-
 
 {{/*
     Post-processing steps.
    */}}
-
 
 {{/* Compact the post-processing config to prevent it from appearing non-empty if it doesn't
      contain any concrete (leaf) values. */}}

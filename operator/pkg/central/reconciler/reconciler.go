@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/operator/pkg/reconciler"
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/version"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -32,6 +31,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
+		pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileAdminPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), mgr.GetAPIReader(), extensions.PVCTargetCentral, extensions.DefaultCentralPVCName)),
 		pkgReconciler.WithPreExtension(extensions.ReconcilePVCExtension(mgr.GetClient(), mgr.GetAPIReader(), extensions.PVCTargetCentralDB, extensions.DefaultCentralDBPVCName)),
@@ -40,10 +40,6 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 		pkgReconciler.WithReconcilePeriod(extensions.InitBundleReconcilePeriod),
 		pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation),
-	}
-
-	if features.ScannerV4Support.Enabled() {
-		opts = append(opts, pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())))
 	}
 
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
