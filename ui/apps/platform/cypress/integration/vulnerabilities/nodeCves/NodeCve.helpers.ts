@@ -6,6 +6,7 @@ import {
     interactAndWaitForResponses,
 } from '../../../helpers/request';
 import { visit, visitWithStaticResponseForPermissions } from '../../../helpers/visit';
+import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
 export const nodeCveBaseUrl = '/main/vulnerabilities/node-cves/cves';
 
@@ -129,4 +130,10 @@ export function visitFirstNodeLinkFromTable(): Cypress.Chainable<string> {
             );
             return cy.wrap($link.text());
         });
+}
+
+export function visitFirstNodeFromOverviewPage() {
+    visitNodeCveOverviewPage();
+    cy.get(vulnSelectors.entityTypeToggleItem('Node')).click();
+    visitFirstNodeLinkFromTable();
 }
