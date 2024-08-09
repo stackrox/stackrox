@@ -94,10 +94,11 @@ func insertIntoNetworkEntities(batch *pgx.Batch, obj *storage.NetworkEntity) err
 		// parent primary keys start
 		obj.GetInfo().GetId(),
 		obj.GetInfo().GetExternalSource().GetDefault(),
+		obj.GetInfo().GetExternalSource().GetLearned(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Default, serialized) VALUES($1, $2, $3) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Default, Info_ExternalSource_Learned, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, Info_ExternalSource_Learned = EXCLUDED.Info_ExternalSource_Learned, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -117,6 +118,7 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 	copyCols := []string{
 		"info_id",
 		"info_externalsource_default",
+		"info_externalsource_learned",
 		"serialized",
 	}
 
@@ -134,6 +136,7 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		inputRows = append(inputRows, []interface{}{
 			obj.GetInfo().GetId(),
 			obj.GetInfo().GetExternalSource().GetDefault(),
+			obj.GetInfo().GetExternalSource().GetLearned(),
 			serialized,
 		})
 

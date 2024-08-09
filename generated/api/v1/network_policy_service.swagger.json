@@ -641,6 +641,9 @@
         },
         "default": {
           "type": "boolean"
+        },
+        "learned": {
+          "type": "boolean"
         }
       },
       "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
