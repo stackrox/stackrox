@@ -46,4 +46,32 @@ export const LifecycleStage: CompoundSearchFilterAttribute = {
     },
 };
 
-export const policyAttributes = [Name, Category, Severity, LifecycleStage];
+export const EnforcementAction: CompoundSearchFilterAttribute = {
+    displayName: 'Enforcement action',
+    filterChipLabel: 'Enforcement action',
+    searchTerm: 'Enforcement',
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { value: 'FAIL_BUILD_ENFORCEMENT', label: 'Fail build' },
+            {
+                value: 'FAIL_DEPLOYMENT_CREATE_ENFORCEMENT',
+                label: 'Fail deployment create',
+            },
+            {
+                value: 'FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT',
+                label: 'Fail deployment update',
+            },
+            { value: 'FAIL_KUBE_REQUEST_ENFORCEMENT', label: 'Fail kube request' },
+            { value: 'KILL_POD_ENFORCEMENT', label: 'Kill pod' },
+            { value: 'SCALE_TO_ZERO_ENFORCEMENT', label: 'Scale to zero' },
+            {
+                value: 'UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT',
+                label: 'Unsatisfiable node constraint',
+            },
+            { value: 'UNSET_ENFORCEMENT', label: 'Unset' },
+        ],
+    },
+};
+
+export const policyAttributes = [Name, Category, Severity, LifecycleStage, EnforcementAction];
