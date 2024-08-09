@@ -11,9 +11,7 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
-	"github.com/stackrox/rox/compliance/collection/intervals"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
-	v4 "github.com/stackrox/rox/compliance/index/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -32,13 +30,13 @@ import (
 type Compliance struct {
 	nodeNameProvider NodeNameProvider
 	nodeScanner      NodeScanner
-	nodeIndexer      v4.NodeIndexer
+	nodeIndexer      NodeIndexer
 	umh              UnconfirmedMessageHandler
 	cache            *sensor.MsgFromCompliance
 }
 
 // NewComplianceApp contsructs the Compliance app object
-func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, nodeIndexer v4.NodeIndexer,
+func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, nodeIndexer NodeIndexer,
 	srh UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
 		nodeNameProvider: nnp,
@@ -114,7 +112,7 @@ func (c *Compliance) Start() {
 // TODO(ROX-24117): This report should be sent to central for enrichment
 func (c *Compliance) manageNodeIndexLoop(ctx context.Context) {
 	go func() {
-		i := intervals.NewNodeScanIntervalFromEnv() // TODO(25698): This should be a shared setting, not v2 only
+		i := c.nodeIndexer.GetIntervals()
 		t := time.NewTicker(i.Initial())
 		for {
 			select {

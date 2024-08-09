@@ -16,6 +16,8 @@ import (
 	"github.com/quay/claircore/rhel"
 	rpm2 "github.com/quay/claircore/rpm"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/compliance/collection/compliance"
+	"github.com/stackrox/rox/compliance/collection/intervals"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
@@ -25,21 +27,18 @@ import (
 // ClairCore checks, not for Scanners matching
 var layerDigest = fmt.Sprintf("sha256:%s", strings.Repeat("a", 64))
 
-// NodeIndexer represents a node indexer.
-//
-// It is a specialized mode of [indexer.Indexer] that takes a path and scans a live filesystem
-// instead of downloading and scanning layers of a container manifest.
-type NodeIndexer interface {
-	IndexNode(ctx context.Context) (*v4.IndexReport, error)
-	Close(ctx context.Context) error
-}
-
 type localNodeIndexer struct {
 }
 
 // NewNodeIndexer creates a new node indexer
-func NewNodeIndexer() NodeIndexer {
+func NewNodeIndexer() compliance.NodeIndexer {
 	return &localNodeIndexer{}
+}
+
+// GetIntervals
+func (l *localNodeIndexer) GetIntervals() *intervals.NodeScanIntervals {
+	i := intervals.NewNodeScanIntervalFromEnv()
+	return &i
 }
 
 // IndexNode indexes a live fs.FS at the container mountpoint given in the basePath.
@@ -136,11 +135,6 @@ func filterPackages(_ context.Context, pck []*claircore.Package) []*claircore.Pa
 		}
 	}
 	return filtered
-}
-
-// Close closes the NodeIndexer.
-func (l *localNodeIndexer) Close(ctx context.Context) error {
-	return nil
 }
 
 func runRepositoryScanner(ctx context.Context, l *claircore.Layer) ([]*claircore.Repository, error) {
