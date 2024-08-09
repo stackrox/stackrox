@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
+	timestamp "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
