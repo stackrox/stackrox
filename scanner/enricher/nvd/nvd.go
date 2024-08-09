@@ -37,9 +37,6 @@ const (
 	// DefaultFeeds is the default place to look for CVE feeds.
 	DefaultFeeds = `https://services.nvd.nist.gov/rest/json/cves/2.0/`
 
-	// This appears in [nvd.Type] and must be the same.
-	name = `nvd`
-
 	// First year for the yearly CVE feeds: https://nvd.nist.gov/vuln/data-feeds
 	firstYear = 2002
 )
@@ -143,7 +140,7 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 
 // Name implements driver.Enricher and driver.EnrichmentUpdater.
 func (*Enricher) Name() string {
-	return name
+	return nvd.Name
 }
 
 // FetchEnrichment implements driver.EnrichmentUpdater.
