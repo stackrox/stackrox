@@ -22,7 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/fixedby"
-	nvdp "github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
 	"github.com/stackrox/rox/pkg/scannerv4/updater"
 )
 
@@ -556,7 +556,7 @@ func fixedInVersion(v *claircore.Vulnerability) string {
 // nvdVulnerabilities look for NVD CVSS in the vulnerability report enrichments and
 // returns a map of CVEs.
 func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem, error) {
-	enrichmentsList := enrichments[nvdp.Type]
+	enrichmentsList := enrichments[nvd.Type]
 	if len(enrichmentsList) == 0 {
 		return nil, nil
 	}
