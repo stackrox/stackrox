@@ -8,13 +8,24 @@ BENCHTIME ?= 1x
 BENCHTIMEOUT ?= 20m
 BENCHCOUNT ?= 1
 
+podman =
+# docker --version might not contain any traces of podman in the latest
+# version, search for more output
 ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
+	podman = yes
+endif
+
+ifeq (,$(findstring Podman,$(shell docker version 2>/dev/null)))
+	podman = yes
+endif
+
+ifdef podman
+# Disable selinux for local podman builds.
+DOCKER_OPTS=--security-opt label=disable
+else
 # Podman DTRT by running processes unprivileged in containers,
 # but it's UID mapping is more nuanced. Only set user for vanilla docker.
 DOCKER_OPTS=--user "$(shell id -u)"
-else
-# Disable selinux for local podman builds.
-DOCKER_OPTS=--security-opt label=disable
 endif
 
 # Set to empty string to echo some command lines which are hidden by default.
