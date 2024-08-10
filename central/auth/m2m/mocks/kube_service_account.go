@@ -52,3 +52,41 @@ func (mr *MockServiceAccountIssuerFetcherMockRecorder) GetServiceAccountIssuer()
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServiceAccountIssuer", reflect.TypeOf((*MockServiceAccountIssuerFetcher)(nil).GetServiceAccountIssuer))
 }
+
+// MockserviceAccountTokenReader is a mock of serviceAccountTokenReader interface.
+type MockserviceAccountTokenReader struct {
+	ctrl     *gomock.Controller
+	recorder *MockserviceAccountTokenReaderMockRecorder
+}
+
+// MockserviceAccountTokenReaderMockRecorder is the mock recorder for MockserviceAccountTokenReader.
+type MockserviceAccountTokenReaderMockRecorder struct {
+	mock *MockserviceAccountTokenReader
+}
+
+// NewMockserviceAccountTokenReader creates a new mock instance.
+func NewMockserviceAccountTokenReader(ctrl *gomock.Controller) *MockserviceAccountTokenReader {
+	mock := &MockserviceAccountTokenReader{ctrl: ctrl}
+	mock.recorder = &MockserviceAccountTokenReaderMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockserviceAccountTokenReader) EXPECT() *MockserviceAccountTokenReaderMockRecorder {
+	return m.recorder
+}
+
+// readToken mocks base method.
+func (m *MockserviceAccountTokenReader) readToken() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "readToken")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// readToken indicates an expected call of readToken.
+func (mr *MockserviceAccountTokenReaderMockRecorder) readToken() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "readToken", reflect.TypeOf((*MockserviceAccountTokenReader)(nil).readToken))
+}
