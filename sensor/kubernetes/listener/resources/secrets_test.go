@@ -263,6 +263,52 @@ func TestForceLocalScanning(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// Verifies that secrets are deleted from the registry store when a
+// secret is deleted in k8s.
+func TestLocalScanningSecretDelete(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
+	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "true")
+	t.Setenv(env.DelegatedScanningDisabled.EnvVar(), "false")
+
+	fakeNamespace := "fake-namespace"
+
+	dockerConfigSecret := &v1.Secret{
+		TypeMeta:   metav1.TypeMeta{Kind: "Secret", APIVersion: "v1"},
+		ObjectMeta: metav1.ObjectMeta{Name: "fake-secret", Namespace: fakeNamespace},
+		Type:       v1.SecretTypeDockercfg,
+		Data: map[string][]byte{v1.DockerConfigKey: []byte(`
+			{
+				"fake.reg.local": {
+					"username": "hello",
+					"password": "world",
+					"email": "hello@example.com"
+				}
+			}
+		`)},
+	}
+	fakeImage := &storage.ImageName{
+		Registry: "fake.reg.local",
+		Remote:   "fake/repo",
+		Tag:      "latest",
+		FullName: "fake.reg.local/fake/repo:latest",
+	}
+
+	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
+	d := newSecretDispatcher(regStore)
+
+	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
+	regs, err := regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
+	assert.NotNil(t, regs)
+	assert.NoError(t, err)
+	require.Len(t, regs, 1)
+	assert.Equal(t, regs[0].Config(context.Background()).Username, "hello")
+
+	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_REMOVE_RESOURCE)
+	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
+	assert.Nil(t, regs)
+	assert.NoError(t, err)
+}
+
 // TestSAAnnotationImageIntegrationEvents tests that image integration events
 // are not generated for secrets that contain a service account annotation
 func TestSAAnnotationImageIntegrationEvents(t *testing.T) {

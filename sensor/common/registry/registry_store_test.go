@@ -404,7 +404,7 @@ func TestDataRaceAtCleanup(t *testing.T) {
 				return
 			default:
 				// random reads
-				regStore.GetPullSecretRegistries(&storage.ImageName{}, fakeNamespace, nil)
+				_, _ = regStore.GetPullSecretRegistries(&storage.ImageName{}, fakeNamespace, nil)
 				regStore.getRegistries(fakeNamespace)
 				regStore.IsLocal(&storage.ImageName{})
 				regStore.GetCentralRegistries(&storage.ImageName{})
