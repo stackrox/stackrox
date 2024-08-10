@@ -171,18 +171,18 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
-      name: determine-image-tag-oci-ta
+      name: determine-image-tag
 
   - name: fetch-external-networks
     params:
-      - name: SOURCE_ARTIFACT
-        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-      - name: ociStorage
-        value: $(params.output-image-repo):konflux-$(params.revision).external-networks
-      - name: ociArtifactExpiresAfter
-        value: $(params.oci-artifact-expires-after)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: ociStorage
+      value: $(params.output-image-repo):konflux-$(params.revision).external-networks
+    - name: ociArtifactExpiresAfter
+      value: $(params.oci-artifact-expires-after)
     taskRef:
-      name: fetch-external-networks-oci-ta
+      name: fetch-external-networks
 
   - name: prefetch-dependencies
     params:
