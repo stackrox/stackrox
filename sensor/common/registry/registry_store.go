@@ -410,7 +410,7 @@ func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig c
 		registryAddr := strings.TrimSpace(registryAddress)
 
 		if fromDefaultSA {
-			// We assume that registries found in the dockercfg secret managed OCP for the default
+			// We assume that registries found in the dockercfg secret managed by OCP for the default
 			// service account only references hostnames for the OCP internal registry.
 			rs.addClusterLocalRegistryHost(registryAddr)
 			if err := rs.upsertRegistry(namespace, registryAddr, dce); err != nil {
@@ -454,7 +454,7 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 		registryAddr := strings.TrimSpace(registryAddress)
 
 		if serviceAcctName != "" {
-			// We assume that registries found in the dockercfg secret managed OCP for any
+			// We assume that registries found in the dockercfg secret managed by OCP for any
 			// service account only references hostnames for the OCP internal registry.
 			rs.upsertPullSecretByNameNoLock(namespace, secretName, registryAddr, dce)
 			rs.addClusterLocalRegistryHost(registryAddr)

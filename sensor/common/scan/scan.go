@@ -132,8 +132,6 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		return nil, errors.Join(ErrNoLocalScanner, ErrEnrichNotStarted)
 	}
 
-	log.Debugf("DAVE: Enriching %q locally with pull secrets: %v", req.Image.GetName().GetFullName(), req.ImagePullSecrets)
-
 	// throttle the # of active scans.
 	if err := s.scanSemaphore.Acquire(concurrency.AsContext(concurrency.Timeout(s.maxSemaphoreWaitTime)), 1); err != nil {
 		return nil, errors.Join(ErrTooManyParallelScans, ErrEnrichNotStarted)
@@ -190,14 +188,12 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 // getImageWithMetadata on success returns the registry used to pull metadata and an image with metadata populated.
 // The image returned may represent the source image or an image from a registry mirror.
 func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhelpers.ErrorList, req *LocalScanRequest) (registryTypes.ImageRegistry, *storage.Image) {
-	// TODO: remove these vars if not needed
-	sourceImage := req.Image
-	namespace := req.Namespace
+	srcImage := req.Image
 
 	// Obtain the pull sources, which will include mirrors.
-	pullSources := s.getPullSources(sourceImage)
+	pullSources := s.getPullSources(srcImage)
 	if len(pullSources) == 0 {
-		errorList.AddError(pkgErrors.Errorf("zero valid pull sources found for image %q", sourceImage.GetName().GetFullName()))
+		errorList.AddError(pkgErrors.Errorf("zero valid pull sources found for image %q", srcImage.GetName().GetFullName()))
 		return nil, nil
 	}
 
@@ -206,7 +202,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 
 	// For each pull source, obtain the associated registries and attempt to obtain metadata, stopping on first success.
 	for _, pullSource := range pullSources {
-		registries, err := s.getRegistries(ctx, namespace, pullSource.GetName(), req.ImagePullSecrets)
+		registries, err := s.getRegistries(ctx, req.Namespace, pullSource.GetName(), req.ImagePullSecrets)
 		if err != nil {
 			log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
 			errs.AddError(err)
@@ -220,10 +216,10 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 		reg := s.enrichImageWithMetadata(ctx, errs, registries, pullSourceImage)
 		if reg != nil {
 			// Successful enrichment.
-			enrichImageDataSource(sourceImage, reg, pullSourceImage)
+			enrichImageDataSource(srcImage, reg, pullSourceImage)
 
-			srcName := sourceImage.GetName().GetFullName()
-			srcID := sourceImage.GetId()
+			srcName := srcImage.GetName().GetFullName()
+			srcID := srcImage.GetId()
 			pullName := pullSourceImage.GetName().GetFullName()
 			pullID := pullSourceImage.GetId()
 			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and integration %q (insecure: %t)", srcName, srcID, pullName, pullID, reg.Name(), reg.Config(ctx).GetInsecure())
@@ -235,7 +231,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 	// Attempts for every pull source and registry have failed.
 	errorList.AddErrors(errs.Errors()...)
 
-	image := types.ToImage(sourceImage)
+	image := types.ToImage(srcImage)
 	image.Notes = append(image.Notes, storage.Image_MISSING_METADATA)
 	return nil, image
 }
@@ -266,6 +262,7 @@ func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName
 	if namespace != "" {
 		// If namespace provided pull appropriate registry.
 		// An err indicates no registry was found, only append if was no err.
+		// TODO: Clean this up so not relying on an error to indicate no registries found
 		if sRegs, err := s.getPullSecretRegistries(imgName, namespace, imagePullSecrets); err == nil {
 			regs = append(regs, sRegs...)
 		}
@@ -441,17 +438,16 @@ func validateRequest(req *LocalScanRequest) error {
 		return pkgErrors.New("request is nil")
 	}
 
-	img := req.Image
-	if img == nil {
+	if req.Image == nil {
 		return pkgErrors.New("missing image")
 	}
 
-	if img.GetName() == nil {
+	if req.Image.GetName() == nil {
 		return pkgErrors.New("missing image name")
 	}
 
 	// A fully qualified image is expected at this point.
-	if img.GetName().GetRegistry() == "" {
+	if req.Image.GetName().GetRegistry() == "" {
 		return pkgErrors.New("missing image registry")
 	}
 

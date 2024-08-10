@@ -329,8 +329,11 @@ func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, req *scan
 func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	imageChan := make(chan imageChanResult, len(deployment.GetContainers()))
 
-	// TODO: should this be changed so that the service account pull secrets are ONLY added IF
-	// the deployments image pull secrets are empty? That may more closely mirror k8s. CONFIRM.
+	// TODO: CONFIRM this change is accurate, do podspec image pull secrets eclipse
+	// service account pull secrets, or are both used like below
+	// TODO: Consider if this isn't right, but we're doing it anyone it would
+	// increase the chances of a successful scan, but may also increase registry
+	// traffic
 	pullSecretsSet := set.NewStringSet(e.serviceAccountStore.GetImagePullSecrets(deployment.GetNamespace(), deployment.GetServiceAccount())...)
 	pullSecretsSet.AddAll(deployment.GetImagePullSecrets()...)
 	pullSecrets := pullSecretsSet.AsSlice()

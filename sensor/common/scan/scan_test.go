@@ -667,7 +667,6 @@ func failCreateNoAuthImageRegistry(context.Context, *storage.ImageName, registri
 	return nil, errBroken
 }
 
-// TODO: Remove fake registry and use mock instead
 type fakeRegistry struct {
 	metadataInvoked bool
 	usedForScan     bool
