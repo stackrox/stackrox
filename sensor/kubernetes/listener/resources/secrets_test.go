@@ -78,6 +78,7 @@ func alwaysInsecureCheckTLS(_ context.Context, _ string) (bool, error) {
 
 func TestOpenShiftRegistrySecret_311(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "true")
 
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d := newSecretDispatcher(regStore)
@@ -122,6 +123,7 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 
 func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "true")
 
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d := newSecretDispatcher(regStore)
