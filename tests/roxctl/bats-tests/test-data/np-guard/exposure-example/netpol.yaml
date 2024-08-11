@@ -1,0 +1,22 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-ingress-ns-and-pod-selectors
+  namespace: hello-world
+spec:
+  podSelector:
+    matchLabels:
+      app: a-app
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          effect: "NoSchedule"
+      podSelector: 
+        matchLabels:
+            role: monitoring
+    ports:
+    - port: 8050
+      protocol: TCP

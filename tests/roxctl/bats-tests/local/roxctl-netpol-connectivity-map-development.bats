@@ -54,6 +54,35 @@ teardown() {
   assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
 }
 
+@test "roxctl-development netpol connectivity map generates md exposure output" {
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
+  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
+  echo "Writing exposure report to ${ofile}" >&3
+  run roxctl-development netpol connectivity map "${test_data}/np-guard/netpols-analysis-example-minimal" --exposure --output-format=md
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output '| src | dst | conn |
+|-----|-----|------|
+| 0.0.0.0-255.255.255.255 | default/frontend[Deployment] | TCP 8080 |
+| default/frontend[Deployment] | 0.0.0.0-255.255.255.255 | UDP 53 |
+| default/frontend[Deployment] | default/backend[Deployment] | TCP 9090 |
+## Exposure Analysis Result:
+### Egress Exposure:
+| src | dst | conn |
+|-----|-----|------|
+| default/frontend[Deployment] | 0.0.0.0-255.255.255.255 | UDP 53 |
+| default/frontend[Deployment] | entire-cluster | UDP 53 |
+
+### Ingress Exposure:
+| dst | src | conn |
+|-----|-----|------|
+| default/frontend[Deployment] | 0.0.0.0-255.255.255.255 | TCP 8080 |
+| default/frontend[Deployment] | entire-cluster | TCP 8080 |'
+}
+
 @test "roxctl-development netpol connectivity shows all warnings about corrupted files" {
     mkdir -p "$out_dir"
     assert_file_exist "${test_data}/np-guard/mixed/backend.yaml"
@@ -427,6 +456,87 @@ payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080'
   assert_output --partial '{ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080
 {ingress-controller} => frontend/webapp[Deployment] : TCP 8080'
   refute_output --partial 'frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080'
+}
+
+@test "roxctl-development netpol connectivity map generates connlist with exposure-analysis for acs-security-demo" {
+  check_acs_security_demos_files
+  run roxctl-development netpol connectivity map "${acs_security_demos_dir}" --exposure
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # partial is used to filter connlist and WARN and INFO messages
+  assert_output --partial 'Exposure Analysis Result:
+Egress Exposure:'
+# backend/checkout[Deployment]               =>      entire-cluster : UDP 5353
+# backend/recommendation[Deployment]         =>      entire-cluster : UDP 5353
+# backend/reports[Deployment]                =>      entire-cluster : UDP 5353
+# frontend/webapp[Deployment]                =>      entire-cluster : UDP 5353
+# payments/gateway[Deployment]               =>      entire-cluster : UDP 5353
+
+# Ingress Exposure:
+# frontend/asset-cache[Deployment]           <=      entire-cluster : TCP 8080
+# frontend/webapp[Deployment]                <=      entire-cluster : TCP 8080
+}
+
+@test "roxctl-development netpol connectivity map generates connlist with exposure-analysis for acs-security-demo md format" {
+  check_acs_security_demos_files
+  run roxctl-development netpol connectivity map "${acs_security_demos_dir}" --output-format=md --exposure
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # output lines , skipping connlist and WARN and INFO messages
+  assert_output --partial '## Exposure Analysis Result:
+### Egress Exposure:
+| src | dst | conn |
+|-----|-----|------|
+| backend/checkout[Deployment] | entire-cluster | UDP 5353 |
+| backend/recommendation[Deployment] | entire-cluster | UDP 5353 |
+| backend/reports[Deployment] | entire-cluster | UDP 5353 |
+| frontend/webapp[Deployment] | entire-cluster | UDP 5353 |
+| payments/gateway[Deployment] | entire-cluster | UDP 5353 |
+
+### Ingress Exposure:
+| dst | src | conn |
+|-----|-----|------|
+| frontend/asset-cache[Deployment] | entire-cluster | TCP 8080 |
+| frontend/webapp[Deployment] | entire-cluster | TCP 8080 |'
+}
+
+@test "roxctl-development netpol connectivity map generates exposure for acs-security-demo with focus-workload=gateway" {
+  check_acs_security_demos_files
+  run roxctl-development netpol connectivity map "${acs_security_demos_dir}" --focus-workload=gateway --exposure
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'Exposure Analysis Result:
+Egress Exposure:'
+# payments/gateway[Deployment]    =>      entire-cluster : UDP 5353
+}
+
+@test "roxctl-development netpol connectivity map generates exposure from certain Namespace labels and Pod labels specified" {
+  assert_file_exist "${test_data}/np-guard/exposure-example/netpol.yaml"
+  assert_file_exist "${test_data}/np-guard/exposure-example/ns_and_deployments.yaml"
+  echo "Writing exposure report to ${ofile}" >&3
+  run roxctl-development netpol connectivity map "${test_data}/np-guard/exposure-example" --exposure --output-format=md
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output '| src | dst | conn |
+|-----|-----|------|
+| hello-world/workload-a[Deployment] | 0.0.0.0-255.255.255.255 | All Connections |
+## Exposure Analysis Result:
+### Egress Exposure:
+| src | dst | conn |
+|-----|-----|------|
+| hello-world/workload-a[Deployment] | 0.0.0.0-255.255.255.255 | All Connections |
+| hello-world/workload-a[Deployment] | entire-cluster | All Connections |
+
+### Ingress Exposure:
+| dst | src | conn |
+|-----|-----|------|
+| hello-world/workload-a[Deployment] | [namespace with {effect=NoSchedule}]/[pod with {role=monitoring}] | TCP 8050 |'  
 }
 
 check_acs_security_demos_files() {

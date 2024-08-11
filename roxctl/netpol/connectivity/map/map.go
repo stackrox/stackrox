@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	defaultOutputFileNamePrefix = "connlist."
-	defaultOutputFormat         = "txt"
+	defaultOutputFileNamePrefix  = "connlist."
+	exposureOutputFileNamePrefix = "exposure."
+	defaultOutputFormat          = "txt"
 )
 
 type netpolAnalyzer interface {
@@ -43,6 +44,9 @@ func (cmd *Cmd) construct(args []string) (netpolAnalyzer, error) {
 	}
 	if cmd.outputFilePath != "" {
 		cmd.outputToFile = true
+	}
+	if cmd.exposure {
+		opts = append(opts, npguard.WithExposureAnalysis())
 	}
 	return npguard.NewConnlistAnalyzer(opts...), nil
 }
@@ -84,8 +88,12 @@ func (cmd *Cmd) ouputConnList(connsStr string) error {
 }
 
 func (cmd *Cmd) getDefaultFileName() string {
-	if cmd.outputFormat == "" {
-		return defaultOutputFileNamePrefix + defaultOutputFormat
+	outputFileNamePrefix := defaultOutputFileNamePrefix
+	if cmd.exposure {
+		outputFileNamePrefix = exposureOutputFileNamePrefix
 	}
-	return defaultOutputFileNamePrefix + cmd.outputFormat
+	if cmd.outputFormat == "" {
+		return outputFileNamePrefix + defaultOutputFormat
+	}
+	return outputFileNamePrefix + cmd.outputFormat
 }
