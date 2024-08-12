@@ -282,7 +282,6 @@ update-storage-protolock: $(PROTOLOCK_BIN)
 	@echo "+ $@"
 	$(SILENT)$(PROTOLOCK_BIN) commit -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
 
-
 .PHONY: blanks
 blanks:
 	@echo "+ $@"
