@@ -751,6 +751,8 @@ ossls-audit: deps
 
 .PHONY: ossls-notice
 ossls-notice: deps
+	ls -lah ui/apps/platform/node_modules/*
+	pwd
 	ossls version
 	ossls audit --export image/rhel/THIRD_PARTY_NOTICES
 

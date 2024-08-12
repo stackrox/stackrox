@@ -18,7 +18,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -81,7 +81,7 @@ jobs:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -133,7 +133,7 @@ jobs:
   go-bench:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -174,7 +174,7 @@ jobs:
   ui:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -212,7 +212,7 @@ jobs:
   local-roxctl-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -250,7 +250,7 @@ jobs:
   shell-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -283,7 +283,7 @@ jobs:
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
