@@ -157,7 +157,9 @@ function IntegrationsTable({
                                         </Th>
                                     );
                                 })}
-                                <Td />
+                                <Th>
+                                    <span className="pf-v5-screen-reader">Row actions</span>
+                                </Th>
                             </Tr>
                         </Thead>
                         <Tbody>

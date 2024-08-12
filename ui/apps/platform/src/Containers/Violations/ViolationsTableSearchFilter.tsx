@@ -12,6 +12,9 @@ import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/Com
 import {
     Category as PolicyCategory,
     Name as PolicyName,
+    LifecycleStage as PolicyLifecycleStage,
+    Severity as PolicySeverity,
+    EnforcementAction as PolicyEnforcementAction,
 } from 'Components/CompoundSearchFilter/attributes/policy';
 import {
     ID as ClusterID,
@@ -25,12 +28,24 @@ import {
     ID as DeploymentID,
     Name as DeploymentName,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
+import { InactiveDeployment as AlertInactiveDeployment } from 'Components/CompoundSearchFilter/attributes/alert';
 
 const searchFilterConfig: CompoundSearchFilterConfig = [
     {
         displayName: 'Policy',
         searchCategory: 'ALERTS',
-        attributes: [PolicyName, PolicyCategory],
+        attributes: [
+            PolicyName,
+            PolicyCategory,
+            PolicySeverity,
+            PolicyLifecycleStage,
+            PolicyEnforcementAction,
+        ],
+    },
+    {
+        displayName: 'Policy violation',
+        searchCategory: 'ALERTS',
+        attributes: [AlertInactiveDeployment],
     },
     {
         displayName: 'Cluster',

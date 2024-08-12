@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -200,7 +199,7 @@ func issuedByStackRoxCA(proxyCert *x509.Certificate) bool {
 
 func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (*v1.TrustInfo, error) {
 	var trustInfo v1.TrustInfo
-	err := proto.Unmarshal(challenge.GetTrustInfoSerialized(), &trustInfo)
+	err := trustInfo.UnmarshalVT(challenge.GetTrustInfoSerialized())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing TrustInfo proto")
 	}

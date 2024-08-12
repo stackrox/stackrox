@@ -23,7 +23,7 @@ type remoteIndexer struct {
 
 // NewRemoteIndexer connect to the gRPC address and creates a new remote indexer.
 func NewRemoteIndexer(ctx context.Context, address string) (*remoteIndexer, error) {
-	indexer, err := client.NewGRPCScanner(ctx, client.WithAddress(address))
+	indexer, err := client.NewGRPCScanner(ctx, client.WithIndexerAddress(address))
 	if err != nil {
 		return nil, err
 	}

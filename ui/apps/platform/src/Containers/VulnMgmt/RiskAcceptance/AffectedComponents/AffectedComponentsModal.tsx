@@ -78,7 +78,9 @@ function AffectedComponentsModal({
                 <Table aria-label="Affected Components Table" variant="compact" borders>
                     <Thead>
                         <Tr>
-                            <Td />
+                            <Th>
+                                <span className="pf-v5-screen-reader">Row expansion</span>
+                            </Th>
                             <Th>Component</Th>
                             <Th>Version</Th>
                             <Th>Fixed in</Th>

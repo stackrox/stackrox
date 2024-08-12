@@ -28,6 +28,7 @@ function MainPage(): ReactElement {
     const isLoadingPublicConfig = useSelector(selectors.isLoadingPublicConfigSelector);
     const isLoadingCentralCapabilities = useSelector(selectors.getIsLoadingCentralCapabilities);
     const [isLoadingClustersCount, setIsLoadingClustersCount] = useState(false);
+    const showFeedbackModal = useSelector(selectors.feedbackSelector);
 
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
 
@@ -88,7 +89,7 @@ function MainPage(): ReactElement {
                 >
                     Feedback
                 </Button>
-                <AcsFeedbackModal />
+                {showFeedbackModal && <AcsFeedbackModal />}
                 <Page
                     mainContainerId="main-page-container"
                     header={<Header />}

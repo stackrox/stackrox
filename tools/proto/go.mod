@@ -3,7 +3,7 @@ module github.com/stackrox/stackrox/tools/proto
 go 1.21
 
 require (
-	github.com/bufbuild/buf v1.35.1
+	github.com/bufbuild/buf v1.36.0
 	github.com/favadi/protoc-go-inject-tag v1.4.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1
 )
@@ -26,7 +26,7 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/cli v26.1.4+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v27.1.0+incompatible // indirect
+	github.com/docker/docker v27.1.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect

@@ -203,6 +203,7 @@ function CompoundSearchFilterInputField({
                     selectOptions.map((option) => {
                         return (
                             <SelectOption
+                                key={option.value}
                                 hasCheckbox
                                 value={option.value}
                                 isSelected={selection.includes(option.value)}
