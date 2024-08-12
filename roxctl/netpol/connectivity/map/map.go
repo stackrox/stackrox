@@ -11,9 +11,8 @@ import (
 )
 
 const (
-	defaultOutputFileNamePrefix  = "connlist."
-	exposureOutputFileNamePrefix = "exposure."
-	defaultOutputFormat          = "txt"
+	defaultOutputFileNamePrefix = "connlist."
+	defaultOutputFormat         = "txt"
 )
 
 type netpolAnalyzer interface {
@@ -88,12 +87,8 @@ func (cmd *Cmd) ouputConnList(connsStr string) error {
 }
 
 func (cmd *Cmd) getDefaultFileName() string {
-	outputFileNamePrefix := defaultOutputFileNamePrefix
-	if cmd.exposure {
-		outputFileNamePrefix = exposureOutputFileNamePrefix
-	}
 	if cmd.outputFormat == "" {
-		return outputFileNamePrefix + defaultOutputFormat
+		return defaultOutputFileNamePrefix + defaultOutputFormat
 	}
-	return outputFileNamePrefix + cmd.outputFormat
+	return defaultOutputFileNamePrefix + cmd.outputFormat
 }
