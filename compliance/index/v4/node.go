@@ -63,17 +63,17 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 
 	reps, err := runRepositoryScanner(ctx, layer)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to run repository scanner")
 	}
 
 	pcks, err := runPackageScanner(ctx, layer)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to run package scanner")
 	}
 
 	ir, err := coalesceReport(ctx, layerDigest, reps, pcks)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to coalesce report")
 	}
 
 	report = controller.MergeSR(report, []*claircore.IndexReport{ir})
