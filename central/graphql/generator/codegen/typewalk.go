@@ -5,10 +5,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	generator2 "github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/pkg/protoreflect"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -61,7 +61,7 @@ func (ctx *walkState) walkUnions(p reflect.Type) (output []unionData) {
 			if len(msgTypeName) > 1 && msgTypeName[0] == '.' {
 				msgTypeName = msgTypeName[1:]
 			}
-			msgType := proto.MessageType(msgTypeName)
+			msgType := protoutils.MessageType(msgTypeName)
 			if msgType == nil {
 				continue
 			}
