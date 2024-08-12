@@ -50,9 +50,19 @@ func alwaysFailCheckTLS(_ context.Context, _ string) (bool, error) {
 	return false, errors.New("fake tls failure")
 }
 
-func TestRegistryStore_same_namespace(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+func TestRegistryStore_SameNamespace(t *testing.T) {
+	t.Run("SecretsByHost", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+		sameNamespaceSubTest(t)
+	})
 
+	t.Run("SecretsByName", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
+		sameNamespaceSubTest(t)
+	})
+}
+
+func sameNamespaceSubTest(t *testing.T) {
 	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
 
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
@@ -103,15 +113,32 @@ func TestRegistryStore_same_namespace(t *testing.T) {
 // TestRegistryStore_SpecificNamespace tests interactions with the registry store
 // using an explicitly provided namespace (vs. inferred)
 func TestRegistryStore_SpecificNamespace(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+	t.Run("SecretsByHost", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+		regStore := specificNamespaceSubTest(t)
+
+		// no registry should exist based on img.Remote
+		regs, err := regStore.GetPullSecretRegistries(fakeImgName, "qa", nil)
+		assert.Error(t, err)
+		assert.Empty(t, regs)
+	})
+
+	t.Run("SecretsByName", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
+		regStore := specificNamespaceSubTest(t)
+
+		// no registry should exist based on img.Remote
+		regs, err := regStore.GetPullSecretRegistries(fakeImgName, "qa", nil)
+		assert.NoError(t, err)
+		assert.Empty(t, regs)
+	})
+}
+
+func specificNamespaceSubTest(t *testing.T) *Store {
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+	dc := config.DockerConfig{fakeImgName.GetRegistry(): dce}
 
 	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
-	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
-
-	dc := config.DockerConfig{
-		fakeImgName.GetRegistry(): dce,
-	}
-
 	regStore.UpsertSecret(fakeNamespace, fakeSecretName, dc, "")
 	regs, err := regStore.GetPullSecretRegistries(fakeImgName, fakeNamespace, nil)
 	require.NoError(t, err)
@@ -119,17 +146,25 @@ func TestRegistryStore_SpecificNamespace(t *testing.T) {
 	assert.Equal(t, fakeImgName.GetRegistry(), regs[0].Config(bgCtx).RegistryHostname)
 	assert.Equal(t, "username", regs[0].Config(bgCtx).Username)
 
-	// no registry should exist based on img.Remote
-	_, err = regStore.GetPullSecretRegistries(fakeImgName, "qa", nil)
-	assert.Error(t, err)
+	return regStore
 }
 
 // TestRegistryStore_MultipleSecretsSameRegistry tests that upsert overwrites
 // registry entries with matching endpoints when storing secrets by host
 // instead of name.
 func TestRegistryStore_MultipleSecretsSameRegistry(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+	t.Run("SecretsByHost", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+		multipleSecretsSameRegistrySubTest(t)
+	})
 
+	t.Run("SecretsByName", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
+		multipleSecretsSameRegistrySubTest(t)
+	})
+}
+
+func multipleSecretsSameRegistrySubTest(t *testing.T) {
 	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
 	dceA := config.DockerConfigEntry{Username: "usernameA", Password: "passwordA"}
 	dceB := config.DockerConfigEntry{Username: "usernameB", Password: "passwordB"}
@@ -141,75 +176,92 @@ func TestRegistryStore_MultipleSecretsSameRegistry(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, regs, 1)
 	assert.Equal(t, fakeImgName.GetRegistry(), regs[0].Config(bgCtx).RegistryHostname)
-	assert.Equal(t, regs[0].Config(bgCtx).Username, dceA.Username)
-	assert.Equal(t, regs[0].Config(bgCtx).Password, dceA.Password)
+	assert.Equal(t, dceA.Username, regs[0].Config(bgCtx).Username)
+	assert.Equal(t, dceA.Password, regs[0].Config(bgCtx).Password)
 
 	regStore.UpsertSecret(fakeNamespace, fakeSecretName, dcB, "")
 	regs, err = regStore.GetPullSecretRegistries(fakeImgName, fakeNamespace, nil)
 	require.NoError(t, err)
 	require.Len(t, regs, 1)
 	assert.Equal(t, fakeImgName.GetRegistry(), regs[0].Config(bgCtx).RegistryHostname)
-	assert.Equal(t, regs[0].Config(bgCtx).Username, dceB.Username)
-	assert.Equal(t, regs[0].Config(bgCtx).Password, dceB.Password)
+	assert.Equal(t, dceB.Username, regs[0].Config(bgCtx).Username)
+	assert.Equal(t, dceB.Password, regs[0].Config(bgCtx).Password)
 }
 
 func TestRegistryStore_LazyNoFailUpsertCheckTLS(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
-
-	regStore := NewRegistryStore(alwaysFailCheckTLS)
-	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
-	dc := config.DockerConfig{fakeImgName.GetRegistry(): dce}
-
-	// Upsert should NOT fail on lazy TLS check
-	regStore.UpsertSecret(fakeNamespace, fakeSecretName, dc, "")
-	regs := regStore.storeByHost[fakeNamespace]
-	allRegs := regs.GetAll()
-	require.Len(t, allRegs, 1)
-}
-
-func TestRegistryStore_GlobalStore(t *testing.T) {
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 	dc := config.DockerConfig{fakeImgName.GetRegistry(): dce}
 
 	t.Run("SecretsByHost", func(t *testing.T) {
 		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+		regStore := NewRegistryStore(alwaysFailCheckTLS)
 
-		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dc, "")
+		regs := regStore.storeByHost[fakeNamespace]
+		allRegs := regs.GetAll()
+		require.Len(t, allRegs, 1)
+	})
 
-		_, err := regStore.GetGlobalRegistry(fakeImgName)
-		require.Error(t, err, "error is expected on empty store")
+	t.Run("SecretsByName", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
+		regStore := NewRegistryStore(alwaysFailCheckTLS)
 
-		regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dc, "")
-		reg, err := regStore.GetGlobalRegistry(fakeImgName)
-		require.NoError(t, err, "should be no error on valid get")
-		assert.NotNil(t, reg)
-		assert.Equal(t, reg.Config(bgCtx).Username, dce.Username)
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dc, "")
+		secs := regStore.storeByName[fakeNamespace]
+		require.Len(t, secs, 1)
 
-		// sanity check
+		hostToRegistry := secs[fakeSecretName]
+		require.Len(t, hostToRegistry, 1)
+	})
+}
+
+func TestRegistryStore_GlobalStore(t *testing.T) {
+	t.Run("SecretsByHost", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+		regStore := globalStoreSubTest(t)
+
 		assert.Zero(t, len(regStore.storeByHost), "non-global store should not have been modified")
 	})
 
 	t.Run("SecretsByName", func(t *testing.T) {
 		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
-
-		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
-
-		_, err := regStore.GetGlobalRegistry(fakeImgName)
-		require.Error(t, err, "error is expected on empty store")
-
-		regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dc, "")
-		reg, err := regStore.GetGlobalRegistry(fakeImgName)
-		require.NoError(t, err, "should be no error on valid get")
-		assert.NotNil(t, reg)
-		assert.Equal(t, reg.Config(bgCtx).Username, dce.Username)
+		regStore := globalStoreSubTest(t)
 
 		assert.Len(t, regStore.storeByName, 1, "non-global store should have also had an upsert")
 	})
 }
 
-func TestRegistryStore_GlobalStoreLazyNoFailUpsertCheckTLS(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+func globalStoreSubTest(t *testing.T) *Store {
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+	dc := config.DockerConfig{fakeImgName.GetRegistry(): dce}
 
+	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+
+	_, err := regStore.GetGlobalRegistry(fakeImgName)
+	require.Error(t, err, "error is expected on empty store")
+
+	regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dc, "")
+	reg, err := regStore.GetGlobalRegistry(fakeImgName)
+	require.NoError(t, err, "should be no error on valid get")
+	assert.NotNil(t, reg)
+	assert.Equal(t, reg.Config(bgCtx).Username, dce.Username)
+
+	return regStore
+}
+
+func TestRegistryStore_GlobalStoreLazyNoFailUpsertCheckTLS(t *testing.T) {
+	t.Run("SecretsByHost", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+		globalStoreLazyNoFailUpsertCheckTLSSubTests(t)
+	})
+
+	t.Run("SecretsByName", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
+		globalStoreLazyNoFailUpsertCheckTLSSubTests(t)
+	})
+}
+
+func globalStoreLazyNoFailUpsertCheckTLSSubTests(t *testing.T) {
 	regStore := NewRegistryStore(alwaysFailCheckTLS)
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 	dc := config.DockerConfig{fakeImgName.GetRegistry(): dce}
@@ -389,8 +441,18 @@ func TestRegistryStore_GenImgIntName(t *testing.T) {
 }
 
 func TestDataRaceAtCleanup(t *testing.T) {
-	testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+	t.Run("SecretsByHost", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+		dataRaceAtCleanupSubTest()
+	})
 
+	t.Run("SecretsByName", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
+		dataRaceAtCleanupSubTest()
+	})
+}
+
+func dataRaceAtCleanupSubTest() {
 	regStore := NewRegistryStore(alwaysInsecureCheckTLS)
 	regStore.storeByHost[fakeNamespace] = registries.NewSet(regStore.factory)
 	wg := sync.WaitGroup{}
