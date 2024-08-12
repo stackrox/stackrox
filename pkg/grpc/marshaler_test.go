@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -60,28 +59,32 @@ func (s *supressCveServiceTestErrorImpl) SuppressCVEs(_ context.Context, req *v1
 }
 
 func (a *MarshalerTest) TestDurationParsing() {
-	url := "https://localhost:8080/v1/nodecves/suppress"
 
+	url := "https://localhost:8080/v1/nodecves/suppress"
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	api := NewAPI(defaultConf())
 	grpcServiceHandler := &supressCveServiceTestErrorImpl{}
 	api.Register(grpcServiceHandler)
-	a.Assert().NoError(api.Start().Wait())
+	a.Require().NoError(api.Start().Wait())
 	a.T().Cleanup(func() { api.Stop() })
 
-	b := strings.NewReader(`{"cves": ["ABC", "XYZ"], "duration": "24h"}`)
+	for given, expected := range map[string]string{
+		`{"cves": ["ABC", "XYZ"], "duration": "24h"}`: `ABC, XYZ, 24h0m0s`,
+		`{"cves": ["ABC", "XYZ"], "duration": "24s"}`: `ABC, XYZ, 24s`,
+		`{"cves": ["ABC", "XYZ"], "duration": "XYZ"}`: `invalid google.protobuf.Duration value \"XYZ\"`,
+	} {
+		a.Run(expected, func() {
+			req, err := http.NewRequest(http.MethodPatch, url, strings.NewReader(given))
+			a.NoError(err)
 
-	req, err := http.NewRequest(http.MethodPatch, url, b)
-	a.NoError(err)
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
-	a.NoError(err)
+			req.Header.Set("Content-Type", "application/json")
+			resp, err := http.DefaultClient.Do(req)
+			a.NoError(err)
 
-	body, err := io.ReadAll(resp.Body)
-	a.Require().NoError(err)
-
-	str := `ABC, XYZ, 24h0m0s`
-	expected := fmt.Sprintf(`{"code":1, "details": [], "error":%q, "message":%q}`, str, str)
-	a.Assert().JSONEq(expected, string(body))
+			body, err := io.ReadAll(resp.Body)
+			a.Require().NoError(err)
+			a.Contains(string(body), expected)
+		})
+	}
 }
