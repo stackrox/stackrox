@@ -19,61 +19,43 @@ on:
         default: nvd-api
 
 jobs:
-  build-updater:
+  parse-versions:
     runs-on: ubuntu-latest
-    if: >
-      github.event_name == 'schedule' ||
-      (github.event_name == 'pull_request' &&
-       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns'))
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
+    outputs:
+      versions: ${{ steps.set-versions.outputs.versions }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-    - uses: ./.github/actions/cache-go-dependencies
-
-    - name: Build updater
+    - name: Parse VULNERABILITY_BUNDLE_VERSION
+      id: set-versions
       run: |
-        make tag
-        make -C scanner bin/updater
+        versions=$(grep -v '^#' scanner/updater/version/VULNERABILITY_BUNDLE_VERSION | awk -F, '{print $1 "|" $2}' | paste -sd "," -)
+        versions_json="[\"${versions//,/\",\"}\"]"
+        echo "Versions JSON: ${versions_json}"
+        echo "versions=${versions_json}" >> "$GITHUB_OUTPUT"
 
-    - uses: ./.github/actions/upload-artifact-with-retry
-      with:
-        name: updater
-        path: scanner/bin/updater
-        if-no-files-found: error
-
-  download-nvd:
+  prepare-environment:
+    needs: parse-versions
     runs-on: ubuntu-latest
-    env:
-      JOB: ${{ github.event.inputs.job || 'nvd-api' }}
-    if: >
-      github.event_name == 'schedule' ||
-      (github.event_name == 'pull_request' &&
-       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns'))
+    outputs:
+      manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
 
     - name: Download NVD
       run: |
         set -eu
         since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
-        if [ "$JOB" = "nvd-api" ]; then
-            url="https://definitions.stackrox.io/v4/nvd/nvd-api.zip"
-          else
-            url="https://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
-          fi
+        if [ "${{ github.event.inputs.job || 'nvd-api' }}" = "nvd-api" ]; then
+          url="https://definitions.stackrox.io/v4/nvd/nvd-api.zip"
+        else
+          url="https://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
+        fi
 
         code=$(curl \
             -o nvd.zip \
@@ -84,44 +66,6 @@ jobs:
         echo "code: $code"
         echo "$code" | grep -q 200
 
-    - uses: ./.github/actions/upload-artifact-with-retry
-      with:
-        name: nvd
-        path: nvd.zip
-        if-no-files-found: error
-
-  run-updater:
-    needs:
-    - build-updater
-    - download-nvd
-    runs-on: ubuntu-latest
-    env:
-      STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-      STACKROX_NVD_API_CALL_INTERVAL: 6s
-
-    steps:
-    # Checkout to run ./.github/actions/{download,upload}-artifact-with-retry
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha || github.ref }}
-
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Free up disk space
-      shell: bash
-      run: |
-        set +e
-        set -x
-        df -h
-        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
-          rm -rf "${delete:?}"
-        done
-        df -h
-
     - name: Set MANUAL_URL
       id: set-manual-url
       run: |
@@ -131,97 +75,116 @@ jobs:
           echo "MANUAL_URL=https://raw.githubusercontent.com/stackrox/stackrox/${{ github.event.pull_request.head.sha }}/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
         fi
 
-    - uses: ./.github/actions/download-artifact-with-retry
-      with:
-        name: updater
-        path: /usr/local/bin
-
-    - uses: ./.github/actions/download-artifact-with-retry
+    - uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: nvd
-        path: .
+        path: nvd.zip
+        if-no-files-found: error
 
-    - name: Set updater
+  build-and-upload:
+    needs:
+    - parse-versions
+    - prepare-environment
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
+      volumes:
+      # The updater makes heavy use of /tmp files.
+      - /tmp:/tmp
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        vb: ${{ fromJson(needs.parse-versions.outputs.versions) }}
+    steps:
+    - name: Split version and branch
+      id: split
       run: |
-        chmod +x /usr/local/bin/updater
+        IFS="|" read -r version branch <<< "${{ matrix.vb }}"
+        echo "version=${version}" >> "$GITHUB_OUTPUT"
+        echo "branch=${branch}" >> "$GITHUB_OUTPUT"
+
+    - name: Free up disk space
+      shell: bash
+      run: |
+        set +e
+        set -x
+        df -h
+        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
+          rm -rf "/mnt${delete:?}"
+        done
+        df -h
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ steps.split.outputs.branch }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Build updater
+      run: |
+        echo "Building updater for version ${{ steps.split.outputs.version }} on branch ${{ steps.split.outputs.branch }}..."
+        make tag
+        make -C scanner bin/updater
+
+    - name: Upload Updater Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: updater-${{ steps.split.outputs.version }}
+        path: scanner/bin/updater
+        if-no-files-found: error
+
+    - name: Download NVD
+      uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd
+        path: nvd.zip
+
+    - name: Set Updater
+      run: |
+        chmod +x scanner/bin/updater
         mkdir vulns
 
-    - name: Run updater (single bundle)
+    - name: Run Updater (single bundle)
       env:
         STACKROX_NVD_ZIP_PATH: nvd.zip
-      run: |
-        updater export vulns --manual-url "$MANUAL_URL"
+      run: scanner/bin/updater export vulns --manual-url "${{ needs.prepare-environment.outputs.manual_url }}"
 
     - name: Run updater (multi bundle)
       env:
         STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
-        updater export --manual-url "$MANUAL_URL" --split bundles
+        echo "Running multi-bundle updater for version ${{ steps.split.outputs.version }} with manual URL ${{ needs.prepare-environment.outputs.manual_url }}..."
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip vulns/vulnerabilities.zip bundles/*.json.zst
 
-    - uses: ./.github/actions/upload-artifact-with-retry
-      with:
-        name: vulns
-        path: vulns
-        if-no-files-found: error
-
-  upload-vulnerabilities:
-    runs-on: ubuntu-latest
-    needs:
-    - run-updater
-    steps:
-    # Checkout to run ./.github/actions/download-artifact-with-retry
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
-
-    - uses: ./.github/actions/download-artifact-with-retry
-      with:
-        name: vulns
-        path: vulns
-
     - name: Authenticate with Google Cloud
-      if: github.event_name == 'schedule'
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
-    - name: Authenticate with Google Cloud
-      if: github.event_name == 'pull_request'
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
-
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Update dev vulnerabilities
-      if: github.event_name == 'schedule'
+    - name: Upload vulnerabilities to specific path
       run: |
-        cd vulns
-        # Upload development tags for upstream (dev) and downstream (1.0.0).
-        gsutil -m cp -r . gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/
-        gsutil -m cp -r . gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
+        gsutil -m cp vulns/* gs://definitions.stackrox.io/v4/vulnerability-bundles/${{ steps.split.outputs.version }}/
 
-    - name: Update PR vulnerabilities
-      if: github.event_name == 'pull_request'
+    - name: Upload vulnerabilities to downstream path
+      if: github.event_name == 'schedule' && steps.split.outputs.version == 'dev'
       run: |
-        branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
-        # Replace / with -, so the branch name isn't truncated when pushed to GCS.
-        dir=${branch////-}
-        case $dir in
-        dev|1.0.0)
-          echo "Branch $dir is disallowed"
-          exit 1
-        esac
-        cd vulns
-        gsutil cp -r . "gs://scanner-v4-test/vulnerability-bundles/$dir"
+        echo "Uploading vulnerabilities to downstream path: gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/"
+        gsutil -m cp vulns/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
 
   send-notification:
     needs:
-    - upload-vulnerabilities
+    - build-and-upload
     runs-on: ubuntu-latest
     if: ${{ failure() && github.ref_name == 'master' }}
     steps:
