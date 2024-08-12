@@ -312,6 +312,6 @@ metadata:
     {{- $_ := include "srox.getAnnotationTemplate" (list . "helm-hook_secret" $annotations) -}}
     {{- include "srox.annotations" (list . "secret" "helm-effective-cluster-name" $annotations) | nindent 4 }}
 data:
-  cluster-name: {{ ._rox.clusterName | base64 }}
+  cluster-name: {{ ._rox.clusterName | b64enc }}
 {{- end}}
 [<- end >]
