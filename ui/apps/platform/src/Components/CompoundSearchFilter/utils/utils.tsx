@@ -17,9 +17,19 @@ export const conditionMap = {
     'Is equal to': '=',
     'Is less than or equal to': '<=',
     'Is less than': '<',
-};
+} as const;
 
-export const conditions = Object.keys(conditionMap);
+export const dateConditionMap = {
+    Before: '<',
+    On: '', // "=" doesn't work but we can omit the condition to work like an equals
+    After: '>',
+} as const;
+
+export const conditions = Object.keys(conditionMap) as unknown as (keyof typeof conditionMap)[];
+
+export const dateConditions = Object.keys(
+    dateConditionMap
+) as unknown as (keyof typeof dateConditionMap)[];
 
 export function getEntity(
     config: CompoundSearchFilterConfig,
@@ -102,6 +112,26 @@ export function ensureConditionNumber(value: unknown): { condition: string; numb
     return {
         condition: conditions[0],
         number: 0,
+    };
+}
+
+export function ensureConditionDate(value: unknown): { condition: string; date: string } {
+    if (
+        typeof value === 'object' &&
+        value !== null &&
+        'condition' in value &&
+        'date' in value &&
+        typeof value.condition === 'string' &&
+        typeof value.date === 'string'
+    ) {
+        return {
+            condition: value.condition,
+            date: value.date,
+        };
+    }
+    return {
+        condition: dateConditions[1],
+        date: '',
     };
 }
 
