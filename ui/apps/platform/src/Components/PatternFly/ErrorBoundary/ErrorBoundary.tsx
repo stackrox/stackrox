@@ -23,7 +23,7 @@ type State =
           errorInfo: ErrorInfo;
       };
 
-class ErrorBoundaryClass extends Component<Props, State> {
+class ErrorBoundary extends Component<Props, State> {
     constructor(props: Props) {
         super(props);
 
@@ -58,9 +58,9 @@ class ErrorBoundaryClass extends Component<Props, State> {
     }
 }
 
-function ErrorBoundary({ children }: { children: ReactNode }) {
+function ErrorBoundaryWrapper({ children }: { children: ReactNode }) {
     const location = useLocation();
-    return <ErrorBoundaryClass location={location.pathname}>{children}</ErrorBoundaryClass>;
+    return <ErrorBoundary location={location.pathname}>{children}</ErrorBoundary>;
 }
 
-export default ErrorBoundary;
+export default ErrorBoundaryWrapper;
