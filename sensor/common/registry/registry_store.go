@@ -477,6 +477,8 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 
 		rs.upsertPullSecretByNameNoLock(namespace, secretName, registryAddr, dce)
 	}
+
+	log.Debugf("Upserted %d entries from secret %q in namespace %q", len(dockerConfig), secretName, namespace)
 }
 
 func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registryAddr string, dce config.DockerConfigEntry) {
@@ -528,6 +530,8 @@ func (rs *Store) DeleteSecret(namespace, secretName string) bool {
 			// If there are no more secrets for this namespace, delete the namespace entry as well.
 			delete(rs.storeByName, namespace)
 		}
+
+		log.Debugf("Deleted secret %q from namespace %q", secretName, namespace)
 		return true
 	}
 
