@@ -6,7 +6,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
-	"github.com/stackrox/rox/scanner/mappers"
+	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 )
 
 // RemoteIndexer represents the interface offered by remote indexers.

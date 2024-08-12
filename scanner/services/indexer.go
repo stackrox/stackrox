@@ -16,8 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
+	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/scanner/indexer"
-	"github.com/stackrox/rox/scanner/mappers"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 )
