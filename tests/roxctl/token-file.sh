@@ -13,10 +13,14 @@ eecho() {
   echo "$@" >&2
 }
 
+escape() {
+  echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 # Retrieve API token
 TOKEN_FILE=$(mktemp)
 curl -k -f \
-  -u "admin:$ROX_PASSWORD" \
+  --config <(escape user "admin:$ROX_PASSWORD") \
   -d '{"name": "test", "role": "Admin"}' \
   --retry 5 \
   --retry-connrefused \

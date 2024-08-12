@@ -6,10 +6,14 @@
 
 set -eo pipefail
 
+function escape() {
+  echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 function roxcurl() {
   local url="$1"
   shift
-  curl -u "admin:${ROX_PASSWORD}" -k "https://${API_ENDPOINT}${url}" "$@"
+  curl --config <(escape user "admin:${ROX_PASSWORD}") -k "https://${API_ENDPOINT}${url}" "$@"
 }
 
 function kcr() {

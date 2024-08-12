@@ -1111,7 +1111,7 @@ _record_build_info() {
     local build_info
 
     local metadata_url="https://${API_ENDPOINT}/v1/metadata"
-    releaseBuild="$(curl -skS -u "admin:${ROX_PASSWORD}" "${metadata_url}" | jq -r '.releaseBuild')"
+    releaseBuild="$(curl -skS --config <(escape user "admin:${ROX_PASSWORD}") "${metadata_url}" | jq -r '.releaseBuild')"
 
     if [[ "$releaseBuild" == "true" ]]; then
         build_info="release"

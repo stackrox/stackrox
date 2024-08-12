@@ -20,11 +20,16 @@ die() {
     exit 1
 }
 
+escape() {
+  echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 curl_central() {
   url="$1"
   shift
   [[ -n "${url}" ]] || die "No URL specified"
-  curl --retry 5 --retry-connrefused -Sskf -u "admin:${ROX_PASSWORD}" "https://${API_ENDPOINT}/${url}" "$@"
+  curl --retry 5 --retry-connrefused -Sskf --config <(escape user "admin:${ROX_PASSWORD}") \
+    "https://${API_ENDPOINT}/${url}" "$@"
 }
 
 check_image() {

@@ -25,12 +25,16 @@ curl_central() {
   curl -Sskf --retry 5 --retry-connrefused "https://${API_ENDPOINT}${url}" "$@"
 }
 
+escape() {
+  echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 curl_central_admin() {
-  curl_central "$@" -u "admin:${ROX_PASSWORD}"
+  curl_central "$@" --config <(escape user "admin:${ROX_PASSWORD}")
 }
 
 curl_central_token() {
-  curl_central "$@" -H "Authorization: Bearer $(cat $TOKEN_FILE)"
+  curl_central "$@" --config <(escape header "Authorization: Bearer $(cat "$TOKEN_FILE")")
 }
 
 verify_trace_for_endpoint() {
@@ -85,7 +89,8 @@ curl_central_admin /v1/apitokens/generate -d '{"name": "test", "roles": ["Analys
 FAILED_CHECKS=0
 
 # Run authorization trace collection in the background.
-nohup roxctl --endpoint "$API_ENDPOINT" --insecure-skip-tls-verify --insecure -p "$ROX_PASSWORD" -t 20s central debug authz-trace > trace.out &
+ROX_ADMIN_PASSWORD="$ROX_PASSWORD" \
+nohup roxctl --endpoint "$API_ENDPOINT" --insecure-skip-tls-verify --insecure -t 20s central debug authz-trace > trace.out &
 # Wait for roxctl to subscribe for authz traces.
 sleep 5
 

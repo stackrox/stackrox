@@ -16,11 +16,15 @@ usage() {
     echo "usage: ./pprof.sh <output dir> <endpoint> <num_iterations (optional)>"
 }
 
+escape() {
+    echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 curl_central() {
     if [[ -n $ROX_API_TOKEN ]]; then
-        curl -sSk -H "Authorization: Bearer $ROX_API_TOKEN" "$@"
+        curl -sSk --config <(escape header "Authorization: Bearer $ROX_API_TOKEN") "$@"
     else
-        curl -sSk -u "admin:$ROX_PASSWORD" "$@"
+        curl -sSk --config <(escape user "admin:$ROX_PASSWORD") "$@"
     fi
 }
 
