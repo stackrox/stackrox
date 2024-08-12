@@ -326,9 +326,9 @@ func (s *enricherSuite) TestGetPullSecrets() {
 
 	secs = s.enricher.getPullSecrets(deployment)
 	s.Len(secs, 3)
-	s.Contains(secs, "not")
-	s.Contains(secs, "from")
-	s.Contains(secs, "spec")
+	s.Equal("not", secs[0])
+	s.Equal("from", secs[1])
+	s.Equal("spec", secs[2])
 
 	// on empty input expect empty responses and no panics.
 	s.mockServiceAccountStore.EXPECT().GetImagePullSecrets(gomock.Any(), gomock.Any()).AnyTimes()

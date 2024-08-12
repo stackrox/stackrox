@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/image/cache"
@@ -357,12 +356,13 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 }
 
 func (e *enricher) getPullSecrets(deployment *storage.Deployment) []string {
-	pullSecretsSet := set.NewStringSet(deployment.GetImagePullSecrets()...)
-	if pullSecretsSet.Cardinality() == 0 {
+	var pullSecrets []string
+	pullSecrets = append(pullSecrets, deployment.GetImagePullSecrets()...)
+	if len(pullSecrets) == 0 {
 		// Only add service account secrets if the spec did NOT specify image pull secrets.
-		pullSecretsSet.AddAll(e.serviceAccountStore.GetImagePullSecrets(deployment.GetNamespace(), deployment.GetServiceAccount())...)
+		pullSecrets = append(pullSecrets, e.serviceAccountStore.GetImagePullSecrets(deployment.GetNamespace(), deployment.GetServiceAccount())...)
 	}
-	return pullSecretsSet.AsSlice()
+	return pullSecrets
 }
 
 func (e *enricher) blockingScan(ctx context.Context, deployment *storage.Deployment, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction) {
