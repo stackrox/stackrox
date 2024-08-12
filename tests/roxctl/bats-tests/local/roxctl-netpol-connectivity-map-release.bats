@@ -19,7 +19,6 @@ teardown() {
   rm -f "$ofile"
 }
 
-
 @test "roxctl-release netpol connectivity map should return error on empty or non-existing directory" {
     run roxctl-release netpol connectivity map "$out_dir"
     assert_failure
@@ -504,6 +503,16 @@ Egress Exposure:'
 | frontend/webapp[Deployment] | entire-cluster | TCP 8080 |'
 }
 
+@test "roxctl-release netpol connectivity map generates connlist with exposure-analysis for acs-security-demo dot format" {
+  check_acs_security_demos_files
+  run roxctl-release netpol connectivity map "${acs_security_demos_dir}" --output-format=dot --exposure
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial '"frontend/webapp[Deployment]" -> "entire-cluster" [label="UDP 5353" color="darkorange4" fontcolor="darkgreen" weight=0.5 style=dashed]'
+}
+
 @test "roxctl-release netpol connectivity map generates exposure for acs-security-demo with focus-workload=gateway" {
   check_acs_security_demos_files
   run roxctl-release netpol connectivity map "${acs_security_demos_dir}" --focus-workload=gateway --exposure
@@ -516,6 +525,29 @@ Egress Exposure:'
 }
 
 @test "roxctl-release netpol connectivity map generates exposure from certain Namespace labels and Pod labels specified" {
+  assert_file_exist "${test_data}/np-guard/exposure-example/netpol.yaml"
+  assert_file_exist "${test_data}/np-guard/exposure-example/ns_and_deployments.yaml"
+  echo "Writing exposure report to ${ofile}" >&3
+  run roxctl-release netpol connectivity map "${test_data}/np-guard/exposure-example" --exposure
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  assert_output --partial 'Exposure Analysis Result:'
+
+# Exposure Analysis Result:
+# Egress Exposure:
+# hello-world/workload-a[Deployment]      =>      0.0.0.0-255.255.255.255 : All Connections
+# hello-world/workload-a[Deployment]      =>      entire-cluster : All Connections
+
+# Ingress Exposure:
+# hello-world/workload-a[Deployment]      <=      [namespace with {effect=NoSchedule}]/[pod with {role=monitoring}] : TCP 8050
+
+# Workloads not protected by network policies:
+# hello-world/workload-a[Deployment] is not protected on Egress  
+}
+
+@test "roxctl-release netpol connectivity map generates exposure from certain Namespace labels and Pod labels specified md format" {
   assert_file_exist "${test_data}/np-guard/exposure-example/netpol.yaml"
   assert_file_exist "${test_data}/np-guard/exposure-example/ns_and_deployments.yaml"
   echo "Writing exposure report to ${ofile}" >&3
@@ -539,6 +571,20 @@ Egress Exposure:'
 |-----|-----|------|
 | hello-world/workload-a[Deployment] | [namespace with {effect=NoSchedule}]/[pod with {role=monitoring}] | TCP 8050 |'  
 }
+
+@test "roxctl-release netpol connectivity map generates exposure from certain Namespace labels and Pod labels specified dot format" {
+  assert_file_exist "${test_data}/np-guard/exposure-example/netpol.yaml"
+  assert_file_exist "${test_data}/np-guard/exposure-example/ns_and_deployments.yaml"
+  echo "Writing exposure report to ${ofile}" >&3
+  run roxctl-release netpol connectivity map "${test_data}/np-guard/exposure-example" --exposure --output-format=dot
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # writing some graph edges in assert_output
+  assert_output --partial '"pod with {role=monitoring}_in_namespace with {effect=NoSchedule}" -> "hello-world/workload-a[Deployment]" [label="TCP 8050" color="darkorange2" fontcolor="darkgreen" weight=1 style=dashed]'  
+}
+
 
 check_acs_security_demos_files() {
   assert_file_exist "${acs_security_demos_dir}/backend/catalog/deployment.yaml"
