@@ -93,8 +93,8 @@ message VulnerabilityReport {
       }
       V2 v2 = 1;
       V3 v3 = 2;
-      Source source = 3; <-- New field.
-      string url = 4; <-- New field
+      Source source = 3; <-- New field
+      string url = 4;    <-- New field
     }
     ...
     string severity = 6;
