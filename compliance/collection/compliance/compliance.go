@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -110,8 +111,11 @@ func (c *Compliance) Start() {
 }
 
 // TODO(ROX-24117): This report should be sent to central for enrichment
-func (c *Compliance) manageNodeIndexLoop(ctx context.Context) {
+// FIXME: Can be merged with manageNodeScanLoop
+func (c *Compliance) manageNodeIndexLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
+	nodeIndexC := make(chan *sensor.MsgFromCompliance)
 	go func() {
+		defer close(nodeIndexC)
 		i := c.nodeIndexer.GetIntervals()
 		t := time.NewTicker(i.Initial())
 		for {
@@ -126,10 +130,19 @@ func (c *Compliance) manageNodeIndexLoop(ctx context.Context) {
 					continue
 				}
 				log.Infof("Built Node Index Report with %d packages", len(report.GetContents().GetPackages()))
+				nodeIndexC <- c.createIndexMsg(report)
+				t.Reset(i.Next())
 			}
-
 		}
 	}()
+	return nodeIndexC
+}
+
+func (c *Compliance) createIndexMsg(report *v4.IndexReport) *sensor.MsgFromCompliance {
+	return &sensor.MsgFromCompliance{
+		Node: c.nodeNameProvider.GetNodeName(),
+		Msg:  &sensor.MsgFromCompliance_IndexReport{IndexReport: report},
+	}
 }
 
 func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {

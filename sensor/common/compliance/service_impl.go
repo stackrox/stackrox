@@ -236,6 +236,9 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
 		case *sensor.MsgFromCompliance_NodeInventory:
 			s.nodeInventories <- t.NodeInventory
+		case *sensor.MsgFromCompliance_IndexReport:
+			log.Infof("Received index report from %q with %d packages",
+				msg.GetNode(), len(msg.GetIndexReport().GetContents().GetPackages()))
 		}
 	}
 }
