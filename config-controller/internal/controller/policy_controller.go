@@ -29,7 +29,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/roxctl/common"
@@ -37,7 +36,6 @@ import (
 	roxctlIO "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
-
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 )
 
