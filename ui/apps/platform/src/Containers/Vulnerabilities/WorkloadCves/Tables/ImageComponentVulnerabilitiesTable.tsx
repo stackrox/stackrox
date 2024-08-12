@@ -25,7 +25,6 @@ export const imageComponentVulnerabilitiesFragment = gql`
         source
         layerIndex
         imageVulnerabilities(query: $query) {
-            vulnerabilityId: id
             severity
             fixedByVersion
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
@@ -70,16 +69,8 @@ function ImageComponentVulnerabilitiesTable({
                 </Tr>
             </Thead>
             {sortedComponentVulns.map((componentVuln, index) => {
-                const {
-                    image,
-                    name,
-                    vulnerabilityId,
-                    version,
-                    fixedByVersion,
-                    location,
-                    source,
-                    layer,
-                } = componentVuln;
+                const { image, name, version, fixedByVersion, location, source, layer } =
+                    componentVuln;
                 // No border on the last row
                 const style =
                     index !== componentVulns.length - 1
@@ -87,7 +78,7 @@ function ImageComponentVulnerabilitiesTable({
                         : {};
 
                 return (
-                    <Tbody key={`${image.id}:${name}:${version}:${vulnerabilityId}`} style={style}>
+                    <Tbody key={`${image.id}:${name}:${version}`} style={style}>
                         <Tr>
                             <Td>{name}</Td>
                             <Td>{version}</Td>
