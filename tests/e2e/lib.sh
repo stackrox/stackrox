@@ -588,9 +588,13 @@ patch_resources_for_test() {
     kubectl -n "${central_namespace}" apply -f "$TEST_ROOT/tests/e2e/yaml/endpoints-test-netpol.yaml"
 
     info "Checking port availability..."
+    all_reachable=1
     for target_port in 8080 8081 8082 8443 8444 8445 8446 8447 8448; do
-        check_endpoint_availability "$target_port"
+        check_endpoint_availability "$target_port" || all_reachable=0
     done
+    if [[ $all_reachable = 0 ]]; then
+        die "Not all ports on ${API_HOSTNAME} became reachable"
+    fi
 
     # Ensure the API is available as well after patching the load balancer.
     wait_for_api "$central_namespace"
@@ -599,14 +603,15 @@ patch_resources_for_test() {
 check_endpoint_availability() {
     local target_port="$1"
     # shellcheck disable=SC2034
-    for i in $(seq 1 200); do
+    for i in $(seq 1 20); do
         if echo "Endpoint check" 2>/dev/null > /dev/tcp/"${API_HOSTNAME}"/"${target_port}"; then
             info "Port ${target_port} on ${API_HOSTNAME} is reachable."
-            return
+            return 0
         fi
         sleep 5
     done
-    die "Port ${target_port} on ${API_HOSTNAME} did not become reachable in time"
+    info "Port ${target_port} on ${API_HOSTNAME} did not become reachable in time"
+    return 1
 }
 
 check_stackrox_logs() {
