@@ -63,7 +63,7 @@ function ImageComponentVulnerabilitiesTable({
                 <Tr>
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
-                    <Th>CVE Fixed in</Th>
+                    <Th>CVE fixed in</Th>
                     <Th>Source</Th>
                     <Th>Location</Th>
                 </Tr>
@@ -80,13 +80,13 @@ function ImageComponentVulnerabilitiesTable({
                 return (
                     <Tbody key={`${image.id}:${name}:${version}`} style={style}>
                         <Tr>
-                            <Td>{name}</Td>
-                            <Td>{version}</Td>
-                            <Td modifier="nowrap">
+                            <Td data-label="Component">{name}</Td>
+                            <Td data-label="Version">{version}</Td>
+                            <Td data-label="CVE fixed in" modifier="nowrap">
                                 <FixedByVersion fixedByVersion={fixedByVersion} />
                             </Td>
-                            <Td>{source}</Td>
-                            <Td>
+                            <Td data-label="Source">{source}</Td>
+                            <Td data-label="Location">
                                 <ComponentLocation location={location} source={source} />
                             </Td>
                         </Tr>
