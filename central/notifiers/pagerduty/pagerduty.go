@@ -1,7 +1,6 @@
 package pagerduty
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -11,7 +10,6 @@ import (
 	"time"
 
 	pd "github.com/PagerDuty/go-pagerduty"
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
@@ -207,11 +205,11 @@ type marshalableAlert storage.Alert
 
 // MarshalJSON marshals alert data to bytes, following jsonpb rules.
 func (a *marshalableAlert) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	if err := (&jsonpb.Marshaler{}).Marshal(&buf, (*storage.Alert)(a)); err != nil {
+	bytes, err := jsonutil.MarshalToString((*storage.Alert)(a))
+	if err != nil {
 		return nil, err
 	}
-	return buf.Bytes(), nil
+	return []byte(bytes), nil
 }
 
 // UnmarshalJSON unmarshals alert JSON bytes into an Alert object, following jsonpb rules.

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/testutils"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -109,13 +109,18 @@ func getTestImages() ([]*storage.Image, error) {
 	defer func() { _ = zipReader.Close() }()
 
 	jsonReader := json.NewDecoder(zipReader)
-	unmarshaler := jsonpb.Unmarshaler{AllowUnknownFields: true}
+	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
 
 	images := make([]*storage.Image, 0, 500)
 
 	for jsonReader.More() {
+		b := json.RawMessage{}
+		err := jsonReader.Decode(&b)
+		if err != nil {
+			return nil, err
+		}
 		img := &storage.Image{}
-		err = unmarshaler.UnmarshalNext(jsonReader, img)
+		err = unmarshaler.Unmarshal(b, img)
 		if err != nil {
 			return nil, err
 		}

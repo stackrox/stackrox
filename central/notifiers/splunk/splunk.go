@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -21,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -165,7 +165,7 @@ func (s *splunk) sendEvent(ctx context.Context, msg protocompat.Message, sourceT
 	}
 
 	var data bytes.Buffer
-	err = new(jsonpb.Marshaler).Marshal(&data, splunkEvent)
+	err = jsonutil.Marshal(&data, splunkEvent)
 	if err != nil {
 		return err
 	}
