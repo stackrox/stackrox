@@ -39,13 +39,13 @@ var (
 	bgContext = context.Background()
 )
 
-// namespaceToSecretName is an alias for a map of namespace to another map keyed by secret name.
+// namespaceToSecretName is an alias for a map of namespaces to another map keyed by secret name.
 type namespaceToSecretName = map[string]secretNameToHostname
 
-// secretNameToHostname is an alias for a map of secret name to another map keyed by registry hostname.
+// secretNameToHostname is an alias for a map of secret names to another map keyed by registry hostname.
 type secretNameToHostname = map[string]hostnameToRegistry
 
-// hostnameToRegistry is an alias for a map of registry hostname to image registry.
+// hostnameToRegistry is an alias for a map of registry hostnames to image image registries.
 type hostnameToRegistry = map[string]types.ImageRegistry
 
 // Store stores cluster-internal registries by namespace.
@@ -53,13 +53,15 @@ type Store struct {
 	factory registries.Factory
 
 	// storeByHost maps a namespace to registries accessible from within the namespace.
+	// Only one of store, storeByHost or storeByName, will be active at any given time.
 	storeByHost map[string]registries.Set
 
-	// storeByName maps a namespace to secret names to host names to a registry. This intention
-	// of this mapping is to closely resemble how pull secrets are represented in k8s.
+	// storeByName maps a namespace to secret names to host names to a registry. This more
+	// closely resembles how pull secrets are represented in k8s.  Only one of store,
+	// storeByHost or storeByName, will be active at any given time.
 	storeByName namespaceToSecretName
 
-	// storeMutux controls access to storeByHost or storeByName (whichever is active)
+	// storeMutux controls access to storeByHost or storeByName (whichever is active).
 	storeMutux sync.RWMutex
 
 	// clusterLocalRegistryHosts contains hosts (names and/or IPs) for registries that are local
@@ -392,7 +394,7 @@ func (rs *Store) GetCentralRegistries(imgName *storage.ImageName) []types.ImageR
 	return regs
 }
 
-// UpsertSecret upserts the secret into the store.
+// UpsertSecret upserts a pull secret into the store.
 func (rs *Store) UpsertSecret(namespace, secretName string, dockerConfig config.DockerConfig, serviceAcctName string) {
 	if !features.SensorPullSecretsByName.Enabled() {
 		rs.upsertSecretByHost(namespace, secretName, dockerConfig, serviceAcctName)
@@ -454,8 +456,8 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 		registryAddr := strings.TrimSpace(registryAddress)
 
 		if serviceAcctName != "" {
-			// We assume that registries found in the dockercfg secret managed by OCP for any
-			// service account only references hostnames for the OCP internal registry.
+			// We assume that registries found in dockercfg secrets managed by OCP only
+			// reference hostnames for the OCP internal registry.
 			rs.upsertPullSecretByNameNoLock(namespace, secretName, registryAddr, dce)
 			rs.addClusterLocalRegistryHost(registryAddr)
 			continue
@@ -544,9 +546,6 @@ func (rs *Store) GetPullSecretRegistries(image *storage.ImageName, namespace str
 		return []types.ImageRegistry{reg}, nil
 	}
 
-	var allRegs []types.ImageRegistry
-	registryHostname := image.GetRegistry()
-
 	rs.storeMutux.RLock()
 	defer rs.storeMutux.RUnlock()
 
@@ -556,21 +555,39 @@ func (rs *Store) GetPullSecretRegistries(image *storage.ImageName, namespace str
 	}
 
 	if len(imagePullSecrets) > 0 {
-		// If pull secrets were provided, find the matching registries within
-		// those secrets.
-		for _, secretName := range imagePullSecrets {
-			for host, reg := range secretNameToHost[secretName] {
-				if host == registryHostname {
-					allRegs = append(allRegs, reg)
-				}
-			}
-		}
+		// Return matching registries referenced by the image pull secrets.
+		return rs.getPullSecretRegistriesNoLock(secretNameToHost, image, imagePullSecrets), nil
 
-		return allRegs, nil
 	}
 
 	// If no pull secrets were provided, we assume that all matching registries
-	// from the namespace are desired.
+	// from the namespace are desired (scan requests that originate from Central
+	// will not have pull secrets, such as those executed via roxctl).
+	return rs.getAllPullSecretRegistriesNoLock(secretNameToHost, image), nil
+}
+
+// getPullSecretRegistriesNoLock returns registries found within image pull secrets
+// from a namespace that match image.
+func (rs *Store) getPullSecretRegistriesNoLock(secretNameToHost secretNameToHostname, image *storage.ImageName, imagePullSecrets []string) []types.ImageRegistry {
+	var regs []types.ImageRegistry
+	registryHostname := image.GetRegistry()
+
+	// Extract registries from the matching pull secrets.
+	for _, secretName := range imagePullSecrets {
+		for host, reg := range secretNameToHost[secretName] {
+			if host == registryHostname {
+				regs = append(regs, reg)
+			}
+		}
+	}
+
+	return regs
+}
+
+// getAllPullSecretRegistriesNoLock returns all registries within a namespace that match image.
+func (rs *Store) getAllPullSecretRegistriesNoLock(secretNameToHost secretNameToHostname, image *storage.ImageName) []types.ImageRegistry {
+	var regs []types.ImageRegistry
+	registryHostname := image.GetRegistry()
 
 	// To make the output deterministic we sort the secret names.
 	secretNames := make([]string, 0, len(secretNameToHost))
@@ -583,9 +600,9 @@ func (rs *Store) GetPullSecretRegistries(image *storage.ImageName, namespace str
 		hostToRegistry := secretNameToHost[secretName]
 		for host, reg := range hostToRegistry {
 			if host == registryHostname {
-				allRegs = append(allRegs, reg)
+				regs = append(regs, reg)
 			}
 		}
 	}
-	return allRegs, nil
+	return regs
 }
