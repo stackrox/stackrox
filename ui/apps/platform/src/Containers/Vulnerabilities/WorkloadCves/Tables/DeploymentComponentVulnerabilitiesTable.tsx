@@ -30,7 +30,6 @@ export const deploymentComponentVulnerabilitiesFragment = gql`
         source
         layerIndex
         imageVulnerabilities(query: $query) {
-            vulnerabilityId: id
             severity
             cvss
             scoreVersion
@@ -88,7 +87,6 @@ function DeploymentComponentVulnerabilitiesTable({
                 const {
                     image,
                     name,
-                    vulnerabilityId,
                     severity,
                     version,
                     cvss,
@@ -108,7 +106,7 @@ function DeploymentComponentVulnerabilitiesTable({
                 );
 
                 return (
-                    <Tbody key={`${image.id}:${name}:${version}:${vulnerabilityId}`} style={style}>
+                    <Tbody key={`${image.id}:${name}:${version}`} style={style}>
                         <Tr>
                             <Td>
                                 {image.name ? (
