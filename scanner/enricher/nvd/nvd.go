@@ -21,7 +21,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
+	"github.com/stackrox/rox/pkg/scannerv4/constants"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -140,7 +140,7 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 
 // Name implements driver.Enricher and driver.EnrichmentUpdater.
 func (*Enricher) Name() string {
-	return nvd.Name
+	return constants.NVDName
 }
 
 // FetchEnrichment implements driver.EnrichmentUpdater.
@@ -519,11 +519,11 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 		}
 	}
 	if len(m) == 0 {
-		return nvd.Type, nil, nil
+		return constants.NVDType, nil, nil
 	}
 	b, err := json.Marshal(m)
 	if err != nil {
-		return nvd.Type, nil, err
+		return constants.NVDType, nil, err
 	}
-	return nvd.Type, []json.RawMessage{b}, nil
+	return constants.NVDType, []json.RawMessage{b}, nil
 }

@@ -21,9 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
-	"github.com/stackrox/rox/pkg/scannerv4/enricher/fixedby"
-	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
-	"github.com/stackrox/rox/pkg/scannerv4/updater"
+	"github.com/stackrox/rox/pkg/scannerv4/constants"
 )
 
 var (
@@ -556,7 +554,7 @@ func fixedInVersion(v *claircore.Vulnerability) string {
 // nvdVulnerabilities look for NVD CVSS in the vulnerability report enrichments and
 // returns a map of CVEs.
 func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem, error) {
-	enrichmentsList := enrichments[nvd.Type]
+	enrichmentsList := enrichments[constants.NVDType]
 	if len(enrichmentsList) == 0 {
 		return nil, nil
 	}
@@ -611,7 +609,7 @@ func filterPackages(packages map[string]*claircore.Package, environments map[str
 
 // pkgFixedBy unmarshals and returns the package-fixed-by enrichment, if it exists.
 func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, error) {
-	enrichmentsList := enrichments[fixedby.Type]
+	enrichmentsList := enrichments[constants.FixedByType]
 	if len(enrichmentsList) == 0 {
 		return nil, nil
 	}
@@ -651,7 +649,7 @@ func severityAndScores(ctx context.Context, vuln *claircore.Vulnerability, nvdVu
 	switch {
 	case rhelUpdaterPattern.MatchString(vuln.Updater):
 		return rhelSeverityAndScores(vuln)
-	case osvUpdaterPattern.MatchString(vuln.Updater), strings.EqualFold(vuln.Updater, updater.Name):
+	case osvUpdaterPattern.MatchString(vuln.Updater), strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
 		sev, err := cvssVector(vuln.Severity)
 		if err != nil {
 			zlog.Debug(ctx).
