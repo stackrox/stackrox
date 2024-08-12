@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/cve/common"
 	pgStore "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -31,6 +32,7 @@ func New(storage pgStore.Store) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	scopedSafeSearcher := pkgPostgres.WithScoping(searcher)
+	noOrphanedCVEsByDefaultSearcher := common.WithoutOrphanedCVEsByDefault(searcher)
+	scopedSafeSearcher := pkgPostgres.WithScoping(noOrphanedCVEsByDefaultSearcher)
 	return sortfields.TransformSortFields(scopedSafeSearcher, schema.NodesSchema.OptionsMap)
 }
