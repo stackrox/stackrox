@@ -1,8 +1,16 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { FormikProvider, useFormik } from 'formik';
-import { Breadcrumb, Title, BreadcrumbItem, Divider, PageSection } from '@patternfly/react-core';
-import { Wizard } from '@patternfly/react-core/deprecated';
+import {
+    Breadcrumb,
+    Title,
+    BreadcrumbItem,
+    Divider,
+    PageSection,
+    Wizard,
+    WizardStep,
+    WizardStepType,
+} from '@patternfly/react-core';
 
 import { createPolicy, savePolicy } from 'services/PoliciesService';
 import { fetchAlertCount } from 'services/AlertsService';
@@ -12,13 +20,24 @@ import { policiesBasePath } from 'routePaths';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
+import {
+    POLICY_DEFINITION_DETAILS_ID,
+    POLICY_DEFINITION_LIFECYCLE_ID,
+    POLICY_DEFINITION_RULES_ID,
+    POLICY_BEHAVIOR_SCOPE_ID,
+    POLICY_BEHAVIOR_ENFORCEMENT_ID,
+    POLICY_BEHAVIOR_NOTIFIERS_ID,
+    POLICY_REVIEW_ID,
+} from '../policies.constants';
 import { getServerPolicy } from '../policies.utils';
 import { getValidationSchema } from './policyValidationSchemas';
 import PolicyDetailsForm from './Step1/PolicyDetailsForm';
 import PolicyBehaviorForm from './Step2/PolicyBehaviorForm';
 import PolicyCriteriaForm from './Step3/PolicyCriteriaForm';
 import PolicyScopeForm from './Step4/PolicyScopeForm';
-import ReviewPolicyForm from './Step5/ReviewPolicyForm';
+import PolicyEnforcementForm from './Step5/PolicyEnforcementForm';
+import AttachNotifiersForm from './Step6/AttachNotifiersForm';
+import ReviewPolicyForm from './Step7/ReviewPolicyForm';
 
 import './PolicyWizard.css';
 
@@ -29,8 +48,7 @@ type PolicyWizardProps = {
 
 function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
     const history = useHistory();
-    const [stepId, setStepId] = useState(1);
-    const [stepIdReached, setStepIdReached] = useState(1);
+    const [stepId, setStepId] = useState<number | string>(POLICY_DEFINITION_DETAILS_ID);
     const [isValidOnServer, setIsValidOnServer] = useState(false);
     const [policyErrorMessage, setPolicyErrorMessage] = useState('');
     const [isBadRequest, setIsBadRequest] = useState(false);
@@ -79,28 +97,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
         document.getElementsByClassName('pf-v5-c-wizard__main')[0].scrollTop = 0;
     }
 
-    function onBack(newStep): void {
-        const { id } = newStep;
-        setStepId(id);
-        scrollToTop();
-    }
-
-    function onGoToStep(newStep): void {
-        const { id } = newStep;
-        // TODO Maybe prevent going forward to previously visited step if current step is not valid,
-        // after having moved backward to step which was valid, but made a change which is not valid?
-        // Maybe allow going backward in that situation? For example, from criteria to behavior?
-        setStepId(id);
-        scrollToTop();
-    }
-
-    function onNext(newStep): void {
-        const { id } = newStep;
-        setStepId(id);
-        setStepIdReached(stepIdReached < id ? id : stepIdReached);
-        scrollToTop();
-    }
-
     useEffect(() => {
         // Imperative call is needed to validate when the step changes,
         // before any value has changed to cause validation.
@@ -124,6 +120,11 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
             });
         }
     }, [policy]);
+
+    function onStepChange(_event, currentStep: WizardStepType): void {
+        setStepId(currentStep.id);
+        scrollToTop();
+    }
 
     const canJumpToAny = pageAction === 'clone' || pageAction === 'edit';
 
@@ -149,73 +150,105 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
             >
                 <FormikProvider value={formik}>
                     <Wizard
+                        title={`${pageAction} policy wizard`}
                         navAriaLabel={`${pageAction} policy steps`}
-                        mainAriaLabel={`${pageAction} policy content`}
                         onClose={closeWizard}
                         onSave={submitForm}
-                        hasNoBodyPadding
-                        steps={[
-                            {
-                                id: 1,
-                                name: 'Policy details',
-                                component: (
+                        isVisitRequired={!canJumpToAny}
+                        onStepChange={onStepChange}
+                    >
+                        <WizardStep
+                            name="Policy definition"
+                            id="policy-definition"
+                            isExpandable
+                            steps={[
+                                <WizardStep
+                                    name="Details"
+                                    id={POLICY_DEFINITION_DETAILS_ID}
+                                    key={POLICY_DEFINITION_DETAILS_ID}
+                                    body={{ hasNoPadding: true }}
+                                    footer={{ isNextDisabled: !isValidOnClient }}
+                                >
                                     <PolicyDetailsForm
                                         id={values.id}
                                         mitreVectorsLocked={values.mitreVectorsLocked}
                                     />
-                                ),
-                                canJumpTo: canJumpToAny || stepIdReached >= 1,
-                                enableNext: isValidOnClient,
-                            },
-                            {
-                                id: 2,
-                                name: 'Policy behavior',
-                                component: (
+                                </WizardStep>,
+                                <WizardStep
+                                    name="Lifecycle"
+                                    id={POLICY_DEFINITION_LIFECYCLE_ID}
+                                    key={POLICY_DEFINITION_LIFECYCLE_ID}
+                                    body={{ hasNoPadding: true }}
+                                    footer={{ isNextDisabled: !isValidOnClient }}
+                                >
                                     <PolicyBehaviorForm hasActiveViolations={hasActiveViolations} />
-                                ),
-                                canJumpTo: canJumpToAny || stepIdReached >= 2,
-                                enableNext: isValidOnClient,
-                            },
-                            {
-                                id: 3,
-                                name: 'Policy criteria',
-                                component: (
+                                </WizardStep>,
+                                <WizardStep
+                                    name="Rules"
+                                    id={POLICY_DEFINITION_RULES_ID}
+                                    key={POLICY_DEFINITION_RULES_ID}
+                                    body={{ hasNoPadding: true }}
+                                    footer={{ isNextDisabled: !isValidOnClient }}
+                                >
                                     <PolicyCriteriaForm hasActiveViolations={hasActiveViolations} />
-                                ),
-                                canJumpTo: canJumpToAny || stepIdReached >= 3,
-                                enableNext: isValidOnClient,
-                            },
-                            {
-                                id: 4,
-                                name: 'Policy scope',
-                                component: <PolicyScopeForm />,
-                                canJumpTo: canJumpToAny || stepIdReached >= 4,
-                                enableNext: isValidOnClient,
-                            },
-                            {
-                                id: 5,
-                                name: 'Review policy',
-                                component: (
-                                    <ReviewPolicyForm
-                                        isBadRequest={isBadRequest}
-                                        policyErrorMessage={policyErrorMessage}
-                                        setIsBadRequest={setIsBadRequest}
-                                        setIsValidOnServer={setIsValidOnServer}
-                                        setPolicyErrorMessage={setPolicyErrorMessage}
-                                    />
-                                ),
+                                </WizardStep>,
+                            ]}
+                        />
+                        <WizardStep
+                            name="Policy behavior"
+                            id="policy-behavior"
+                            isExpandable
+                            steps={[
+                                <WizardStep
+                                    name="Scope"
+                                    id={POLICY_BEHAVIOR_SCOPE_ID}
+                                    key={POLICY_BEHAVIOR_SCOPE_ID}
+                                    body={{ hasNoPadding: true }}
+                                    footer={{ isNextDisabled: !isValidOnClient }}
+                                >
+                                    <PolicyScopeForm />
+                                </WizardStep>,
+                                <WizardStep
+                                    name="Enforcement"
+                                    id={POLICY_BEHAVIOR_ENFORCEMENT_ID}
+                                    key={POLICY_BEHAVIOR_ENFORCEMENT_ID}
+                                    body={{ hasNoPadding: true }}
+                                    footer={{ isNextDisabled: !isValidOnClient }}
+                                >
+                                    <PolicyEnforcementForm />
+                                </WizardStep>,
+                                <WizardStep
+                                    name="Notifiers"
+                                    id={POLICY_BEHAVIOR_NOTIFIERS_ID}
+                                    key={POLICY_BEHAVIOR_NOTIFIERS_ID}
+                                    body={{ hasNoPadding: true }}
+                                    footer={{ isNextDisabled: !isValidOnClient }}
+                                >
+                                    <AttachNotifiersForm />
+                                </WizardStep>,
+                            ]}
+                        />
+                        <WizardStep
+                            name="Review"
+                            id={POLICY_REVIEW_ID}
+                            footer={{
                                 nextButtonText: 'Save',
-                                canJumpTo: canJumpToAny || stepIdReached >= 5,
-                                enableNext:
+                                isNextDisabled: !(
                                     (dirty || pageAction === 'clone') &&
                                     isValidOnServer &&
-                                    !isSubmitting,
-                            },
-                        ]}
-                        onBack={onBack}
-                        onGoToStep={onGoToStep}
-                        onNext={onNext}
-                    />
+                                    !isSubmitting
+                                ),
+                            }}
+                        >
+                            <ReviewPolicyForm
+                                isBadRequest={isBadRequest}
+                                policyErrorMessage={policyErrorMessage}
+                                setIsBadRequest={setIsBadRequest}
+                                setIsValidOnServer={setIsValidOnServer}
+                                setPolicyErrorMessage={setPolicyErrorMessage}
+                            />
+                        </WizardStep>
+                    </Wizard>
                 </FormikProvider>
             </PageSection>
         </>

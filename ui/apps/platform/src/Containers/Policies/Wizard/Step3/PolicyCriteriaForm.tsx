@@ -45,7 +45,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
 
     const headingElements = (
         <>
-            <Title headingLevel="h2">Policy criteria</Title>
+            <Title headingLevel="h2">Policy rules</Title>
             <div className="pf-v5-u-mt-sm">Chain criteria with boolean logic.</div>
         </>
     );
@@ -113,7 +113,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 onClick={addNewPolicySection}
                                 data-testid="add-section-btn"
                             >
-                                Add condition
+                                Add a new rule
                             </Button>
                         </FlexItem>
                     </Flex>

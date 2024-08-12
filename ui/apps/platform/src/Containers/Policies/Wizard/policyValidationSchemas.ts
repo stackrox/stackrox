@@ -2,6 +2,12 @@ import * as yup from 'yup';
 
 import { Policy } from 'types/policy.proto';
 
+import {
+    POLICY_DEFINITION_DETAILS_ID,
+    POLICY_DEFINITION_LIFECYCLE_ID,
+    POLICY_DEFINITION_RULES_ID,
+    POLICY_BEHAVIOR_SCOPE_ID,
+} from '../policies.constants';
 import { WizardPolicyStep4, WizardScope } from '../policies.utils';
 import {
     imageSigningCriteriaName,
@@ -184,15 +190,15 @@ export const validationSchemaStep4: yup.ObjectSchema<WizardPolicyStep4> = yup.ob
 
 const validationSchemaStep5 = yup.object().shape({});
 
-export function getValidationSchema(stepId: number | string | undefined): yup.Schema {
+export function getValidationSchema(stepId: number | string): yup.Schema {
     switch (stepId) {
-        case 1:
+        case POLICY_DEFINITION_DETAILS_ID:
             return validationSchemaStep1;
-        case 2:
+        case POLICY_DEFINITION_LIFECYCLE_ID:
             return validationSchemaStep2;
-        case 3:
+        case POLICY_DEFINITION_RULES_ID:
             return validationSchemaStep3;
-        case 4:
+        case POLICY_BEHAVIOR_SCOPE_ID:
             return validationSchemaStep4;
         default:
             return validationSchemaStep5;
