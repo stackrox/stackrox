@@ -35,13 +35,13 @@ import (
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // PolicyReconciler reconciles a Policy object
 type PolicyReconciler struct {
-	client.Client
+	ctrlClient.Client
 	Scheme *runtime.Scheme
 	conn   *grpc.ClientConn
 }
