@@ -585,7 +585,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				return
 			}
 			if isExternal {
-				if !isInternet {
+				// If Central does not handle LearnedExternalEntities, report an Internet entity as it used to be.
+				if !isInternet && centralcaps.Has(centralsensor.NetworkGraphLearnedExternalEntitiesSupported) {
 					entityType = networkgraph.LearnedExternalEntity(net.IPNetworkFromNetworkPeerID(conn.remote.IPAndPort))
 				}
 			} else {
