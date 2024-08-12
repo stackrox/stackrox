@@ -324,6 +324,7 @@ var (
 	ComplianceManualCount        = newDerivedFieldLabelWithType("Manual Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
 	ComplianceNotApplicableCount = newDerivedFieldLabelWithType("Not Applicable Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
 	ComplianceInconsistentCount  = newDerivedFieldLabelWithType("Inconsistent Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceRidiculousCount    = newDerivedFieldLabelWithType("Ridiculous Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
 
 	// Max-based derived fields.  These fields are primarily used in pagination.  If used in a select it will correspond
 	// to the type of the reference field and simply provide the max function on that field.

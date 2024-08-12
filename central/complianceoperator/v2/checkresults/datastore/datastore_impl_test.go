@@ -936,6 +936,12 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResultSta
 			expectedResults: expectedProfileCounts,
 		},
 		{
+			desc:            "Empty query - Full access - Custom Sort",
+			query:           search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.ComplianceRidiculousCount))).ProtoQuery(),
+			scopeKey:        testutils.UnrestrictedReadCtx,
+			expectedResults: expectedProfileCounts,
+		},
+		{
 			desc:            "Empty query - Only cluster 2 access",
 			query:           search.NewQueryBuilder().ProtoQuery(),
 			scopeKey:        testutils.Cluster2ReadWriteCtx,
