@@ -43,12 +43,13 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-23343: The auto-sensing within the Helm charts for detecting OpenShift clusters has been changed to depend on the `project.openshift.io/v1` APIVersion.
 - ROX-22701: Prevent deleting default policies through the API
 - ROX-26422: Central will now include the `id` field in alert notifications and API responses.
-
 - ROX-20723: Remove monorepo substructure under `ui/` directory and switch from yarn v1 to npm for package management. Use `npm run` in place of `yarn` commands.
 - ROX-26306: Increase minimum Node.js version from `">=18.0.0"` to `"^18.18.0 || >=20.0.0"` for open source community to run `make lint` command in the ui directory.
     - Node.js 18.18.0 was released on 2023-09-18
     - Node.js 18 moves from Maintenance to End-of-Life status on 2025-04-30
     - Node.js 20 moves from Active to Maintenance status on 2024-10-22
+- ROX-20578: Sensor will now store pull secrets by secret name and registry host (instead of only registry host). This will reduce Delegated Scanning authentication failures when multiple secrets exist for the same registry within a namespace.
+  - Setting `ROX_SENSOR_PULL_SECRETS_BY_NAME` to `false` on Sensor will disable this feature and cause secrets to be stored by only registry host.
 
 ## [4.5.0]
 
