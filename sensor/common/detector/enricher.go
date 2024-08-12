@@ -329,14 +329,7 @@ func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, req *scan
 func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	imageChan := make(chan imageChanResult, len(deployment.GetContainers()))
 
-	// TODO: CONFIRM this change is accurate, do podspec image pull secrets eclipse
-	// service account pull secrets, or are both used like below
-	// TODO: Consider if this isn't right, but we're doing it anyone it would
-	// increase the chances of a successful scan, but may also increase registry
-	// traffic
-	pullSecretsSet := set.NewStringSet(e.serviceAccountStore.GetImagePullSecrets(deployment.GetNamespace(), deployment.GetServiceAccount())...)
-	pullSecretsSet.AddAll(deployment.GetImagePullSecrets()...)
-	pullSecrets := pullSecretsSet.AsSlice()
+	pullSecrets := e.getPullSecrets(deployment)
 
 	for idx, container := range deployment.GetContainers() {
 		e.runImageScanAsync(imageChan, &scanImageRequest{
@@ -361,6 +354,15 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 		images[imgResult.containerIdx] = &image
 	}
 	return images
+}
+
+func (e *enricher) getPullSecrets(deployment *storage.Deployment) []string {
+	pullSecretsSet := set.NewStringSet(deployment.GetImagePullSecrets()...)
+	if pullSecretsSet.Cardinality() == 0 {
+		// Only add service account secrets if the spec did NOT specify image pull secrets.
+		pullSecretsSet.AddAll(e.serviceAccountStore.GetImagePullSecrets(deployment.GetNamespace(), deployment.GetServiceAccount())...)
+	}
+	return pullSecretsSet.AsSlice()
 }
 
 func (e *enricher) blockingScan(ctx context.Context, deployment *storage.Deployment, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction) {
