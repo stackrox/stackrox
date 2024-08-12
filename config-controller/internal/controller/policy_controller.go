@@ -21,6 +21,14 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/auth"
+	roxctlIO "github.com/stackrox/rox/roxctl/common/io"
+	"github.com/stackrox/rox/roxctl/common/logger"
+	"github.com/stackrox/rox/roxctl/common/printer"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/protoadapt"
@@ -29,14 +37,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	v1 "github.com/stackrox/rox/generated/api/v1"
-	storage "github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/auth"
-	roxctlIO "github.com/stackrox/rox/roxctl/common/io"
-	"github.com/stackrox/rox/roxctl/common/logger"
-	"github.com/stackrox/rox/roxctl/common/printer"
-	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 )
 
 // PolicyReconciler reconciles a Policy object
@@ -69,7 +69,6 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, errors.Wrap(err, "Failed to parse policy JSON")
 	}
 
-	// GET policy from Central
 	svc := v1.NewPolicyServiceClient(r.conn)
 	allPolicies, err := svc.ListPolicies(ctx, &v1.RawQuery{})
 
@@ -107,8 +106,6 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on policy %s", req.Name))
 		}
 	}
-
-	// Report status
 
 	return ctrl.Result{}, nil
 }
