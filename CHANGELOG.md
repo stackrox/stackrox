@@ -48,7 +48,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - Node.js 18.18.0 was released on 2023-09-18
     - Node.js 18 moves from Maintenance to End-of-Life status on 2025-04-30
     - Node.js 20 moves from Active to Maintenance status on 2024-10-22
-- ROX-20578: Sensor will now store pull secrets by secret name and registry host (instead of only registry host). This will reduce Delegated Scanning authentication failures when multiple secrets exist for the same registry within a namespace.
+- ROX-20578: Sensor will now store pull secrets by secret name and registry host (instead of only registry host). This will reduce Delegated Scanning authentication failures when multiple secrets exist for the same registry within a namespace and more closely aligns with k8s secret handling.
   - Setting `ROX_SENSOR_PULL_SECRETS_BY_NAME` to `false` on Sensor will disable this feature and cause secrets to be stored by only registry host.
 
 ## [4.5.0]
