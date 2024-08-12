@@ -262,7 +262,6 @@ func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName
 	if namespace != "" {
 		// If namespace provided pull appropriate registry.
 		// An err indicates no registry was found, only append if was no err.
-		// TODO: Clean this up so not relying on an error to indicate no registries found
 		if sRegs, err := s.getPullSecretRegistries(imgName, namespace, imagePullSecrets); err == nil {
 			regs = append(regs, sRegs...)
 		}
