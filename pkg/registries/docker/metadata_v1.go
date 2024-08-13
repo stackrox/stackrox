@@ -60,6 +60,16 @@ func convertImageToDockerFileLine(img *v1.Image) *storage.ImageLayer {
 }
 
 func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, ref string) (*storage.ImageMetadata, error) {
+	// Orient the layers to be oldest to newest
+	fsLayers := make([]string, 0, len(manifest.FSLayers))
+	for i := len(manifest.FSLayers) - 1; i > -1; i-- {
+		dig := manifest.FSLayers[i].BlobSum
+		if err := dig.Validate(); err != nil {
+			return nil, errors.Wrapf(err, "invalid layer digest %v: %v", dig, err)
+		}
+		fsLayers = append(fsLayers, dig.String())
+	}
+
 	// Get the latest layer and author
 	var latest *storage.ImageLayer
 	var layers []*storage.ImageLayer
@@ -80,12 +90,6 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 			labels[labelKey] = labelValue
 		}
 	}
-	// Orient the layers to be oldest to newest
-	fsLayers := make([]string, 0, len(manifest.FSLayers))
-	for i := len(manifest.FSLayers) - 1; i > -1; i-- {
-		fsLayers = append(fsLayers, manifest.FSLayers[i].BlobSum.String())
-	}
-
 	// Nil out empty label maps to be consistent with handleV1ManifestLayer()
 	if len(labels) == 0 {
 		labels = nil
@@ -122,6 +126,10 @@ func HandleV1Manifest(r *Registry, remote, ref string) (*storage.ImageMetadata, 
 }
 
 func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*storage.V1Metadata, error) {
+	if err := ref.Validate(); err != nil {
+		return nil, errors.Wrapf(err, "invalid layer digest: %v", ref)
+	}
+
 	v1r, err := r.Client.DownloadLayer(remote, ref)
 	if err != nil {
 		return nil, err

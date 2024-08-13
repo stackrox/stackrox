@@ -10,6 +10,7 @@ import (
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
+	"github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -185,21 +186,27 @@ func (r *Registry) lazyLoadRepoList() {
 	})
 }
 
-func handleManifests(r *Registry, manifestType, remote, digest string) (*storage.ImageMetadata, error) {
+func handleManifests(r *Registry, manifestType, remote string, dig digest.Digest) (*storage.ImageMetadata, error) {
+	if err := dig.Validate(); err != nil {
+		return nil, errors.Wrap(err, "invalid image digest")
+	}
+
+	ref := dig.String()
+
 	// Note: Any updates here must be accompanied by updates to registry_without_digest.go.
 	switch manifestType {
 	case manifestV1.MediaTypeManifest:
-		return HandleV1Manifest(r, remote, digest)
+		return HandleV1Manifest(r, remote, ref)
 	case manifestV1.MediaTypeSignedManifest:
-		return HandleV1SignedManifest(r, remote, digest)
+		return HandleV1SignedManifest(r, remote, ref)
 	case manifestlist.MediaTypeManifestList:
-		return HandleV2ManifestList(r, remote, digest)
+		return HandleV2ManifestList(r, remote, ref)
 	case manifestV2.MediaTypeManifest:
-		return HandleV2Manifest(r, remote, digest)
+		return HandleV2Manifest(r, remote, ref)
 	case registry.MediaTypeImageIndex:
-		return HandleOCIImageIndex(r, remote, digest)
+		return HandleOCIImageIndex(r, remote, ref)
 	case registry.MediaTypeImageManifest:
-		return HandleOCIManifest(r, remote, digest)
+		return HandleOCIManifest(r, remote, ref)
 	default:
 		return nil, fmt.Errorf("unknown manifest type '%s'", manifestType)
 	}
@@ -212,11 +219,14 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 	}
 
 	remote := image.GetName().GetRemote()
-	digest, manifestType, err := r.Client.ManifestDigest(remote, utils.Reference(image))
+	d, manifestType, err := r.Client.ManifestDigest(remote, utils.Reference(image))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get the manifest digest")
 	}
-	return handleManifests(r, manifestType, remote, digest.String())
+	if err := d.Validate(); err != nil {
+		return nil, errors.Wrap(err, "digest is invalid")
+	}
+	return handleManifests(r, manifestType, remote, d)
 }
 
 // Test tests the current registry and makes sure that it is working properly

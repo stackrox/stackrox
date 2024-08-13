@@ -64,10 +64,11 @@ func TestNewImage(t *testing.T) {
 	}
 }
 
-func TestExtractImageSha(t *testing.T) {
+func TestExtractImageDigest(t *testing.T) {
 	var cases = []struct {
-		input  string
-		output string
+		input   string
+		output  string
+		wantErr bool
 	}{
 		{
 			input:  "docker-pullable://registry.k8s.io/etcd-amd64@sha256:68235934469f3bc58917bcf7018bf0d3b72129e6303b0bef28186d96b2259317",
@@ -85,11 +86,24 @@ func TestExtractImageSha(t *testing.T) {
 			input:  "docker://sha512:36fb26cde46557cf26a79d8fe53e704416c18afe667103fe58d84180d8a3e33244cd10baabeaeb0eb7541760ab776e3db2dee5e15a9ad26b0966703889c4eb45",
 			output: "sha512:36fb26cde46557cf26a79d8fe53e704416c18afe667103fe58d84180d8a3e33244cd10baabeaeb0eb7541760ab776e3db2dee5e15a9ad26b0966703889c4eb45",
 		},
+		{
+			input:   "sha512:ls;ldkfjwpeorjqwoe;lfkjw;oeri",
+			wantErr: true,
+		},
+		{
+			input:  "",
+			output: "",
+		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			assert.Equal(t, c.output, ExtractImageDigest(c.input))
+			dig, err := ExtractImageDigest(c.input)
+			if c.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.Equal(t, c.output, dig)
 		})
 	}
 }
