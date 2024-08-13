@@ -313,18 +313,10 @@ var (
 	CVECount        = newDerivedFieldLabel("CVE Count", CVEID, CountDerivationType)
 	ProfileCount    = newDerivedFieldLabel("Compliance Profile Name Count", ComplianceOperatorProfileName, CountDerivationType)
 	// Translative derived fields with reversed sorting. These fields are supported only in pagination.
-	NodePriority                 = newDerivedFieldLabel("Node Risk Priority", NodeRiskScore, SimpleReverseSortDerivationType)
-	DeploymentPriority           = newDerivedFieldLabel("Deployment Risk Priority", DeploymentRiskScore, SimpleReverseSortDerivationType)
-	ImagePriority                = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
-	ComponentPriority            = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
-	CompliancePassCount          = newDerivedFieldLabelWithType("Pass Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceFailCount          = newDerivedFieldLabelWithType("Fail Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceErrorCount         = newDerivedFieldLabelWithType("Error Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceInfoCount          = newDerivedFieldLabelWithType("Info Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceManualCount        = newDerivedFieldLabelWithType("Manual Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceNotApplicableCount = newDerivedFieldLabelWithType("Not Applicable Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceInconsistentCount  = newDerivedFieldLabelWithType("Inconsistent Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
-	ComplianceRidiculousCount    = newDerivedFieldLabelWithType("Ridiculous Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	NodePriority       = newDerivedFieldLabel("Node Risk Priority", NodeRiskScore, SimpleReverseSortDerivationType)
+	DeploymentPriority = newDerivedFieldLabel("Deployment Risk Priority", DeploymentRiskScore, SimpleReverseSortDerivationType)
+	ImagePriority      = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
+	ComponentPriority  = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
 
 	// Max-based derived fields.  These fields are primarily used in pagination.  If used in a select it will correspond
 	// to the type of the reference field and simply provide the max function on that field.
@@ -465,15 +457,17 @@ var (
 
 	// Derived test fields
 	// The derived fields depending of fields with map and scalar data type array data structures are unsupported.
-	TestGrandparentCount          = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
-	TestParent1ValCount           = newDerivedFieldLabel("Test Parent1 Val Count", TestParent1Val, CountDerivationType)
-	TestParent1Count              = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
-	TestChild1Count               = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
-	TestGrandParentPriority       = newDerivedFieldLabel("Test Grandparent Priority", TestGrandparentRiskScore, SimpleReverseSortDerivationType)
-	TestNestedStringCount         = newDerivedFieldLabel("Test Nested String Count", TestNestedString, CountDerivationType)
-	TestNestedString2Count        = newDerivedFieldLabel("Test Nested String 2 Count", TestNestedString2, CountDerivationType)
-	TestParent1StringSliceCount   = newDerivedFieldLabel("Test Parent1 String Slice Count", TestParent1StringSlice, CountDerivationType)
-	TestGrandParentCustomPriority = newDerivedFieldLabelWithType("Test Grandparent Custom Priority", TestGrandparentRiskScore, CustomFieldType, postgres.Integer)
+	TestGrandparentCount        = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
+	TestParent1ValCount         = newDerivedFieldLabel("Test Parent1 Val Count", TestParent1Val, CountDerivationType)
+	TestParent1Count            = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
+	TestChild1Count             = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
+	TestGrandParentPriority     = newDerivedFieldLabel("Test Grandparent Priority", TestGrandparentRiskScore, SimpleReverseSortDerivationType)
+	TestNestedStringCount       = newDerivedFieldLabel("Test Nested String Count", TestNestedString, CountDerivationType)
+	TestNestedString2Count      = newDerivedFieldLabel("Test Nested String 2 Count", TestNestedString2, CountDerivationType)
+	TestParent1StringSliceCount = newDerivedFieldLabel("Test Parent1 String Slice Count", TestParent1StringSlice, CountDerivationType)
+	TestEnum1Custom             = newDerivedFieldLabelWithType("Test String Affected By Enum1", TestEnum, CustomFieldType, postgres.Integer)
+	TestEnum2Custom             = newDerivedFieldLabelWithType("Test String Affected By Enum2", TestEnum, CustomFieldType, postgres.Integer)
+	TestInvalidEnumCustom       = newDerivedFieldLabelWithType("Invalid Test String Affected By Enum1", TestEnum, CustomFieldType, postgres.Integer)
 )
 
 func init() {
