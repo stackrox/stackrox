@@ -465,14 +465,15 @@ var (
 
 	// Derived test fields
 	// The derived fields depending of fields with map and scalar data type array data structures are unsupported.
-	TestGrandparentCount        = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
-	TestParent1ValCount         = newDerivedFieldLabel("Test Parent1 Val Count", TestParent1Val, CountDerivationType)
-	TestParent1Count            = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
-	TestChild1Count             = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
-	TestGrandParentPriority     = newDerivedFieldLabel("Test Grandparent Priority", TestGrandparentRiskScore, SimpleReverseSortDerivationType)
-	TestNestedStringCount       = newDerivedFieldLabel("Test Nested String Count", TestNestedString, CountDerivationType)
-	TestNestedString2Count      = newDerivedFieldLabel("Test Nested String 2 Count", TestNestedString2, CountDerivationType)
-	TestParent1StringSliceCount = newDerivedFieldLabel("Test Parent1 String Slice Count", TestParent1StringSlice, CountDerivationType)
+	TestGrandparentCount          = newDerivedFieldLabel("Test Grandparent Count", TestGrandparentID, CountDerivationType)
+	TestParent1ValCount           = newDerivedFieldLabel("Test Parent1 Val Count", TestParent1Val, CountDerivationType)
+	TestParent1Count              = newDerivedFieldLabel("Test Parent1 Count", TestParent1ID, CountDerivationType)
+	TestChild1Count               = newDerivedFieldLabel("Test Child1 Count", TestChild1ID, CountDerivationType)
+	TestGrandParentPriority       = newDerivedFieldLabel("Test Grandparent Priority", TestGrandparentRiskScore, SimpleReverseSortDerivationType)
+	TestNestedStringCount         = newDerivedFieldLabel("Test Nested String Count", TestNestedString, CountDerivationType)
+	TestNestedString2Count        = newDerivedFieldLabel("Test Nested String 2 Count", TestNestedString2, CountDerivationType)
+	TestParent1StringSliceCount   = newDerivedFieldLabel("Test Parent1 String Slice Count", TestParent1StringSlice, CountDerivationType)
+	TestGrandParentCustomPriority = newDerivedFieldLabelWithType("Test Grandparent Custom Priority", TestGrandparentRiskScore, CustomFieldType, postgres.Integer)
 )
 
 func init() {
@@ -547,6 +548,10 @@ func newDerivedFieldLabelWithType(s string, derivedFrom FieldLabel, derivationTy
 
 func (f FieldLabel) String() string {
 	return string(f)
+}
+
+func (f FieldLabel) Alias() string {
+	return strings.Join(strings.Fields(string(f)), "_")
 }
 
 // DerivedFieldLabelMetadata includes metadata showing that a field is derived.
