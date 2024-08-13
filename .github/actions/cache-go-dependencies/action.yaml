@@ -24,6 +24,10 @@ runs:
           ${{ steps.cache-paths.outputs.GOCACHE }}
         key: go-build-v1-${{ github.job }}-${{ hashFiles('**/go.sum') }}
 
+    - name: Enable Go telemetry
+      run: go run golang.org/x/telemetry/cmd/gotelemetry@latest on
+      shell: bash
+
     - name: Download Go modules
       run: make deps --always-make
       shell: bash
