@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	startSeqNum = 203
+	startSeqNum = 206
 )
 
 var (
@@ -23,13 +23,14 @@ var (
 		StartingSeqNum: startSeqNum,
 		VersionAfter:   &storage.Version{SeqNum: int32(startSeqNum + 1)},
 		Run: func(databases *types.Databases) error {
-			   err := updatePolicies(databases.GormDB)
-		      if err != nil {
-		      return errors.Wrap(err, "updating policies")
-	    }
-		return nil
-	},
+			err := updatePolicies(databases.GormDB)
+			if err != nil {
+				return errors.Wrap(err, "updating policies")
+			}
+			return nil
+		},
 	}
+
 	//go:embed policies_before_and_after
 	policyDiffFS embed.FS
 
@@ -97,48 +98,13 @@ func updatePolicies(db *gorm.DB) error {
 			}
 			return result.Error
 		},
-		func(ctx context.Context) (map[string]string, error) {
-			var results []*schema.PolicyCategories
-			db.WithContext(ctx).Table(schema.PolicyCategoriesTableName).Find(&results)
-
-			categories := make(map[string]string, 0)
-			for _, r := range results {
-				c, err := schema.ConvertPolicyCategoryToProto(r)
-				if err != nil {
-					return nil, err
-				}
-				categories[c.Name] = c.Id
-			}
-			return categories, nil
+		func(context.Context) (map[string]string, error) {
+			return nil,nil
+	    },
+		func(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
+			return nil
 		},
 		func(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
-			dbEdge, err := schema.ConvertPolicyCategoryEdgeFromProto(edge)
-			if err != nil {
-				return err
-			}
-			result := db.WithContext(ctx).Table(schema.PolicyCategoryEdgesTableName).Save(dbEdge)
-			if result.RowsAffected != 1 {
-				return errors.Errorf("failed to save edge for policy id %s, category id %s: %q",
-					edge.GetPolicyId(), edge.GetCategoryId(), result.Error)
-			}
-			return result.Error
-		},
-		func(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
-			dbEdge, err := schema.ConvertPolicyCategoryEdgeFromProto(edge)
-			if err != nil {
-				return err
-			}
-			result := db.WithContext(ctx).Table(schema.PolicyCategoryEdgesTableName).Where(&schema.PolicyCategoryEdges{
-				PolicyID:   edge.GetPolicyId(),
-				CategoryID: edge.GetCategoryId(),
-			}).Delete(dbEdge)
-			if result.Error != nil {
-				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-					return nil
-				}
-				return errors.Errorf("failed to remove edge for policy id %s, category id %s", edge.GetPolicyId(), edge.GetCategoryId())
-
-			}
 			return nil
 		},
 	)

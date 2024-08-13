@@ -14,7 +14,6 @@ import (
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -87,7 +86,7 @@ func (s *policyMigrationTestSuite) TestMigration() {
 			s.Require().NoError(result.Error)
 			migratedPolicy, err := schema.ConvertPolicyToProto(&foundPolicies[0])
 			s.Require().NoError(err)
-			protoassert.ElementsMatch(s.T(), migratedPolicy.Exclusions, afterPolicy.Exclusions, "exclusion do not match after migration")
+			s.ElementsMatch(s.T(), migratedPolicy.Categories, afterPolicy.Categories, "categories do not match after migration")
 		})
 	}
 }
