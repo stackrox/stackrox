@@ -30,6 +30,7 @@ type Service interface {
 	Output() chan *compliance.ComplianceReturn
 	AuditEvents() chan *sensor.AuditEvents
 	NodeInventories() <-chan *storage.NodeInventory
+	IndexReportWraps() <-chan *IndexReportWrap
 }
 
 // NewService returns the ComplianceServiceServer API for Sensor to use, outputs any received ComplianceReturns

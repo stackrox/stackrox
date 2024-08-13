@@ -27,9 +27,10 @@ import (
 type serviceImpl struct {
 	sensor.UnimplementedComplianceServiceServer
 
-	output          chan *compliance.ComplianceReturn
-	auditEvents     chan *sensor.AuditEvents
-	nodeInventories chan *storage.NodeInventory
+	output           chan *compliance.ComplianceReturn
+	auditEvents      chan *sensor.AuditEvents
+	nodeInventories  chan *storage.NodeInventory
+	indexReportWraps chan *IndexReportWrap
 
 	complianceC <-chan common.MessageToComplianceWithAddress
 
@@ -239,6 +240,10 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		case *sensor.MsgFromCompliance_IndexReport:
 			log.Infof("Received index report from %q with %d packages",
 				msg.GetNode(), len(msg.GetIndexReport().GetContents().GetPackages()))
+			s.indexReportWraps <- &IndexReportWrap{
+				NodeName:    msg.GetNode(),
+				IndexReport: t.IndexReport,
+			}
 		}
 	}
 }
@@ -268,4 +273,8 @@ func (s *serviceImpl) AuditEvents() chan *sensor.AuditEvents {
 
 func (s *serviceImpl) NodeInventories() <-chan *storage.NodeInventory {
 	return s.nodeInventories
+}
+
+func (s *serviceImpl) IndexReportWraps() <-chan *IndexReportWrap {
+	return s.indexReportWraps
 }
