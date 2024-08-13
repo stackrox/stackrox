@@ -2,7 +2,7 @@
 set -euo pipefail
 
 logmein() {
-  target_url="$(curl -sSkf -u "admin:${STACKROX_ADMIN_PASSWORD}" -w '%{redirect_url}' "https://localhost:8000/sso/providers/basic/4df1b98c-24ed-4073-a9ad-356aec6bb62d/challenge?micro_ts=0")"
+  target_url="$(curl -sSkf -u "admin:${ROX_ADMIN_PASSWORD}" -w '%{redirect_url}' "https://localhost:8000/sso/providers/basic/4df1b98c-24ed-4073-a9ad-356aec6bb62d/challenge?micro_ts=0")"
   if [[ -z "${target_url}" ]]; then
     >&2 echo "UNEXPECTED: Could not determine target URL"
     return
@@ -46,9 +46,9 @@ echo "Adding the stackrox/helm-charts/opensource repository to Helm."
 
 helm repo add stackrox https://raw.githubusercontent.com/stackrox/helm-charts/main/opensource/
 
-echo "Generating STACKROX_ADMIN_PASSWORD"
+echo "Generating ROX_ADMIN_PASSWORD"
 
-STACKROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
+ROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 
 echo "Installing stackrox-central-services"
 
@@ -71,7 +71,7 @@ if [[ "$SMALL_INSTALL" == "true" ]]; then
 fi
 
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services \
- --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}" \
+ --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
  "${installflags[@]+"${installflags[@]}"}"
 
 kubectl -n stackrox rollout status deploy/central --timeout=3m
@@ -83,7 +83,6 @@ kubectl -n stackrox port-forward deploy/central --pod-running-timeout=1m0s 8000:
 echo "Generating an init bundle with stackrox-secured-cluster-services provisioning secrets"
 
 kubectl -n stackrox exec deploy/central -- roxctl --insecure-skip-tls-verify \
-  --password "${STACKROX_ADMIN_PASSWORD}" \
   central init-bundles generate stackrox-init-bundle --output - 1> stackrox-init-bundle.yaml
 
 installflags=()
@@ -113,7 +112,7 @@ Consult these documents for additional information on customizing your Helm inst
 https://docs.openshift.com/acs/installing/installing_other/install-central-other.html#install-using-helm-customizations-other
 https://docs.openshift.com/acs/installing/installing_other/install-secured-cluster-other.html#configure-secured-cluster-services-helm-chart-customizations-other
 
-STACKROX_ADMIN_PASSWORD='$STACKROX_ADMIN_PASSWORD'
+ROX_ADMIN_PASSWORD='$ROX_ADMIN_PASSWORD'
 Above is your automatically generated stackrox admin password. Please store it securely, as you will need it during further configuration.
 In your current directory an init bundle \"stackrox-init-bundle.yaml\" was created, store it safely in case you are planning to provision more secured clusters with it, or delete it otherwise."
 

@@ -2,10 +2,10 @@
 
 set -uo pipefail
 
-# This test script requires API_ENDPOINT and ROX_PASSWORD to be set in the environment.
+# This test script requires API_ENDPOINT and ROX_ADMIN_PASSWORD to be set in the environment.
 
 [ -n "$API_ENDPOINT" ]
-[ -n "$ROX_PASSWORD" ]
+[ -n "$ROX_ADMIN_PASSWORD" ]
 
 echo "Using API_ENDPOINT $API_ENDPOINT"
 
@@ -28,7 +28,7 @@ curl_central() {
   url="$1"
   shift
   [[ -n "${url}" ]] || die "No URL specified"
-  curl --retry 5 --retry-connrefused -Sskf --config <(curl_cfg user "admin:${ROX_PASSWORD}") \
+  curl --retry 5 --retry-connrefused -Sskf --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
     "https://${API_ENDPOINT}/${url}" "$@"
 }
 

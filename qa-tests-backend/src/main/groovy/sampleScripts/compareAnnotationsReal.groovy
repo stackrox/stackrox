@@ -19,7 +19,7 @@ import util.Helpers
 
 // Use basic authentication for API calls to central. Relies on:
 // ROX_USERNAME (defaults to admin)
-// ROX_PASSWORD (inferred from the most recent deploy/{k8s,openshift}/central-deploy/password)
+// ROX_ADMIN_PASSWORD (inferred from the most recent deploy/{k8s,openshift}/central-deploy/password)
 // API_HOSTNAME & API_PORT
 BaseService.useBasicAuth()
 BaseService.setUseClientCert(false)
