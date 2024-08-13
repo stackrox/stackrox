@@ -533,6 +533,7 @@ func local_request_ComplianceResultsService_GetComplianceProfileCheckDetails_0(c
 // UnaryRPC     :call ComplianceResultsServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterComplianceResultsServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ComplianceResultsServiceServer) error {
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanCheckResult_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -748,7 +749,7 @@ func RegisterComplianceResultsServiceHandler(ctx context.Context, mux *runtime.S
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ComplianceResultsServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ComplianceResultsServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "ComplianceResultsServiceClient" to call the correct interceptors.
+// "ComplianceResultsServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterComplianceResultsServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ComplianceResultsServiceClient) error {
 
 	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanCheckResult_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
