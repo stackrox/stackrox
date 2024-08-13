@@ -83,7 +83,6 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 					continue
 				}
 
-				//selectField = selectQueryField(so.GetField(), so.GetField(), false, aggregatefunc.Unset, "")
 				selectField = pgsearch.SelectQueryField{
 					SelectPath:   aliasString,
 					Alias:        aliasString,

@@ -544,10 +544,6 @@ func (f FieldLabel) String() string {
 	return string(f)
 }
 
-func (f FieldLabel) Alias() string {
-	return strings.Join(strings.Fields(string(f)), "_")
-}
-
 // DerivedFieldLabelMetadata includes metadata showing that a field is derived.
 type DerivedFieldLabelMetadata struct {
 	DerivedFrom     FieldLabel
