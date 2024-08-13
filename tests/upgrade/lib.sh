@@ -81,7 +81,7 @@ validate_upgrade() {
 function roxcurl() {
   local url="$1"
   shift
-  curl --config <(echo "user = admin:${ROX_PASSWORD}") -k "https://${API_ENDPOINT}${url}" "$@"
+  curl --config <(escape user "admin:${ROX_PASSWORD}") -k "https://${API_ENDPOINT}${url}" "$@"
 }
 
 deploy_earlier_postgres_central() {
