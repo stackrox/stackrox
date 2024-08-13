@@ -16,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
@@ -134,6 +135,12 @@ func (s *NodeCVEViewTestSuite) createTestClusters() {
 }
 
 func (s *NodeCVEViewTestSuite) SetupSuite() {
+	s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "true")
+	if !env.OrphanedCVEsKeepAlive.BooleanSetting() {
+		s.T().Skip("Skip tests when ROX_ORPHANED_CVES_KEEP_ALIVE disabled")
+		s.T().SkipNow()
+	}
+
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 
@@ -146,8 +153,23 @@ func (s *NodeCVEViewTestSuite) SetupSuite() {
 		s.Require().NoError(nodeDatastore.UpsertNode(s.ctx, node))
 	}
 
+	// Orphan some CVEs by removing the last added vuln in each node
+	iTime := time.Now()
+	for _, node := range s.nodeMap {
+		nComponents := len(node.GetScan().GetComponents())
+		if nComponents > 0 {
+			nVulnsInLastComponent := len(node.GetScan().GetComponents()[nComponents-1].GetVulns())
+			if nVulnsInLastComponent > 0 {
+				node.Scan.Components[nComponents-1].Vulns = node.Scan.Components[nComponents-1].Vulns[:nVulnsInLastComponent-1]
+				node.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+				s.Require().NoError(nodeDatastore.UpsertNode(s.ctx, node))
+			}
+		}
+	}
+
 	cveStore, err := nodeCVEDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
+	// Include orphaned CVEs in this list of all stored CVEs
 	storedCves, err := cveStore.SearchRawCVEs(s.ctx, nil, true)
 	s.Require().NoError(err)
 	s.cveCreateMap = make(map[string]*storage.NodeCVE)
