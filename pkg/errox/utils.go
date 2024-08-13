@@ -22,7 +22,10 @@ func IsAny(err error, targets ...error) bool {
 	return false
 }
 
-// wrapErrors is a copy from the standard errors package.
+type multipleErrors interface{ Unwrap() []error }
+
+// wrapErrors is a copy from the standard errors package:
+// https://cs.opensource.google/go/go/+/refs/tags/go1.22.6:src/fmt/errors.go;l=67
 type wrapErrors struct {
 	msg  string
 	errs []error
@@ -34,6 +37,23 @@ func (e *wrapErrors) Error() string {
 
 func (e *wrapErrors) Unwrap() []error {
 	return e.errs
+}
+
+var _ multipleErrors = (*wrapErrors)(nil)
+
+func concealMultiple(errs multipleErrors) error {
+	unwrapped := errs.Unwrap()
+	concealed := make([]error, 0, len(unwrapped))
+	msg := make([]string, 0, len(unwrapped))
+	for _, e := range unwrapped {
+		e = ConcealSensitive(e)
+		concealed = append(concealed, e)
+		msg = append(msg, e.Error())
+	}
+	return &wrapErrors{
+		msg:  fmt.Sprintf("[%s]", strings.Join(msg, ", ")),
+		errs: concealed,
+	}
 }
 
 // ConcealSensitive strips sensitive data from some known error types and
@@ -61,19 +81,9 @@ func ConcealSensitive(err error) error {
 		case *url.Error:
 			return errors.New(fmt.Sprintf("%s %q: %s", e.Op, e.URL, ConcealSensitive(e.Err)))
 		}
-		if errs, ok := err.(interface{ Unwrap() []error }); ok {
-			unwrapped := errs.Unwrap()
-			concealed := make([]error, 0, len(unwrapped))
-			msg := make([]string, 0, len(unwrapped))
-			for _, e := range unwrapped {
-				e = ConcealSensitive(e)
-				concealed = append(concealed, e)
-				msg = append(msg, e.Error())
-			}
-			return &wrapErrors{
-				fmt.Sprintf("[%s]", strings.Join(msg, ", ")),
-				concealed,
-			}
+		// multipleErrors can be returned by fmt.Errorf() with multiple %w.
+		if errs, ok := err.(multipleErrors); ok {
+			return concealMultiple(errs)
 		}
 		err = errors.Unwrap(err)
 	}

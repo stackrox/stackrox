@@ -33,8 +33,8 @@ func TestConcealSensitive(t *testing.T) {
 			"lookup error: unknown network",
 		},
 		"net.OpError": {
-			&net.OpError{Op: "operation", Err: NotFound, Addr: &net.IPAddr{IP: net.IPv4(1, 2, 3, 4)}},
-			"operation: not found",
+			&net.OpError{Op: "operation", Net: "tcp", Err: NotFound, Addr: &net.IPAddr{IP: net.IPv4(1, 2, 3, 4)}},
+			"operation tcp: not found",
 		},
 		"url.Error": {
 			&url.Error{Err: &net.OpError{Op: "operation", Err: NotFound, Addr: &net.IPAddr{IP: net.IPv4(1, 2, 3, 4)}}, Op: "Get", URL: "URL"},
