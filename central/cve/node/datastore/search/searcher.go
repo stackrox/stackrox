@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/cve/common"
 	pgStore "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,10 +16,10 @@ import (
 //
 //go:generate mockgen-wrapper
 type Searcher interface {
-	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
-	Count(ctx context.Context, query *v1.Query) (int, error)
-	SearchCVEs(context.Context, *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawCVEs(ctx context.Context, query *v1.Query) ([]*storage.NodeCVE, error)
+	Search(ctx context.Context, query *v1.Query, allowOrphaned bool) ([]search.Result, error)
+	Count(ctx context.Context, query *v1.Query, allowOrphaned bool) (int, error)
+	SearchCVEs(ctx context.Context, query *v1.Query, allowOrphaned bool) ([]*v1.SearchResult, error)
+	SearchRawCVEs(ctx context.Context, query *v1.Query, allowOrphaned bool) ([]*storage.NodeCVE, error)
 }
 
 // New returns a new instance of Searcher for the given the storage.
@@ -32,7 +31,6 @@ func New(storage pgStore.Store) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	noOrphanedCVEsByDefaultSearcher := common.WithoutOrphanedCVEsByDefault(searcher)
-	scopedSafeSearcher := pkgPostgres.WithScoping(noOrphanedCVEsByDefaultSearcher)
+	scopedSafeSearcher := pkgPostgres.WithScoping(searcher)
 	return sortfields.TransformSortFields(scopedSafeSearcher, schema.NodesSchema.OptionsMap)
 }

@@ -137,10 +137,9 @@ func (n *nodeCVECoreViewImpl) GetNodeIDs(ctx context.Context, q *v1.Query) ([]st
 }
 
 func withoutOrphanedCVEsQuery(q *v1.Query) *v1.Query {
-	pagination := q.GetPagination()
-	q = search.ConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.CVEOrphaned, false).ProtoQuery())
-	q.Pagination = pagination
-	return q
+	ret := search.ConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.CVEOrphaned, false).ProtoQuery())
+	ret.Pagination = q.GetPagination()
+	return ret
 }
 
 func withSelectQuery(q *v1.Query) *v1.Query {

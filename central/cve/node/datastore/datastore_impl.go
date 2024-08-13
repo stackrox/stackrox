@@ -50,7 +50,7 @@ func getSuppressionCacheEntry(cve *storage.NodeCVE) common.SuppressionCacheEntry
 
 func (ds *datastoreImpl) buildSuppressedCache() error {
 	query := pkgSearch.NewQueryBuilder().AddBools(pkgSearch.CVESuppressed, true).ProtoQuery()
-	suppressedCVEs, err := ds.searcher.SearchRawCVEs(accessAllCtx, query)
+	suppressedCVEs, err := ds.searcher.SearchRawCVEs(accessAllCtx, query, true)
 	if err != nil {
 		return errors.Wrap(err, "searching suppress CVEs")
 	}
@@ -63,27 +63,27 @@ func (ds *datastoreImpl) buildSuppressedCache() error {
 	return nil
 }
 
-func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.searcher.Search(ctx, q)
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query, allowOrphaned bool) ([]pkgSearch.Result, error) {
+	return ds.searcher.Search(ctx, q, allowOrphaned)
 }
 
-func (ds *datastoreImpl) SearchNodeCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return ds.searcher.SearchCVEs(ctx, q)
+func (ds *datastoreImpl) SearchNodeCVEs(ctx context.Context, q *v1.Query, allowOrphaned bool) ([]*v1.SearchResult, error) {
+	return ds.searcher.SearchCVEs(ctx, q, allowOrphaned)
 }
 
-func (ds *datastoreImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.NodeCVE, error) {
-	cves, err := ds.searcher.SearchRawCVEs(ctx, q)
+func (ds *datastoreImpl) SearchRawCVEs(ctx context.Context, q *v1.Query, allowOrphaned bool) ([]*storage.NodeCVE, error) {
+	cves, err := ds.searcher.SearchRawCVEs(ctx, q, allowOrphaned)
 	if err != nil {
 		return nil, err
 	}
 	return cves, nil
 }
 
-func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query, allowOrphaned bool) (int, error) {
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}
-	return ds.searcher.Count(ctx, q)
+	return ds.searcher.Count(ctx, q, allowOrphaned)
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.NodeCVE, bool, error) {
@@ -122,7 +122,7 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *time.Time, duratio
 		return err
 	}
 
-	vulns, err := ds.searcher.SearchRawCVEs(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
+	vulns, err := ds.searcher.SearchRawCVEs(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery(), true)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	vulns, err := ds.searcher.SearchRawCVEs(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery())
+	vulns, err := ds.searcher.SearchRawCVEs(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, cves...).ProtoQuery(), true)
 	if err != nil {
 		return err
 	}

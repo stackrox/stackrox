@@ -45,7 +45,7 @@ func (suite *NodeCVEDataStoreSuite) SetupSuite() {
 	suite.storage = storeMocks.NewMockStore(suite.mockCtrl)
 	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 
-	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.NodeCVE{}, nil)
+	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery, true).Return([]*storage.NodeCVE{}, nil)
 
 	ds, err := New(suite.storage, suite.searcher, concurrency.NewKeyFence())
 	suite.Require().NoError(err)
@@ -99,9 +99,30 @@ func (suite *NodeCVEDataStoreSuite) verifySuppressionState(cveMap map[string]boo
 	}
 }
 
+func (suite *NodeCVEDataStoreSuite) TestSearchAndCountFunctions() {
+	// Verify that the datastore passes on the allowOrphaned value to the searcher
+
+	query := searchPkg.EmptyQuery()
+	suite.searcher.EXPECT().Search(testAllAccessContext, query, true).Times(1).Return(nil, nil)
+	_, err := suite.datastore.Search(testAllAccessContext, query, true)
+	suite.NoError(err)
+
+	suite.searcher.EXPECT().SearchCVEs(testAllAccessContext, query, false).Times(1).Return(nil, nil)
+	_, err = suite.datastore.SearchNodeCVEs(testAllAccessContext, query, false)
+	suite.NoError(err)
+
+	suite.searcher.EXPECT().SearchRawCVEs(testAllAccessContext, query, true).Times(1).Return(nil, nil)
+	_, err = suite.datastore.SearchRawCVEs(testAllAccessContext, query, true)
+	suite.NoError(err)
+
+	suite.searcher.EXPECT().Count(testAllAccessContext, query, false).Times(1).Return(0, nil)
+	_, err = suite.datastore.Count(testAllAccessContext, query, false)
+	suite.NoError(err)
+}
+
 func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 	// Add some results
-	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.NodeCVE{
+	suite.searcher.EXPECT().SearchRawCVEs(accessAllCtx, testSuppressionQuery, true).Return([]*storage.NodeCVE{
 		{
 			Id: "CVE-ABC",
 			CveBaseInfo: &storage.CVEInfo{
@@ -135,7 +156,7 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 	expiry, err := getSuppressExpiry(&start, &duration)
 	suite.NoError(err)
 
-	suite.searcher.EXPECT().SearchRawCVEs(testAllAccessContext, gomock.Any()).Return(
+	suite.searcher.EXPECT().SearchRawCVEs(testAllAccessContext, gomock.Any(), true).Return(
 		[]*storage.NodeCVE{
 			{
 				Id: "CVE-GHI",
@@ -164,7 +185,7 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 
 	// Clear image before unsupressing
 	node = getNodeWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
-	suite.searcher.EXPECT().SearchRawCVEs(testAllAccessContext, gomock.Any()).Return([]*storage.NodeCVE{storedCVE}, nil)
+	suite.searcher.EXPECT().SearchRawCVEs(testAllAccessContext, gomock.Any(), true).Return([]*storage.NodeCVE{storedCVE}, nil)
 	suite.storage.EXPECT().UpsertMany(testAllAccessContext, []*storage.NodeCVE{
 		{Id: "CVE-GHI", CveBaseInfo: &storage.CVEInfo{Cve: "CVE-GHI"}},
 	}).Return(nil)
