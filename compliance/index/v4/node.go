@@ -42,7 +42,7 @@ func (l *localNodeIndexer) GetIntervals() *intervals.NodeScanIntervals {
 }
 
 // IndexNode indexes a live fs.FS at the container mountpoint given in the basePath.
-func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, error) {
+func (l *localNodeIndexer) IndexNode(ctx context.Context) (r *v4.IndexReport, err error) {
 	report := &claircore.IndexReport{
 		Packages:      map[string]*claircore.Package{},
 		Environments:  map[string][]*claircore.Environment{},
@@ -80,12 +80,12 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, erro
 	report.Success = true
 	report.State = controller.IndexFinished.String()
 
-	v4Report, err := mappers.ToProtoV4IndexReport(report)
+	r, err = mappers.ToProtoV4IndexReport(report)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting clair report to v4 report")
 	}
 
-	return v4Report, nil
+	return
 }
 
 func coalesceReport(ctx context.Context, layerDigest string, reps []*claircore.Repository, pcks []*claircore.Package) (*claircore.IndexReport, error) {

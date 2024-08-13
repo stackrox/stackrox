@@ -35,58 +35,35 @@ func (s *nodeIndexerSuite) TestConstructLayer() {
 	s.NoError(err)
 
 	layer, err := constructLayer(context.TODO(), layerDigest, testdir)
-	defer func() {
-		if tmpErr := layer.Close(); tmpErr != nil {
-			err = tmpErr
-		}
-	}()
-
 	s.NoError(err)
+
 	s.NotNil(layer)
+	s.NoError(layer.Close())
 }
 
 func (s *nodeIndexerSuite) TestConstructLayerNoURI() {
-	layer, err := constructLayer(context.TODO(), layerDigest, "")
-	defer func() {
-		if tmpErr := layer.Close(); tmpErr != nil {
-			err = tmpErr
-		}
-	}()
+	_, err := constructLayer(context.TODO(), layerDigest, "")
 	s.ErrorContains(err, "no URI provided")
 }
 
 func (s *nodeIndexerSuite) TestConstructLayerIllegalDigest() {
-	layer, err := constructLayer(context.TODO(), "sha256:nodigest", s.T().TempDir())
-	defer func() {
-		if tmpErr := layer.Close(); tmpErr != nil {
-			err = tmpErr
-		}
-	}()
+	_, err := constructLayer(context.TODO(), "sha256:nodigest", s.T().TempDir())
 	s.ErrorContains(err, "unable to decode digest as hex")
 }
 
 func (s *nodeIndexerSuite) TestRunRespositoryScanner() {
 	layer, err := createLayer("testdata")
-	defer func() {
-		if tmpErr := layer.Close(); tmpErr != nil {
-			err = tmpErr
-		}
-	}()
 	s.NoError(err)
 
 	repositories, err := runRepositoryScanner(context.TODO(), layer)
 	s.NoError(err)
 
 	s.Len(repositories, 2)
+	s.NoError(layer.Close())
 }
 
 func (s *nodeIndexerSuite) TestRunRespositoryScannerAnyPath() {
 	layer, err := createLayer(s.T().TempDir())
-	defer func() {
-		if tmpErr := layer.Close(); tmpErr != nil {
-			err = tmpErr
-		}
-	}()
 	s.NoError(err)
 
 	repositories, err := runRepositoryScanner(context.TODO(), layer)
@@ -94,30 +71,22 @@ func (s *nodeIndexerSuite) TestRunRespositoryScannerAnyPath() {
 
 	// The scanner must not error out, but produce 0 results
 	s.Len(repositories, 0)
+	s.NoError(layer.Close())
 }
 
 func (s *nodeIndexerSuite) TestRunPackageScanner() {
 	layer, err := createLayer("testdata")
-	defer func() {
-		if tmpErr := layer.Close(); tmpErr != nil {
-			err = tmpErr
-		}
-	}()
 	s.NoError(err)
 
 	packages, err := runPackageScanner(context.TODO(), layer)
 	s.NoError(err)
 
 	s.Len(packages, 106)
+	s.NoError(layer.Close())
 }
 
 func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 	layer, err := createLayer(s.T().TempDir())
-	defer func() {
-		if tmpErr := layer.Close(); tmpErr != nil {
-			err = tmpErr
-		}
-	}()
 	s.NoError(err)
 
 	packages, err := runPackageScanner(context.TODO(), layer)
@@ -125,6 +94,7 @@ func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 
 	// The scanner must not error out, but produce 0 results
 	s.Len(packages, 0)
+	s.NoError(layer.Close())
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2E() {
