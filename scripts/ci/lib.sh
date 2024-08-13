@@ -878,6 +878,21 @@ publish_roxctl() {
     "${SCRIPTS_ROOT}/scripts/ci/roxctl-publish/publish.sh" "${temp_dir}" "${tag}" "gs://rhacs-openshift-mirror-src/assets"
 }
 
+publish_openapispec() {
+ if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: publish_openapispec <tag>"
+    fi
+
+    local tag="$1"
+
+    echo "Push OpenAPI spec to gs://rhacs-openshift-mirror-src/assets" >> "${GITHUB_STEP_SUMMARY}"
+
+    local temp_dir
+    temp_dir="$(mktemp -d)"
+    "${SCRIPTS_ROOT}/scripts/ci/openapi-spec-publish/prepare.sh" "${temp_dir}" "${tag}"
+    "${SCRIPTS_ROOT}/scripts/ci/openapi-spec-publish/publish.sh" "${temp_dir}" "${tag}" "gs://rhacs-openshift-mirror-src/openapi-spec"
+}
+
 push_helm_charts() {
     if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: push_helm_charts <tag>"
