@@ -31,7 +31,6 @@ image:
     registry: {{ ._rox.image.registry }}
   collector:
     registry: {{ if or (eq ._rox.image.registry "stackrox.io") (eq ._rox.image.registry "registry.connect.redhat.com") }}collector.stackrox.io{{ else }}{{ ._rox.image.registry }}{{ end }}
-  # TODO: Shouldn't the [<- if not .KubectlOutput >] check be here?
   scanner:
     registry: {{ ._rox.image.registry }}
   [<- if not .KubectlOutput >]
@@ -57,7 +56,6 @@ image:
     {{- else }}
     repository: {{ list ._rox.image.collector.registry ._rox.image.collector.name | compact | join "/" }}
     {{- end }}
-  # TODO: Shouldn't [<- if not .KubectlOutput >] be here?
   scanner:
     repository: {{ list ._rox.image.scanner.registry ._rox.image.scanner.name | compact | join "/" }}
   [<- if not .KubectlOutput >]
@@ -115,7 +113,6 @@ image:
     fullRef: "{{ printf "%s:%s" ._rox.image.main.repository ._rox.image.main.tag }}"
   collector:
     fullRef: "{{ printf "%s:%s" ._rox.image.collector.repository ._rox.image.collector.tag }}"
-  # TODO: Shouldn't the check for [<- if not .KubectlOutput >] be here?
   scanner:
     fullRef: "{{ printf "%s:%s" ._rox.image.scanner.repository ._rox.image.scanner.tag }}"
   [<- if not .KubectlOutput >]
