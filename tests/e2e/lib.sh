@@ -378,10 +378,13 @@ deploy_sensor_via_operator() {
 
     NAMESPACE="${sensor_namespace}" make -C operator stackrox-image-pull-secret
 
-    kubectl -n "${central_namespace}" exec deploy/central -- \
-    roxctl central init-bundles generate my-test-bundle \
+    # shellcheck disable=SC2016
+    echo "${ROX_ADMIN_PASSWORD}" | \
+    kubectl -n "${central_namespace}" exec -i deploy/central -- bash -c \
+    'roxctl central init-bundles generate my-test-bundle \
         --insecure-skip-tls-verify \
-        --output-secrets - \
+        --password "$(cat)" \
+        --output-secrets -' \
     | kubectl -n "${sensor_namespace}" apply -f -
 
     if [[ -n "${COLLECTION_METHOD:-}" ]]; then
