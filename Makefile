@@ -277,6 +277,11 @@ storage-protos-compatible: $(PROTOLOCK_BIN)
 	@echo "+ $@"
 	$(SILENT)$(PROTOLOCK_BIN) status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage --uptodate true
 
+.PHONY: update-storage-protolock
+update-storage-protolock: $(PROTOLOCK_BIN)
+	@echo "+ $@"
+	$(SILENT)$(PROTOLOCK_BIN) commit -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
+
 .PHONY: blanks
 blanks:
 	@echo "+ $@"
@@ -367,8 +372,6 @@ clean-deps:
 clean-obsolete-protos:
 	@echo "+ $@"
 	$(BASE_DIR)/tools/clean_autogen_protos.py --protos $(BASE_DIR)/proto --generated $(BASE_DIR)/generated
-
-
 
 ###########
 ## Build ##
