@@ -71,14 +71,14 @@ var (
 	})
 )
 
-// IncrementClusterLocalHostsCount adds to the count of stored cluster local registry hosts.
-func IncrementClusterLocalHostsCount() {
-	ClusterLocalHostsCount.Add(1)
+// SetClusterLocalHostsCount updates the count of stored cluster local registry hosts.
+func SetClusterLocalHostsCount(count int) {
+	ClusterLocalHostsCount.Set(float64(count))
 }
 
 // SetGlobalSecretEntriesCount updates the count of global secret entries in the registry store.
-func SetGlobalSecretEntriesCount(size int) {
-	GlobalSecretEntriesCount.Set(float64(size))
+func SetGlobalSecretEntriesCount(count int) {
+	GlobalSecretEntriesCount.Set(float64(count))
 }
 
 // IncrementPullSecretEntriesCount adds to the count of pull secret entries in the registry store.
@@ -102,8 +102,8 @@ func DecrementPullSecretEntriesSize(value int) {
 }
 
 // SetCentralIntegrationCount updates the count of image integrations from Central in the registry store.
-func SetCentralIntegrationCount(size int) {
-	CentralIntegrationsCount.Set(float64(size))
+func SetCentralIntegrationCount(value int) {
+	CentralIntegrationsCount.Set(float64(value))
 }
 
 // IncrementTlSCheckCacheHitCount adds to the total count of TLS check cache hits.

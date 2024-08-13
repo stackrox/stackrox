@@ -357,7 +357,7 @@ func (rs *Store) addClusterLocalRegistryHost(host string) {
 	if rs.clusterLocalRegistryHosts.Add(trimmed) {
 		log.Infof("Added cluster local registry host %q", trimmed)
 
-		metrics.IncrementClusterLocalHostsCount()
+		metrics.SetClusterLocalHostsCount(len(rs.clusterLocalRegistryHosts))
 	}
 }
 
