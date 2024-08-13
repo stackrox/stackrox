@@ -679,7 +679,7 @@
     "storageMicrosoftSentinel": {
       "type": "object",
       "properties": {
-        "endpoint": {
+        "logIngestionEndpoint": {
           "type": "string"
         },
         "dataCollectionRuleId": {

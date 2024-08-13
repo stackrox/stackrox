@@ -815,7 +815,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"applicationClientId: String!",
 		"dataCollectionRuleId: String!",
 		"directoryTenantId: String!",
-		"endpoint: String!",
+		"logIngestionEndpoint: String!",
 		"secret: String!",
 		"streamName: String!",
 	}))
@@ -9556,8 +9556,8 @@ func (resolver *microsoftSentinelResolver) DirectoryTenantId(ctx context.Context
 	return value
 }
 
-func (resolver *microsoftSentinelResolver) Endpoint(ctx context.Context) string {
-	value := resolver.data.GetEndpoint()
+func (resolver *microsoftSentinelResolver) LogIngestionEndpoint(ctx context.Context) string {
+	value := resolver.data.GetLogIngestionEndpoint()
 	return value
 }
 

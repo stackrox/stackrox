@@ -440,7 +440,7 @@ func (m *MicrosoftSentinel) CloneVT() *MicrosoftSentinel {
 		return (*MicrosoftSentinel)(nil)
 	}
 	r := new(MicrosoftSentinel)
-	r.Endpoint = m.Endpoint
+	r.LogIngestionEndpoint = m.LogIngestionEndpoint
 	r.DataCollectionRuleId = m.DataCollectionRuleId
 	r.StreamName = m.StreamName
 	r.DirectoryTenantId = m.DirectoryTenantId
@@ -1237,7 +1237,7 @@ func (this *MicrosoftSentinel) EqualVT(that *MicrosoftSentinel) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Endpoint != that.Endpoint {
+	if this.LogIngestionEndpoint != that.LogIngestionEndpoint {
 		return false
 	}
 	if this.DataCollectionRuleId != that.DataCollectionRuleId {
@@ -2502,10 +2502,10 @@ func (m *MicrosoftSentinel) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.Endpoint) > 0 {
-		i -= len(m.Endpoint)
-		copy(dAtA[i:], m.Endpoint)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Endpoint)))
+	if len(m.LogIngestionEndpoint) > 0 {
+		i -= len(m.LogIngestionEndpoint)
+		copy(dAtA[i:], m.LogIngestionEndpoint)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.LogIngestionEndpoint)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -3027,7 +3027,7 @@ func (m *MicrosoftSentinel) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Endpoint)
+	l = len(m.LogIngestionEndpoint)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -5986,7 +5986,7 @@ func (m *MicrosoftSentinel) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Endpoint", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field LogIngestionEndpoint", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -6014,7 +6014,7 @@ func (m *MicrosoftSentinel) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Endpoint = string(dAtA[iNdEx:postIndex])
+			m.LogIngestionEndpoint = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {

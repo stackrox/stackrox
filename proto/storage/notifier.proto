@@ -163,7 +163,7 @@ message Syslog {
 }
 
 message MicrosoftSentinel {
-  string endpoint = 1;
+  string log_ingestion_endpoint = 1;
   string data_collection_rule_id = 2;
   string stream_name = 3;
   string directory_tenant_id = 4;
