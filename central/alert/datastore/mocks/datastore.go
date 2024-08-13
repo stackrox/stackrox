@@ -127,6 +127,25 @@ func (mr *MockDataStoreMockRecorder) MarkAlertsResolvedBatch(ctx any, id ...any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAlertsResolvedBatch", reflect.TypeOf((*MockDataStore)(nil).MarkAlertsResolvedBatch), varargs...)
 }
 
+// PruneAlerts mocks base method.
+func (m *MockDataStore) PruneAlerts(ctx context.Context, ids ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx}
+	for _, a := range ids {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PruneAlerts", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PruneAlerts indicates an expected call of PruneAlerts.
+func (mr *MockDataStoreMockRecorder) PruneAlerts(ctx any, ids ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx}, ids...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PruneAlerts", reflect.TypeOf((*MockDataStore)(nil).PruneAlerts), varargs...)
+}
+
 // Search mocks base method.
 func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
