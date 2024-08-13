@@ -60,6 +60,7 @@ GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
                    -trimpath \
                    -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)" \
+                   -ldflags="-X github.com/stackrox/rox/scanner/internal/version.VulnerabilityVersion=$(SCANNER_VULNERABILITY_VERSION)" \
                    -tags=$(GOTAGS) \
                    $(RACE_FLAG)
 GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
@@ -88,16 +89,23 @@ SCANNER_DB_INIT_BUNDLE_VERSION ?= dev
 # If true enable the DB init bundle when building the db image.
 SCANNER_DB_INIT_BUNDLE_ENABLED ?= false
 
+SCANNER_VULNERABILITY_VERSION = $(shell cat VULNERABILITY_VERSION)
+
 .PHONY: all
 all: images
 
-#########
-## Tag ##
-#########
+#######################
+## Build Information ##
+#######################
 
 .PHONY: tag
 tag:
 	@echo $(TAG)
+
+.PHONY: vulnerability-version
+vulnerability-version: VULNERABILITY_VERSION
+	@echo $(SCANNER_VULNERABILITY_VERSION)
+
 
 ###############
 ## Go Builds ##
