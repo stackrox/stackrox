@@ -37,7 +37,6 @@ const rules = {
             };
         },
     },
-    // /*
     'Popover-aria-label-prop': {
         // Require prop to prevent axe DevTools issue:
         // ARIA dialog and alertdialog nodes should have an accessible name
@@ -68,7 +67,6 @@ const rules = {
             };
         },
     },
-    // */
     'Th-screenReaderText-prop': {
         // Require prop to prevent axe DevTools issue:
         // Table header text should not be empty
