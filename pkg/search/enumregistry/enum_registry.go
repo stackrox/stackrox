@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 var (
@@ -14,7 +14,7 @@ var (
 )
 
 // Add takes in a path and an enum descriptor and creates a path -> map[string enum]int32 value.
-func Add(path string, enumDescriptor *descriptor.EnumDescriptorProto) {
+func Add(path string, enumDescriptor *descriptorpb.EnumDescriptorProto) {
 	if _, ok := enumMap[path]; !ok {
 		enumMap[path] = make(map[string]int32)
 		reverseEnumMap[path] = make(map[int32]string)
