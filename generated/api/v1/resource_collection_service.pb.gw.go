@@ -359,6 +359,7 @@ func local_request_CollectionService_DryRunCollection_0(ctx context.Context, mar
 // UnaryRPC     :call CollectionServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterCollectionServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterCollectionServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server CollectionServiceServer) error {
 
 	mux.Handle("GET", pattern_CollectionService_ListCollectionSelectors_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -599,7 +600,7 @@ func RegisterCollectionServiceHandler(ctx context.Context, mux *runtime.ServeMux
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "CollectionServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "CollectionServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "CollectionServiceClient" to call the correct interceptors.
+// "CollectionServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterCollectionServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client CollectionServiceClient) error {
 
 	mux.Handle("GET", pattern_CollectionService_ListCollectionSelectors_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

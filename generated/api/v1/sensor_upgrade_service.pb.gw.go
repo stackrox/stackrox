@@ -183,6 +183,7 @@ func local_request_SensorUpgradeService_TriggerSensorCertRotation_0(ctx context.
 // UnaryRPC     :call SensorUpgradeServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterSensorUpgradeServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterSensorUpgradeServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server SensorUpgradeServiceServer) error {
 
 	mux.Handle("GET", pattern_SensorUpgradeService_GetSensorUpgradeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -323,7 +324,7 @@ func RegisterSensorUpgradeServiceHandler(ctx context.Context, mux *runtime.Serve
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "SensorUpgradeServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "SensorUpgradeServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "SensorUpgradeServiceClient" to call the correct interceptors.
+// "SensorUpgradeServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterSensorUpgradeServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client SensorUpgradeServiceClient) error {
 
 	mux.Handle("GET", pattern_SensorUpgradeService_GetSensorUpgradeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

@@ -53,6 +53,7 @@ func local_request_FeatureFlagService_GetFeatureFlags_0(ctx context.Context, mar
 // UnaryRPC     :call FeatureFlagServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterFeatureFlagServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterFeatureFlagServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server FeatureFlagServiceServer) error {
 
 	mux.Handle("GET", pattern_FeatureFlagService_GetFeatureFlags_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -118,7 +119,7 @@ func RegisterFeatureFlagServiceHandler(ctx context.Context, mux *runtime.ServeMu
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "FeatureFlagServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "FeatureFlagServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "FeatureFlagServiceClient" to call the correct interceptors.
+// "FeatureFlagServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterFeatureFlagServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client FeatureFlagServiceClient) error {
 
 	mux.Handle("GET", pattern_FeatureFlagService_GetFeatureFlags_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

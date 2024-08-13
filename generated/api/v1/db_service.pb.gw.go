@@ -195,6 +195,7 @@ func local_request_DBService_CancelRestoreProcess_0(ctx context.Context, marshal
 // UnaryRPC     :call DBServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterDBServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterDBServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server DBServiceServer) error {
 
 	mux.Handle("GET", pattern_DBService_GetExportCapabilities_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -335,7 +336,7 @@ func RegisterDBServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "DBServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "DBServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "DBServiceClient" to call the correct interceptors.
+// "DBServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterDBServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client DBServiceClient) error {
 
 	mux.Handle("GET", pattern_DBService_GetExportCapabilities_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
