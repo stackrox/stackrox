@@ -32,7 +32,8 @@ curl -k -f \
 
 test_roxctl_cmd() {
   echo "Testing command: roxctl " "$@"
-
+  local password="$ROX_ADMIN_PASSWORD"
+  ROX_ADMIN_PASSWORD=""
   # Verify that specifying a token file works.
   if OUTPUT=$(roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     --token-file "$TOKEN_FILE" \
@@ -98,6 +99,7 @@ test_roxctl_cmd() {
 
   # Verify that a password on the command line has precedence over token in the environment
   if OUTPUT=$(ROX_API_TOKEN="invalid-token" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --password "$password" \
     "$@" \
     2>&1); then
       echo "[OK] --password has precedence over ROX_API_TOKEN environment variable"
