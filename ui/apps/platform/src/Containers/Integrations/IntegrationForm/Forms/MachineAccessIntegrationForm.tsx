@@ -19,17 +19,21 @@ import {
 import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FieldArray, FormikProvider } from 'formik';
 import { ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
-import { IntegrationFormProps } from 'Containers/Integrations/IntegrationForm/integrationFormTypes';
-import useIntegrationForm from 'Containers/Integrations/IntegrationForm/useIntegrationForm';
+
 import FormMessage from 'Components/PatternFly/FormMessage';
-import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
-import IntegrationFormActions from 'Containers/Integrations/IntegrationForm/IntegrationFormActions';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import PopoverBodyContent from 'Components/PopoverBodyContent';
 import SelectSingle from 'Components/SelectSingle';
 import { fetchRolesAsArray, Role } from 'services/RolesService';
 import { MachineConfigType } from 'services/MachineAccessService';
-import { getAxiosErrorMessage } from '../../../../utils/responseErrorUtils';
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+
+import { IntegrationFormProps } from 'Containers/Integrations/IntegrationForm/integrationFormTypes';
+import useIntegrationForm from 'Containers/Integrations/IntegrationForm/useIntegrationForm';
+import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
+import IntegrationFormActions from 'Containers/Integrations/IntegrationForm/IntegrationFormActions';
 
 export type MachineAccessConfig = {
     id: string;
@@ -194,7 +198,7 @@ function MachineAccessIntegrationForm({
                                 </HelperText>
                             </FormHelperText>
                         </FormLabelGroup>
-                        <FormSection title="Rules" titleElement="h3" className="pf-v5-u-mt-0">
+                        <FormSection title="Rules" titleElement="h2" className="pf-v5-u-mt-0">
                             <FieldArray
                                 name="mappings"
                                 render={(arrayHelpers) => (
@@ -231,20 +235,24 @@ function MachineAccessIntegrationForm({
                                                             label="Value"
                                                             labelIcon={
                                                                 <Popover
+                                                                    aria-label="Use regex to enter values"
                                                                     bodyContent={
-                                                                        <div>
-                                                                            <a
-                                                                                href="https://golang.org/s/re2syntax"
-                                                                                target="_blank"
-                                                                                rel="noreferrer"
-                                                                            >
-                                                                                Learn how to use
-                                                                                regex here
-                                                                            </a>
-                                                                        </div>
-                                                                    }
-                                                                    headerContent={
-                                                                        'Use regex to enter values'
+                                                                        <PopoverBodyContent
+                                                                            headerContent="Use regex to enter values"
+                                                                            bodyContent={
+                                                                                <ExternalLink>
+                                                                                    <a
+                                                                                        href="https://golang.org/s/re2syntax"
+                                                                                        target="_blank"
+                                                                                        rel="noreferrer"
+                                                                                    >
+                                                                                        Learn how to
+                                                                                        use regex
+                                                                                        here
+                                                                                    </a>
+                                                                                </ExternalLink>
+                                                                            }
+                                                                        />
                                                                     }
                                                                 >
                                                                     {

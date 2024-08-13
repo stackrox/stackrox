@@ -3,6 +3,7 @@ import { Button, Popover, PopoverPosition } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons/dist/esm/icons';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import PopoverBodyContent from 'Components/PopoverBodyContent';
 import useMetadata from 'hooks/useMetadata';
 import { healthStatusLabels } from 'messages/common';
 import { getVersionedDocs } from 'utils/versioning';
@@ -62,15 +63,19 @@ function ClusterStatus({ healthStatus, isList = false }: ClusterStatusProps): Re
                                     minWidth="0px"
                                     position={PopoverPosition.top}
                                     enableFlip
-                                    headerContent={
-                                        <span className="pf-v5-u-danger-color-100">
-                                            Unhealthy Collector
-                                        </span>
+                                    bodyContent={
+                                        <PopoverBodyContent
+                                            headerContent={
+                                                <span className="pf-v5-u-danger-color-100">
+                                                    Unhealthy Collector
+                                                </span>
+                                            }
+                                            headerIcon={
+                                                <ExclamationCircleIcon className="pf-v5-u-danger-color-100" />
+                                            }
+                                            bodyContent={bodyContent}
+                                        />
                                     }
-                                    headerIcon={
-                                        <ExclamationCircleIcon className="pf-v5-u-danger-color-100" />
-                                    }
-                                    bodyContent={bodyContent}
                                 >
                                     <Button
                                         aria-label="Show troubleshooting info"

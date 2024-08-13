@@ -37,6 +37,38 @@ const rules = {
             };
         },
     },
+    // /*
+    'Popover-aria-label-prop': {
+        // Require prop to prevent axe DevTools issue:
+        // ARIA dialog and alertdialog nodes should have an accessible name
+        // https://dequeuniversity.com/rules/axe/4.9/aria-dialog-name
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Require that Popover element has aria-label prop',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Popover') {
+                        if (
+                            !node.attributes.some((nodeAttribute) => {
+                                return nodeAttribute.name?.name === 'aria-label';
+                            })
+                        ) {
+                            context.report({
+                                node,
+                                message: 'Require that Popover element has aria-label prop',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    // */
     'Th-screenReaderText-prop': {
         // Require prop to prevent axe DevTools issue:
         // Table header text should not be empty
@@ -82,6 +114,47 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
+    'no-Popover-footerContent-headerContent-props': {
+        // Forbid props that cause axe DevTools issues:
+        // Heading levels should only increase by one
+        // https://dequeuniversity.com/rules/axe/4.9/heading-order
+        // Document should not have more than one banner landmark
+        // https://dequeuniversity.com/rules/axe/4.9/landmark-no-duplicate-banner
+        // Document should not have more than one contentinfo landmark
+        // https://dequeuniversity.com/rules/axe/4.9/landmark-no-duplicate-contentinfo
+        // Ensures landmarks are unique
+        // https://dequeuniversity.com/rules/axe/4.9/landmark-unique
+        //
+        // Use PopoverBodyContent element to compose footer, or header, or both.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Forbid Popover footerContent or headerContent props',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Popover') {
+                        if (
+                            node.attributes?.some(
+                                (nodeAttribute) =>
+                                    nodeAttribute.name?.name === 'footerContent' ||
+                                    nodeAttribute.name?.name === 'headerContent'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'Forbid Popover footerContent or headerContent props and use PopoverBodyContent in bodyContent instead',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-Td-in-Thead': {
         // Forbid work-around to prevent axe DevTools issue:
         // Table header text should not be empty

@@ -6,6 +6,7 @@ function AnnotationKeyLabelIcon(): ReactElement {
     return (
         <Popover
             showClose={false}
+            aria-label="Information about annotation key"
             bodyContent={
                 <div>
                     Using an annotation key, you can define an audience to notify about policy
