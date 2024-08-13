@@ -489,7 +489,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.Equal(len(testNode.Scan.Components), count)
 
 	// Verify orphaned node vulnerabilities are removed.
-	results, err := suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery())
+	// @TODO : This test expects ROX_ORPHANED_CVES_KEEP_ALIVE to be false. Refactor this test when the flag is turned on by default
+	results, err := suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery(), true)
 	suite.NoError(err)
 	suite.ElementsMatch(cveIDsSet.AsSlice(), pkgSearch.ResultsToIDs(results))
 
@@ -508,7 +509,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.Equal(len(testNode.Scan.Components), count)
 
 	// Verify that number of node vulnerabilities remains unchanged since both nodes have same vulns.
-	results, err = suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery())
+	results, err = suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery(), true)
 	suite.NoError(err)
 	suite.ElementsMatch(cveIDsSet.AsSlice(), pkgSearch.ResultsToIDs(results))
 
@@ -549,7 +550,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.Equal(len(testNode2.Scan.Components), count)
 
 	// Verify orphaned node vulnerabilities are removed.
-	results, err = suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery())
+	// @TODO : This test expects ROX_ORPHANED_CVES_KEEP_ALIVE to be false. Refactor this test when the flag is turned on by default
+	results, err = suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery(), true)
 	suite.NoError(err)
 	suite.ElementsMatch([]string{pkgCVE.ID("cve", "")}, pkgSearch.ResultsToIDs(results))
 
@@ -571,7 +573,7 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.Equal(len(testNode2.Scan.Components), count)
 
 	// Verify no vulnerability is removed since all vulns are still connected.
-	results, err = suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery())
+	results, err = suite.nodeCVEDataStore.Search(ctx, pkgSearch.EmptyQuery(), true)
 	suite.NoError(err)
 	suite.ElementsMatch([]string{pkgCVE.ID("cve", "")}, pkgSearch.ResultsToIDs(results))
 
@@ -593,7 +595,8 @@ func (suite *NodePostgresDataStoreTestSuite) TestOrphanedNodeTreeDeletion() {
 	suite.Equal(0, count)
 
 	// Verify no vulnerabilities exist.
-	count, err = suite.nodeCVEDataStore.Count(ctx, pkgSearch.EmptyQuery())
+	// @TODO : This test expects ROX_ORPHANED_CVES_KEEP_ALIVE to be false. Refactor this test when the flag is turned on by default
+	count, err = suite.nodeCVEDataStore.Count(ctx, pkgSearch.EmptyQuery(), true)
 	suite.NoError(err)
 	suite.Equal(0, count)
 

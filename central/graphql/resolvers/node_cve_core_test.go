@@ -445,7 +445,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVESubResolvers() {
 		AddBools(search.CVESuppressed, true, false).
 		WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
 
-	s.nodeCVEDatastore.EXPECT().Search(s.ctx, expectedQ).Return(cveResults, nil)
+	s.nodeCVEDatastore.EXPECT().Search(s.ctx, expectedQ, false).Return(cveResults, nil)
 	s.nodeCVEDatastore.EXPECT().GetBatch(s.ctx, cveIDsToTest).Return(nodeCVEs, nil)
 	vulns, err := response.DistroTuples(s.ctx)
 	s.Nil(err)

@@ -134,7 +134,7 @@ func (suite *NodeCVELoaderTestSuite) TestFromQuery() {
 			ID: nodeCve2,
 		},
 	}
-	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
+	suite.mockDataStore.EXPECT().Search(suite.ctx, query, false).Return(results, nil)
 
 	cves, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
@@ -155,7 +155,7 @@ func (suite *NodeCVELoaderTestSuite) TestFromQuery() {
 			ID: nodeCve3,
 		},
 	}
-	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
+	suite.mockDataStore.EXPECT().Search(suite.ctx, query, false).Return(results, nil)
 
 	thirdCVE := &storage.NodeCVE{Id: "nodeCve3"}
 	suite.mockDataStore.EXPECT().GetBatch(suite.ctx, []string{nodeCve3}).
@@ -181,7 +181,7 @@ func (suite *NodeCVELoaderTestSuite) TestFromQuery() {
 			ID: nodeCve3,
 		},
 	}
-	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
+	suite.mockDataStore.EXPECT().Search(suite.ctx, query, false).Return(results, nil)
 
 	cves, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)

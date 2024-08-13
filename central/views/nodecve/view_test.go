@@ -148,7 +148,7 @@ func (s *NodeCVEViewTestSuite) SetupSuite() {
 
 	cveStore, err := nodeCVEDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
-	storedCves, err := cveStore.SearchRawCVEs(s.ctx, nil)
+	storedCves, err := cveStore.SearchRawCVEs(s.ctx, nil, true)
 	s.Require().NoError(err)
 	s.cveCreateMap = make(map[string]*storage.NodeCVE)
 	for _, c := range storedCves {
