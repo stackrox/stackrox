@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -12,6 +14,8 @@ func init() {
 		PullSecretEntriesCount,
 		PullSecretEntriesSize,
 		CentralIntegrationsCount,
+		TLSCheckCacheHitCount,
+		TLSCheckDuration,
 	)
 }
 
@@ -49,7 +53,21 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "registry_store_central_integrations_count",
-		Help:      "Current number of stored image integrations from Central.",
+		Help:      "Current number of stored image integrations from Central",
+	})
+
+	TLSCheckCacheHitCount = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "registry_store_tls_check_cache_hit_count",
+		Help:      "The total number of TLS Checks that used the cache",
+	})
+
+	TLSCheckDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "registry_store_tls_check_duration_seconds",
+		Help:      "Time taken in seconds to perform a TLS check on a registry host",
 	})
 )
 
@@ -88,8 +106,18 @@ func SetCentralIntegrationCount(size int) {
 	CentralIntegrationsCount.Set(float64(size))
 }
 
-// ResetRegistryStoreMetrics resets the counts of all registry store metrics.
-func ResetRegistryStoreMetrics() {
+// IncrementTlSCheckCacheHitCount adds to the total count of TLS check cache hits.
+func IncrementTLSCheckCacheHitCount() {
+	TLSCheckCacheHitCount.Inc()
+}
+
+// ObserveTLSCheckDuration observes the time in seconds taken to perform a TLS check.
+func ObserveTLSCheckDuration(t time.Duration) {
+	TLSCheckDuration.Observe(t.Seconds())
+}
+
+// ResetRegistryMetrics resets the count and size metrics for registry store entries.
+func ResetRegistryMetrics() {
 	ClusterLocalHostsCount.Set(0)
 	GlobalSecretEntriesCount.Set(0)
 	PullSecretEntriesCount.Set(0)

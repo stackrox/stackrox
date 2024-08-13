@@ -2,12 +2,14 @@ package registry
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/sensor/common/registry/metrics"
 )
 
 type tlsCheckResult uint8
@@ -41,7 +43,10 @@ type cacheEntry struct {
 // previous check. Returns true for skip if there was a previous error.
 func (e *cacheEntry) checkTLS(ctx context.Context, registry string, checkTLSFunc CheckTLS) (secure bool, skip bool, err error) {
 	e.once.Do(func() {
+		start := time.Now()
 		secure, err = checkTLSFunc(ctx, registry)
+		metrics.ObserveTLSCheckDuration(time.Since(start))
+
 		if err != nil {
 			e.result = tlsCheckResultError
 			return
@@ -89,6 +94,7 @@ func (c *tlsCheckCacheImpl) CheckTLS(ctx context.Context, registry string) (secu
 	// allocations on cache hits.
 	entry, ok := c.results.Get(registry)
 	if ok {
+		metrics.IncrementTLSCheckCacheHitCount()
 		return entry.checkTLS(ctx, registry, c.checkTLSFunc)
 	}
 
