@@ -115,16 +115,22 @@ func runAsyncTLSChecks(cache *tlsCheckCacheImpl, regs []string) {
 }
 
 func TestMetrics(t *testing.T) {
-	c := newTLSCheckCache(alwaysSecureCheckTLS)
-	_, _, err := c.CheckTLS(ctx, "fake")
-	assert.NoError(t, err)
-	assert.Equal(t, 0.0, testutil.ToFloat64(metrics.TLSCheckCacheHitCount))
+	cache := newTLSCheckCache(alwaysSecureCheckTLS)
+	_, _, err := cache.CheckTLS(ctx, "fake")
 
-	_, _, err = c.CheckTLS(ctx, "fake")
-	assert.NoError(t, err)
-	assert.Equal(t, 1.0, testutil.ToFloat64(metrics.TLSCheckCacheHitCount))
+	c := metrics.TLSCheckCacheHitCount
+	// Counter metrics cannot be reset, so use the the current
+	// value as a base and test relative changes.
+	base := testutil.ToFloat64(c)
 
-	_, _, err = c.CheckTLS(ctx, "fake")
 	assert.NoError(t, err)
-	assert.Equal(t, 2.0, testutil.ToFloat64(metrics.TLSCheckCacheHitCount))
+	assert.Equal(t, base, testutil.ToFloat64(c))
+
+	_, _, err = cache.CheckTLS(ctx, "fake")
+	assert.NoError(t, err)
+	assert.Equal(t, base+1, testutil.ToFloat64(c))
+
+	_, _, err = cache.CheckTLS(ctx, "fake")
+	assert.NoError(t, err)
+	assert.Equal(t, base+2, testutil.ToFloat64(c))
 }

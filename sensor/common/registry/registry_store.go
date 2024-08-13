@@ -133,7 +133,7 @@ func (rs *Store) Cleanup() {
 	rs.cleanupDelegatedRegistryConfig()
 	rs.tlsCheckCache.Cleanup()
 
-	metrics.ResetRegistryStoreMetrics()
+	metrics.ResetRegistryMetrics()
 }
 
 func (rs *Store) cleanupRegistries() {
@@ -534,10 +534,13 @@ func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registryAdd
 		secretNameToHost[secretName] = hostToRegistry
 	}
 
-	if _, ok := hostToRegistry[registryAddr]; !ok {
-		// Only increment if an entry will be inserted.
+	oldreg, ok := hostToRegistry[registryAddr]
+	if !ok {
 		metrics.IncrementPullSecretEntriesCount(1)
 		metrics.IncrementPullSecretEntriesSize(reg.Source().SizeVT())
+	} else {
+		// Adjust the the size based on the diff between the old and the new entry.
+		metrics.IncrementPullSecretEntriesSize(reg.Source().SizeVT() - oldreg.Source().SizeVT())
 	}
 
 	hostToRegistry[registryAddr] = reg
