@@ -402,6 +402,7 @@ func local_request_AuthProviderService_ExchangeToken_0(ctx context.Context, mars
 // UnaryRPC     :call AuthProviderServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterAuthProviderServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterAuthProviderServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server AuthProviderServiceServer) error {
 
 	mux.Handle("GET", pattern_AuthProviderService_ListAvailableProviderTypes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -667,7 +668,7 @@ func RegisterAuthProviderServiceHandler(ctx context.Context, mux *runtime.ServeM
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "AuthProviderServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "AuthProviderServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "AuthProviderServiceClient" to call the correct interceptors.
+// "AuthProviderServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterAuthProviderServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client AuthProviderServiceClient) error {
 
 	mux.Handle("GET", pattern_AuthProviderService_ListAvailableProviderTypes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

@@ -53,6 +53,7 @@ func local_request_CentralHealthService_GetUpgradeStatus_0(ctx context.Context, 
 // UnaryRPC     :call CentralHealthServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterCentralHealthServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterCentralHealthServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server CentralHealthServiceServer) error {
 
 	mux.Handle("GET", pattern_CentralHealthService_GetUpgradeStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -118,7 +119,7 @@ func RegisterCentralHealthServiceHandler(ctx context.Context, mux *runtime.Serve
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "CentralHealthServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "CentralHealthServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "CentralHealthServiceClient" to call the correct interceptors.
+// "CentralHealthServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterCentralHealthServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client CentralHealthServiceClient) error {
 
 	mux.Handle("GET", pattern_CentralHealthService_GetUpgradeStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

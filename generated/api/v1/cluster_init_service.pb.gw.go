@@ -123,6 +123,7 @@ func local_request_ClusterInitService_GenerateInitBundle_0(ctx context.Context, 
 // UnaryRPC     :call ClusterInitServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterClusterInitServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterClusterInitServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ClusterInitServiceServer) error {
 
 	mux.Handle("PATCH", pattern_ClusterInitService_RevokeInitBundle_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -263,7 +264,7 @@ func RegisterClusterInitServiceHandler(ctx context.Context, mux *runtime.ServeMu
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ClusterInitServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ClusterInitServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "ClusterInitServiceClient" to call the correct interceptors.
+// "ClusterInitServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterClusterInitServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ClusterInitServiceClient) error {
 
 	mux.Handle("PATCH", pattern_ClusterInitService_RevokeInitBundle_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

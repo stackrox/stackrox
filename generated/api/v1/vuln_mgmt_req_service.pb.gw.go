@@ -459,6 +459,7 @@ func local_request_VulnerabilityRequestService_DeleteVulnerabilityRequest_0(ctx 
 // UnaryRPC     :call VulnerabilityRequestServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterVulnerabilityRequestServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterVulnerabilityRequestServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server VulnerabilityRequestServiceServer) error {
 
 	mux.Handle("GET", pattern_VulnerabilityRequestService_GetVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -724,7 +725,7 @@ func RegisterVulnerabilityRequestServiceHandler(ctx context.Context, mux *runtim
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "VulnerabilityRequestServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "VulnerabilityRequestServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "VulnerabilityRequestServiceClient" to call the correct interceptors.
+// "VulnerabilityRequestServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterVulnerabilityRequestServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client VulnerabilityRequestServiceClient) error {
 
 	mux.Handle("GET", pattern_VulnerabilityRequestService_GetVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
