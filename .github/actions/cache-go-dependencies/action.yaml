@@ -27,7 +27,3 @@ runs:
     - name: Download Go modules
       run: make deps --always-make
       shell: bash
-
-    - name: Enable Go telemetry
-      run: make enable-go-telemetry
-      shell: bash

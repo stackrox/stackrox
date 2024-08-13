@@ -140,7 +140,6 @@ $(call go-tool, PROTOLOCK_BIN, github.com/nilslice/protolock/cmd/protolock, tool
 $(call go-tool, GOVULNCHECK_BIN, golang.org/x/vuln/cmd/govulncheck, tools/linters)
 $(call go-tool, IMAGE_PREFETCHER_DEPLOY_BIN, github.com/stackrox/image-prefetcher/deploy, tools/test)
 $(call go-tool, PROMETHEUS_METRIC_PARSER_BIN, github.com/stackrox/prometheus-metric-parser, tools/test)
-$(call go-tool, GO_TELEMETRY_BIN, golang.org/x/telemetry/cmd/gotelemetry, tools/telemetry)
 
 ###########
 ## Style ##
@@ -833,7 +832,3 @@ print-image-prefetcher-deploy-bin:
 .PHONY: prometheus-metric-parser
 prometheus-metric-parser: $(PROMETHEUS_METRIC_PARSER_BIN)
 	@echo $(PROMETHEUS_METRIC_PARSER_BIN)
-
-.PHONY: enable-go-telemetry
-enable-go-telemetry: $(GO_TELEMETRY_BIN)
-	$(GO_TELEMETRY_BIN) on
