@@ -25,8 +25,11 @@ runs:
         key: go-build-v1-${{ github.job }}-${{ hashFiles('**/go.sum') }}
 
     - name: Enable Go telemetry
-      run: go run golang.org/x/telemetry/cmd/gotelemetry@latest on
-      shell: bash
+      uses: gacts/run-and-post-run@674528335da98a7afc80915ff2b4b860a0b3553a # v1.4.0
+      with:
+        shell: bash
+        run: go run golang.org/x/telemetry/cmd/gotelemetry@latest on
+        post: go run golang.org/x/telemetry/cmd/gotelemetry@latest upload
 
     - name: Download Go modules
       run: make deps --always-make
