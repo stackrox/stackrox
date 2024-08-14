@@ -78,7 +78,7 @@ message NetworkEntityInfo {
   message ExternalSource {
     string name = 1;
     oneof source {
-      string cidr = 2;
+      string cidr = 2; // @gotags: sql:"type(cidr),index" search:"External Source Address,hidden"
     }
     // `default` indicates whether the external source is user-generated or system-generated.
     bool default = 3; // @gotags: search:"Default External Source,hidden"
