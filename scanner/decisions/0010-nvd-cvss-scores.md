@@ -1,4 +1,4 @@
-# 0009 - NVD CVSS Scores
+# 0010 - NVD CVSS Scores
 
 - **Author(s):** Ross Tannenbaum and Yi Li
 - **Created:** [2024-04-11 Thurs]
@@ -77,7 +77,7 @@ message VulnerabilityReport {
       SEVERITY_CRITICAL = 4;
     }
     message CVSS {
-      enum Source {
+      enum Source { <-- New field
         SOURCE_UNKNOWN = 0;
         SOURCE_RED_HAT = 1;
         SOURCE_OSV = 2;
@@ -108,10 +108,10 @@ message VulnerabilityReport {
 
 There will be a new type plus two new fields added:
 
-* `CVSS.Source`
-  * This specifies the supported CVSS metrics data sources.
-* `CVSS.source`
-  * This specifies the source of the particular CVSS metrics.
+* **enum** `CVSS.Source`
+  * This is the **enum** that specifies the supported CVSS metrics data sources.
+* **field** `CVSS.source`
+  * This **field** specifies the source of the particular CVSS metrics.
 * `CVSS.url`
   * This specifies the CVSS score source URL, aiding both API and UI users in tracking the origin of this metric.
 * `cvss_metrics`
