@@ -15,17 +15,20 @@ import (
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/rhel"
 	rpm2 "github.com/quay/claircore/rpm"
-	"github.com/quay/zlog"
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/compliance/collection/intervals"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 )
 
-// The layer carries a hardcoded digest, as it is exclusively used for passing
-// ClairCore checks, not for Scanners matching
-var layerDigest = fmt.Sprintf("sha256:%s", strings.Repeat("a", 64))
+var (
+	// The layer carries a hardcoded digest, as it is exclusively used for passing
+	// ClairCore checks, not for Scanners matching
+	layerDigest = fmt.Sprintf("sha256:%s", strings.Repeat("a", 64))
+	log         = logging.LoggerForModule()
+)
 
 type localNodeIndexer struct {
 }
@@ -117,7 +120,7 @@ func runPackageScanner(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	}
 	pck = filterPackages(ctx, pck)
 	if pck != nil {
-		zlog.Info(ctx).Msgf("Num packages found: %v", len(pck))
+		log.Infof("Num packages found: %d", len(pck))
 	}
 	for i, p := range pck {
 		p.ID = fmt.Sprintf("%d", i)
@@ -160,7 +163,7 @@ func runRepositoryScanner(ctx context.Context, l *claircore.Layer) ([]*claircore
 		return nil, errors.Wrap(err, "failed to scan repositories")
 	}
 	if reps != nil {
-		zlog.Info(ctx).Msgf("Num repositories found: %v", len(reps))
+		log.Infof("Num repositories found: %v", len(reps))
 	}
 	for i, r := range reps {
 		r.ID = fmt.Sprintf("%d", i)
@@ -169,7 +172,7 @@ func runRepositoryScanner(ctx context.Context, l *claircore.Layer) ([]*claircore
 }
 
 func constructLayer(ctx context.Context, digest string, hostPath string) (*claircore.Layer, error) {
-	zlog.Info(ctx).Msgf("Realizing mount path: %s", hostPath)
+	log.Infof("Realizing mount path: %s", hostPath)
 	desc := &claircore.LayerDescription{
 		Digest:    digest,
 		URI:       hostPath,

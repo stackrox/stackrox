@@ -125,7 +125,7 @@ func (c *Compliance) manageNodeIndexLoop(ctx context.Context) {
 					log.Errorf("Error running node scan: %v", err)
 					continue
 				}
-				log.Infof("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
+				log.Infof("Built Node Index Report with %d packages", len(report.GetContents().GetPackages()))
 			}
 
 		}
