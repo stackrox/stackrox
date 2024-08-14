@@ -1,5 +1,11 @@
 import React from 'react';
-import { SearchInput, SelectOption } from '@patternfly/react-core';
+import {
+    Divider,
+    SearchInput,
+    SelectGroup,
+    SelectList,
+    SelectOption,
+} from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
 import { SelectedEntity } from './EntitySelector';
@@ -14,6 +20,8 @@ import {
     ensureStringArray,
     getAttribute,
     getEntity,
+    hasGroupedSelectOptions,
+    hasSelectOptions,
     isSelectType,
 } from '../utils/utils';
 
@@ -150,9 +158,59 @@ function CompoundSearchFilterInputField({
     }
     if (isSelectType(attribute)) {
         const attributeLabel = attribute.displayName;
-        const selectOptions = attribute.inputProps.options;
         const { searchTerm } = attribute;
         const selection = ensureStringArray(searchFilter?.[searchTerm]);
+
+        let content: JSX.Element | JSX.Element[] = (
+            <SelectList>
+                <SelectOption isDisabled>No options available</SelectOption>
+            </SelectList>
+        );
+
+        if (
+            hasGroupedSelectOptions(attribute.inputProps) &&
+            attribute.inputProps.groupOptions.length !== 0
+        ) {
+            content = attribute.inputProps.groupOptions.map(({ name, options }, index) => {
+                return (
+                    <React.Fragment key={name}>
+                        <SelectGroup label={name}>
+                            <SelectList>
+                                {options.map((option) => (
+                                    <SelectOption
+                                        key={option.value}
+                                        hasCheckbox
+                                        value={option.value}
+                                        isSelected={selection.includes(option.value)}
+                                    >
+                                        {option.label}
+                                    </SelectOption>
+                                ))}
+                            </SelectList>
+                        </SelectGroup>
+                        {index !== options.length - 1 && <Divider component="div" />}
+                    </React.Fragment>
+                );
+            });
+        } else if (
+            hasSelectOptions(attribute.inputProps) &&
+            attribute.inputProps.options.length !== 0
+        ) {
+            content = (
+                <SelectList>
+                    {attribute.inputProps.options.map((option) => (
+                        <SelectOption
+                            key={option.value}
+                            hasCheckbox
+                            value={option.value}
+                            isSelected={selection.includes(option.value)}
+                        >
+                            {option.label}
+                        </SelectOption>
+                    ))}
+                </SelectList>
+            );
+        }
 
         return (
             <CheckboxSelect
@@ -168,22 +226,7 @@ function CompoundSearchFilterInputField({
                 ariaLabelMenu={`Filter by ${attributeLabel} select menu`}
                 toggleLabel={`Filter by ${attributeLabel}`}
             >
-                {selectOptions.length !== 0 ? (
-                    selectOptions.map((option) => {
-                        return (
-                            <SelectOption
-                                key={option.value}
-                                hasCheckbox
-                                value={option.value}
-                                isSelected={selection.includes(option.value)}
-                            >
-                                {option.label}
-                            </SelectOption>
-                        );
-                    })
-                ) : (
-                    <SelectOption isDisabled>No options available</SelectOption>
-                )}
+                {content}
             </CheckboxSelect>
         );
     }

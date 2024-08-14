@@ -15,6 +15,9 @@ import {
     LifecycleStage as PolicyLifecycleStage,
     Severity as PolicySeverity,
     EnforcementAction as PolicyEnforcementAction,
+    InactiveDeployment as AlertInactiveDeployment,
+    ViolationTime as AlertViolationTime,
+    EntityType as AlertEntityType,
 } from 'Components/CompoundSearchFilter/attributes/policy';
 import {
     ID as ClusterID,
@@ -28,10 +31,6 @@ import {
     ID as DeploymentID,
     Name as DeploymentName,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
-import {
-    InactiveDeployment as AlertInactiveDeployment,
-    ViolationTime as AlertViolationTime,
-} from 'Components/CompoundSearchFilter/attributes/alert';
 
 const searchFilterConfig: CompoundSearchFilterConfig = [
     {
@@ -43,12 +42,10 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
             PolicySeverity,
             PolicyLifecycleStage,
             PolicyEnforcementAction,
+            AlertInactiveDeployment,
+            AlertViolationTime,
+            AlertEntityType,
         ],
-    },
-    {
-        displayName: 'Policy violation',
-        searchCategory: 'ALERTS',
-        attributes: [AlertInactiveDeployment, AlertViolationTime],
     },
     {
         displayName: 'Cluster',
