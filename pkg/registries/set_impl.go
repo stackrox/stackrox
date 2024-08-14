@@ -151,7 +151,7 @@ func (e *setImpl) Clear() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	e.integrations = make(map[string]types.ImageRegistry)
+	clear(e.integrations)
 }
 
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.

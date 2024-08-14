@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func newFakeRegistry(name, username, password, url string, auto bool) *fakeRegistry {
@@ -117,4 +118,31 @@ func TestSetImpl_GetAllUnique(t *testing.T) {
 	uniqueRegistries := set.GetAllUnique()
 
 	assert.ElementsMatch(t, uniqueRegistries, []types.ImageRegistry{reg1, reg2, reg3, reg4})
+}
+
+func TestSetImpl_Clear(t *testing.T) {
+	integration := func(id string) *storage.ImageIntegration {
+		return &storage.ImageIntegration{
+			Id:                id,
+			Name:              id,
+			Type:              types.DockerType,
+			IntegrationConfig: &storage.ImageIntegration_Docker{},
+		}
+	}
+
+	factory := NewFactory(FactoryOptions{})
+
+	set := NewSet(factory)
+	assert.Equal(t, 0, set.Len())
+
+	_, err := set.UpdateImageIntegration(integration("a"))
+	require.NoError(t, err)
+	assert.Equal(t, 1, set.Len())
+
+	set.Clear()
+	assert.Equal(t, 0, set.Len())
+
+	_, err = set.UpdateImageIntegration(integration("b"))
+	require.NoError(t, err)
+	assert.Equal(t, 1, set.Len())
 }
