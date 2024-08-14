@@ -18,7 +18,13 @@ const (
 	nsEnvVar = "POD_NAMESPACE"
 )
 
-// GetPodNamespace is a heuristic to determine in what namespace a given Pod runs.
+// GetPodNamespace is a heuristic to determine in what namespace a given pod
+// runs. It relies on the POD_NAMESPACE env var being correctly set. For more
+// information on why this mechanism is the default, see
+//     https://issues.redhat.com/browse/ROX-12349
+//
+// We don't read the SAToken file anymore because it sometimes lies, see
+//     https://github.com/openshift/ci-operator/blob/master/TEMPLATES.md
 func GetPodNamespace() string {
 	sensorNamespace := os.Getenv(nsEnvVar)
 
