@@ -20,7 +20,10 @@
 
 {{/* Infer OpenShift, if needed */}}
 {{ if kindIs "invalid" $env.openshift }}
-  {{ $_ := set $env "openshift" (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
+  {{/* The API GroupVersion project.openshift.io/v1 contains the core OpenShift API 'Project' of
+       compatibility level 1, which comes with the strongest stability guarantees among the OpenShift APIs.
+       This API is available in OpenShift 3.x and 4.x. */}}
+  {{ $_ := set $env "openshift" (has "project.openshift.io/v1" $._rox._apiServer.apiResources) }}
 {{ end }}
 
 {{/* Infer openshift version */}}
@@ -29,7 +32,7 @@
   {{ $kubeVersion := semver $.Capabilities.KubeVersion.Version }}
 
   {{/* Default to OpenShift 3 if no openshift resources are available, i.e. in helm template commands */}}
-  {{ if not (has "apps.openshift.io/v1" $._rox._apiServer.apiResources) }}
+  {{ if not (has "project.openshift.io/v1" $._rox._apiServer.apiResources) }}
     {{ $_ := set $._rox.env "openshift" 3 }}
   {{ else if gt $kubeVersion.Minor 11 }}
     {{ $_ := set $env "openshift" 4 }}
