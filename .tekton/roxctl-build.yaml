@@ -71,7 +71,7 @@ spec:
 
   timeouts:
     # The tasks regularly takes 1h to finish.
-    tasks: 1h
+    tasks: 3m
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 1h10m
