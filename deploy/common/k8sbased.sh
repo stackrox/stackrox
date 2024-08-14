@@ -396,6 +396,12 @@ function launch_central {
         )
       fi
 
+      if [[ -n "$CENTRAL_PERSISTENCE_NONE" ]]; then
+        helm_args+=(
+          --set central.persistence.none="true"
+        )
+      fi
+
       if [[ -n "$ROX_OPENSHIFT_VERSION" ]]; then
         helm_args+=(
           --set env.openshift="${ROX_OPENSHIFT_VERSION}"
