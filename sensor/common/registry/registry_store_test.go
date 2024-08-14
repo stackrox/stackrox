@@ -906,13 +906,12 @@ func TestRegistyStore_Metrics(t *testing.T) {
 
 	t.Run("No crash on negative gauge", func(t *testing.T) {
 		// The size in bytes of an image integration is calculated when it is inserted into
-		// the store. It's possible that the object inserted changes internally after insertion.
-		// When the integration is deleted, the number of metric bytes deleted may not be
-		// exactly the same. For now this should be 'ok' as the number of bytes is only
-		// a rough estimate and not the actual amount of 'memory consumed', the bytes should
-		// still be 'statistically' relevant and provide a meaningful relative size for
-		// comparison / troubleshooting. This test ensures that if the gauge goes into
-		// a 'negative value' nothing will break.
+		// the store. It's possible that the integration changes internally after insertion.
+		// When the integration is deleted its size may be different creating a skew in the
+		// size metric. This should be OK as the number of bytes is only a rough estimate and
+		// not the actual amount of 'memory consumed'. The byte count should still be
+		// 'statistically' relevant and provide a meaningful relative size for comparison.
+		// This test ensures that if the gauge goes into a 'negative value' nothing will break.
 		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
 		c := metrics.PullSecretEntriesSize
 		metrics.ResetRegistryMetrics()
