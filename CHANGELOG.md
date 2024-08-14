@@ -20,6 +20,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Technical Changes
 - ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
   - To revert back to synchronous TLS checks set `ROX_SENSOR_LAZY_TLS_CHECKS` to `false` on Sensor.
+- ROX-23343: The auto-sensing within the Helm charts for detecting OpenShift clusters has been changed to depend on the `project.openshift.io/v1` APIVersion.
 
 ## [4.5.0]
 
