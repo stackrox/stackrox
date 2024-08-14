@@ -5,6 +5,12 @@ metadata:
 spec:
 
   finally:
+  - name: slack-notification
+    params:
+    - name: message
+      value: ':x: `{{event_type}}` pipeline for <https://console.redhat.com/application-pipeline/workspaces/rh-acs/applications/acs/pipelineruns/$(context.pipelineRun.name)|$(context.pipelineRun.name)> (`$(params.output-image-repo)`, revision <$(params.git-url)/commit/$(params.revision)|$(params.revision)>) has failed.'
+    - name: key-name
+      value: 'acs-konflux-notifications'
   - name: show-sbom
     params:
     - name: IMAGE_URL

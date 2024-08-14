@@ -60,7 +60,11 @@ spec:
 
   # The pipeline regularly takes >1h to finish.
   timeouts:
-    pipeline: 1h30m0s
+    # The tasks regularly takes 1h to finish.
+    tasks: 1h30m
+    # Reserve time for final tasks to run.
+    finally: 10m
+    pipeline: 1h40m
 
   pipelineRef:
     name: main-pipeline
