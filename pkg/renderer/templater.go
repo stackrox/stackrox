@@ -30,8 +30,7 @@ type ExternalPersistenceInstance struct {
 
 // ExternalPersistence is wrapper around the definitions for data held in a volume
 type ExternalPersistence struct {
-	Central *ExternalPersistenceInstance
-	DB      *ExternalPersistenceInstance
+	DB *ExternalPersistenceInstance
 }
 
 // HostPathPersistenceInstance describes the parameters for a bind mount
@@ -41,10 +40,9 @@ type HostPathPersistenceInstance struct {
 	NodeSelectorValue string
 }
 
-// HostPathPersistence wraps the instances of bind mounts for Central and Central DB
+// HostPathPersistence wraps the instances of bind mounts for Central DB
 type HostPathPersistence struct {
-	Central *HostPathPersistenceInstance
-	DB      *HostPathPersistenceInstance
+	DB *HostPathPersistenceInstance
 }
 
 // WithNodeSelector is a helper function for the templater that returns if node selectors are used
@@ -167,19 +165,9 @@ type Config struct {
 	EnablePodSecurityPolicies bool
 }
 
-// HasCentralHostPath returns if a Central is configured with host path
-func (c Config) HasCentralHostPath() bool {
-	return c.HostPath != nil && c.HostPath.Central != nil
-}
-
 // HasCentralDBHostPath returns if a Central DB is configured with host path
 func (c Config) HasCentralDBHostPath() bool {
 	return c.HostPath != nil && c.HostPath.DB != nil
-}
-
-// HasCentralExternal returns if a Central is configured with an external volume
-func (c Config) HasCentralExternal() bool {
-	return c.External != nil && c.External.Central != nil
 }
 
 // HasCentralDBExternal returns if a Central DB is configured with an external volume
