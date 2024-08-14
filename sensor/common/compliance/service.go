@@ -41,6 +41,7 @@ func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *s
 	return &serviceImpl{
 		output:                    make(chan *compliance.ComplianceReturn),
 		nodeInventories:           make(chan *storage.NodeInventory),
+		indexReportWraps:          make(chan *IndexReportWrap),
 		complianceC:               complianceC,
 		orchestrator:              orchestrator,
 		auditEvents:               auditEventsInput,

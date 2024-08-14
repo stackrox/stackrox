@@ -161,11 +161,12 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *mes
 			}
 		case wrap, ok := <-c.reportWraps:
 			if !ok {
+				log.Warn("Report wraps channel is closed")
 				c.stopper.Flow().StopWithError(errInputChanClosed)
 				return
 			}
 			if !c.centralReady.IsDone() {
-				log.Warn("Received Index Reoprt but Central is not reachable. Skipping for now")
+				log.Warn("Received Index Report but Central is not reachable. Skipping for now")
 				continue
 			}
 			if wrap == nil || wrap.IndexReport == nil {
