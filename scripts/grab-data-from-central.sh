@@ -46,8 +46,7 @@ main() {
     fi
 
     mkdir -p "${dest}"
-    ROX_ADMIN_PASSWORD="${ROX_PASSWORD}" \
-    roxctl -e "${api_endpoint}" --insecure-skip-tls-verify central backup --output "${dest}"
+    roxctl -e "${api_endpoint}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central backup --output "${dest}"
 
     # Pull some data not found from the database
     set +e
