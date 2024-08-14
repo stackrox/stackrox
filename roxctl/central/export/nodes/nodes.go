@@ -4,10 +4,10 @@ import (
 	"context"
 	"io"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
@@ -38,8 +38,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		if err != nil {
 			return errors.Wrap(err, "could not initialize stream client")
 		}
-
-		marshaler := &jsonpb.Marshaler{}
 		for {
 			node, err := client.Recv()
 			if err != nil {
@@ -48,7 +46,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 				}
 				return errors.Wrap(err, "stream broken by unexpected error")
 			}
-			if err := marshaler.Marshal(cliEnvironment.InputOutput().Out(), node); err != nil {
+			if err := jsonutil.Marshal(cliEnvironment.InputOutput().Out(), node); err != nil {
 				return errors.Wrap(err, "unable to serialize node")
 			}
 		}
