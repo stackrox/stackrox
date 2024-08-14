@@ -1,12 +1,5 @@
 import React, { ReactElement } from 'react';
-import {
-    Select,
-    SelectOption,
-    SelectList,
-    MenuToggle,
-    MenuToggleElement,
-    Badge,
-} from '@patternfly/react-core';
+import { Select, SelectOption, MenuToggle, MenuToggleElement, Badge } from '@patternfly/react-core';
 import { ensureString } from '../utils/utils';
 
 type CheckboxSelectProps = {
@@ -66,7 +59,7 @@ function CheckboxSelect({
             toggle={toggle}
             shouldFocusToggleOnSelect
         >
-            <SelectList>{children}</SelectList>
+            {children}
         </Select>
     );
 }
