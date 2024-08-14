@@ -381,9 +381,8 @@ deploy_sensor_via_operator() {
     # shellcheck disable=SC2016
     echo "${ROX_ADMIN_PASSWORD}" | \
     kubectl -n "${central_namespace}" exec -i deploy/central -- bash -c \
-    'roxctl central init-bundles generate my-test-bundle \
+    'ROX_ADMIN_PASSWORD=$(cat) roxctl central init-bundles generate my-test-bundle \
         --insecure-skip-tls-verify \
-        --password "$(cat)" \
         --output-secrets -' \
     | kubectl -n "${sensor_namespace}" apply -f -
 

@@ -84,8 +84,8 @@ echo "Generating an init bundle with stackrox-secured-cluster-services provision
 
 # shellcheck disable=SC2016
 echo "$ROX_ADMIN_PASSWORD" | \
-kubectl -n stackrox exec -i deploy/central -- bash -c 'roxctl --insecure-skip-tls-verify \
-  --password "$(cat)" \
+kubectl -n stackrox exec -i deploy/central -- bash -c 'ROX_ADMIN_PASSWORD=$(cat) \
+  roxctl --insecure-skip-tls-verify \
   central init-bundles generate stackrox-init-bundle --output -' 1> stackrox-init-bundle.yaml
 
 installflags=()
