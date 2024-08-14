@@ -50,8 +50,12 @@ func init() {
 
 // clientSetImpl implements our client.Interface
 type clientSetImpl struct {
-	kubernetes kubernetes.Interface
-	dynamic    dynamic.Interface
+	kubernetes        kubernetes.Interface
+	dynamic           dynamic.Interface
+	openshiftApps     appVersioned.Interface
+	openshiftConfig   configVersioned.Interface
+	openshiftRoute    routeVersioned.Interface
+	openshiftOperator operatorVersioned.Interface
 }
 
 // Kubernetes returns the fake Kubernetes clientset
@@ -61,12 +65,12 @@ func (c *clientSetImpl) Kubernetes() kubernetes.Interface {
 
 // OpenshiftApps returns nil for the openshift client for config
 func (c *clientSetImpl) OpenshiftApps() appVersioned.Interface {
-	return nil
+	return c.openshiftApps
 }
 
 // OpenshiftConfig returns nil for the openshift client for apps
 func (c *clientSetImpl) OpenshiftConfig() configVersioned.Interface {
-	return nil
+	return c.openshiftConfig
 }
 
 // Dynamic returns nil
@@ -76,12 +80,12 @@ func (c *clientSetImpl) Dynamic() dynamic.Interface {
 
 // OpenshiftRoute implements the client interface.
 func (c *clientSetImpl) OpenshiftRoute() routeVersioned.Interface {
-	return nil
+	return c.openshiftRoute
 }
 
 // OpenshiftOperator implements the client interface.
 func (c *clientSetImpl) OpenshiftOperator() operatorVersioned.Interface {
-	return nil
+	return c.openshiftOperator
 }
 
 // WorkloadManager encapsulates running a fake Kubernetes client
@@ -243,10 +247,12 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		Resource: "customresourcedefinitions",
 	}
 
-	w.client = &clientSetImpl{
+	clientSet := &clientSetImpl{
 		kubernetes: w.fakeClient,
 		dynamic:    fakeDynamic.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{gvr: "CustomResourceDefinitionList"}),
 	}
+	initializeOpenshiftClients(clientSet)
+	w.client = clientSet
 
 	go w.clearActions()
 
