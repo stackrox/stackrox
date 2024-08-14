@@ -29,12 +29,12 @@ func AddAPITokenFile(c *cobra.Command) {
 
 // APITokenFile returns the currently specified API token file name.
 func APITokenFile() string {
-	return flagOrSettingValue(apiTokenFile, *apiTokenFileChanged, env.TokenFileEnv)
+	return flagOrSettingValue(apiTokenFile, APITokenFileChanged(), env.TokenFileEnv)
 }
 
 // APITokenFileChanged returns whether the token-file is provided as an argument.
 func APITokenFileChanged() bool {
-	return *apiTokenFileChanged
+	return apiTokenFileChanged != nil && *apiTokenFileChanged
 }
 
 // ReadTokenFromFile attempts to retrieve a token from the currently specified file.
