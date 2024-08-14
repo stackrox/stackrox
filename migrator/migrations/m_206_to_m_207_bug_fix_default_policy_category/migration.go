@@ -5,12 +5,14 @@ import (
 	"context"
 	"embed"
 
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_openshift_policy_exclusions_for_4_5/schema"
+	"github.com/stackrox/rox/migrator/migrations/m_206_to_m_207_bug_fix_default_policy_category/schema"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
+	"github.com/stackrox/rox/pkg/sac"
 	"gorm.io/gorm"
 )
 
@@ -66,48 +68,46 @@ var (
 )
 
 func updatePolicies(db *gorm.DB) error {
+	policy_category_map := map[string][]string {
+		"fb8f8732-c31d-496b-8fb1-d5abe6056e27": ["f732f1a5-1515-4e9e-9179-3ab2aefe9ad9","99cfb323-c9d3-4e0c-af64-4d0101659866"],
+		"ed8c7957-14de-40bc-aeab-d27ceeecfa7b": ["99cfb323-c9d3-4e0c-af64-4d0101659866","9d924f5d-6679-4449-8154-795449c8e754"],
+		"6226d4ad-7619-4a0b-a160-46373cfcee66": ["d2bbe19e-3009-4a0e-a701-a0b621b319a0"],
+		"dce17697-1b72-49d2-b18a-05d893cd9368": ["d2bbe19e-3009-4a0e-a701-a0b621b319a0"],
+	}
+	for policy,category := range policy_category_map{
+		add_policy_category_edge(db,policy,category)
+	}
 
-	return policymigrationhelper.MigratePoliciesWithDiffsAndStoreV2(
-		policyDiffFS,
-		policyDiffs,
-		// Get policy with specified id
-		func(ctx context.Context, id string) (*storage.Policy, bool, error) {
-			var foundPolicy schema.Policies
-			result := db.WithContext(ctx).Table(schema.PoliciesTableName).Where(&schema.Policies{ID: id}).First(&foundPolicy)
-			if result.Error != nil {
-				if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-					return nil, false, nil
-				}
-				return nil, false, result.Error
-			}
-			storagePolicy, err := schema.ConvertPolicyToProto(&foundPolicy)
-			if err != nil {
-				return nil, false, err
-			}
-			return storagePolicy, true, nil
-		},
-		// Upsert policy. Technically it should be just an update and not create because in theory policy has been verified to exist
-		func(ctx context.Context, policy *storage.Policy) error {
-			dbPolicy, err := schema.ConvertPolicyFromProto(policy)
-			if err != nil {
-				return err
-			}
-			result := db.WithContext(ctx).Table(schema.PoliciesTableName).Save(dbPolicy)
-			if result.RowsAffected != 1 {
-				return errors.Errorf("failed to save policy with id %s", policy.GetId())
-			}
-			return result.Error
-		},
-		func(context.Context) (map[string]string, error) {
-			return nil,nil
-	    },
-		func(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
-			return nil
-		},
-		func(ctx context.Context, edge *storage.PolicyCategoryEdge) error {
-			return nil
-		},
-	)
+	return nil
+}
+
+func upsertPolicyCategoryEdge(db *gorm.DB,ctx context.Context, edge *storage.PolicyCategoryEdge) error {
+	dbEdge, err := schema.ConvertPolicyCategoryEdgeFromProto(edge)
+	if err != nil {
+		return err
+	}
+	result := db.WithContext(ctx).Table(schema.PolicyCategoryEdgesTableName).Save(dbEdge)
+	if result.RowsAffected != 1 {
+		return errors.Errorf("failed to save edge for policy id %s, category id %s: %q",
+			edge.GetPolicyId(), edge.GetCategoryId(), result.Error)
+	}
+	return result.Error
+}
+
+func add_policy_category_edge(db *gorm.DB,policyID string, categories []string) error {
+	ctx := sac.WithAllAccess(context.Background())
+	for _,categoryID := range categories {
+		edge := &storage.PolicyCategoryEdge{
+			Id:         uuid.NewV4().String(),
+			PolicyId:   policyID,
+			CategoryId: categoryID,
+		}
+		err := upsertPolicyCategoryEdge(db, ctx, edge)
+		if err != nil{
+		return err
+		}
+	}
+	return nil
 }
 
 func init() {

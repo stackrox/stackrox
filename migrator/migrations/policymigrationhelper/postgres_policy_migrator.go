@@ -203,3 +203,68 @@ func MigratePoliciesWithStoreV2(policiesToMigrate map[string]PolicyChanges,
 	}
 	return nil
 }
+
+// MigratePolicyCategoriesWithStoreV2 migrates policies and adds policy categories to policy proto with the given diffs.
+// This is different from MigratePoliciesWithStoreV2 since in this case we dont add any new categories to policy_categories table
+// but just update categories field in policy proto
+// The policyDiffFS should be an embedded FS that satisfies the following conditions:
+// 1. It must contain a top-level directory called "policies_before_and_after".
+// 2. That directory must contain two subdirectories: "before" and "after".
+// 3. For each policy being migrated, there must be one copy in the "before" directory and one in the "after" directory.
+// 4. The file names for a policy should match the PolicyFileName in the corresponding PolicyDiff passed in the third argument.
+// This function then automatically computes the diff for each policy, and executes the migration.
+// This method requires the caller to provide funcs that check if a policy exists,
+// fetches policy from the store and will upsert a policy to the store
+func MigratePolicyCategoriesWithStoreV2(policyDiffFS embed.FS,
+	policyDiffs []PolicyDiff,
+	getPolicy func(context.Context, string) (*storage.Policy, bool, error),
+	upsertPolicy func(context.Context, *storage.Policy) error) error {
+
+	ctx := sac.WithAllAccess(context.Background())
+	policiesToMigrate := make(map[string]PolicyChanges, len(policyDiffs))
+	preMigrationPolicies := make(map[string]*storage.Policy, len(policyDiffs))
+	for _, diff := range policyDiffs {
+		beforePolicy, err := ReadPolicyFromFile(policyDiffFS, filepath.Join(beforeDirName, diff.PolicyFileName))
+		if err != nil {
+			return err
+		}
+		afterPolicy, err := ReadPolicyFromFile(policyDiffFS, filepath.Join(afterDirName, diff.PolicyFileName))
+		if err != nil {
+			return err
+		}
+		if beforePolicy.GetId() == "" || beforePolicy.GetId() != afterPolicy.GetId() {
+			return errors.Errorf("policies in file %s don't both have the same, non-empty, id", diff.PolicyFileName)
+		}
+		updates, err := diffPolicies(beforePolicy, afterPolicy)
+		if err != nil {
+			return err
+		}
+		policiesToMigrate[beforePolicy.GetId()] = PolicyChanges{FieldsToCompare: diff.FieldsToCompare, ToChange: updates}
+		preMigrationPolicies[beforePolicy.GetId()] = beforePolicy
+	}
+
+	for policyID, updateDetails := range policiesToMigrate {
+		policy, exists, err := getPolicy(ctx, policyID)
+		if err != nil {
+			pglog.WriteToStderrf("err getting policy with id %s. Will not update.", policyID)
+			continue
+		} else if !exists {
+			pglog.WriteToStderrf("unable to find policy with id %s. Will not update.", policyID)
+			continue
+		}
+
+		comparePolicy := preMigrationPolicies[policyID]
+		if !checkIfPoliciesMatch(updateDetails.FieldsToCompare, comparePolicy, policy) {
+			pglog.WriteToStderrf("policy ID %s has already been altered. Will not update.", policyID)
+			continue
+		}
+
+		// Update policy as needed
+		updateDetails.ToChange.applyToPolicy(policy)
+		err = upsertPolicy(ctx, policy)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
