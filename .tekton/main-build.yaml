@@ -58,9 +58,9 @@ spec:
     secret:
       secretName: '{{ git_auth_secret }}'
 
-  # The pipeline regularly takes >2h to finish with multi-arch builds being the slowest.
   timeouts:
-    pipeline: 3h30m0s
+    # Slow multiarch builds may take around 2h to finish.
+    pipeline: 2h30m0s
 
   pipelineRef:
     name: main-pipeline
