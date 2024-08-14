@@ -42,6 +42,7 @@ func TestIntegration(t *testing.T) {
 			default:
 				assert.Failf(t, "unexpected call ", r.RequestURI)
 			}
+			return
 		}
 
 		switch r.RequestURI {
@@ -85,7 +86,7 @@ func TestIntegration(t *testing.T) {
             "html_url": "https://github.com/octocat"
         }`))
 			assert.NoError(t, err)
-		case "/repos/stackrox/stackrox/issues/2/comments":
+		case "/repos/stackrox/stackrox/issues/2/comments?direction=asc&sort=created":
 			_, err := w.Write([]byte(`[
     {
         "id": 1,
@@ -98,7 +99,7 @@ func TestIntegration(t *testing.T) {
     }
 ]`))
 			assert.NoError(t, err)
-		case "/repos/stackrox/stackrox/issues/500/comments":
+		case "/repos/stackrox/stackrox/issues/500/comments?direction=asc&sort=created":
 			_, err := w.Write([]byte(`[
     {
         "id": 1,
@@ -111,21 +112,26 @@ func TestIntegration(t *testing.T) {
     }
 ]`))
 			assert.NoError(t, err)
-		case "/repos/stackrox/stackrox/issues/501/comments":
+		case "/repos/stackrox/stackrox/issues/501/comments?direction=asc&page=2&sort=created":
+			_, err := w.Write([]byte(`[
+    {
+        "id": 1,
+        "html_url": "https://github.com/octocat/Hello-World/issues/1347#issuecomment-2",
+        "body": ":x: There was an error with a comment. Please edit or remove it and issue a proper command\ngot an error in a comment \"/retest-times 10000000000000000000000000000 job-name-1\": strconv.Atoi: parsing \"10000000000000000000000000000\": value out of range",
+        "user": {
+            "login": "octocat",
+            "html_url": "https://github.com/octocat"
+        }
+    }
+]`))
+			assert.NoError(t, err)
+		case "/repos/stackrox/stackrox/issues/501/comments?direction=asc&sort=created":
+			w.Header().Set("link", `<?page=2>; rel="next";`)
 			_, err := w.Write([]byte(`[
     {
         "id": 1,
         "html_url": "https://github.com/octocat/Hello-World/issues/1347#issuecomment-1",
         "body": "/retest-times 10000000000000000000000000000 job-name-1",
-        "user": {
-            "login": "octocat",
-            "html_url": "https://github.com/octocat"
-        }
-    },
-    {
-        "id": 1,
-        "html_url": "https://github.com/octocat/Hello-World/issues/1347#issuecomment-2",
-        "body": ":x: There was an error with a comment. Please edit or remove it and issue a proper command\ngot an error in a comment \"/retest-times 10000000000000000000000000000 job-name-1\": strconv.Atoi: parsing \"10000000000000000000000000000\": value out of range",
         "user": {
             "login": "octocat",
             "html_url": "https://github.com/octocat"
@@ -143,7 +149,7 @@ func TestIntegration(t *testing.T) {
 	"statuses_url": "` + server.URL + `/repos/octocat/Hello-World/statuses/6dcb09b5b57875f334f61aebed695e2e4193db5e"
 }`))
 			assert.NoError(t, err)
-		case "/repos/stackrox/stackrox/issues/132/comments":
+		case "/repos/stackrox/stackrox/issues/132/comments?direction=asc&sort=created":
 			_, err := w.Write([]byte(`[
     {
         "id": 1,
