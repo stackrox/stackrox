@@ -14,7 +14,7 @@ func init() {
 		PullSecretEntriesCount,
 		PullSecretEntriesSize,
 		CentralIntegrationsCount,
-		TLSCheckCacheHitCount,
+		TLSCheckCount,
 		TLSCheckDuration,
 	)
 }
@@ -56,18 +56,18 @@ var (
 		Help:      "Current number of stored image integrations from Central",
 	})
 
-	TLSCheckCacheHitCount = prometheus.NewCounter(prometheus.CounterOpts{
+	TLSCheckCount = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "registry_store_tls_check_cache_hit_count",
-		Help:      "The total number of TLS Checks that used the cache",
+		Name:      "registry_store_tls_check_count",
+		Help:      "The total number of TLS checks requested via the registry store",
 	})
 
 	TLSCheckDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "registry_store_tls_check_duration_seconds",
-		Help:      "Time taken in seconds to perform a TLS check on a registry host",
+		Help:      "Time taken in seconds to perform a TLS check on a registry host (does not include TLS check cache hits)",
 	})
 )
 
@@ -106,9 +106,9 @@ func SetCentralIntegrationCount(value int) {
 	CentralIntegrationsCount.Set(float64(value))
 }
 
-// IncrementTlSCheckCacheHitCount adds to the total count of TLS check cache hits.
-func IncrementTLSCheckCacheHitCount() {
-	TLSCheckCacheHitCount.Inc()
+// IncrementTLSCheckCount adds to the total count of TLS check requests made via the registry store.
+func IncrementTLSCheckCount() {
+	TLSCheckCount.Inc()
 }
 
 // ObserveTLSCheckDuration observes the time in seconds taken to perform a TLS check.

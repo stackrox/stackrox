@@ -89,12 +89,13 @@ func (c *tlsCheckCacheImpl) Cleanup() {
 // CheckTLS performs a TLS check on a registry or returns the result from a
 // previous check. Returns true for skip if there was a previous error.
 func (c *tlsCheckCacheImpl) CheckTLS(ctx context.Context, registry string) (secure bool, skip bool, err error) {
+	metrics.IncrementTLSCheckCount()
+
 	// First check the cache for an entry, and, if found, perform
 	// the TLS check. This is an optimization to avoid unnecessary
 	// allocations on cache hits.
 	entry, ok := c.results.Get(registry)
 	if ok {
-		metrics.IncrementTLSCheckCacheHitCount()
 		return entry.checkTLS(ctx, registry, c.checkTLSFunc)
 	}
 

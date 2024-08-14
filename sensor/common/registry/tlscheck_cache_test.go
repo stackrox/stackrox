@@ -118,7 +118,7 @@ func TestMetrics(t *testing.T) {
 	cache := newTLSCheckCache(alwaysSecureCheckTLS)
 	_, _, err := cache.CheckTLS(ctx, "fake")
 
-	c := metrics.TLSCheckCacheHitCount
+	c := metrics.TLSCheckCount
 	// Counter metrics cannot be reset, so use the current
 	// value as a base and test relative changes.
 	base := testutil.ToFloat64(c)
