@@ -182,7 +182,7 @@ func (s *pingServiceTestErrorImpl) Ping(context.Context, *v1.Empty) (*v1.PongMes
 	return nil, errors.Wrap(errox.InvalidArgs, "missing argument")
 }
 
-func (a *APIServerSuite) Test_GRPS_Server_Error_Response() {
+func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
 	url := "https://localhost:8080/v1/ping"
 	jsonPayload := `{"code":3, "details":[], "error":"missing argument: invalid arguments", "message":"missing argument: invalid arguments"}`
 

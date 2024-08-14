@@ -23,12 +23,33 @@ const (
 	ScrubReplacementStr = "******"
 )
 
-var (
-	mapKeysToReplace = []string{"client_secret"}
-)
+var mapKeysToReplace = []string{"client_secret"}
+
+type ScrubOption func(*scrubConfig)
+
+type scrubConfig struct {
+	scrubZeroValues bool
+}
+
+func applyScrubOptions(options ...ScrubOption) *scrubConfig {
+	cfg := &scrubConfig{scrubZeroValues: true}
+	for _, o := range options {
+		o(cfg)
+	}
+	return cfg
+}
+
+// WithScrubZeroValues specifies that zero values should not be scrubbed.
+// This is useful to indicate in the API response that a secret field has not been set.
+func WithScrubZeroValues(value bool) ScrubOption {
+	return func(o *scrubConfig) {
+		o.scrubZeroValues = value
+	}
+}
 
 // ScrubSecretsFromStructWithReplacement hides secret keys from an object with given replacement
-func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string) {
+func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string, options ...ScrubOption) {
+	cfg := applyScrubOptions(options...)
 	scrubber := func(field reflect.Value, scrubTag string) {
 		switch scrubTag {
 		case scrubTagAlways:
@@ -38,7 +59,9 @@ func ScrubSecretsFromStructWithReplacement(obj interface{}, replacement string) 
 			if field.Type() != reflect.TypeOf(replacement) {
 				utils.CrashOnError(errors.Errorf("field type mismatch %s!=%s", field.Type(), reflect.TypeOf(replacement)))
 			}
-			field.Set(reflect.ValueOf(replacement))
+			if cfg.scrubZeroValues || !field.IsZero() {
+				field.Set(reflect.ValueOf(replacement))
+			}
 		case scrubTagMapValues:
 			if field.Kind() != reflect.Map {
 				utils.CrashOnError(errors.Errorf("expected map kind, got %s", field.Kind()))

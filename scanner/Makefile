@@ -260,7 +260,7 @@ certs-namespace := $(SCANNER_CERTS_NAMESPACE)
 certs-t := $(foreach name,$(certs-names),$(certs-d)/$(name)/.verified)
 
 # Subject prefix.
-certs-subj := /C=US/ST=North Carolina/L=Raleigh/O=Red Hat, Inc./OU=Scanner
+certs-subj := /C=US/ST=North Carolina/L=Raleigh/O=Red Hat, Inc./OU=SCANNER_V4_SERVICE
 
 # DNS name or CN of the current cert target.
 cert-dns = $(notdir $(@D)).$(certs-namespace)
@@ -295,7 +295,7 @@ $(certs-d)/ca/root.pem: $(certs-d)/ca/key.pem
 	    -x509 \
 	    -nodes \
 	    -days 398 \
-	    -subj "$(certs-subj)/CN=RootCA" \
+	    -subj "$(certs-subj)/CN=StackRox Certificate Authority" \
 	    -key $< \
 	    -out $@
 

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"k8s.io/utils/env"
@@ -48,7 +49,7 @@ func main() {
 		log.Fatal("must provide --type")
 	}
 
-	mt := proto.MessageType(*protobufType)
+	mt := protoutils.MessageType(*protobufType)
 	if mt == nil {
 		log.Fatalf("type %s could not be resolved to a protobuf message type", *protobufType)
 	}

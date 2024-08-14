@@ -5,7 +5,6 @@ import { Page, Button } from '@patternfly/react-core';
 import { OutlinedCommentsIcon } from '@patternfly/react-icons';
 
 import LoadingSection from 'Components/PatternFly/LoadingSection';
-import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import { selectors } from 'reducers';
@@ -13,21 +12,11 @@ import { actions } from 'reducers/feedback';
 import { getClustersForPermissions } from 'services/RolesService';
 import { clustersBasePath } from 'routePaths';
 
-import AnnouncementBanner from './Banners/AnnouncementBanner';
-import CredentialExpiryBanner from './Banners/CredentialExpiryBanner';
-import DatabaseStatusBanner from './Banners/DatabaseStatusBanner';
-import OutdatedVersionBanner from './Banners/OutdatedVersionBanner';
-import ServerStatusBanner from './Banners/ServerStatusBanner';
-
 import Header from './Header/Header';
-
 import PublicConfigFooter from './PublicConfig/PublicConfigFooter';
-import PublicConfigHeader from './PublicConfig/PublicConfigHeader';
-
 import NavigationSidebar from './Sidebar/NavigationSidebar';
 
 import Body from './Body';
-import Notifications from './Notifications';
 import AcsFeedbackModal from './AcsFeedbackModal';
 
 function MainPage(): ReactElement {
@@ -39,15 +28,9 @@ function MainPage(): ReactElement {
     const isLoadingPublicConfig = useSelector(selectors.isLoadingPublicConfigSelector);
     const isLoadingCentralCapabilities = useSelector(selectors.getIsLoadingCentralCapabilities);
     const [isLoadingClustersCount, setIsLoadingClustersCount] = useState(false);
-
-    const isScannerV4Enabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const showFeedbackModal = useSelector(selectors.feedbackSelector);
 
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
-
-    const hasAdministrationWritePermission = hasReadWriteAccess('Administration');
-    const { isCentralCapabilityAvailable } = useCentralCapabilities();
-    const centralCanUpdateCert = isCentralCapabilityAvailable('centralCanUpdateCert');
-    const currentUserCanGenerateCert = centralCanUpdateCert && hasAdministrationWritePermission;
 
     useEffect(() => {
         if (hasWriteAccessForCluster) {
@@ -86,26 +69,6 @@ function MainPage(): ReactElement {
 
     return (
         <>
-            <Notifications />
-            <PublicConfigHeader />
-            <AnnouncementBanner />
-            <CredentialExpiryBanner
-                component="CENTRAL"
-                showCertGenerateAction={currentUserCanGenerateCert}
-            />
-            <CredentialExpiryBanner
-                component="SCANNER"
-                showCertGenerateAction={currentUserCanGenerateCert}
-            />
-            {isScannerV4Enabled && (
-                <CredentialExpiryBanner
-                    component="SCANNER_V4"
-                    showCertGenerateAction={currentUserCanGenerateCert}
-                />
-            )}
-            <OutdatedVersionBanner />
-            <DatabaseStatusBanner />
-            <ServerStatusBanner />
             <div id="PageParent">
                 <Button
                     style={{
@@ -126,7 +89,7 @@ function MainPage(): ReactElement {
                 >
                     Feedback
                 </Button>
-                <AcsFeedbackModal />
+                {showFeedbackModal && <AcsFeedbackModal />}
                 <Page
                     mainContainerId="main-page-container"
                     header={<Header />}
@@ -144,7 +107,9 @@ function MainPage(): ReactElement {
                     />
                 </Page>
             </div>
-            <PublicConfigFooter />
+            <footer>
+                <PublicConfigFooter />
+            </footer>
         </>
     );
 }

@@ -62,6 +62,5 @@ export function assertOnEachRowForColumn(
                 );
             }
             $cells.each(assertion);
-            return Promise.resolve();
         });
 }

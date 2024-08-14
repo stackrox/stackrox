@@ -25,7 +25,6 @@ export const imageComponentVulnerabilitiesFragment = gql`
         source
         layerIndex
         imageVulnerabilities(query: $query) {
-            vulnerabilityId: id
             severity
             fixedByVersion
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
@@ -64,22 +63,14 @@ function ImageComponentVulnerabilitiesTable({
                 <Tr>
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
-                    <Th>CVE Fixed in</Th>
+                    <Th>CVE fixed in</Th>
                     <Th>Source</Th>
                     <Th>Location</Th>
                 </Tr>
             </Thead>
             {sortedComponentVulns.map((componentVuln, index) => {
-                const {
-                    image,
-                    name,
-                    vulnerabilityId,
-                    version,
-                    fixedByVersion,
-                    location,
-                    source,
-                    layer,
-                } = componentVuln;
+                const { image, name, version, fixedByVersion, location, source, layer } =
+                    componentVuln;
                 // No border on the last row
                 const style =
                     index !== componentVulns.length - 1
@@ -87,15 +78,15 @@ function ImageComponentVulnerabilitiesTable({
                         : {};
 
                 return (
-                    <Tbody key={`${image.id}:${name}:${version}:${vulnerabilityId}`} style={style}>
+                    <Tbody key={`${image.id}:${name}:${version}`} style={style}>
                         <Tr>
-                            <Td>{name}</Td>
-                            <Td>{version}</Td>
-                            <Td modifier="nowrap">
+                            <Td data-label="Component">{name}</Td>
+                            <Td data-label="Version">{version}</Td>
+                            <Td data-label="CVE fixed in" modifier="nowrap">
                                 <FixedByVersion fixedByVersion={fixedByVersion} />
                             </Td>
-                            <Td>{source}</Td>
-                            <Td>
+                            <Td data-label="Source">{source}</Td>
+                            <Td data-label="Location">
                                 <ComponentLocation location={location} source={source} />
                             </Td>
                         </Tr>

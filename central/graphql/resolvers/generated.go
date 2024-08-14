@@ -908,6 +908,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"impactScore: Float!",
 		"operatingSystem: String!",
+		"orphaned: Boolean!",
+		"orphanedTime: Time",
 		"severity: VulnerabilitySeverity!",
 		"snoozeExpiry: Time",
 		"snoozeStart: Time",
@@ -10407,6 +10409,16 @@ func (resolver *nodeCVEResolver) ImpactScore(ctx context.Context) float64 {
 func (resolver *nodeCVEResolver) OperatingSystem(ctx context.Context) string {
 	value := resolver.data.GetOperatingSystem()
 	return value
+}
+
+func (resolver *nodeCVEResolver) Orphaned(ctx context.Context) bool {
+	value := resolver.data.GetOrphaned()
+	return value
+}
+
+func (resolver *nodeCVEResolver) OrphanedTime(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetOrphanedTime()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *nodeCVEResolver) Severity(ctx context.Context) string {

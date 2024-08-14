@@ -55,7 +55,6 @@ export type ComponentVulnerabilityBase = {
     source: SourceType;
     layerIndex: number | null;
     imageVulnerabilities: {
-        vulnerabilityId: string;
         severity: string;
         fixedByVersion: string;
         pendingExceptionCount: number;
@@ -69,7 +68,6 @@ export type DeploymentComponentVulnerability = Omit<
     'imageVulnerabilities'
 > & {
     imageVulnerabilities: {
-        vulnerabilityId: string;
         severity: string;
         cvss: number;
         scoreVersion: string;
@@ -89,7 +87,6 @@ export type TableDataRow = {
         } | null;
     };
     name: string;
-    vulnerabilityId: string;
     fixedByVersion: string;
     severity: VulnerabilitySeverity;
     version: string;
@@ -170,7 +167,6 @@ function extractCommonComponentFields(
         }
     }
 
-    const vulnerabilityId = vulnerability?.vulnerabilityId ?? 'N/A';
     const severity =
         vulnerability?.severity && isVulnerabilitySeverity(vulnerability.severity)
             ? vulnerability.severity
@@ -185,7 +181,6 @@ function extractCommonComponentFields(
         source,
         image,
         layer,
-        vulnerabilityId,
         severity,
         fixedByVersion,
         pendingExceptionCount,

@@ -125,7 +125,11 @@ function ImagesTable({
                     </Th>
                     <Th sort={getSortParams('Image created time')}>Age</Th>
                     <Th sort={getSortParams('Image scan time')}>Scan time</Th>
-                    {hasWriteAccessForWatchedImage && <Th aria-label="Image action menu" />}
+                    {hasWriteAccessForWatchedImage && (
+                        <Th>
+                            <span className="pf-v5-screen-reader">Image action menu</span>
+                        </Th>
+                    )}
                 </Tr>
             </Thead>
             <TbodyUnified

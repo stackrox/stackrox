@@ -3,21 +3,29 @@ import { SearchCategory } from 'services/SearchService';
 
 // Compound search filter types
 
-export type InputType = 'autocomplete' | 'text' | 'date-picker' | 'condition-number' | 'select';
+export type BaseInputType = 'autocomplete' | 'text' | 'date-picker' | 'condition-number';
+export type InputType = BaseInputType | 'select';
+export type SelectSearchFilterOptions = {
+    options: { label: string; value: string }[];
+};
+export type SelectSearchFilterGroupedOptions = {
+    groupOptions: { name: string; options: { label: string; value: string }[] }[];
+};
 
 type BaseSearchFilterAttribute = {
     displayName: string;
     filterChipLabel: string;
     searchTerm: string;
-    inputType: InputType;
+    inputType: BaseInputType;
 };
 
-export interface SelectSearchFilterAttribute extends BaseSearchFilterAttribute {
+export type SelectSearchFilterAttribute = {
+    displayName: string;
+    filterChipLabel: string;
+    searchTerm: string;
     inputType: 'select';
-    inputProps: {
-        options: { label: string; value: string }[];
-    };
-}
+    inputProps: SelectSearchFilterOptions | SelectSearchFilterGroupedOptions;
+};
 
 export type CompoundSearchFilterAttribute = BaseSearchFilterAttribute | SelectSearchFilterAttribute;
 

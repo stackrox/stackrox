@@ -191,6 +191,7 @@ func local_request_ClusterCVEService_UnsuppressCVEs_0(ctx context.Context, marsh
 // UnaryRPC     :call ImageCVEServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterImageCVEServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterImageCVEServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ImageCVEServiceServer) error {
 
 	mux.Handle("PATCH", pattern_ImageCVEService_SuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -250,6 +251,7 @@ func RegisterImageCVEServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 // UnaryRPC     :call NodeCVEServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterNodeCVEServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterNodeCVEServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server NodeCVEServiceServer) error {
 
 	mux.Handle("PATCH", pattern_NodeCVEService_SuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -309,6 +311,7 @@ func RegisterNodeCVEServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 // UnaryRPC     :call ClusterCVEServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterClusterCVEServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterClusterCVEServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ClusterCVEServiceServer) error {
 
 	mux.Handle("PATCH", pattern_ClusterCVEService_SuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -399,7 +402,7 @@ func RegisterImageCVEServiceHandler(ctx context.Context, mux *runtime.ServeMux, 
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ImageCVEServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ImageCVEServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "ImageCVEServiceClient" to call the correct interceptors.
+// "ImageCVEServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterImageCVEServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ImageCVEServiceClient) error {
 
 	mux.Handle("PATCH", pattern_ImageCVEService_SuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -496,7 +499,7 @@ func RegisterNodeCVEServiceHandler(ctx context.Context, mux *runtime.ServeMux, c
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "NodeCVEServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "NodeCVEServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "NodeCVEServiceClient" to call the correct interceptors.
+// "NodeCVEServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterNodeCVEServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client NodeCVEServiceClient) error {
 
 	mux.Handle("PATCH", pattern_NodeCVEService_SuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -593,7 +596,7 @@ func RegisterClusterCVEServiceHandler(ctx context.Context, mux *runtime.ServeMux
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ClusterCVEServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ClusterCVEServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "ClusterCVEServiceClient" to call the correct interceptors.
+// "ClusterCVEServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterClusterCVEServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ClusterCVEServiceClient) error {
 
 	mux.Handle("PATCH", pattern_ClusterCVEService_SuppressCVEs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

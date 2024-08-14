@@ -126,7 +126,11 @@ function CVEsTable({
                         Affected clusters
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
-                    {canSelectRows && <Th aria-label="CVE actions" />}
+                    {canSelectRows && (
+                        <Th>
+                            <span className="pf-v5-screen-reader">CVE actions</span>
+                        </Th>
+                    )}
                 </Tr>
             </Thead>
             <TbodyUnified

@@ -1,5 +1,15 @@
 import React, { useEffect, useMemo, useState, ReactElement } from 'react';
-import { PageSection, Bullseye, Alert, Divider, Title } from '@patternfly/react-core';
+import {
+    PageSection,
+    Bullseye,
+    Alert,
+    Divider,
+    Title,
+    Tabs,
+    Tab,
+    TabTitleText,
+    Spinner,
+} from '@patternfly/react-core';
 
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 import { getSearchOptionsForCategory } from 'services/SearchService';
@@ -12,6 +22,7 @@ import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useURLSort from 'hooks/useURLSort';
@@ -23,6 +34,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
+import { violationStateTabs } from './types';
 
 import './ViolationsTablePage.css';
 
@@ -36,6 +48,11 @@ function ViolationsTablePage(): ReactElement {
     const [searchOptions, setSearchOptions] = useState<string[]>([]);
     const { searchFilter, setSearchFilter } = useURLSearch();
 
+    const [activeViolationStateTab, setActiveViolationStateTab] = useURLStringUnion(
+        'violationState',
+        violationStateTabs
+    );
+
     const hasExecutableFilter =
         Object.keys(searchFilter).length &&
         Object.values(searchFilter).some((filter) => filter !== '');
@@ -46,6 +63,7 @@ function ViolationsTablePage(): ReactElement {
     const { page, perPage, setPage, setPerPage } = useURLPagination(50);
 
     // Handle changes in the currently displayed violations.
+    const [isLoadingAlerts, setIsLoadingAlerts] = useState(false);
     const [currentPageAlerts, setCurrentPageAlerts] = useEntitiesByIdsCache();
     const [currentPageAlertsErrorMessage, setCurrentPageAlertsErrorMessage] = useState('');
     const [alertCount, setAlertCount] = useState(0);
@@ -99,21 +117,29 @@ function ViolationsTablePage(): ReactElement {
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
+        const searchFilterWithViolationState = {
+            ...searchFilter,
+            'Violation State': activeViolationStateTab,
+        };
+
         const { request: alertRequest, cancel: cancelAlertRequest } = fetchAlerts(
-            searchFilter,
+            searchFilterWithViolationState,
             sortOption,
             page - 1,
             perPage
         );
 
         // Get the total count of alerts that match the search request.
-        const { request: countRequest, cancel: cancelCountRequest } = fetchAlertCount(searchFilter);
+        const { request: countRequest, cancel: cancelCountRequest } = fetchAlertCount(
+            searchFilterWithViolationState
+        );
 
         Promise.all([alertRequest, countRequest])
             .then(([alerts, counts]) => {
                 setCurrentPageAlerts(alerts);
                 setAlertCount(counts);
                 setCurrentPageAlertsErrorMessage('');
+                setIsLoadingAlerts(false);
             })
             .catch((error) => {
                 if (error instanceof CancelledPromiseError) {
@@ -123,6 +149,7 @@ function ViolationsTablePage(): ReactElement {
                 setAlertCount(0);
                 const parsedMessage = getAxiosErrorMessage(error);
                 setCurrentPageAlertsErrorMessage(parsedMessage);
+                setIsLoadingAlerts(false);
             });
 
         return () => {
@@ -138,6 +165,7 @@ function ViolationsTablePage(): ReactElement {
         setCurrentPageAlertsErrorMessage,
         setAlertCount,
         perPage,
+        activeViolationStateTab,
     ]);
 
     useEffect(() => {
@@ -183,8 +211,27 @@ function ViolationsTablePage(): ReactElement {
                     </>
                 )}
             </PageSection>
+            <PageSection variant="light" className="pf-v5-u-py-0">
+                <Tabs
+                    activeKey={activeViolationStateTab}
+                    onSelect={(_e, tab) => {
+                        setIsLoadingAlerts(true);
+                        setSearchFilter({});
+                        setActiveViolationStateTab(tab);
+                    }}
+                    component="nav"
+                >
+                    <Tab eventKey="ACTIVE" title={<TabTitleText>Active</TabTitleText>} />
+                    <Tab eventKey="RESOLVED" title={<TabTitleText>Resolved</TabTitleText>} />
+                </Tabs>
+            </PageSection>
             <PageSection variant="default">
-                {currentPageAlertsErrorMessage ? (
+                {isLoadingAlerts && (
+                    <Bullseye>
+                        <Spinner size="xl" />
+                    </Bullseye>
+                )}
+                {!isLoadingAlerts && currentPageAlertsErrorMessage && (
                     <Bullseye>
                         <Alert
                             variant="danger"
@@ -192,7 +239,8 @@ function ViolationsTablePage(): ReactElement {
                             component="p"
                         />
                     </Bullseye>
-                ) : (
+                )}
+                {!isLoadingAlerts && !currentPageAlertsErrorMessage && (
                     <PageSection variant="light">
                         <ViolationsTablePanel
                             violations={currentPageAlerts}

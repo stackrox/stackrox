@@ -45,7 +45,6 @@ export const selectors = {
 
     // General selectors
     filteredViewLabel: '.pf-v5-c-label:contains("Filtered view")',
-    summaryCard: (cardTitle) => `.pf-v5-c-card:contains("${cardTitle}")`,
     iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
     bulkActionMenuToggle: 'button:contains("Bulk actions")',
     menuOption: (optionText) => `*[role="menu"] button:contains("${optionText}")`,

@@ -184,7 +184,9 @@ function FlowsTable({
         <Table aria-label={label} variant="compact">
             <Thead>
                 <Tr>
-                    <Td />
+                    <Th>
+                        <span className="pf-v5-screen-reader">Row expansion</span>
+                    </Th>
                     {isEditable && (
                         <Th
                             select={{
@@ -197,7 +199,11 @@ function FlowsTable({
                     <Th>{columnNames.entity}</Th>
                     <Th modifier="nowrap">{columnNames.direction}</Th>
                     <Th modifier="nowrap">{columnNames.portAndProtocol}</Th>
-                    <Td />
+                    {isEditable && (
+                        <Th>
+                            <span className="pf-v5-screen-reader">Row actions</span>
+                        </Th>
+                    )}
                 </Tr>
             </Thead>
             {flows.map((row, rowIndex) => {

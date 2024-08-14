@@ -228,7 +228,9 @@ function DelegatedRegistriesTable({
                     {/* <Th>Order</Th> */}
                     <Th width={40}>Source registry</Th>
                     <Th width={40}>Destination cluster (CLI/API only)</Th>
-                    <Td isActionCell />
+                    <Th>
+                        <span className="pf-v5-screen-reader">Row deletion</span>
+                    </Th>
                 </Tr>
             </Thead>
             <Tbody

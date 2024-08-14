@@ -16,9 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
-	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/safe"
-	"github.com/stackrox/rox/pkg/satoken"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/admission-control/alerts"
@@ -55,11 +54,7 @@ func mainCmd() error {
 	sigC := make(chan os.Signal, 1)
 	signal.Notify(sigC, unix.SIGTERM, unix.SIGINT)
 
-	namespace, err := satoken.LoadNamespaceFromFile()
-	if err != nil {
-		namespace = namespaces.StackRox
-		log.Warnf("Failed to read namespace from service account secret: %v. Assuming default '%s' namespace...", err, namespace)
-	}
+	namespace := pods.GetPodNamespace(pods.ConsiderSATokenNamespace)
 
 	if err := safe.RunE(func() error {
 		if err := configureCA(); err != nil {
