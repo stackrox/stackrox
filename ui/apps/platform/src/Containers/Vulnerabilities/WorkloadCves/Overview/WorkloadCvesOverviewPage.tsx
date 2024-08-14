@@ -80,7 +80,9 @@ import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 import UnwatchImageModal from '../WatchedImages/UnwatchImageModal';
-import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import VulnerabilityStateTabs, {
+    vulnStateTabContentId,
+} from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import DefaultFilterModal from '../components/DefaultFilterModal';
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
@@ -396,7 +398,7 @@ function WorkloadCvesOverviewPage() {
                     )}
                 </Flex>
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }}>
+            <PageSection id={vulnStateTabContentId} padding={{ default: 'noPadding' }}>
                 <PageSection
                     padding={{ default: 'noPadding' }}
                     component="div"

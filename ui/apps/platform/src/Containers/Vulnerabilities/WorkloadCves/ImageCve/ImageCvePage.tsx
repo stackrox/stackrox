@@ -81,7 +81,9 @@ import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
 } from '../../components/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
-import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import VulnerabilityStateTabs, {
+    vulnStateTabContentId,
+} from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 const workloadCveOverviewCvePath = getOverviewPagePath('Workload', {
@@ -401,7 +403,10 @@ function ImageCvePage() {
                 )}
             </PageSection>
             <Divider component="div" />
-            <PageSection className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1">
+            <PageSection
+                id={vulnStateTabContentId}
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+            >
                 <VulnerabilityStateTabs
                     titleOverrides={{ observed: 'Workloads' }}
                     isBox
