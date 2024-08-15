@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/message"
 )
@@ -20,7 +21,7 @@ var (
 
 type nodeInventoryHandlerImpl struct {
 	inventories  <-chan *storage.NodeInventory
-	reportWraps  <-chan *IndexReportWrap
+	reportWraps  <-chan *index.IndexReportWrap
 	toCentral    <-chan *message.ExpiringMessage
 	centralReady concurrency.Signal
 	// acksFromCentral is for connecting the replies from Central with the toCompliance chan
@@ -219,7 +220,7 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.Expirin
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMessage, indexWrap *IndexReportWrap) {
+func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMessage, indexWrap *index.IndexReportWrap) {
 	if indexWrap == nil || indexWrap.IndexReport == nil {
 		return
 	}

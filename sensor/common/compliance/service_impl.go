@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"google.golang.org/grpc"
@@ -30,7 +31,7 @@ type serviceImpl struct {
 	output           chan *compliance.ComplianceReturn
 	auditEvents      chan *sensor.AuditEvents
 	nodeInventories  chan *storage.NodeInventory
-	indexReportWraps chan *IndexReportWrap
+	indexReportWraps chan *index.IndexReportWrap
 
 	complianceC <-chan common.MessageToComplianceWithAddress
 
@@ -240,7 +241,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 		case *sensor.MsgFromCompliance_IndexReport:
 			log.Infof("Received index report from %q with %d packages",
 				msg.GetNode(), len(msg.GetIndexReport().GetContents().GetPackages()))
-			s.indexReportWraps <- &IndexReportWrap{
+			s.indexReportWraps <- &index.IndexReportWrap{
 				NodeName:    msg.GetNode(),
 				IndexReport: t.IndexReport,
 			}
@@ -275,6 +276,6 @@ func (s *serviceImpl) NodeInventories() <-chan *storage.NodeInventory {
 	return s.nodeInventories
 }
 
-func (s *serviceImpl) IndexReportWraps() <-chan *IndexReportWrap {
+func (s *serviceImpl) IndexReportWraps() <-chan *index.IndexReportWrap {
 	return s.indexReportWraps
 }

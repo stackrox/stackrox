@@ -20,7 +20,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
 	common "github.com/stackrox/rox/sensor/common"
-	compliance0 "github.com/stackrox/rox/sensor/common/compliance"
+	index "github.com/stackrox/rox/sensor/common/compliance/index"
 	message "github.com/stackrox/rox/sensor/common/message"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
@@ -107,10 +107,10 @@ func (mr *MockServiceMockRecorder) Communicate(arg0 any) *gomock.Call {
 }
 
 // IndexReportWraps mocks base method.
-func (m *MockService) IndexReportWraps() <-chan *compliance0.IndexReportWrap {
+func (m *MockService) IndexReportWraps() <-chan *index.IndexReportWrap {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IndexReportWraps")
-	ret0, _ := ret[0].(<-chan *compliance0.IndexReportWrap)
+	ret0, _ := ret[0].(<-chan *index.IndexReportWrap)
 	return ret0
 }
 

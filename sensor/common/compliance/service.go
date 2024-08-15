@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 )
 
@@ -30,7 +31,7 @@ type Service interface {
 	Output() chan *compliance.ComplianceReturn
 	AuditEvents() chan *sensor.AuditEvents
 	NodeInventories() <-chan *storage.NodeInventory
-	IndexReportWraps() <-chan *IndexReportWrap
+	IndexReportWraps() <-chan *index.IndexReportWrap
 }
 
 // NewService returns the ComplianceServiceServer API for Sensor to use, outputs any received ComplianceReturns
@@ -41,7 +42,7 @@ func NewService(orchestrator orchestrator.Orchestrator, auditEventsInput chan *s
 	return &serviceImpl{
 		output:                    make(chan *compliance.ComplianceReturn),
 		nodeInventories:           make(chan *storage.NodeInventory),
-		indexReportWraps:          make(chan *IndexReportWrap),
+		indexReportWraps:          make(chan *index.IndexReportWrap),
 		complianceC:               complianceC,
 		orchestrator:              orchestrator,
 		auditEvents:               auditEventsInput,
