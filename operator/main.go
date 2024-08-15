@@ -21,7 +21,6 @@ import (
 	"crypto/tls"
 	"flag"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -34,7 +33,6 @@ import (
 	"github.com/stackrox/rox/operator/pkg/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/profiling"
 	"github.com/stackrox/rox/pkg/version"
 	rawZap "go.uber.org/zap"
@@ -48,7 +46,6 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -68,17 +65,12 @@ const (
 var (
 	setupLog                   = ctrl.Log.WithName("setup")
 	scheme                     = runtime.NewScheme()
-	enableWebhooks             = env.RegisterBooleanSetting("ENABLE_WEBHOOKS", true)
 	enableProfiling            = env.RegisterBooleanSetting("ENABLE_PROFILING", false)
 	profilingThresholdFraction = env.RegisterSetting("PROFILING_THRESHOLD_FRACTION", env.WithDefault("0.8"))
 	memLimit                   = env.RegisterIntegerSetting("MEMORY_LIMIT_BYTES", 0)
 	// Default place to put the heap dump is the /tmp directory because the container process has rights
 	// to write to this directory without creating and mounting a PVC
 	heapDumpDir = env.RegisterSetting("HEAP_DUMP_PARENT_DIR", env.WithDefault("/tmp"))
-	// Default place where controller-runtime looks for TLS artifacts.
-	// see https://github.com/kubernetes-sigs/controller-runtime/blob/v0.8.3/pkg/webhook/server.go#L96-L104
-	defaultCertDir  = filepath.Join(os.TempDir(), "k8s-webhook-server", "serving-certs")
-	defaultTLSPaths = []string{filepath.Join(defaultCertDir, "tls.crt"), filepath.Join(defaultCertDir, "tls.key")}
 	// centralLabelSelector is a kubernetes label selector that is used to filter out Central instances
 	// to be managed by this operator. If the selector is empty, all Central instances are managed.
 	// see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors
@@ -118,7 +110,7 @@ func run() error {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&enableHTTP2, "enable-http2", enableHTTP2, "If HTTP/2 should be enabled for the metrics and webhook servers.")
+	flag.BoolVar(&enableHTTP2, "enable-http2", enableHTTP2, "If HTTP/2 should be enabled for the metrics server.")
 
 	opts := zap.Options{
 		Development: !buildinfo.ReleaseBuild,
@@ -149,11 +141,6 @@ func run() error {
 		})
 	}
 
-	var webhookServer webhook.Server
-	if enableWebhooks.BooleanSetting() {
-		webhookServer = webhook.NewServer(getWebhookOptions(tlsOpts))
-	}
-
 	cacheLabelSelector := labels.SelectorFromSet(commonLabels.DefaultLabels())
 	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -179,18 +166,9 @@ func run() error {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "bf7ea6a2.stackrox.io",
-		WebhookServer:          webhookServer,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create manager")
-	}
-
-	if enableWebhooks.BooleanSetting() {
-		if err = (&platform.Central{}).SetupWebhookWithManager(mgr); err != nil {
-			return errors.Wrap(err, "unable to create Central webhook")
-		}
-	} else {
-		setupLog.Info("skipping webhook setup, ENABLE_WEBHOOKS==false")
 	}
 
 	if enableProfiling.BooleanSetting() {
@@ -246,28 +224,4 @@ func run() error {
 		return errors.Wrap(err, "problem running manager")
 	}
 	return nil
-}
-
-func getWebhookOptions(tlsOpts []func(c *tls.Config)) webhook.Options {
-	// OLM before version 0.17.0 (such as the one shipped with OpenShift 4.6) does not
-	// provide the TLS certificate/key in the location referenced by default by the controller runtime
-	// (i.e. /tmp/k8s-webhook-server/serving-certs/...).
-	// See ROX-8304 for details.
-	// If the files are missing at the default location, then we explicitly set the settings as follows
-	// to force usage of the legacy location, which is provided both by old and new OLM, but not
-	// by the "make deploy" scaffolding.
-
-	opts := webhook.Options{
-		Port:    9443,
-		TLSOpts: tlsOpts,
-	}
-
-	if ok, _ := fileutils.AllExist(defaultTLSPaths...); ok {
-		return opts
-	}
-	setupLog.Info("Webhook key and/or certificate missing at default paths, attempting use of legacy path.", "defaultTLSPaths", defaultTLSPaths)
-	opts.CertDir = "/apiserver.local.config/certificates"
-	opts.CertName = "apiserver.crt"
-	opts.KeyName = "apiserver.key"
-	return opts
 }

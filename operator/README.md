@@ -7,7 +7,6 @@ Central Services and Secured Cluster Services operator.
 All following commands should be run from this directory (`operator/`).
 
 1. Build and run operator locally. Note that this starts the operator without deploying it as a container in the cluster.  
-It does not install any webhooks either.
 See [Advanced usage](#advanced-usage) for different ways of running operator.
 
 ```bash
@@ -101,13 +100,8 @@ $ make help
 ### Launch the operator on the (local) cluster
 
 While `make install run` can launch the operator, the operator is running outside the cluster and this approach may not be sufficient to test all aspects of it.
-An example are features that need to exercise any of the webhooks.
 
 The recommended approach is the following.
-
-0. Make sure you have [cert-manager installed](https://cert-manager.io/docs/installation/).
-   It takes care of the TLS aspects of the connection from k8s API server to the webhook server
-   embedded in the manager binary.
 
 1. Build operator image
    ```bash
@@ -166,8 +160,6 @@ $ make bundle-test-image
 ```
 
 ### Launch the operator on the cluster with OLM and the bundle
-
-Note that unlike the `make deploy` route, deployment with OLM does not require cert-manager to be installed.
 
 ```bash
 # 0. Get the operator-sdk program.
