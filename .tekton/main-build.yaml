@@ -60,7 +60,10 @@ spec:
 
   timeouts:
     # Slow multiarch builds may take around 2h to finish.
-    pipeline: 2h30m0s
+    tasks: 2h30m
+    # Reserve time for final tasks to run.
+    finally: 10m
+    pipeline: 2h40m
 
   pipelineRef:
     name: main-pipeline
