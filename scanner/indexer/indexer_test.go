@@ -7,13 +7,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/google/go-containerregistry/pkg/name"
 	mockindexer "github.com/quay/claircore/test/mock/indexer"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
 func Test_parseContainerImageURL(t *testing.T) {
