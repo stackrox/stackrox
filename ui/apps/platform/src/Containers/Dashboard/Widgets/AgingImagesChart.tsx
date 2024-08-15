@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Chart, ChartAxis, ChartBar, ChartLabelProps } from '@patternfly/react-charts';
+import {
+    Chart,
+    ChartAxis,
+    ChartBar,
+    ChartContainer,
+    ChartLabelProps,
+} from '@patternfly/react-charts';
 
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
@@ -119,6 +125,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
             <Chart
                 ariaDesc="Aging images grouped by date of last update"
                 ariaTitle="Aging images"
+                containerComponent={<ChartContainer role="figure" />}
                 domainPadding={{ x: [50, 50] }}
                 height={defaultChartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width} // Victory defaults to 450
