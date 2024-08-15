@@ -97,7 +97,11 @@ func (u *upgradeController) do(doFn func() error) (err error) {
 		} else if err != nil {
 			errForMetric = err.Error()
 		}
-		observeUpgraderError(u.getSensorVersion(), u.clusterID, errForMetric, u.active.status)
+		var process *storage.ClusterUpgradeStatus_UpgradeProcessStatus
+		if u.active != nil {
+			process = u.active.status
+		}
+		observeUpgraderError(u.getSensorVersion(), u.clusterID, errForMetric, process)
 	}()
 
 	u.mutex.Lock()
