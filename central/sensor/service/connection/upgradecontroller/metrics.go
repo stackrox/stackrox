@@ -38,6 +38,9 @@ func observeUpgraderTriggered(sensorVersion, origin, clusterID string, process *
 }
 
 func observeUpgraderError(sensorVersion, clusterID, err string, process *storage.ClusterUpgradeStatus_UpgradeProcessStatus) {
+	if err == "" {
+		return
+	}
 	upgradeType := "unknown"
 	centralVersion := "unknown"
 	if process != nil {
