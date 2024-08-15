@@ -79,7 +79,7 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 			case searchPkg.CustomFieldType:
 				aliasString := strings.Join(strings.Fields(so.GetField()), "_")
 				if _, exists := selectMap[aliasString]; !exists {
-					log.Errorf("Unsupported derived field %s found in pagination.  Will be ignored", so.GetField())
+					log.Errorf("Derived field %s found in pagination sort option but not in the query selects.  Will be ignored", so.GetField())
 					continue
 				}
 
