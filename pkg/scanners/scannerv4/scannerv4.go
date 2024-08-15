@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,6 +24,7 @@ import (
 var (
 	_ types.Scanner                  = (*scannerv4)(nil)
 	_ types.ImageVulnerabilityGetter = (*scannerv4)(nil)
+	_ types.NodeMatcher              = (*scannerv4)(nil)
 
 	log = logging.LoggerForModule()
 
@@ -47,6 +50,7 @@ func Creator(set registries.Set) (string, func(integration *storage.ImageIntegra
 
 type scannerv4 struct {
 	types.ScanSemaphore
+	types.NodeMatchSemaphore
 
 	name             string
 	activeRegistries registries.Set
@@ -85,10 +89,11 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	}
 
 	scanner := &scannerv4{
-		name:             integration.GetName(),
-		activeRegistries: activeRegistries,
-		ScanSemaphore:    types.NewSemaphoreWithValue(numConcurrentScans),
-		scannerClient:    c,
+		name:               integration.GetName(),
+		activeRegistries:   activeRegistries,
+		ScanSemaphore:      types.NewSemaphoreWithValue(numConcurrentScans),
+		NodeMatchSemaphore: types.NewNodeMatchSemaphoreWithValue(numConcurrentScans), // TODO: Set custom value
+		scannerClient:      c,
 	}
 
 	return scanner, nil
@@ -208,4 +213,21 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 	)
 
 	return imageScan(image.GetMetadata(), vr), nil
+}
+
+func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {
+	nodedigest, err := name.NewDigest("registry/repository@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	if err != nil {
+		log.Errorf("Failed to parse digest from node %q: %v", node.GetName(), err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
+	defer cancel()
+
+	vr, err := s.scannerClient.GetVulnerabilities(ctx, nodedigest, indexReport.GetContents())
+	if err != nil {
+		log.Errorf("Failed to create vulnerability report: %v", err)
+	}
+
+	return vr, nil
 }

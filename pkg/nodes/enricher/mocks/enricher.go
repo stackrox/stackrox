@@ -12,6 +12,7 @@ package mocks
 import (
 	reflect "reflect"
 
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	storage "github.com/stackrox/rox/generated/storage"
 	types "github.com/stackrox/rox/pkg/scanners/types"
 	gomock "go.uber.org/mock/gomock"
@@ -67,6 +68,20 @@ func (m *MockNodeEnricher) EnrichNode(node *storage.Node) error {
 func (mr *MockNodeEnricherMockRecorder) EnrichNode(node any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNode", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNode), node)
+}
+
+// EnrichNodeWithIndexReport mocks base method.
+func (m *MockNodeEnricher) EnrichNodeWithIndexReport(node *storage.Node, indexReport *v4.IndexReport) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnrichNodeWithIndexReport", node, indexReport)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EnrichNodeWithIndexReport indicates an expected call of EnrichNodeWithIndexReport.
+func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithIndexReport(node, indexReport any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithIndexReport", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNodeWithIndexReport), node, indexReport)
 }
 
 // EnrichNodeWithInventory mocks base method.

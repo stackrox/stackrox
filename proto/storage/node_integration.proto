@@ -17,3 +17,13 @@ message NodeIntegration {
     ClairifyConfig clairify = 4;
   }
 }
+
+message NodeMatcherIntegration {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+
+  oneof IntegrationConfig {
+    ClairV4Config clairv4 = 4;
+  }
+}

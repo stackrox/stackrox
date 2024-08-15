@@ -8,6 +8,7 @@ import (
 )
 
 var _ types.NodeScannerWithDataSource = (*nodeScannerWithDataSource)(nil)
+var _ types.NodeMatcherWithDataSource = (*nodeMatcherWithDataSource)(nil)
 
 type nodeScannerWithDataSource struct {
 	nodeScanner types.NodeScanner
@@ -34,6 +35,37 @@ func (e *enricherImpl) CreateNodeScanner(source *storage.NodeIntegration) (types
 	}
 	return &nodeScannerWithDataSource{
 		nodeScanner: scanner,
+		datasource: &storage.DataSource{
+			Id:   source.GetId(),
+			Name: source.GetName(),
+		},
+	}, nil
+}
+
+type nodeMatcherWithDataSource struct {
+	nodeMatcher types.NodeMatcher
+	datasource  *storage.DataSource
+}
+
+func (n nodeMatcherWithDataSource) GetNodeMatcher() types.NodeMatcher {
+	return n.nodeMatcher
+}
+
+func (n nodeMatcherWithDataSource) DataSource() *storage.DataSource {
+	return n.datasource
+}
+
+func (e *enricherImpl) CreateNodeMatcher(source *storage.NodeMatcherIntegration) (types.NodeMatcherWithDataSource, error) {
+	creator, exists := e.v4creators[source.GetType()]
+	if !exists {
+		return nil, fmt.Errorf("scanner with type %q does not exist", source.GetType())
+	}
+	scanner, err := creator(source)
+	if err != nil {
+		return nil, err
+	}
+	return &nodeMatcherWithDataSource{
+		nodeMatcher: scanner,
 		datasource: &storage.DataSource{
 			Id:   source.GetId(),
 			Name: source.GetName(),

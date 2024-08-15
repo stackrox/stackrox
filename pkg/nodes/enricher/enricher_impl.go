@@ -7,27 +7,37 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/converter"
 	pkgScanners "github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var _ NodeEnricher = (*enricherImpl)(nil)
+var (
+	_ NodeEnricher = (*enricherImpl)(nil)
+
+	log = logging.LoggerForModule()
+)
 
 type enricherImpl struct {
 	cves CVESuppressor
 
 	lock     sync.RWMutex
 	scanners map[string]types.NodeScannerWithDataSource
+	matchers map[string]types.NodeMatcherWithDataSource
 
-	creators map[string]pkgScanners.NodeScannerCreator
+	creators   map[string]pkgScanners.NodeScannerCreator
+	v4creators map[string]pkgScanners.NodeMatcherCreator
 
 	metrics metrics
 }
+
+// Node Scanning / Scanner v2
 
 // UpsertNodeIntegration creates or updates a node integration.
 func (e *enricherImpl) UpsertNodeIntegration(integration *storage.NodeIntegration) error {
@@ -60,7 +70,7 @@ func (e *enricherImpl) EnrichNodeWithInventory(node *storage.Node, nodeInventory
 	// Note: this is valid even if node.Notes is nil.
 	node.Notes = node.Notes[:0]
 
-	err := e.enrichWithScan(node, nodeInventory)
+	err := e.enrichWithScan(node, nodeInventory) // Maybe we can use index here as a third parameter
 	if err != nil {
 		node.Notes = append(node.Notes, storage.Node_MISSING_SCAN_DATA)
 	}
@@ -96,7 +106,6 @@ func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage
 			errorList.AddError(err)
 			continue
 		}
-
 		return nil
 	}
 
@@ -212,4 +221,65 @@ func SupportsNodeScanning(node *storage.Node) bool {
 		}
 	}
 	return false
+}
+
+// Node Matcher / Scanner v4
+
+// EnrichNodeWithIndexReport does vulnerability scanning for Scanner v4 and sets the result in node.NodeScan.
+// node must not be nil
+// indexReport can be nil - in that case it is skipped on scanning
+func (e *enricherImpl) EnrichNodeWithIndexReport(node *storage.Node, indexReport *v4.IndexReport) error {
+	node.Notes = node.Notes[:0]
+
+	err := e.enrichWithIndexReport(node, indexReport)
+	if err != nil {
+		node.Notes = append(node.Notes, storage.Node_MISSING_SCAN_DATA)
+	}
+
+	// e.cves.EnrichNodeWithSuppressedCVEs(node)
+
+	return err
+}
+
+func (e *enricherImpl) enrichWithIndexReport(node *storage.Node, indexReport *v4.IndexReport) error {
+	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error matching node %s:%s", node.GetClusterName(), node.GetName()))
+
+	scanners := concurrency.WithRLock1(&e.lock, func() []types.NodeMatcherWithDataSource {
+		scanners := make([]types.NodeMatcherWithDataSource, 0, len(e.matchers))
+		for _, scanner := range e.matchers {
+			scanners = append(scanners, scanner)
+		}
+		return scanners
+	})
+
+	if len(scanners) == 0 {
+		errorList.AddError(errors.New("no node matchers integrated"))
+		return errorList.ToError()
+	}
+
+	for _, scanner := range scanners {
+		if err := e.enrichNodeWithMatcher(node, indexReport, scanner.GetNodeMatcher()); err != nil {
+			errorList.AddError(err)
+			continue
+		}
+		return nil
+	}
+
+	return errorList.ToError()
+}
+
+func (e *enricherImpl) enrichNodeWithMatcher(node *storage.Node, indexReport *v4.IndexReport, scanner types.NodeMatcher) error {
+	vr, err := scanner.GetNodeVulnerabilityReport(node, indexReport)
+	if err != nil {
+		return errors.Wrapf(err, "scanning node %s with scanner %q", node.GetName(), scanner.Name())
+	}
+	log.Infof("Scanned node %s with scanner %q and found %d packages with %d vulnerabilities",
+		node.GetName(), scanner.Name(), len(vr.GetContents().Packages), len(vr.GetVulnerabilities()))
+
+	// TODO: Convert v4.VulnerabilityReport into a NodeScan and set node.Scan = scan
+	// node.Scan = scan
+	// converter.FillV2NodeVulnerabilities(node)
+	// FillScanStats(node)
+
+	return nil
 }

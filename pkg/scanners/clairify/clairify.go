@@ -51,6 +51,7 @@ const (
 var (
 	_ scannerTypes.Scanner                  = (*clairify)(nil)
 	_ scannerTypes.ImageVulnerabilityGetter = (*clairify)(nil)
+	_ scannerTypes.NodeScanner              = (*clairify)(nil)
 
 	log             = logging.LoggerForModule()
 	scannerEndpoint = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())

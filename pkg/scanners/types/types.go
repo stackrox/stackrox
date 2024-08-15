@@ -2,6 +2,7 @@ package types
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
@@ -60,6 +61,19 @@ type NodeScanner interface {
 // a DataSource function to describe which integration formed the interface.
 type NodeScannerWithDataSource interface {
 	GetNodeScanner() NodeScanner
+	DataSource() *storage.DataSource
+}
+
+// NodeMatcher is the interface all v4 node matchers must implement
+type NodeMatcher interface {
+	NodeMatchSemaphore
+	Name() string
+	GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error)
+	Type() string
+}
+
+type NodeMatcherWithDataSource interface {
+	GetNodeMatcher() NodeMatcher
 	DataSource() *storage.DataSource
 }
 

@@ -13,3 +13,6 @@ type NodeScannerCreator func(scanner *storage.NodeIntegration) (types.NodeScanne
 
 // OrchestratorScannerCreator is a func stub that defines how to instantiate an orchestrator scanner.
 type OrchestratorScannerCreator func(scanner *storage.OrchestratorIntegration) (types.OrchestratorScanner, error)
+
+// NodeMatcherCreator is a func stub that defines how to instantiate a scanner v4 node matcher.
+type NodeMatcherCreator func(scanner *storage.NodeMatcherIntegration) (types.NodeMatcher, error)
