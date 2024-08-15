@@ -82,6 +82,9 @@ func (u *upgradeController) do(doFn func() error) (err error) {
 	}
 
 	panicked := true
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
+
 	defer func() {
 		var errForMetric string
 		if p := recover(); p != nil || panicked {
@@ -101,11 +104,10 @@ func (u *upgradeController) do(doFn func() error) (err error) {
 		if u.active != nil {
 			process = u.active.status
 		}
+		// call to getSensorVersion must be with mutex locked
 		observeUpgraderError(u.getSensorVersion(), u.clusterID, errForMetric, process)
 	}()
 
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
 	err = doFn()
 	u.expectNoError(u.flushUpgradeStatus())
 	panicked = false
