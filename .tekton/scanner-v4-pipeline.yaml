@@ -25,6 +25,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: show-sbom
     params:
     - name: IMAGE_URL
