@@ -102,11 +102,6 @@ TEST_E2E_ENV_IS_OPENSHIFT ?= $(shell $(PROJECT_DIR)/hack/retry-kubectl.sh < /dev
 # KUTTL_TEST_RUN_LABELS_ARGS specifies what label set to use for kuttl tests.
 KUTTL_TEST_RUN_LABELS_ARGS ?= --test-run-labels openshift=$(TEST_E2E_ENV_IS_OPENSHIFT)
 
-# ENABLE_WEBHOOKS determines if webhooks should be set up in manager when running locally.
-# Disabled by default since it requires setting up of custom routing from your k8s API server
-# to your manager process.
-ENABLE_WEBHOOKS ?= false
-
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
 # ROX_IMAGE_FLAVOR valid values are: development_build, opensource, rhacs.
 # Use the value figured in the parent directory Makefile, unless provided explicitly in the environment.
@@ -248,7 +243,7 @@ validate-crs: yq
 .PHONY: test-e2e
 test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test $(KUTTL_TEST_RUN_LABELS_ARGS)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test $(KUTTL_TEST_RUN_LABELS_ARGS)
 
 .PHONY: test-e2e-deployed
 test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
@@ -281,7 +276,7 @@ check-ci-setup: ## Make sure this target is not started in CI environment.
 
 .PHONY: run
 run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
-	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) ../scripts/go-run.sh ./main.go
+	../scripts/go-run.sh ./main.go
 
 .PHONY: ensure-rox-main-image-exists
 ensure-rox-main-image-exists:

@@ -1375,9 +1375,6 @@ spec:
                   periodSeconds: 20
                 name: manager
                 ports:
-                - containerPort: 9443
-                  name: webhook-server
-                  protocol: TCP
                 - containerPort: 8443
                   name: https
                   protocol: TCP
@@ -1482,25 +1479,4 @@ spec:
   skips:
   - rhacs-operator.v4.1.0
   version: 0.0.1
-  webhookdefinitions:
-  - admissionReviewVersions:
-    - v1
-    containerPort: 443
-    deploymentName: rhacs-operator-controller-manager
-    failurePolicy: Fail
-    generateName: vcentral.kb.io
-    rules:
-    - apiGroups:
-      - platform.stackrox.io
-      apiVersions:
-      - v1alpha1
-      operations:
-      - CREATE
-      - UPDATE
-      resources:
-      - centrals
-    sideEffects: None
-    targetPort: 9443
-    type: ValidatingAdmissionWebhook
-    webhookPath: /validate-platform-stackrox-io-v1alpha1-central
 
