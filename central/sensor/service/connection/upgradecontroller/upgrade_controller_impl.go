@@ -67,7 +67,7 @@ func (u *upgradeController) initialize() error {
 	u.upgradeStatus = upgradeStatus
 	process := upgradeStatus.GetMostRecentProcess()
 	u.makeProcessActive(cluster, process)
-	registerUpgraderTriggered(u.getSensorVersion(), "central-initialization", u.clusterID, process, u.active != nil)
+	observeUpgraderTriggered(u.getSensorVersion(), "central-initialization", u.clusterID, process, u.active != nil)
 
 	if err := u.flushUpgradeStatus(); err != nil {
 		return errors.Wrap(err, "persisting upgrade status to DB")
@@ -83,6 +83,7 @@ func (u *upgradeController) do(doFn func() error) (err error) {
 
 	panicked := true
 	defer func() {
+		var errForMetric string
 		if p := recover(); p != nil || panicked {
 			ue, ok := p.(unexpectedError)
 			if !ok {
@@ -90,8 +91,13 @@ func (u *upgradeController) do(doFn func() error) (err error) {
 				// something more serious, e.g., nil pointer accesses.
 				panic(p)
 			}
-			u.errorSig.SignalWithError(errors.Wrap(ue.err, "unexpected error during upgrade controller operation"))
+			errWrap := errors.Wrap(ue.err, "unexpected error during upgrade controller operation")
+			u.errorSig.SignalWithError(errWrap)
+			errForMetric = errWrap.Error()
+		} else if err != nil {
+			errForMetric = err.Error()
 		}
+		observeUpgraderError(u.getSensorVersion(), u.clusterID, errForMetric, u.active.status)
 	}()
 
 	u.mutex.Lock()

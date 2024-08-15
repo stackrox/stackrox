@@ -88,7 +88,7 @@ func (u *upgradeController) maybeTriggerAutoUpgrade() {
 		log.Errorf("Cannot automatically trigger auto-upgrade for sensor in cluster %s: %v", u.clusterID, err)
 	} else {
 		u.makeProcessActive(cluster, process)
-		registerUpgraderTriggered(u.getSensorVersion(), "new-connection-reconciliation", u.clusterID, process, u.active != nil)
+		observeUpgraderTriggered(u.getSensorVersion(), "new-connection-reconciliation", u.clusterID, process, u.active != nil)
 	}
 }
 

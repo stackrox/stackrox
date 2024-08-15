@@ -113,7 +113,7 @@ func (u *upgradeController) doTriggerCertRotation() (common.MessageInjector, *ce
 	cluster := u.getCluster()
 	process := newCertRotationProcess()
 	u.makeProcessActive(cluster, process)
-	registerUpgraderTriggered(u.getSensorVersion(), "cert-rotation", u.clusterID, process, u.active != nil)
+	observeUpgraderTriggered(u.getSensorVersion(), "cert-rotation", u.clusterID, process, u.active != nil)
 	return u.activeSensorConn.conn, u.active.trigger, nil
 }
 
@@ -143,6 +143,6 @@ func (u *upgradeController) doTriggerUpgrade() (common.MessageInjector, *central
 	}
 
 	u.makeProcessActive(cluster, process)
-	registerUpgraderTriggered(u.getSensorVersion(), "ui-click", u.clusterID, process, u.active != nil)
+	observeUpgraderTriggered(u.getSensorVersion(), "ui-click", u.clusterID, process, u.active != nil)
 	return u.activeSensorConn.conn, u.active.trigger, nil
 }
