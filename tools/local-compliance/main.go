@@ -21,12 +21,16 @@ func main() {
 		generationInterval: env.NodeScanningInterval.DurationSetting(),
 		initialScanDelay:   env.NodeScanningMaxInitialWait.DurationSetting(),
 	}
+	nindexer := &LoadGeneratingNodeIndexer{
+		generationInterval: env.NodeScanningInterval.DurationSetting(),
+		initialScanDelay:   env.NodeScanningMaxInitialWait.DurationSetting(),
+	}
 	log.Infof("Generation inverval: %v", scanner.generationInterval.String())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	umh := handler.NewUnconfirmedMessageHandler(ctx, 5*time.Second)
-	c := compliance.NewComplianceApp(np, scanner, umh)
+	c := compliance.NewComplianceApp(np, scanner, nindexer, umh)
 	c.Start()
 }
 

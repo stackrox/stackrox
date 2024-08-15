@@ -15,7 +15,6 @@ import (
 	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
 	"github.com/stackrox/rox/operator/pkg/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/pkg/values/translation"
-	"github.com/stackrox/rox/pkg/features"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
@@ -123,7 +122,7 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 	}
 
 	v.AddChild("scanner", t.getLocalScannerComponentValues(sc, scannerAutoSenseConfig))
-	if sc.Spec.ScannerV4 != nil && features.ScannerV4Support.Enabled() {
+	if sc.Spec.ScannerV4 != nil {
 		v.AddChild("scannerV4", t.getLocalScannerV4ComponentValues(ctx, sc, scannerV4AutoSenseConfig))
 	}
 
