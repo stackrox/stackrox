@@ -41,3 +41,15 @@ Cypress.on(
         !err.message.includes("Uncaught SyntaxError: Unexpected token '<'") &&
         !err.message.includes("Uncaught SyntaxError: Unexpected token '<'")
 );
+
+// Output timestamps for test suite start and end
+before(() => {
+    cy.task('beforeSuite', Cypress.spec);
+});
+
+// Output timestamp at the point of test failure
+Cypress.on('fail', (err) => {
+    // eslint-disable-next-line no-param-reassign
+    err.name = `${err.name} - ${new Date().toISOString()}`;
+    throw err;
+});
