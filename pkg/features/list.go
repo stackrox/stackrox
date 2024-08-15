@@ -41,7 +41,7 @@ var (
 	AuthMachineToMachine = registerFeature("Enable Auth Machine to Machine functionalities", "ROX_AUTH_MACHINE_TO_MACHINE", enabled)
 
 	// AccessiblePolicyCriteriaEditing enables a way to select policy criteria accessibly when editing a policy
-	AccessiblePolicyCriteriaEditing = registerFeature("Enable accessible policy criteria when editing a policy", "ROX_ACCESSIBLE_POLICY_CRITERIA_EDITING", false)
+	AccessiblePolicyCriteriaEditing = registerFeature("Enable accessible policy criteria when editing a policy", "ROX_ACCESSIBLE_POLICY_CRITERIA_EDITING")
 
 	// PolicyCriteriaModal enables a modal for selecting policy criteria when editing a policy
 	PolicyCriteriaModal = registerFeature("Enable modal to select policy criteria when editing a policy", "ROX_POLICY_CRITERIA_MODAL")
