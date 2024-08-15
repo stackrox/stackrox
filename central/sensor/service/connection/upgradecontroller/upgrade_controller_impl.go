@@ -65,7 +65,9 @@ func (u *upgradeController) initialize() error {
 	upgradeStatus.UpgradabilityStatusReason = ""
 
 	u.upgradeStatus = upgradeStatus
-	u.makeProcessActive(cluster, upgradeStatus.GetMostRecentProcess())
+	process := upgradeStatus.GetMostRecentProcess()
+	u.makeProcessActive(cluster, process)
+	registerUpgraderTriggered(u.getSensorVersion(), "central-initialization", u.clusterID, process, u.active != nil)
 
 	if err := u.flushUpgradeStatus(); err != nil {
 		return errors.Wrap(err, "persisting upgrade status to DB")
@@ -120,4 +122,11 @@ func (u *upgradeController) shouldAutoTriggerUpgrade() bool {
 		}
 	}
 	return true
+}
+
+func (u *upgradeController) getSensorVersion() string {
+	if u.activeSensorConn == nil {
+		return ""
+	}
+	return u.activeSensorConn.sensorVersion
 }
