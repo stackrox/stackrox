@@ -39,9 +39,9 @@ type authenticatedRoundTripper struct {
 	token        string
 }
 
-// RoundTrip here inserts an HTTP "Authorization" header with the given bearer token
+// RoundTrip here inserts an HTTP "Authorization" header with the given bearer token.
 func (a authenticatedRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	// It's generally not recommended to make more than actual round trip inside the RoundTrip function,
+	// It's generally not recommended to make more than one actual round trip inside the RoundTrip function,
 	// but we have no reasonable alternative if we want to utilize the oidc provider interface.
 	// NOTE: This has only been tested with GET requests used by the oidc library to fetch JWKS config
 

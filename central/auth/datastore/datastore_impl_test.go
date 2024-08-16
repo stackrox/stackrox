@@ -88,7 +88,13 @@ func (s *datastorePostgresTestSuite) TearDownTest() {
 }
 
 func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
-	s.NoError(s.authDataStore.InitializeTokenExchangers())
+	controller := gomock.NewController(s.T())
+	defer controller.Finish()
+	store := store.New(s.pool.DB)
+	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
+	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return("https://localhost", nil).MinTimes(1)
+	authDataStore := New(store, s.mockSet, issuerFetcher)
+	s.NoError(authDataStore.InitializeTokenExchangers())
 }
 
 func (s *datastorePostgresTestSuite) TestAddFKConstraint() {

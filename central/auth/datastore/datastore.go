@@ -21,5 +21,9 @@ type DataStore interface {
 
 // New returns an instance of an auth machine to machine Datastore.
 func New(store store.Store, set m2m.TokenExchangerSet, issuerFetcher m2m.ServiceAccountIssuerFetcher) DataStore {
-	return &datastoreImpl{store: store, set: set}
+	return &datastoreImpl{
+		store:         store,
+		set:           set,
+		issuerFetcher: issuerFetcher,
+	}
 }

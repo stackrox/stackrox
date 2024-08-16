@@ -144,23 +144,15 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 		return err
 	}
 
-	var tokenExchangerErrors error
-	for _, config := range configs {
-		if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
-			tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
-			continue
-		}
-	}
-
 	if features.PolicyAsCode.Enabled() {
 		kubeSAIssuer, err := d.issuerFetcher.GetServiceAccountIssuer()
 		if err != nil {
-			return errors.Join(tokenExchangerErrors, err)
+			return fmt.Errorf("Failed to get service account issuer: %w", err)
 		}
 
-		// Unconditionally add K8s service account exchanger
-		// This is required for config-controller auth
-		err = d.set.UpsertTokenExchanger(ctx, &storage.AuthMachineToMachineConfig{
+		// Unconditionally add K8s service account exchanger.
+		// This is required for config-controller auth.
+		configs = append(configs, &storage.AuthMachineToMachineConfig{
 			Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
 			TokenExpirationDuration: "1h",
 			Mappings: []*storage.AuthMachineToMachineConfig_Mapping{{
@@ -170,7 +162,14 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 			}},
 			Issuer: kubeSAIssuer,
 		})
-		tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
+	}
+
+	var tokenExchangerErrors error
+	for _, config := range configs {
+		if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
+			tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
+			continue
+		}
 	}
 
 	if tokenExchangerErrors != nil {

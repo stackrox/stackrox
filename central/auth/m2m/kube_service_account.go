@@ -1,7 +1,6 @@
 package m2m
 
 import (
-	"fmt"
 	"os"
 
 	jwt "github.com/go-jose/go-jose/v3/jwt"
@@ -21,7 +20,7 @@ type KubeServiceAccountIssuerFetcher struct {
 	reader serviceAccountTokenReader
 }
 
-// GetServiceAccountIssuer takes a base64-encoded JWT and returns the "iss" (issuer) claim value
+// GetServiceAccountIssuer takes a base64-encoded JWT and returns the "iss" (issuer) claim value.
 func (k KubeServiceAccountIssuerFetcher) GetServiceAccountIssuer() (string, error) {
 	token, err := k.reader.readToken()
 	if err != nil {
@@ -46,7 +45,7 @@ type kubeServiceAccountTokenReader struct{}
 func (k kubeServiceAccountTokenReader) readToken() (string, error) {
 	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
-		return "", fmt.Errorf("error reading service account token file: %w", err)
+		return "", errors.WithMessage(err, "error reading service account token file")
 	}
 
 	return string(token), nil
