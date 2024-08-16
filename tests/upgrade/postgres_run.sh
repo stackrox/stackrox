@@ -176,7 +176,6 @@ test_upgrade_paths() {
 
       wait_for_api
       wait_for_central_db
-      info "4.5.0 should fail"
     done
 
     ########################################################################################
