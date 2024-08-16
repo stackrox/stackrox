@@ -44,7 +44,7 @@ func (p *process) determineImage() (string, error) {
 	log.Infof("Sensor was instructed to run the upgrader with image: %s", p.trigger.GetImage())
 	// TODO: check the pullability of that image
 	if env.UpgraderImageOverwrite.Setting() != "" {
-		log.Infof("Sensor will use the follownig upgrader image instead: %s", env.UpgraderImageOverwrite.Setting())
+		log.Infof("Sensor will use the following upgrader image instead: %s", env.UpgraderImageOverwrite.Setting())
 		return env.UpgraderImageOverwrite.Setting(), nil
 	}
 	if image := p.trigger.GetImage(); image != "" {
