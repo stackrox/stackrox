@@ -105,7 +105,7 @@ export const EntityType: CompoundSearchFilterAttribute = {
                 name: 'Workload & Container image',
                 options: [
                     {
-                        label: 'Deployments & Container images',
+                        label: 'Workload & Container images',
                         value: 'UNKNOWN',
                     },
                 ],
