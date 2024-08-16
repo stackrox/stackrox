@@ -101,7 +101,7 @@ require (
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.55.0
-	github.com/quay/claircore v1.5.29-0.20240724213134-1e3b8b548e6c
+	github.com/quay/claircore v1.5.29-0.20240812155114-de6d8475516c
 	github.com/quay/claircore/toolkit v1.2.4
 	github.com/quay/goval-parser v0.8.8
 	github.com/quay/zlog v1.1.8
@@ -552,5 +552,3 @@ replace (
 	github.com/heroku/docker-registry-client => github.com/stackrox/docker-registry-client v0.2.0
 	github.com/mholt/archiver/v3 => github.com/anchore/archiver/v3 v3.5.2
 )
-
-replace github.com/quay/claircore => github.com/Maddosaurus/claircore v0.0.0-20240813125501-08eee60eff09
