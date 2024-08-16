@@ -1,0 +1,77 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
+    # TODO(ROX-21073): re-enable for all PR branches
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
+      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
+  labels:
+    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/component: roxctl
+    pipelines.appstudio.openshift.io/type: build
+  name: roxctl-build
+  namespace: rh-acs-tenant
+
+spec:
+
+  params:
+  - name: dockerfile
+    value: image/roxctl/konflux.Dockerfile
+  - name: git-url
+    value: '{{repo_url}}'
+  - name: image-expires-after
+    # TODO(ROX-24530): return expiration for non-released images to 13w
+    value: '52w'
+  - name: output-image-repo
+    value: quay.io/rhacs-eng/roxctl
+  - name: path-context
+    value: .
+  - name: revision
+    value: '{{revision}}'
+  - name: rebuild
+    value: 'true'
+  # TODO(ROX-20234): Enable hermetic builds
+  # - name: hermetic
+  #   value: 'true'
+  - name: prefetch-input
+    value: '{"type": "gomod", "path": "."}'
+  - name: build-source-image
+    value: 'true'
+  - name: clone-depth
+    value: '0'
+  - name: clone-fetch-tags
+    value: 'true'
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
+  pipelineRef:
+    name: basic-component-pipeline
+
+  taskRunSpecs:
+  - pipelineTaskName: build-container-amd64
+    stepSpecs:
+    - name: build
+      # CPU requests are increased to speed up builds compared to the defaults.
+      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
+      computeResources:
+        limits:
+          cpu: 2
+        requests:
+          cpu: 2
+
+  timeouts:
+    # The tasks regularly takes 1h to finish.
+    tasks: 1h
+    # Reserve time for final tasks to run.
+    finally: 10m
+    pipeline: 1h10m
