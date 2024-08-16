@@ -3,50 +3,44 @@ package search
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/cve/node/datastore/store"
+	pgStore "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 type searcherImpl struct {
-	storage  store.Store
+	storage  pgStore.Store
 	searcher search.Searcher
 }
 
-func (ds *searcherImpl) SearchCVEs(ctx context.Context, q *v1.Query, allowOrphaned bool) ([]*v1.SearchResult, error) {
-	results, err := ds.getSearchResults(ctx, q, allowOrphaned)
+func (ds *searcherImpl) SearchCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	results, err := ds.getSearchResults(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	return ds.resultsToSearchResults(ctx, results)
 }
 
-func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query, allowOrphaned bool) ([]search.Result, error) {
-	return ds.getSearchResults(ctx, q, allowOrphaned)
+func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return ds.getSearchResults(ctx, q)
 }
 
 // Count returns the number of search results from the query
-func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query, allowOrphaned bool) (int, error) {
-	return ds.getCount(ctx, q, allowOrphaned)
+func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
+	return ds.getCount(ctx, q)
 }
 
-func (ds *searcherImpl) SearchRawCVEs(ctx context.Context, q *v1.Query, allowOrphaned bool) ([]*storage.NodeCVE, error) {
-	return ds.searchCVEs(ctx, q, allowOrphaned)
+func (ds *searcherImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.NodeCVE, error) {
+	return ds.searchCVEs(ctx, q)
 }
 
-func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query, allowOrphaned bool) (res []search.Result, err error) {
-	if allowOrphaned {
-		return ds.searcher.Search(ctx, q)
-	}
-	return ds.searcher.Search(ctx, withoutOrphanedCVEsQuery(q))
+func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
+	return ds.searcher.Search(ctx, q)
 }
 
-func (ds *searcherImpl) getCount(ctx context.Context, q *v1.Query, allowOrphaned bool) (count int, err error) {
-	if allowOrphaned {
-		return ds.searcher.Count(ctx, q)
-	}
-	return ds.searcher.Count(ctx, withoutOrphanedCVEsQuery(q))
+func (ds *searcherImpl) getCount(ctx context.Context, q *v1.Query) (count int, err error) {
+	return ds.searcher.Count(ctx, q)
 }
 
 func (ds *searcherImpl) resultsToCVEs(ctx context.Context, results []search.Result) ([]*storage.NodeCVE, []int, error) {
@@ -80,8 +74,8 @@ func convertOne(cve *storage.NodeCVE, result *search.Result) *v1.SearchResult {
 	}
 }
 
-func (ds *searcherImpl) searchCVEs(ctx context.Context, q *v1.Query, allowOrphaned bool) ([]*storage.NodeCVE, error) {
-	results, err := ds.Search(ctx, q, allowOrphaned)
+func (ds *searcherImpl) searchCVEs(ctx context.Context, q *v1.Query) ([]*storage.NodeCVE, error) {
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -92,10 +86,4 @@ func (ds *searcherImpl) searchCVEs(ctx context.Context, q *v1.Query, allowOrphan
 		return nil, err
 	}
 	return cves, nil
-}
-
-func withoutOrphanedCVEsQuery(q *v1.Query) *v1.Query {
-	ret := search.ConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.CVEOrphaned, false).ProtoQuery())
-	ret.Pagination = q.GetPagination()
-	return ret
 }

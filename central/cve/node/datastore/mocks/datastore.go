@@ -44,18 +44,18 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockDataStore) Count(ctx context.Context, q *v1.Query, allowOrphaned bool) (int, error) {
+func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count", ctx, q, allowOrphaned)
+	ret := m.ctrl.Call(m, "Count", ctx, q)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockDataStoreMockRecorder) Count(ctx, q, allowOrphaned any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q, allowOrphaned)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
 // EnrichNodeWithSuppressedCVEs mocks base method.
@@ -117,48 +117,48 @@ func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id any) *gomock.Call {
 }
 
 // Search mocks base method.
-func (m *MockDataStore) Search(ctx context.Context, q *v1.Query, allowOrphaned bool) ([]search.Result, error) {
+func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", ctx, q, allowOrphaned)
+	ret := m.ctrl.Call(m, "Search", ctx, q)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search.
-func (mr *MockDataStoreMockRecorder) Search(ctx, q, allowOrphaned any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) Search(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q, allowOrphaned)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), ctx, q)
 }
 
 // SearchNodeCVEs mocks base method.
-func (m *MockDataStore) SearchNodeCVEs(ctx context.Context, q *v1.Query, allowOrphaned bool) ([]*v1.SearchResult, error) {
+func (m *MockDataStore) SearchNodeCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchNodeCVEs", ctx, q, allowOrphaned)
+	ret := m.ctrl.Call(m, "SearchNodeCVEs", ctx, q)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchNodeCVEs indicates an expected call of SearchNodeCVEs.
-func (mr *MockDataStoreMockRecorder) SearchNodeCVEs(ctx, q, allowOrphaned any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) SearchNodeCVEs(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchNodeCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchNodeCVEs), ctx, q, allowOrphaned)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchNodeCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchNodeCVEs), ctx, q)
 }
 
 // SearchRawCVEs mocks base method.
-func (m *MockDataStore) SearchRawCVEs(ctx context.Context, q *v1.Query, allowOrphaned bool) ([]*storage.NodeCVE, error) {
+func (m *MockDataStore) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.NodeCVE, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawCVEs", ctx, q, allowOrphaned)
+	ret := m.ctrl.Call(m, "SearchRawCVEs", ctx, q)
 	ret0, _ := ret[0].([]*storage.NodeCVE)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchRawCVEs indicates an expected call of SearchRawCVEs.
-func (mr *MockDataStoreMockRecorder) SearchRawCVEs(ctx, q, allowOrphaned any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) SearchRawCVEs(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchRawCVEs), ctx, q, allowOrphaned)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawCVEs", reflect.TypeOf((*MockDataStore)(nil).SearchRawCVEs), ctx, q)
 }
 
 // Suppress mocks base method.

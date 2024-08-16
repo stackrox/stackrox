@@ -16,10 +16,10 @@ import (
 //
 //go:generate mockgen-wrapper
 type Searcher interface {
-	Search(ctx context.Context, query *v1.Query, allowOrphaned bool) ([]search.Result, error)
-	Count(ctx context.Context, query *v1.Query, allowOrphaned bool) (int, error)
-	SearchCVEs(ctx context.Context, query *v1.Query, allowOrphaned bool) ([]*v1.SearchResult, error)
-	SearchRawCVEs(ctx context.Context, query *v1.Query, allowOrphaned bool) ([]*storage.NodeCVE, error)
+	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
+	Count(ctx context.Context, query *v1.Query) (int, error)
+	SearchCVEs(ctx context.Context, query *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawCVEs(ctx context.Context, query *v1.Query) ([]*storage.NodeCVE, error)
 }
 
 // New returns a new instance of Searcher for the given the storage.

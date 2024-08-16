@@ -488,6 +488,17 @@ func testNodes() []*storage.Node {
 							},
 						},
 					},
+					{
+						Name:    "comp5",
+						Version: "1.0",
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "cve-to-be-orphaned-1",
+								},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -550,6 +561,17 @@ func testNodes() []*storage.Node {
 									Cve: "cve-2017-2",
 								},
 								Severity: storage.VulnerabilitySeverity_IMPORTANT_VULNERABILITY_SEVERITY,
+							},
+						},
+					},
+					{
+						Name:    "comp6",
+						Version: "1.0",
+						Vulnerabilities: []*storage.NodeVulnerability{
+							{
+								CveBaseInfo: &storage.CVEInfo{
+									Cve: "cve-to-be-orphaned-2",
+								},
 							},
 						},
 					},

@@ -32,8 +32,6 @@ func (n *nodeCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, erro
 		return 0, err
 	}
 
-	q = withoutOrphanedCVEsQuery(q)
-
 	var results []*nodeCVECoreCount
 	results, err = pgSearch.RunSelectRequestForSchema[nodeCVECoreCount](ctx, n.db, n.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
@@ -59,8 +57,6 @@ func (n *nodeCVECoreViewImpl) Get(ctx context.Context, q *v1.Query) ([]CveCore, 
 	if err != nil {
 		return nil, err
 	}
-
-	q = withoutOrphanedCVEsQuery(q)
 
 	var results []*nodeCVECoreResponse
 	results, err = pgSearch.RunSelectRequestForSchema[nodeCVECoreResponse](ctx, n.db, n.schema, withSelectQuery(q))
@@ -92,8 +88,6 @@ func (n *nodeCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query) 
 	if err != nil {
 		return nil, err
 	}
-
-	q = withoutOrphanedCVEsQuery(q)
 
 	var results []*countByNodeCVESeverity
 	results, err = pgSearch.RunSelectRequestForSchema[countByNodeCVESeverity](ctx, n.db, n.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
@@ -134,12 +128,6 @@ func (n *nodeCVECoreViewImpl) GetNodeIDs(ctx context.Context, q *v1.Query) ([]st
 		ret = append(ret, r.GetNodeID())
 	}
 	return ret, nil
-}
-
-func withoutOrphanedCVEsQuery(q *v1.Query) *v1.Query {
-	ret := search.ConjunctionQuery(q, search.NewQueryBuilder().AddBools(search.CVEOrphaned, false).ProtoQuery())
-	ret.Pagination = q.GetPagination()
-	return ret
 }
 
 func withSelectQuery(q *v1.Query) *v1.Query {

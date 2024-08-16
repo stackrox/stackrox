@@ -43,61 +43,61 @@ func (m *MockSearcher) EXPECT() *MockSearcherMockRecorder {
 }
 
 // Count mocks base method.
-func (m *MockSearcher) Count(ctx context.Context, query *v1.Query, allowOrphaned bool) (int, error) {
+func (m *MockSearcher) Count(ctx context.Context, query *v1.Query) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Count", ctx, query, allowOrphaned)
+	ret := m.ctrl.Call(m, "Count", ctx, query)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Count indicates an expected call of Count.
-func (mr *MockSearcherMockRecorder) Count(ctx, query, allowOrphaned any) *gomock.Call {
+func (mr *MockSearcherMockRecorder) Count(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSearcher)(nil).Count), ctx, query, allowOrphaned)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockSearcher)(nil).Count), ctx, query)
 }
 
 // Search mocks base method.
-func (m *MockSearcher) Search(ctx context.Context, query *v1.Query, allowOrphaned bool) ([]search.Result, error) {
+func (m *MockSearcher) Search(ctx context.Context, query *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Search", ctx, query, allowOrphaned)
+	ret := m.ctrl.Call(m, "Search", ctx, query)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search.
-func (mr *MockSearcherMockRecorder) Search(ctx, query, allowOrphaned any) *gomock.Call {
+func (mr *MockSearcherMockRecorder) Search(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), ctx, query, allowOrphaned)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockSearcher)(nil).Search), ctx, query)
 }
 
 // SearchCVEs mocks base method.
-func (m *MockSearcher) SearchCVEs(ctx context.Context, query *v1.Query, allowOrphaned bool) ([]*v1.SearchResult, error) {
+func (m *MockSearcher) SearchCVEs(ctx context.Context, query *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchCVEs", ctx, query, allowOrphaned)
+	ret := m.ctrl.Call(m, "SearchCVEs", ctx, query)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchCVEs indicates an expected call of SearchCVEs.
-func (mr *MockSearcherMockRecorder) SearchCVEs(ctx, query, allowOrphaned any) *gomock.Call {
+func (mr *MockSearcherMockRecorder) SearchCVEs(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCVEs", reflect.TypeOf((*MockSearcher)(nil).SearchCVEs), ctx, query, allowOrphaned)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCVEs", reflect.TypeOf((*MockSearcher)(nil).SearchCVEs), ctx, query)
 }
 
 // SearchRawCVEs mocks base method.
-func (m *MockSearcher) SearchRawCVEs(ctx context.Context, query *v1.Query, allowOrphaned bool) ([]*storage.NodeCVE, error) {
+func (m *MockSearcher) SearchRawCVEs(ctx context.Context, query *v1.Query) ([]*storage.NodeCVE, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchRawCVEs", ctx, query, allowOrphaned)
+	ret := m.ctrl.Call(m, "SearchRawCVEs", ctx, query)
 	ret0, _ := ret[0].([]*storage.NodeCVE)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchRawCVEs indicates an expected call of SearchRawCVEs.
-func (mr *MockSearcherMockRecorder) SearchRawCVEs(ctx, query, allowOrphaned any) *gomock.Call {
+func (mr *MockSearcherMockRecorder) SearchRawCVEs(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawCVEs", reflect.TypeOf((*MockSearcher)(nil).SearchRawCVEs), ctx, query, allowOrphaned)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawCVEs", reflect.TypeOf((*MockSearcher)(nil).SearchRawCVEs), ctx, query)
 }

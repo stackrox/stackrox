@@ -809,7 +809,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVEGetBatch() {
 func (s *cveDataStoreSACTestSuite) TestSACNodeCVECount() {
 	s.runNodeTest("TestSACNodeCVECount", func(c cveTestCase) {
 		testCtx := s.nodeTestContexts[c.contextKey]
-		count, err := s.nodeCVEStore.Count(testCtx, nil, false)
+		count, err := s.nodeCVEStore.Count(testCtx, nil)
 		s.NoError(err)
 		expectedCount := 0
 		for _, visible := range c.expectedCVEFound {
@@ -825,7 +825,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearch() {
 	s.runNodeTest("TestSACNodeCVESearch", func(c cveTestCase) {
 
 		testCtx := s.nodeTestContexts[c.contextKey]
-		results, err := s.nodeCVEStore.Search(testCtx, nil, false)
+		results, err := s.nodeCVEStore.Search(testCtx, nil)
 		s.NoError(err)
 		expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
 		for name, visible := range c.expectedCVEFound {
@@ -849,7 +849,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchCVEs() {
 	s.runNodeTest("TestSACNodeCVESearchCVEs", func(c cveTestCase) {
 
 		testCtx := s.nodeTestContexts[c.contextKey]
-		results, err := s.nodeCVEStore.SearchNodeCVEs(testCtx, nil, false)
+		results, err := s.nodeCVEStore.SearchNodeCVEs(testCtx, nil)
 		s.NoError(err)
 		expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
 		for name, visible := range c.expectedCVEFound {
@@ -873,7 +873,7 @@ func (s *cveDataStoreSACTestSuite) TestSACNodeCVESearchRawCVEs() {
 	s.runNodeTest("TestSACNodeCVESearchRawCVEs", func(c cveTestCase) {
 
 		testCtx := s.nodeTestContexts[c.contextKey]
-		results, err := s.nodeCVEStore.SearchRawCVEs(testCtx, nil, false)
+		results, err := s.nodeCVEStore.SearchRawCVEs(testCtx, nil)
 		s.NoError(err)
 		expectedCVENames := make([]string, 0, len(c.expectedCVEFound))
 		for name, visible := range c.expectedCVEFound {

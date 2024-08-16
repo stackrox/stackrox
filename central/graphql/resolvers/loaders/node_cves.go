@@ -76,7 +76,7 @@ func (idl *nodeCVELoaderImpl) FromID(ctx context.Context, id string) (*storage.N
 
 // FromQuery loads a set of nodeCVEs that match a query.
 func (idl *nodeCVELoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.NodeCVE, error) {
-	results, err := idl.ds.Search(ctx, query, false)
+	results, err := idl.ds.Search(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (idl *nodeCVELoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([
 }
 
 func (idl *nodeCVELoaderImpl) GetIDs(ctx context.Context, query *v1.Query) ([]string, error) {
-	results, err := idl.ds.Search(ctx, query, false)
+	results, err := idl.ds.Search(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (idl *nodeCVELoaderImpl) GetIDs(ctx context.Context, query *v1.Query) ([]st
 }
 
 func (idl *nodeCVELoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
-	count, err := idl.ds.Count(ctx, query, false)
+	count, err := idl.ds.Count(ctx, query)
 	if err != nil {
 		return 0, err
 	}
@@ -100,7 +100,7 @@ func (idl *nodeCVELoaderImpl) CountFromQuery(ctx context.Context, query *v1.Quer
 }
 
 func (idl *nodeCVELoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.Count(ctx, search.EmptyQuery(), false)
+	count, err := idl.ds.Count(ctx, search.EmptyQuery())
 	return int32(count), err
 }
 

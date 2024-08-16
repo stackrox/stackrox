@@ -153,24 +153,9 @@ func (s *NodeCVEViewTestSuite) SetupSuite() {
 		s.Require().NoError(nodeDatastore.UpsertNode(s.ctx, node))
 	}
 
-	// Orphan some CVEs by removing the last added vuln in each node
-	iTime := time.Now()
-	for _, node := range s.nodeMap {
-		nComponents := len(node.GetScan().GetComponents())
-		if nComponents > 0 {
-			nVulnsInLastComponent := len(node.GetScan().GetComponents()[nComponents-1].GetVulns())
-			if nVulnsInLastComponent > 0 {
-				node.Scan.Components[nComponents-1].Vulns = node.Scan.Components[nComponents-1].Vulns[:nVulnsInLastComponent-1]
-				node.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&iTime)
-				s.Require().NoError(nodeDatastore.UpsertNode(s.ctx, node))
-			}
-		}
-	}
-
 	cveStore, err := nodeCVEDataStore.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.Require().NoError(err)
-	// Include orphaned CVEs in this list of all stored CVEs
-	storedCves, err := cveStore.SearchRawCVEs(s.ctx, nil, true)
+	storedCves, err := cveStore.SearchRawCVEs(s.ctx, nil)
 	s.Require().NoError(err)
 	s.cveCreateMap = make(map[string]*storage.NodeCVE)
 	for _, c := range storedCves {

@@ -41,7 +41,7 @@ type vulnsStore interface {
 // Singleton returns the singleton reprocessor loop
 func Singleton() CVEUnsuppressLoop {
 	once.Do(func() {
-		loop = NewLoop(imageCVEDataStore.Singleton(), NewNodeCVEUnsnoozer(nodeCVEDataStore.Singleton()), clusterCVEDataStore.Singleton())
+		loop = NewLoop(imageCVEDataStore.Singleton(), nodeCVEDataStore.Singleton(), clusterCVEDataStore.Singleton())
 	})
 	return loop
 }
