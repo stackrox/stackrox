@@ -45,7 +45,7 @@ type namespaceToSecretName = map[string]secretNameToHostname
 // secretNameToHostname is an alias for a map of secret names to another map keyed by registry hostname.
 type secretNameToHostname = map[string]hostnameToRegistry
 
-// hostnameToRegistry is an alias for a map of registry hostnames to image image registries.
+// hostnameToRegistry is an alias for a map of registry hostnames to image registries.
 type hostnameToRegistry = map[string]types.ImageRegistry
 
 // Store stores cluster-internal registries by namespace.
@@ -53,12 +53,12 @@ type Store struct {
 	factory registries.Factory
 
 	// storeByHost maps a namespace to registries accessible from within the namespace.
-	// Only one of store, storeByHost or storeByName, will be active at any given time.
+	// Only one of storeByHost or storeByName will be active at any given time.
 	storeByHost map[string]registries.Set
 
 	// storeByName maps a namespace to secret names to host names to a registry. This more
-	// closely resembles how pull secrets are represented in k8s.  Only one of store,
-	// storeByHost or storeByName, will be active at any given time.
+	// closely resembles how pull secrets are represented in k8s.  Only one of
+	// storeByHost or storeByName will be active at any given time.
 	storeByName namespaceToSecretName
 
 	// storeMutux controls access to storeByHost or storeByName (whichever is active).
