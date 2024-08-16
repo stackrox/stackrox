@@ -61,7 +61,9 @@ import {
 } from '../../utils/searchUtils';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
-import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import VulnerabilityStateTabs, {
+    vulnStateTabContentId,
+} from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import ExceptionRequestModal, {
     ExceptionRequestModalProps,
@@ -225,6 +227,7 @@ function ImagePageVulnerabilities({
             </PageSection>
             <Divider component="div" />
             <PageSection
+                id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
