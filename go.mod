@@ -206,10 +206,10 @@ require (
 	github.com/digitorus/timestamp v0.0.0-20230902153158-687734543647 // indirect
 	github.com/distribution/distribution/v3 v3.0.0-20230511163743-f7717b7855ca // indirect
 	github.com/distribution/reference v0.5.0 // indirect
-	github.com/docker/cli v26.1.4+incompatible // indirect
-	github.com/docker/docker v26.1.4+incompatible // indirect
-	github.com/docker/docker-credential-helpers v0.8.0 // indirect
-	github.com/docker/go-connections v0.4.0 // indirect
+	github.com/docker/cli v27.1.1+incompatible // indirect
+	github.com/docker/docker v27.1.1+incompatible // indirect
+	github.com/docker/docker-credential-helpers v0.8.2 // indirect
+	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
