@@ -31,6 +31,17 @@ const createWrapper = (props) => {
     };
 };
 
+beforeAll(() => {
+    jest.useFakeTimers();
+});
+
+function actAndRunTicks(callback) {
+    return act(() => {
+        callback();
+        jest.runAllTicks();
+    });
+}
+
 test('should read/write only the specified set of strings to the URL parameter', async () => {
     let params;
     let testLocation;
@@ -46,6 +57,7 @@ test('should read/write only the specified set of strings to the URL parameter',
             initialEntries: [''],
         }),
     });
+    actAndRunTicks(() => {});
 
     // Check that default value is applied correctly
     params = new URLSearchParams(testLocation.search);
@@ -53,7 +65,7 @@ test('should read/write only the specified set of strings to the URL parameter',
     expect(params.get('urlKey')).toBe('Alpha');
 
     // Check that setting the value changes the parameter
-    act(() => {
+    actAndRunTicks(() => {
         const [, setParam] = result.current;
         setParam('Delta');
     });
@@ -75,7 +87,7 @@ test('should read/write only the specified set of strings to the URL parameter',
     ];
 
     invalidValues.forEach((invalid) => {
-        act(() => {
+        actAndRunTicks(() => {
             const [, setParam] = result.current;
             setParam(invalid);
         });
@@ -85,7 +97,7 @@ test('should read/write only the specified set of strings to the URL parameter',
     });
 
     // Check setting a valid value after invalid attempts correctly sets the new value
-    act(() => {
+    actAndRunTicks(() => {
         const [, setParam] = result.current;
         setParam('Beta');
     });
@@ -111,6 +123,7 @@ test('should default to the current URL parameter value on initialization, if it
             }),
         }
     );
+    actAndRunTicks(() => {});
 
     // Check that default value is not applied if the URL param already contains a valid value
     const params = new URLSearchParams(testLocation.search);
@@ -134,6 +147,7 @@ test('should use the default value when an invalid value is entered directly int
             }),
         }
     );
+    actAndRunTicks(() => {});
 
     // Check that default value is applied correctly when the URL param is invalid
     const params = new URLSearchParams(testLocation.search);
