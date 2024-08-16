@@ -21,7 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
+	configv1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -38,13 +38,13 @@ var _ = Describe("Policy Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		policy := &configstackroxiov1alpha1.Policy{}
+		policy := &configv1alpha1.Policy{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind Policy")
 			err := k8sClient.Get(ctx, typeNamespacedName, policy)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &configstackroxiov1alpha1.Policy{
+				resource := &configv1alpha1.Policy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -57,7 +57,7 @@ var _ = Describe("Policy Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &configstackroxiov1alpha1.Policy{}
+			resource := &configv1alpha1.Policy{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 

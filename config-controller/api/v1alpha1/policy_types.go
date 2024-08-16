@@ -31,8 +31,8 @@ type PolicyStatus struct {
 	Message  string `json:"message"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Policy is the Schema for the policies API
 type Policy struct {
@@ -43,7 +43,7 @@ type Policy struct {
 	Status PolicyStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // PolicyList contains a list of Policy
 type PolicyList struct {
