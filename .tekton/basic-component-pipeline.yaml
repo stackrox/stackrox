@@ -449,72 +449,12 @@ spec:
       operator: in
       values: [ "true" ]
 
-  - name: deprecated-base-image-check-amd64
+  - name: deprecated-base-image-check
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-container-amd64.results.IMAGE_URL)
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     - name: IMAGE_DIGEST
-      value: $(tasks.build-container-amd64.results.IMAGE_DIGEST)
-    taskRef:
-      params:
-      - name: name
-        value: deprecated-image-check
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-deprecated-image-check:0.4@sha256:d98fa9daf5ee12dfbf00880b83d092d01ce9994d79836548d2f82748bb0c64a2
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(params.skip-checks)
-      operator: in
-      values: [ "false" ]
-
-  - name: deprecated-base-image-check-s390x
-    params:
-    - name: IMAGE_URL
-      value: $(tasks.build-container-s390x.results.IMAGE_URL)
-    - name: IMAGE_DIGEST
-      value: $(tasks.build-container-s390x.results.IMAGE_DIGEST)
-    taskRef:
-      params:
-      - name: name
-        value: deprecated-image-check
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-deprecated-image-check:0.4@sha256:d98fa9daf5ee12dfbf00880b83d092d01ce9994d79836548d2f82748bb0c64a2
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(params.skip-checks)
-      operator: in
-      values: [ "false" ]
-
-  - name: deprecated-base-image-check-ppc64le
-    params:
-    - name: IMAGE_URL
-      value: $(tasks.build-container-ppc64le.results.IMAGE_URL)
-    - name: IMAGE_DIGEST
-      value: $(tasks.build-container-ppc64le.results.IMAGE_DIGEST)
-    taskRef:
-      params:
-      - name: name
-        value: deprecated-image-check
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-deprecated-image-check:0.4@sha256:d98fa9daf5ee12dfbf00880b83d092d01ce9994d79836548d2f82748bb0c64a2
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(params.skip-checks)
-      operator: in
-      values: [ "false" ]
-
-  - name: deprecated-base-image-check-arm64
-    params:
-    - name: IMAGE_URL
-      value: $(tasks.build-container-arm64.results.IMAGE_URL)
-    - name: IMAGE_DIGEST
-      value: $(tasks.build-container-arm64.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
     taskRef:
       params:
       - name: name
