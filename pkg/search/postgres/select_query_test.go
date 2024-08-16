@@ -762,6 +762,69 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			},
 		},
 		{
+			desc: "select derived w/ filter and group by and pagination of filter field",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum1",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestStruct_ENUM1.String()).ProtoQuery(),
+						),
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum2",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestStruct_ENUM2.String()).ProtoQuery(),
+						),
+				).AddGroupBy(search.TestBool).
+				WithPagination(search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestEnum1Custom)).
+					AddSortOption(search.NewSortOption(search.TestEnum2Custom).Reversed(true))).ProtoQuery(),
+			resultStruct: DerivedStruct8{},
+			expectedQuery: "select count(test_structs.Key1) filter (where (test_structs.Enum = $1)) as test_string_affected_by_enum1, " +
+				"count(test_structs.Key1) filter (where (test_structs.Enum = $2)) as test_string_affected_by_enum2, " +
+				"test_structs.Bool as test_bool from test_structs " +
+				"group by test_structs.Bool order by test_string_affected_by_enum1 asc, test_string_affected_by_enum2 desc",
+			expectedResult: []*DerivedStruct8{
+				{1, 1, false},
+				{1, 1, true},
+			},
+		},
+		{
+			desc: "select derived w/ filter and group by and pagination of INVALID filter field",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum1",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestStruct_ENUM1.String()).ProtoQuery(),
+						),
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum2",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestStruct_ENUM2.String()).ProtoQuery(),
+						),
+				).AddGroupBy(search.TestBool).
+				WithPagination(search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestInvalidEnumCustom))).ProtoQuery(),
+			resultStruct: DerivedStruct8{},
+			expectedQuery: "select count(test_structs.Key1) filter (where (test_structs.Enum = $1)) as test_string_affected_by_enum1, " +
+				"count(test_structs.Key1) filter (where (test_structs.Enum = $2)) as test_string_affected_by_enum2, " +
+				"test_structs.Bool as test_bool from test_structs " +
+				"group by test_structs.Bool",
+			expectedResult: []*DerivedStruct8{
+				{1, 1, false},
+				{1, 1, true},
+			},
+		},
+		{
 			desc: "select multiple derived w/ group by & pagination",
 			q: search.NewQueryBuilder().
 				AddSelectFields(
