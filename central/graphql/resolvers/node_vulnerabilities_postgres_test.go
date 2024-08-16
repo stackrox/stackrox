@@ -75,7 +75,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 	s.resolver = resolver
 
 	// Add test data to DataStores
-	testClusters, testNodes := testClustersWithNodes()
+	testClusters, testNodes := testClustersWithNodes(true)
 	for _, cluster := range testClusters {
 		err := s.resolver.ClusterDataStore.UpdateCluster(s.ctx, cluster)
 		s.NoError(err)
