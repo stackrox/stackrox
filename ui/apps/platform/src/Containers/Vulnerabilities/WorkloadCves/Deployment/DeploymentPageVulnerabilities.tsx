@@ -62,7 +62,9 @@ import {
 import DeploymentVulnerabilitiesTable, {
     deploymentWithVulnerabilitiesFragment,
 } from '../Tables/DeploymentVulnerabilitiesTable';
-import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import VulnerabilityStateTabs, {
+    vulnStateTabContentId,
+} from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 const summaryQuery = gql`
@@ -227,6 +229,7 @@ function DeploymentPageVulnerabilities({
             </PageSection>
             <Divider component="div" />
             <PageSection
+                id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
