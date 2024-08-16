@@ -242,6 +242,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
+      - BASE_IMAGE=$(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-amd64
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
       - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
@@ -280,6 +281,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
+      - BASE_IMAGE=$(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-s390x
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
       - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
@@ -320,6 +322,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
+      - BASE_IMAGE=$(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-ppc64le
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
       - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT
@@ -360,6 +363,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
+      - BASE_IMAGE=$(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-arm64
       - VERSIONS_SUFFIX=$(params.output-tag-suffix)
       - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
     - name: SOURCE_ARTIFACT

@@ -1,3 +1,5 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+ARG BASE_IMAGE
+
+FROM $BASE_IMAGE
 
 LABEL foo=bar
