@@ -25,7 +25,7 @@ function ProfileClustersPage() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: [CLUSTER_QUERY],
         defaultSortOption: { field: CLUSTER_QUERY, direction: 'asc' },
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
     const { searchFilter, setSearchFilter } = useURLSearch();
 
@@ -62,7 +62,7 @@ function ProfileClustersPage() {
 
     function onClearFilters() {
         setSearchFilter({});
-        setPage(1, 'replace');
+        setPage(1);
     }
 
     return (

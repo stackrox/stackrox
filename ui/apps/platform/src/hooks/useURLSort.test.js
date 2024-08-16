@@ -19,6 +19,17 @@ const wrapper = ({ children }) => {
     return <Router history={history}>{children}</Router>;
 };
 
+beforeAll(() => {
+    jest.useFakeTimers();
+});
+
+function actAndRunTicks(callback) {
+    return act(() => {
+        callback();
+        jest.runAllTicks();
+    });
+}
+
 describe('useURLSort', () => {
     it('should get the sort options from URL by default', () => {
         const { result } = renderHook(
@@ -44,7 +55,7 @@ describe('useURLSort', () => {
             }
         );
 
-        act(() => {
+        actAndRunTicks(() => {
             result.current.getSortParams('Name').onSort(null, null, 'asc');
         });
 
@@ -62,7 +73,7 @@ describe('useURLSort', () => {
             }
         );
 
-        act(() => {
+        actAndRunTicks(() => {
             result.current.getSortParams('Status').onSort(null, null, 'desc');
         });
 
