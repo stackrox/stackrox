@@ -329,7 +329,7 @@ teardown_gke_cluster() {
 
     for i in {1..10}; do
         gcloud container clusters describe "${CLUSTER_NAME}" --format "flattened(status)"
-        if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format 'get(status)')" != "PROVISIONING" ]]; then
+        if [[ ! "$(gcloud container clusters describe "${CLUSTER_NAME}" --format 'get(status)')" =~ PROVISIONING|RECONCILING ]]; then
             break
         fi
         info "Before deleting, waiting for cluster ${CLUSTER_NAME} to leave provisioning state (wait $i of 10)"
