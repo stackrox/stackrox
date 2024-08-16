@@ -54,11 +54,32 @@ func (s *serviceImpl) GetCertExpiry(ctx context.Context, request *v1.GetCertExpi
 		return s.getScannerCertExpiry(ctx)
 	case v1.GetCertExpiry_SCANNER_V4:
 		return s.getScannerV4CertExpiry(ctx)
+	case v1.GetCertExpiry_CENTRAL_DB:
+		return s.getCentralDbCertExpiry()
 	}
 	return nil, errors.Wrapf(errox.InvalidArgs, "invalid component: %v", request.GetComponent())
 }
 
 func (s *serviceImpl) getCentralCertExpiry() (*v1.GetCertExpiry_Response, error) {
+	cert, err := mtls.LeafCertificateFromFile()
+	if err != nil {
+		return nil, errors.Errorf("failed to retrieve leaf certificate: %v", err)
+	}
+	if len(cert.Certificate) == 0 {
+		return nil, errors.New("no central cert found")
+	}
+	parsedCert, err := x509.ParseCertificate(cert.Certificate[0])
+	if err != nil {
+		return nil, errors.New("failed to parse central cert")
+	}
+	expiry, err := protocompat.ConvertTimeToTimestampOrError(parsedCert.NotAfter)
+	if err != nil {
+		return nil, errors.Errorf("failed to convert timestamp: %v", err)
+	}
+	return &v1.GetCertExpiry_Response{Expiry: expiry}, nil
+}
+
+func (s *serviceImpl) getCentralDbCertExpiry() (*v1.GetCertExpiry_Response, error) {
 	cert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
 		return nil, errors.Errorf("failed to retrieve leaf certificate: %v", err)
