@@ -19,235 +19,198 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	CollectorRuntimeConfigService_GetCollectorRuntimeConfig_FullMethodName    = "/v1.CollectorRuntimeConfigService/GetCollectorRuntimeConfig"
-	CollectorRuntimeConfigService_PostCollectorRuntimeConfig_FullMethodName   = "/v1.CollectorRuntimeConfigService/PostCollectorRuntimeConfig"
-	CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_FullMethodName  = "/v1.CollectorRuntimeConfigService/PatchCollectorRuntimeConfig"
-	CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_FullMethodName = "/v1.CollectorRuntimeConfigService/DeleteCollectorRuntimeConfig"
-	CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_FullMethodName = "/v1.CollectorRuntimeConfigService/DryRunCollectorRuntimeConfig"
+	RuntimeConfigService_GetRuntimeConfig_FullMethodName    = "/v1.RuntimeConfigService/GetRuntimeConfig"
+	RuntimeConfigService_PostRuntimeConfig_FullMethodName   = "/v1.RuntimeConfigService/PostRuntimeConfig"
+	RuntimeConfigService_PatchRuntimeConfig_FullMethodName  = "/v1.RuntimeConfigService/PatchRuntimeConfig"
+	RuntimeConfigService_DryRunRuntimeConfig_FullMethodName = "/v1.RuntimeConfigService/DryRunRuntimeConfig"
 )
 
-// CollectorRuntimeConfigServiceClient is the client API for CollectorRuntimeConfigService service.
+// RuntimeConfigServiceClient is the client API for RuntimeConfigService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type CollectorRuntimeConfigServiceClient interface {
-	GetCollectorRuntimeConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetCollectorRuntimeConfigResponse, error)
-	PostCollectorRuntimeConfig(ctx context.Context, in *CollectorRuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error)
-	PatchCollectorRuntimeConfig(ctx context.Context, in *CollectorRuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error)
-	DeleteCollectorRuntimeConfig(ctx context.Context, in *DeleteCollectorRuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error)
-	DryRunCollectorRuntimeConfig(ctx context.Context, in *CollectorRuntimeConfigRequest, opts ...grpc.CallOption) (*DryRunCollectorRuntimeConfigResponse, error)
+type RuntimeConfigServiceClient interface {
+	GetRuntimeConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetRuntimeConfigResponse, error)
+	PostRuntimeConfig(ctx context.Context, in *RuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error)
+	PatchRuntimeConfig(ctx context.Context, in *RuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error)
+	DryRunRuntimeConfig(ctx context.Context, in *RuntimeConfigRequest, opts ...grpc.CallOption) (*DryRunRuntimeConfigResponse, error)
 }
 
-type collectorRuntimeConfigServiceClient struct {
+type runtimeConfigServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewCollectorRuntimeConfigServiceClient(cc grpc.ClientConnInterface) CollectorRuntimeConfigServiceClient {
-	return &collectorRuntimeConfigServiceClient{cc}
+func NewRuntimeConfigServiceClient(cc grpc.ClientConnInterface) RuntimeConfigServiceClient {
+	return &runtimeConfigServiceClient{cc}
 }
 
-func (c *collectorRuntimeConfigServiceClient) GetCollectorRuntimeConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetCollectorRuntimeConfigResponse, error) {
-	out := new(GetCollectorRuntimeConfigResponse)
-	err := c.cc.Invoke(ctx, CollectorRuntimeConfigService_GetCollectorRuntimeConfig_FullMethodName, in, out, opts...)
+func (c *runtimeConfigServiceClient) GetRuntimeConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetRuntimeConfigResponse, error) {
+	out := new(GetRuntimeConfigResponse)
+	err := c.cc.Invoke(ctx, RuntimeConfigService_GetRuntimeConfig_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *collectorRuntimeConfigServiceClient) PostCollectorRuntimeConfig(ctx context.Context, in *CollectorRuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *runtimeConfigServiceClient) PostRuntimeConfig(ctx context.Context, in *RuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, CollectorRuntimeConfigService_PostCollectorRuntimeConfig_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, RuntimeConfigService_PostRuntimeConfig_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *collectorRuntimeConfigServiceClient) PatchCollectorRuntimeConfig(ctx context.Context, in *CollectorRuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *runtimeConfigServiceClient) PatchRuntimeConfig(ctx context.Context, in *RuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, RuntimeConfigService_PatchRuntimeConfig_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *collectorRuntimeConfigServiceClient) DeleteCollectorRuntimeConfig(ctx context.Context, in *DeleteCollectorRuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_FullMethodName, in, out, opts...)
+func (c *runtimeConfigServiceClient) DryRunRuntimeConfig(ctx context.Context, in *RuntimeConfigRequest, opts ...grpc.CallOption) (*DryRunRuntimeConfigResponse, error) {
+	out := new(DryRunRuntimeConfigResponse)
+	err := c.cc.Invoke(ctx, RuntimeConfigService_DryRunRuntimeConfig_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *collectorRuntimeConfigServiceClient) DryRunCollectorRuntimeConfig(ctx context.Context, in *CollectorRuntimeConfigRequest, opts ...grpc.CallOption) (*DryRunCollectorRuntimeConfigResponse, error) {
-	out := new(DryRunCollectorRuntimeConfigResponse)
-	err := c.cc.Invoke(ctx, CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// CollectorRuntimeConfigServiceServer is the server API for CollectorRuntimeConfigService service.
-// All implementations should embed UnimplementedCollectorRuntimeConfigServiceServer
+// RuntimeConfigServiceServer is the server API for RuntimeConfigService service.
+// All implementations should embed UnimplementedRuntimeConfigServiceServer
 // for forward compatibility
-type CollectorRuntimeConfigServiceServer interface {
-	GetCollectorRuntimeConfig(context.Context, *Empty) (*GetCollectorRuntimeConfigResponse, error)
-	PostCollectorRuntimeConfig(context.Context, *CollectorRuntimeConfigRequest) (*Empty, error)
-	PatchCollectorRuntimeConfig(context.Context, *CollectorRuntimeConfigRequest) (*Empty, error)
-	DeleteCollectorRuntimeConfig(context.Context, *DeleteCollectorRuntimeConfigRequest) (*Empty, error)
-	DryRunCollectorRuntimeConfig(context.Context, *CollectorRuntimeConfigRequest) (*DryRunCollectorRuntimeConfigResponse, error)
+type RuntimeConfigServiceServer interface {
+	GetRuntimeConfig(context.Context, *Empty) (*GetRuntimeConfigResponse, error)
+	PostRuntimeConfig(context.Context, *RuntimeConfigRequest) (*Empty, error)
+	PatchRuntimeConfig(context.Context, *RuntimeConfigRequest) (*Empty, error)
+	DryRunRuntimeConfig(context.Context, *RuntimeConfigRequest) (*DryRunRuntimeConfigResponse, error)
 }
 
-// UnimplementedCollectorRuntimeConfigServiceServer should be embedded to have forward compatible implementations.
-type UnimplementedCollectorRuntimeConfigServiceServer struct {
+// UnimplementedRuntimeConfigServiceServer should be embedded to have forward compatible implementations.
+type UnimplementedRuntimeConfigServiceServer struct {
 }
 
-func (UnimplementedCollectorRuntimeConfigServiceServer) GetCollectorRuntimeConfig(context.Context, *Empty) (*GetCollectorRuntimeConfigResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCollectorRuntimeConfig not implemented")
+func (UnimplementedRuntimeConfigServiceServer) GetRuntimeConfig(context.Context, *Empty) (*GetRuntimeConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRuntimeConfig not implemented")
 }
-func (UnimplementedCollectorRuntimeConfigServiceServer) PostCollectorRuntimeConfig(context.Context, *CollectorRuntimeConfigRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PostCollectorRuntimeConfig not implemented")
+func (UnimplementedRuntimeConfigServiceServer) PostRuntimeConfig(context.Context, *RuntimeConfigRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostRuntimeConfig not implemented")
 }
-func (UnimplementedCollectorRuntimeConfigServiceServer) PatchCollectorRuntimeConfig(context.Context, *CollectorRuntimeConfigRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PatchCollectorRuntimeConfig not implemented")
+func (UnimplementedRuntimeConfigServiceServer) PatchRuntimeConfig(context.Context, *RuntimeConfigRequest) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PatchRuntimeConfig not implemented")
 }
-func (UnimplementedCollectorRuntimeConfigServiceServer) DeleteCollectorRuntimeConfig(context.Context, *DeleteCollectorRuntimeConfigRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteCollectorRuntimeConfig not implemented")
-}
-func (UnimplementedCollectorRuntimeConfigServiceServer) DryRunCollectorRuntimeConfig(context.Context, *CollectorRuntimeConfigRequest) (*DryRunCollectorRuntimeConfigResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DryRunCollectorRuntimeConfig not implemented")
+func (UnimplementedRuntimeConfigServiceServer) DryRunRuntimeConfig(context.Context, *RuntimeConfigRequest) (*DryRunRuntimeConfigResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DryRunRuntimeConfig not implemented")
 }
 
-// UnsafeCollectorRuntimeConfigServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to CollectorRuntimeConfigServiceServer will
+// UnsafeRuntimeConfigServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RuntimeConfigServiceServer will
 // result in compilation errors.
-type UnsafeCollectorRuntimeConfigServiceServer interface {
-	mustEmbedUnimplementedCollectorRuntimeConfigServiceServer()
+type UnsafeRuntimeConfigServiceServer interface {
+	mustEmbedUnimplementedRuntimeConfigServiceServer()
 }
 
-func RegisterCollectorRuntimeConfigServiceServer(s grpc.ServiceRegistrar, srv CollectorRuntimeConfigServiceServer) {
-	s.RegisterService(&CollectorRuntimeConfigService_ServiceDesc, srv)
+func RegisterRuntimeConfigServiceServer(s grpc.ServiceRegistrar, srv RuntimeConfigServiceServer) {
+	s.RegisterService(&RuntimeConfigService_ServiceDesc, srv)
 }
 
-func _CollectorRuntimeConfigService_GetCollectorRuntimeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RuntimeConfigService_GetRuntimeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CollectorRuntimeConfigServiceServer).GetCollectorRuntimeConfig(ctx, in)
+		return srv.(RuntimeConfigServiceServer).GetRuntimeConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CollectorRuntimeConfigService_GetCollectorRuntimeConfig_FullMethodName,
+		FullMethod: RuntimeConfigService_GetRuntimeConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CollectorRuntimeConfigServiceServer).GetCollectorRuntimeConfig(ctx, req.(*Empty))
+		return srv.(RuntimeConfigServiceServer).GetRuntimeConfig(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CollectorRuntimeConfigService_PostCollectorRuntimeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectorRuntimeConfigRequest)
+func _RuntimeConfigService_PostRuntimeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RuntimeConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CollectorRuntimeConfigServiceServer).PostCollectorRuntimeConfig(ctx, in)
+		return srv.(RuntimeConfigServiceServer).PostRuntimeConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CollectorRuntimeConfigService_PostCollectorRuntimeConfig_FullMethodName,
+		FullMethod: RuntimeConfigService_PostRuntimeConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CollectorRuntimeConfigServiceServer).PostCollectorRuntimeConfig(ctx, req.(*CollectorRuntimeConfigRequest))
+		return srv.(RuntimeConfigServiceServer).PostRuntimeConfig(ctx, req.(*RuntimeConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectorRuntimeConfigRequest)
+func _RuntimeConfigService_PatchRuntimeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RuntimeConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CollectorRuntimeConfigServiceServer).PatchCollectorRuntimeConfig(ctx, in)
+		return srv.(RuntimeConfigServiceServer).PatchRuntimeConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_FullMethodName,
+		FullMethod: RuntimeConfigService_PatchRuntimeConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CollectorRuntimeConfigServiceServer).PatchCollectorRuntimeConfig(ctx, req.(*CollectorRuntimeConfigRequest))
+		return srv.(RuntimeConfigServiceServer).PatchRuntimeConfig(ctx, req.(*RuntimeConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteCollectorRuntimeConfigRequest)
+func _RuntimeConfigService_DryRunRuntimeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RuntimeConfigRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CollectorRuntimeConfigServiceServer).DeleteCollectorRuntimeConfig(ctx, in)
+		return srv.(RuntimeConfigServiceServer).DryRunRuntimeConfig(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_FullMethodName,
+		FullMethod: RuntimeConfigService_DryRunRuntimeConfig_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CollectorRuntimeConfigServiceServer).DeleteCollectorRuntimeConfig(ctx, req.(*DeleteCollectorRuntimeConfigRequest))
+		return srv.(RuntimeConfigServiceServer).DryRunRuntimeConfig(ctx, req.(*RuntimeConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectorRuntimeConfigRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CollectorRuntimeConfigServiceServer).DryRunCollectorRuntimeConfig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CollectorRuntimeConfigServiceServer).DryRunCollectorRuntimeConfig(ctx, req.(*CollectorRuntimeConfigRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// CollectorRuntimeConfigService_ServiceDesc is the grpc.ServiceDesc for CollectorRuntimeConfigService service.
+// RuntimeConfigService_ServiceDesc is the grpc.ServiceDesc for RuntimeConfigService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var CollectorRuntimeConfigService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.CollectorRuntimeConfigService",
-	HandlerType: (*CollectorRuntimeConfigServiceServer)(nil),
+var RuntimeConfigService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "v1.RuntimeConfigService",
+	HandlerType: (*RuntimeConfigServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetCollectorRuntimeConfig",
-			Handler:    _CollectorRuntimeConfigService_GetCollectorRuntimeConfig_Handler,
+			MethodName: "GetRuntimeConfig",
+			Handler:    _RuntimeConfigService_GetRuntimeConfig_Handler,
 		},
 		{
-			MethodName: "PostCollectorRuntimeConfig",
-			Handler:    _CollectorRuntimeConfigService_PostCollectorRuntimeConfig_Handler,
+			MethodName: "PostRuntimeConfig",
+			Handler:    _RuntimeConfigService_PostRuntimeConfig_Handler,
 		},
 		{
-			MethodName: "PatchCollectorRuntimeConfig",
-			Handler:    _CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_Handler,
+			MethodName: "PatchRuntimeConfig",
+			Handler:    _RuntimeConfigService_PatchRuntimeConfig_Handler,
 		},
 		{
-			MethodName: "DeleteCollectorRuntimeConfig",
-			Handler:    _CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_Handler,
-		},
-		{
-			MethodName: "DryRunCollectorRuntimeConfig",
-			Handler:    _CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_Handler,
+			MethodName: "DryRunRuntimeConfig",
+			Handler:    _RuntimeConfigService_DryRunRuntimeConfig_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

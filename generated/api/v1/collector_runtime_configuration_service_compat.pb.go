@@ -2,65 +2,48 @@
 
 package v1
 
-func (m *GetCollectorRuntimeConfigResponse) Size() int { return m.SizeVT() }
-func (m *GetCollectorRuntimeConfigResponse) Clone() *GetCollectorRuntimeConfigResponse {
+func (m *GetRuntimeConfigResponse) Size() int                        { return m.SizeVT() }
+func (m *GetRuntimeConfigResponse) Clone() *GetRuntimeConfigResponse { return m.CloneVT() }
+func (m *GetRuntimeConfigResponse) Marshal() ([]byte, error)         { return m.MarshalVT() }
+func (m *GetRuntimeConfigResponse) Unmarshal(dAtA []byte) error      { return m.UnmarshalVT(dAtA) }
+
+func (m *RuntimeConfigRequest) Size() int                    { return m.SizeVT() }
+func (m *RuntimeConfigRequest) Clone() *RuntimeConfigRequest { return m.CloneVT() }
+func (m *RuntimeConfigRequest) Marshal() ([]byte, error)     { return m.MarshalVT() }
+func (m *RuntimeConfigRequest) Unmarshal(dAtA []byte) error  { return m.UnmarshalVT(dAtA) }
+
+func (m *DryRunRuntimeConfigResponse) Size() int                           { return m.SizeVT() }
+func (m *DryRunRuntimeConfigResponse) Clone() *DryRunRuntimeConfigResponse { return m.CloneVT() }
+func (m *DryRunRuntimeConfigResponse) Marshal() ([]byte, error)            { return m.MarshalVT() }
+func (m *DryRunRuntimeConfigResponse) Unmarshal(dAtA []byte) error         { return m.UnmarshalVT(dAtA) }
+
+func (m *DryRunRuntimeConfigResponse_Resource) Size() int { return m.SizeVT() }
+func (m *DryRunRuntimeConfigResponse_Resource) Clone() *DryRunRuntimeConfigResponse_Resource {
 	return m.CloneVT()
 }
-func (m *GetCollectorRuntimeConfigResponse) Marshal() ([]byte, error)    { return m.MarshalVT() }
-func (m *GetCollectorRuntimeConfigResponse) Unmarshal(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
-
-func (m *CollectorRuntimeConfigRequest) Size() int                             { return m.SizeVT() }
-func (m *CollectorRuntimeConfigRequest) Clone() *CollectorRuntimeConfigRequest { return m.CloneVT() }
-func (m *CollectorRuntimeConfigRequest) Marshal() ([]byte, error)              { return m.MarshalVT() }
-func (m *CollectorRuntimeConfigRequest) Unmarshal(dAtA []byte) error           { return m.UnmarshalVT(dAtA) }
-
-func (m *DeleteCollectorRuntimeConfigRequest) Size() int { return m.SizeVT() }
-func (m *DeleteCollectorRuntimeConfigRequest) Clone() *DeleteCollectorRuntimeConfigRequest {
-	return m.CloneVT()
-}
-func (m *DeleteCollectorRuntimeConfigRequest) Marshal() ([]byte, error) { return m.MarshalVT() }
-func (m *DeleteCollectorRuntimeConfigRequest) Unmarshal(dAtA []byte) error {
+func (m *DryRunRuntimeConfigResponse_Resource) Marshal() ([]byte, error) { return m.MarshalVT() }
+func (m *DryRunRuntimeConfigResponse_Resource) Unmarshal(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse) Size() int { return m.SizeVT() }
-func (m *DryRunCollectorRuntimeConfigResponse) Clone() *DryRunCollectorRuntimeConfigResponse {
+func (m *DryRunRuntimeConfigResponse_StatusWithResources) Size() int { return m.SizeVT() }
+func (m *DryRunRuntimeConfigResponse_StatusWithResources) Clone() *DryRunRuntimeConfigResponse_StatusWithResources {
 	return m.CloneVT()
 }
-func (m *DryRunCollectorRuntimeConfigResponse) Marshal() ([]byte, error) { return m.MarshalVT() }
-func (m *DryRunCollectorRuntimeConfigResponse) Unmarshal(dAtA []byte) error {
-	return m.UnmarshalVT(dAtA)
-}
-
-func (m *DryRunCollectorRuntimeConfigResponse_Resource) Size() int { return m.SizeVT() }
-func (m *DryRunCollectorRuntimeConfigResponse_Resource) Clone() *DryRunCollectorRuntimeConfigResponse_Resource {
-	return m.CloneVT()
-}
-func (m *DryRunCollectorRuntimeConfigResponse_Resource) Marshal() ([]byte, error) {
+func (m *DryRunRuntimeConfigResponse_StatusWithResources) Marshal() ([]byte, error) {
 	return m.MarshalVT()
 }
-func (m *DryRunCollectorRuntimeConfigResponse_Resource) Unmarshal(dAtA []byte) error {
+func (m *DryRunRuntimeConfigResponse_StatusWithResources) Unmarshal(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) Size() int { return m.SizeVT() }
-func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) Clone() *DryRunCollectorRuntimeConfigResponse_StatusWithResources {
+func (m *DryRunRuntimeConfigResponse_StatusesForFeature) Size() int { return m.SizeVT() }
+func (m *DryRunRuntimeConfigResponse_StatusesForFeature) Clone() *DryRunRuntimeConfigResponse_StatusesForFeature {
 	return m.CloneVT()
 }
-func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) Marshal() ([]byte, error) {
+func (m *DryRunRuntimeConfigResponse_StatusesForFeature) Marshal() ([]byte, error) {
 	return m.MarshalVT()
 }
-func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) Unmarshal(dAtA []byte) error {
-	return m.UnmarshalVT(dAtA)
-}
-
-func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) Size() int { return m.SizeVT() }
-func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) Clone() *DryRunCollectorRuntimeConfigResponse_StatusesForFeature {
-	return m.CloneVT()
-}
-func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) Marshal() ([]byte, error) {
-	return m.MarshalVT()
-}
-func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) Unmarshal(dAtA []byte) error {
+func (m *DryRunRuntimeConfigResponse_StatusesForFeature) Unmarshal(dAtA []byte) error {
 	return m.UnmarshalVT(dAtA)
 }

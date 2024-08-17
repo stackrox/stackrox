@@ -31,161 +31,109 @@ var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
-func request_CollectorRuntimeConfigService_GetCollectorRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, client CollectorRuntimeConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_RuntimeConfigService_GetRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, client RuntimeConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq Empty
 	var metadata runtime.ServerMetadata
 
-	msg, err := client.GetCollectorRuntimeConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetRuntimeConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_CollectorRuntimeConfigService_GetCollectorRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, server CollectorRuntimeConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_RuntimeConfigService_GetRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, server RuntimeConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq Empty
 	var metadata runtime.ServerMetadata
 
-	msg, err := server.GetCollectorRuntimeConfig(ctx, &protoReq)
+	msg, err := server.GetRuntimeConfig(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_CollectorRuntimeConfigService_PostCollectorRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, client CollectorRuntimeConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CollectorRuntimeConfigRequest
+func request_RuntimeConfigService_PostRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, client RuntimeConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq RuntimeConfigRequest
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.PostCollectorRuntimeConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.PostRuntimeConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_CollectorRuntimeConfigService_PostCollectorRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, server CollectorRuntimeConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CollectorRuntimeConfigRequest
+func local_request_RuntimeConfigService_PostRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, server RuntimeConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq RuntimeConfigRequest
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.PostCollectorRuntimeConfig(ctx, &protoReq)
+	msg, err := server.PostRuntimeConfig(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, client CollectorRuntimeConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CollectorRuntimeConfigRequest
+func request_RuntimeConfigService_PatchRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, client RuntimeConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq RuntimeConfigRequest
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.PatchCollectorRuntimeConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.PatchRuntimeConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, server CollectorRuntimeConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CollectorRuntimeConfigRequest
+func local_request_RuntimeConfigService_PatchRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, server RuntimeConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq RuntimeConfigRequest
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.PatchCollectorRuntimeConfig(ctx, &protoReq)
+	msg, err := server.PatchRuntimeConfig(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, client CollectorRuntimeConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteCollectorRuntimeConfigRequest
-	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
-	}
-
-	protoReq.Id, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
-	}
-
-	msg, err := client.DeleteCollectorRuntimeConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, server CollectorRuntimeConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteCollectorRuntimeConfigRequest
-	var metadata runtime.ServerMetadata
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
-	}
-
-	protoReq.Id, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
-	}
-
-	msg, err := server.DeleteCollectorRuntimeConfig(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, client CollectorRuntimeConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CollectorRuntimeConfigRequest
+func request_RuntimeConfigService_DryRunRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, client RuntimeConfigServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq RuntimeConfigRequest
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.DryRunCollectorRuntimeConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.DryRunRuntimeConfig(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, server CollectorRuntimeConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq CollectorRuntimeConfigRequest
+func local_request_RuntimeConfigService_DryRunRuntimeConfig_0(ctx context.Context, marshaler runtime.Marshaler, server RuntimeConfigServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq RuntimeConfigRequest
 	var metadata runtime.ServerMetadata
 
 	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.DryRunCollectorRuntimeConfig(ctx, &protoReq)
+	msg, err := server.DryRunRuntimeConfig(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-// RegisterCollectorRuntimeConfigServiceHandlerServer registers the http handlers for service CollectorRuntimeConfigService to "mux".
-// UnaryRPC     :call CollectorRuntimeConfigServiceServer directly.
+// RegisterRuntimeConfigServiceHandlerServer registers the http handlers for service RuntimeConfigService to "mux".
+// UnaryRPC     :call RuntimeConfigServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
-// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterCollectorRuntimeConfigServiceHandlerFromEndpoint instead.
-func RegisterCollectorRuntimeConfigServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server CollectorRuntimeConfigServiceServer) error {
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterRuntimeConfigServiceHandlerFromEndpoint instead.
+func RegisterRuntimeConfigServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server RuntimeConfigServiceServer) error {
 
-	mux.Handle("GET", pattern_CollectorRuntimeConfigService_GetCollectorRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_RuntimeConfigService_GetRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -193,12 +141,12 @@ func RegisterCollectorRuntimeConfigServiceHandlerServer(ctx context.Context, mux
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.CollectorRuntimeConfigService/GetCollectorRuntimeConfig", runtime.WithHTTPPathPattern("/v1/collector_runtime_config"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.RuntimeConfigService/GetRuntimeConfig", runtime.WithHTTPPathPattern("/v1/runtime_config"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_CollectorRuntimeConfigService_GetCollectorRuntimeConfig_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_RuntimeConfigService_GetRuntimeConfig_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -206,11 +154,11 @@ func RegisterCollectorRuntimeConfigServiceHandlerServer(ctx context.Context, mux
 			return
 		}
 
-		forward_CollectorRuntimeConfigService_GetCollectorRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_RuntimeConfigService_GetRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_CollectorRuntimeConfigService_PostCollectorRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_RuntimeConfigService_PostRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -218,12 +166,12 @@ func RegisterCollectorRuntimeConfigServiceHandlerServer(ctx context.Context, mux
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.CollectorRuntimeConfigService/PostCollectorRuntimeConfig", runtime.WithHTTPPathPattern("/v1/collector_runtime_config"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.RuntimeConfigService/PostRuntimeConfig", runtime.WithHTTPPathPattern("/v1/runtime_config"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_CollectorRuntimeConfigService_PostCollectorRuntimeConfig_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_RuntimeConfigService_PostRuntimeConfig_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -231,11 +179,11 @@ func RegisterCollectorRuntimeConfigServiceHandlerServer(ctx context.Context, mux
 			return
 		}
 
-		forward_CollectorRuntimeConfigService_PostCollectorRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_RuntimeConfigService_PostRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("PATCH", pattern_CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PATCH", pattern_RuntimeConfigService_PatchRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -243,12 +191,12 @@ func RegisterCollectorRuntimeConfigServiceHandlerServer(ctx context.Context, mux
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.CollectorRuntimeConfigService/PatchCollectorRuntimeConfig", runtime.WithHTTPPathPattern("/v1/collector_runtime_config"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.RuntimeConfigService/PatchRuntimeConfig", runtime.WithHTTPPathPattern("/v1/runtime_config"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_RuntimeConfigService_PatchRuntimeConfig_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -256,11 +204,11 @@ func RegisterCollectorRuntimeConfigServiceHandlerServer(ctx context.Context, mux
 			return
 		}
 
-		forward_CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_RuntimeConfigService_PatchRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("DELETE", pattern_CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_RuntimeConfigService_DryRunRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -268,12 +216,12 @@ func RegisterCollectorRuntimeConfigServiceHandlerServer(ctx context.Context, mux
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.CollectorRuntimeConfigService/DeleteCollectorRuntimeConfig", runtime.WithHTTPPathPattern("/v1/collector_runtime_config/id/{id}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.RuntimeConfigService/DryRunRuntimeConfig", runtime.WithHTTPPathPattern("/v1/runtime_config/dryrun"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_RuntimeConfigService_DryRunRuntimeConfig_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -281,41 +229,16 @@ func RegisterCollectorRuntimeConfigServiceHandlerServer(ctx context.Context, mux
 			return
 		}
 
-		forward_CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.CollectorRuntimeConfigService/DryRunCollectorRuntimeConfig", runtime.WithHTTPPathPattern("/v1/collector_runtime_config/dryrun"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_RuntimeConfigService_DryRunRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	return nil
 }
 
-// RegisterCollectorRuntimeConfigServiceHandlerFromEndpoint is same as RegisterCollectorRuntimeConfigServiceHandler but
+// RegisterRuntimeConfigServiceHandlerFromEndpoint is same as RegisterRuntimeConfigServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterCollectorRuntimeConfigServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterRuntimeConfigServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.NewClient(endpoint, opts...)
 	if err != nil {
 		return err
@@ -335,129 +258,107 @@ func RegisterCollectorRuntimeConfigServiceHandlerFromEndpoint(ctx context.Contex
 		}()
 	}()
 
-	return RegisterCollectorRuntimeConfigServiceHandler(ctx, mux, conn)
+	return RegisterRuntimeConfigServiceHandler(ctx, mux, conn)
 }
 
-// RegisterCollectorRuntimeConfigServiceHandler registers the http handlers for service CollectorRuntimeConfigService to "mux".
+// RegisterRuntimeConfigServiceHandler registers the http handlers for service RuntimeConfigService to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterCollectorRuntimeConfigServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterCollectorRuntimeConfigServiceHandlerClient(ctx, mux, NewCollectorRuntimeConfigServiceClient(conn))
+func RegisterRuntimeConfigServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterRuntimeConfigServiceHandlerClient(ctx, mux, NewRuntimeConfigServiceClient(conn))
 }
 
-// RegisterCollectorRuntimeConfigServiceHandlerClient registers the http handlers for service CollectorRuntimeConfigService
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "CollectorRuntimeConfigServiceClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "CollectorRuntimeConfigServiceClient"
+// RegisterRuntimeConfigServiceHandlerClient registers the http handlers for service RuntimeConfigService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "RuntimeConfigServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "RuntimeConfigServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "CollectorRuntimeConfigServiceClient" to call the correct interceptors.
-func RegisterCollectorRuntimeConfigServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client CollectorRuntimeConfigServiceClient) error {
+// "RuntimeConfigServiceClient" to call the correct interceptors.
+func RegisterRuntimeConfigServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client RuntimeConfigServiceClient) error {
 
-	mux.Handle("GET", pattern_CollectorRuntimeConfigService_GetCollectorRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_RuntimeConfigService_GetRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.CollectorRuntimeConfigService/GetCollectorRuntimeConfig", runtime.WithHTTPPathPattern("/v1/collector_runtime_config"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.RuntimeConfigService/GetRuntimeConfig", runtime.WithHTTPPathPattern("/v1/runtime_config"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_CollectorRuntimeConfigService_GetCollectorRuntimeConfig_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_RuntimeConfigService_GetRuntimeConfig_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_CollectorRuntimeConfigService_GetCollectorRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_RuntimeConfigService_GetRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_CollectorRuntimeConfigService_PostCollectorRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_RuntimeConfigService_PostRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.CollectorRuntimeConfigService/PostCollectorRuntimeConfig", runtime.WithHTTPPathPattern("/v1/collector_runtime_config"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.RuntimeConfigService/PostRuntimeConfig", runtime.WithHTTPPathPattern("/v1/runtime_config"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_CollectorRuntimeConfigService_PostCollectorRuntimeConfig_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_RuntimeConfigService_PostRuntimeConfig_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_CollectorRuntimeConfigService_PostCollectorRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_RuntimeConfigService_PostRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("PATCH", pattern_CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PATCH", pattern_RuntimeConfigService_PatchRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.CollectorRuntimeConfigService/PatchCollectorRuntimeConfig", runtime.WithHTTPPathPattern("/v1/collector_runtime_config"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.RuntimeConfigService/PatchRuntimeConfig", runtime.WithHTTPPathPattern("/v1/runtime_config"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_RuntimeConfigService_PatchRuntimeConfig_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_RuntimeConfigService_PatchRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("DELETE", pattern_CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_RuntimeConfigService_DryRunRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.CollectorRuntimeConfigService/DeleteCollectorRuntimeConfig", runtime.WithHTTPPathPattern("/v1/collector_runtime_config/id/{id}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.RuntimeConfigService/DryRunRuntimeConfig", runtime.WithHTTPPathPattern("/v1/runtime_config/dryrun"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_RuntimeConfigService_DryRunRuntimeConfig_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.CollectorRuntimeConfigService/DryRunCollectorRuntimeConfig", runtime.WithHTTPPathPattern("/v1/collector_runtime_config/dryrun"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_RuntimeConfigService_DryRunRuntimeConfig_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -465,25 +366,21 @@ func RegisterCollectorRuntimeConfigServiceHandlerClient(ctx context.Context, mux
 }
 
 var (
-	pattern_CollectorRuntimeConfigService_GetCollectorRuntimeConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "collector_runtime_config"}, ""))
+	pattern_RuntimeConfigService_GetRuntimeConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "runtime_config"}, ""))
 
-	pattern_CollectorRuntimeConfigService_PostCollectorRuntimeConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "collector_runtime_config"}, ""))
+	pattern_RuntimeConfigService_PostRuntimeConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "runtime_config"}, ""))
 
-	pattern_CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "collector_runtime_config"}, ""))
+	pattern_RuntimeConfigService_PatchRuntimeConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "runtime_config"}, ""))
 
-	pattern_CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 2}, []string{"v1", "collector_runtime_config", "id"}, ""))
-
-	pattern_CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "collector_runtime_config", "dryrun"}, ""))
+	pattern_RuntimeConfigService_DryRunRuntimeConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "runtime_config", "dryrun"}, ""))
 )
 
 var (
-	forward_CollectorRuntimeConfigService_GetCollectorRuntimeConfig_0 = runtime.ForwardResponseMessage
+	forward_RuntimeConfigService_GetRuntimeConfig_0 = runtime.ForwardResponseMessage
 
-	forward_CollectorRuntimeConfigService_PostCollectorRuntimeConfig_0 = runtime.ForwardResponseMessage
+	forward_RuntimeConfigService_PostRuntimeConfig_0 = runtime.ForwardResponseMessage
 
-	forward_CollectorRuntimeConfigService_PatchCollectorRuntimeConfig_0 = runtime.ForwardResponseMessage
+	forward_RuntimeConfigService_PatchRuntimeConfig_0 = runtime.ForwardResponseMessage
 
-	forward_CollectorRuntimeConfigService_DeleteCollectorRuntimeConfig_0 = runtime.ForwardResponseMessage
-
-	forward_CollectorRuntimeConfigService_DryRunCollectorRuntimeConfig_0 = runtime.ForwardResponseMessage
+	forward_RuntimeConfigService_DryRunRuntimeConfig_0 = runtime.ForwardResponseMessage
 )

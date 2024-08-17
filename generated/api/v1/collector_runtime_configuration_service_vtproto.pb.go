@@ -20,18 +20,18 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-func (m *GetCollectorRuntimeConfigResponse) CloneVT() *GetCollectorRuntimeConfigResponse {
+func (m *GetRuntimeConfigResponse) CloneVT() *GetRuntimeConfigResponse {
 	if m == nil {
-		return (*GetCollectorRuntimeConfigResponse)(nil)
+		return (*GetRuntimeConfigResponse)(nil)
 	}
-	r := new(GetCollectorRuntimeConfigResponse)
-	if rhs := m.CollectorRuntimeConfig; rhs != nil {
+	r := new(GetRuntimeConfigResponse)
+	if rhs := m.RuntimeConfig; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface {
-			CloneVT() *commonapi.CollectorRuntimeConfig
+			CloneVT() *commonapi.RuntimeConfigs
 		}); ok {
-			r.CollectorRuntimeConfig = vtpb.CloneVT()
+			r.RuntimeConfig = vtpb.CloneVT()
 		} else {
-			r.CollectorRuntimeConfig = proto.Clone(rhs).(*commonapi.CollectorRuntimeConfig)
+			r.RuntimeConfig = proto.Clone(rhs).(*commonapi.RuntimeConfigs)
 		}
 	}
 	if len(m.unknownFields) > 0 {
@@ -41,22 +41,22 @@ func (m *GetCollectorRuntimeConfigResponse) CloneVT() *GetCollectorRuntimeConfig
 	return r
 }
 
-func (m *GetCollectorRuntimeConfigResponse) CloneMessageVT() proto.Message {
+func (m *GetRuntimeConfigResponse) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *CollectorRuntimeConfigRequest) CloneVT() *CollectorRuntimeConfigRequest {
+func (m *RuntimeConfigRequest) CloneVT() *RuntimeConfigRequest {
 	if m == nil {
-		return (*CollectorRuntimeConfigRequest)(nil)
+		return (*RuntimeConfigRequest)(nil)
 	}
-	r := new(CollectorRuntimeConfigRequest)
-	if rhs := m.CollectorRuntimeConfig; rhs != nil {
+	r := new(RuntimeConfigRequest)
+	if rhs := m.RuntimeConfig; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface {
-			CloneVT() *commonapi.CollectorRuntimeConfig
+			CloneVT() *commonapi.RuntimeConfigs
 		}); ok {
-			r.CollectorRuntimeConfig = vtpb.CloneVT()
+			r.RuntimeConfig = vtpb.CloneVT()
 		} else {
-			r.CollectorRuntimeConfig = proto.Clone(rhs).(*commonapi.CollectorRuntimeConfig)
+			r.RuntimeConfig = proto.Clone(rhs).(*commonapi.RuntimeConfigs)
 		}
 	}
 	if len(m.unknownFields) > 0 {
@@ -66,32 +66,15 @@ func (m *CollectorRuntimeConfigRequest) CloneVT() *CollectorRuntimeConfigRequest
 	return r
 }
 
-func (m *CollectorRuntimeConfigRequest) CloneMessageVT() proto.Message {
+func (m *RuntimeConfigRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *DeleteCollectorRuntimeConfigRequest) CloneVT() *DeleteCollectorRuntimeConfigRequest {
+func (m *DryRunRuntimeConfigResponse_Resource) CloneVT() *DryRunRuntimeConfigResponse_Resource {
 	if m == nil {
-		return (*DeleteCollectorRuntimeConfigRequest)(nil)
+		return (*DryRunRuntimeConfigResponse_Resource)(nil)
 	}
-	r := new(DeleteCollectorRuntimeConfigRequest)
-	r.Id = m.Id
-	if len(m.unknownFields) > 0 {
-		r.unknownFields = make([]byte, len(m.unknownFields))
-		copy(r.unknownFields, m.unknownFields)
-	}
-	return r
-}
-
-func (m *DeleteCollectorRuntimeConfigRequest) CloneMessageVT() proto.Message {
-	return m.CloneVT()
-}
-
-func (m *DryRunCollectorRuntimeConfigResponse_Resource) CloneVT() *DryRunCollectorRuntimeConfigResponse_Resource {
-	if m == nil {
-		return (*DryRunCollectorRuntimeConfigResponse_Resource)(nil)
-	}
-	r := new(DryRunCollectorRuntimeConfigResponse_Resource)
+	r := new(DryRunRuntimeConfigResponse_Resource)
 	r.Cluster = m.Cluster
 	r.Namespace = m.Namespace
 	if len(m.unknownFields) > 0 {
@@ -101,15 +84,15 @@ func (m *DryRunCollectorRuntimeConfigResponse_Resource) CloneVT() *DryRunCollect
 	return r
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_Resource) CloneMessageVT() proto.Message {
+func (m *DryRunRuntimeConfigResponse_Resource) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) CloneVT() *DryRunCollectorRuntimeConfigResponse_StatusWithResources {
+func (m *DryRunRuntimeConfigResponse_StatusWithResources) CloneVT() *DryRunRuntimeConfigResponse_StatusWithResources {
 	if m == nil {
-		return (*DryRunCollectorRuntimeConfigResponse_StatusWithResources)(nil)
+		return (*DryRunRuntimeConfigResponse_StatusWithResources)(nil)
 	}
-	r := new(DryRunCollectorRuntimeConfigResponse_StatusWithResources)
+	r := new(DryRunRuntimeConfigResponse_StatusWithResources)
 	if rhs := m.Status; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *commonapi.Status }); ok {
 			r.Status = vtpb.CloneVT()
@@ -118,7 +101,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) CloneVT() *Dr
 		}
 	}
 	if rhs := m.Resources; rhs != nil {
-		tmpContainer := make([]*DryRunCollectorRuntimeConfigResponse_Resource, len(rhs))
+		tmpContainer := make([]*DryRunRuntimeConfigResponse_Resource, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
@@ -131,18 +114,18 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) CloneVT() *Dr
 	return r
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) CloneMessageVT() proto.Message {
+func (m *DryRunRuntimeConfigResponse_StatusWithResources) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) CloneVT() *DryRunCollectorRuntimeConfigResponse_StatusesForFeature {
+func (m *DryRunRuntimeConfigResponse_StatusesForFeature) CloneVT() *DryRunRuntimeConfigResponse_StatusesForFeature {
 	if m == nil {
-		return (*DryRunCollectorRuntimeConfigResponse_StatusesForFeature)(nil)
+		return (*DryRunRuntimeConfigResponse_StatusesForFeature)(nil)
 	}
-	r := new(DryRunCollectorRuntimeConfigResponse_StatusesForFeature)
+	r := new(DryRunRuntimeConfigResponse_StatusesForFeature)
 	r.RuntimeFeature = m.RuntimeFeature
 	if rhs := m.StatusWithResources; rhs != nil {
-		tmpContainer := make([]*DryRunCollectorRuntimeConfigResponse_StatusWithResources, len(rhs))
+		tmpContainer := make([]*DryRunRuntimeConfigResponse_StatusWithResources, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
@@ -155,17 +138,17 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) CloneVT() *Dry
 	return r
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) CloneMessageVT() proto.Message {
+func (m *DryRunRuntimeConfigResponse_StatusesForFeature) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse) CloneVT() *DryRunCollectorRuntimeConfigResponse {
+func (m *DryRunRuntimeConfigResponse) CloneVT() *DryRunRuntimeConfigResponse {
 	if m == nil {
-		return (*DryRunCollectorRuntimeConfigResponse)(nil)
+		return (*DryRunRuntimeConfigResponse)(nil)
 	}
-	r := new(DryRunCollectorRuntimeConfigResponse)
+	r := new(DryRunRuntimeConfigResponse)
 	if rhs := m.StatusesForFeatures; rhs != nil {
-		tmpContainer := make([]*DryRunCollectorRuntimeConfigResponse_StatusesForFeature, len(rhs))
+		tmpContainer := make([]*DryRunRuntimeConfigResponse_StatusesForFeature, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
@@ -178,80 +161,61 @@ func (m *DryRunCollectorRuntimeConfigResponse) CloneVT() *DryRunCollectorRuntime
 	return r
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse) CloneMessageVT() proto.Message {
+func (m *DryRunRuntimeConfigResponse) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (this *GetCollectorRuntimeConfigResponse) EqualVT(that *GetCollectorRuntimeConfigResponse) bool {
+func (this *GetRuntimeConfigResponse) EqualVT(that *GetRuntimeConfigResponse) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.CollectorRuntimeConfig).(interface {
-		EqualVT(*commonapi.CollectorRuntimeConfig) bool
+	if equal, ok := interface{}(this.RuntimeConfig).(interface {
+		EqualVT(*commonapi.RuntimeConfigs) bool
 	}); ok {
-		if !equal.EqualVT(that.CollectorRuntimeConfig) {
+		if !equal.EqualVT(that.RuntimeConfig) {
 			return false
 		}
-	} else if !proto.Equal(this.CollectorRuntimeConfig, that.CollectorRuntimeConfig) {
+	} else if !proto.Equal(this.RuntimeConfig, that.RuntimeConfig) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *GetCollectorRuntimeConfigResponse) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*GetCollectorRuntimeConfigResponse)
+func (this *GetRuntimeConfigResponse) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*GetRuntimeConfigResponse)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *CollectorRuntimeConfigRequest) EqualVT(that *CollectorRuntimeConfigRequest) bool {
+func (this *RuntimeConfigRequest) EqualVT(that *RuntimeConfigRequest) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if equal, ok := interface{}(this.CollectorRuntimeConfig).(interface {
-		EqualVT(*commonapi.CollectorRuntimeConfig) bool
+	if equal, ok := interface{}(this.RuntimeConfig).(interface {
+		EqualVT(*commonapi.RuntimeConfigs) bool
 	}); ok {
-		if !equal.EqualVT(that.CollectorRuntimeConfig) {
+		if !equal.EqualVT(that.RuntimeConfig) {
 			return false
 		}
-	} else if !proto.Equal(this.CollectorRuntimeConfig, that.CollectorRuntimeConfig) {
+	} else if !proto.Equal(this.RuntimeConfig, that.RuntimeConfig) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *CollectorRuntimeConfigRequest) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*CollectorRuntimeConfigRequest)
+func (this *RuntimeConfigRequest) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*RuntimeConfigRequest)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *DeleteCollectorRuntimeConfigRequest) EqualVT(that *DeleteCollectorRuntimeConfigRequest) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	if this.Id != that.Id {
-		return false
-	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *DeleteCollectorRuntimeConfigRequest) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*DeleteCollectorRuntimeConfigRequest)
-	if !ok {
-		return false
-	}
-	return this.EqualVT(that)
-}
-func (this *DryRunCollectorRuntimeConfigResponse_Resource) EqualVT(that *DryRunCollectorRuntimeConfigResponse_Resource) bool {
+func (this *DryRunRuntimeConfigResponse_Resource) EqualVT(that *DryRunRuntimeConfigResponse_Resource) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -266,14 +230,14 @@ func (this *DryRunCollectorRuntimeConfigResponse_Resource) EqualVT(that *DryRunC
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *DryRunCollectorRuntimeConfigResponse_Resource) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*DryRunCollectorRuntimeConfigResponse_Resource)
+func (this *DryRunRuntimeConfigResponse_Resource) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*DryRunRuntimeConfigResponse_Resource)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *DryRunCollectorRuntimeConfigResponse_StatusWithResources) EqualVT(that *DryRunCollectorRuntimeConfigResponse_StatusWithResources) bool {
+func (this *DryRunRuntimeConfigResponse_StatusWithResources) EqualVT(that *DryRunRuntimeConfigResponse_StatusWithResources) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -293,10 +257,10 @@ func (this *DryRunCollectorRuntimeConfigResponse_StatusWithResources) EqualVT(th
 		vy := that.Resources[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &DryRunCollectorRuntimeConfigResponse_Resource{}
+				p = &DryRunRuntimeConfigResponse_Resource{}
 			}
 			if q == nil {
-				q = &DryRunCollectorRuntimeConfigResponse_Resource{}
+				q = &DryRunRuntimeConfigResponse_Resource{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -306,14 +270,14 @@ func (this *DryRunCollectorRuntimeConfigResponse_StatusWithResources) EqualVT(th
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *DryRunCollectorRuntimeConfigResponse_StatusWithResources) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*DryRunCollectorRuntimeConfigResponse_StatusWithResources)
+func (this *DryRunRuntimeConfigResponse_StatusWithResources) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*DryRunRuntimeConfigResponse_StatusWithResources)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) EqualVT(that *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) bool {
+func (this *DryRunRuntimeConfigResponse_StatusesForFeature) EqualVT(that *DryRunRuntimeConfigResponse_StatusesForFeature) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -329,10 +293,10 @@ func (this *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) EqualVT(tha
 		vy := that.StatusWithResources[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &DryRunCollectorRuntimeConfigResponse_StatusWithResources{}
+				p = &DryRunRuntimeConfigResponse_StatusWithResources{}
 			}
 			if q == nil {
-				q = &DryRunCollectorRuntimeConfigResponse_StatusWithResources{}
+				q = &DryRunRuntimeConfigResponse_StatusWithResources{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -342,14 +306,14 @@ func (this *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) EqualVT(tha
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*DryRunCollectorRuntimeConfigResponse_StatusesForFeature)
+func (this *DryRunRuntimeConfigResponse_StatusesForFeature) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*DryRunRuntimeConfigResponse_StatusesForFeature)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *DryRunCollectorRuntimeConfigResponse) EqualVT(that *DryRunCollectorRuntimeConfigResponse) bool {
+func (this *DryRunRuntimeConfigResponse) EqualVT(that *DryRunRuntimeConfigResponse) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -362,10 +326,10 @@ func (this *DryRunCollectorRuntimeConfigResponse) EqualVT(that *DryRunCollectorR
 		vy := that.StatusesForFeatures[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &DryRunCollectorRuntimeConfigResponse_StatusesForFeature{}
+				p = &DryRunRuntimeConfigResponse_StatusesForFeature{}
 			}
 			if q == nil {
-				q = &DryRunCollectorRuntimeConfigResponse_StatusesForFeature{}
+				q = &DryRunRuntimeConfigResponse_StatusesForFeature{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -375,14 +339,14 @@ func (this *DryRunCollectorRuntimeConfigResponse) EqualVT(that *DryRunCollectorR
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *DryRunCollectorRuntimeConfigResponse) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*DryRunCollectorRuntimeConfigResponse)
+func (this *DryRunRuntimeConfigResponse) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*DryRunRuntimeConfigResponse)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (m *GetCollectorRuntimeConfigResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *GetRuntimeConfigResponse) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -395,12 +359,12 @@ func (m *GetCollectorRuntimeConfigResponse) MarshalVT() (dAtA []byte, err error)
 	return dAtA[:n], nil
 }
 
-func (m *GetCollectorRuntimeConfigResponse) MarshalToVT(dAtA []byte) (int, error) {
+func (m *GetRuntimeConfigResponse) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *GetCollectorRuntimeConfigResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *GetRuntimeConfigResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -412,8 +376,8 @@ func (m *GetCollectorRuntimeConfigResponse) MarshalToSizedBufferVT(dAtA []byte) 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.CollectorRuntimeConfig != nil {
-		if vtmsg, ok := interface{}(m.CollectorRuntimeConfig).(interface {
+	if m.RuntimeConfig != nil {
+		if vtmsg, ok := interface{}(m.RuntimeConfig).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -423,7 +387,7 @@ func (m *GetCollectorRuntimeConfigResponse) MarshalToSizedBufferVT(dAtA []byte) 
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		} else {
-			encoded, err := proto.Marshal(m.CollectorRuntimeConfig)
+			encoded, err := proto.Marshal(m.RuntimeConfig)
 			if err != nil {
 				return 0, err
 			}
@@ -437,7 +401,7 @@ func (m *GetCollectorRuntimeConfigResponse) MarshalToSizedBufferVT(dAtA []byte) 
 	return len(dAtA) - i, nil
 }
 
-func (m *CollectorRuntimeConfigRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *RuntimeConfigRequest) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -450,12 +414,12 @@ func (m *CollectorRuntimeConfigRequest) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CollectorRuntimeConfigRequest) MarshalToVT(dAtA []byte) (int, error) {
+func (m *RuntimeConfigRequest) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *CollectorRuntimeConfigRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *RuntimeConfigRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -467,8 +431,8 @@ func (m *CollectorRuntimeConfigRequest) MarshalToSizedBufferVT(dAtA []byte) (int
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.CollectorRuntimeConfig != nil {
-		if vtmsg, ok := interface{}(m.CollectorRuntimeConfig).(interface {
+	if m.RuntimeConfig != nil {
+		if vtmsg, ok := interface{}(m.RuntimeConfig).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -478,7 +442,7 @@ func (m *CollectorRuntimeConfigRequest) MarshalToSizedBufferVT(dAtA []byte) (int
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		} else {
-			encoded, err := proto.Marshal(m.CollectorRuntimeConfig)
+			encoded, err := proto.Marshal(m.RuntimeConfig)
 			if err != nil {
 				return 0, err
 			}
@@ -492,7 +456,7 @@ func (m *CollectorRuntimeConfigRequest) MarshalToSizedBufferVT(dAtA []byte) (int
 	return len(dAtA) - i, nil
 }
 
-func (m *DeleteCollectorRuntimeConfigRequest) MarshalVT() (dAtA []byte, err error) {
+func (m *DryRunRuntimeConfigResponse_Resource) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -505,52 +469,12 @@ func (m *DeleteCollectorRuntimeConfigRequest) MarshalVT() (dAtA []byte, err erro
 	return dAtA[:n], nil
 }
 
-func (m *DeleteCollectorRuntimeConfigRequest) MarshalToVT(dAtA []byte) (int, error) {
+func (m *DryRunRuntimeConfigResponse_Resource) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *DeleteCollectorRuntimeConfigRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.Id) > 0 {
-		i -= len(m.Id)
-		copy(dAtA[i:], m.Id)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Id)))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *DryRunCollectorRuntimeConfigResponse_Resource) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *DryRunCollectorRuntimeConfigResponse_Resource) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *DryRunCollectorRuntimeConfigResponse_Resource) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *DryRunRuntimeConfigResponse_Resource) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -579,7 +503,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_Resource) MarshalToSizedBufferVT(d
 	return len(dAtA) - i, nil
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) MarshalVT() (dAtA []byte, err error) {
+func (m *DryRunRuntimeConfigResponse_StatusWithResources) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -592,12 +516,12 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) MarshalVT() (
 	return dAtA[:n], nil
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) MarshalToVT(dAtA []byte) (int, error) {
+func (m *DryRunRuntimeConfigResponse_StatusWithResources) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *DryRunRuntimeConfigResponse_StatusWithResources) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -646,7 +570,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) MarshalToSize
 	return len(dAtA) - i, nil
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) MarshalVT() (dAtA []byte, err error) {
+func (m *DryRunRuntimeConfigResponse_StatusesForFeature) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -659,12 +583,12 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) MarshalVT() (d
 	return dAtA[:n], nil
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) MarshalToVT(dAtA []byte) (int, error) {
+func (m *DryRunRuntimeConfigResponse_StatusesForFeature) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *DryRunRuntimeConfigResponse_StatusesForFeature) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -696,7 +620,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) MarshalToSized
 	return len(dAtA) - i, nil
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse) MarshalVT() (dAtA []byte, err error) {
+func (m *DryRunRuntimeConfigResponse) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -709,12 +633,12 @@ func (m *DryRunCollectorRuntimeConfigResponse) MarshalVT() (dAtA []byte, err err
 	return dAtA[:n], nil
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse) MarshalToVT(dAtA []byte) (int, error) {
+func (m *DryRunRuntimeConfigResponse) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *DryRunRuntimeConfigResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -741,19 +665,19 @@ func (m *DryRunCollectorRuntimeConfigResponse) MarshalToSizedBufferVT(dAtA []byt
 	return len(dAtA) - i, nil
 }
 
-func (m *GetCollectorRuntimeConfigResponse) SizeVT() (n int) {
+func (m *GetRuntimeConfigResponse) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.CollectorRuntimeConfig != nil {
-		if size, ok := interface{}(m.CollectorRuntimeConfig).(interface {
+	if m.RuntimeConfig != nil {
+		if size, ok := interface{}(m.RuntimeConfig).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
 		} else {
-			l = proto.Size(m.CollectorRuntimeConfig)
+			l = proto.Size(m.RuntimeConfig)
 		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -761,19 +685,19 @@ func (m *GetCollectorRuntimeConfigResponse) SizeVT() (n int) {
 	return n
 }
 
-func (m *CollectorRuntimeConfigRequest) SizeVT() (n int) {
+func (m *RuntimeConfigRequest) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.CollectorRuntimeConfig != nil {
-		if size, ok := interface{}(m.CollectorRuntimeConfig).(interface {
+	if m.RuntimeConfig != nil {
+		if size, ok := interface{}(m.RuntimeConfig).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
 		} else {
-			l = proto.Size(m.CollectorRuntimeConfig)
+			l = proto.Size(m.RuntimeConfig)
 		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -781,21 +705,7 @@ func (m *CollectorRuntimeConfigRequest) SizeVT() (n int) {
 	return n
 }
 
-func (m *DeleteCollectorRuntimeConfigRequest) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Id)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	n += len(m.unknownFields)
-	return n
-}
-
-func (m *DryRunCollectorRuntimeConfigResponse_Resource) SizeVT() (n int) {
+func (m *DryRunRuntimeConfigResponse_Resource) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -813,7 +723,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_Resource) SizeVT() (n int) {
 	return n
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) SizeVT() (n int) {
+func (m *DryRunRuntimeConfigResponse_StatusWithResources) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -839,7 +749,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) SizeVT() (n i
 	return n
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) SizeVT() (n int) {
+func (m *DryRunRuntimeConfigResponse_StatusesForFeature) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -858,7 +768,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) SizeVT() (n in
 	return n
 }
 
-func (m *DryRunCollectorRuntimeConfigResponse) SizeVT() (n int) {
+func (m *DryRunRuntimeConfigResponse) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -874,7 +784,7 @@ func (m *DryRunCollectorRuntimeConfigResponse) SizeVT() (n int) {
 	return n
 }
 
-func (m *GetCollectorRuntimeConfigResponse) UnmarshalVT(dAtA []byte) error {
+func (m *GetRuntimeConfigResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -897,15 +807,15 @@ func (m *GetCollectorRuntimeConfigResponse) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: GetCollectorRuntimeConfigResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: GetRuntimeConfigResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: GetCollectorRuntimeConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: GetRuntimeConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CollectorRuntimeConfig", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RuntimeConfig", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -932,17 +842,17 @@ func (m *GetCollectorRuntimeConfigResponse) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.CollectorRuntimeConfig == nil {
-				m.CollectorRuntimeConfig = &commonapi.CollectorRuntimeConfig{}
+			if m.RuntimeConfig == nil {
+				m.RuntimeConfig = &commonapi.RuntimeConfigs{}
 			}
-			if unmarshal, ok := interface{}(m.CollectorRuntimeConfig).(interface {
+			if unmarshal, ok := interface{}(m.RuntimeConfig).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.CollectorRuntimeConfig); err != nil {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.RuntimeConfig); err != nil {
 					return err
 				}
 			}
@@ -969,7 +879,7 @@ func (m *GetCollectorRuntimeConfigResponse) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CollectorRuntimeConfigRequest) UnmarshalVT(dAtA []byte) error {
+func (m *RuntimeConfigRequest) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -992,15 +902,15 @@ func (m *CollectorRuntimeConfigRequest) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CollectorRuntimeConfigRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: RuntimeConfigRequest: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CollectorRuntimeConfigRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RuntimeConfigRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CollectorRuntimeConfig", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field RuntimeConfig", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -1027,17 +937,17 @@ func (m *CollectorRuntimeConfigRequest) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.CollectorRuntimeConfig == nil {
-				m.CollectorRuntimeConfig = &commonapi.CollectorRuntimeConfig{}
+			if m.RuntimeConfig == nil {
+				m.RuntimeConfig = &commonapi.RuntimeConfigs{}
 			}
-			if unmarshal, ok := interface{}(m.CollectorRuntimeConfig).(interface {
+			if unmarshal, ok := interface{}(m.RuntimeConfig).(interface {
 				UnmarshalVT([]byte) error
 			}); ok {
 				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.CollectorRuntimeConfig); err != nil {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.RuntimeConfig); err != nil {
 					return err
 				}
 			}
@@ -1064,7 +974,7 @@ func (m *CollectorRuntimeConfigRequest) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *DeleteCollectorRuntimeConfigRequest) UnmarshalVT(dAtA []byte) error {
+func (m *DryRunRuntimeConfigResponse_Resource) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1087,93 +997,10 @@ func (m *DeleteCollectorRuntimeConfigRequest) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DeleteCollectorRuntimeConfigRequest: wiretype end group for non-group")
+			return fmt.Errorf("proto: DryRunRuntimeConfigResponse_Resource: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DeleteCollectorRuntimeConfigRequest: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Id = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *DryRunCollectorRuntimeConfigResponse_Resource) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: DryRunCollectorRuntimeConfigResponse_Resource: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DryRunCollectorRuntimeConfigResponse_Resource: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DryRunRuntimeConfigResponse_Resource: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1262,7 +1089,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_Resource) UnmarshalVT(dAtA []byte)
 	}
 	return nil
 }
-func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) UnmarshalVT(dAtA []byte) error {
+func (m *DryRunRuntimeConfigResponse_StatusWithResources) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1285,10 +1112,10 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) UnmarshalVT(d
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DryRunCollectorRuntimeConfigResponse_StatusWithResources: wiretype end group for non-group")
+			return fmt.Errorf("proto: DryRunRuntimeConfigResponse_StatusWithResources: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DryRunCollectorRuntimeConfigResponse_StatusWithResources: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DryRunRuntimeConfigResponse_StatusWithResources: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1364,7 +1191,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) UnmarshalVT(d
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Resources = append(m.Resources, &DryRunCollectorRuntimeConfigResponse_Resource{})
+			m.Resources = append(m.Resources, &DryRunRuntimeConfigResponse_Resource{})
 			if err := m.Resources[len(m.Resources)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -1391,7 +1218,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusWithResources) UnmarshalVT(d
 	}
 	return nil
 }
-func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) UnmarshalVT(dAtA []byte) error {
+func (m *DryRunRuntimeConfigResponse_StatusesForFeature) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1414,10 +1241,10 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) UnmarshalVT(dA
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DryRunCollectorRuntimeConfigResponse_StatusesForFeature: wiretype end group for non-group")
+			return fmt.Errorf("proto: DryRunRuntimeConfigResponse_StatusesForFeature: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DryRunCollectorRuntimeConfigResponse_StatusesForFeature: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DryRunRuntimeConfigResponse_StatusesForFeature: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1468,7 +1295,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) UnmarshalVT(dA
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.StatusWithResources = append(m.StatusWithResources, &DryRunCollectorRuntimeConfigResponse_StatusWithResources{})
+			m.StatusWithResources = append(m.StatusWithResources, &DryRunRuntimeConfigResponse_StatusWithResources{})
 			if err := m.StatusWithResources[len(m.StatusWithResources)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -1495,7 +1322,7 @@ func (m *DryRunCollectorRuntimeConfigResponse_StatusesForFeature) UnmarshalVT(dA
 	}
 	return nil
 }
-func (m *DryRunCollectorRuntimeConfigResponse) UnmarshalVT(dAtA []byte) error {
+func (m *DryRunRuntimeConfigResponse) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1518,10 +1345,10 @@ func (m *DryRunCollectorRuntimeConfigResponse) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: DryRunCollectorRuntimeConfigResponse: wiretype end group for non-group")
+			return fmt.Errorf("proto: DryRunRuntimeConfigResponse: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: DryRunCollectorRuntimeConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: DryRunRuntimeConfigResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1553,7 +1380,7 @@ func (m *DryRunCollectorRuntimeConfigResponse) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.StatusesForFeatures = append(m.StatusesForFeatures, &DryRunCollectorRuntimeConfigResponse_StatusesForFeature{})
+			m.StatusesForFeatures = append(m.StatusesForFeatures, &DryRunRuntimeConfigResponse_StatusesForFeature{})
 			if err := m.StatusesForFeatures[len(m.StatusesForFeatures)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

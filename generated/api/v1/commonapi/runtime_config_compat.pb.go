@@ -39,7 +39,12 @@ func (m *RuntimeFeatureConfig_RuntimeRule) Clone() *RuntimeFeatureConfig_Runtime
 func (m *RuntimeFeatureConfig_RuntimeRule) Marshal() ([]byte, error)    { return m.MarshalVT() }
 func (m *RuntimeFeatureConfig_RuntimeRule) Unmarshal(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
 
-func (m *CollectorRuntimeConfig) Size() int                      { return m.SizeVT() }
-func (m *CollectorRuntimeConfig) Clone() *CollectorRuntimeConfig { return m.CloneVT() }
-func (m *CollectorRuntimeConfig) Marshal() ([]byte, error)       { return m.MarshalVT() }
-func (m *CollectorRuntimeConfig) Unmarshal(dAtA []byte) error    { return m.UnmarshalVT(dAtA) }
+func (m *RuntimeConfig) Size() int                   { return m.SizeVT() }
+func (m *RuntimeConfig) Clone() *RuntimeConfig       { return m.CloneVT() }
+func (m *RuntimeConfig) Marshal() ([]byte, error)    { return m.MarshalVT() }
+func (m *RuntimeConfig) Unmarshal(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
+
+func (m *RuntimeConfigs) Size() int                   { return m.SizeVT() }
+func (m *RuntimeConfigs) Clone() *RuntimeConfigs      { return m.CloneVT() }
+func (m *RuntimeConfigs) Marshal() ([]byte, error)    { return m.MarshalVT() }
+func (m *RuntimeConfigs) Unmarshal(dAtA []byte) error { return m.UnmarshalVT(dAtA) }
