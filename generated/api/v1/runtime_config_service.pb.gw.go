@@ -105,6 +105,7 @@ func local_request_RuntimeConfigService_DryRunRuntimeConfig_0(ctx context.Contex
 // UnaryRPC     :call RuntimeConfigServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterRuntimeConfigServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterRuntimeConfigServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server RuntimeConfigServiceServer) error {
 
 	mux.Handle("GET", pattern_RuntimeConfigService_GetRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -220,7 +221,7 @@ func RegisterRuntimeConfigServiceHandler(ctx context.Context, mux *runtime.Serve
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "RuntimeConfigServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "RuntimeConfigServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "RuntimeConfigServiceClient" to call the correct interceptors.
+// "RuntimeConfigServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterRuntimeConfigServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client RuntimeConfigServiceClient) error {
 
 	mux.Handle("GET", pattern_RuntimeConfigService_GetRuntimeConfig_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
