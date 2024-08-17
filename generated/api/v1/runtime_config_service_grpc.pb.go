@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v4.25.3
-// source: api/v1/collector_runtime_configuration_service.proto
+// source: api/v1/runtime_config_service.proto
 
 package v1
 
@@ -20,7 +20,6 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	RuntimeConfigService_GetRuntimeConfig_FullMethodName    = "/v1.RuntimeConfigService/GetRuntimeConfig"
-	RuntimeConfigService_PostRuntimeConfig_FullMethodName   = "/v1.RuntimeConfigService/PostRuntimeConfig"
 	RuntimeConfigService_PatchRuntimeConfig_FullMethodName  = "/v1.RuntimeConfigService/PatchRuntimeConfig"
 	RuntimeConfigService_DryRunRuntimeConfig_FullMethodName = "/v1.RuntimeConfigService/DryRunRuntimeConfig"
 )
@@ -30,7 +29,6 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RuntimeConfigServiceClient interface {
 	GetRuntimeConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetRuntimeConfigResponse, error)
-	PostRuntimeConfig(ctx context.Context, in *RuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error)
 	PatchRuntimeConfig(ctx context.Context, in *RuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error)
 	DryRunRuntimeConfig(ctx context.Context, in *RuntimeConfigRequest, opts ...grpc.CallOption) (*DryRunRuntimeConfigResponse, error)
 }
@@ -46,15 +44,6 @@ func NewRuntimeConfigServiceClient(cc grpc.ClientConnInterface) RuntimeConfigSer
 func (c *runtimeConfigServiceClient) GetRuntimeConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetRuntimeConfigResponse, error) {
 	out := new(GetRuntimeConfigResponse)
 	err := c.cc.Invoke(ctx, RuntimeConfigService_GetRuntimeConfig_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *runtimeConfigServiceClient) PostRuntimeConfig(ctx context.Context, in *RuntimeConfigRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, RuntimeConfigService_PostRuntimeConfig_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +73,6 @@ func (c *runtimeConfigServiceClient) DryRunRuntimeConfig(ctx context.Context, in
 // for forward compatibility
 type RuntimeConfigServiceServer interface {
 	GetRuntimeConfig(context.Context, *Empty) (*GetRuntimeConfigResponse, error)
-	PostRuntimeConfig(context.Context, *RuntimeConfigRequest) (*Empty, error)
 	PatchRuntimeConfig(context.Context, *RuntimeConfigRequest) (*Empty, error)
 	DryRunRuntimeConfig(context.Context, *RuntimeConfigRequest) (*DryRunRuntimeConfigResponse, error)
 }
@@ -95,9 +83,6 @@ type UnimplementedRuntimeConfigServiceServer struct {
 
 func (UnimplementedRuntimeConfigServiceServer) GetRuntimeConfig(context.Context, *Empty) (*GetRuntimeConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRuntimeConfig not implemented")
-}
-func (UnimplementedRuntimeConfigServiceServer) PostRuntimeConfig(context.Context, *RuntimeConfigRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PostRuntimeConfig not implemented")
 }
 func (UnimplementedRuntimeConfigServiceServer) PatchRuntimeConfig(context.Context, *RuntimeConfigRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PatchRuntimeConfig not implemented")
@@ -131,24 +116,6 @@ func _RuntimeConfigService_GetRuntimeConfig_Handler(srv interface{}, ctx context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RuntimeConfigServiceServer).GetRuntimeConfig(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RuntimeConfigService_PostRuntimeConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RuntimeConfigRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RuntimeConfigServiceServer).PostRuntimeConfig(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: RuntimeConfigService_PostRuntimeConfig_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RuntimeConfigServiceServer).PostRuntimeConfig(ctx, req.(*RuntimeConfigRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -201,10 +168,6 @@ var RuntimeConfigService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RuntimeConfigService_GetRuntimeConfig_Handler,
 		},
 		{
-			MethodName: "PostRuntimeConfig",
-			Handler:    _RuntimeConfigService_PostRuntimeConfig_Handler,
-		},
-		{
 			MethodName: "PatchRuntimeConfig",
 			Handler:    _RuntimeConfigService_PatchRuntimeConfig_Handler,
 		},
@@ -214,5 +177,5 @@ var RuntimeConfigService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/v1/collector_runtime_configuration_service.proto",
+	Metadata: "api/v1/runtime_config_service.proto",
 }

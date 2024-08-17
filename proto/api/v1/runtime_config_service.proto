@@ -41,13 +41,6 @@ service RuntimeConfigService {
     option (google.api.http) = {get: "/v1/runtime_config"};
   }
 
-  rpc PostRuntimeConfig(RuntimeConfigRequest) returns (Empty) {
-    option (google.api.http) = {
-      post: "/v1/runtime_config"
-      body: "*"
-    };
-  }
-
   rpc PatchRuntimeConfig(RuntimeConfigRequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/runtime_config"

@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/collector_runtime_configuration_service.proto",
+    "title": "api/v1/runtime_config_service.proto",
     "version": "version not set"
   },
   "tags": [
@@ -33,36 +33,6 @@
             }
           }
         },
-        "tags": [
-          "RuntimeConfigService"
-        ]
-      },
-      "post": {
-        "operationId": "RuntimeConfigService_PostRuntimeConfig",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1RuntimeConfigRequest"
-            }
-          }
-        ],
         "tags": [
           "RuntimeConfigService"
         ]
