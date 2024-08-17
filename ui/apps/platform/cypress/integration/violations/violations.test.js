@@ -142,7 +142,7 @@ describe('Violations', () => {
 
         cy.get(selectors.deployment.overview);
         cy.get(selectors.deployment.overview)
-            .find('.pf-v5-c-description-list__term:contains("Deployment kind")')
+            .find('.pf-v5-c-description-list__term:contains("Deployment type")')
             .siblings('.pf-v5-c-description-list__description:contains("DaemonSet")');
         cy.get(selectors.deployment.containerConfiguration);
         cy.get(`${selectors.deployment.containerConfiguration} *[aria-label="Commands"]`).should(
