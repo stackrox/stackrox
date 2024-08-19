@@ -20,4 +20,5 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.NodeCVE, []int, error)
 
 	UpsertMany(ctx context.Context, cves []*storage.NodeCVE) error
+	PruneMany(ctx context.Context, ids []string) error
 }

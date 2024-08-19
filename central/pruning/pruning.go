@@ -9,6 +9,7 @@ import (
 	blobDatastore "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
+	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -102,6 +103,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	reportSnapshotDS snapshotDS.DataStore,
 	plops plopDataStore.DataStore,
 	blobStore blobDatastore.Datastore,
+	nodeCVEStore nodeCVEDS.DataStore,
 ) GarbageCollector {
 	return &garbageCollectorImpl{
 		alerts:          alerts,
@@ -126,6 +128,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		reportSnapshot:  reportSnapshotDS,
 		plops:           plops,
 		blobStore:       blobStore,
+		nodeCVEStore:    nodeCVEStore,
 	}
 }
 
@@ -153,6 +156,7 @@ type garbageCollectorImpl struct {
 	reportSnapshot  snapshotDS.DataStore
 	plops           plopDataStore.DataStore
 	blobStore       blobDatastore.Datastore
+	nodeCVEStore    nodeCVEDS.DataStore
 }
 
 func (g *garbageCollectorImpl) Start() {
@@ -1029,6 +1033,32 @@ func (g *garbageCollectorImpl) pruneLogImbues() {
 	}()
 
 	postgres.PruneLogImbues(pruningCtx, g.postgres, logImbueWindow)
+}
+
+func (g *garbageCollectorImpl) pruneOrphanedNodeCVEs() {
+	retentionDays := int64(env.OrphanedCVEsRetentionDurationDays.IntegerSetting())
+	if retentionDays < 0 {
+		log.Errorf("Invalid orphaned node CVEs retention setting %d, should be >= 0", retentionDays)
+	}
+
+	query := search.NewQueryBuilder().AddBools(search.CVEOrphaned, true).AddDays(search.CVEOrphanedTime, retentionDays).ProtoQuery()
+	results, err := g.nodeCVEStore.Search(pruningCtx, query)
+	if err != nil {
+		log.Error(errors.Wrap(err, "Pruning orphaned node CVEs"))
+	}
+
+	if len(results) == 0 {
+		log.Debug("No orphaned node CVEs to prune")
+	}
+
+	ids := make([]string, 0, len(results))
+	for _, res := range results {
+		ids = append(ids, res.ID)
+	}
+	err = g.nodeCVEStore.PruneNodeCVEs(pruningCtx, ids)
+	if err != nil {
+		log.Error(errors.Wrap(err, "Pruning orphaned node CVEs"))
+	}
 }
 
 func (g *garbageCollectorImpl) Stop() {
