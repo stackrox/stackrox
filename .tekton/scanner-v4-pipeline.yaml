@@ -504,6 +504,10 @@ spec:
     params:
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: image-digest
+      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+    - name: image-url
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
