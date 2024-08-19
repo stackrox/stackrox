@@ -190,7 +190,7 @@ jobs:
       uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: ${{ env.ROX_PRODUCT_VERSION }}
-        path: ${{ steps.upload-vulnerabilities.outputs.VULN_OUTPUT_DIR}}
+        path: ${{ steps.upload-vulnerabilities.outputs.VULN_OUTPUT_DIR }}
         if-no-files-found: error
 
   send-notification:
