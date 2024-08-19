@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/common"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views/nodecve"
@@ -162,6 +163,7 @@ func (resolver *Resolver) NodeCVE(ctx context.Context, args struct {
 		}
 		query = search.ConjunctionQuery(query, filterQuery)
 	}
+	query = common.WithoutOrphanedNodeCVEsQuery(query)
 
 	cves, err := resolver.NodeCVEView.Get(ctx, query)
 	if len(cves) == 0 {
@@ -196,6 +198,7 @@ func (resolver *Resolver) NodeCVECount(ctx context.Context, q RawQuery) (int32, 
 		return 0, err
 	}
 	query = tryUnsuppressedQuery(query)
+	query = common.WithoutOrphanedNodeCVEsQuery(query)
 
 	count, err := resolver.NodeCVEView.Count(ctx, query)
 	if err != nil {
@@ -220,6 +223,7 @@ func (resolver *Resolver) NodeCVEs(ctx context.Context, q PaginatedQuery) ([]*no
 		return nil, err
 	}
 	query = tryUnsuppressedQuery(query)
+	query = common.WithoutOrphanedNodeCVEsQuery(query)
 
 	cves, err := resolver.NodeCVEView.Get(ctx, query)
 	ret, err := resolver.wrapNodeCVECoresWithContext(ctx, cves, err)
@@ -249,6 +253,7 @@ func (resolver *Resolver) NodeCVECountBySeverity(ctx context.Context, q RawQuery
 		return nil, err
 	}
 	query = tryUnsuppressedQuery(query)
+	query = common.WithoutOrphanedNodeCVEsQuery(query)
 
 	response, err := resolver.NodeCVEView.CountBySeverity(ctx, query)
 	if err != nil {
