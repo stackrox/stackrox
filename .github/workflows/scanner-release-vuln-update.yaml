@@ -172,8 +172,20 @@ jobs:
             ;;
         esac
 
-        # Upload all bundles.
-        gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://definitions.stackrox.io/v4/vulnerability-bundles"
+        # Upload all bundles if running against master branch.
+        cmd=()
+        if [[ "${{ github.ref_name }}" != "master" ]]; then
+          echo "Ref '${{ github.ref_name }}' is not master."
+          cmd+=(echo "Would do:")
+        fi
+        "${cmd[@]}" gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://definitions.stackrox.io/v4/vulnerability-bundles"
+
+    - name: Upload GH artifact
+      if: ${{ github.ref_name != 'master' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.ROX_PRODUCT_VERSION }} 
+        path: ${{ env.ROX_PRODUCT_VERSION }}
 
   send-notification:
     needs:
