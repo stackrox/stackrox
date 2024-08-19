@@ -88,7 +88,7 @@ func createDynamicObject(objDesc common.DynamicBundleObjectDesc, bundleContents 
 	}
 
 	obj.SetName(objDesc.Name)
-	obj.SetNamespace(pods.GetPodNamespace(pods.NoSATokenNamespace))
+	obj.SetNamespace(pods.GetPodNamespace())
 
 	lbls := obj.GetLabels()
 	if lbls == nil {
