@@ -8,6 +8,7 @@ import (
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	flowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -42,15 +43,28 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 		s.firstUpdateSeen = true
 	}
 
-	// Sensor may have forwarded unknown NetworkEntities that we want to learn
-	for _, newFlow := range newFlows {
-		err := s.updateExternalNetworkEntityIfLearned(ctx, newFlow.GetProps().DstEntity)
-		if err != nil {
-			return err
+	if features.ExternalIPs.Enabled() {
+		// Sensor may have forwarded unknown NetworkEntities that we want to learn
+		for _, newFlow := range newFlows {
+			err := s.updateExternalNetworkEntityIfLearned(ctx, newFlow.GetProps().DstEntity)
+			if err != nil {
+				return err
+			}
+			err = s.updateExternalNetworkEntityIfLearned(ctx, newFlow.GetProps().SrcEntity)
+			if err != nil {
+				return err
+			}
 		}
-		err = s.updateExternalNetworkEntityIfLearned(ctx, newFlow.GetProps().SrcEntity)
-		if err != nil {
-			return err
+	} else {
+		// We are not storing the learned entities. Let net-flows point to INTERNET instead.
+		for newFlow := range flowsByIndicator {
+			if newFlow.SrcEntity.Learned {
+				newFlow.SrcEntity = networkgraph.InternetEntity()
+			}
+
+			if newFlow.DstEntity.Learned {
+				newFlow.DstEntity = networkgraph.InternetEntity()
+			}
 		}
 	}
 
