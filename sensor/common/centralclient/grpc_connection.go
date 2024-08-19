@@ -78,6 +78,11 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 // func finishes.
 // f.okSignal is used if the connection is successful and f.stopSignal if the connection failed to start.
 func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn, certLoader CertLoader) {
+	// This should be called with the okSignal and the stopSignal un-triggered.
+	// If they are triggered, reset them.
+	if f.stopSignal.IsDone() || f.okSignal.IsDone() {
+		f.Reset()
+	}
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
 	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
@@ -110,10 +115,12 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 
 	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {
-		f.stopSignal.SignalWithErrorWrap(err, "Error connecting to central")
+		log.Errorf("creating the gRPC client: %v", err)
+		f.stopSignal.SignalWithErrorWrap(err, "creating the gRPC client")
 		return
 	}
 
 	conn.Set(centralConnection)
 	f.okSignal.Signal()
+	log.Info("Initial gRPC connection with central successful")
 }
