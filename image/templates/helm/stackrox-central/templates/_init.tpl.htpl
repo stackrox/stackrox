@@ -28,17 +28,8 @@
 {{ $rox := deepCopy $.Values }}
 {{ $_ := set $ "_rox" $rox }}
 
-{{ $existingSecret := $rox.ca.existingSecret }}
-
-{{ if $existingSecret }}
-  {{ $secretVal := (lookup "v1" "Secret" .Release.Namespace $rox.ca.existingSecret.name) }}
-  {{ if $secretVal }}
-    {{ $caCert := (index $secretVal.data $rox.ca.existingSecret.cert) | b64dec }}
-    {{ $caKey := (index $secretVal.data $rox.ca.existingSecret.key) | b64dec }}
-    {{ $_ := set $rox.ca "cert" $caCert }}
-    {{ $_ := set $rox.ca "key" $caKey }}
-  {{ end }}
-{{ end }}
+{{ include "srox.getExistingTLSSecret" (list $rox.ca $.Release.Namespace "cert" )}}
+{{ include "srox.getExistingTLSSecret" (list $rox.ca $.Release.Namespace "key" )}}
 
 {{/* Global state (accessed from sub-templates) */}}
 {{ $generatedName := printf "stackrox-generated-%s" (randAlphaNum 6 | lower) }}

@@ -245,3 +245,27 @@
 {{ end }}
 {{ $_ := set $out "result" $sans }}
 {{ end }}
+
+{{/*
+  srox.getExistingTLSSecret (list $rox.{$svcName}.serviceTLS $.Release.Namespace $key)
+
+  Pulls existing secret from the passed in secret / key and populates the appropriate 
+  section in the serviceTLS map.
+
+    */}}
+{{ define "srox.getExistingTLSSecret" }}
+{{ $ := index . 0 }}
+{{ $ns := index . 1 }}
+{{ $key := index . 2 }}
+{{ with $.existingSecret }}
+  {{ $secret := $.existingSecret.name }}
+  {{ $secretVal := (lookup "v1" "Secret" $ns $secret) }}
+  {{ if $secretVal }}
+    {{ $secretKey := get $.existingSecret $key}}
+    {{ $val := (index $secretVal.data $secretKey) | b64dec }}
+    {{ $_ := set $ $key $val }}
+  {{ else }}
+    {{ $_ := set $ $key "fake_value" }}
+  {{ end }}
+{{ end }}
+{{ end }}
