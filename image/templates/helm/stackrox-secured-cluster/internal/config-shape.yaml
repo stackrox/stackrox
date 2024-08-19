@@ -72,6 +72,7 @@ env:
     names: null # [string]
 ca:
   cert: null # string
+  existingSecret: null #string
 sensor:
   imagePullPolicy: null # string
   endpoint: null # string
@@ -80,6 +81,7 @@ sensor:
   serviceTLS:
     cert: null # string
     key: null # string
+    existingSecret: null #string
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
@@ -107,6 +109,7 @@ admissionControl:
   serviceTLS:
     cert: null # string
     key: null # string
+    existingSecret: null #string
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
@@ -126,6 +129,7 @@ collector:
   serviceTLS:
     cert: null # string
     key: null # string
+    existingSecret: null #string
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   priorityClassName: null # string

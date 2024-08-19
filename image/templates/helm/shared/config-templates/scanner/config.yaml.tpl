@@ -16,6 +16,9 @@ scanner:
     options:
       # PostgreSQL Connection string
       # https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
+      {{ if ._rox.scanner.db.external }}
+      source: {{ ._rox.scanner.db.connectionString }}
+      {{ else }}
       source: host=scanner-db.{{ .Release.Namespace }}.svc port=5432 user=postgres sslmode={{- if eq .Release.Namespace "stackrox" }}verify-full{{- else }}verify-ca{{- end }} statement_timeout=60000
 
       # Number of elements kept in the cache

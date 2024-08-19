@@ -36,6 +36,68 @@
 {{ $rox := deepCopy $values }}
 {{ $_ := set $ "_rox" $rox }}
 
+{{/*
+  The below section checks if any preexisting k8s secrets have been provided to the helm chart. 
+  If so, it looks them up in the cluster and loads them into the _rox config. This allows us to 
+  support pre-existing CA/sensor/admissionControl/collector secrets. This means an operator can
+  pull the necessary TLS certs from the central service dashboard, load them into the k8s cluster
+  ahead of time, and then deploy the secured-cluster-services helm chart without needing to put
+  TLS secrets in a values file that could get committed into source control.
+    */}}
+
+{{ with $rox.ca.existingSecret }}
+  {{ $existingSecret := $rox.ca.existingSecret }}
+  {{ $secretVal := (lookup "v1" "Secret" $.Release.Namespace $existingSecret) }}
+  {{ if $secretVal }}
+    {{ $caCert := (index $secretVal.data "ca.pem") | b64dec }}
+    {{ $_ := set $._rox.ca "cert" $caCert }}
+  {{ else }}
+    {{ $_ := set $._rox.ca "cert" "fake cert" }}
+  {{ end }}
+{{ end }}
+
+{{ with $rox.sensor.serviceTLS.existingSecret }}
+  {{ $sensorSecret := $rox.sensor.serviceTLS.existingSecret }}
+  {{ $secretVal := (lookup "v1" "Secret" $.Release.Namespace $sensorSecret) }}
+  {{ if $secretVal }}
+    {{ $cert := (index $secretVal.data "cert.pem") | b64dec }}
+    {{ $key := (index $secretVal.data "key.pem") | b64dec }}
+    {{ $_ := set $rox.sensor.serviceTLS "cert" $cert }}
+    {{ $_ := set $rox.sensor.serviceTLS "key" $key }}
+  {{ else }}
+    {{ $_ := set $rox.sensor.serviceTLS "cert" "fake cert" }}
+    {{ $_ := set $rox.sensor.serviceTLS "key" "fake key" }}
+  {{ end }}
+{{ end }}
+
+{{ with $rox.admissionControl.serviceTLS.existingSecret }}
+  {{ $admissionControlSecret := $rox.admissionControl.serviceTLS.existingSecret }}
+  {{ $secretVal := (lookup "v1" "Secret" $.Release.Namespace $admissionControlSecret) }}
+  {{ if $secretVal }}
+    {{ $cert := (index $secretVal.data "cert.pem") | b64dec }}
+    {{ $key := (index $secretVal.data "key.pem") | b64dec }}
+    {{ $_ := set $rox.admissionControl.serviceTLS "cert" $cert }}
+    {{ $_ := set $rox.admissionControl.serviceTLS "key" $key }}
+  {{ else }}
+    {{ $_ := set $rox.admissionControl.serviceTLS "cert" "fake_cert" }}
+    {{ $_ := set $rox.admissionControl.serviceTLS "key" "fake_key" }}
+  {{ end }}
+{{ end }}
+
+{{ with $rox.collector.serviceTLS.existingSecret }}
+  {{ $collectorSecret := $rox.collector.serviceTLS.existingSecret }}
+  {{ $secretVal := (lookup "v1" "Secret" $.Release.Namespace $collectorSecret) }}
+  {{ if $secretVal }}
+    {{ $cert := (index $secretVal.data "cert.pem") | b64dec }}
+    {{ $key := (index $secretVal.data "key.pem") | b64dec }}
+    {{ $_ := set $rox.collector.serviceTLS "cert" $cert }}
+    {{ $_ := set $rox.collector.serviceTLS "key" $key }}
+  {{ else }}
+    {{ $_ := set $rox.collector.serviceTLS "cert" "fake_cert" }}
+    {{ $_ := set $rox.collector.serviceTLS "key" "fake_key" }}
+  {{ end }}
+{{ end }}
+
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
 {{/* Only merge scanner config shapes if kubectl output is disabled */}}
 [<- if not .KubectlOutput >]

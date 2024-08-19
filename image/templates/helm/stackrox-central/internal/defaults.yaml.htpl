@@ -99,6 +99,8 @@ defaults:
     replicas: 3
     logLevel: INFO
     mode: full
+    db:
+      external: false
 
     autoscaling:
       disable: false

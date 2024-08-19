@@ -93,11 +93,15 @@
 ## - `generate` is explicitly set to true, or
 ## - `generate` is unset (null), and the Helm chart is being freshly installed (as opposed to being
 ##    upgraded).
+## If existingSecret is provided, and it follows the secret key format required by the helm chart
+## with the CA cert under the `ca.pem` key, and the CA key under the `ca-key.pem` key in the k8s
+## generic secret, it will pull that data and add to the `ca.cert` and `ca.key` values respectively. 
+## They will be used to then generate the other TLS certs in the cluster.
 #ca:
 #  cert: null
 #  key: null
 #  generate: null
-#
+#  existingSecret: null
 
 ## Additional CA certificates to trust, besides system roots
 ## If specified, this should be a map mapping file names to PEM-encoded contents.
@@ -288,6 +292,16 @@ central:
 #    tag: 2.3.2
 #    fullRef: null
 #
+#  db:
+#    external: false
+#    # ConnectionString should not be specified if the Central DB deployment is being managed by the helm chart
+#    # The connection string must be in the format described here https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
+#    # client_encoding=UTF8 is required in any connection string and the only supported encoding
+#    # statementTimeoutMs is ignored for external database connections
+#    # If using a connection that supports "statement_timeout" it is recommended to include "statement_timeout=1200000"
+#    # Do NOT use a connection string with a password field. Instead specify the value below in the password section.
+#    connectionString:
+#    passwordSecret:
 #  dbImage:
 #    registry: null
 #    name: scanner-db

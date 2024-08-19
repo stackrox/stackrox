@@ -123,7 +123,11 @@ spec:
         - name: proxy-config-volume
           mountPath: /run/secrets/stackrox.io/proxy-config/
           readOnly: true
+        {{ if not $_rox.scanner.db.passwordSecret }}
         - name: scanner-db-password
+        {{- else -}}
+        - name: {{ $_rox.scanner.db.passwordSecret }}
+        {{- end }}
           mountPath: /run/secrets/stackrox.io/secrets
           readOnly: true
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
@@ -157,10 +161,18 @@ spec:
         secret:
           secretName: proxy-config
           optional: true
+      {{ if not $_rox.scanner.db.passwordSecret -}}
       - name: scanner-db-password
         secret:
           secretName: scanner-db-password
+      {{- else -}}
+      - name: {{ $_rox.scanner.db.passwordSecret }}
+        secret:
+          secretName: {{ $_rox.scanner.db.passwordSecret }}
+      {{- end -}}
       {{- include "srox.injectedCABundleVolume" . | nindent 6 }}
+
+{{- if not ._rox.scanner.db.external -}}
 ---
 
 apiVersion: apps/v1
@@ -314,5 +326,5 @@ spec:
       - name: scanner-db-password
         secret:
           secretName: scanner-db-password
-
+{{ end - }}
 {{ end -}}
