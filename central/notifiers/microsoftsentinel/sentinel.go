@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/option"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 )
@@ -24,7 +25,7 @@ var _ notifiers.AlertNotifier = (*sentinel)(nil)
 var _ notifiers.AuditNotifier = (*sentinel)(nil)
 
 func init() {
-	notifiers.Add("microsoft_sentinel", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add(notifiers.MicrosoftSentinelType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		return newSentinelNotifier(notifier)
 	})
 }
@@ -105,5 +106,34 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to upload logs to azure")
 	}
+	return nil
+}
+
+func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
+	errorList := errorhelpers.NewErrorList("Microsoft Sentinel validation")
+	if sentinel.GetLogIngestionEndpoint() == "" {
+		errorList.AddString("Log Ingestion Endpoint must be specified")
+	}
+
+	if sentinel.GetDataCollectionRuleId() == "" {
+		errorList.AddString("Data Collection Rule Id must be specified")
+	}
+
+	if sentinel.GetStreamName() == "" {
+		errorList.AddString("Stream Name must be specified")
+	}
+
+	if sentinel.GetDirectoryTenantId() == "" {
+		errorList.AddString("Directory Tenant Id must be specified")
+	}
+
+	if sentinel.GetApplicationClientId() == "" {
+		errorList.AddString("Application Client Id must be specified")
+	}
+
+	if sentinel.GetSecret() == "" && validateSecret {
+		errorList.AddString("Secret must be specified")
+	}
+
 	return nil
 }

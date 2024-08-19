@@ -162,7 +162,6 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 
 // PostNotifier inserts a new registry into the system if it doesn't already exist
 func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifier) (*storage.Notifier, error) {
-	log.Infof("NOTIFIER %+v", request)
 	if err := validateNotifier(request); err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}

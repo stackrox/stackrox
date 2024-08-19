@@ -343,6 +343,10 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	// - RequestInfo handler (consumed by other handlers)
 	// - IdentityExtractor
 	// - AuthConfigChecker
+	handler := func(handler http.Handler) http.Handler {
+		return handler
+	}
+	preAuthHTTPInterceptors = append(preAuthHTTPInterceptors, handler)
 	preAuthHTTPInterceptorChain := httputil.ChainInterceptors(preAuthHTTPInterceptors...)
 
 	// Interceptors for HTTP/1.1 requests that must be called after

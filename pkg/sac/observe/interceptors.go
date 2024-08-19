@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/cloudflare/cfssl/log"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/protoconv"
