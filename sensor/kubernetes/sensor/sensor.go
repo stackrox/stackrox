@@ -185,7 +185,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		components = append(components, upgradeCmdHandler)
 	}
 
-	sensorNamespace := pods.GetPodNamespace(pods.ConsiderSATokenNamespace)
+	sensorNamespace := pods.GetPodNamespace()
 
 	if admCtrlSettingsMgr != nil {
 		components = append(components, k8sadmctrl.NewConfigMapSettingsPersister(cfg.k8sClient.Kubernetes(), admCtrlSettingsMgr, sensorNamespace))
