@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import { Chart, ChartAxis, ChartBar, ChartGroup, ChartLabelProps } from '@patternfly/react-charts';
+import {
+    Chart,
+    ChartAxis,
+    ChartBar,
+    ChartContainer,
+    ChartGroup,
+    ChartLabelProps,
+} from '@patternfly/react-charts';
 
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import useResizeObserver from 'hooks/useResizeObserver';
@@ -38,6 +45,7 @@ function ComplianceLevelsByStandardChart({
             <Chart
                 ariaDesc="Compliance coverage percentages by standard across the selected resource scope"
                 ariaTitle="Compliance coverage by standard"
+                containerComponent={<ChartContainer role="figure" />}
                 domainPadding={{ x: [20, 20] }}
                 height={defaultChartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width}
