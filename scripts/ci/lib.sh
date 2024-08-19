@@ -692,7 +692,7 @@ image_prefetcher_await_set() {
     local attempt=0
     local service="service/${name}-metrics"
     while [[ -z $(kubectl -n "${ns}" get "${service}" -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
-        if [ "$attempt" -lt "30" ]; then
+        if [ "$attempt" -lt "60" ]; then
             info "Waiting for ${service} to obtain endpoint ..."
             ((attempt++))
             sleep 10
