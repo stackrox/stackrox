@@ -12,7 +12,7 @@
             "policyVersion": "1.1",
             "policySections": [
                 {
-                    "sectionName": "Policy Section 1",
+                    "sectionName": "Rule 1",
                     "policyGroups": [
                         {
                             "fieldName": "Severity",

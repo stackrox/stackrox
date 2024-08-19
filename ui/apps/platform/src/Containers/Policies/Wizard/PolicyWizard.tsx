@@ -21,12 +21,14 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
 import {
+    POLICY_BEHAVIOR_ENFORCEMENT_ID,
+    POLICY_BEHAVIOR_ID,
+    POLICY_BEHAVIOR_NOTIFIERS_ID,
+    POLICY_BEHAVIOR_SCOPE_ID,
     POLICY_DEFINITION_DETAILS_ID,
+    POLICY_DEFINITION_ID,
     POLICY_DEFINITION_LIFECYCLE_ID,
     POLICY_DEFINITION_RULES_ID,
-    POLICY_BEHAVIOR_SCOPE_ID,
-    POLICY_BEHAVIOR_ENFORCEMENT_ID,
-    POLICY_BEHAVIOR_NOTIFIERS_ID,
     POLICY_REVIEW_ID,
 } from '../policies.constants';
 import { getServerPolicy } from '../policies.utils';
@@ -36,7 +38,7 @@ import PolicyBehaviorForm from './Step2/PolicyBehaviorForm';
 import PolicyCriteriaForm from './Step3/PolicyCriteriaForm';
 import PolicyScopeForm from './Step4/PolicyScopeForm';
 import PolicyEnforcementForm from './Step5/PolicyEnforcementForm';
-import AttachNotifiersForm from './Step6/AttachNotifiersForm';
+import NotifiersForm from './Step6/NotifiersForm';
 import ReviewPolicyForm from './Step7/ReviewPolicyForm';
 
 import './PolicyWizard.css';
@@ -79,6 +81,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
         validateOnMount: true,
         validationSchema: getValidationSchema(stepId),
     });
+    console.log(formik);
     const {
         dirty,
         isSubmitting,
@@ -159,7 +162,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                     >
                         <WizardStep
                             name="Policy definition"
-                            id="policy-definition"
+                            id={POLICY_DEFINITION_ID}
                             isExpandable
                             steps={[
                                 <WizardStep
@@ -196,7 +199,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                         />
                         <WizardStep
                             name="Policy behavior"
-                            id="policy-behavior"
+                            id={POLICY_BEHAVIOR_ID}
                             isExpandable
                             steps={[
                                 <WizardStep
@@ -224,13 +227,14 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >
-                                    <AttachNotifiersForm />
+                                    <NotifiersForm />
                                 </WizardStep>,
                             ]}
                         />
                         <WizardStep
                             name="Review"
                             id={POLICY_REVIEW_ID}
+                            body={{ hasNoPadding: true }}
                             footer={{
                                 nextButtonText: 'Save',
                                 isNextDisabled: !(

@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
-import { Button, Divider, Flex, Form, Title } from '@patternfly/react-core';
+import { Divider, Flex, Form, Title } from '@patternfly/react-core';
 import { useField } from 'formik';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
@@ -9,7 +10,7 @@ import { integrationsPath } from 'routePaths';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import { getTableUIState } from 'utils/getTableUIState';
 
-function AttachNotifiersForm() {
+function NotifiersForm() {
     const [field, , helpers] = useField('notifiers');
 
     const fetchNotifiers = useCallback(() => fetchNotifierIntegrations(), []);
@@ -59,7 +60,7 @@ function AttachNotifiersForm() {
             <Divider component="div" />
             <Form>
                 <div className="pf-v5-u-p-lg">
-                    <Table aria-label="Attach notifiers table" borders>
+                    <Table borders>
                         <Thead>
                             <Tr>
                                 <Th
@@ -85,14 +86,13 @@ function AttachNotifiersForm() {
                                 message:
                                     'No notifiers found. Add notifiers in the Integrations Page to add them to this policy.',
                                 children: (
-                                    <Button
-                                        variant="secondary"
-                                        component="a"
+                                    <Link
+                                        to={integrationsPath}
                                         target="_blank"
-                                        href={integrationsPath}
+                                        rel="noopener noreferrer"
                                     >
-                                        Add a notifier
-                                    </Button>
+                                        Go to integrations
+                                    </Link>
                                 ),
                             }}
                             renderer={({ data }) => (
@@ -124,4 +124,4 @@ function AttachNotifiersForm() {
     );
 }
 
-export default AttachNotifiersForm;
+export default NotifiersForm;

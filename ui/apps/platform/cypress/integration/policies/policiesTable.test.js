@@ -286,7 +286,7 @@ describe('Policies table', () => {
         cy.intercept('POST', `${api.policies.policies}?enableStrictValidation=true`).as(
             'POST_policies'
         );
-        cy.get(selectors.wizardBtns.step5).click();
+        cy.get(selectors.wizardBtns.step7).click();
         cy.get('button:contains("Save")').click();
         cy.wait('@POST_policies');
         cy.get(`${selectors.table.policyLink}:contains("${policyName}")`).should('exist');

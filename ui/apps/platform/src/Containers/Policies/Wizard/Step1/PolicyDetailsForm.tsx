@@ -25,7 +25,7 @@ function PolicyDetailsForm({ id, mitreVectorsLocked }: PolicyDetailsFormProps): 
                 spaceItems={{ default: 'spaceItemsSm' }}
                 className="pf-v5-u-p-lg"
             >
-                <Title headingLevel="h2">Policy details</Title>
+                <Title headingLevel="h2">Details</Title>
                 <div>Describe general information about your policy.</div>
             </Flex>
             <Divider component="div" />

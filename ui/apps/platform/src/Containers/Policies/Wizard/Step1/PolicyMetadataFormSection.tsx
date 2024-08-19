@@ -17,11 +17,15 @@ function PolicyMetadataFormSection(): ReactElement {
         values,
     }: FormikContextType<ClientPolicy> = useFormikContext();
 
+    function handleSeverityChange(severity: string) {
+        setFieldValue('severity', severity);
+    }
+
     return (
         <Form>
             <FormLabelGroup
-                label="Name"
                 isRequired
+                label="Name"
                 fieldId="name"
                 errors={errors}
                 touched={touched}
@@ -34,15 +38,15 @@ function PolicyMetadataFormSection(): ReactElement {
                     name="name"
                     value={values.name}
                     validated={errors?.name && touched?.name ? 'error' : 'default'}
-                    onChange={(event) => handleChange(event)}
+                    onChange={handleChange}
                     onBlur={handleBlur}
                 />
             </FormLabelGroup>
             <FormLabelGroup
+                isRequired
                 label="Severity"
                 fieldId="severity"
                 errors={errors}
-                isRequired
                 touched={touched}
                 helperText={'Select a severity level for this policy'}
             >
@@ -50,7 +54,7 @@ function PolicyMetadataFormSection(): ReactElement {
                     <Radio
                         name="severity"
                         value="LOW_SEVERITY"
-                        onChange={() => setFieldValue('severity', 'LOW_SEVERITY')}
+                        onChange={() => handleSeverityChange('LOW_SEVERITY')}
                         label="Low"
                         id="policy-severity-radio-low"
                         isChecked={values.severity === 'LOW_SEVERITY'}
@@ -59,7 +63,7 @@ function PolicyMetadataFormSection(): ReactElement {
                     <Radio
                         name="severity"
                         value="MEDIUM_SEVERITY"
-                        onChange={() => setFieldValue('severity', 'MEDIUM_SEVERITY')}
+                        onChange={() => handleSeverityChange('MEDIUM_SEVERITY')}
                         label="Medium"
                         id="policy-severity-radio-medium"
                         isChecked={values.severity === 'MEDIUM_SEVERITY'}
@@ -68,7 +72,7 @@ function PolicyMetadataFormSection(): ReactElement {
                     <Radio
                         name="severity"
                         value="HIGH_SEVERITY"
-                        onChange={() => setFieldValue('severity', 'HIGH_SEVERITY')}
+                        onChange={() => handleSeverityChange('HIGH_SEVERITY')}
                         label="High"
                         id="policy-severity-radio-high"
                         isChecked={values.severity === 'HIGH_SEVERITY'}
@@ -77,7 +81,7 @@ function PolicyMetadataFormSection(): ReactElement {
                     <Radio
                         name="severity"
                         value="CRITICAL_SEVERITY"
-                        onChange={() => setFieldValue('severity', 'CRITICAL_SEVERITY')}
+                        onChange={() => handleSeverityChange('CRITICAL_SEVERITY')}
                         label="Critical"
                         id="policy-severity-radio-critical"
                         isChecked={values.severity === 'CRITICAL_SEVERITY'}
@@ -91,7 +95,7 @@ function PolicyMetadataFormSection(): ReactElement {
                 fieldId="description"
                 errors={errors}
                 touched={touched}
-                helperText={'Enter details about the policy'}
+                helperText={'Enter a description of the policy'}
             >
                 <TextArea
                     id="description"
