@@ -276,7 +276,11 @@ spec:
             - name: scanner-db-tls-volume
               mountPath: /run/secrets/stackrox.io/certs
               readOnly: true
+            {{ if not $._rox.scanner.db.existingSecret }}
             - name: scanner-db-password
+            {{- else -}}
+            - name: {{ $._rox.scanner.db.existingSecret.name }}
+            {{- end }}
               mountPath: /run/secrets/stackrox.io/secrets
               readOnly: true
       containers:
@@ -326,8 +330,18 @@ spec:
             path: root.crt
       - name: scanner-db-data
         emptyDir: {}
+      {{ if not $._rox.scanner.db.existingSecret -}}
       - name: scanner-db-password
         secret:
           secretName: scanner-db-password
+      {{- else -}}
+      - name: {{ $._rox.scanner.db.existingSecret.name }}
+        secret:
+          secretName: {{ $._rox.scanner.db.existingSecret.name }}
+          items:
+          - key: {{ $._rox.scanner.db.existingSecret.key }}
+            path: password
+      {{- end -}}
+
 {{ end - }}
 {{ end -}}

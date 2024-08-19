@@ -27,7 +27,6 @@ ca:
     name: null # string
     cert: null # string
     key: null # string
-
 additionalCAs: null # string | [string] | dict
 central:
   telemetry:
