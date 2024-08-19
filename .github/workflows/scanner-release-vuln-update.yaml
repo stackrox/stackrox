@@ -182,17 +182,18 @@ jobs:
 
     - name: Upload GH artifact
       if: ${{ github.ref_name != 'master' }}
-      uses: actions/upload-artifact@v4
+      uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: ${{ env.ROX_PRODUCT_VERSION }}
         path: ${{ env.ROX_PRODUCT_VERSION }}
+        if-no-files-found: error
 
   send-notification:
     needs:
     - read-release-versions
     - upload-release-vulnerabilities
     runs-on: ubuntu-latest
-    if: failure()
+    if: ${{ failure() && github.ref_name == 'master' }}
     steps:
     - name: Send Slack notification on workflow failure
       run: |
