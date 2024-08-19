@@ -162,7 +162,7 @@ jobs:
 
         mkdir ${{ env.ROX_PRODUCT_VERSION }}
 
-        # Save the bundle dir as a job output so that we can create a GH artifact of its 
+        # Save the bundle dir as a job output so that we can create a GH artifact of its
         # contents in a later step (as needed).
         echo "VULN_OUTPUT_DIR=$(pwd)/${{ env.ROX_PRODUCT_VERSION }}" >> "$GITHUB_OUTPUT"
 
