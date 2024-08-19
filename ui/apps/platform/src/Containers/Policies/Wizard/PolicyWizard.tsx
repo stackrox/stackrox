@@ -81,7 +81,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
         validateOnMount: true,
         validationSchema: getValidationSchema(stepId),
     });
-    console.log(formik);
+
     const {
         dirty,
         isSubmitting,
