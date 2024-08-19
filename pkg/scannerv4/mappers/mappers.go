@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -15,7 +14,8 @@ import (
 	"github.com/facebookincubator/nvdtools/cvss2"
 	"github.com/facebookincubator/nvdtools/cvss3"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/rhel/vex"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
@@ -46,15 +46,14 @@ var (
 	// Updater patterns are used to determine the security updater the
 	// vulnerability was detected.
 
-	awsUpdaterPrefix   = `aws-`
-	osvUpdaterPrefix   = `osv/`
-	rhelUpdaterPattern = regexp.MustCompile(`^RHEL\d+-`)
+	awsUpdaterPrefix = `aws-`
+	osvUpdaterPrefix = `osv/`
+	rhelUpdaterName  = (*vex.Updater)(nil).Name()
 
 	// Name patterns are regexes to match against vulnerability fields to
 	// extract their name according to their updater.
 
-	awsVulnNamePattern  = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
-	rhelVulnNamePattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`)
+	awsVulnNamePattern = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
 
 	// vulnNamePatterns is a default prioritized list of regexes to match
 	// vulnerability names.
@@ -427,7 +426,7 @@ func toDigestString(digest claircore.Digest) string {
 }
 
 func toClairCoreCPE(s string) (cpe.WFN, error) {
-	c, err := cpe.UnbindFS(s)
+	c, err := cpe.Unbind(s)
 	if err != nil {
 		return c, fmt.Errorf("%q: %s", s, strings.TrimPrefix(err.Error(), "cpe: "))
 	}
@@ -651,14 +650,13 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 // however, the returned slice of metrics will still be populated with any successfully gathered metrics.
 // It is up to the caller to ensure the returned slice is populated prior to using it.
 func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
-
 	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
 
 	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
 	var preferredErr error
 	switch {
-	case rhelUpdaterPattern.MatchString(vuln.Updater):
-		preferredCVSS, preferredErr = rhelCVSS(vuln)
+	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
+		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
 	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix) && !isOSVDBSpecificSeverity(vuln.Severity):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV)
 	case strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
@@ -692,56 +690,6 @@ type cvssValues struct {
 	v3Score  float32
 	source   v4.VulnerabilityReport_Vulnerability_CVSS_Source
 	url      string
-}
-
-func rhelCVSS(vuln *claircore.Vulnerability) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
-	if vuln.Severity == "" {
-		return nil, errors.New("severity is empty")
-	}
-
-	q, err := url.ParseQuery(vuln.Severity)
-	if err != nil {
-		return nil, fmt.Errorf("parsing severity: %w", err)
-	}
-
-	values := cvssValues{
-		source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
-	}
-
-	if v := q.Get("cvss2_vector"); v != "" {
-		if _, err := cvss2.VectorFromString(v); err != nil {
-			return nil, fmt.Errorf("parsing CVSS v2 vector: %w", err)
-		}
-
-		s := q.Get("cvss2_score")
-		f, err := strconv.ParseFloat(s, 32)
-		if err != nil {
-			return nil, fmt.Errorf("parsing CVSS v2 score: %w", err)
-		}
-
-		values.v2Vector = v
-		values.v2Score = float32(f)
-	}
-
-	if v := q.Get("cvss3_vector"); v != "" {
-		if _, err := cvss3.VectorFromString(v); err != nil {
-			return nil, fmt.Errorf("parsing CVSS v3 vector: %w", err)
-		}
-
-		s := q.Get("cvss3_score")
-		f, err := strconv.ParseFloat(s, 32)
-		if err != nil {
-			return nil, fmt.Errorf("parsing CVSS v3 score: %w", err)
-		}
-		values.v3Vector = v
-		values.v3Score = float32(f)
-	}
-	if cveId := q.Get("cve"); cveId != "" {
-		values.url = redhatCVEURLPrefix + cveId
-	}
-
-	cvss := toCVSS(values)
-	return cvss, nil
 }
 
 // vulnCVSS returns CVSS metrics based on the given vulnerability and its source.
@@ -882,10 +830,6 @@ func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerab
 func vulnerabilityName(vuln *claircore.Vulnerability) string {
 	// Attempt per-updater patterns.
 	switch {
-	case rhelUpdaterPattern.MatchString(vuln.Updater):
-		if v, ok := findName(vuln, rhelVulnNamePattern); ok {
-			return v
-		}
 	case strings.HasPrefix(vuln.Updater, awsUpdaterPrefix):
 		if v, ok := findName(vuln, awsVulnNamePattern); ok {
 			return v

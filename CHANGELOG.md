@@ -51,6 +51,14 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - Node.js 20 moves from Active to Maintenance status on 2024-10-22
 - ROX-20578: Sensor will now store pull secrets by secret name and registry host (instead of only registry host). This will reduce Delegated Scanning authentication failures when multiple secrets exist for the same registry within a namespace and more closely aligns with k8s secret handling.
   - Setting `ROX_SENSOR_PULL_SECRETS_BY_NAME` to `false` on Sensor will disable this feature and cause secrets to be stored by only registry host.
+- ROX-25981: Scanner V4 now fetches vulnerability data from [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of [Red Hat's OVAL feed](https://security.access.redhat.com/data/oval/v2/) for RPMs installed in RHEL-based image containers.
+  - Fixed vulnerabilities affecting RHEL-based images are no longer identified by the respective RHSA, RHBA, nor RHEA anymore. Instead, they will be identified by CVE.
+    - This will also apply to vulnerabilities obtained from the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) (used for container-first scanning).
+    - This may potentially disrupt policies created around RHSAs, for example, but for most users, this change is much preferred over the previous results.
+  - Scanner V4 now only considers vulnerabilities affecting Red Hat products dated back to 2014.
+    - Previously when reading Red Hat's OVAL data, the vulnerabilities dated back to pre-2000; however, most of those vulnerabilities were irrelevant.
+      We can found most, if not all, vulnerabilities prior to 2014 are not relevant these days, so they are not considered.
+  - Scanner V4 DB requires less space for vulnerability data, and its initialization time has improved from about 1 hour on SSD to about 10 minutes.
 
 ## [4.5.0]
 

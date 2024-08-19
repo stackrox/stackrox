@@ -9,11 +9,24 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/alpine"
+	"github.com/quay/claircore/aws"
+	"github.com/quay/claircore/debian"
+	"github.com/quay/claircore/gobin"
+	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/matchers/registry"
 	"github.com/quay/claircore/nodejs"
+	"github.com/quay/claircore/oracle"
+	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/python"
+	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/ruby"
+	"github.com/quay/claircore/suse"
+	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/scanner/config"
@@ -26,20 +39,22 @@ import (
 )
 
 // matcherNames specifies the ClairCore matchers to use.
+//
+// Note: Do NOT hardcode the names. It's very easy to mess up...
 var matcherNames = []string{
-	"alpine-matcher",
-	"aws-matcher",
-	"debian-matcher",
-	"gobin",
-	"java-maven",
-	"oracle",
-	"photon",
-	"python",
-	"rhel-container-matcher",
-	"rhel",
-	"ruby-gem",
-	"suse",
-	"ubuntu-matcher",
+	(*alpine.Matcher)(nil).Name(),
+	(*aws.Matcher)(nil).Name(),
+	(*debian.Matcher)(nil).Name(),
+	(*gobin.Matcher)(nil).Name(),
+	(*java.Matcher)(nil).Name(),
+	(*oracle.Matcher)(nil).Name(),
+	(*photon.Matcher)(nil).Name(),
+	(*python.Matcher)(nil).Name(),
+	rhcc.Matcher.Name(),
+	(*rhel.Matcher)(nil).Name(),
+	(*ruby.Matcher)(nil).Name(),
+	(*suse.Matcher)(nil).Name(),
+	(*ubuntu.Matcher)(nil).Name(),
 }
 
 func init() {
