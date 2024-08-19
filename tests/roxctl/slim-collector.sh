@@ -20,7 +20,7 @@ die() {
     exit 1
 }
 
-escape() {
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
   echo -n "$1 = \"${2//[\"\\]/\\&}\""
 }
 
@@ -28,7 +28,7 @@ curl_central() {
   url="$1"
   shift
   [[ -n "${url}" ]] || die "No URL specified"
-  curl --retry 5 --retry-connrefused -Sskf --config <(escape user "admin:${ROX_PASSWORD}") \
+  curl --retry 5 --retry-connrefused -Sskf --config <(curl_cfg user "admin:${ROX_PASSWORD}") \
     "https://${API_ENDPOINT}/${url}" "$@"
 }
 

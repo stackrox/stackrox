@@ -8,13 +8,13 @@ usage() {
     echo "$0 <somewhere to put it>"
 }
 
-escape() {
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
     echo -n "$1 = \"${2//[\"\\]/\\&}\""
 }
 
 call_curl() {
     local url=$1
-    curl -s --insecure --config <(escape user "$ROX_USERNAME:$ROX_PASSWORD") "$url"
+    curl -s --insecure --config <(curl_cfg user "$ROX_USERNAME:$ROX_PASSWORD") "$url"
 }
 
 main() {

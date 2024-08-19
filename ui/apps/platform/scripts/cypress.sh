@@ -9,12 +9,12 @@ if [[ -z "$ROX_USERNAME" || -z "$ROX_PASSWORD" ]]; then
   source ../../../scripts/k8s/export-basic-auth-creds.sh ../../../deploy/k8s
 fi
 
-escape() {
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
   echo -n "$1 = \"${2//[\"\\]/\\&}\""
 }
 
 if [[ -n "$ROX_PASSWORD" ]]; then
-  readarray -t arr < <(curl -sk --config <(escape user "admin:$ROX_PASSWORD") ${api_endpoint}/v1/featureflags | jq -cr '.featureFlags[] | {name: .envVar, enabled: .enabled}')
+  readarray -t arr < <(curl -sk --config <(curl_cfg user "admin:$ROX_PASSWORD") ${api_endpoint}/v1/featureflags | jq -cr '.featureFlags[] | {name: .envVar, enabled: .enabled}')
   for i in "${arr[@]}"; do
     name=$(echo $i | jq -rc .name)
     val=$(echo $i | jq -rc .enabled)
