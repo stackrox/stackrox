@@ -128,6 +128,7 @@ jobs:
         path: .
 
     - name: Update vulnerabilities
+      id: upload-vulnerabilities
       env:
         STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         STACKROX_NVD_API_CALL_INTERVAL: 6s
@@ -161,6 +162,10 @@ jobs:
 
         mkdir ${{ env.ROX_PRODUCT_VERSION }}
 
+        # Save the bundle dir as a job output so that we can create a GH artifact of its 
+        # contents in a later step (as needed).
+        echo "VULN_OUTPUT_DIR=$(pwd)/${{ env.ROX_PRODUCT_VERSION }}" >> "$GITHUB_OUTPUT"
+
         # Run updater per release/product version.
         case "${{ env.ROX_PRODUCT_VERSION }}" in
         4.4.*)
@@ -185,7 +190,7 @@ jobs:
       uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: ${{ env.ROX_PRODUCT_VERSION }}
-        path: ${{ env.ROX_PRODUCT_VERSION }}
+        path: ${{ steps.upload-vulnerabilities.outputs.VULN_OUTPUT_DIR}}
         if-no-files-found: error
 
   send-notification:
