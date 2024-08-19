@@ -184,7 +184,7 @@ spec:
     app: central-db
   type: ClusterIP
 {{- end }}
-{{- if ._rox.central.db._password }}
+{{- if and (._rox.central.db._password) (not $._rox.central.db.existingSecret) (not ._rox.central.db.external) }}
 {{- if not (kindIs "invalid" ._rox.central.db._password.value) }}
 ---
 apiVersion: v1

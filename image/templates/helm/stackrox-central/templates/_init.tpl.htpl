@@ -31,10 +31,10 @@
 {{ $existingSecret := $rox.ca.existingSecret }}
 
 {{ if $existingSecret }}
-  {{ $secretVal := (lookup "v1" "Secret" .Release.Namespace $rox.ca.existingSecret) }}
+  {{ $secretVal := (lookup "v1" "Secret" .Release.Namespace $rox.ca.existingSecret.name) }}
   {{ if $secretVal }}
-    {{ $caCert := (index $secretVal.data "ca.pem") | b64dec }}
-    {{ $caKey := (index $secretVal.data "ca-key.pem") | b64dec }}
+    {{ $caCert := (index $secretVal.data $rox.ca.existingSecret.cert) | b64dec }}
+    {{ $caKey := (index $secretVal.data $rox.ca.existingSecret.key) | b64dec }}
     {{ $_ := set $rox.ca "cert" $caCert }}
     {{ $_ := set $rox.ca "key" $caKey }}
   {{ end }}

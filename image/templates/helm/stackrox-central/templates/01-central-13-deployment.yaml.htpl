@@ -178,8 +178,13 @@ spec:
         - name: endpoints-config-volume
           mountPath: /etc/stackrox.d/endpoints/
           readOnly: true
+        {{ if not $._rox.central.db.existingSecret }}
         - name: central-db-password
+        {{- else -}}
+        - name: {{ $._rox.central.db.existingSecret.name }}
+        {{- end }}
           mountPath: /run/secrets/stackrox.io/db-password
+          readOnly: true
         - name: central-external-db-volume
           mountPath: /etc/ext-db
         {{- if ._rox.env.openshift }}
@@ -258,9 +263,18 @@ spec:
       - name: endpoints-config-volume
         configMap:
           name: central-endpoints
+      {{ if not $._rox.central.db.existingSecret -}}
       - name: central-db-password
         secret:
           secretName: central-db-password
+      {{- else -}}
+      - name: {{ $._rox.central.db.existingSecret.name }}
+        secret:
+          secretName: {{ $._rox.central.db.existingSecret.name }}
+          items:
+          - key: {{ $._rox.central.db.existingSecret.key }}
+            path: password
+      {{- end }}
       - name: central-external-db-volume
         configMap:
           name: central-external-db

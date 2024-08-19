@@ -23,7 +23,11 @@ ca:
   cert: null # string
   key: null # string
   generate: null # bool
-  existingSecret: null # string
+  existingSecret: 
+    name: null # string
+    cert: null # string
+    key: null # string
+
 additionalCAs: null # string | [string] | dict
 central:
   telemetry:
