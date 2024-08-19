@@ -4,6 +4,7 @@ package datastore
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
@@ -14,6 +15,7 @@ import (
 	accessScopePostgresStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -88,6 +90,8 @@ func (s *datastorePostgresTestSuite) TearDownTest() {
 }
 
 func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
+	s.NoError(os.Setenv(features.PolicyAsCode.EnvVar(), "true"))
+	defer os.Setenv(features.PolicyAsCode.EnvVar(), "false")
 	controller := gomock.NewController(s.T())
 	defer controller.Finish()
 	store := store.New(s.pool.DB)
