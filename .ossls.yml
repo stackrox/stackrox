@@ -1,10 +1,9 @@
 gomod:
   mod-file: go.mod
 
-# TODO re-enable this and test with updated ossls tool
-#npm:
-#  lockfile: ui/apps/platform/package-lock.json
-#  node-modules-dir: ui/apps/platform/node_modules
+npm:
+  lockfile: ui/apps/platform/package-lock.json
+  node-modules-dir: ui/apps/platform/node_modules
 
 patterns:
   - "*AUTHOR*"
