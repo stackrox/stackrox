@@ -4,7 +4,6 @@ const path = require('node:path');
 
 const parserTypeScriptESLint = require('@typescript-eslint/parser');
 
-const pluginAccessibilityJSX = require('eslint-plugin-jsx-a11y');
 const pluginCypress = require('eslint-plugin-cypress');
 const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-extraneous-dependencies
 const pluginESLintComments = require('eslint-plugin-eslint-comments');
@@ -533,7 +532,6 @@ module.exports = [
         plugins: {
             accessibility: pluginAccessibility,
             import: pluginImport,
-            'jsx-a11y': pluginAccessibilityJSX,
             react: pluginReact,
             'react-hooks': pluginReactHooks,
         },
@@ -564,26 +562,6 @@ module.exports = [
                     devDependencies: [
                         path.join(__dirname, 'src/test-utils/*'), // TODO delete renderWithRedux.js
                     ],
-                },
-            ],
-
-            // TODO compare eslint-plugin-jsx-a11y recommended and strict config to former airbnb-config-react react-a11y config.
-
-            // TODO Reconfigure for using react-router Link
-            'jsx-a11y/anchor-is-valid': [
-                'error',
-                {
-                    components: ['Link'],
-                    specialLink: ['to', 'hrefLeft', 'hrefRight'],
-                    aspects: ['noHref', 'invalidHref', 'preferButton'],
-                },
-            ],
-
-            'jsx-a11y/label-has-associated-control': [
-                'error',
-                {
-                    assert: 'either',
-                    depth: 12,
                 },
             ],
 
