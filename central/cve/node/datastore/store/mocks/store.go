@@ -104,6 +104,20 @@ func (mr *MockStoreMockRecorder) GetMany(ctx, ids any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
 }
 
+// PruneMany mocks base method.
+func (m *MockStore) PruneMany(ctx context.Context, ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PruneMany", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PruneMany indicates an expected call of PruneMany.
+func (mr *MockStoreMockRecorder) PruneMany(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PruneMany", reflect.TypeOf((*MockStore)(nil).PruneMany), ctx, ids)
+}
+
 // Search mocks base method.
 func (m *MockStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
