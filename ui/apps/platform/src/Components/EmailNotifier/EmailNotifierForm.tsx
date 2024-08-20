@@ -120,6 +120,7 @@ function EmailNotifierForm({
                                 />
                                 <Popover
                                     showClose={false}
+                                    aria-label="Information about unauthenticated SMTP"
                                     bodyContent="Enable unauthenticated SMTP will allow you to setup an email notifier if you don’t have authenticated email services."
                                 >
                                     <button

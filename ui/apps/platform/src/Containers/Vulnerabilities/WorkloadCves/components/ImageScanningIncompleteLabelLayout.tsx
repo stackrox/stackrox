@@ -3,6 +3,8 @@ import { Button, Flex, FlexItem, Label, Popover } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 import isEmpty from 'lodash/isEmpty';
 
+import PopoverBodyContent from 'Components/PopoverBodyContent';
+
 import getImageScanMessage from '../utils/getImageScanMessage';
 
 export type ImageScanningIncompleteLabelProps = {
@@ -24,15 +26,19 @@ function ImageScanningIncompleteLabel({
         <>
             <Popover
                 aria-label="Image scanning incomplete label"
-                headerContent={<div>CVE data may be inaccurate</div>}
                 bodyContent={
-                    <Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsSm' }}
-                    >
-                        <FlexItem>{scanMessage.header}</FlexItem>
-                        <FlexItem>{scanMessage.body}</FlexItem>
-                    </Flex>
+                    <PopoverBodyContent
+                        headerContent="CVE data may be inaccurate"
+                        bodyContent={
+                            <Flex
+                                direction={{ default: 'column' }}
+                                spaceItems={{ default: 'spaceItemsSm' }}
+                            >
+                                <FlexItem>{scanMessage.header}</FlexItem>
+                                <FlexItem>{scanMessage.body}</FlexItem>
+                            </Flex>
+                        }
+                    />
                 }
                 enableFlip
                 position="top"
