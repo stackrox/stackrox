@@ -34,7 +34,7 @@ func (c customMarshaler) unmarshalBackwardCompatible(data []byte, v interface{},
 	goStruct := SuppressCVERequestGo{}
 	err := json.Unmarshal(data, &goStruct)
 	if err != nil {
-		log.Warnf(err.Error())
+		log.Warn(err)
 		// We want users choose the new format.
 		return unmarshalError
 	}
