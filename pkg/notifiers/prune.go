@@ -5,7 +5,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/jsonutil"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -97,8 +96,7 @@ func PruneAlert(alert *storage.Alert, maxSize int) {
 	maxSize -= sizeBuffer
 
 	// Get current size and then determine how to trim more in terms of violations
-	marshaler := new(protojson.MarshalOptions)
-	data, err := marshaler.Marshal(alert)
+	data, err := jsonutil.MarshalToCompactString(alert)
 	if err != nil {
 		log.Error(err)
 	}
