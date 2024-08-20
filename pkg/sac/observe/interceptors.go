@@ -31,6 +31,7 @@ func AuthzTraceInterceptor(authzTraceSink AuthzTraceSink) grpc.UnaryServerInterc
 func AuthzTraceHTTPInterceptor(authzTraceSink AuthzTraceSink) httputil.HTTPInterceptor {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Infof("TEST LOG INCEPT")
 			statusTrackingWriter := httputil.NewStatusTrackingWriter(w)
 			handler.ServeHTTP(statusTrackingWriter, r)
 			if trace := AuthzTraceFromContext(r.Context()); trace != nil {

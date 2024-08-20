@@ -1,0 +1,33 @@
+[
+  {
+    "clusterId": "cluster-id",
+    "clusterName": "cluster-01",
+    "firstOccurred": {
+      "nanos": 655059901,
+      "seconds": "1724154275"
+    },
+    "firstOccurredTime": "2024-08-20T11:44:35.65505",
+    "namespace": "default",
+    "namespaceId": "default-ns-id",
+    "policy": {
+      "categories": [],
+      "id": "policy-id",
+      "lifecycleStages": [
+        "BUILD",
+        "DEPLOY"
+      ],
+      "name": "some-policy"
+    },
+    "resolvedAt": {
+      "nanos": 655059967,
+      "seconds": "1724154275"
+    },
+    "resolvedAt2": "2024-08-20T11:44:35.655059967Z",
+    "snoozeTill": {
+      "nanos": 655060031,
+      "seconds": "1724154275"
+    },
+    "violationTime2": "2024-08-20T11:44:35.65505",
+    "TimeGenerated": "2024-08-20T11:44:35.65505"
+  }
+]
