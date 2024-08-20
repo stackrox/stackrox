@@ -74,7 +74,7 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 			return nil, errors.Wrap(err, "Failed to read kube service account token")
 		}
 
-		// By defualt k8s requires authentication to fetch the OIDC resources for service account tokens
+		// By default k8s requires authentication to fetch the OIDC resources for service account tokens
 		// https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery
 		roundTripper = authenticatedRoundTripper{roundTripper: roundTripper, token: token}
 	}
