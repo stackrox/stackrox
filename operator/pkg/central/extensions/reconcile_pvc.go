@@ -137,7 +137,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 	if r.centralObj.DeletionTimestamp != nil || r.persistence == nil {
 		return r.handleDelete()
 	}
-	if common.ObsoletePVC(r.centralObj.GetAnnotations()) {
+	if r.target == PVCTargetCentral && common.ObsoletePVC(r.centralObj.GetAnnotations()) {
 		return r.handleDelete()
 	}
 
