@@ -10,24 +10,31 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const indent = "  "
+const (
+	pretty  = "  "
+	compact = ""
+)
 
 var errNil = errors.New("Marshal called with nil")
 
 // Marshal marshals the given [proto.Message] in the JSON format.
 func Marshal(out io.Writer, msg proto.Message) error {
-	return marshal(out, msg, "")
+	return marshal(out, msg, compact)
 }
 
 // MarshalPretty marshals the given [proto.Message] in the JSON format
 // with two space indentation.
 func MarshalPretty(out io.Writer, msg proto.Message) error {
-	return marshal(out, msg, indent)
+	return marshal(out, msg, pretty)
 }
 
 // MarshalToString serializes a protobuf message as JSON in string form.
 func MarshalToString(msg proto.Message) (string, error) {
-	return marshalToString(msg, indent)
+	return marshalToString(msg, pretty)
+}
+
+func MarshalToCompactString(msg proto.Message) (string, error) {
+	return marshalToString(msg, compact)
 }
 
 func marshal(out io.Writer, msg proto.Message, indent string) error {
@@ -58,7 +65,7 @@ func marshalToString(msg proto.Message, indent string) (string, error) {
 		return "", errors.Wrap(err, "failed to marshal JSON")
 	}
 	buffer := bytes.NewBuffer(make([]byte, 0, len(b)))
-	if indent == "" {
+	if indent == compact {
 		err = json.Compact(buffer, b)
 	} else {
 		err = json.Indent(buffer, b, "", indent)

@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -56,15 +57,13 @@ func filterProcesses(processes []*storage.ProcessIndicator, maxSize int, currSiz
 	if *currSize < maxSize {
 		return processes
 	}
-
-	marshaler := new(protojson.MarshalOptions)
 	// Clean Process first then prune
 	for _, p := range processes {
 		cleanProcessIndicator(p)
 	}
 
 	for i := len(processes) - 1; i >= 0; i-- {
-		data, err := marshaler.Marshal(processes[i])
+		data, err := jsonutil.MarshalToCompactString(processes[i])
 		if err != nil {
 			log.Error(err)
 		}
@@ -80,10 +79,8 @@ func filterViolations(violations []*storage.Alert_Violation, maxSize int, currSi
 	if *currSize < maxSize {
 		return violations
 	}
-	marshaler := new(protojson.MarshalOptions)
-
 	for i := len(violations) - 1; i >= 0; i-- {
-		data, err := marshaler.Marshal(violations[i])
+		data, err := jsonutil.MarshalToCompactString(violations[i])
 		if err != nil {
 			log.Error(err)
 		}

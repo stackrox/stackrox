@@ -205,11 +205,11 @@ type marshalableAlert storage.Alert
 
 // MarshalJSON marshals alert data to bytes, following jsonpb rules.
 func (a *marshalableAlert) MarshalJSON() ([]byte, error) {
-	bytes, err := jsonutil.MarshalToString((*storage.Alert)(a))
+	payload, err := jsonutil.MarshalToString((*storage.Alert)(a))
 	if err != nil {
 		return nil, err
 	}
-	return []byte(bytes), nil
+	return []byte(payload), nil
 }
 
 // UnmarshalJSON unmarshals alert JSON bytes into an Alert object, following jsonpb rules.
