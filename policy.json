@@ -1,0 +1,49 @@
+{
+  "id": "26d06447-134b-4bb9-8bba-e63426ff52c5",
+  "name": "create-alert",
+  "description": "",
+  "rationale": "",
+  "remediation": "",
+  "disabled": false,
+  "categories": [
+    "Anomalous Activity"
+  ],
+  "lifecycleStages": [
+    "DEPLOY"
+  ],
+  "eventSource": "NOT_APPLICABLE",
+  "exclusions": [],
+  "scope": [],
+  "severity": "CRITICAL_SEVERITY",
+  "enforcementActions": [],
+  "notifiers": [
+    "a6cc3c58-d9b0-41a1-9786-d4dd418ccc60"
+  ],
+  "lastUpdated": "2024-08-19T09:57:13.529604625Z",
+  "SORTName": "create-alert",
+  "SORTLifecycleStage": "DEPLOY",
+  "SORTEnforcement": false,
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "Policy Section 1",
+      "policyGroups": [
+        {
+          "fieldName": "Image Tag",
+          "booleanOperator": "OR",
+          "negate": false,
+          "values": [
+            {
+              "value": "latest"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [],
+  "criteriaLocked": false,
+  "mitreVectorsLocked": false,
+  "isDefault": false,
+  "source": "IMPERATIVE"
+}

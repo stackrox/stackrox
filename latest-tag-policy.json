@@ -1,0 +1,48 @@
+{
+  "name": "Latest tag",
+  "description": "Alert on deployments with images using tag 'latest'",
+  "rationale": "Using latest tag can result in running heterogeneous versions of code. Many Docker hosts cache the Docker images, which means newer versions of the latest tag will not be picked up. See https://docs.docker.com/develop/dev-best-practices for more best practices.",
+  "remediation": "Consider moving to semantic versioning based on code releases (semver.org) or using the first 12 characters of the source control SHA. This will allow you to tie the Docker image to the code.",
+  "disabled": false,
+  "categories": [
+    "DevOps Best Practices",
+    "Supply Chain Security"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "eventSource": "NOT_APPLICABLE",
+  "exclusions": [],
+  "scope": [],
+  "severity": "LOW_SEVERITY",
+  "enforcementActions": [],
+  "notifiers": [],
+  "lastUpdated": null,
+  "SORTName": "Latest tag",
+  "SORTLifecycleStage": "BUILD,DEPLOY",
+  "SORTEnforcement": false,
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "",
+      "policyGroups": [
+        {
+          "fieldName": "Image Tag",
+          "booleanOperator": "OR",
+          "negate": false,
+          "values": [
+            {
+              "value": "latest"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true,
+  "source": "IMPERATIVE"
+}

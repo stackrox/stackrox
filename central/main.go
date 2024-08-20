@@ -269,6 +269,7 @@ func runSafeMode() {
 
 func main() {
 	premain.StartMain()
+	log.Info("TEST TEST TEST")
 
 	conf := config.GetConfig()
 	if conf == nil || conf.Maintenance.SafeMode {

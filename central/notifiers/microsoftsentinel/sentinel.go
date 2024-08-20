@@ -26,7 +26,7 @@ var (
 var _ notifiers.AlertNotifier = (*sentinel)(nil)
 var _ notifiers.AuditNotifier = (*sentinel)(nil)
 
-//var _ notifiers.NetworkPolicyNotifier = (*sentinel)(nil)
+// var _ notifiers.NetworkPolicyNotifier = (*sentinel)(nil)
 
 func init() {
 	notifiers.Add(notifiers.MicrosoftSentinelType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
@@ -68,7 +68,7 @@ func (s sentinel) sentinel() *storage.MicrosoftSentinel {
 
 func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
 	log.Info("Called SendAuditMessage")
-	//marhsaler := jsonpb.Marshaler{}
+	// marhsaler := jsonpb.Marshaler{}
 	//jsonString, err := marhsaler.MarshalToString(msg)
 	//fmt.Println("err", err)
 	//fmt.Println(string(jsonString))
@@ -105,7 +105,7 @@ func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
 		//Entity: &storage.Alert_Deployment_{},
 		//Violations: []*storage.Alert_Violation{
 		//	{Type: storage.Alert_Violation_GENERIC, Message: "", Time: timestamppb.Now()},
-		//},
+		// },
 		//ProcessViolation: &storage.Alert_ProcessViolation{},
 		//Enforcement: &storage.Alert_Enforcement{
 		//	Action: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
