@@ -2283,7 +2283,3 @@ func resourceWithAccess(access storage.Access, resource permissions.ResourceMeta
 		Resource: resource,
 	}
 }
-
-func getTestNodeCVEs() {
-
-}
