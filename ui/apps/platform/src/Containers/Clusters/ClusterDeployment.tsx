@@ -56,9 +56,10 @@ function ClusterDeployment({
                     >
                         <Title headingLevel="h3">1. Download files</Title>
                         <Text>Download the required configuration files, keys, and scripts.</Text>
+                        <Text>Enabling automatic upgrades creates a powerful service account in your secured cluster.</Text>
                         <Switch
-                            label="Cluster is configured to allow future automatic upgrades"
-                            labelOff="Click to configure cluster to allow future automatic upgrades"
+                            label="Automatic upgrades ON: Will upgrade secured clusters with versions behind central's."
+                            labelOff="Automatic upgrades OFF: Will not upgrade secured clusters automatically."
                             onChange={toggleSA}
                             isChecked={createUpgraderSA}
                         />
