@@ -164,18 +164,14 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 		})
 	}
 
-	var tokenExchangerErrors error
+	tokenExchangerErrors := []error{}
 	for _, config := range configs {
 		if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
-			tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
-			continue
+			tokenExchangerErrors = append(tokenExchangerErrors, err)
 		}
 	}
 
-	if tokenExchangerErrors != nil {
-		return tokenExchangerErrors
-	}
-	return tokenExchangerErrors
+	return errors.Join(tokenExchangerErrors...)
 }
 
 // wrapRollback wraps the error with potential rollback errors.
