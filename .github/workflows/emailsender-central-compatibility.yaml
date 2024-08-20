@@ -58,9 +58,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: stackrox/stackrox
+          ref: ${{ github.event.pull_request.head.sha }}
           path: stackrox
           fetch-depth: 0
-          fetch-tags: true
       - name: Create Kind cluster"
         uses: helm/kind-action@v1
         with:
