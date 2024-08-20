@@ -20,7 +20,7 @@ const (
 	OptUnEscape
 )
 
-// JSONUnmarshaler returns a jsonpb Unmarshaler configured to allow unknown fields,
+// JSONUnmarshaler returns a protojson.UnmarshalOptions configured to allow unknown fields,
 // i.e. not error out unmarshaling JSON that contains attributes not defined in proto.
 // This Unmarshaler must be used everywhere instead of direct calls to jsonpb.Unmarshal
 // and jsonpb.UnmarshalString.
