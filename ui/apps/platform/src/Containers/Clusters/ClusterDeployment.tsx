@@ -55,9 +55,11 @@ function ClusterDeployment({
                         spaceItems={{ default: 'spaceItemsMd' }}
                     >
                         <Title headingLevel="h3">1. Download files</Title>
-                        <Text>Download the required configuration files, keys, and scripts.</Text>
-                        <Text>Enabling automatic upgrades creates a powerful service account in</Text>
-                        <Text>your secured cluster that will be used to perform the upgrades.</Text>
+                        <Text>
+                            Download the required configuration files, keys, and scripts.
+                            Enabling automatic upgrades creates a powerful service account in
+                            your secured cluster that will be used to perform the upgrades.
+                        </Text>
                         <Switch
                             label="Automatic upgrades ON: Will upgrade secured clusters with versions behind central's."
                             labelOff="Automatic upgrades OFF: Will not upgrade secured clusters automatically."
