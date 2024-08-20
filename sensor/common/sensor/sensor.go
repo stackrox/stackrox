@@ -438,8 +438,6 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		case <-s.centralConnectionFactory.StopSignal().WaitC():
 			// Save the error before retrying
 			err := wrapOrNewError(s.centralConnectionFactory.StopSignal().Err(), "communication stopped")
-			// Reset the ok and stop signals
-			s.centralConnectionFactory.Reset()
 			// Connection is still broken, report and try again
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
 			return err
@@ -477,7 +475,6 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			// Communication either ended or there was an error. Either way we should retry.
 			// Send notification to all components that we are running in offline mode
 			s.changeState(common.SensorComponentEventOfflineMode)
-			s.centralConnectionFactory.Reset()
 			s.reconnect.Store(true)
 			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
 			// checked to probe connection state.

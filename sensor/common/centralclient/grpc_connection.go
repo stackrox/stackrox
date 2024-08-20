@@ -21,7 +21,6 @@ type CentralConnectionFactory interface {
 	SetCentralConnectionWithRetries(ptr *util.LazyClientConn, certLoader CertLoader)
 	StopSignal() *concurrency.ErrorSignal
 	OkSignal() *concurrency.Signal
-	Reset()
 }
 
 type centralConnectionFactoryImpl struct {
@@ -52,12 +51,6 @@ func (f *centralConnectionFactoryImpl) StopSignal() *concurrency.ErrorSignal {
 	return &f.stopSignal
 }
 
-// Reset signals. This should be used when re-attempting the connection in case it was broken.
-func (f *centralConnectionFactoryImpl) Reset() {
-	f.stopSignal.Reset()
-	f.okSignal.Reset()
-}
-
 func (f *centralConnectionFactoryImpl) pingCentral() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -76,13 +69,11 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 // This function is supposed to be called asynchronously and allows sensor components to be
 // started with an empty util.LazyClientConn. The pointer will be swapped once this
 // func finishes.
-// f.okSignal is used if the connection is successful and f.stopSignal if the connection failed to start.
+// f.okSignal is used if the connection is successful and f.stopSignal if the
+// connection failed to start. Hence, both signals are reset here.
 func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn, certLoader CertLoader) {
-	// This should be called with the okSignal and the stopSignal un-triggered.
-	// If they are triggered, reset them.
-	if f.stopSignal.IsDone() || f.okSignal.IsDone() {
-		f.Reset()
-	}
+	f.stopSignal.Reset()
+	f.okSignal.Reset()
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
 	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
