@@ -55,13 +55,13 @@ func (f *fakeGRPCClient) SetCentralConnectionWithRetries(ptr *util.LazyClientCon
 
 // StopSignal returns a signal that is sent if there is an error.
 // This signal is never called.
-func (f *fakeGRPCClient) StopSignal() *concurrency.ErrorSignal {
+func (f *fakeGRPCClient) StopSignal() concurrency.ReadOnlyErrorSignal {
 	return &f.stopSig
 }
 
 // OkSignal returns a signal that is sent if connection was swapped.
 // This signal is triggered instantly on calling SetCentralConnectionWithRetries.
-func (f *fakeGRPCClient) OkSignal() *concurrency.Signal {
+func (f *fakeGRPCClient) OkSignal() concurrency.ReadOnlySignal {
 	return &f.okSig
 }
 

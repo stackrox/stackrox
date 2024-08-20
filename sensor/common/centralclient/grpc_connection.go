@@ -19,8 +19,8 @@ import (
 // more easily mocked when writing unit/integration tests.
 type CentralConnectionFactory interface {
 	SetCentralConnectionWithRetries(ptr *util.LazyClientConn, certLoader CertLoader)
-	StopSignal() *concurrency.ErrorSignal
-	OkSignal() *concurrency.Signal
+	StopSignal() concurrency.ReadOnlyErrorSignal
+	OkSignal() concurrency.ReadOnlySignal
 }
 
 type centralConnectionFactoryImpl struct {
@@ -42,12 +42,12 @@ func NewCentralConnectionFactory(centralClient *Client) CentralConnectionFactory
 
 // OkSignal returns a concurrency.Signal that is sends signal once connection object is successfully established
 // and the util.LazyClientConn pointer is swapped.
-func (f *centralConnectionFactoryImpl) OkSignal() *concurrency.Signal {
+func (f *centralConnectionFactoryImpl) OkSignal() concurrency.ReadOnlySignal {
 	return &f.okSignal
 }
 
 // StopSignal returns a concurrency.Signal that alerts if there is an error trying to establish gRPC connection.
-func (f *centralConnectionFactoryImpl) StopSignal() *concurrency.ErrorSignal {
+func (f *centralConnectionFactoryImpl) StopSignal() concurrency.ReadOnlyErrorSignal {
 	return &f.stopSignal
 }
 
