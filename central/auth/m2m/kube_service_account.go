@@ -16,12 +16,12 @@ type serviceAccountTokenReader interface {
 	readToken() (string, error)
 }
 
-type KubeServiceAccountIssuerFetcher struct {
+type kubeServiceAccountIssuerFetcher struct {
 	reader serviceAccountTokenReader
 }
 
 // GetServiceAccountIssuer takes a base64-encoded JWT and returns the "iss" (issuer) claim value.
-func (k KubeServiceAccountIssuerFetcher) GetServiceAccountIssuer() (string, error) {
+func (k kubeServiceAccountIssuerFetcher) GetServiceAccountIssuer() (string, error) {
 	token, err := k.reader.readToken()
 	if err != nil {
 		return "", errors.Wrap(err, "Failed to read kube service account token")
@@ -51,8 +51,8 @@ func (k kubeServiceAccountTokenReader) readToken() (string, error) {
 	return string(token), nil
 }
 
-func NewServiceAccountIssuerFetcher() KubeServiceAccountIssuerFetcher {
-	return KubeServiceAccountIssuerFetcher{
+func NewServiceAccountIssuerFetcher() kubeServiceAccountIssuerFetcher {
+	return kubeServiceAccountIssuerFetcher{
 		reader: kubeServiceAccountTokenReader{},
 	}
 }

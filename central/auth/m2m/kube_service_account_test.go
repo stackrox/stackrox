@@ -7,7 +7,7 @@ import (
 )
 
 func TestGetKubeServiceAccountIssuer(t *testing.T) {
-	fetcher := KubeServiceAccountIssuerFetcher{
+	fetcher := kubeServiceAccountIssuerFetcher{
 		reader: &mockServiceAccountTokenReader{},
 	}
 	issuer, err := fetcher.GetServiceAccountIssuer()
