@@ -318,6 +318,15 @@ var (
 	ImagePriority      = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
 	ComponentPriority  = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
 
+	// Custom derived fields to support query aliases.  These fields are only supported in pagination sort options.
+	CompliancePassCount          = newDerivedFieldLabelWithType("Compliance Pass Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceFailCount          = newDerivedFieldLabelWithType("Compliance Fail Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceErrorCount         = newDerivedFieldLabelWithType("Compliance Error Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceInfoCount          = newDerivedFieldLabelWithType("Compliance Info Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceManualCount        = newDerivedFieldLabelWithType("Compliance Manual Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceNotApplicableCount = newDerivedFieldLabelWithType("Compliance Not Applicable Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceInconsistentCount  = newDerivedFieldLabelWithType("Compliance Inconsistent Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+
 	// Max-based derived fields.  These fields are primarily used in pagination.  If used in a select it will correspond
 	// to the type of the reference field and simply provide the max function on that field.
 	ComplianceLastScanMax = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
@@ -542,6 +551,10 @@ func newDerivedFieldLabelWithType(s string, derivedFrom FieldLabel, derivationTy
 
 func (f FieldLabel) String() string {
 	return string(f)
+}
+
+func (f FieldLabel) Alias() string {
+	return strings.ToLower(strings.Join(strings.Fields(string(f)), "_"))
 }
 
 // DerivedFieldLabelMetadata includes metadata showing that a field is derived.
