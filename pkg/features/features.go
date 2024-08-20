@@ -27,6 +27,7 @@ var (
 
 // registerFeature registers and returns a new feature flag, configured with the
 // provided options.
+// If no option is provided the feature is disabled by default.
 func registerFeature(name, envVar string, options ...option) FeatureFlag {
 	if !strings.HasPrefix(envVar, "ROX_") {
 		panic(fmt.Sprintf("invalid env var: %s, must start with ROX_", envVar))
