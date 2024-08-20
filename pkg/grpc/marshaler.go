@@ -19,33 +19,36 @@ type customMarshaler struct {
 }
 
 func (c customMarshaler) Unmarshal(data []byte, v interface{}) error {
-	unmarshalError := protojson.Unmarshal(data, v.(proto.Message))
-	if unmarshalError == nil {
+	err := protojson.Unmarshal(data, v.(proto.Message))
+	if err == nil {
 		return nil
 	}
-	return c.unmarshalBackwardCompatible(data, v, unmarshalError)
+	if !c.unmarshalBackwardCompatible(data, v) {
+		return err
+	}
+	log.Warnf("DEPRECATED: The duration format only supports seconds: %q", err)
+	return nil
 }
 
-func (c customMarshaler) unmarshalBackwardCompatible(data []byte, v interface{}, unmarshalError error) error {
+func (c customMarshaler) unmarshalBackwardCompatible(data []byte, v interface{}) bool {
 	suppressCVERequest, ok := v.(*v1.SuppressCVERequest)
 	if !ok {
-		return unmarshalError
+		return false
 	}
 	goStruct := SuppressCVERequestGo{}
 	err := json.Unmarshal(data, &goStruct)
 	if err != nil {
 		log.Warn(err)
 		// We want users choose the new format.
-		return unmarshalError
+		return false
 	}
 	suppressCVERequest.Cves = goStruct.CVES
 	duration, err := time.ParseDuration(goStruct.Duration)
 	if err != nil {
-		return unmarshalError
+		return false
 	}
 	suppressCVERequest.Duration = protocompat.DurationProto(duration)
-	log.Warnf("DEPRECATED: The duration format only supports seconds: %q", unmarshalError)
-	return nil
+	return true
 }
 
 type SuppressCVERequestGo struct {
