@@ -20,16 +20,90 @@ const rules = {
                 JSXOpeningElement(node) {
                     if (node.name?.name === 'Alert') {
                         if (
-                            !node.attributes.some((nodeAttribute) => {
-                                return (
+                            !node.attributes.some(
+                                (nodeAttribute) =>
                                     nodeAttribute.name?.name === 'component' &&
                                     nodeAttribute.value?.value === 'p'
-                                );
-                            })
+                            )
                         ) {
                             context.report({
                                 node,
                                 message: 'Alert element requires component="p" prop',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'ExpandableSection-isDetached-contentId-toggleId-props': {
+        // Require props to prevent axe DevTools issue:
+        // Landmarks should have a unique role or role/label/title (i.e. accessible name) combination
+        // https://dequeuniversity.com/rules/axe/4.10/landmark-unique
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'ExpandableSection element with isDetached requires contentId and ToggleId props',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (
+                        node.name?.name === 'ExpandableSection' &&
+                        node.attributes.some(
+                            (nodeAttribute) => nodeAttribute.name?.name === 'isDetached'
+                        )
+                    ) {
+                        if (
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'contentId'
+                            ) ||
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'toggleId'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'ExpandableSection element with isDetached requires contentId and ToggleId props',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'ExpandableSectionToggle-contentId-toggleId-props': {
+        // Require props to prevent axe DevTools issue:
+        // Landmarks should have a unique role or role/label/title (i.e. accessible name) combination
+        // https://dequeuniversity.com/rules/axe/4.10/landmark-unique
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'ExpandableSectionToggle element requires contentId and toggleId props',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'ExpandableSectionToggle') {
+                        if (
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'contentId'
+                            ) ||
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'toggleId'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'ExpandableSectionToggle element requires contentId and toggleId props',
                             });
                         }
                     }
@@ -53,9 +127,9 @@ const rules = {
                 JSXOpeningElement(node) {
                     if (node.name?.name === 'Popover') {
                         if (
-                            !node.attributes.some((nodeAttribute) => {
-                                return nodeAttribute.name?.name === 'aria-label';
-                            })
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'aria-label'
+                            )
                         ) {
                             context.report({
                                 node,
@@ -89,11 +163,11 @@ const rules = {
                     if (node.openingElement?.name?.name === 'Th') {
                         if (node.children?.length === 0) {
                             if (
-                                !node.openingElement?.attributes?.some((nodeAttribute) => {
-                                    return ['expand', 'select', 'screenReaderText'].includes(
+                                !node.openingElement?.attributes?.some((nodeAttribute) =>
+                                    ['expand', 'select', 'screenReaderText'].includes(
                                         nodeAttribute.name?.name
-                                    );
-                                })
+                                    )
+                                )
                             ) {
                                 context.report({
                                     node,
@@ -205,9 +279,9 @@ const rules = {
                 JSXOpeningElement(node) {
                     if (node.name?.name === 'Th') {
                         if (
-                            node.attributes.some((nodeAttribute) => {
-                                return nodeAttribute.name?.name === 'aria-label';
-                            })
+                            node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'aria-label'
+                            )
                         ) {
                             context.report({
                                 node,
