@@ -92,7 +92,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) createAndStoreBaseline(key *stor
 	suite.NoError(err)
 	suite.NotNil(id)
 	suite.NotNil(baseline.Created)
-	protoassert.Equal(suite.T(), baseline.Created, baseline.LastUpdate)
+	suite.Equal(baseline.Created.AsTime(), baseline.LastUpdate.AsTime())
 	suite.True(protocompat.CompareTimestamps(baseline.StackRoxLockedTimestamp, baseline.Created) >= 0)
 
 	suite.Equal(suite.mustSerializeKey(key), id)
