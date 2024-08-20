@@ -20,12 +20,11 @@ const rules = {
                 JSXOpeningElement(node) {
                     if (node.name?.name === 'Alert') {
                         if (
-                            !node.attributes.some((nodeAttribute) => {
-                                return (
+                            !node.attributes.some(
+                                (nodeAttribute) =>
                                     nodeAttribute.name?.name === 'component' &&
                                     nodeAttribute.value?.value === 'p'
-                                );
-                            })
+                            )
                         ) {
                             context.report({
                                 node,
@@ -128,9 +127,9 @@ const rules = {
                 JSXOpeningElement(node) {
                     if (node.name?.name === 'Popover') {
                         if (
-                            !node.attributes.some((nodeAttribute) => {
-                                return nodeAttribute.name?.name === 'aria-label';
-                            })
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'aria-label'
+                            )
                         ) {
                             context.report({
                                 node,
@@ -164,11 +163,11 @@ const rules = {
                     if (node.openingElement?.name?.name === 'Th') {
                         if (node.children?.length === 0) {
                             if (
-                                !node.openingElement?.attributes?.some((nodeAttribute) => {
-                                    return ['expand', 'select', 'screenReaderText'].includes(
+                                !node.openingElement?.attributes?.some((nodeAttribute) =>
+                                    ['expand', 'select', 'screenReaderText'].includes(
                                         nodeAttribute.name?.name
-                                    );
-                                })
+                                    )
+                                )
                             ) {
                                 context.report({
                                     node,
@@ -280,9 +279,9 @@ const rules = {
                 JSXOpeningElement(node) {
                     if (node.name?.name === 'Th') {
                         if (
-                            node.attributes.some((nodeAttribute) => {
-                                return nodeAttribute.name?.name === 'aria-label';
-                            })
+                            node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'aria-label'
+                            )
                         ) {
                             context.report({
                                 node,
