@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -152,7 +152,7 @@ func (s *FakeService) StubMessage(msg *central.MsgToSensor) {
 func (s *FakeService) Communicate(stream central.SensorService_CommunicateServer) error {
 	defer close(s.centralStubMessagesC)
 
-	md := metautils.NiceMD{}
+	md := metautils.MD{}
 	md.Set(centralsensor.SensorHelloMetadataKey, "true")
 	err := stream.SetHeader(metadata.MD(md))
 	if err != nil {

@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	pb "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
@@ -177,7 +177,7 @@ func Test_Conversions(t *testing.T) {
 		handler := NewRequestInfoHandler()
 		ctx := peer.NewContext(context.Background(), &peer.Peer{Addr: &net.UnixAddr{Net: "pipe"}})
 
-		ctx = metautils.NiceMD{}.Add("test-key", "test value").ToIncoming(ctx)
+		ctx = metautils.MD{}.Add("test-key", "test value").ToIncoming(ctx)
 
 		ctx, err := handler.UpdateContextForGRPC(ctx)
 		require.NoError(t, err)
@@ -197,7 +197,7 @@ func Test_Conversions(t *testing.T) {
 		assert.NotEmpty(t, md.Get(requestInfoMDKey))
 		md.Set(userAgentKey, "gateway")
 
-		ctx = metautils.NiceMD(md).ToIncoming(ctx)
+		ctx = metautils.MD(md).ToIncoming(ctx)
 		ctx, err := handler.UpdateContextForGRPC(ctx)
 		require.NoError(t, err)
 

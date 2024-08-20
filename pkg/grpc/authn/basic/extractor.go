@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -39,7 +39,7 @@ func getExtractorError(msg string, err error) *authn.ExtractorError {
 // IdentityForRequest returns an identity for the given request if it contains valid basic auth credentials.
 // If non-nil, the returned identity implements `basic.Identity`.
 func (e *Extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, *authn.ExtractorError) {
-	md := metautils.NiceMD(ri.Metadata)
+	md := metautils.MD(ri.Metadata)
 	authHeader := md.Get("Authorization")
 	if authHeader == "" {
 		return nil, nil
