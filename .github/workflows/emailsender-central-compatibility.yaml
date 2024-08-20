@@ -17,6 +17,7 @@ on:
 
 jobs:
   e2e-test-on-kind:
+    timeout-minutes: 45
     name: "Test on kind cluster"
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.head.repo.fork }} # do not run for PRs from forks
@@ -49,6 +50,7 @@ jobs:
       - name: Checkout stackrox/acs-fleet-manager repository
         uses: actions/checkout@v4
         with:
+          repository: stackrox/acs-fleet-manager
           path: acs-fleet-manager
           ref: jmalsam/ROX-24936-emailsender-central-compatibility
           fetch-depth: 0
