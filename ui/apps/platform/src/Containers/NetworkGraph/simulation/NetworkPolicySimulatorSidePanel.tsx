@@ -22,6 +22,7 @@ import {
 import { HelpIcon } from '@patternfly/react-icons';
 import sortBy from 'lodash/sortBy';
 
+import PopoverBodyContent from 'Components/PopoverBodyContent';
 import useRestQuery from 'hooks/useRestQuery';
 import useAnalytics, { GENERATE_NETWORK_POLICIES } from 'hooks/useAnalytics';
 import useURLSearch from 'hooks/useURLSearch';
@@ -231,14 +232,12 @@ function NetworkPolicySimulatorSidePanel({
                                         Compare
                                     </Button>
                                     <Popover
+                                        aria-label="Information about compare policies"
                                         bodyContent={
-                                            <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                                                <Title headingLevel="h3">Compare</Title>
-                                                <Text>
-                                                    Compare the generated network policies to the
-                                                    existing network policies.
-                                                </Text>
-                                            </Flex>
+                                            <PopoverBodyContent
+                                                headerContent="Compare"
+                                                bodyContent="Compare the generated network policies to the existing network policies."
+                                            />
                                         }
                                     >
                                         <button

@@ -17,6 +17,8 @@ import { HelpIcon, TrashIcon } from '@patternfly/react-icons';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormMessage from 'Components/PatternFly/FormMessage';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import PopoverBodyContent from 'Components/PopoverBodyContent';
 import {
     CosignCertificateVerification,
     CosignPublicKey,
@@ -95,14 +97,23 @@ const VerificationExpandableSection = ({ toggleText, children }): ReactElement =
 function regularExpressionIcon(): ReactElement {
     return (
         <Popover
+            aria-label="Supports regular expressions"
             bodyContent={
-                <div>
-                    <a href="https://golang.org/s/re2syntax" target="_blank" rel="noreferrer">
-                        See RE2 syntax reference
-                    </a>
-                </div>
+                <PopoverBodyContent
+                    headerContent="Supports regular expressions"
+                    bodyContent={
+                        <ExternalLink>
+                            <a
+                                href="https://golang.org/s/re2syntax"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                See RE2 syntax reference
+                            </a>
+                        </ExternalLink>
+                    }
+                />
             }
-            headerContent={'Supports regular expressions'}
         >
             <button
                 type="button"

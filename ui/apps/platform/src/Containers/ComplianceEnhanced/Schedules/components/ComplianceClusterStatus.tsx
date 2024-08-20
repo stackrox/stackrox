@@ -3,6 +3,7 @@ import { Button, Icon, Popover } from '@patternfly/react-core';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
+import PopoverBodyContent from 'Components/PopoverBodyContent';
 
 type ClusterStatusObject = {
     icon: ReactElement;
@@ -41,8 +42,12 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
     ) : (
         <Popover
             aria-label="Reveal errors"
-            headerContent={<div>{errors.length === 1 ? 'Error' : 'Errors'}</div>}
-            bodyContent={<div>{errors.join(', ')}</div>}
+            bodyContent={
+                <PopoverBodyContent
+                    headerContent={errors.length === 1 ? 'Error' : 'Errors'}
+                    bodyContent={errors.join(', ')}
+                />
+            }
         >
             <Button variant="link" className="pf-v5-u-p-0">
                 <IconText icon={statusObj.icon} text={statusObj.statusText} />
