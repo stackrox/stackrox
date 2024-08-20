@@ -72,6 +72,11 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 // f.okSignal is used if the connection is successful and f.stopSignal if the
 // connection failed to start. Hence, both signals are reset here.
 func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn, certLoader CertLoader) {
+	// Both signals should not be in a triggered state at the same time.
+	// If we run into this situation something went wrong with the handling of these signals.
+	if f.stopSignal.IsDone() && f.okSignal.IsDone() {
+		log.Warn("the stopSignal and the okSignal are both triggered")
+	}
 	f.stopSignal.Reset()
 	f.okSignal.Reset()
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
