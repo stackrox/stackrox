@@ -190,6 +190,9 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	postgres.PruneClusterHealthStatuses(pruningCtx, g.postgres)
 
 	g.pruneLogImbues()
+	if env.OrphanedCVEsKeepAlive.BooleanSetting() {
+		g.pruneOrphanedNodeCVEs()
+	}
 
 	log.Info("[Pruning] Finished garbage collection cycle")
 }
