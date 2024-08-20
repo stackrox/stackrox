@@ -64,6 +64,9 @@ describe('Violations', () => {
             'have.text',
             'Security Context Constraits'
         );
+
+        // check that Type of Deployment is correctly display for workloads other than deployment
+        cy.get('tbody tr:nth-child(3) td[data-label="Type"]').should('have.text', 'CronJob');
     });
 
     it('should go to the detail page on row click', () => {
@@ -138,6 +141,9 @@ describe('Violations', () => {
         clickDeploymentTabWithFixture('alerts/deploymentForAlertFirstInAlerts.json');
 
         cy.get(selectors.deployment.overview);
+        cy.get(selectors.deployment.overview)
+            .find('.pf-v5-c-description-list__term:contains("Deployment type")')
+            .siblings('.pf-v5-c-description-list__description:contains("DaemonSet")');
         cy.get(selectors.deployment.containerConfiguration);
         cy.get(`${selectors.deployment.containerConfiguration} *[aria-label="Commands"]`).should(
             'not.exist'
