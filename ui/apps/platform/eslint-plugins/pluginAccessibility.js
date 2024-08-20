@@ -36,6 +36,36 @@ const rules = {
             };
         },
     },
+    'Chart-ariaTitle-prop': {
+        // Require prop for aria-labelledby attribute to prevent axe DevTools issue:
+        // <svg> elements with an img role must have an alternative text
+        // https://dequeuniversity.com/rules/axe/4.10/svg-img-alt
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Chart element requires ariaTitle prop',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Chart') {
+                        if (
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'ariaTitle'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message: 'Chart element requires ariaTitle prop',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'ExpandableSection-isDetached-contentId-toggleId-props': {
         // Require props to prevent axe DevTools issue:
         // Landmarks should have a unique role or role/label/title (i.e. accessible name) combination
