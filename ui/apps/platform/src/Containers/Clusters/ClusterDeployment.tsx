@@ -56,9 +56,9 @@ function ClusterDeployment({
                     >
                         <Title headingLevel="h3">1. Download files</Title>
                         <Text>
-                            Download the required configuration files, keys, and scripts.
-                            Enabling automatic upgrades creates a powerful service account in
-                            your secured cluster that will be used to perform the upgrades.
+                            Download the required configuration files, keys, and scripts. Enabling
+                            automatic upgrades creates a powerful service account in your secured
+                            cluster that will be used to perform the upgrades.
                         </Text>
                         <Switch
                             label="Automatic upgrades ON: Will upgrade secured clusters with versions behind central's."
