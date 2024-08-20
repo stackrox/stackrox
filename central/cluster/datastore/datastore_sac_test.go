@@ -648,7 +648,7 @@ func (s *clusterDatastoreSACSuite) TestUpdateClusterCertExpiryStatus() {
 			s.True(postUpdateFound)
 			if c.ExpectError {
 				s.Equal(oldSensorExpiry.AsTime(), preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
-				s.Equal(oldSensorCertNotBefore, preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore())
+				s.Equal(oldSensorCertNotBefore.AsTime(), preUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore().AsTime())
 				s.ErrorIs(updateErr, c.ExpectedError)
 				s.Equal(oldSensorExpiry.AsTime(), postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertExpiry().AsTime())
 				s.Equal(oldSensorCertNotBefore.AsTime(), postUpdateCluster.GetStatus().GetCertExpiryStatus().GetSensorCertNotBefore().AsTime())
