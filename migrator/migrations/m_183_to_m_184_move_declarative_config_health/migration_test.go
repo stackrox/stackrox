@@ -12,7 +12,6 @@ import (
 	integrationHealthStore "github.com/stackrox/rox/migrator/migrations/m_183_to_m_184_move_declarative_config_health/integrationhealth/store"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -83,7 +82,7 @@ func TestMigration(t *testing.T) {
 	assert.Equal(t, unhealthyDeclarativeConfigName, config.GetName())
 	assert.Equal(t, unhealthyDeclarativeConfig.GetErrorMessage(), config.GetErrorMessage())
 	assert.Equal(t, unhealthyDeclarativeConfig.GetStatus().String(), config.GetStatus().String())
-	protoassert.Equal(t, unhealthyDeclarativeConfig.GetLastTimestamp(), config.GetLastTimestamp())
+	assert.Equal(t, unhealthyDeclarativeConfig.GetLastTimestamp().AsTime(), config.GetLastTimestamp().AsTime())
 
 	config, exists, err = healthStore.Get(ctx, healthyDeclarativeConfigID)
 	assert.NoError(t, err)
@@ -91,5 +90,5 @@ func TestMigration(t *testing.T) {
 	assert.Equal(t, healthyDeclarativeConfigName, config.GetName())
 	assert.Equal(t, healthyDeclarativeConfig.GetErrorMessage(), config.GetErrorMessage())
 	assert.Equal(t, healthyDeclarativeConfig.GetStatus().String(), config.GetStatus().String())
-	protoassert.Equal(t, healthyDeclarativeConfig.GetLastTimestamp(), config.GetLastTimestamp())
+	assert.Equal(t, healthyDeclarativeConfig.GetLastTimestamp().AsTime(), config.GetLastTimestamp().AsTime())
 }
