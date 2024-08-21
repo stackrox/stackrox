@@ -1,6 +1,8 @@
 package ratelimit
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/pkg/httputil"
 	"google.golang.org/grpc"
 )
@@ -10,7 +12,7 @@ import (
 // gRPC or HTTP server.
 type RateLimiter interface {
 	// Limit returns true when the event should be rejected.
-	Limit() bool
+	Limit(ctx context.Context) error
 
 	// IncreaseLimit increases the allowed rate of events. If rate limiter
 	// is unlimited, no change is made. The argument 'limitDelta' has to be
