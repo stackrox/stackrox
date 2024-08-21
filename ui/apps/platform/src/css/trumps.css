@@ -35,20 +35,28 @@ body {
     text-decoration: var(--pf-v5-global--link--TextDecoration) !important;
 }
 
-/* PatternFly style for links in classic widget body and table cell. */
+/* PatternFly style for links in classic related entity, widget body, and table cell. */
 /* Also PatternFly Popover element. */
 
+button[data-testid="related-entity-list-count-value"],
+button[data-testid="related-entity-value"],
 [data-testid="widget-body"] a,
 .rt-td a,
 .pf-v5-c-popover a {
     color: var(--pf-v5-global--link--Color);
 }
 
+button[data-testid="related-entity-list-count-value"]:hover {
+    color: var(--pf-v5-global--link--Color--hover);
+    /* but no underline */
+}
+
+button[data-testid="related-entity-value"]:hover,
 [data-testid="widget-body"] a:hover,
 .rt-td a:hover,
 .pf-v5-c-popover a:hover {
-  color: var(--pf-v5-global--link--Color--hover);
-  text-decoration: var(--pf-v5-global--link--TextDecoration--hover);
+    color: var(--pf-v5-global--link--Color--hover);
+    text-decoration: var(--pf-v5-global--link--TextDecoration--hover);
 }
 
 .pf-v5-c-page__sidebar {
