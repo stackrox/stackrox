@@ -47,7 +47,7 @@ func (a authenticatedRoundTripper) RoundTrip(req *http.Request) (*http.Response,
 
 	// First try without any auth header
 	resp, err := a.roundTripper.RoundTrip(req)
-	if resp.StatusCode >= 400 {
+	if err == nil && resp.StatusCode >= 400 {
 		// GKE's issuer endpoint responds with HTTP 400 if Authorization header is set.
 		// At the same time, the Kube docs indicate that auth should be required by default.
 		// Thus, try first with no auth.
