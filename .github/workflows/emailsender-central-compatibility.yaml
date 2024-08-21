@@ -17,7 +17,7 @@ on:
 
 jobs:
   e2e-test-on-kind:
-    timeout-minutes: 45
+    timeout-minutes: 60
     name: "Test on kind cluster"
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.head.repo.fork }} # do not run for PRs from forks
@@ -66,4 +66,6 @@ jobs:
         with:
           cluster_name: kind
       - name: Run Test
+        env:
+          IMG_WAIT_TIMEOUT_SECONDS: 2100
         run: acs-fleet-manager/scripts/ci/central_compatibility/entrypoint.sh
