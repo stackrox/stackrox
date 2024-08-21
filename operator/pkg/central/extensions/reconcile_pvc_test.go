@@ -178,7 +178,16 @@ func TestReconcilePVCExtension(t *testing.T) {
 			Target:       PVCTargetCentral,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(centralWithPvcObsoletedAnnotation, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, nil)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralPVCName: verifyMultiple(notOwnedBy(emptyNotDeletedCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralPVCName: verifyMultiple(notOwnedBy(centralWithPvcObsoletedAnnotation), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+			},
+		},
+		"obsoleted-annotation-should-not-obsolete-default-db-pvc": {
+			Central:      centralWithPvcObsoletedAnnotation,
+			DefaultClaim: DefaultCentralDBPVCName,
+			Target:       PVCTargetCentralDB,
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(centralWithPvcObsoletedAnnotation, DefaultCentralDBPVCName, defaultPVCSize, emptyStorageClass, centralDBTargetAnnotations)},
+			ExpectedPVCs: map[string]pvcVerifyFunc{
+				DefaultCentralDBPVCName: verifyMultiple(ownedBy(centralWithPvcObsoletedAnnotation), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
 			},
 		},
 		"given-hostpath-and-pvc-should-return-error": {
@@ -228,7 +237,16 @@ func TestReconcilePVCExtension(t *testing.T) {
 			Target:       PVCTargetCentral,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(centralWithPersistenceAndPvcObsoletedAnnotation, testPVCName, defaultPVCSize, emptyStorageClass, nil)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				testPVCName: verifyMultiple(notOwnedBy(pvcShouldCreateWithConfigCentral), withSize(resource.MustParse(defaultPVCSize.String())), withStorageClass(emptyStorageClass)),
+				testPVCName: verifyMultiple(notOwnedBy(centralWithPersistenceAndPvcObsoletedAnnotation), withSize(resource.MustParse(defaultPVCSize.String())), withStorageClass(emptyStorageClass)),
+			},
+		},
+		"legacy-central-with-obsolete-annotation-should-create-db-pvc": {
+			Central:      centralWithPersistenceAndPvcObsoletedAnnotation,
+			DefaultClaim: DefaultCentralDBPVCName,
+			Target:       PVCTargetCentralDB,
+			ExistingPVCs: nil,
+			ExpectedPVCs: map[string]pvcVerifyFunc{
+				DefaultCentralDBPVCName: verifyMultiple(ownedBy(centralWithPersistenceAndPvcObsoletedAnnotation), withSize(resource.MustParse(defaultPVCSize.String())), withStorageClass(emptyStorageClass)),
 			},
 		},
 		"existing-pvc-should-be-reconciled-with-no-annotation": {
@@ -495,12 +513,13 @@ func makeCentral(p *platform.Persistence) *platform.Central {
 	}
 }
 
-func makePVC(owner *platform.Central, name string, size resource.Quantity, storageClassName string, _ map[string]string) *corev1.PersistentVolumeClaim {
+func makePVC(owner *platform.Central, name string, size resource.Quantity, storageClassName string, labels map[string]string) *corev1.PersistentVolumeClaim {
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:       "stackrox",
 			Name:            name,
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(owner, owner.GroupVersionKind())},
+			Labels:          labels,
 		},
 		Spec: corev1.PersistentVolumeClaimSpec{
 			StorageClassName: pointer.String(storageClassName),
