@@ -1041,7 +1041,9 @@ func (g *garbageCollectorImpl) pruneLogImbues() {
 func (g *garbageCollectorImpl) pruneOrphanedNodeCVEs() {
 	retentionDays := int64(env.OrphanedCVEsRetentionDurationDays.IntegerSetting())
 	if retentionDays < 0 {
-		log.Errorf("Invalid value of ROX_ORPHANED_CVES_RETENTION_DURATION_DAYS env var: %d, value should be >= 0", retentionDays)
+		log.Warnf("Invalid value of ROX_ORPHANED_CVES_RETENTION_DURATION_DAYS env var: %d, value should be >= 0. "+
+			"Using default value %d days", retentionDays, env.OrphanedCVEsRetentionDurationDays.DefaultValue())
+		retentionDays = int64(env.OrphanedCVEsRetentionDurationDays.DefaultValue())
 	}
 
 	query := search.NewQueryBuilder().AddBools(search.CVEOrphaned, true).AddDays(search.CVEOrphanedTime, retentionDays).ProtoQuery()
