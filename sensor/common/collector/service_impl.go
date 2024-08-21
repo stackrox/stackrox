@@ -4,13 +4,15 @@ import (
 	"context"
 
 	// "github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	//"github.com/grpc-ecosystem/grpc-gateway/runtime"
+        "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	// "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -46,12 +48,12 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 
 func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	log.Info("In ProcessMessage")
-	if msg.GetRuntimeFilteringConfiguration() != nil {
+	if msg.GetClusterConfig() != nil {
 		log.Infof("msg= %+v", msg)
 		s.collectorC <- common.MessageToCollectorWithAddress{
 			Msg: &sensor.MsgToCollector{
-				Msg: &sensor.MsgToCollector_RuntimeFilteringConfiguration{
-					RuntimeFilteringConfiguration: msg.GetRuntimeFilteringConfiguration(),
+				Msg: &sensor.MsgToCollector_ConfigWithCluster {
+					ConfigWithCluster: nil,
 				},
 			},
 			Broadcast: true,
@@ -144,7 +146,7 @@ func (s *serviceImpl) startSendingLoop() {
 	}
 }
 
-func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
+func (s *serviceImpl) Communicate(_ *protocompat.Empty, server sensor.CollectorService_CommunicateServer) error {
 	log.Info("In Communicate")
 	// incomingMD := metautils.ExtractIncoming(server.Context())
 	// hostname := incomingMD.Get("rox-collector-nodename")
@@ -161,16 +163,18 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 
 	go s.startSendingLoop()
 
-	for {
-		msg, err := server.Recv()
-		if err != nil {
-			log.Errorf("Receiving message from collector")
-			return err
-		}
-		if msg.GetRuntimeFiltersAck() != nil {
-			log.Infof("Received ack from collector %+v", msg)
-		}
-	}
+	//for {
+	//	msg, err := server.Recv()
+	//	if err != nil {
+	//		log.Errorf("Receiving message from collector")
+	//		return err
+	//	}
+	//	if msg.GetRuntimeFiltersAck() != nil {
+	//		log.Infof("Received ack from collector %+v", msg)
+	//	}
+	//}
+
+	return nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
