@@ -126,7 +126,7 @@ force_rollback() {
     info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
 
     local upgradeStatus
-    upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:$ROX_PASSWORD") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
+    upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
     echo "upgrade status: ${upgradeStatus}"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "$(make --quiet --no-print-directory tag)"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"

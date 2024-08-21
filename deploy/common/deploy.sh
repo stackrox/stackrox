@@ -54,7 +54,7 @@ function curl_central_once() {
     local cmd=(curl --silent --show-error --insecure)
     local admin_user="${ROX_ADMIN_USER:-admin}"
     if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
-        "${cmd[@]}" --config <(curl_cfg user "$admin_user:$ROX_ADMIN_PASSWORD") "$@"
+        "${cmd[@]}" --config <(curl_cfg user "${admin_user}:${ROX_ADMIN_PASSWORD}") "$@"
     else
         "${cmd[@]}" "$@"
     fi

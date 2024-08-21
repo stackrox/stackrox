@@ -19,7 +19,7 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 
 if [[ -n "$ROX_USERNAME" && -n "$ROX_PASSWORD" ]]; then
   rox_auth_token="$(
-  curl -sk --config <(curl_cfg user "$ROX_USERNAME:$ROX_PASSWORD") \
+  curl -sk --config <(curl_cfg user "${ROX_USERNAME}:${ROX_PASSWORD}") \
     "${api_endpoint}/v1/apitokens/generate" \
     -X POST \
     -d '{"name": "ui_tests", "role": "Admin"}' \

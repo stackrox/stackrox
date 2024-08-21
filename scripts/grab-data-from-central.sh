@@ -14,7 +14,7 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 
 call_curl() {
     local url=$1
-    curl -s --insecure --config <(curl_cfg user "$ROX_USERNAME:$ROX_PASSWORD") "$url"
+    curl -s --insecure --config <(curl_cfg user "${ROX_USERNAME}:${ROX_PASSWORD}") "$url"
 }
 
 main() {
