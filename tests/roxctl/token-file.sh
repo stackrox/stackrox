@@ -13,10 +13,14 @@ eecho() {
   echo "$@" >&2
 }
 
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
+  echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 # Retrieve API token
 TOKEN_FILE=$(mktemp)
 curl -k -f \
-  -u "admin:$ROX_PASSWORD" \
+  --config <(curl_cfg user "admin:$ROX_PASSWORD") \
   -d '{"name": "test", "role": "Admin"}' \
   --retry 5 \
   --retry-connrefused \

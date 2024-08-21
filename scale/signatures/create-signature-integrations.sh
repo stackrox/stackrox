@@ -22,7 +22,7 @@ declare -a integrations=(
 for integrationJSON in "${integrations[@]}"
 do
   tmpOutput=$(mktemp)
-  status=$(curl -k -u "admin:${ROX_PASSWORD}" -X POST \
+  status=$(curl -k --config <(curl_cfg user "admin:${ROX_PASSWORD}") -X POST \
     -d "${integrationJSON}" \
     -o "$tmpOutput" \
     -w "%{http_code}\n" \

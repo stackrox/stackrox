@@ -58,6 +58,10 @@ deploy_central() {
     export CENTRAL_IP
 }
 
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
+    echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 deploy_sensor() {
     CLUSTER_NAME=$1
     CENTRAL_API_ENDPOINT=$2
@@ -66,7 +70,7 @@ deploy_sensor() {
     # Register cluster
     CLUSTER_ID="$(curl "https://${CENTRAL_IP}/v1/clusters" \
         --insecure \
-        --user "admin:${ROX_PASSWORD}" \
+        --config <(curl_cfg user "admin:${ROX_PASSWORD}") \
         --silent \
         --data-raw '{"name":"'"${CLUSTER_NAME}"'","type":"KUBERNETES_CLUSTER","mainImage":"quay.io/rhacs-eng/main","collectorImage":"quay.io/rhacs-eng/collector","centralApiEndpoint":"'"${CENTRAL_API_ENDPOINT}"'","runtimeSupport":false,"collectionMethod":"'"${COLLECTION_METHOD}"'","DEPRECATEDProviderMetadata":null,"admissionControllerEvents":true,"admissionController":false,"admissionControllerUpdates":false,"DEPRECATEDOrchestratorMetadata":null,"tolerationsConfig":{"disabled":false},"dynamicConfig":{"admissionControllerConfig":{"enabled":false,"enforceOnUpdates":false,"timeoutSeconds":3,"scanInline":false,"disableBypass":false},"registryOverride":""},"slimCollector":true}' \
         | jq -r '.cluster.id'
@@ -75,7 +79,7 @@ deploy_sensor() {
     # Download sensor bundle
     curl "https://${CENTRAL_IP}/api/extensions/clusters/zip" \
         --insecure \
-        --user "admin:${ROX_PASSWORD}" \
+        --config <(curl_cfg user "admin:${ROX_PASSWORD}") \
         --data-raw '{"id":"'"${CLUSTER_ID}"'","createUpgraderSA":true}' \
         --output "sensor-${CLUSTER_NAME}.zip"
 
@@ -90,7 +94,7 @@ deploy_sensor() {
 disable_autoupgrader() {
     curl "https://${CENTRAL_IP}/v1/sensorupgrades/config" \
         --insecure \
-        --user "admin:${ROX_PASSWORD}" \
+        --config <(curl_cfg user "admin:${ROX_PASSWORD}") \
         --data-raw '{"config":{"enableAutoUpgrades":false}}'
 }
 
@@ -102,14 +106,14 @@ deploy_violations() {
 
 create_policy() {
     curl "https://${CENTRAL_IP}/v1/policies?enableStrictValidation=true" \
-        --user "admin:${ROX_PASSWORD}" \
+        --config <(curl_cfg user "admin:${ROX_PASSWORD}") \
         --insecure \
         --data @"${CWD}"/.github/static/upgrade-test/policy.json | jq -r '.id'
 }
 
 trigger_compliance_check() {
     curl "https://${CENTRAL_IP}/api/graphql?opname=triggerScan" \
-        --user "admin:${ROX_PASSWORD}" \
+        --config <(curl_cfg user "admin:${ROX_PASSWORD}") \
         --insecure \
         --data-raw $'{"operationName":"triggerScan","variables":{"clusterId":"*","standardId":"*"},"query":"mutation triggerScan($clusterId: ID\u0021, $standardId: ID\u0021) {\\n  complianceTriggerRuns(clusterId: $clusterId, standardId: $standardId) {\\n    id\\n    standardId\\n    clusterId\\n    state\\n    errorMessage\\n    __typename\\n  }\\n}\\n"}'
 }

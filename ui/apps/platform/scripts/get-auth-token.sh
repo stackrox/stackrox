@@ -13,9 +13,14 @@ if [[ -z "$ROX_USERNAME" || -z "$ROX_PASSWORD" ]]; then
   source "${DIR}/../../../../scripts/k8s/export-basic-auth-creds.sh" "${DIR}/../../../../deploy/k8s"
 fi
 
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
+  echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 if [[ -n "$ROX_USERNAME" && -n "$ROX_PASSWORD" ]]; then
   rox_auth_token="$(
-  curl -sk -u "${ROX_USERNAME}:${ROX_PASSWORD}" "${api_endpoint}/v1/apitokens/generate" \
+  curl -sk --config <(curl_cfg user "${ROX_USERNAME}:${ROX_PASSWORD}") \
+    "${api_endpoint}/v1/apitokens/generate" \
     -X POST \
     -d '{"name": "ui_tests", "role": "Admin"}' \
     | jq -r '.token // ""')"
