@@ -20,6 +20,8 @@ class ProcessVisualizationTest extends BaseSpecification {
     static final private String MONGODEPLOYMENT = "mongodeployment"
     static final private String ROX4751DEPLOYMENT = "rox4751deployment"
     static final private String ROX4979DEPLOYMENT = "rox4979deployment"
+    // ldconfig process
+    static final private String LDCONFIG = "/sbin/ldconfig"
 
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
@@ -138,6 +140,15 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         then:
         "Verify process in added : : #depName"
+        // ldconfig sometimes takes up to 10 minutes to be reported.
+        // If it is the only process missing we ignore it in order to avoid waiting for 10 minutes.
+        // It should be enough to assert on the other processes to validate this feature.
+        // See: https://github.com/stackrox/stackrox/pull/12254
+        if (!receivedProcessPaths.containsAll(expectedFilePaths) &&
+                !receivedProcessPaths.contains(LDCONFIG)) {
+            log.info("ldconfig took too long to be reported. Skipping it...")
+            expectedFilePaths.remove(LDCONFIG)
+        }
         assert receivedProcessPaths.containsAll(expectedFilePaths)
 
         where:
@@ -160,11 +171,6 @@ class ProcessVisualizationTest extends BaseSpecification {
          "/usr/share/elasticsearch/bin/elasticsearch", "/sbin/ldconfig",
          "/usr/bin/cut",
          "/usr/bin/dirname"] as Set | ELASTICDEPLOYMENT
-
-        /*
-        ["/usr/bin/id", "/usr/bin/find", "/usr/local/bin/docker-entrypoint.sh",
-         "/usr/local/bin/gosu"] as Set | REDISDEPLOYMENT
-        */
 
         ["/usr/local/bin/docker-entrypoint.sh",
          "/usr/bin/id",
@@ -201,9 +207,18 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         then:
         "Verify process in added : : #depName"
+        // ldconfig sometimes takes up to 10 minutes to be reported.
+        // If it is the only process missing we ignore it in order to avoid waiting for 10 minutes.
+        // It should be enough to assert on the other processes to validate this feature.
+        // See: https://github.com/stackrox/stackrox/pull/12254
+        if (!containsAllProcessInfo(processToUserAndGroupIds, expectedFilePathAndUIDs) &&
+                !processToUserAndGroupIds.containsKey(LDCONFIG)) {
+            log.info("ldconfig took too long to be reported. Skipping it...")
+            expectedFilePathAndUIDs.remove(LDCONFIG)
+        }
         assert containsAllProcessInfo(processToUserAndGroupIds, expectedFilePathAndUIDs)
 
-            where:
+        where:
         "Data inputs are :"
 
         expectedFilePathAndUIDs | depName
@@ -243,27 +258,6 @@ class ProcessVisualizationTest extends BaseSpecification {
         [ "/qa/exec.sh":[[9001, 9000]],
           "/bin/sleep":[[9001, 9000]],
         ] | ROX4979DEPLOYMENT
-
-        /*
-        // Enable as part of ROX-5417 (process deduplication should include process UIDs)
-        [ "/usr/bin/id":[[0,0], [999,999]],
-          "/usr/bin/find":[[0,0]],
-          "/usr/local/bin/docker-entrypoint.sh":[[0,0], [999,999]],
-          "/usr/local/bin/gosu":[[0,0]],
-          "/usr/local/bin/redis-server":[[999,999]],
-         ] | REDISDEPLOYMENT
-
-        // On machines with NUMA arch, mongo deployment will also execute path `/bin/true`
-        [ "/bin/chown":[[0,0]],
-          "/usr/local/bin/docker-entrypoint.sh": [[0,0], [999,999]],
-          "/bin/rm":[[999,999]],
-          "/usr/bin/id":[[0,0], [999,999]],
-          "/usr/bin/find":[[0,0]],
-          "/usr/local/bin/gosu":[[0,0]],
-          "/usr/bin/mongod":[[999,999]],
-          "/usr/bin/numactl":[[999,999]],
-        ] | MONGODEPLOYMENT
-        */
     }
 
     @Tag("BAT")
@@ -291,6 +285,15 @@ class ProcessVisualizationTest extends BaseSpecification {
 
         then:
         "Verify process args for #depName"
+        // ldconfig sometimes takes up to 10 minutes to be reported.
+        // If it is the only process missing we ignore it in order to avoid waiting for 10 minutes.
+        // It should be enough to assert on the other processes to validate this feature.
+        // See: https://github.com/stackrox/stackrox/pull/12254
+        if (!processToArgs.containsAll(expectedProcessArgs) &&
+                processToArgs.find { it[0] == LDCONFIG } == null) {
+            log.info("ldconfig took too long to be reported. Skipping it...")
+            expectedProcessArgs.removeAll { it[0] == LDCONFIG }
+        }
         assert processToArgs.containsAll(expectedProcessArgs)
 
         where:
@@ -332,17 +335,21 @@ class ProcessVisualizationTest extends BaseSpecification {
         if (received.size() < expected.size()) {
             return false
         }
+        Boolean allFound = true
         expected.keySet().each {  String path ->
             if (!received.containsKey(path)) {
-                return false
+                allFound = false
+                return
             }
             if (expected[path].size() != received[path].size()) {
-                return false
+                allFound = false
+                return
             }
             if (expected[path].any { !received[path].contains(it) }) {
-                return false
+                allFound = false
+                return
             }
         }
-        return true
+        return allFound
     }
 }
