@@ -4,9 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,6 +31,8 @@ func TestGetSuppressExpiry(t *testing.T) {
 	assert.Equal(t, &expectedExpiry4, expiry4)
 }
 
+// TODO: uncomment if cluster CVE suppression cache gets used.
+/*
 func TestGetSuppressionCacheEntry(t *testing.T) {
 	startTime := time.Now().UTC()
 	duration := 10 * time.Minute
@@ -79,3 +78,4 @@ func TestGetSuppressionCacheEntry(t *testing.T) {
 	entry4 := getSuppressionCacheEntry(cve4)
 	assert.Equal(t, expectedEntry4, entry4)
 }
+*/

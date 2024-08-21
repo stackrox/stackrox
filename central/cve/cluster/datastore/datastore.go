@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/central/cve/cluster/datastore/search"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
-	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -42,10 +41,12 @@ func New(storage store.Store, searcher search.Searcher) (DataStore, error) {
 		storage:  storage,
 		searcher: searcher,
 
-		cveSuppressionCache: make(common.CVESuppressionCache),
+		// TODO: uncomment if cluster CVE suppression cache gets used.
+		// cveSuppressionCache: make(common.CVESuppressionCache),
 	}
-	if err := ds.buildSuppressedCache(); err != nil {
-		return nil, err
-	}
+	// TODO: uncomment if cluster CVE suppression cache gets used.
+	// if err := ds.buildSuppressedCache(); err != nil {
+	// 	return nil, err
+	// }
 	return ds, nil
 }
