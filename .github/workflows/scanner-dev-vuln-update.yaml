@@ -31,7 +31,7 @@ jobs:
     - name: Parse VULNERABILITY_BUNDLE_VERSION
       id: set-versions
       run: |
-        versions=$(grep -v '^#' scanner/updater/version/VULNERABILITY_BUNDLE_VERSION | awk -F, '{print $1 "|" $2}' | paste -sd "," -)
+        versions=$(grep -vE '^#|[[:space:]]*$' scanner/updater/version/VULNERABILITY_BUNDLE_VERSION | awk -F, '{print $1 "|" $2}' | paste -sd "," -)
         versions_json="[\"${versions//,/\",\"}\"]"
         echo "Versions JSON: ${versions_json}"
         echo "versions=${versions_json}" >> "$GITHUB_OUTPUT"
@@ -51,11 +51,19 @@ jobs:
       run: |
         set -eu
         since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
-        if [ "${{ github.event.inputs.job || 'nvd-api' }}" = "nvd-api" ]; then
-          url="https://definitions.stackrox.io/v4/nvd/nvd-api.zip"
-        else
-          url="https://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
-        fi
+          NVD_BUNDLE_TYPE=${{ github.event.inputs.job || 'nvd-api' }}
+          case "$NVD_BUNDLE_TYPE" in
+              nvd-api)
+                  nvd_file=nvd-api.zip
+                  ;;
+              nvd-feeds)
+                  nvd_file=nvd-feeds.zip
+                  ;;
+              ,*)
+                  echo >&2 "error: invalid NVD bundle type '$NVD_BUNDLE_TYPE'"
+                  exit 1
+          esac
+          url="https://definitions.stackrox.io/v4/nvd/$nvd_file"
 
         code=$(curl \
             -o nvd.zip \
@@ -70,9 +78,9 @@ jobs:
       id: set-manual-url
       run: |
         if [ "${{ github.event_name }}" == "schedule" ]; then
-          echo "MANUAL_URL=https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
+          echo "manual_url=https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
         else
-          echo "MANUAL_URL=https://raw.githubusercontent.com/stackrox/stackrox/${{ github.event.pull_request.head.sha }}/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
+          echo "manual_url=https://raw.githubusercontent.com/stackrox/stackrox/${{ github.event.pull_request.head.sha }}/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
         fi
 
     - uses: ./.github/actions/upload-artifact-with-retry
