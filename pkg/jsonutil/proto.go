@@ -10,27 +10,38 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const indent = "  "
+type indentFunc func(buffer *bytes.Buffer, b []byte) error
 
-var errNil = errors.New("Marshal called with nil")
+var (
+	compact = json.Compact
+	pretty  = func(buffer *bytes.Buffer, b []byte) error {
+		return json.Indent(buffer, b, "", "  ")
+	}
+
+	errNil = errors.New("Marshal called with nil")
+)
 
 // Marshal marshals the given [proto.Message] in the JSON format.
 func Marshal(out io.Writer, msg proto.Message) error {
-	return marshal(out, msg, "")
+	return marshal(out, msg, compact)
 }
 
 // MarshalPretty marshals the given [proto.Message] in the JSON format
 // with two space indentation.
 func MarshalPretty(out io.Writer, msg proto.Message) error {
-	return marshal(out, msg, indent)
+	return marshal(out, msg, pretty)
 }
 
 // MarshalToString serializes a protobuf message as JSON in string form.
 func MarshalToString(msg proto.Message) (string, error) {
-	return marshalToString(msg, indent)
+	return marshalToString(msg, pretty)
 }
 
-func marshal(out io.Writer, msg proto.Message, indent string) error {
+func MarshalToCompactString(msg proto.Message) (string, error) {
+	return marshalToString(msg, compact)
+}
+
+func marshal(out io.Writer, msg proto.Message, indent indentFunc) error {
 	str, err := marshalToString(msg, indent)
 	if err != nil {
 		return err
@@ -42,13 +53,11 @@ func marshal(out io.Writer, msg proto.Message, indent string) error {
 	return nil
 }
 
-func marshalToString(msg proto.Message, indent string) (string, error) {
+func marshalToString(msg proto.Message, indent indentFunc) (string, error) {
 	if msg == nil {
 		return "", errNil
 	}
-	m := protojson.MarshalOptions{
-		Indent: indent,
-	}
+	m := protojson.MarshalOptions{}
 	// Do not depend on the output being stable. Its output will change across
 	// different builds of your program, even when using the same version of the
 	// protobuf module. So after marshaling we need to run additional Indent processing
@@ -58,12 +67,7 @@ func marshalToString(msg proto.Message, indent string) (string, error) {
 		return "", errors.Wrap(err, "failed to marshal JSON")
 	}
 	buffer := bytes.NewBuffer(make([]byte, 0, len(b)))
-	if indent == "" {
-		err = json.Compact(buffer, b)
-	} else {
-		err = json.Indent(buffer, b, "", indent)
-	}
-	if err != nil {
+	if err = indent(buffer, b); err != nil {
 		return "", errors.Wrap(err, "failed to indent JSON")
 	}
 	return buffer.String(), nil

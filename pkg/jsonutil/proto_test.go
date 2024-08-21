@@ -12,10 +12,10 @@ import (
 )
 
 //go:embed testdata/compat.alert.json
-var compat string
+var compactJson string
 
 //go:embed testdata/pretty.alert.json
-var pretty string
+var prettyJson string
 
 func TestNil(t *testing.T) {
 	output, err := MarshalToString(nil)
@@ -38,7 +38,7 @@ func TestMarshal(t *testing.T) {
 	output := &bytes.Buffer{}
 	err := Marshal(output, alert())
 	assert.NoError(t, err)
-	assert.Equal(t, compat, output.String())
+	assert.Equal(t, compactJson, output.String())
 }
 
 func TestMarshalPretty(t *testing.T) {
@@ -46,14 +46,14 @@ func TestMarshalPretty(t *testing.T) {
 	output := &bytes.Buffer{}
 	err := MarshalPretty(output, alert())
 	assert.NoError(t, err)
-	assert.Equal(t, pretty, output.String())
+	assert.Equal(t, prettyJson, output.String())
 }
 
 func TestMarshalString(t *testing.T) {
 	t.Parallel()
 	output, err := MarshalToString(alert())
 	assert.NoError(t, err)
-	assert.Equal(t, pretty, output)
+	assert.Equal(t, prettyJson, output)
 }
 
 func alert() *storage.Alert {
