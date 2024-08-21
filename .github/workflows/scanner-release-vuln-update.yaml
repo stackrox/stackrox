@@ -115,9 +115,16 @@ jobs:
         df -h
 
     - name: Authenticate with Google Cloud
+      if: github.ref_name == 'master'
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+
+    - name: Authenticate with Google Cloud
+      if: github.ref_name != 'master'
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
@@ -128,7 +135,6 @@ jobs:
         path: .
 
     - name: Update vulnerabilities
-      id: upload-vulnerabilities
       env:
         STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         STACKROX_NVD_API_CALL_INTERVAL: 6s
@@ -162,10 +168,6 @@ jobs:
 
         mkdir ${{ env.ROX_PRODUCT_VERSION }}
 
-        # Save the bundle dir as a job output so that we can create a GH artifact of its
-        # contents in a later step (as needed).
-        echo "VULN_OUTPUT_DIR=$(pwd)/${{ env.ROX_PRODUCT_VERSION }}" >> "$GITHUB_OUTPUT"
-
         # Run updater per release/product version.
         case "${{ env.ROX_PRODUCT_VERSION }}" in
         4.4.*)
@@ -177,21 +179,15 @@ jobs:
             ;;
         esac
 
-        # Upload all bundles if running against master branch.
-        cmd=()
+        bucket="gs://definitions.stackrox.io/v4/vulnerability-bundles"
         if [[ "${{ github.ref_name }}" != "master" ]]; then
-          echo "Ref '${{ github.ref_name }}' is not master."
-          cmd+=(echo "Would do:")
+          # If dispatched from a branch other then master, upload bundles
+          # to a test bucket for inspection.
+          bucket="gs://scanner-v4-test/vulnerability-bundles"
         fi
-        "${cmd[@]}" gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://definitions.stackrox.io/v4/vulnerability-bundles"
 
-    - name: Upload GH artifact
-      if: ${{ github.ref_name != 'master' }}
-      uses: ./.github/actions/upload-artifact-with-retry
-      with:
-        name: ${{ env.ROX_PRODUCT_VERSION }}
-        path: ${{ steps.upload-vulnerabilities.outputs.VULN_OUTPUT_DIR }}
-        if-no-files-found: error
+        echo "Copying ${{ env.ROX_PRODUCT_VERSION }} to $bucket"
+        gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "$bucket"
 
   send-notification:
     needs:
