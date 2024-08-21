@@ -52,7 +52,7 @@ jobs:
         with:
           repository: stackrox/acs-fleet-manager
           path: acs-fleet-manager
-          ref: jmalsam/ROX-24936-emailsender-central-compatibility
+          ref: main
           fetch-depth: 0
       - name: Checkout stackrox/stackrox repository
         uses: actions/checkout@v4
