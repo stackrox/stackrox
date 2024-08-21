@@ -369,11 +369,11 @@ func (m *SumoLogic) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *MicrosoftSentinel_AlertNotifier) CloneVT() *MicrosoftSentinel_AlertNotifier {
+func (m *MicrosoftSentinel_NotifierConfig) CloneVT() *MicrosoftSentinel_NotifierConfig {
 	if m == nil {
-		return (*MicrosoftSentinel_AlertNotifier)(nil)
+		return (*MicrosoftSentinel_NotifierConfig)(nil)
 	}
-	r := new(MicrosoftSentinel_AlertNotifier)
+	r := new(MicrosoftSentinel_NotifierConfig)
 	r.StreamName = m.StreamName
 	r.DataCollectionRuleId = m.DataCollectionRuleId
 	if len(m.unknownFields) > 0 {
@@ -383,7 +383,7 @@ func (m *MicrosoftSentinel_AlertNotifier) CloneVT() *MicrosoftSentinel_AlertNoti
 	return r
 }
 
-func (m *MicrosoftSentinel_AlertNotifier) CloneMessageVT() proto.Message {
+func (m *MicrosoftSentinel_NotifierConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -1112,7 +1112,7 @@ func (this *SumoLogic) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *MicrosoftSentinel_AlertNotifier) EqualVT(that *MicrosoftSentinel_AlertNotifier) bool {
+func (this *MicrosoftSentinel_NotifierConfig) EqualVT(that *MicrosoftSentinel_NotifierConfig) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -1127,8 +1127,8 @@ func (this *MicrosoftSentinel_AlertNotifier) EqualVT(that *MicrosoftSentinel_Ale
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *MicrosoftSentinel_AlertNotifier) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*MicrosoftSentinel_AlertNotifier)
+func (this *MicrosoftSentinel_NotifierConfig) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*MicrosoftSentinel_NotifierConfig)
 	if !ok {
 		return false
 	}
@@ -2270,7 +2270,7 @@ func (m *SumoLogic) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MicrosoftSentinel_AlertNotifier) MarshalVT() (dAtA []byte, err error) {
+func (m *MicrosoftSentinel_NotifierConfig) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2283,12 +2283,12 @@ func (m *MicrosoftSentinel_AlertNotifier) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *MicrosoftSentinel_AlertNotifier) MarshalToVT(dAtA []byte) (int, error) {
+func (m *MicrosoftSentinel_NotifierConfig) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *MicrosoftSentinel_AlertNotifier) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *MicrosoftSentinel_NotifierConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2973,7 +2973,7 @@ func (m *SumoLogic) SizeVT() (n int) {
 	return n
 }
 
-func (m *MicrosoftSentinel_AlertNotifier) SizeVT() (n int) {
+func (m *MicrosoftSentinel_NotifierConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -5634,7 +5634,7 @@ func (m *SumoLogic) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *MicrosoftSentinel_AlertNotifier) UnmarshalVT(dAtA []byte) error {
+func (m *MicrosoftSentinel_NotifierConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -5657,10 +5657,10 @@ func (m *MicrosoftSentinel_AlertNotifier) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: MicrosoftSentinel_AlertNotifier: wiretype end group for non-group")
+			return fmt.Errorf("proto: MicrosoftSentinel_NotifierConfig: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MicrosoftSentinel_AlertNotifier: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: MicrosoftSentinel_NotifierConfig: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -5936,7 +5936,7 @@ func (m *MicrosoftSentinel) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.AlertNotifier == nil {
-				m.AlertNotifier = &MicrosoftSentinel_AlertNotifier{}
+				m.AlertNotifier = &MicrosoftSentinel_NotifierConfig{}
 			}
 			if err := m.AlertNotifier.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
