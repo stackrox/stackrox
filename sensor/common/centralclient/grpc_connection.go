@@ -75,7 +75,7 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	// Both signals should not be in a triggered state at the same time.
 	// If we run into this situation something went wrong with the handling of these signals.
 	if f.stopSignal.IsDone() && f.okSignal.IsDone() {
-		log.Warn("the stopSignal and the okSignal are both triggered")
+		log.Warn("Unexpected: the stopSignal and the okSignal are both triggered")
 	}
 	f.stopSignal.Reset()
 	f.okSignal.Reset()
