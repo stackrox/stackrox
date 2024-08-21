@@ -36,13 +36,15 @@ import (
 )
 
 type testCase struct {
-	desc        string
-	ctx         context.Context
-	q           *v1.Query
-	matchFilter *filterImpl
-	less        lessFunc
-	readOptions views.ReadOptions
-	expectedErr string
+	desc           string
+	ctx            context.Context
+	q              *v1.Query
+	matchFilter    *filterImpl
+	less           lessFunc
+	readOptions    views.ReadOptions
+	expectedErr    string
+	skipCountTests bool
+	testOrder      bool
 }
 
 type lessFunc func(records []*imageCVECoreResponse) func(i, j int) bool
@@ -159,7 +161,11 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 
 			expected := compileExpected(s.testImages, tc.matchFilter, tc.readOptions, tc.less)
 			assert.Equal(t, len(expected), len(actual))
+
 			assert.ElementsMatch(t, expected, actual)
+			if tc.testOrder {
+				assert.Equal(t, expected, actual)
+			}
 
 			if tc.readOptions.SkipGetAffectedImages || tc.readOptions.SkipGetImagesBySeverity {
 				return
@@ -322,6 +328,10 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreWithPagination() {
 
 func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 	for _, tc := range s.testCases() {
+		if tc.skipCountTests {
+			continue
+		}
+
 		s.T().Run(tc.desc, func(t *testing.T) {
 			actual, err := s.cveView.Count(sac.WithAllAccess(tc.ctx), tc.q)
 			if tc.expectedErr != "" {
@@ -339,6 +349,10 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECore() {
 func (s *ImageCVEViewTestSuite) TestCountImageCVECoreSAC() {
 	for _, tc := range s.testCases() {
 		for key, sacTC := range s.sacTestCases() {
+			if tc.skipCountTests {
+				continue
+			}
+
 			s.T().Run(fmt.Sprintf("Image %s %s", key, tc.desc), func(t *testing.T) {
 				testCtxs := testutils.GetNamespaceScopedTestContexts(tc.ctx, s.T(), resources.Image)
 				ctx := testCtxs[key]
@@ -369,6 +383,10 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECoreSAC() {
 
 func (s *ImageCVEViewTestSuite) TestCountBySeverity() {
 	for _, tc := range s.testCases() {
+		if tc.skipCountTests {
+			continue
+		}
+
 		s.T().Run(tc.desc, func(t *testing.T) {
 			actual, err := s.cveView.CountBySeverity(sac.WithAllAccess(tc.ctx), tc.q)
 			if tc.expectedErr != "" {
@@ -579,6 +597,22 @@ func (s *ImageCVEViewTestSuite) testCases() []testCase {
 					return vuln.GetCve() == "CVE-2022-1552" &&
 						vuln.GetSeverity() == storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY
 				}),
+		},
+		{
+			desc:           "search all sort by critical severity most first",
+			ctx:            context.Background(),
+			q:              search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.CriticalSeverityCount).Reversed(true)).AddSortOption(search.NewSortOption(search.CVE))).ProtoQuery(),
+			matchFilter:    matchAllFilter(),
+			skipCountTests: true,
+			testOrder:      true,
+			less: func(records []*imageCVECoreResponse) func(i, j int) bool {
+				return func(i, j int) bool {
+					if records[i].ImagesWithCriticalSeverity == records[j].ImagesWithCriticalSeverity {
+						return records[i].CVE <= records[j].CVE
+					}
+					return records[i].ImagesWithCriticalSeverity > records[j].ImagesWithCriticalSeverity
+				}
+			},
 		},
 	}
 }
