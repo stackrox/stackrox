@@ -63,27 +63,27 @@ func (c *clientSetImpl) Kubernetes() kubernetes.Interface {
 	return c.kubernetes
 }
 
-// OpenshiftApps returns nil for the openshift client for config
+// OpenshiftApps returns the fake openshift client for apps
 func (c *clientSetImpl) OpenshiftApps() appVersioned.Interface {
 	return c.openshiftApps
 }
 
-// OpenshiftConfig returns nil for the openshift client for apps
+// OpenshiftConfig returns the fake openshift client for config
 func (c *clientSetImpl) OpenshiftConfig() configVersioned.Interface {
 	return c.openshiftConfig
 }
 
-// Dynamic returns nil
+// Dynamic returns the fake dynamic client
 func (c *clientSetImpl) Dynamic() dynamic.Interface {
 	return c.dynamic
 }
 
-// OpenshiftRoute implements the client interface.
+// OpenshiftRoute returns the fake openshift client for route
 func (c *clientSetImpl) OpenshiftRoute() routeVersioned.Interface {
 	return c.openshiftRoute
 }
 
-// OpenshiftOperator implements the client interface.
+// OpenshiftOperator returns the fake openshift client for operator
 func (c *clientSetImpl) OpenshiftOperator() operatorVersioned.Interface {
 	return c.openshiftOperator
 }
