@@ -340,36 +340,19 @@ func (m *NamespaceRule) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *NamespaceSelection) CloneVT() *NamespaceSelection {
-	if m == nil {
-		return (*NamespaceSelection)(nil)
-	}
-	r := new(NamespaceSelection)
-	if rhs := m.NamespaceRules; rhs != nil {
-		tmpContainer := make([]*NamespaceRule, len(rhs))
-		for k, v := range rhs {
-			tmpContainer[k] = v.CloneVT()
-		}
-		r.NamespaceRules = tmpContainer
-	}
-	if len(m.unknownFields) > 0 {
-		r.unknownFields = make([]byte, len(m.unknownFields))
-		copy(r.unknownFields, m.unknownFields)
-	}
-	return r
-}
-
-func (m *NamespaceSelection) CloneMessageVT() proto.Message {
-	return m.CloneVT()
-}
-
 func (m *CollectorNamespaceLevelFeatureConfig_RuntimeRule) CloneVT() *CollectorNamespaceLevelFeatureConfig_RuntimeRule {
 	if m == nil {
 		return (*CollectorNamespaceLevelFeatureConfig_RuntimeRule)(nil)
 	}
 	r := new(CollectorNamespaceLevelFeatureConfig_RuntimeRule)
-	r.NamespaceSelection = m.NamespaceSelection.CloneVT()
 	r.Status = m.Status.CloneVT()
+	if rhs := m.NamespaceSelection; rhs != nil {
+		tmpContainer := make([]*NamespaceRule, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.NamespaceSelection = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1446,17 +1429,17 @@ func (this *NamespaceRule) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *NamespaceSelection) EqualVT(that *NamespaceSelection) bool {
+func (this *CollectorNamespaceLevelFeatureConfig_RuntimeRule) EqualVT(that *CollectorNamespaceLevelFeatureConfig_RuntimeRule) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if len(this.NamespaceRules) != len(that.NamespaceRules) {
+	if len(this.NamespaceSelection) != len(that.NamespaceSelection) {
 		return false
 	}
-	for i, vx := range this.NamespaceRules {
-		vy := that.NamespaceRules[i]
+	for i, vx := range this.NamespaceSelection {
+		vy := that.NamespaceSelection[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
 				p = &NamespaceRule{}
@@ -1468,25 +1451,6 @@ func (this *NamespaceSelection) EqualVT(that *NamespaceSelection) bool {
 				return false
 			}
 		}
-	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *NamespaceSelection) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*NamespaceSelection)
-	if !ok {
-		return false
-	}
-	return this.EqualVT(that)
-}
-func (this *CollectorNamespaceLevelFeatureConfig_RuntimeRule) EqualVT(that *CollectorNamespaceLevelFeatureConfig_RuntimeRule) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	if !this.NamespaceSelection.EqualVT(that.NamespaceSelection) {
-		return false
 	}
 	if !this.Status.EqualVT(that.Status) {
 		return false
@@ -3243,51 +3207,6 @@ func (m *NamespaceRule) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NamespaceSelection) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *NamespaceSelection) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *NamespaceSelection) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if len(m.NamespaceRules) > 0 {
-		for iNdEx := len(m.NamespaceRules) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.NamespaceRules[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0xa
-		}
-	}
-	return len(dAtA) - i, nil
-}
-
 func (m *CollectorNamespaceLevelFeatureConfig_RuntimeRule) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -3328,15 +3247,17 @@ func (m *CollectorNamespaceLevelFeatureConfig_RuntimeRule) MarshalToSizedBufferV
 		i--
 		dAtA[i] = 0x12
 	}
-	if m.NamespaceSelection != nil {
-		size, err := m.NamespaceSelection.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+	if len(m.NamespaceSelection) > 0 {
+		for iNdEx := len(m.NamespaceSelection) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.NamespaceSelection[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0xa
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -5307,31 +5228,17 @@ func (m *NamespaceRule) SizeVT() (n int) {
 	return n
 }
 
-func (m *NamespaceSelection) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if len(m.NamespaceRules) > 0 {
-		for _, e := range m.NamespaceRules {
-			l = e.SizeVT()
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
-	}
-	n += len(m.unknownFields)
-	return n
-}
-
 func (m *CollectorNamespaceLevelFeatureConfig_RuntimeRule) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.NamespaceSelection != nil {
-		l = m.NamespaceSelection.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	if len(m.NamespaceSelection) > 0 {
+		for _, e := range m.NamespaceSelection {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	if m.Status != nil {
 		l = m.Status.SizeVT()
@@ -7700,91 +7607,6 @@ func (m *NamespaceRule) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NamespaceSelection) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: NamespaceSelection: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: NamespaceSelection: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NamespaceRules", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.NamespaceRules = append(m.NamespaceRules, &NamespaceRule{})
-			if err := m.NamespaceRules[len(m.NamespaceRules)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *CollectorNamespaceLevelFeatureConfig_RuntimeRule) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -7843,10 +7665,8 @@ func (m *CollectorNamespaceLevelFeatureConfig_RuntimeRule) UnmarshalVT(dAtA []by
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.NamespaceSelection == nil {
-				m.NamespaceSelection = &NamespaceSelection{}
-			}
-			if err := m.NamespaceSelection.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			m.NamespaceSelection = append(m.NamespaceSelection, &NamespaceRule{})
+			if err := m.NamespaceSelection[len(m.NamespaceSelection)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

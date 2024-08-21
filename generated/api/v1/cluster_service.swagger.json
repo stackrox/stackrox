@@ -354,7 +354,11 @@
       "type": "object",
       "properties": {
         "namespaceSelection": {
-          "$ref": "#/definitions/storageNamespaceSelection"
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageNamespaceRule"
+          }
         },
         "status": {
           "$ref": "#/definitions/storageCollectorFeatureStatus"
@@ -902,18 +906,6 @@
         },
         "matchType": {
           "$ref": "#/definitions/storageMatchType"
-        }
-      }
-    },
-    "storageNamespaceSelection": {
-      "type": "object",
-      "properties": {
-        "namespaceRules": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageNamespaceRule"
-          }
         }
       }
     },

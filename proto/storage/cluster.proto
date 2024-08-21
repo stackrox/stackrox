@@ -136,13 +136,9 @@ message NamespaceRule {
   storage.MatchType match_type = 2;
 }
 
-message NamespaceSelection {
-  repeated NamespaceRule namespace_rules = 1;
-}
-
 message CollectorNamespaceLevelFeatureConfig {
   message RuntimeRule {
-    NamespaceSelection namespace_selection = 1;
+    repeated NamespaceRule namespace_selection = 1;
     CollectorFeatureStatus status = 2;
   }
 

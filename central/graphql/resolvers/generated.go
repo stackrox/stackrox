@@ -376,7 +376,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"rules: [CollectorNamespaceLevelFeatureConfig_RuntimeRule]!",
 	}))
 	utils.Must(builder.AddType("CollectorNamespaceLevelFeatureConfig_RuntimeRule", []string{
-		"namespaceSelection: NamespaceSelection",
+		"namespaceSelection: [NamespaceRule]!",
 		"status: CollectorFeatureStatus",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectorNamespaceLevelRuntimeFeature(0)))
@@ -905,9 +905,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("NamespaceRule", []string{
 		"matchType: MatchType!",
 		"namespace: String!",
-	}))
-	utils.Must(builder.AddType("NamespaceSelection", []string{
-		"namespaceRules: [NamespaceRule]!",
 	}))
 	utils.Must(builder.AddType("NetworkConnectionStatus", []string{
 		"aggregateExternal: Boolean!",
@@ -5097,9 +5094,9 @@ func (resolver *Resolver) wrapCollectorNamespaceLevelFeatureConfig_RuntimeRulesW
 	return output, nil
 }
 
-func (resolver *collectorNamespaceLevelFeatureConfig_RuntimeRuleResolver) NamespaceSelection(ctx context.Context) (*namespaceSelectionResolver, error) {
+func (resolver *collectorNamespaceLevelFeatureConfig_RuntimeRuleResolver) NamespaceSelection(ctx context.Context) ([]*namespaceRuleResolver, error) {
 	value := resolver.data.GetNamespaceSelection()
-	return resolver.root.wrapNamespaceSelection(value, true, nil)
+	return resolver.root.wrapNamespaceRules(value, nil)
 }
 
 func (resolver *collectorNamespaceLevelFeatureConfig_RuntimeRuleResolver) Status(ctx context.Context) (*collectorFeatureStatusResolver, error) {
@@ -10561,53 +10558,6 @@ func (resolver *namespaceRuleResolver) MatchType(ctx context.Context) string {
 func (resolver *namespaceRuleResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	return value
-}
-
-type namespaceSelectionResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.NamespaceSelection
-}
-
-func (resolver *Resolver) wrapNamespaceSelection(value *storage.NamespaceSelection, ok bool, err error) (*namespaceSelectionResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &namespaceSelectionResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapNamespaceSelections(values []*storage.NamespaceSelection, err error) ([]*namespaceSelectionResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*namespaceSelectionResolver, len(values))
-	for i, v := range values {
-		output[i] = &namespaceSelectionResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapNamespaceSelectionWithContext(ctx context.Context, value *storage.NamespaceSelection, ok bool, err error) (*namespaceSelectionResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &namespaceSelectionResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapNamespaceSelectionsWithContext(ctx context.Context, values []*storage.NamespaceSelection, err error) ([]*namespaceSelectionResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*namespaceSelectionResolver, len(values))
-	for i, v := range values {
-		output[i] = &namespaceSelectionResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *namespaceSelectionResolver) NamespaceRules(ctx context.Context) ([]*namespaceRuleResolver, error) {
-	value := resolver.data.GetNamespaceRules()
-	return resolver.root.wrapNamespaceRules(value, nil)
 }
 
 type networkConnectionStatusResolver struct {
