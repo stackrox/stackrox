@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
@@ -218,7 +218,7 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 
 	var centralHello *central.CentralHello
 
-	hdr := metautils.NiceMD(rawHdr)
+	hdr := metautils.MD(rawHdr)
 	if hdr.Get(centralsensor.SensorHelloMetadataKey) == "true" {
 		// Yay, central supports the "sensor hello" protocol!
 		err := stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: hello}})

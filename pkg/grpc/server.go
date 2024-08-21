@@ -10,8 +10,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -430,12 +429,8 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(credsFromConn{a.tlsHandshakeTimeout}),
-		grpc.StreamInterceptor(
-			grpc_middleware.ChainStreamServer(a.streamInterceptors()...),
-		),
-		grpc.UnaryInterceptor(
-			grpc_middleware.ChainUnaryServer(a.unaryInterceptors()...),
-		),
+		grpc.ChainStreamInterceptor(a.streamInterceptors()...),
+		grpc.ChainUnaryInterceptor(a.unaryInterceptors()...),
 		grpc.MaxRecvMsgSize(env.MaxMsgSizeSetting.IntegerSetting()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time:             40 * time.Second,

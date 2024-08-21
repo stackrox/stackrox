@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
@@ -217,7 +217,7 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 
 func receiveSensorHello(server central.SensorService_CommunicateServer) (*central.SensorHello, bool, error) {
 	incomingMD := metautils.ExtractIncoming(server.Context())
-	outMD := metautils.NiceMD{}
+	outMD := metautils.MD{}
 
 	sensorSupportsHello := incomingMD.Get(centralsensor.SensorHelloMetadataKey) == "true"
 	if sensorSupportsHello {
