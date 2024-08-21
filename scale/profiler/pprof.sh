@@ -16,11 +16,15 @@ usage() {
     echo "usage: ./pprof.sh <output dir> <endpoint> <num_iterations (optional)>"
 }
 
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
+    echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 curl_central() {
     if [[ -n $ROX_API_TOKEN ]]; then
-        curl -sSk -H "Authorization: Bearer $ROX_API_TOKEN" "$@"
+        curl -sSk --config <(curl_cfg header "Authorization: Bearer $ROX_API_TOKEN") "$@"
     else
-        curl -sSk -u "admin:$ROX_PASSWORD" "$@"
+        curl -sSk --config <(curl_cfg user "admin:$ROX_PASSWORD") "$@"
     fi
 }
 

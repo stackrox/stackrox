@@ -41,6 +41,10 @@ echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
 
 popd
 
+function curl_cfg() { # Use built-in echo to not expose $2 in the process list.
+    echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 # curl_central_once
 # Runs curl with --silent --show-error --insecure.
 # Obeys $ROX_ADMIN_USER and $ROX_ADMIN_PASSWORD.
@@ -50,9 +54,10 @@ function curl_central_once() {
     local cmd=(curl --silent --show-error --insecure)
     local admin_user="${ROX_ADMIN_USER:-admin}"
     if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
-        cmd+=(-u "${admin_user}:${ROX_ADMIN_PASSWORD}")
+        "${cmd[@]}" --config <(curl_cfg user "${admin_user}:${ROX_ADMIN_PASSWORD}") "$@"
+    else
+        "${cmd[@]}" "$@"
     fi
-    "${cmd[@]}" "$@"
 }
 
 
