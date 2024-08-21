@@ -317,15 +317,26 @@ describe(Cypress.spec.relative, () => {
         cy.get(selectors.attributeSelectToggle).click();
         cy.get(selectors.attributeSelectItem('Discovered time')).click();
 
+        cy.get('button[aria-label="Condition selector toggle"]').should('have.text', 'On');
+
+        cy.get('button[aria-label="Condition selector toggle"]').click();
+        cy.get('div[aria-label="Condition selector menu"] li button:contains("After")')
+            .filter((_, element) => {
+                // Get exact value
+                // @TODO: Could be a custom command
+                return Cypress.$(element).text().trim() === 'After';
+            })
+            .click();
+
         selectDatePickerDate('January', '15', '2034');
 
-        cy.get('button[aria-label="Apply date input to search"]').click();
+        cy.get('button[aria-label="Apply condition and date input to search"]').click();
 
         // Check updated date value
         cy.get('@onSearch').should('have.been.calledWithExactly', {
             action: 'ADD',
             category: 'CVE Created Time',
-            value: '01/15/2034',
+            value: '>01/15/2034',
         });
 
         cy.get('input[aria-label="Filter by date"]').should('have.value', '');

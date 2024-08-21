@@ -75,7 +75,7 @@ jobs:
       - download-nvd
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
       volumes:
         # The updater makes heavy use of /tmp files.
         - /tmp:/tmp
@@ -131,8 +131,11 @@ jobs:
       env:
         STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         STACKROX_NVD_API_CALL_INTERVAL: 6s
-        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
+        # Use fully qualified path to refer to the NVD bundle
+        STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
+        export STACKROX_NVD_ZIP_PATH
+
         DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_TAG }}.zip"
         FILE_NAME=$(basename "$DOWNLOAD_URL")
         if ! wget "$DOWNLOAD_URL" -O "$FILE_NAME"; then

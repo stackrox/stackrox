@@ -142,6 +142,9 @@ message NodeCVE {
   bool snoozed = 7; // @gotags: search:"CVE Snoozed"
   google.protobuf.Timestamp snooze_start = 8;
   google.protobuf.Timestamp snooze_expiry = 9; // @gotags: search:"CVE Snooze Expiry,hidden"
+
+  bool orphaned = 10; // @gotags: search:"CVE Orphaned,hidden"
+  google.protobuf.Timestamp orphaned_time = 11; // @gotags: search:"CVE Orphaned Time,hidden"
 }
 
 message ClusterCVE {

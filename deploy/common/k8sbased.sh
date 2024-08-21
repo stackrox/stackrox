@@ -236,12 +236,10 @@ function launch_central {
     fi
 
     if [[ -n $STORAGE_CLASS ]]; then
-        add_storage_args "--storage-class=$STORAGE_CLASS"
         add_storage_args "--db-storage-class=$STORAGE_CLASS"
     fi
 
     if [[ "${STORAGE}" == "pvc" && -n "${STORAGE_SIZE}" ]]; then
-	      add_storage_args "--size=${STORAGE_SIZE}"
           add_storage_args "--db-size=${STORAGE_SIZE}"
     fi
 
@@ -393,6 +391,12 @@ function launch_central {
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
         helm_args+=(
           --set env.managedServices=true
+        )
+      fi
+
+      if [[ -n "$CENTRAL_PERSISTENCE_NONE" ]]; then
+        helm_args+=(
+          --set central.persistence.none="true"
         )
       fi
 

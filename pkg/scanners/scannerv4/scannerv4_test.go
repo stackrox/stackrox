@@ -6,7 +6,6 @@ import (
 	"time"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	s4ClientMocks "github.com/stackrox/rox/pkg/scannerv4/client/mocks"
 	"github.com/stretchr/testify/assert"
@@ -68,7 +67,7 @@ func TestGetVulnDefinitionsInfo(t *testing.T) {
 				assert.Nil(t, vdi)
 			} else {
 				require.NoError(t, err)
-				protoassert.Equal(t, tc.clientRet.GetLastVulnerabilityUpdate(), vdi.GetLastUpdatedTimestamp())
+				assert.Equal(t, tc.clientRet.GetLastVulnerabilityUpdate().AsTime(), vdi.GetLastUpdatedTimestamp().AsTime())
 			}
 		})
 	}

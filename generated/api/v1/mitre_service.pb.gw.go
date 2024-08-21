@@ -105,6 +105,7 @@ func local_request_MitreAttackService_GetMitreAttackVector_0(ctx context.Context
 // UnaryRPC     :call MitreAttackServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterMitreAttackServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterMitreAttackServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server MitreAttackServiceServer) error {
 
 	mux.Handle("GET", pattern_MitreAttackService_ListMitreAttackVectors_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -195,7 +196,7 @@ func RegisterMitreAttackServiceHandler(ctx context.Context, mux *runtime.ServeMu
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "MitreAttackServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "MitreAttackServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "MitreAttackServiceClient" to call the correct interceptors.
+// "MitreAttackServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterMitreAttackServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client MitreAttackServiceClient) error {
 
 	mux.Handle("GET", pattern_MitreAttackService_ListMitreAttackVectors_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

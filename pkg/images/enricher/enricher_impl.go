@@ -369,7 +369,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		return false, errorList.ToError()
 	}
 
-	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
+	log.Infof("Getting metadata for image %q (ID %q)", image.GetName().GetFullName(), image.GetId())
 	for _, registry := range registries {
 		updated, err := e.enrichImageWithRegistry(ctx, image, registry)
 		if err != nil {
@@ -588,7 +588,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 		return ScanNotDone, errorList.ToError()
 	}
 
-	log.Debugf("Scanning image %s", image.GetName().GetFullName())
+	log.Debugf("Scanning image %q (ID %q)", image.GetName().GetFullName(), image.GetId())
 	for _, scanner := range scanners.GetAll() {
 		result, err := e.enrichImageWithScanner(ctx, image, scanner)
 		if err != nil {

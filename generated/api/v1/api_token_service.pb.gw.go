@@ -219,6 +219,7 @@ func local_request_APITokenService_ListAllowedTokenRoles_0(ctx context.Context, 
 // UnaryRPC     :call APITokenServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterAPITokenServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterAPITokenServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server APITokenServiceServer) error {
 
 	mux.Handle("GET", pattern_APITokenService_GetAPIToken_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -384,7 +385,7 @@ func RegisterAPITokenServiceHandler(ctx context.Context, mux *runtime.ServeMux, 
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "APITokenServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "APITokenServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "APITokenServiceClient" to call the correct interceptors.
+// "APITokenServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterAPITokenServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client APITokenServiceClient) error {
 
 	mux.Handle("GET", pattern_APITokenService_GetAPIToken_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

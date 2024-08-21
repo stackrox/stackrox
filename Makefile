@@ -24,7 +24,7 @@ SILENT ?= @
 # the pattern is passed to: grep -Ev
 #  usage: "path/to/ignored|another/path"
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
-UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
+UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/config-controller|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')$(MAIN_TAG_SUFFIX)
@@ -277,6 +277,11 @@ storage-protos-compatible: $(PROTOLOCK_BIN)
 	@echo "+ $@"
 	$(SILENT)$(PROTOLOCK_BIN) status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage --uptodate true
 
+.PHONY: update-storage-protolock
+update-storage-protolock: $(PROTOLOCK_BIN)
+	@echo "+ $@"
+	$(SILENT)$(PROTOLOCK_BIN) commit -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
+
 .PHONY: blanks
 blanks:
 	@echo "+ $@"
@@ -367,8 +372,6 @@ clean-deps:
 clean-obsolete-protos:
 	@echo "+ $@"
 	$(BASE_DIR)/tools/clean_autogen_protos.py --protos $(BASE_DIR)/proto --generated $(BASE_DIR)/generated
-
-
 
 ###########
 ## Build ##

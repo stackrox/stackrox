@@ -7,8 +7,6 @@ data:
       healthProbeBindAddress: :8081
     metrics:
       bindAddress: 0.0.0.0:8443
-    webhook:
-      port: 9443
     leaderElection:
       leaderElect: true
       resourceName: bf7ea6a2.stackrox.io

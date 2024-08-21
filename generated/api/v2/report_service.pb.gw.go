@@ -619,6 +619,7 @@ func local_request_ReportService_DeleteReport_0(ctx context.Context, marshaler r
 // UnaryRPC     :call ReportServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterReportServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ReportServiceServer) error {
 
 	mux.Handle("POST", pattern_ReportService_PostReportConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -959,7 +960,7 @@ func RegisterReportServiceHandler(ctx context.Context, mux *runtime.ServeMux, co
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ReportServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ReportServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "ReportServiceClient" to call the correct interceptors.
+// "ReportServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterReportServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ReportServiceClient) error {
 
 	mux.Handle("POST", pattern_ReportService_PostReportConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

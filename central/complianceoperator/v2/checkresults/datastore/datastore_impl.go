@@ -379,7 +379,7 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 	cloned.Selects = append(cloned.Selects,
 		search.NewQuerySelect(countOn).
 			AggrFunc(aggregatefunc.Count).
-			Filter("pass_count",
+			Filter(search.CompliancePassCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.ComplianceOperatorCheckStatus,
@@ -388,7 +388,7 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 			).Proto(),
 		search.NewQuerySelect(countOn).
 			AggrFunc(aggregatefunc.Count).
-			Filter("fail_count",
+			Filter(search.ComplianceFailCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.ComplianceOperatorCheckStatus,
@@ -397,7 +397,7 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 			).Proto(),
 		search.NewQuerySelect(countOn).
 			AggrFunc(aggregatefunc.Count).
-			Filter("error_count",
+			Filter(search.ComplianceErrorCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.ComplianceOperatorCheckStatus,
@@ -406,7 +406,7 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 			).Proto(),
 		search.NewQuerySelect(countOn).
 			AggrFunc(aggregatefunc.Count).
-			Filter("info_count",
+			Filter(search.ComplianceInfoCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.ComplianceOperatorCheckStatus,
@@ -415,7 +415,7 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 			).Proto(),
 		search.NewQuerySelect(countOn).
 			AggrFunc(aggregatefunc.Count).
-			Filter("manual_count",
+			Filter(search.ComplianceManualCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.ComplianceOperatorCheckStatus,
@@ -424,7 +424,7 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 			).Proto(),
 		search.NewQuerySelect(countOn).
 			AggrFunc(aggregatefunc.Count).
-			Filter("not_applicable_count",
+			Filter(search.ComplianceNotApplicableCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.ComplianceOperatorCheckStatus,
@@ -433,7 +433,7 @@ func (d *datastoreImpl) withCountByResultSelectQuery(q *v1.Query, countOn search
 			).Proto(),
 		search.NewQuerySelect(countOn).
 			AggrFunc(aggregatefunc.Count).
-			Filter("inconsistent_count",
+			Filter(search.ComplianceInconsistentCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.ComplianceOperatorCheckStatus,

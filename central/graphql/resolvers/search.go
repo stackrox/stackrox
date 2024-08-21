@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
+	"github.com/stackrox/rox/central/graphql/resolvers/searchers"
 	"github.com/stackrox/rox/central/rbac/service"
 	searchService "github.com/stackrox/rox/central/search/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -136,7 +137,7 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 		v1.SearchCategory_IMAGE_COMPONENTS:        resolver.ImageComponentDataStore,
 		v1.SearchCategory_SUBJECTS:                service.NewSubjectSearcher(resolver.K8sRoleBindingStore),
 		v1.SearchCategory_IMAGE_VULNERABILITIES:   resolver.ImageCVEDataStore,
-		v1.SearchCategory_NODE_VULNERABILITIES:    resolver.NodeCVEDataStore,
+		v1.SearchCategory_NODE_VULNERABILITIES:    searchers.NewNonOrphanedNodeCVESearcher(resolver.NodeCVEDataStore),
 		v1.SearchCategory_CLUSTER_VULNERABILITIES: resolver.ClusterCVEDataStore,
 		v1.SearchCategory_NODE_COMPONENTS:         resolver.NodeComponentDataStore,
 		v1.SearchCategory_POLICY_CATEGORIES:       resolver.PolicyCategoryDataStore,
@@ -162,7 +163,7 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 		v1.SearchCategory_IMAGE_COMPONENTS:        resolver.ImageComponentDataStore.SearchImageComponents,
 		v1.SearchCategory_SUBJECTS:                service.NewSubjectSearcher(resolver.K8sRoleBindingStore).SearchSubjects,
 		v1.SearchCategory_IMAGE_VULNERABILITIES:   resolver.ImageCVEDataStore.SearchImageCVEs,
-		v1.SearchCategory_NODE_VULNERABILITIES:    resolver.NodeCVEDataStore.SearchNodeCVEs,
+		v1.SearchCategory_NODE_VULNERABILITIES:    searchers.NewNonOrphanedNodeCVESearcher(resolver.NodeCVEDataStore).SearchNodeCVEs,
 		v1.SearchCategory_CLUSTER_VULNERABILITIES: resolver.ClusterCVEDataStore.SearchClusterCVEs,
 		v1.SearchCategory_NODE_COMPONENTS:         resolver.NodeComponentDataStore.SearchNodeComponents,
 		v1.SearchCategory_POLICY_CATEGORIES:       resolver.PolicyCategoryDataStore.SearchPolicyCategories,

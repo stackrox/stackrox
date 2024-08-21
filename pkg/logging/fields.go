@@ -113,6 +113,12 @@ func Int(field string, value int) zap.Field {
 	return zap.Int(field, value)
 }
 
+// Bool provides a wrapper around zap.Bool and adds the key-value pair as structured log field.
+// This should be _always_ preferred over direct calls to zap to minimize dependency to it.
+func Bool(field string, value bool) zap.Field {
+	return zap.Bool(field, value)
+}
+
 // End Wrapper functions for zap.field functions.
 
 // Helper functions.

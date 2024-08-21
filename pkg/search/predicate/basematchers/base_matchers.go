@@ -5,13 +5,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/parse"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/regexutils"
 	"github.com/stackrox/rox/pkg/search"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // ForString returns a matcher for a string.
@@ -194,7 +194,7 @@ func ForTimestamp(value string) (func(*protocompat.Timestamp) bool, error) {
 }
 
 // MapEnumValues provides mappings between enum string name and enum number
-func MapEnumValues(enumDesc *descriptor.EnumDescriptorProto) (nameToNumber map[string]int32, numberToName map[int32]string) {
+func MapEnumValues(enumDesc *descriptorpb.EnumDescriptorProto) (nameToNumber map[string]int32, numberToName map[int32]string) {
 	nameToNumber = make(map[string]int32, len(enumDesc.GetValue()))
 	numberToName = make(map[int32]string, len(enumDesc.GetValue()))
 	for _, v := range enumDesc.GetValue() {

@@ -113,6 +113,7 @@ func local_request_DetectionService_DetectDeployTimeFromYAML_0(ctx context.Conte
 // UnaryRPC     :call DetectionServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterDetectionServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterDetectionServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server DetectionServiceServer) error {
 
 	mux.Handle("POST", pattern_DetectionService_DetectBuildTime_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -228,7 +229,7 @@ func RegisterDetectionServiceHandler(ctx context.Context, mux *runtime.ServeMux,
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "DetectionServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "DetectionServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "DetectionServiceClient" to call the correct interceptors.
+// "DetectionServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterDetectionServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client DetectionServiceClient) error {
 
 	mux.Handle("POST", pattern_DetectionService_DetectBuildTime_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

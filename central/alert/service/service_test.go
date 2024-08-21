@@ -925,7 +925,7 @@ func (s *patchAlertTests) TestSnoozeAlert() {
 	s.NoError(err)
 
 	s.Equal(fakeAlert.State, storage.ViolationState_SNOOZED)
-	protoassert.Equal(s.T(), fakeAlert.SnoozeTill, snoozeTill)
+	assert.Equal(s.T(), fakeAlert.SnoozeTill.AsTime(), snoozeTill.AsTime())
 }
 
 func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {

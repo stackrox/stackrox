@@ -195,7 +195,7 @@ func (s *serviceImplTestSuite) TestDatabaseBackupStatus() {
 	s.NoError(err)
 	actual, err := srv.GetDatabaseBackupStatus(ctx, &v1.Empty{})
 	s.NoError(err)
-	protoassert.Equal(s.T(), expected, actual)
+	protoassert.Equal(s.T(), expected.BackupInfo, actual.BackupInfo)
 }
 
 func (s *serviceImplTestSuite) TestGetCentralCapabilities() {

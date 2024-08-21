@@ -80,7 +80,9 @@ import DeploymentsTableContainer from './DeploymentsTableContainer';
 import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 import UnwatchImageModal from '../WatchedImages/UnwatchImageModal';
-import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import VulnerabilityStateTabs, {
+    vulnStateTabContentId,
+} from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import DefaultFilterModal from '../components/DefaultFilterModal';
 import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
@@ -237,7 +239,7 @@ function WorkloadCvesOverviewPage() {
     const sort = useURLSort({
         sortFields: getWorkloadSortFields(activeEntityTabKey),
         defaultSortOption: getDefaultSortOption(activeEntityTabKey),
-        onSort: () => pagination.setPage(1, 'replace'),
+        onSort: () => pagination.setPage(1),
     });
 
     function updateDefaultFilters(values: DefaultFilters) {
@@ -248,14 +250,13 @@ function WorkloadCvesOverviewPage() {
                 localStorageValue.preferences.defaultFilters,
                 values,
                 searchFilter
-            ),
-            'replace'
+            )
         );
     }
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {
         pagination.setPage(1);
-        sort.setSortOption(getDefaultSortOption(entityTab), 'replace');
+        sort.setSortOption(getDefaultSortOption(entityTab));
 
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
@@ -270,11 +271,11 @@ function WorkloadCvesOverviewPage() {
         // Set the observed CVE mode, pushing a new history entry to the stack
         setObservedCveMode(mode);
         // Reset all filters, sorting, and pagination and apply to the current history entry
-        pagination.setPage(1, 'replace');
-        setSearchFilter({}, 'replace');
+        pagination.setPage(1);
+        setSearchFilter({});
         if (activeEntityTabKey === 'CVE') {
-            setActiveEntityTabKey('Image', 'replace');
-            sort.setSortOption(getDefaultSortOption('Image'), 'replace');
+            setActiveEntityTabKey('Image');
+            sort.setSortOption(getDefaultSortOption('Image'));
         }
 
         // Re-apply the default filters when changing modes to the "WITH_CVES" mode
@@ -286,10 +287,10 @@ function WorkloadCvesOverviewPage() {
     function onVulnerabilityStateChange(vulnerabilityState: VulnerabilityState) {
         // Reset all filters, sorting, and pagination and apply to the current history entry
         setActiveEntityTabKey('CVE');
-        setSearchFilter({}, 'replace');
-        sort.setSortOption(getDefaultWorkloadSortOption('CVE'), 'replace');
-        pagination.setPage(1, 'replace');
-        setObservedCveMode('WITH_CVES', 'replace');
+        setSearchFilter({});
+        sort.setSortOption(getDefaultWorkloadSortOption('CVE'));
+        pagination.setPage(1);
+        setObservedCveMode('WITH_CVES');
 
         // Re-apply the default filters when changing to the "OBSERVED" state
         if (vulnerabilityState === 'OBSERVED') {
@@ -299,7 +300,7 @@ function WorkloadCvesOverviewPage() {
 
     function applyDefaultFilters() {
         if (isFixabilityFiltersEnabled) {
-            setSearchFilter(localStorageValue.preferences.defaultFilters, 'replace');
+            setSearchFilter(localStorageValue.preferences.defaultFilters);
         }
     }
 
@@ -338,7 +339,7 @@ function WorkloadCvesOverviewPage() {
             defaultFilters={localStorageValue.preferences.defaultFilters}
             onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
-                pagination.setPage(1, 'replace');
+                pagination.setPage(1);
                 trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
             }}
             includeCveSeverityFilters={isViewingWithCves}
@@ -348,7 +349,7 @@ function WorkloadCvesOverviewPage() {
     ) : (
         <WorkloadCveFilterToolbar
             defaultFilters={localStorageValue.preferences.defaultFilters}
-            onFilterChange={() => pagination.setPage(1, 'replace')}
+            onFilterChange={() => pagination.setPage(1)}
             searchOptions={
                 isViewingWithCves
                     ? searchOptions
@@ -396,7 +397,7 @@ function WorkloadCvesOverviewPage() {
                     )}
                 </Flex>
             </PageSection>
-            <PageSection padding={{ default: 'noPadding' }}>
+            <PageSection id={vulnStateTabContentId} padding={{ default: 'noPadding' }}>
                 <PageSection
                     padding={{ default: 'noPadding' }}
                     component="div"

@@ -115,7 +115,9 @@ function RolesList({
                             <Th width={25}>Description</Th>
                             <Th width={15}>Permission set</Th>
                             <Th width={20}>Access scope</Th>
-                            <Th width={10} aria-label="Row actions" />
+                            <Th width={10}>
+                                <span className="pf-v5-screen-reader">Row actions</span>
+                            </Th>
                         </Tr>
                     </Thead>
                     <Tbody>

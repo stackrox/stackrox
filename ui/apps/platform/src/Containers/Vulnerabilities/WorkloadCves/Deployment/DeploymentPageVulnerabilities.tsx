@@ -62,7 +62,9 @@ import {
 import DeploymentVulnerabilitiesTable, {
     deploymentWithVulnerabilitiesFragment,
 } from '../Tables/DeploymentVulnerabilitiesTable';
-import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import VulnerabilityStateTabs, {
+    vulnStateTabContentId,
+} from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 const summaryQuery = gql`
@@ -135,7 +137,7 @@ function DeploymentPageVulnerabilities({
             field: 'Severity',
             direction: 'desc',
         },
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
@@ -227,6 +229,7 @@ function DeploymentPageVulnerabilities({
             </PageSection>
             <Divider component="div" />
             <PageSection
+                id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
@@ -234,7 +237,7 @@ function DeploymentPageVulnerabilities({
                     isBox
                     onChange={() => {
                         setSearchFilter({});
-                        setPage(1, 'replace');
+                        setPage(1);
                     }}
                 />
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
@@ -245,7 +248,7 @@ function DeploymentPageVulnerabilities({
                             searchFilter={searchFilter}
                             onFilterChange={(newFilter, searchPayload) => {
                                 setSearchFilter(newFilter);
-                                setPage(1, 'replace');
+                                setPage(1);
                                 trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                             }}
                         />
@@ -316,7 +319,7 @@ function DeploymentPageVulnerabilities({
                                 vulnerabilityState={currentVulnerabilityState}
                                 onClearFilters={() => {
                                     setSearchFilter({});
-                                    setPage(1, 'replace');
+                                    setPage(1);
                                 }}
                             />
                         </div>

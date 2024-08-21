@@ -21,6 +21,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/scannerv4/constants"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -33,14 +34,8 @@ var (
 )
 
 const (
-	// Type is the type of data returned from the Enricher's Enrich method.
-	Type = `message/vnd.stackrox.scannerv4.vulnerability; enricher=nvd schema=https://csrc.nist.gov/schema/nvd/api/2.0/source_api_json_2.0.schema`
-
 	// DefaultFeeds is the default place to look for CVE feeds.
 	DefaultFeeds = `https://services.nvd.nist.gov/rest/json/cves/2.0/`
-
-	// This appears above and must be the same.
-	name = `nvd`
 
 	// First year for the yearly CVE feeds: https://nvd.nist.gov/vuln/data-feeds
 	firstYear = 2002
@@ -145,7 +140,7 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 
 // Name implements driver.Enricher and driver.EnrichmentUpdater.
 func (*Enricher) Name() string {
-	return name
+	return constants.NVDName
 }
 
 // FetchEnrichment implements driver.EnrichmentUpdater.
@@ -524,11 +519,11 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 		}
 	}
 	if len(m) == 0 {
-		return Type, nil, nil
+		return constants.NVDType, nil, nil
 	}
 	b, err := json.Marshal(m)
 	if err != nil {
-		return Type, nil, err
+		return constants.NVDType, nil, err
 	}
-	return Type, []json.RawMessage{b}, nil
+	return constants.NVDType, []json.RawMessage{b}, nil
 }

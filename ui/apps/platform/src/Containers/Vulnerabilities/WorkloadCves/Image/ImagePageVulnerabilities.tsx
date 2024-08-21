@@ -61,7 +61,9 @@ import {
 } from '../../utils/searchUtils';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/table.utils';
-import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import VulnerabilityStateTabs, {
+    vulnStateTabContentId,
+} from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import ExceptionRequestModal, {
     ExceptionRequestModalProps,
@@ -136,7 +138,7 @@ function ImagePageVulnerabilities({
             field: 'Severity',
             direction: 'desc',
         },
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
 
     // TODO Split metadata, counts, and vulnerabilities into separate queries
@@ -225,6 +227,7 @@ function ImagePageVulnerabilities({
             </PageSection>
             <Divider component="div" />
             <PageSection
+                id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
@@ -232,7 +235,7 @@ function ImagePageVulnerabilities({
                     isBox
                     onChange={() => {
                         setSearchFilter({});
-                        setPage(1, 'replace');
+                        setPage(1);
                     }}
                 />
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
@@ -243,7 +246,7 @@ function ImagePageVulnerabilities({
                             searchFilter={searchFilter}
                             onFilterChange={(newFilter, searchPayload) => {
                                 setSearchFilter(newFilter);
-                                setPage(1, 'replace');
+                                setPage(1);
                                 trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                             }}
                         />
@@ -359,7 +362,7 @@ function ImagePageVulnerabilities({
                                 createTableActions={createTableActions}
                                 onClearFilters={() => {
                                     setSearchFilter({});
-                                    setPage(1, 'replace');
+                                    setPage(1);
                                 }}
                             />
                         </div>

@@ -970,6 +970,11 @@
                     "value": "true"
                   }
                 ]
+              },
+              {
+                "id": 9,
+                "name": "deployment_type",
+                "type": "string"
               }
             ],
             "reserved_ids": [
@@ -5708,6 +5713,16 @@
               {
                 "id": 9,
                 "name": "snooze_expiry",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "orphaned",
+                "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "orphaned_time",
                 "type": "google.protobuf.Timestamp"
               }
             ]
@@ -15314,6 +15329,10 @@
               {
                 "name": "SCANNER_V4_DB_SERVICE",
                 "integer": 15
+              },
+              {
+                "name": "SCANNER_V4_SERVICE",
+                "integer": 16
               }
             ]
           }

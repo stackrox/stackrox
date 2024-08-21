@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -91,8 +90,7 @@ func (e *exchangeCommand) exchange() error {
 		IdToken: e.token,
 	}
 	buf := &bytes.Buffer{}
-	m := jsonpb.Marshaler{}
-	if err := m.Marshal(buf, req); err != nil {
+	if err := jsonutil.Marshal(buf, req); err != nil {
 		return errors.Wrap(err, "creating request body")
 	}
 

@@ -2,6 +2,7 @@ import { ClipboardCopy, Popover } from '@patternfly/react-core';
 import React, { ReactElement } from 'react';
 import { InfoCircleIcon } from '@patternfly/react-icons';
 
+import PopoverBodyContent from 'Components/PopoverBodyContent';
 import { getQueryString } from 'utils/queryStringUtils';
 
 import { vulnManagementPendingApprovalsPath } from '../pathsForRiskAcceptance';
@@ -24,12 +25,16 @@ function PendingApprovalPopover({ vulnRequestId }: PendingApprovalPopoverProps):
         <span>
             <Popover
                 aria-label="Pending approval popover"
-                headerContent={<div>Pending Approval</div>}
-                bodyContent={<div>Use the link to share your request with your approver</div>}
-                footerContent={
-                    <ClipboardCopy isReadOnly hoverTip="Copy" clickTip="Copied">
-                        {pendingRequestURL}
-                    </ClipboardCopy>
+                bodyContent={
+                    <PopoverBodyContent
+                        headerContent="Pending Approval"
+                        bodyContent="Use the link to share your request with your approver"
+                        footerContent={
+                            <ClipboardCopy isReadOnly hoverTip="Copy" clickTip="Copied">
+                                {pendingRequestURL}
+                            </ClipboardCopy>
+                        }
+                    />
                 }
                 triggerRef={popoverRef}
             />

@@ -9,6 +9,8 @@ import {
     CompoundSearchFilterEntity,
     OnSearchPayload,
     SelectSearchFilterAttribute,
+    SelectSearchFilterGroupedOptions,
+    SelectSearchFilterOptions,
 } from '../types';
 
 export const conditionMap = {
@@ -17,9 +19,19 @@ export const conditionMap = {
     'Is equal to': '=',
     'Is less than or equal to': '<=',
     'Is less than': '<',
-};
+} as const;
 
-export const conditions = Object.keys(conditionMap);
+export const dateConditionMap = {
+    Before: '<',
+    On: '', // "=" doesn't work but we can omit the condition to work like an equals
+    After: '>',
+} as const;
+
+export const conditions = Object.keys(conditionMap) as unknown as (keyof typeof conditionMap)[];
+
+export const dateConditions = Object.keys(
+    dateConditionMap
+) as unknown as (keyof typeof dateConditionMap)[];
 
 export function getEntity(
     config: CompoundSearchFilterConfig,
@@ -105,10 +117,42 @@ export function ensureConditionNumber(value: unknown): { condition: string; numb
     };
 }
 
+export function ensureConditionDate(value: unknown): { condition: string; date: string } {
+    if (
+        typeof value === 'object' &&
+        value !== null &&
+        'condition' in value &&
+        'date' in value &&
+        typeof value.condition === 'string' &&
+        typeof value.date === 'string'
+    ) {
+        return {
+            condition: value.condition,
+            date: value.date,
+        };
+    }
+    return {
+        condition: dateConditions[1],
+        date: '',
+    };
+}
+
 export function isSelectType(
     attribute: CompoundSearchFilterAttribute
 ): attribute is SelectSearchFilterAttribute {
     return attribute.inputType === 'select';
+}
+
+export function hasGroupedSelectOptions(
+    inputProps: SelectSearchFilterAttribute['inputProps']
+): inputProps is SelectSearchFilterGroupedOptions {
+    return 'groupOptions' in inputProps;
+}
+
+export function hasSelectOptions(
+    inputProps: SelectSearchFilterAttribute['inputProps']
+): inputProps is SelectSearchFilterOptions {
+    return 'options' in inputProps;
 }
 
 /**
@@ -130,12 +174,13 @@ export function makeFilterChipDescriptors(
                 };
 
                 if (isSelectType(attribute)) {
+                    const options = hasGroupedSelectOptions(attribute.inputProps)
+                        ? attribute.inputProps.groupOptions.flatMap((group) => group.options)
+                        : attribute.inputProps.options;
                     return {
                         ...baseConfig,
                         render: (filter: string) => {
-                            const option = attribute.inputProps.options.find(
-                                (option) => option.value === filter
-                            );
+                            const option = options.find((option) => option.value === filter);
                             return <FilterChip name={option?.label || 'N/A'} />;
                         },
                     };

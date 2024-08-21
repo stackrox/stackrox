@@ -4,7 +4,6 @@ const path = require('node:path');
 
 const parserTypeScriptESLint = require('@typescript-eslint/parser');
 
-const pluginAccessibility = require('eslint-plugin-jsx-a11y');
 const pluginCypress = require('eslint-plugin-cypress');
 const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-extraneous-dependencies
 const pluginESLintComments = require('eslint-plugin-eslint-comments');
@@ -19,7 +18,7 @@ const pluginTypeScriptESLint = require('@typescript-eslint/eslint-plugin');
 
 const { browser: browserGlobals, jest: jestGlobals, node: nodeGlobals } = require('globals');
 
-const accessibilityPlugin = require('./eslint-plugins/accessibilityPlugin');
+const pluginAccessibility = require('./eslint-plugins/pluginAccessibility');
 
 const parserAndOptions = {
     parser: parserTypeScriptESLint,
@@ -38,7 +37,6 @@ module.exports = [
             'coverage/**',
             'react-app-rewired/**',
             'scripts/**',
-            'eslint-plugins/**',
             'src/setupProxy.js',
             'src/setupTests.js',
             'cypress.d.ts',
@@ -532,14 +530,13 @@ module.exports = [
 
         // Key of plugin is namespace of its rules.
         plugins: {
+            accessibility: pluginAccessibility,
             import: pluginImport,
-            'jsx-a11y': pluginAccessibility,
             react: pluginReact,
             'react-hooks': pluginReactHooks,
-            accessibilityPlugin,
         },
         rules: {
-            'accessibilityPlugin/require-Alert-component': 'error',
+            ...pluginAccessibility.configs.recommended.rules,
 
             'no-restricted-imports': [
                 'error',
@@ -565,26 +562,6 @@ module.exports = [
                     devDependencies: [
                         path.join(__dirname, 'src/test-utils/*'), // TODO delete renderWithRedux.js
                     ],
-                },
-            ],
-
-            // TODO compare eslint-plugin-jsx-a11y recommended and strict config to former airbnb-config-react react-a11y config.
-
-            // TODO Reconfigure for using react-router Link
-            'jsx-a11y/anchor-is-valid': [
-                'error',
-                {
-                    components: ['Link'],
-                    specialLink: ['to', 'hrefLeft', 'hrefRight'],
-                    aspects: ['noHref', 'invalidHref', 'preferButton'],
-                },
-            ],
-
-            'jsx-a11y/label-has-associated-control': [
-                'error',
-                {
-                    assert: 'either',
-                    depth: 12,
                 },
             ],
 
@@ -701,7 +678,7 @@ module.exports = [
         },
     },
     {
-        files: ['*.js', 'eslint-plugins/*.js', 'tailwind-plugins/*.js'], // non-product files
+        files: ['*.js', 'tailwind-plugins/*.js'], // non-product files
 
         languageOptions: {
             ...parserAndOptions,

@@ -80,13 +80,6 @@ func TestValidateHostPath(t *testing.T) {
 			expectedErr: false,
 		},
 		{
-			name: "central-only",
-			hostPath: &renderer.HostPathPersistence{
-				Central: newHostPathInstance("/var/lib/stackrox", "", ""),
-			},
-			expectedErr: false,
-		},
-		{
 			name: "db-only",
 			hostPath: &renderer.HostPathPersistence{
 				DB: newHostPathInstance("/var/lib/centraldb", "", ""),
@@ -94,34 +87,9 @@ func TestValidateHostPath(t *testing.T) {
 			expectedErr: false,
 		},
 		{
-			name: "both",
-			hostPath: &renderer.HostPathPersistence{
-				Central: newHostPathInstance("/var/lib/stackrox", "", ""),
-				DB:      newHostPathInstance("/var/lib/centraldb", "", ""),
-			},
-			expectedErr: false,
-		},
-		{
-			name: "error-on-central",
-			hostPath: &renderer.HostPathPersistence{
-				Central: newHostPathInstance("/var/lib/stackrox", "key", ""),
-				DB:      newHostPathInstance("/var/lib/centraldb", "", ""),
-			},
-			expectedErr: true,
-		},
-		{
 			name: "error-on-db",
 			hostPath: &renderer.HostPathPersistence{
-				Central: newHostPathInstance("/var/lib/stackrox", "", ""),
-				DB:      newHostPathInstance("/var/lib/centraldb", "key", ""),
-			},
-			expectedErr: true,
-		},
-		{
-			name: "error-on-both",
-			hostPath: &renderer.HostPathPersistence{
-				Central: newHostPathInstance("/var/lib/stackrox", "key", ""),
-				DB:      newHostPathInstance("/var/lib/centraldb", "key", ""),
+				DB: newHostPathInstance("/var/lib/centraldb", "key", ""),
 			},
 			expectedErr: true,
 		},

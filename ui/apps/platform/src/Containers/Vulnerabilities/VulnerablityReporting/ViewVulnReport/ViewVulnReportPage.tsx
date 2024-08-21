@@ -41,6 +41,7 @@ import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
+import PopoverBodyContent from 'Components/PopoverBodyContent';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
@@ -325,21 +326,26 @@ function ViewVulnReportPage() {
                             <>
                                 <Popover
                                     aria-label="All report jobs help text"
-                                    headerContent={<div>All report jobs</div>}
                                     bodyContent={
-                                        <div>
-                                            This function displays the requested jobs from different
-                                            users and includes their statuses accordingly. While the
-                                            function provides the ability to monitor and audit your
-                                            active and past requested jobs, we suggest configuring
-                                            the{' '}
-                                            <Link to={systemConfigPath}>
-                                                Vulnerability report retention limit
-                                            </Link>{' '}
-                                            based on your needs in order to ensure optimal user
-                                            experience. All the report jobs will be kept in your
-                                            system until they exceed the limit set by you.
-                                        </div>
+                                        <PopoverBodyContent
+                                            headerContent="All report jobs"
+                                            bodyContent={
+                                                <>
+                                                    This function displays the requested jobs from
+                                                    different users and includes their statuses
+                                                    accordingly. While the function provides the
+                                                    ability to monitor and audit your active and
+                                                    past requested jobs, we suggest configuring the{' '}
+                                                    <Link to={systemConfigPath}>
+                                                        Vulnerability report retention limit
+                                                    </Link>{' '}
+                                                    based on your needs in order to ensure optimal
+                                                    user experience. All the report jobs will be
+                                                    kept in your system until they exceed the limit
+                                                    set by you.
+                                                </>
+                                            }
+                                        />
                                     }
                                     enableFlip
                                     position="top"
