@@ -863,7 +863,7 @@ check_collector_version() {
 }
 
 publish_roxctl() {
- if [[ "$#" -ne 1 ]]; then
+    if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: publish_roxctl <tag>"
     fi
 
@@ -879,7 +879,7 @@ publish_roxctl() {
 }
 
 publish_openapispec() {
- if [[ "$#" -ne 1 ]]; then
+    if [[ "$#" -ne 1 ]]; then
         die "missing arg. usage: publish_openapispec <tag>"
     fi
 
