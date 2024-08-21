@@ -49,7 +49,7 @@ setup_file() {
     export CI=${CI:-false}
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
     export OS
-    export ORCH_CMD=kubectl
+    export ORCH_CMD="${ROOT}/scripts/retry-kubectl.sh"
     export SENSOR_HELM_MANAGED=true
     export CENTRAL_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/central-deploy/chart"
     export SENSOR_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/sensor-deploy/chart"
@@ -615,13 +615,13 @@ verify_no_scannerV4_deployed() {
 
 verify_no_scannerV4_indexer_deployed() {
     local namespace=${1:-stackrox}
-    run kubectl -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+    run "${ORCH_CMD}" -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4-indexer"
 }
 
 verify_no_scannerV4_matcher_deployed() {
     local namespace=${1:-stackrox}
-    run kubectl -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+    run "${ORCH_CMD}" -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4-matcher"
 }
 
