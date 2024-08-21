@@ -44,9 +44,9 @@ func (limiter *rateLimiter) Limit(ctx context.Context) error {
 		return ctx.Err()
 	}
 	if limiter.limit(ctx) {
-		return nil
+		return limitErr
 	}
-	return limitErr
+	return nil
 }
 
 func (limiter *rateLimiter) limit(ctx context.Context) bool {

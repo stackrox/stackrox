@@ -95,9 +95,9 @@ func TestLimitNoThrottle(t *testing.T) {
 			r1 := rl.Limit(context.Background())
 			r2 := rl.Limit(context.Background())
 
-			assert.Error(t, r1)
-			assert.True(t, tt.maxPerSec == 0 || r2 == nil)
-			assert.False(t, tt.maxPerSec == 0 && r2 == nil)
+			assert.NoError(t, r1)
+			assert.True(t, tt.maxPerSec == 0 || r2 != nil)
+			assert.False(t, tt.maxPerSec == 0 && r2 != nil)
 		})
 	}
 }
@@ -169,7 +169,7 @@ func BenchmarkRateLimiter(b *testing.B) {
 		b.Run(tt.name, func(b *testing.B) {
 			l := NewRateLimiter(tt.maxPerSec, tt.maxThrottleDuration)
 			for i := 0; i < b.N; i++ {
-				l.Limit(context.Background())
+				_ = l.Limit(context.Background())
 			}
 		})
 	}
