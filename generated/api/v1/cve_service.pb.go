@@ -28,7 +28,13 @@ type SuppressCVERequest struct {
 
 	// These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
 	// For example, CVE-2021-44832.
-	Cves     []string             `protobuf:"bytes,1,rep,name=cves,proto3" json:"cves,omitempty"`
+	Cves []string `protobuf:"bytes,1,rep,name=cves,proto3" json:"cves,omitempty"`
+	// In JSON format, the Duration type is encoded as a string rather than an object,
+	// where the string ends in the suffix "s" (indicating seconds) and is preceded by the number of seconds,
+	// with nanoseconds expressed as fractional seconds.
+	// For example, 3 seconds with 0 nanoseconds should be encoded in JSON format as "3s",
+	// while 3 seconds and 1 nanosecond should be expressed in JSON format as "3.000000001s",
+	// and 3 seconds and 1 microsecond should be expressed in JSON format as "3.000001s".
 	Duration *durationpb.Duration `protobuf:"bytes,3,opt,name=duration,proto3" json:"duration,omitempty"`
 }
 
