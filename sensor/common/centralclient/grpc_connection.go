@@ -40,13 +40,13 @@ func NewCentralConnectionFactory(centralClient *Client) CentralConnectionFactory
 	}
 }
 
-// OkSignal returns a concurrency.Signal that is sends signal once connection object is successfully established
+// OkSignal returns a concurrency.ReadOnlySignal that is sends signal once connection object is successfully established
 // and the util.LazyClientConn pointer is swapped.
 func (f *centralConnectionFactoryImpl) OkSignal() concurrency.ReadOnlySignal {
 	return &f.okSignal
 }
 
-// StopSignal returns a concurrency.Signal that alerts if there is an error trying to establish gRPC connection.
+// StopSignal returns a concurrency.ReadOnlyErrorSignal that alerts if there is an error trying to establish gRPC connection.
 func (f *centralConnectionFactoryImpl) StopSignal() concurrency.ReadOnlyErrorSignal {
 	return &f.stopSignal
 }
