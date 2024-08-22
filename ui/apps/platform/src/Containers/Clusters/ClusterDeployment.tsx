@@ -61,7 +61,7 @@ function ClusterDeployment({
                             cluster that will be used to perform the upgrades.
                         </Text>
                         <Switch
-                            label="Automatic upgrades ON: Secured clusters are upgraded automatically when behind Central's version."
+                            label="Automatic upgrades ON: Secured Clusters are upgraded automatically to match Central's version."
                             labelOff="Automatic upgrades OFF: Secured clusters are not upgraded automatically."
                             onChange={toggleSA}
                             isChecked={createUpgraderSA}
