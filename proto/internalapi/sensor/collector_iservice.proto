@@ -14,5 +14,5 @@ message MsgToCollector {
 }
 
 service CollectorService {
-  rpc Communicate(google.protobuf.Empty) returns (stream MsgToCollector);
+  rpc Communicate(stream MsgToCollector) returns (stream MsgToCollector);
 }

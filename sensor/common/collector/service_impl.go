@@ -4,7 +4,7 @@ import (
 	"context"
 
 	// "github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	//"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	// "github.com/grpc-ecosystem/grpc-gateway/runtime"
         "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	// "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protocompat"
+	// "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -146,7 +146,8 @@ func (s *serviceImpl) startSendingLoop() {
 	}
 }
 
-func (s *serviceImpl) Communicate(empty *protocompat.Empty, server sensor.CollectorService_CommunicateServer) error {
+//func (s *serviceImpl) Communicate(empty *protocompat.Empty, server sensor.CollectorService_CommunicateServer) error {
+func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
 	log.Info("In Communicate")
 	// incomingMD := metautils.ExtractIncoming(server.Context())
 	// hostname := incomingMD.Get("rox-collector-nodename")
