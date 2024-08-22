@@ -61,6 +61,14 @@ func NilOrUUID(value string) *uuid.UUID {
 	return &id
 }
 
+// NilOrCIDR allows for a proto string to be stored as a CIDR type in Postgres
+func NilOrCIDR(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
 // EmptyOrMap allows for map to be stored explicit as an empty object ({}) rather than null.
 func EmptyOrMap[K comparable, V any, M map[K]V](m M) interface{} {
 	if m == nil {
