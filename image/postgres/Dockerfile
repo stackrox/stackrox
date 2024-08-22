@@ -37,7 +37,7 @@ RUN dnf upgrade -y --nobest && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
-COPY image/postgres/scripts \
+COPY scripts \
     /usr/local/bin/
 
 ENV LANG="en_US.utf8"
