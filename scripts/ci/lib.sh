@@ -188,8 +188,6 @@ process_central_metrics() {
         --labels "${metadata}" \
         > "${csv_output}"
 
-    cat "${csv_output}"
-
     setup_gcp
     save_central_metrics "${csv_output}"
 }
