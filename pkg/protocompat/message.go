@@ -45,7 +45,7 @@ func MarshalTextString(m proto.Message) string {
 
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
 type Unmarshaler[T any] interface {
-	UnmarshalVT(dAtA []byte) error
+	UnmarshalVTUnsafe(dAtA []byte) error
 	*T
 }
 
