@@ -15,7 +15,7 @@ wait_for_central_reconciliation() {
     local success=0
     for i in $(seq 1 90); do
         local numDeployments
-        numDeployments="$(curl -sSk -u "admin:$ROX_PASSWORD" "https://$API_ENDPOINT/v1/summary/counts" | jq '.numDeployments' -r)"
+        numDeployments="$(curl -sSk --config <(curl_cfg user "admin:$ROX_PASSWORD") "https://$API_ENDPOINT/v1/summary/counts" | jq '.numDeployments' -r)"
         echo "Try number ${i}. Number of deployments in Central: $numDeployments"
         [[ -n "$numDeployments" ]]
         if [[ "$numDeployments" -lt 100 ]]; then
@@ -81,7 +81,7 @@ validate_upgrade() {
 function roxcurl() {
   local url="$1"
   shift
-  curl -u "admin:${ROX_PASSWORD}" -k "https://${API_ENDPOINT}${url}" "$@"
+  curl --config <(curl_cfg user "admin:${ROX_PASSWORD}") -k "https://${API_ENDPOINT}${url}" "$@"
 }
 
 deploy_earlier_postgres_central() {
@@ -126,7 +126,7 @@ force_rollback() {
     info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
 
     local upgradeStatus
-    upgradeStatus=$(curl -sSk -X GET -u "admin:${ROX_PASSWORD}" https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
+    upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
     echo "upgrade status: ${upgradeStatus}"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "$(make --quiet --no-print-directory tag)"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"

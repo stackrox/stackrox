@@ -92,7 +92,7 @@ function ApprovedFalsePositives() {
 
     function onClearFilters() {
         setSearchFilter({});
-        setPage(1, 'replace');
+        setPage(1);
     }
 
     if (tableState.type === 'ERROR') {

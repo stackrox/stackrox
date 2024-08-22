@@ -24,6 +24,7 @@ var (
 	validRoots = set.NewFrozenStringSet(
 		"central",
 		"compliance",
+		"config-controller",
 		"govulncheck",
 		"image",
 		"migrator",
@@ -95,7 +96,10 @@ var (
 			replacement: "a logger",
 		},
 		"github.com/gogo/protobuf/jsonpb": {
-			replacement: "github.com/golang/protobuf/jsonpb",
+			replacement: "google.golang.org/protobuf/encoding/protojson",
+		},
+		"github.com/golang/protobuf/jsonpb": {
+			replacement: "google.golang.org/protobuf/encoding/protojson",
 		},
 		"k8s.io/helm/...": {
 			replacement: "package from helm.sh/v3",
@@ -362,6 +366,11 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	if validImportRoot == "central" {
 		// Need this for unit tests.
 		allowedPackages = appendPackageWithChildren(allowedPackages, "tests/bad-ca")
+	}
+
+	if validImportRoot == "config-controller" {
+		// TODO(ROX-25729): Figure out how to wire up a gRPC client in config-controller without requiring these exceptions
+		allowedPackages = appendPackageWithChildren(allowedPackages, "roxctl/common", "roxctl/common/auth", "roxctl/common/io", "roxctl/common/logger", "roxctl/common/printer")
 	}
 
 	for _, imp := range imports {

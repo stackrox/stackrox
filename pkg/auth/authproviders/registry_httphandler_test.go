@@ -426,7 +426,7 @@ func TestGetSerializedAuthStatusData(t *testing.T) {
 
 	buf, err := getSerializedAuthStatusData(testAuthStatus)
 	assert.NoError(t, err)
-	assert.JSONEq(t, expectedSerializedTestAuthStatus, buf.String())
+	assert.JSONEq(t, expectedSerializedTestAuthStatus, string(buf))
 }
 
 func TestUserMetadataURLError(t *testing.T) {

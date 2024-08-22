@@ -29,20 +29,29 @@ func createComment(ctx context.Context, client *github.Client, prNumber int, com
 }
 
 func commentsForPrByUser(ctx context.Context, client *github.Client, prNumber int, userId int64) ([]string, []string, error) {
-	comments, _, err := client.Issues.ListComments(ctx, s, s, prNumber, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	userComments := make([]string, 0, len(comments))
-	allComments := make([]string, 0, len(comments))
-	for _, comment := range comments {
-		c := splitMultilineComment(comment.GetBody())
-		if comment.User.GetID() == userId {
-			userComments = append(userComments, c...)
+	var allComments, userComments []string
+	nextPage := 0
+	for {
+		comments, resp, err := client.Issues.ListComments(ctx, s, s, prNumber, &github.IssueListCommentsOptions{
+			Sort:        github.String("created"),
+			Direction:   github.String("asc"),
+			ListOptions: github.ListOptions{Page: nextPage},
+		})
+		if err != nil {
+			return nil, nil, err
 		}
-		allComments = append(allComments, c...)
+		for _, comment := range comments {
+			c := splitMultilineComment(comment.GetBody())
+			if comment.User.GetID() == userId {
+				userComments = append(userComments, c...)
+			}
+			allComments = append(allComments, c...)
+		}
+		if resp.NextPage == 0 {
+			return userComments, allComments, nil
+		}
+		nextPage = resp.NextPage
 	}
-	return userComments, allComments, nil
 }
 
 func splitMultilineComment(comment string) []string {

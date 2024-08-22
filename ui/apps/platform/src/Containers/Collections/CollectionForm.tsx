@@ -46,8 +46,11 @@ import { CollectionConfigError } from './errorUtils';
 
 import './CollectionForm.css';
 
-const ruleSectionContentId = 'expandable-rules-section';
-const attachmentSectionContentId = 'expandable-attachment-section';
+const ruleSectionContentId = 'expandable-rules-section-contentId';
+const attachmentSectionContentId = 'expandable-attachment-section-contentId';
+
+const ruleSectionToggleId = 'expandable-rules-section-toggleId';
+const attachmentSectionToggleId = 'expandable-attachment-section-toggleId';
 
 function AttachedCollectionTable({
     collections,
@@ -380,6 +383,7 @@ function CollectionForm({
                 <div className="collection-form-expandable-section">
                     <ExpandableSectionToggle
                         contentId={ruleSectionContentId}
+                        toggleId={ruleSectionToggleId}
                         isExpanded={isRuleSectionOpen}
                         onToggle={ruleSectionOnToggle}
                     >
@@ -401,6 +405,7 @@ function CollectionForm({
                     <ExpandableSection
                         isDetached
                         contentId={ruleSectionContentId}
+                        toggleId={ruleSectionToggleId}
                         isExpanded={isRuleSectionOpen}
                     >
                         <Flex
@@ -460,6 +465,7 @@ function CollectionForm({
                 <div className="collection-form-expandable-section">
                     <ExpandableSectionToggle
                         contentId={attachmentSectionContentId}
+                        toggleId={attachmentSectionToggleId}
                         isExpanded={isAttachmentSectionOpen}
                         onToggle={attachmentSectionOnToggle}
                     >
@@ -478,6 +484,7 @@ function CollectionForm({
                     <ExpandableSection
                         isDetached
                         contentId={attachmentSectionContentId}
+                        toggleId={attachmentSectionToggleId}
                         isExpanded={isAttachmentSectionOpen}
                     >
                         <Flex

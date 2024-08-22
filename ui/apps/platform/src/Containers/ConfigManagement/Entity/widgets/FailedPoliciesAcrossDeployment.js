@@ -87,12 +87,12 @@ const FailedPoliciesAcrossDeployment = ({ deploymentID }) => {
                         accessor: 'name',
                     },
                     {
-                        Header: `Enforced`,
+                        Header: `Enforcing`,
                         headerClassName: `w-1/8 ${defaultHeaderClassName}`,
                         className: `w-1/8 ${defaultColumnClassName}`,
                         Cell: ({ original }) => {
                             const { enforcementActions } = original;
-                            return enforcementActions ? 'Yes' : 'No';
+                            return (enforcementActions ?? []).length > 0 ? 'Yes' : 'No';
                         },
                         accessor: 'enforcementActions',
                     },

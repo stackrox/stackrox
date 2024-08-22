@@ -82,6 +82,57 @@ var (
 		},
 	}
 
+	expectedInconsistentClusterScanCounts = []*ResourceResultCountByClusterScan{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  3,
+			ClusterID:          testconsts.Cluster2,
+			ClusterName:        "cluster2",
+			ScanConfigName:     "scanConfig1",
+		},
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  1,
+			ClusterID:          testconsts.Cluster3,
+			ClusterName:        "cluster3",
+			ScanConfigName:     "scanConfig1",
+		},
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  1,
+			ClusterID:          testconsts.Cluster1,
+			ClusterName:        "cluster1",
+			ScanConfigName:     "scanConfig1",
+		},
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          1,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  0,
+			ClusterID:          testconsts.Cluster3,
+			ClusterName:        "cluster3",
+			ScanConfigName:     "scanConfig2",
+		},
+	}
+
 	expectedCluster2And3ScanCounts = []*ResourceResultCountByClusterScan{
 		{
 			PassCount:          0,
@@ -172,6 +223,42 @@ var (
 		},
 	}
 
+	expectedClusterCountsByInconsistent = []*ResultStatusCountByCluster{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          1,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  1,
+			ClusterID:          testconsts.Cluster3,
+			ClusterName:        "cluster3",
+		},
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  1,
+			ClusterID:          testconsts.Cluster1,
+			ClusterName:        "cluster1",
+		},
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  3,
+			ClusterID:          testconsts.Cluster2,
+			ClusterName:        "cluster2",
+		},
+	}
+
 	expectedCluster2And3Counts = []*ResultStatusCountByCluster{
 		{
 			PassCount:          0,
@@ -250,7 +337,7 @@ var (
 		},
 	}
 
-	expectedProfileResults = []*ResourceResultsByProfile{
+	expectedProfileResultsByInconsistent = []*ResourceResultsByProfile{
 		{
 			PassCount:          0,
 			FailCount:          0,
@@ -273,6 +360,33 @@ var (
 			InconsistentCount:  5,
 			ProfileName:        "ocp4-cis-node",
 			CheckName:          "test-check",
+			RuleName:           "test-rule",
+		},
+	}
+
+	expectedProfileResults = []*ResourceResultsByProfile{
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          0,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  5,
+			ProfileName:        "ocp4-cis-node",
+			CheckName:          "test-check",
+			RuleName:           "test-rule",
+		},
+		{
+			PassCount:          0,
+			FailCount:          0,
+			ErrorCount:         0,
+			InfoCount:          1,
+			ManualCount:        0,
+			NotApplicableCount: 0,
+			InconsistentCount:  0,
+			ProfileName:        "ocp4-cis-node",
+			CheckName:          "test-check-2",
 			RuleName:           "test-rule",
 		},
 	}
@@ -503,8 +617,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestSearchResultsSac() {
 
 	for _, tc := range testCases {
 		results, err := s.dataStore.SearchComplianceCheckResults(s.testContexts[tc.scopeKey], tc.query)
-		s.NoError(err)
-		s.Equal(tc.expectedCount, len(results))
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedCount, len(results))
 	}
 }
 
@@ -547,8 +661,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestCountResultsSac() {
 
 	for _, tc := range testCases {
 		count, err := s.dataStore.CountCheckResults(s.testContexts[tc.scopeKey], tc.query)
-		s.NoError(err)
-		s.Equal(tc.expectedCount, count)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedCount, count)
 	}
 }
 
@@ -565,6 +679,12 @@ func (s *complianceCheckResultDataStoreTestSuite) TestResultsStatsSac() {
 			query:           search.NewQueryBuilder().ProtoQuery(),
 			scopeKey:        testutils.UnrestrictedReadCtx,
 			expectedResults: expectedClusterScanCounts,
+		},
+		{
+			desc:            "Empty query - Full access - sort on custom field",
+			query:           search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.ComplianceInconsistentCount).Reversed(true))).ProtoQuery(),
+			scopeKey:        testutils.UnrestrictedReadCtx,
+			expectedResults: expectedInconsistentClusterScanCounts,
 		},
 		{
 			desc:            "Empty query - Only cluster 2 access",
@@ -596,8 +716,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestResultsStatsSac() {
 
 	for _, tc := range testCases {
 		results, err := s.dataStore.ComplianceCheckResultStats(s.testContexts[tc.scopeKey], tc.query)
-		s.NoError(err)
-		s.Equal(tc.expectedResults, results)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedResults, results)
 	}
 }
 
@@ -614,6 +734,12 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceClusterStats() {
 			query:           search.NewQueryBuilder().ProtoQuery(),
 			scopeKey:        testutils.UnrestrictedReadCtx,
 			expectedResults: expectedClusterCounts,
+		},
+		{
+			desc:            "Empty query - Full access - sort by inconsistent count",
+			query:           search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.ComplianceInconsistentCount))).ProtoQuery(),
+			scopeKey:        testutils.UnrestrictedReadCtx,
+			expectedResults: expectedClusterCountsByInconsistent,
 		},
 		{
 			desc:            "Empty query - Only cluster 2 access",
@@ -645,8 +771,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceClusterStats() {
 
 	for _, tc := range testCases {
 		results, err := s.dataStore.ComplianceClusterStats(s.testContexts[tc.scopeKey], tc.query)
-		s.NoError(err)
-		s.Equal(tc.expectedResults, results)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedResults, results)
 	}
 }
 
@@ -694,8 +820,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestCountByFieldCluster() {
 
 	for _, tc := range testCases {
 		results, err := s.dataStore.CountByField(s.testContexts[tc.scopeKey], tc.query, search.ClusterID)
-		s.NoError(err)
-		s.Equal(tc.expectedCount, results)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedCount, results)
 	}
 }
 
@@ -743,8 +869,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestCountByFieldProfile() {
 
 	for _, tc := range testCases {
 		results, err := s.dataStore.CountByField(s.testContexts[tc.scopeKey], tc.query, search.ComplianceOperatorProfileName)
-		s.NoError(err)
-		s.Equal(tc.expectedCount, results)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedCount, results)
 	}
 }
 
@@ -792,8 +918,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestCountByFieldCheck() {
 
 	for _, tc := range testCases {
 		results, err := s.dataStore.CountByField(s.testContexts[tc.scopeKey], tc.query, search.ComplianceOperatorCheckName)
-		s.NoError(err)
-		s.Equal(tc.expectedCount, results)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedCount, results)
 	}
 }
 
@@ -841,8 +967,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestCountByFieldScanConfig() {
 
 	for _, tc := range testCases {
 		results, err := s.dataStore.CountByField(s.testContexts[tc.scopeKey], tc.query, search.ComplianceOperatorScanConfigName)
-		s.NoError(err)
-		s.Equal(tc.expectedCount, results)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedCount, results)
 	}
 }
 
@@ -936,6 +1062,12 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResultSta
 			expectedResults: expectedProfileCounts,
 		},
 		{
+			desc:            "Empty query - Full access - Custom Sort",
+			query:           search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.ComplianceInconsistentCount).Reversed(true))).ProtoQuery(),
+			scopeKey:        testutils.UnrestrictedReadCtx,
+			expectedResults: expectedProfileCounts,
+		},
+		{
 			desc:            "Empty query - Only cluster 2 access",
 			query:           search.NewQueryBuilder().ProtoQuery(),
 			scopeKey:        testutils.Cluster2ReadWriteCtx,
@@ -965,8 +1097,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResultSta
 
 	for _, tc := range testCases {
 		results, err := s.dataStore.ComplianceProfileResultStats(s.testContexts[tc.scopeKey], tc.query)
-		s.NoError(err)
-		s.Equal(tc.expectedResults, results)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedResults, results)
 	}
 }
 
@@ -983,6 +1115,12 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResults()
 			query:           search.NewQueryBuilder().ProtoQuery(),
 			scopeKey:        testutils.UnrestrictedReadCtx,
 			expectedResults: expectedProfileResults,
+		},
+		{
+			desc:            "Empty query - Full access - sort on custom field",
+			query:           search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.ComplianceInconsistentCount).Reversed(false))).ProtoQuery(),
+			scopeKey:        testutils.UnrestrictedReadCtx,
+			expectedResults: expectedProfileResultsByInconsistent,
 		},
 		{
 			desc:            "Empty query - Only cluster 2 access",
@@ -1014,8 +1152,8 @@ func (s *complianceCheckResultDataStoreTestSuite) TestComplianceProfileResults()
 
 	for _, tc := range testCases {
 		results, err := s.dataStore.ComplianceProfileResults(s.testContexts[tc.scopeKey], tc.query)
-		s.NoError(err)
-		s.ElementsMatch(tc.expectedResults, results)
+		s.Require().NoError(err)
+		s.Require().Equal(tc.expectedResults, results)
 	}
 }
 

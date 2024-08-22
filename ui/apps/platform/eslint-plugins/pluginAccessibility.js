@@ -20,16 +20,150 @@ const rules = {
                 JSXOpeningElement(node) {
                     if (node.name?.name === 'Alert') {
                         if (
-                            !node.attributes.some((nodeAttribute) => {
-                                return (
+                            !node.attributes.some(
+                                (nodeAttribute) =>
                                     nodeAttribute.name?.name === 'component' &&
                                     nodeAttribute.value?.value === 'p'
-                                );
-                            })
+                            )
                         ) {
                             context.report({
                                 node,
                                 message: 'Alert element requires component="p" prop',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'Chart-ariaTitle-prop': {
+        // Require prop for aria-labelledby attribute to prevent axe DevTools issue:
+        // <svg> elements with an img role must have an alternative text
+        // https://dequeuniversity.com/rules/axe/4.10/svg-img-alt
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Chart element requires ariaTitle prop',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Chart') {
+                        if (
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'ariaTitle'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message: 'Chart element requires ariaTitle prop',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'ExpandableSection-isDetached-contentId-toggleId-props': {
+        // Require props to prevent axe DevTools issue:
+        // Landmarks should have a unique role or role/label/title (i.e. accessible name) combination
+        // https://dequeuniversity.com/rules/axe/4.10/landmark-unique
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'ExpandableSection element with isDetached requires contentId and ToggleId props',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (
+                        node.name?.name === 'ExpandableSection' &&
+                        node.attributes.some(
+                            (nodeAttribute) => nodeAttribute.name?.name === 'isDetached'
+                        )
+                    ) {
+                        if (
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'contentId'
+                            ) ||
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'toggleId'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'ExpandableSection element with isDetached requires contentId and ToggleId props',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'ExpandableSectionToggle-contentId-toggleId-props': {
+        // Require props to prevent axe DevTools issue:
+        // Landmarks should have a unique role or role/label/title (i.e. accessible name) combination
+        // https://dequeuniversity.com/rules/axe/4.10/landmark-unique
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'ExpandableSectionToggle element requires contentId and toggleId props',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'ExpandableSectionToggle') {
+                        if (
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'contentId'
+                            ) ||
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'toggleId'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'ExpandableSectionToggle element requires contentId and toggleId props',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'Popover-aria-label-prop': {
+        // Require prop to prevent axe DevTools issue:
+        // ARIA dialog and alertdialog nodes should have an accessible name
+        // https://dequeuniversity.com/rules/axe/4.9/aria-dialog-name
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Require that Popover element has aria-label prop',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Popover') {
+                        if (
+                            !node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'aria-label'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message: 'Require that Popover element has aria-label prop',
                             });
                         }
                     }
@@ -59,11 +193,11 @@ const rules = {
                     if (node.openingElement?.name?.name === 'Th') {
                         if (node.children?.length === 0) {
                             if (
-                                !node.openingElement?.attributes?.some((nodeAttribute) => {
-                                    return ['expand', 'select', 'screenReaderText'].includes(
+                                !node.openingElement?.attributes?.some((nodeAttribute) =>
+                                    ['expand', 'select', 'screenReaderText'].includes(
                                         nodeAttribute.name?.name
-                                    );
-                                })
+                                    )
+                                )
                             ) {
                                 context.report({
                                     node,
@@ -82,6 +216,47 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
+    'no-Popover-footerContent-headerContent-props': {
+        // Forbid props that cause axe DevTools issues:
+        // Heading levels should only increase by one
+        // https://dequeuniversity.com/rules/axe/4.9/heading-order
+        // Document should not have more than one banner landmark
+        // https://dequeuniversity.com/rules/axe/4.9/landmark-no-duplicate-banner
+        // Document should not have more than one contentinfo landmark
+        // https://dequeuniversity.com/rules/axe/4.9/landmark-no-duplicate-contentinfo
+        // Ensures landmarks are unique
+        // https://dequeuniversity.com/rules/axe/4.9/landmark-unique
+        //
+        // Use PopoverBodyContent element to compose footer, or header, or both.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Forbid Popover footerContent or headerContent props',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Popover') {
+                        if (
+                            node.attributes?.some(
+                                (nodeAttribute) =>
+                                    nodeAttribute.name?.name === 'footerContent' ||
+                                    nodeAttribute.name?.name === 'headerContent'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'Forbid Popover footerContent or headerContent props and use PopoverBodyContent in bodyContent instead',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-Td-in-Thead': {
         // Forbid work-around to prevent axe DevTools issue:
         // Table header text should not be empty
@@ -134,9 +309,9 @@ const rules = {
                 JSXOpeningElement(node) {
                     if (node.name?.name === 'Th') {
                         if (
-                            node.attributes.some((nodeAttribute) => {
-                                return nodeAttribute.name?.name === 'aria-label';
-                            })
+                            node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'aria-label'
+                            )
                         ) {
                             context.report({
                                 node,

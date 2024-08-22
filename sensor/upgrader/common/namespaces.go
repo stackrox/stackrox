@@ -11,7 +11,7 @@ import (
 // explanation. Then adapt the namespace validation in sensor/upgrader/preflight/namespace.go.
 var AllowedNamespaces = []string{
 	// Main StackRox namespace. The upgrader lives here.
-	pods.GetPodNamespace(pods.NoSATokenNamespace),
+	pods.GetPodNamespace(),
 	// Needed for OpenShift monitoring integration on OpenShift.
 	namespaces.KubeSystem,
 	// Needed for OpenShift monitoring integration on OpenShift.

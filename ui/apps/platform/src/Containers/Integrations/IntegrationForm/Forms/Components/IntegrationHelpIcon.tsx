@@ -2,6 +2,8 @@ import React, { ReactElement } from 'react';
 import { Popover } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 
+import PopoverBodyContent from 'Components/PopoverBodyContent';
+
 export type IntegrationHelpIconProps = {
     helpTitle: string;
     helpText: React.ReactElement;
@@ -14,7 +16,10 @@ function IntegrationHelpIcon({
     ariaLabel,
 }: IntegrationHelpIconProps): ReactElement {
     return (
-        <Popover headerContent={helpTitle} bodyContent={helpText}>
+        <Popover
+            aria-label={helpTitle}
+            bodyContent={<PopoverBodyContent headerContent={helpTitle} bodyContent={helpText} />}
+        >
             <button
                 type="button"
                 aria-label={ariaLabel}

@@ -22,7 +22,7 @@ func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabe
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
-			Filter("critical_severity_count",
+			Filter(search.CriticalSeverityCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,
@@ -32,7 +32,7 @@ func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabe
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
-			Filter("fixable_critical_severity_count",
+			Filter(search.FixableCriticalSeverityCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,
@@ -43,7 +43,7 @@ func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabe
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
-			Filter("important_severity_count",
+			Filter(search.ImportantSeverityCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,
@@ -53,7 +53,7 @@ func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabe
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
-			Filter("fixable_important_severity_count",
+			Filter(search.FixableImportantSeverityCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,
@@ -64,7 +64,7 @@ func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabe
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
-			Filter("moderate_severity_count",
+			Filter(search.ModerateSeverityCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,
@@ -74,7 +74,7 @@ func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabe
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
-			Filter("fixable_moderate_severity_count",
+			Filter(search.FixableModerateSeverityCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,
@@ -85,7 +85,7 @@ func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabe
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
-			Filter("low_severity_count",
+			Filter(search.LowSeverityCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,
@@ -95,7 +95,7 @@ func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabe
 		search.NewQuerySelect(countOn).
 			Distinct().
 			AggrFunc(aggregatefunc.Count).
-			Filter("fixable_low_severity_count",
+			Filter(search.FixableLowSeverityCount.Alias(),
 				search.NewQueryBuilder().
 					AddExactMatches(
 						search.Severity,

@@ -81,7 +81,9 @@ import BySeveritySummaryCard, {
     ResourceCountsByCveSeverity,
 } from '../../components/BySeveritySummaryCard';
 import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/CvesByStatusSummaryCard';
-import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
+import VulnerabilityStateTabs, {
+    vulnStateTabContentId,
+} from '../components/VulnerabilityStateTabs';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 const workloadCveOverviewCvePath = getOverviewPagePath('Workload', {
@@ -222,7 +224,7 @@ function ImageCvePage() {
     const { sortOption, setSortOption, getSortParams } = useURLSort({
         sortFields: getSortFields(entityTab),
         defaultSortOption: getDefaultSortOption(entityTab),
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
 
     const metadataRequest = useQuery<{ imageCVE: CveMetadata | null }, { cve: string }>(
@@ -318,7 +320,7 @@ function ImageCvePage() {
     function onEntityTypeChange(entityTab: WorkloadEntityTab) {
         setPage(1);
         if (entityTab !== 'CVE') {
-            setSortOption(getDefaultSortOption(entityTab), 'replace');
+            setSortOption(getDefaultSortOption(entityTab));
         }
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
@@ -331,7 +333,7 @@ function ImageCvePage() {
 
     function onClearFilters() {
         setSearchFilter({});
-        setPage(1, 'replace');
+        setPage(1);
     }
 
     // Track the initial entity tab view
@@ -401,13 +403,16 @@ function ImageCvePage() {
                 )}
             </PageSection>
             <Divider component="div" />
-            <PageSection className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1">
+            <PageSection
+                id={vulnStateTabContentId}
+                className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+            >
                 <VulnerabilityStateTabs
                     titleOverrides={{ observed: 'Workloads' }}
                     isBox
                     onChange={() => {
                         setSearchFilter({});
-                        setPage(1, 'replace');
+                        setPage(1);
                     }}
                 />
                 <div className="pf-v5-u-background-color-100">
@@ -419,7 +424,7 @@ function ImageCvePage() {
                                 searchFilter={searchFilter}
                                 onFilterChange={(newFilter, searchPayload) => {
                                     setSearchFilter(newFilter);
-                                    setPage(1, 'replace');
+                                    setPage(1);
                                     trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
                                 }}
                             />

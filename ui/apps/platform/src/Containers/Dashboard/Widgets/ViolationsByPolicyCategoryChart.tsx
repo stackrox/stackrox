@@ -3,11 +3,12 @@ import { useHistory } from 'react-router-dom';
 import {
     Chart,
     ChartAxis,
-    ChartStack,
     ChartBar,
-    ChartTooltip,
+    ChartContainer,
     ChartLabelProps,
     ChartLegend,
+    ChartStack,
+    ChartTooltip,
     getInteractiveLegendEvents,
     getInteractiveLegendItemStyles,
 } from '@patternfly/react-charts';
@@ -239,6 +240,7 @@ function ViolationsByPolicyCategoryChart({
         <div ref={setWidgetContainer}>
             <Chart
                 ariaDesc="Number of violations by policy category, grouped by severity"
+                ariaTitle="Policy violations by category"
                 domainPadding={{ x: [20, 20] }}
                 events={getInteractiveLegendEvents({
                     chartNames: [Object.values(severityLabels)],
@@ -246,6 +248,7 @@ function ViolationsByPolicyCategoryChart({
                     legendName: 'legend',
                     onLegendClick,
                 })}
+                containerComponent={<ChartContainer role="figure" />}
                 legendComponent={<ChartLegend name="legend" data={getLegendData()} />}
                 legendPosition="bottom"
                 height={chartHeight}

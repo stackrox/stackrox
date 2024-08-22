@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/gjson"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
@@ -348,10 +348,7 @@ func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer,
 	case "csv":
 		return PrintCSV(imageResult, out)
 	default:
-		marshaller := &jsonpb.Marshaler{
-			Indent: "  ",
-		}
-		jsonResult, err := marshaller.MarshalToString(imageResult)
+		jsonResult, err := jsonutil.MarshalToString(imageResult)
 		if err != nil {
 			return errors.Wrap(err, "could not marshal image result")
 		}

@@ -329,7 +329,7 @@ func TestJSONRemarks(t *testing.T) {
 			alerts:        []*storage.Alert{&imageAlertOne, &imageAlertTwo},
 			remarks:       []*v1.DeployDetectionRemark{&remarkOne, &remarkTwo},
 			writeableLen:  100,
-			expectedError: errors.Wrap(capacityExhaustedErr, "could not marshal alerts"),
+			expectedError: errors.Wrap(capacityExhaustedErr, "could not marshal alerts: failed to write JSON"),
 		},
 		"multi alerts with remarks, trailing newline write fails": {
 			alerts:        []*storage.Alert{&imageAlertOne, &imageAlertTwo},
@@ -385,7 +385,7 @@ func TestJSON(t *testing.T) {
 			name:          "One alert, payload write fails",
 			alerts:        []*storage.Alert{&imageAlertOne},
 			writeableLen:  100,
-			expectedError: errors.Wrap(capacityExhaustedErr, "could not marshal alerts"),
+			expectedError: errors.Wrap(capacityExhaustedErr, "could not marshal alerts: failed to write JSON"),
 		},
 		{
 			name:          "One alert, trailing newline write fails",

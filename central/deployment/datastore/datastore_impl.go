@@ -100,14 +100,22 @@ func (ds *datastoreImpl) initializeRanker() {
 		nsScores[deployment.GetNamespaceId()] += riskScore
 	}
 
-	// update namespace risk scores
-	for id, score := range nsScores {
-		ds.nsRanker.Add(id, score)
+	if ds.nsRanker != nil {
+		// update namespace risk scores
+		for id, score := range nsScores {
+			ds.nsRanker.Add(id, score)
+		}
+	} else {
+		log.Warn("Not updating namespace risk scores, no ranker found")
 	}
 
-	// update cluster risk scores
-	for id, score := range clusterScores {
-		ds.clusterRanker.Add(id, score)
+	if ds.clusterRanker != nil {
+		// update cluster risk scores
+		for id, score := range clusterScores {
+			ds.clusterRanker.Add(id, score)
+		}
+	} else {
+		log.Warn("Not updating cluster risk scores, no ranker found")
 	}
 }
 

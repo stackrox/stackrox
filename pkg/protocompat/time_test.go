@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -72,7 +71,7 @@ func TestConvertTimeToTimestampOrError(t *testing.T) {
 
 	protoTS1, errTS1 := ConvertTimeToTimestampOrError(time1)
 	assert.NoError(t, errTS1)
-	protoassert.Equal(t, &timestamppb.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
+	assert.Equal(t, (&timestamppb.Timestamp{Seconds: seconds1, Nanos: nanos1}).AsTime(), protoTS1.AsTime())
 }
 
 func TestConvertTimestampToTimeOrNil(t *testing.T) {
@@ -110,7 +109,7 @@ func TestConvertTimeToTimestampOrNil(t *testing.T) {
 	time1 := time.Unix(seconds1, int64(nanos1))
 
 	protoTS1 := ConvertTimeToTimestampOrNil(&time1)
-	protoassert.Equal(t, &timestamppb.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
+	assert.Equal(t, (&timestamppb.Timestamp{Seconds: seconds1, Nanos: nanos1}).AsTime(), protoTS1.AsTime())
 
 	timeInvalid := time.Date(0, 12, 25, 23, 59, 59, 0, time.UTC)
 	protoTSInvalid := ConvertTimeToTimestampOrNil(&timeInvalid)
@@ -250,5 +249,5 @@ func TestDurationProto(t *testing.T) {
 		Nanos:   5,
 	}
 	protoDuration := DurationProto(timeDuration)
-	protoassert.Equal(t, expectedProtoDuration, protoDuration)
+	assert.Equal(t, expectedProtoDuration.AsDuration(), protoDuration.AsDuration())
 }

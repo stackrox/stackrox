@@ -19,9 +19,8 @@ import (
 // more easily mocked when writing unit/integration tests.
 type CentralConnectionFactory interface {
 	SetCentralConnectionWithRetries(ptr *util.LazyClientConn, certLoader CertLoader)
-	StopSignal() *concurrency.ErrorSignal
-	OkSignal() *concurrency.Signal
-	Reset()
+	StopSignal() concurrency.ReadOnlyErrorSignal
+	OkSignal() concurrency.ReadOnlySignal
 }
 
 type centralConnectionFactoryImpl struct {
@@ -41,21 +40,15 @@ func NewCentralConnectionFactory(centralClient *Client) CentralConnectionFactory
 	}
 }
 
-// OkSignal returns a concurrency.Signal that is sends signal once connection object is successfully established
+// OkSignal returns a concurrency.ReadOnlySignal that is sends signal once connection object is successfully established
 // and the util.LazyClientConn pointer is swapped.
-func (f *centralConnectionFactoryImpl) OkSignal() *concurrency.Signal {
+func (f *centralConnectionFactoryImpl) OkSignal() concurrency.ReadOnlySignal {
 	return &f.okSignal
 }
 
-// StopSignal returns a concurrency.Signal that alerts if there is an error trying to establish gRPC connection.
-func (f *centralConnectionFactoryImpl) StopSignal() *concurrency.ErrorSignal {
+// StopSignal returns a concurrency.ReadOnlyErrorSignal that alerts if there is an error trying to establish gRPC connection.
+func (f *centralConnectionFactoryImpl) StopSignal() concurrency.ReadOnlyErrorSignal {
 	return &f.stopSignal
-}
-
-// Reset signals. This should be used when re-attempting the connection in case it was broken.
-func (f *centralConnectionFactoryImpl) Reset() {
-	f.stopSignal.Reset()
-	f.okSignal.Reset()
 }
 
 func (f *centralConnectionFactoryImpl) pingCentral() error {
@@ -76,8 +69,16 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 // This function is supposed to be called asynchronously and allows sensor components to be
 // started with an empty util.LazyClientConn. The pointer will be swapped once this
 // func finishes.
-// f.okSignal is used if the connection is successful and f.stopSignal if the connection failed to start.
+// f.okSignal is used if the connection is successful and f.stopSignal if the
+// connection failed to start. Hence, both signals are reset here.
 func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn, certLoader CertLoader) {
+	// Both signals should not be in a triggered state at the same time.
+	// If we run into this situation something went wrong with the handling of these signals.
+	if f.stopSignal.IsDone() && f.okSignal.IsDone() {
+		log.Warn("Unexpected: the stopSignal and the okSignal are both triggered")
+	}
+	f.stopSignal.Reset()
+	f.okSignal.Reset()
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
 	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
@@ -110,10 +111,12 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 
 	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {
-		f.stopSignal.SignalWithErrorWrap(err, "Error connecting to central")
+		log.Errorf("creating the gRPC client: %v", err)
+		f.stopSignal.SignalWithErrorWrap(err, "creating the gRPC client")
 		return
 	}
 
 	conn.Set(centralConnection)
 	f.okSignal.Signal()
+	log.Info("Initial gRPC connection with central successful")
 }

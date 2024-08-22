@@ -11,10 +11,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/random"
@@ -109,13 +109,18 @@ func getTestImages() ([]*storage.Image, error) {
 	defer func() { _ = zipReader.Close() }()
 
 	jsonReader := json.NewDecoder(zipReader)
-	unmarshaler := jsonpb.Unmarshaler{AllowUnknownFields: true}
+	unmarshaler := jsonutil.JSONUnmarshaler()
 
 	images := make([]*storage.Image, 0, 500)
 
 	for jsonReader.More() {
+		b := json.RawMessage{}
+		err := jsonReader.Decode(&b)
+		if err != nil {
+			return nil, err
+		}
 		img := &storage.Image{}
-		err = unmarshaler.UnmarshalNext(jsonReader, img)
+		err = unmarshaler.Unmarshal(b, img)
 		if err != nil {
 			return nil, err
 		}
@@ -198,7 +203,27 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 				NotPullable:    false,
 				IsClusterLocal: false,
 			}
+			// region ensure enum values are valid
+			// Note: the unique initializer considers enum fields as int32
+			// and fills them with values that are mostly out of the valid
+			// range. These get reverted to fixed valid values so decoders
+			// do not break.
 			container.Image = containerImage
+			for _, v := range container.Volumes {
+				v.MountPropagation = storage.Volume_NONE
+			}
+			if container.Config != nil {
+				for _, e := range container.Config.Env {
+					e.EnvVarSource = storage.ContainerConfig_EnvironmentConfig_UNKNOWN
+				}
+			}
+			for _, portConfig := range container.Ports {
+				portConfig.Exposure = storage.PortConfig_INTERNAL
+				for _, exposureInfo := range portConfig.ExposureInfos {
+					exposureInfo.Level = storage.PortConfig_INTERNAL
+				}
+			}
+			// endregion ensure enum values are valid
 			containers = append(containers, container)
 		}
 		deployment.Containers = containers
@@ -206,6 +231,13 @@ func (h *ExportServicePostgresTestHelper) InjectDeployments(
 			deployment.Namespace = namespace10pct
 		} else {
 			deployment.Namespace = namepsace90pct
+		}
+		// Set the enum values to valid data.
+		for _, portConfig := range deployment.Ports {
+			portConfig.Exposure = storage.PortConfig_INTERNAL
+			for _, exposureInfo := range portConfig.ExposureInfos {
+				exposureInfo.Level = storage.PortConfig_INTERNAL
+			}
 		}
 		err = h.Deployments.UpsertDeployment(upsertCtx, deployment)
 		if err != nil {

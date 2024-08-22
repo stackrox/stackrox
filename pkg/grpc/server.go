@@ -10,8 +10,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -385,19 +384,18 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 
 	gwMux := runtime.NewServeMux(
-		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, customMarshaler{&runtime.JSONPb{
 			MarshalOptions: protojson.MarshalOptions{
 				EmitUnpopulated: true,
 			},
 			UnmarshalOptions: protojson.UnmarshalOptions{
 				DiscardUnknown: true,
 			},
-		}),
+		}}),
 		runtime.WithMetadata(a.requestInfoHandler.AnnotateMD),
 		runtime.WithOutgoingHeaderMatcher(allowCookiesHeaderMatcher),
 		runtime.WithMarshalerOption(
-			"application/json+pretty",
-			&runtime.JSONPb{
+			"application/json+pretty", customMarshaler{&runtime.JSONPb{
 				MarshalOptions: protojson.MarshalOptions{
 					Indent:          "  ",
 					EmitUnpopulated: true,
@@ -405,7 +403,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 				UnmarshalOptions: protojson.UnmarshalOptions{
 					DiscardUnknown: true,
 				},
-			},
+			}},
 		),
 		runtime.WithErrorHandler(errorHandler),
 	)
@@ -431,12 +429,8 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(credsFromConn{a.tlsHandshakeTimeout}),
-		grpc.StreamInterceptor(
-			grpc_middleware.ChainStreamServer(a.streamInterceptors()...),
-		),
-		grpc.UnaryInterceptor(
-			grpc_middleware.ChainUnaryServer(a.unaryInterceptors()...),
-		),
+		grpc.ChainStreamInterceptor(a.streamInterceptors()...),
+		grpc.ChainUnaryInterceptor(a.unaryInterceptors()...),
 		grpc.MaxRecvMsgSize(env.MaxMsgSizeSetting.IntegerSetting()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time:             40 * time.Second,

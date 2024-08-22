@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	metricsPkg "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -17,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
+	"google.golang.org/protobuf/encoding/protojson"
 	"k8s.io/client-go/kubernetes"
 	v1Listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
@@ -167,14 +167,14 @@ func (m dumpingDispatcher) ProcessEvent(obj, oldObj interface{}, action central.
 	}
 
 	var eventsOutput []string
-	marshaler := jsonpb.Marshaler{}
+	marshaler := protojson.MarshalOptions{}
 	for _, e := range events.ForwardMessages {
-		ev, err := marshaler.MarshalToString(e)
+		ev, err := marshaler.Marshal(e)
 		if err != nil {
 			log.Warnf("Error marshaling msg: %s\n", err.Error())
 			return events
 		}
-		eventsOutput = append(eventsOutput, ev)
+		eventsOutput = append(eventsOutput, string(ev))
 	}
 
 	jsonLine, err := json.Marshal(InformerK8sMsg{

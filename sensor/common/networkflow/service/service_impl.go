@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"

@@ -217,6 +217,35 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		"method", "GetOrCreateImageIndex",
 		"image", ref.String(),
 	)
+
+	return c.getOrCreateImageIndex(ctx, ref, auth, opt)
+}
+
+// IndexAndScanImage gets or creates an index report for the image, then call the
+// matcher to return a vulnerability report.
+func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.VulnerabilityReport, error) {
+	if c.indexer == nil {
+		return nil, errIndexerNotConfigured
+	}
+	if c.matcher == nil {
+		return nil, errMatcherNotConfigured
+	}
+
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/client",
+		"method", "IndexAndScanImage",
+		"image", ref.String(),
+	)
+
+	ir, err := c.getOrCreateImageIndex(ctx, ref, auth, opt)
+	if err != nil {
+		return nil, fmt.Errorf("get or create index: %w", err)
+	}
+
+	return c.getVulnerabilities(ctx, ir.GetHashId(), nil)
+}
+
+func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.IndexReport, error) {
 	id := getImageManifestID(ref)
 	imgURL := &url.URL{
 		Scheme: ref.Context().Scheme(),
@@ -247,29 +276,6 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		return nil, fmt.Errorf("create index: %w", err)
 	}
 	return ir, nil
-}
-
-// IndexAndScanImage gets or creates an index report for the image, then call the
-// matcher to return a vulnerability report.
-func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.VulnerabilityReport, error) {
-	if c.indexer == nil {
-		return nil, errIndexerNotConfigured
-	}
-	if c.matcher == nil {
-		return nil, errMatcherNotConfigured
-	}
-
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/client",
-		"method", "IndexAndScanImage",
-		"image", ref.String(),
-	)
-	ir, err := c.GetOrCreateImageIndex(ctx, ref, auth, opt)
-	if err != nil {
-		return nil, fmt.Errorf("get or create index: %w", err)
-	}
-
-	return c.getVulnerabilities(ctx, ir.GetHashId(), nil)
 }
 
 func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error) {

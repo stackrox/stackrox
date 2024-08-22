@@ -10,7 +10,7 @@ import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils
 import SearchFilterChips, { FilterChip } from 'Components/PatternFly/SearchFilterChips';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { SearchFilter } from 'types/search';
-import { searchValueAsArray } from 'utils/searchUtils';
+import { getHasSearchApplied, searchValueAsArray } from 'utils/searchUtils';
 
 import { DefaultFilters } from '../types';
 import CVESeverityDropdown from './CVESeverityDropdown';
@@ -157,9 +157,13 @@ function AdvancedFiltersToolbar({
                         )}
                     </ToolbarGroup>
                 )}
-                <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
-                    <SearchFilterChips filterChipGroupDescriptors={filterChipGroupDescriptors} />
-                </ToolbarGroup>
+                {getHasSearchApplied(searchFilter) && (
+                    <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
+                        <SearchFilterChips
+                            filterChipGroupDescriptors={filterChipGroupDescriptors}
+                        />
+                    </ToolbarGroup>
+                )}
             </ToolbarContent>
         </Toolbar>
     );

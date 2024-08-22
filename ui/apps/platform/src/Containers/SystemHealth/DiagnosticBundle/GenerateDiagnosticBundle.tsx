@@ -5,6 +5,7 @@ import { useFormik } from 'formik';
 import { parse } from 'date-fns';
 
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import PopoverBodyContent from 'Components/PopoverBodyContent';
 import useMetadata from 'hooks/useMetadata';
 import downloadDiagnostics, { DiagnosticBundleRequest } from 'services/DebugService';
 import { getVersionedDocs } from 'utils/versioning';
@@ -104,20 +105,23 @@ function GenerateDiagnosticBundle(): ReactElement {
     return (
         <Popover
             aria-label="Choose options to generate a diagnostic bundle"
-            headerComponent="h2"
-            headerContent="Diagnostic bundle"
             bodyContent={
-                <DiagnosticBundleForm
-                    values={values}
-                    setFieldValue={setFieldValue}
-                    handleBlur={handleBlur}
-                    currentTimeObject={currentTimeObject}
-                    startingTimeObject={startingTimeObject}
-                    isStartingTimeValid={isStartingTimeValid}
-                    onChangeStartingTime={onChangeStartingTime}
+                <PopoverBodyContent
+                    headerContent="Diagnostic bundle"
+                    bodyContent={
+                        <DiagnosticBundleForm
+                            values={values}
+                            setFieldValue={setFieldValue}
+                            handleBlur={handleBlur}
+                            currentTimeObject={currentTimeObject}
+                            startingTimeObject={startingTimeObject}
+                            isStartingTimeValid={isStartingTimeValid}
+                            onChangeStartingTime={onChangeStartingTime}
+                        />
+                    }
+                    footerContent={footerContent}
                 />
             }
-            footerContent={footerContent}
             maxWidth="100%"
             position={PopoverPosition.bottomEnd}
             shouldOpen={() => setIsOpen(true)}
