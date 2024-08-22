@@ -11,7 +11,6 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
@@ -19,7 +18,7 @@ import (
 
 // NewGenericStoreWithCache returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithCache[T any, PT protocompat.ClonedUnmarshaler[T]](
+func NewGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -65,7 +64,7 @@ func NewGenericStoreWithCache[T any, PT protocompat.ClonedUnmarshaler[T]](
 
 // NewGenericStoreWithCacheAndPermissionChecker returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithCacheAndPermissionChecker[T any, PT protocompat.ClonedUnmarshaler[T]](
+func NewGenericStoreWithCacheAndPermissionChecker[T any, PT ClonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -108,7 +107,7 @@ func NewGenericStoreWithCacheAndPermissionChecker[T any, PT protocompat.ClonedUn
 }
 
 // cachedStore implements subset of Store interface for resources with single ID.
-type cachedStore[T any, PT protocompat.ClonedUnmarshaler[T]] struct {
+type cachedStore[T any, PT ClonedUnmarshaler[T]] struct {
 	schema                        *walker.Schema
 	pkGetter                      primaryKeyGetter[T, PT]
 	setCacheOperationDurationTime durationTimeSetter
