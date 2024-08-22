@@ -216,6 +216,38 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
+    'no-Button-Link': {
+        // Forbid Button that has Link element as child to prevent axe DevTools issue:
+        // Interactive controls must not be nested
+        // https://dequeuniversity.com/rules/axe/4.10/nested-interactive
+        //
+        // The rule does not forbid Button element with component={LinkShim} prop for link that looks like a button.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Forbid Button that has Link element as child',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXElement(node) {
+                    if (node.openingElement?.name?.name === 'Button') {
+                        if (
+                            node.children?.some(
+                                (child) => child.openingElement?.name?.name === 'Link'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message: 'Forbid Button that has Link element as child',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-Popover-footerContent-headerContent-props': {
         // Forbid props that cause axe DevTools issues:
         // Heading levels should only increase by one

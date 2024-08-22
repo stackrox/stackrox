@@ -1,6 +1,5 @@
 import React, { ReactElement, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@patternfly/react-core';
 
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
@@ -16,11 +15,7 @@ function CVESummaryLink({ cve, id }: CVESummaryLinkProps): ReactElement {
     const workflowState = useContext(workflowStateContext);
     const url = workflowState.pushRelatedEntity(entityType, id).toUrl();
 
-    return (
-        <Button variant="link" isInline>
-            <Link to={url}>{cve}</Link>
-        </Button>
-    );
+    return <Link to={url}>{cve}</Link>;
 }
 
 export default CVESummaryLink;
