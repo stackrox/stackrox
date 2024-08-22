@@ -66,3 +66,11 @@ a[href="/main/search"] {
 .pf-v5-c-popover__close + .pf-v5-c-popover__body > .pf-v5-c-popover__header {
     padding-inline-end: var(--pf-v5-c-popover__close--sibling--PaddingRight);
 }
+
+/*
+ * Fix lack of color contrast in label of ChromePicker element.
+ */
+.chrome-picker input,
+.chrome-picker label {
+    color: var(--pf-v5-global--Color--100) !important; /* instead of #969696 */
+}
