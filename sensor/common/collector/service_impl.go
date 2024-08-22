@@ -48,12 +48,12 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 
 func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	log.Info("In ProcessMessage")
-	if msg.GetClusterConfig() != nil {
+	if msg.GetClusterConfig() != nil && msg.GetClusterConfig().GetConfig() != nil && msg.GetClusterConfig().GetConfig().GetCollectorConfig() != nil {
 		log.Infof("msg= %+v", msg)
 		s.collectorC <- common.MessageToCollectorWithAddress{
 			Msg: &sensor.MsgToCollector{
-				Msg: &sensor.MsgToCollector_ConfigWithCluster {
-					ConfigWithCluster: nil,
+				Msg: &sensor.MsgToCollector_CollectorConfig {
+					CollectorConfig: msg.GetClusterConfig().GetConfig().GetCollectorConfig(),
 				},
 			},
 			Broadcast: true,
@@ -146,7 +146,7 @@ func (s *serviceImpl) startSendingLoop() {
 	}
 }
 
-func (s *serviceImpl) Communicate(_ *protocompat.Empty, server sensor.CollectorService_CommunicateServer) error {
+func (s *serviceImpl) Communicate(empty *protocompat.Empty, server sensor.CollectorService_CommunicateServer) error {
 	log.Info("In Communicate")
 	// incomingMD := metautils.ExtractIncoming(server.Context())
 	// hostname := incomingMD.Get("rox-collector-nodename")

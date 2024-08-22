@@ -3,13 +3,13 @@ syntax = "proto3";
 package sensor;
 
 import "google/protobuf/empty.proto";
-import "internalapi/common/collector_runtime_config.proto";
+import "storage/cluster.proto";
 
 option go_package = "./internalapi/sensor;sensor";
 
 message MsgToCollector {
   oneof msg {
-    common.CollectorRuntimeConfig config_with_cluster = 1;
+    storage.CollectorConfig collector_config = 1;
   }
 }
 

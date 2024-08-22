@@ -7,7 +7,7 @@ package sensor
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
-	common "github.com/stackrox/rox/generated/internalapi/common"
+	storage "github.com/stackrox/rox/generated/storage"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
@@ -39,18 +39,18 @@ func (m *MsgToCollector) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *MsgToCollector_ConfigWithCluster) CloneVT() isMsgToCollector_Msg {
+func (m *MsgToCollector_CollectorConfig) CloneVT() isMsgToCollector_Msg {
 	if m == nil {
-		return (*MsgToCollector_ConfigWithCluster)(nil)
+		return (*MsgToCollector_CollectorConfig)(nil)
 	}
-	r := new(MsgToCollector_ConfigWithCluster)
-	if rhs := m.ConfigWithCluster; rhs != nil {
+	r := new(MsgToCollector_CollectorConfig)
+	if rhs := m.CollectorConfig; rhs != nil {
 		if vtpb, ok := interface{}(rhs).(interface {
-			CloneVT() *common.CollectorRuntimeConfig
+			CloneVT() *storage.CollectorConfig
 		}); ok {
-			r.ConfigWithCluster = vtpb.CloneVT()
+			r.CollectorConfig = vtpb.CloneVT()
 		} else {
-			r.ConfigWithCluster = proto.Clone(rhs).(*common.CollectorRuntimeConfig)
+			r.CollectorConfig = proto.Clone(rhs).(*storage.CollectorConfig)
 		}
 	}
 	return r
@@ -84,8 +84,8 @@ func (this *MsgToCollector) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *MsgToCollector_ConfigWithCluster) EqualVT(thatIface isMsgToCollector_Msg) bool {
-	that, ok := thatIface.(*MsgToCollector_ConfigWithCluster)
+func (this *MsgToCollector_CollectorConfig) EqualVT(thatIface isMsgToCollector_Msg) bool {
+	that, ok := thatIface.(*MsgToCollector_CollectorConfig)
 	if !ok {
 		return false
 	}
@@ -95,15 +95,15 @@ func (this *MsgToCollector_ConfigWithCluster) EqualVT(thatIface isMsgToCollector
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.ConfigWithCluster, that.ConfigWithCluster; p != q {
+	if p, q := this.CollectorConfig, that.CollectorConfig; p != q {
 		if p == nil {
-			p = &common.CollectorRuntimeConfig{}
+			p = &storage.CollectorConfig{}
 		}
 		if q == nil {
-			q = &common.CollectorRuntimeConfig{}
+			q = &storage.CollectorConfig{}
 		}
 		if equal, ok := interface{}(p).(interface {
-			EqualVT(*common.CollectorRuntimeConfig) bool
+			EqualVT(*storage.CollectorConfig) bool
 		}); ok {
 			if !equal.EqualVT(q) {
 				return false
@@ -157,15 +157,15 @@ func (m *MsgToCollector) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *MsgToCollector_ConfigWithCluster) MarshalToVT(dAtA []byte) (int, error) {
+func (m *MsgToCollector_CollectorConfig) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *MsgToCollector_ConfigWithCluster) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *MsgToCollector_CollectorConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.ConfigWithCluster != nil {
-		if vtmsg, ok := interface{}(m.ConfigWithCluster).(interface {
+	if m.CollectorConfig != nil {
+		if vtmsg, ok := interface{}(m.CollectorConfig).(interface {
 			MarshalToSizedBufferVT([]byte) (int, error)
 		}); ok {
 			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -175,7 +175,7 @@ func (m *MsgToCollector_ConfigWithCluster) MarshalToSizedBufferVT(dAtA []byte) (
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		} else {
-			encoded, err := proto.Marshal(m.ConfigWithCluster)
+			encoded, err := proto.Marshal(m.CollectorConfig)
 			if err != nil {
 				return 0, err
 			}
@@ -201,19 +201,19 @@ func (m *MsgToCollector) SizeVT() (n int) {
 	return n
 }
 
-func (m *MsgToCollector_ConfigWithCluster) SizeVT() (n int) {
+func (m *MsgToCollector_CollectorConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ConfigWithCluster != nil {
-		if size, ok := interface{}(m.ConfigWithCluster).(interface {
+	if m.CollectorConfig != nil {
+		if size, ok := interface{}(m.CollectorConfig).(interface {
 			SizeVT() int
 		}); ok {
 			l = size.SizeVT()
 		} else {
-			l = proto.Size(m.ConfigWithCluster)
+			l = proto.Size(m.CollectorConfig)
 		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -250,7 +250,7 @@ func (m *MsgToCollector) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ConfigWithCluster", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectorConfig", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -277,20 +277,20 @@ func (m *MsgToCollector) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Msg.(*MsgToCollector_ConfigWithCluster); ok {
-				if unmarshal, ok := interface{}(oneof.ConfigWithCluster).(interface {
+			if oneof, ok := m.Msg.(*MsgToCollector_CollectorConfig); ok {
+				if unmarshal, ok := interface{}(oneof.CollectorConfig).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
 					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 						return err
 					}
 				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.ConfigWithCluster); err != nil {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.CollectorConfig); err != nil {
 						return err
 					}
 				}
 			} else {
-				v := &common.CollectorRuntimeConfig{}
+				v := &storage.CollectorConfig{}
 				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
@@ -302,7 +302,7 @@ func (m *MsgToCollector) UnmarshalVT(dAtA []byte) error {
 						return err
 					}
 				}
-				m.Msg = &MsgToCollector_ConfigWithCluster{ConfigWithCluster: v}
+				m.Msg = &MsgToCollector_CollectorConfig{CollectorConfig: v}
 			}
 			iNdEx = postIndex
 		default:
