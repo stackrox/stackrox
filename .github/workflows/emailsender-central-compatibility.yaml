@@ -4,7 +4,7 @@ name: emailsender-central-compatibility
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'central/notifiers/email/**'
       - 'central/notifiers/acscsemail/**'
