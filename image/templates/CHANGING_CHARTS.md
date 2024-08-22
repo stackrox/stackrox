@@ -1,5 +1,44 @@
 # Changing StackRox Helm charts
 
+## Helm Template Coding Style Guidelines
+
+### Whitespace Elimination
+
+Given that the sole purpose of the Helm templating is to render out Kubernetes manifests in YAML format,
+it is critical that the rendering process does not mangle with whitespace indentation in an undesired manner.
+
+Helm templating -- just like the underlying Go templating engine -- supports different mechanisms for
+whitespace trimming, see [Go templating docs](https://pkg.go.dev/text/template#hdr-Text_and_spaces) for more information on this.
+
+For our Helm charts we have settled on the following coding style:
+
+For in-line interpolation we usually do not require any whitespace trimming. For example, we can write the templating code as follows:
+```
+metadata:
+  namespace: {{ ._rox._namespace }}
+```
+```
+      env:
+        - name: ROX_OFFLINE_MODE
+          value: {{ ._rox.env.offlineMode | quote }}
+```
+
+For line-based flow-control we use the left hand side whitespace trimming (`{{- ... }}`) exclusively. For example:
+```
+        {{- if ._rox.central.telemetry.storage.endpoint }}
+        - name: ROX_TELEMETRY_ENDPOINT
+          value: {{ ._rox.central.telemetry.storage.endpoint | quote }}
+        {{- end }}
+```
+```
+imagePullSecrets:
+{{- range $secretName := ._rox.imagePullSecrets._names }}
+- name: {{ quote $secretName }}
+{{- end }}
+```
+This style provides consistency for the templating syntax and it enables us to indent the templating directives
+without having any extra whitespace ending up in the rendered output or semantically required whitespace silently eing removed.
+
 ## Add new values field to StackRox Helm Chart
 
 This section describes how to add a new field to the Helm values, with unit tests.
