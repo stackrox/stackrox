@@ -1586,6 +1586,26 @@
             ]
           },
           {
+            "name": "CollectorClusterLevelRuntimeFeature",
+            "enum_fields": [
+              {
+                "name": "PROCESSES"
+              },
+              {
+                "name": "NETWORK_ENDPOINTS",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CollectorNamespaceLevelRuntimeFeature",
+            "enum_fields": [
+              {
+                "name": "NETWORK_CONNECTIONS"
+              }
+            ]
+          },
+          {
             "name": "ManagerType",
             "enum_fields": [
               {
@@ -1885,6 +1905,164 @@
             ]
           },
           {
+            "name": "ProcessStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "enabled",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "NetworkConnectionStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "enabled",
+                "type": "bool"
+              },
+              {
+                "id": 2,
+                "name": "aggregate_external",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "NetworkEndpointStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "enabled",
+                "type": "bool"
+              },
+              {
+                "id": 2,
+                "name": "processes_listening_on_port",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "CollectorFeatureStatus",
+            "fields": [
+              {
+                "id": 1,
+                "name": "process_status",
+                "type": "ProcessStatus",
+                "oneof_parent": "status"
+              },
+              {
+                "id": 2,
+                "name": "network_connection_status",
+                "type": "NetworkConnectionStatus",
+                "oneof_parent": "status"
+              },
+              {
+                "id": 3,
+                "name": "network_endpoint_status",
+                "type": "NetworkEndpointStatus",
+                "oneof_parent": "status"
+              }
+            ]
+          },
+          {
+            "name": "CollectorClusterLevelConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "process_status",
+                "type": "ProcessStatus"
+              },
+              {
+                "id": 2,
+                "name": "network_endpoint_status",
+                "type": "NetworkEndpointStatus"
+              }
+            ]
+          },
+          {
+            "name": "NamespaceRule",
+            "fields": [
+              {
+                "id": 1,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "match_type",
+                "type": "storage.MatchType"
+              }
+            ]
+          },
+          {
+            "name": "CollectorNamespaceLevelFeatureConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "feature",
+                "type": "CollectorNamespaceLevelRuntimeFeature"
+              },
+              {
+                "id": 2,
+                "name": "default_status",
+                "type": "CollectorFeatureStatus"
+              },
+              {
+                "id": 3,
+                "name": "rules",
+                "type": "RuntimeRule",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "RuntimeRule",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "namespace_selection",
+                    "type": "NamespaceRule",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 2,
+                    "name": "status",
+                    "type": "CollectorFeatureStatus"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "CollectorNamespaceLevelConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "feature_config",
+                "type": "CollectorNamespaceLevelFeatureConfig",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "CollectorConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "collector_cluster_level_config",
+                "type": "CollectorClusterLevelConfig"
+              },
+              {
+                "id": 2,
+                "name": "collector_namespace_level_config",
+                "type": "CollectorNamespaceLevelConfig"
+              }
+            ]
+          },
+          {
             "name": "TolerationsConfig",
             "fields": [
               {
@@ -1966,6 +2144,11 @@
                 "id": 3,
                 "name": "disable_audit_logs",
                 "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "collector_config",
+                "type": "CollectorConfig"
               }
             ]
           },
@@ -2480,6 +2663,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/resource_collection.proto"
           }
         ],
         "package": {
