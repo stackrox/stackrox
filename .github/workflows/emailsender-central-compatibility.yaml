@@ -4,16 +4,18 @@ name: emailsender-central-compatibility
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'central/notifiers/email/**'
       - 'central/notifiers/acscsemail/**'
+      - '.github/workflows/emailsender-central-compatibility.yaml'
 
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'central/notifiers/email/**'
       - 'central/notifiers/acscsemail/**'
+      - '.github/workflows/emailsender-central-compatibility.yaml'
 
 jobs:
   e2e-test-on-kind:
