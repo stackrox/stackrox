@@ -1,0 +1,52 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: rhacs-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Central is the Schema for the centrals API
+      displayName: Central
+      kind: Central
+      name: centrals.platform.stackrox.io
+      version: v1alpha1
+    - description: SecuredCluster is the Schema for the securedclusters API
+      displayName: Secured Cluster
+      kind: SecuredCluster
+      name: securedclusters.platform.stackrox.io
+      version: v1alpha1
+  description: Bla bla
+  displayName: StackRox operator
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - acs
+  links:
+  - name: Rhacs Operator
+    url: https://rhacs-operator.domain
+  maintainers:
+  - email: porridge@redhat.com
+    name: Marcin Owsiany
+  maturity: alpha
+  provider:
+    name: Red Hat
+  version: 0.0.0
