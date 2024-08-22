@@ -1,0 +1,23 @@
+# permissions for end users to view securedclusters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: rhacs-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: securedcluster-viewer-role
+rules:
+- apiGroups:
+  - platform.stackrox.io
+  resources:
+  - securedclusters
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - platform.stackrox.io
+  resources:
+  - securedclusters/status
+  verbs:
+  - get

@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- platform_v1alpha1_central.yaml
+- platform_v1alpha1_securedcluster.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
