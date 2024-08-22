@@ -1,4 +1,4 @@
-name: Scanner dev vulnerability update
+name: Scanner versioned vulnerability bundles update
 on:
   schedule:
   - cron: "30 */4 * * *"
@@ -31,10 +31,8 @@ jobs:
     - name: Parse VULNERABILITY_BUNDLE_VERSION
       id: set-versions
       run: |
-        versions=$(grep -vE '^#|[[:space:]]*$' scanner/updater/version/VULNERABILITY_BUNDLE_VERSION | awk -F, '{print $1 "|" $2}' | paste -sd "," -)
-        versions_json="[\"${versions//,/\",\"}\"]"
-        echo "Versions JSON: ${versions_json}"
-        echo "versions=${versions_json}" >> "$GITHUB_OUTPUT"
+        versions_output=$(./.github/workflows/scripts/scanner-get-released-tags.sh)
+        echo "versions=$versions_output" >> "$GITHUB_OUTPUT"
 
   prepare-environment:
     needs: parse-versions
@@ -78,9 +76,18 @@ jobs:
       id: set-manual-url
       run: |
         if [ "${{ github.event_name }}" == "schedule" ]; then
+          # Scheduled workflows should use the master branch
           echo "manual_url=https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
         else
-          echo "manual_url=https://raw.githubusercontent.com/stackrox/stackrox/${{ github.event.pull_request.head.sha }}/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
+          # Determine the SHA to use
+          if [ -z "${{ github.event.pull_request.head.sha }}" ]; then
+            # Fallback to the current ref or SHA if it's not a pull request event
+            sha=${{ github.sha }}
+          else
+            sha=${{ github.event.pull_request.head.sha }}
+          fi
+
+          echo "manual_url=https://raw.githubusercontent.com/stackrox/stackrox/$sha/scanner/updater/manual/vulns.yaml" >> "$GITHUB_ENV"
         fi
 
     - uses: ./.github/actions/upload-artifact-with-retry
@@ -89,7 +96,7 @@ jobs:
         path: nvd.zip
         if-no-files-found: error
 
-  build-and-upload:
+  build-updater:
     needs:
     - parse-versions
     - prepare-environment
@@ -105,15 +112,11 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        vb: ${{ fromJson(needs.parse-versions.outputs.versions) }}
+        include: ${{ fromJson(needs.parse-versions.outputs.versions) }}
+    env:
+      ROX_BUNDLE_VERSION: ${{ matrix.version }}
+      ROX_PRODUCT_TAG: ${{ matrix.tag }}
     steps:
-    - name: Split version and branch
-      id: split
-      run: |
-        IFS="|" read -r version branch <<< "${{ matrix.vb }}"
-        echo "version=${version}" >> "$GITHUB_OUTPUT"
-        echo "branch=${branch}" >> "$GITHUB_OUTPUT"
-
     - name: Free up disk space
       shell: bash
       run: |
@@ -125,11 +128,11 @@ jobs:
         done
         df -h
 
-    - name: Checkout repository
+    - name: Checkout specific reference
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        ref: ${{ steps.split.outputs.branch }}
+        ref: ${{ env.ROX_PRODUCT_TAG }}
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -137,16 +140,9 @@ jobs:
 
     - name: Build updater
       run: |
-        echo "Building updater for version ${{ steps.split.outputs.version }} on branch ${{ steps.split.outputs.branch }}..."
+        echo "Building updater for version ${{ env.ROX_BUNDLE_VERSION }} on branch ${{ env.ROX_PRODUCT_TAG }}..."
         make tag
         make -C scanner bin/updater
-
-    - name: Upload Updater Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: updater-${{ steps.split.outputs.version }}
-        path: scanner/bin/updater
-        if-no-files-found: error
 
     - name: Download NVD
       uses: ./.github/actions/download-artifact-with-retry
@@ -159,18 +155,44 @@ jobs:
         chmod +x scanner/bin/updater
         mkdir vulns
 
+    - name: Create Folder
+      run: mkdir -p definitions/${{ env.ROX_BUNDLE_VERSION }}
+
     - name: Run Updater (single bundle)
       env:
         STACKROX_NVD_ZIP_PATH: nvd.zip
-      run: scanner/bin/updater export vulns --manual-url "${{ needs.prepare-environment.outputs.manual_url }}"
+      run: |
+        scanner/bin/updater export vulns --manual-url "${{ needs.prepare-environment.outputs.manual_url }}"
+        mv vulns/* definitions/${{ env.ROX_BUNDLE_VERSION }}/
 
     - name: Run updater (multi bundle)
       env:
         STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
-        echo "Running multi-bundle updater for version ${{ steps.split.outputs.version }} with manual URL ${{ needs.prepare-environment.outputs.manual_url }}..."
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
-        zip vulns/vulnerabilities.zip bundles/*.json.zst
+        zip definitions/${{ env.ROX_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
+
+    - name: Upload definitions artifacts
+      if: success() || failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: artifact_${{ env.ROX_BUNDLE_VERSION }}
+        path: definitions
+
+  upload-definitions:
+    needs:
+    - build-updater
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download definitions artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: downloaded_artifacts
+
+    - name: Move files artifacts
+      run: rsync -av downloaded_artifacts/*/ definitions_files/
 
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
@@ -180,19 +202,20 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Upload vulnerabilities to specific path
+    - name: Upload to GCS
       run: |
-        gsutil -m cp vulns/* gs://definitions.stackrox.io/v4/vulnerability-bundles/${{ steps.split.outputs.version }}/
-
-    - name: Upload vulnerabilities to downstream path
-      if: github.event_name == 'schedule' && steps.split.outputs.version == 'dev'
-      run: |
-        echo "Uploading vulnerabilities to downstream path: gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/"
-        gsutil -m cp vulns/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
+        ls -lr definitions_files
+        for dir in definitions_files/*; do
+          if [ -d "$dir" ]; then
+            gsutil -m cp -r "$dir" gs://definitions.stackrox.io/v4/vulnerability-bundles/
+          fi
+        done
+        gsutil cp -r gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
 
   send-notification:
     needs:
-    - build-and-upload
+    - build-updater
+    - upload-definitions
     runs-on: ubuntu-latest
     if: ${{ failure() && github.ref_name == 'master' }}
     steps:
