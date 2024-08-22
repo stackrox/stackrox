@@ -121,7 +121,7 @@ var (
 	PolicyViolationsAdvancedFilters = registerFeature("Enables improved filtering capabilities for Policy Violations", "ROX_POLICY_VIOLATIONS_ADVANCED_FILTERS", enabled)
 
 	// PolicyAsCode enables policy definition and lifecycle changes to be managed in external repositories.
-	PolicyAsCode = registerFeature("Enables policy definition and lifecycle changes to be managed in external repositories.", "ROX_POLICY_AS_CODE", unchangeableInProd)
+	PolicyAsCode = registerFeature("Enables policy definition and lifecycle changes to be managed in external repositories.", "ROX_POLICY_AS_CODE")
 
 	// MicrosoftSentinelNotifier enables the Microsoft Sentinel notifier.
 	MicrosoftSentinelNotifier = registerFeature("Enable the Microsoft Sentinel notifier", "ROX_MICROSOFT_SENTINEL")

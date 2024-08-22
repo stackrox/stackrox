@@ -3,11 +3,14 @@ package datastore
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -21,8 +24,9 @@ var (
 )
 
 type datastoreImpl struct {
-	store store.Store
-	set   m2m.TokenExchangerSet
+	store         store.Store
+	set           m2m.TokenExchangerSet
+	issuerFetcher m2m.ServiceAccountIssuerFetcher
 
 	mutex sync.RWMutex
 }
@@ -140,17 +144,34 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 		return err
 	}
 
-	var tokenExchangerErrors error
+	if features.PolicyAsCode.Enabled() {
+		kubeSAIssuer, err := d.issuerFetcher.GetServiceAccountIssuer()
+		if err != nil {
+			return fmt.Errorf("Failed to get service account issuer: %w", err)
+		}
+
+		// Unconditionally add K8s service account exchanger.
+		// This is required for config-controller auth.
+		configs = append(configs, &storage.AuthMachineToMachineConfig{
+			Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+			TokenExpirationDuration: "1h",
+			Mappings: []*storage.AuthMachineToMachineConfig_Mapping{{
+				Key:             "sub",
+				ValueExpression: fmt.Sprintf("system:serviceaccount:%s:config-controller", env.Namespace.Setting()),
+				Role:            "Configuration Controller",
+			}},
+			Issuer: kubeSAIssuer,
+		})
+	}
+
+	tokenExchangerErrors := []error{}
 	for _, config := range configs {
 		if err := d.set.UpsertTokenExchanger(ctx, config); err != nil {
-			tokenExchangerErrors = errors.Join(tokenExchangerErrors, err)
-			continue
+			tokenExchangerErrors = append(tokenExchangerErrors, err)
 		}
 	}
-	if tokenExchangerErrors != nil {
-		return tokenExchangerErrors
-	}
-	return tokenExchangerErrors
+
+	return errors.Join(tokenExchangerErrors...)
 }
 
 // wrapRollback wraps the error with potential rollback errors.
