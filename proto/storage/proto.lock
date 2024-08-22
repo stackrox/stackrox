@@ -1099,6 +1099,10 @@
               {
                 "name": "GITHUB_ACTIONS",
                 "integer": 1
+              },
+              {
+                "name": "KUBE_SERVICE_ACCOUNT",
+                "integer": 2
               }
             ]
           }
