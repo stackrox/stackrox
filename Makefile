@@ -231,6 +231,11 @@ central-build-nodeps:
 	@echo "+ $@"
 	$(GOBUILD) central
 
+.PHONY: config-controller-build-nodeps
+config-controller-build-nodeps:
+	@echo "+ $@"
+	$(GOBUILD) config-controller
+
 .PHONY: fast-central
 fast-central: deps
 	@echo "+ $@"
@@ -461,7 +466,7 @@ main-build-dockerized: build-volumes
 	docker run $(DOCKER_OPTS) -i -e RACE -e CI -e BUILD_TAG -e SHORTCOMMIT -e GOTAGS -e DEBUG_BUILD -e CGO_ENABLED --rm $(GOPATH_WD_OVERRIDES) $(LOCAL_VOLUME_ARGS) $(BUILD_IMAGE) make main-build-nodeps
 
 .PHONY: main-build-nodeps
-main-build-nodeps: central-build-nodeps migrator-build-nodeps
+main-build-nodeps: central-build-nodeps migrator-build-nodeps config-controller-build-nodeps
 	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
 	$(GOBUILD) sensor/upgrader
 ifndef CI
@@ -634,6 +639,7 @@ docker-build-roxctl-image:
 .PHONY: copy-go-binaries-to-image-dir
 copy-go-binaries-to-image-dir:
 	cp bin/linux_$(GOARCH)/central image/rhel/bin/central
+	cp bin/linux_$(GOARCH)/config-controller image/rhel/bin/config-controller
 ifdef CI
 	cp bin/linux_amd64/roxctl image/rhel/bin/roxctl-linux-amd64
 	cp bin/linux_arm64/roxctl image/rhel/bin/roxctl-linux-arm64
