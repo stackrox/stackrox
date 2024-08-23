@@ -341,6 +341,7 @@ _main() {
 			echo
 			echo 'PostgreSQL Database directory appears to contain a database; Check for upgrade'
 			docker_process_init_files /usr/share/container-scripts/postgresql/*
+			export POSTGRESQL_UPGRADE=hardlink
 			run_pgupgrade
 			echo
 		fi
