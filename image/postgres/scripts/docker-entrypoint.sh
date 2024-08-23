@@ -339,7 +339,9 @@ _main() {
 			echo
 		else
 			echo
-			echo 'PostgreSQL Database directory appears to contain a database; Skipping initialization'
+			echo 'PostgreSQL Database directory appears to contain a database; Check for upgrade'
+			docker_process_init_files /usr/share/container-scripts/postgresql/*
+			try_pgupgrade
 			echo
 		fi
 	fi
