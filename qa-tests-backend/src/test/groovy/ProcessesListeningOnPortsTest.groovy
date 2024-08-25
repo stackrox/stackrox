@@ -106,6 +106,8 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def processesListeningOnPorts = waitForResponseToHaveNumElements(2, deploymentId1, 240)
 
+        def listeningEndpointsCounts = ProcessesListeningOnPortsService.countProcessesListeningOnPortsResponse()
+
         assert processesListeningOnPorts
 
         def list = processesListeningOnPorts.listeningEndpointsList
@@ -156,16 +158,26 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.signal.name == "socat"
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8081,fork STDOUT"
+
+        def count1 = listeningEndpointsCounts.counts[deploymentId1]
+        def count2 = listeningEndpointsCounts.counts[deploymentId2]
+
+        assert count1 == 2
+        assert count2 == 1
     }
 
     def "Networking endpoints are no longer in the API when deployments are deleted"() {
         given:
         String deploymentId1 = targetDeployments.find { it.name == TCPCONNECTIONTARGET1 }?.deploymentUid
         String deploymentId2 = targetDeployments.find { it.name == TCPCONNECTIONTARGET2 }?.deploymentUid
+        String deploymentId3 = targetDeployments.find { it.name == TCPCONNECTIONTARGET3 }?.deploymentUid
 
         destroyDeployments()
 
         def processesListeningOnPorts = waitForResponseToHaveNumElements(0, deploymentId1, 240)
+        def listeningEndpointsCounts = ProcessesListeningOnPortsService.countProcessesListeningOnPortsResponse()
+
+        assert !listeningEndpointsCounts.counts[deploymentId1]
 
         assert processesListeningOnPorts
 
@@ -178,6 +190,10 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         def list3 = processesListeningOnPorts.listeningEndpointsList
         assert list3.size() == 0
+
+        assert !listeningEndpointsCounts.counts.containsKey(deploymentId1)
+        assert !listeningEndpointsCounts.counts.containsKey(deploymentId2)
+        assert !listeningEndpointsCounts.counts.containsKey(deploymentId3)
     }
 
     def "Verify networking endpoints disappear when process is terminated"() {
@@ -187,6 +203,7 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         String deploymentId3 = targetDeployments.find { it.name == TCPCONNECTIONTARGET3 }?.deploymentUid
 
         def processesListeningOnPorts = waitForResponseToHaveNumElements(1, deploymentId3, 240)
+        def listeningEndpointsCounts = ProcessesListeningOnPortsService.countProcessesListeningOnPortsResponse()
 
         // First check that the listening endpoint appears in the API
         assert processesListeningOnPorts
@@ -207,10 +224,17 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         assert endpoint.signal.execFilePath == "/usr/bin/socat"
         assert endpoint.signal.args == "-d -d -v TCP-LISTEN:8082,fork STDOUT"
 
+        def count3 = listeningEndpointsCounts.counts[deploymentId3]
+        assert count3 == 1
+
         // Allow enough time for the process and port to close and check that it is not in the API response
         processesListeningOnPorts = waitForResponseToHaveNumElements(0, deploymentId3, 180)
 
         assert processesListeningOnPorts
+
+        listeningEndpointsCounts = ProcessesListeningOnPortsService.countProcessesListeningOnPortsResponse()
+        count3 = listeningEndpointsCounts.counts[deploymentId3]
+        assert count3 == 0
 
         destroyDeployments()
     }
@@ -225,6 +249,10 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
 
         // First check that the listening endpoint appears in the API
         assert processesListeningOnPorts
+
+        def listeningEndpointsCounts = ProcessesListeningOnPortsService.countProcessesListeningOnPortsResponse()
+        def count2 = listeningEndpointsCounts.counts[deploymentId2]
+        assert count2 == 1
 
         def list = processesListeningOnPorts.listeningEndpointsList
         assert list.size() == 1
@@ -250,6 +278,10 @@ class ProcessesListeningOnPortsTest extends BaseSpecification {
         // Confirm that the listening endpoint still appears in the API 65 seconds later
         list = processesListeningOnPorts.listeningEndpointsList
         assert list.size() == 1
+
+        listeningEndpointsCounts = ProcessesListeningOnPortsService.countProcessesListeningOnPortsResponse()
+        count2 = listeningEndpointsCounts.counts[deploymentId2]
+        assert count2 == 1
 
         destroyDeployments()
     }
