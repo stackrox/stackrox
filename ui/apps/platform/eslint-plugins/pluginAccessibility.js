@@ -217,7 +217,7 @@ const rules = {
     // However, we can write forbid instead of disallow as the verb in description and message.
 
     'no-Button-Link': {
-        // Forbid Button that has Link or HashLink element as child to prevent axe DevTools issue:
+        // Forbid Button that has Link, HashLink, or a element as child to prevent axe DevTools issue:
         // Interactive controls must not be nested
         // https://dequeuniversity.com/rules/axe/4.10/nested-interactive
         //
@@ -225,7 +225,7 @@ const rules = {
         meta: {
             type: 'problem',
             docs: {
-                description: 'Forbid Button that has Link or HashLink element as child',
+                description: 'Forbid Button that has Link, HashLink, or a element as child',
             },
             schema: [],
         },
@@ -235,12 +235,13 @@ const rules = {
                     if (node.openingElement?.name?.name === 'Button') {
                         if (
                             node.children?.some((child) =>
-                                ['Link', 'HashLink'].includes(child.openingElement?.name?.name)
+                                ['Link', 'HashLink', 'a'].includes(child.openingElement?.name?.name)
                             )
                         ) {
                             context.report({
                                 node,
-                                message: 'Forbid Button that has Link or HashLink element as child',
+                                message:
+                                    'Forbid Button that has Link, HashLink, or a element as child',
                             });
                         }
                     }
