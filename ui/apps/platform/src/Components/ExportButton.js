@@ -3,16 +3,15 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import onClickOutside from 'react-onclickoutside';
 import { toast } from 'react-toastify';
+import { Button } from '@patternfly/react-core';
 
 import downloadCSV from 'services/CSVDownloadService';
 import WorkflowPDFExportButton from 'Components/WorkflowPDFExportButton';
-import Button from 'Components/Button';
+import ButtonClassic from 'Components/Button';
 import useCaseTypes from 'constants/useCaseTypes';
 import entityTypes from 'constants/entityTypes';
 import { addBrandedTimestampToString } from 'utils/dateUtils';
 
-const btnClassName =
-    'btn border-primary-600 bg-primary-600 text-base-100 w-48 hover:bg-primary-700 hover:border-primary-700';
 const queryParamMap = {
     [entityTypes.CLUSTER]: 'clusterId',
     [entityTypes.STANDARD]: 'standardId',
@@ -136,13 +135,19 @@ class ExportButton extends Component {
         return !!this.props.pdfId || this.isCsvSupported() ? (
             <div className={`absolute right-0 z-20 flex flex-col text-base-600 ${wrapperClass}`}>
                 <div className="arrow-up self-end mr-5" />
-                <ul className=" bg-base-100 border-2 border-primary-600 rounded">
-                    <li className="p-4 border-b border-base-400">
+                <ul
+                    className="bg-base-100 rounded"
+                    style={{
+                        borderColor: 'var(--pf-v5-global--primary-color--100)',
+                        borderWidth: 2,
+                    }}
+                >
+                    <li className="p-4 border-b">
                         <div className="flex">
                             {!!this.props.pdfId && (
                                 <WorkflowPDFExportButton
                                     id={this.props.pdfId}
-                                    className={`${btnClassName}  min-w-48 ${
+                                    className={`min-w-48 ${
                                         this.isCsvSupported() ? 'mr-2' : 'w-full'
                                     }`}
                                     tableOptions={this.props.tableOptions}
@@ -154,14 +159,12 @@ class ExportButton extends Component {
                             )}
                             {this.isCsvSupported() && (
                                 <Button
-                                    data-testid="download-csv-button"
-                                    className={btnClassName}
-                                    type="button"
+                                    variant="primary"
                                     onClick={this.downloadCSVFile}
-                                    text={csvButtonText}
                                     isLoading={csvIsDownloading}
-                                    loaderSize={14}
-                                />
+                                >
+                                    {csvButtonText}
+                                </Button>
                             )}
                         </div>
                     </li>
@@ -181,7 +184,7 @@ class ExportButton extends Component {
     render() {
         return (
             <div className="relative pl-2">
-                <Button
+                <ButtonClassic
                     className={this.props.className}
                     disabled={this.props.disabled}
                     text="Export"

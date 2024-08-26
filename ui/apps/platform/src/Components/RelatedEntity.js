@@ -51,7 +51,7 @@ const RelatedEntity = ({
         <button
             data-testid="related-entity-value"
             type="button"
-            className="h-full w-full no-underline text-primary-700 hover:bg-primary-100"
+            className="h-full w-full"
             onClick={onClick}
         >
             {content}
