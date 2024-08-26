@@ -350,7 +350,8 @@ _main() {
 			echo
 			echo 'PostgreSQL Database directory appears to contain a database; Check for upgrade'
 #			docker_process_init_files /usr/share/container-scripts/postgresql/*
-#			export POSTGRESQL_UPGRADE=copy
+			export POSTGRESQL_UPGRADE=copy
+			cat "$PGDATA/postgresql.conf"
 #			export POSTGRESQL_LOG_DESTINATION=/dev/stderr
 #			cat /usr/share/container-scripts/postgresql/common.sh
 #			try_pgupgrade
