@@ -4,6 +4,7 @@ package central;
 
 import "internalapi/central/compliance_operator.proto";
 import "internalapi/compliance/compliance_data.proto";
+import "internalapi/scanner/v4/index_report.proto";
 import "storage/alert.proto";
 import "storage/cluster.proto";
 import "storage/compliance_operator.proto";
@@ -75,6 +76,7 @@ message SensorEvent {
     storage.Secret secret = 7;
     storage.Node node = 9;
     storage.NodeInventory node_inventory = 25;
+    scanner.v4.IndexReport index_report = 34;
     storage.ServiceAccount service_account = 14;
     storage.K8sRole role = 15;
     storage.K8sRoleBinding binding = 16;

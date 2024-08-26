@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/message"
 )
@@ -20,6 +21,7 @@ var (
 
 type nodeInventoryHandlerImpl struct {
 	inventories  <-chan *storage.NodeInventory
+	reportWraps  <-chan *index.IndexReportWrap
 	toCentral    <-chan *message.ExpiringMessage
 	centralReady concurrency.Signal
 	// acksFromCentral is for connecting the replies from Central with the toCompliance chan
@@ -158,6 +160,27 @@ func (c *nodeInventoryHandlerImpl) nodeInventoryHandlingLoop(toCentral chan *mes
 				log.Debugf("Mapping NodeInventory name '%s' to Node ID '%s'", inventory.GetNodeName(), nodeID)
 				c.sendNodeInventory(toCentral, inventory)
 			}
+		case wrap, ok := <-c.reportWraps:
+			if !ok {
+				log.Warn("Report wraps channel is closed")
+				c.stopper.Flow().StopWithError(errInputChanClosed)
+				return
+			}
+			if !c.centralReady.IsDone() {
+				log.Warn("Received Index Report but Central is not reachable. Skipping for now")
+				continue
+			}
+			if wrap == nil || wrap.IndexReport == nil {
+				log.Warn("Received nil index report: not sending to Central")
+				break
+			}
+			if nodeID, err := c.nodeMatcher.GetNodeID(wrap.NodeName); err != nil {
+				log.Warnf("Node %q unknown to Sensor.", wrap.NodeName)
+			} else {
+				log.Debugf("Sending Index Report to Central")
+				wrap.NodeID = nodeID
+				c.sendNodeIndex(toCentral, wrap)
+			}
 		}
 	}
 }
@@ -190,6 +213,27 @@ func (c *nodeInventoryHandlerImpl) sendNodeInventory(toC chan<- *message.Expirin
 				Action: central.ResourceAction_UNSET_ACTION_RESOURCE, // There is no action required for NodeInventory as this is not a K8s resource
 				Resource: &central.SensorEvent_NodeInventory{
 					NodeInventory: inventory,
+				},
+			},
+		},
+	}):
+	}
+}
+
+func (c *nodeInventoryHandlerImpl) sendNodeIndex(toC chan<- *message.ExpiringMessage, indexWrap *index.IndexReportWrap) {
+	if indexWrap == nil || indexWrap.IndexReport == nil {
+		return
+	}
+
+	select {
+	case <-c.stopper.Flow().StopRequested():
+	case toC <- message.New(&central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{
+			Event: &central.SensorEvent{
+				Id:     indexWrap.NodeID,
+				Action: central.ResourceAction_UNSET_ACTION_RESOURCE,
+				Resource: &central.SensorEvent_IndexReport{
+					IndexReport: indexWrap.IndexReport,
 				},
 			},
 		},

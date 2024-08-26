@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -85,7 +86,7 @@ func (c *Compliance) Start() {
 		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
 
-	if c.nodeScanner.IsActive() {
+	if c.nodeScanner.IsActive() { // TODO: This mustn't be depending on a v2 setting
 		nodeInventoriesC := c.manageNodeScanLoop(ctx)
 		// sending nodeInventories into output toSensorC
 		for n := range nodeInventoriesC {
@@ -95,7 +96,6 @@ func (c *Compliance) Start() {
 
 	if env.NodeScanningV4Enabled.BooleanSetting() {
 		log.Infof("Node Index v4 enabled")
-		c.manageNodeIndexLoop(ctx)
 	}
 
 	signalsC := make(chan os.Signal, 1)
@@ -109,27 +109,11 @@ func (c *Compliance) Start() {
 	log.Info("Successfully closed Sensor communication")
 }
 
-// TODO(ROX-24117): This report should be sent to central for enrichment
-func (c *Compliance) manageNodeIndexLoop(ctx context.Context) {
-	go func() {
-		i := c.nodeIndexer.GetIntervals()
-		t := time.NewTicker(i.Initial())
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-t.C:
-				log.Infof("Creating Node Index Report")
-				report, err := c.nodeIndexer.IndexNode(ctx)
-				if err != nil {
-					log.Errorf("Error running node scan: %v", err)
-					continue
-				}
-				log.Infof("Built Node Index Report with %d packages", len(report.GetContents().GetPackages()))
-			}
-
-		}
-	}()
+func (c *Compliance) createIndexMsg(report *v4.IndexReport) *sensor.MsgFromCompliance {
+	return &sensor.MsgFromCompliance{
+		Node: c.nodeNameProvider.GetNodeName(),
+		Msg:  &sensor.MsgFromCompliance_IndexReport{IndexReport: report},
+	}
 }
 
 func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
@@ -163,6 +147,16 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 					c.umh.ObserveSending()
 					c.cache = msg.CloneVT()
 					nodeInventoriesC <- msg
+				}
+				if env.NodeScanningV4Enabled.BooleanSetting() {
+					log.Infof("Creating v4 Node Index Report")
+					report, err := c.nodeIndexer.IndexNode(ctx)
+					if err != nil {
+						log.Errorf("Error creating node index: %v", err)
+					} else {
+						log.Infof("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
+						nodeInventoriesC <- c.createIndexMsg(report)
+					}
 				}
 				interval := i.Next()
 				cmetrics.ObserveRescanInterval(interval, nodeName)
