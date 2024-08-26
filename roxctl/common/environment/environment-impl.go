@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
@@ -133,20 +134,27 @@ func (w colorWriter) Write(p []byte) (int, error) {
 }
 
 func determineAuthMethod(cliEnv Environment) (auth.Method, error) {
-	if !flags.APITokenFileChanged() && !flags.PasswordChanged() && flags.APITokenFile() != "" && flags.Password() != "" {
-		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
+	if method, err := determineAuthMethodExt(
+		flags.APITokenFileChanged(), flags.PasswordChanged(),
+		flags.APITokenFile() == "", flags.Password() == ""); method != nil || err != nil {
+		return method, err
 	}
-	// Prefer command line arguments over environment variable.
+	return ConfigMethod(cliEnv), nil
+}
+
+func determineAuthMethodExt(tokenFileChanged, passwordChanged, tokenFileNameEmpty, passwordEmpty bool) (auth.Method, error) {
+	// Prefer command line arguments over environment variables.
 	switch {
-	case flags.PasswordChanged() && flags.Password() != "":
+	case tokenFileChanged && tokenFileNameEmpty || passwordChanged && passwordEmpty:
+		utils.Should(errox.InvariantViolation)
+		return nil, nil
+	case tokenFileChanged && passwordChanged || !(tokenFileChanged || passwordChanged || tokenFileNameEmpty || passwordEmpty):
+		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
+	case passwordChanged || !(passwordEmpty || tokenFileChanged):
 		return auth.BasicAuth(), nil
-	case flags.APITokenFileChanged() && flags.APITokenFile() != "":
-		return auth.TokenAuth(), nil
-	case flags.Password() != "":
-		return auth.BasicAuth(), nil
-	case flags.APITokenFile() != "":
+	case tokenFileChanged || !tokenFileNameEmpty:
 		return auth.TokenAuth(), nil
 	default:
-		return ConfigMethod(cliEnv), nil
+		return nil, nil
 	}
 }
