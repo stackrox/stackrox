@@ -20,6 +20,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
 	common "github.com/stackrox/rox/sensor/common"
+	index "github.com/stackrox/rox/sensor/common/compliance/index"
 	message "github.com/stackrox/rox/sensor/common/message"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
@@ -103,6 +104,20 @@ func (m *MockService) Communicate(arg0 grpc.BidiStreamingServer[sensor.MsgFromCo
 func (mr *MockServiceMockRecorder) Communicate(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Communicate", reflect.TypeOf((*MockService)(nil).Communicate), arg0)
+}
+
+// IndexReportWraps mocks base method.
+func (m *MockService) IndexReportWraps() <-chan *index.IndexReportWrap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IndexReportWraps")
+	ret0, _ := ret[0].(<-chan *index.IndexReportWrap)
+	return ret0
+}
+
+// IndexReportWraps indicates an expected call of IndexReportWraps.
+func (mr *MockServiceMockRecorder) IndexReportWraps() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexReportWraps", reflect.TypeOf((*MockService)(nil).IndexReportWraps))
 }
 
 // NodeInventories mocks base method.

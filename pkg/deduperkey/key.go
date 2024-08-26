@@ -26,6 +26,7 @@ var (
 		&central.SensorEvent_Role{},
 		&central.SensorEvent_Binding{},
 		&central.SensorEvent_NodeInventory{},
+		&central.SensorEvent_IndexReport{},
 		&central.SensorEvent_ProcessIndicator{},
 		&central.SensorEvent_ProviderMetadata{},
 		&central.SensorEvent_OrchestratorMetadata{},

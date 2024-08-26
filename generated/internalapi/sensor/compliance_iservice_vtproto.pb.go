@@ -8,6 +8,7 @@ import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	storage "github.com/stackrox/rox/generated/storage"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -127,6 +128,21 @@ func (m *MsgFromCompliance_NodeInventory) CloneVT() isMsgFromCompliance_Msg {
 			r.NodeInventory = vtpb.CloneVT()
 		} else {
 			r.NodeInventory = proto.Clone(rhs).(*storage.NodeInventory)
+		}
+	}
+	return r
+}
+
+func (m *MsgFromCompliance_IndexReport) CloneVT() isMsgFromCompliance_Msg {
+	if m == nil {
+		return (*MsgFromCompliance_IndexReport)(nil)
+	}
+	r := new(MsgFromCompliance_IndexReport)
+	if rhs := m.IndexReport; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v4.IndexReport }); ok {
+			r.IndexReport = vtpb.CloneVT()
+		} else {
+			r.IndexReport = proto.Clone(rhs).(*v4.IndexReport)
 		}
 	}
 	return r
@@ -494,6 +510,35 @@ func (this *MsgFromCompliance_NodeInventory) EqualVT(thatIface isMsgFromComplian
 		if equal, ok := interface{}(p).(interface {
 			EqualVT(*storage.NodeInventory) bool
 		}); ok {
+			if !equal.EqualVT(q) {
+				return false
+			}
+		} else if !proto.Equal(p, q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *MsgFromCompliance_IndexReport) EqualVT(thatIface isMsgFromCompliance_Msg) bool {
+	that, ok := thatIface.(*MsgFromCompliance_IndexReport)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.IndexReport, that.IndexReport; p != q {
+		if p == nil {
+			p = &v4.IndexReport{}
+		}
+		if q == nil {
+			q = &v4.IndexReport{}
+		}
+		if equal, ok := interface{}(p).(interface{ EqualVT(*v4.IndexReport) bool }); ok {
 			if !equal.EqualVT(q) {
 				return false
 			}
@@ -1057,6 +1102,37 @@ func (m *MsgFromCompliance_NodeInventory) MarshalToSizedBufferVT(dAtA []byte) (i
 	}
 	return len(dAtA) - i, nil
 }
+func (m *MsgFromCompliance_IndexReport) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgFromCompliance_IndexReport) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.IndexReport != nil {
+		if vtmsg, ok := interface{}(m.IndexReport).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.IndexReport)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	return len(dAtA) - i, nil
+}
 func (m *MsgToCompliance_ScrapeConfig) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -1585,6 +1661,24 @@ func (m *MsgFromCompliance_NodeInventory) SizeVT() (n int) {
 			l = size.SizeVT()
 		} else {
 			l = proto.Size(m.NodeInventory)
+		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *MsgFromCompliance_IndexReport) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.IndexReport != nil {
+		if size, ok := interface{}(m.IndexReport).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.IndexReport)
 		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -2193,6 +2287,63 @@ func (m *MsgFromCompliance) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 				m.Msg = &MsgFromCompliance_NodeInventory{NodeInventory: v}
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IndexReport", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgFromCompliance_IndexReport); ok {
+				if unmarshal, ok := interface{}(oneof.IndexReport).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.IndexReport); err != nil {
+						return err
+					}
+				}
+			} else {
+				v := &v4.IndexReport{}
+				if unmarshal, ok := interface{}(v).(interface {
+					UnmarshalVT([]byte) error
+				}); ok {
+					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+						return err
+					}
+				} else {
+					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
+						return err
+					}
+				}
+				m.Msg = &MsgFromCompliance_IndexReport{IndexReport: v}
 			}
 			iNdEx = postIndex
 		default:

@@ -5,14 +5,16 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/compliance/index"
 )
 
 var _ common.ComplianceComponent = (*nodeInventoryHandlerImpl)(nil)
 
 // NewNodeInventoryHandler returns a new instance of a NodeInventoryHandler
-func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, matcher NodeIDMatcher) *nodeInventoryHandlerImpl {
+func NewNodeInventoryHandler(ch <-chan *storage.NodeInventory, iw <-chan *index.IndexReportWrap, matcher NodeIDMatcher) *nodeInventoryHandlerImpl {
 	return &nodeInventoryHandlerImpl{
 		inventories:     ch,
+		reportWraps:     iw,
 		toCentral:       nil,
 		centralReady:    concurrency.NewSignal(),
 		toCompliance:    nil,
