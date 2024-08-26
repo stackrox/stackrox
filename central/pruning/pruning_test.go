@@ -17,6 +17,7 @@ import (
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
+	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
@@ -56,6 +57,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -77,6 +79,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -552,7 +555,8 @@ func (s *PruningTestSuite) TestImagePruning() {
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods,
 				nil, nil, nil, config, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil,
+				nil, nil).(*garbageCollectorImpl)
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
@@ -813,7 +817,8 @@ func (s *PruningTestSuite) TestClusterPruning() {
 
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil,
+				nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -939,7 +944,8 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil,
+				nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -961,10 +967,9 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 }
 
 func unhealthyClusterStatus(daysSinceLastContact int) *storage.ClusterHealthStatus {
-	lastContactTime := daysAgo(daysSinceLastContact)
 	return &storage.ClusterHealthStatus{
 		SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-		LastContact:        protocompat.ConvertTimeToTimestampOrNil(&lastContactTime),
+		LastContact:        daysAgo(daysSinceLastContact),
 	}
 }
 
@@ -979,8 +984,8 @@ func getCluserRetentionConfig(retentionDays int, createdBeforeDays int, lastUpda
 				"k2": "v2",
 				"k3": "v3",
 			},
-			LastUpdated: protocompat.ConvertTimeToTimestampOrNil(&lastUpdateTime),
-			CreatedAt:   protocompat.ConvertTimeToTimestampOrNil(&creationTime),
+			LastUpdated: lastUpdateTime,
+			CreatedAt:   creationTime,
 		}}
 }
 
@@ -1117,7 +1122,8 @@ func (s *PruningTestSuite) TestAlertPruning() {
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil,
 				nil, nil, nil, config, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil,
+				nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -1157,9 +1163,15 @@ func (s *PruningTestSuite) TestAlertPruning() {
 	}
 }
 
-func daysAgo(days int) time.Time { return time.Now().Add(-time.Duration(days) * 24 * time.Hour) }
+func daysAgo(days int) *timestamppb.Timestamp {
+	t := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
+	return protocompat.ConvertTimeToTimestampOrNil(&t)
+}
 
-func hoursAgo(hours int) time.Time { return time.Now().Add(-time.Duration(hours) * time.Hour) }
+func hoursAgo(hours int) *timestamppb.Timestamp {
+	t := time.Now().Add(-time.Duration(hours) * time.Hour)
+	return protocompat.ConvertTimeToTimestampOrNil(&t)
+}
 
 func newListAlertWithDeployment(id string, age time.Duration, deploymentID string, stage storage.LifecycleStage, state storage.ViolationState) *storage.ListAlert {
 	alertTime := time.Now().Add(-age)
@@ -2169,6 +2181,69 @@ func (s *PruningTestSuite) TestRemoveOrphanedNodes() {
 	updatedCount, err = nodeDS.Count(s.ctx, search.EmptyQuery())
 	s.Nil(err)
 	s.Equal(updatedCount, nodeCount-cluster2NodeCount)
+}
+
+func (s *PruningTestSuite) TestPruneOrphanedNodeCVEs() {
+	s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "true")
+	if !env.OrphanedCVEsKeepAlive.BooleanSetting() {
+		s.T().Skip("Skip tests when ROX_ORPHANED_CVES_KEEP_ALIVE disabled")
+		s.T().SkipNow()
+	}
+	s.T().Setenv(env.OrphanedCVEsRetentionDurationDays.EnvVar(), "2")
+
+	nodeCVEDatastore, err := nodeCVEDS.GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
+
+	cases := []struct {
+		desc                string
+		nodeCVEs            []*storage.NodeCVE
+		remainingNodeCVEIDs []string
+	}{
+		{
+			desc: "No orphaned node CVEs to prune",
+			nodeCVEs: []*storage.NodeCVE{
+				{Id: "CVE-1#os1", Orphaned: false},
+				{Id: "CVE-2#os1", Orphaned: true, OrphanedTime: daysAgo(1)},
+				{Id: "CVE-1#os2", Orphaned: true, OrphanedTime: hoursAgo(5)},
+			},
+			remainingNodeCVEIDs: []string{"CVE-1#os1", "CVE-2#os1", "CVE-1#os2"},
+		},
+		{
+			desc: "Successful pruning",
+			nodeCVEs: []*storage.NodeCVE{
+				{Id: "CVE-1#os1", Orphaned: false},
+				{Id: "CVE-2#os1", Orphaned: true, OrphanedTime: daysAgo(1)},
+				{Id: "CVE-1#os2", Orphaned: true, OrphanedTime: daysAgo(3)},
+				{Id: "CVE-2#os2", Orphaned: true, OrphanedTime: daysAgo(5)},
+				{Id: "CVE-3#os1", Orphaned: true, OrphanedTime: hoursAgo(12)},
+			},
+			remainingNodeCVEIDs: []string{"CVE-1#os1", "CVE-2#os1", "CVE-3#os1"},
+		},
+	}
+
+	for _, tc := range cases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			assert.NoError(t, nodeCVEDatastore.UpsertMany(s.ctx, tc.nodeCVEs))
+			defer func() {
+				_, err := s.pool.Exec(s.ctx, "TRUNCATE node_cves CASCADE")
+				assert.NoError(t, err)
+			}()
+
+			gc := &garbageCollectorImpl{
+				nodeCVEStore: nodeCVEDatastore,
+			}
+			gc.pruneOrphanedNodeCVEs()
+
+			results, err := nodeCVEDatastore.Search(s.ctx, search.EmptyQuery())
+			assert.NoError(t, err)
+			ids := make([]string, 0, len(results))
+			for _, res := range results {
+				ids = append(ids, res.ID)
+			}
+
+			assert.ElementsMatch(t, tc.remainingNodeCVEIDs, ids)
+		})
+	}
 }
 
 func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {

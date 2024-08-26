@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/common"
 	searchMocks "github.com/stackrox/rox/central/cve/node/datastore/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/node/datastore/store/mocks"
@@ -172,6 +173,38 @@ func (suite *NodeCVEDataStoreSuite) TestSuppressionCacheForNodes() {
 	suite.NoError(err)
 	suite.datastore.EnrichNodeWithSuppressedCVEs(node)
 	suite.verifySuppressionStateNode(node, []string{"CVE-ABC#", "CVE-DEF#"}, []string{"CVE-GHI#"})
+}
+
+func (suite *NodeCVEDataStoreSuite) TestUpsertMany() {
+	// Test access denied
+	err := suite.datastore.UpsertMany(sac.WithNoAccess(context.Background()), []*storage.NodeCVE{})
+	suite.Require().Error(err)
+
+	// Test successful upsert
+	suite.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.NodeCVE{{Id: "cve-1"}}).Times(1).Return(nil)
+	err = suite.datastore.UpsertMany(testAllAccessContext, []*storage.NodeCVE{{Id: "cve-1"}})
+	suite.Require().NoError(err)
+
+	// Test error from storage
+	suite.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.NodeCVE{{Id: "cve-2"}}).Times(1).Return(errors.New("upsert failed"))
+	err = suite.datastore.UpsertMany(testAllAccessContext, []*storage.NodeCVE{{Id: "cve-2"}})
+	suite.Require().Error(err)
+}
+
+func (suite *NodeCVEDataStoreSuite) TestPruneNodeCVEs() {
+	// Test access denied
+	err := suite.datastore.PruneNodeCVEs(sac.WithNoAccess(context.Background()), []string{})
+	suite.Require().Error(err)
+
+	// Test successful pruning
+	suite.storage.EXPECT().PruneMany(gomock.Any(), []string{"cve-1", "cve-2"}).Times(1).Return(nil)
+	err = suite.datastore.PruneNodeCVEs(testAllAccessContext, []string{"cve-1", "cve-2"})
+	suite.Require().NoError(err)
+
+	// Test error from storage
+	suite.storage.EXPECT().PruneMany(gomock.Any(), []string{"cve-3", "cve-4"}).Times(1).Return(errors.New("prune failed"))
+	err = suite.datastore.PruneNodeCVEs(testAllAccessContext, []string{"cve-3", "cve-4"})
+	suite.Require().Error(err)
 }
 
 func TestGetSuppressionCacheEntry(t *testing.T) {

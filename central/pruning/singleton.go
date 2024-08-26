@@ -5,6 +5,7 @@ import (
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
+	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
@@ -51,7 +52,9 @@ func Singleton() GarbageCollector {
 			logimbueStore.Singleton(),
 			snapshotDataStore.Singleton(),
 			plopDataStore.Singleton(),
-			blobDS.Singleton())
+			blobDS.Singleton(),
+			nodeCVEDS.Singleton(),
+		)
 	})
 	return gc
 }

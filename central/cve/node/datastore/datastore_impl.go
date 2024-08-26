@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/node/datastore/search"
 	"github.com/stackrox/rox/central/cve/node/datastore/store"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -23,6 +24,8 @@ var (
 		sac.ForResource(resources.VulnerabilityManagementRequests),
 		sac.ForResource(resources.VulnerabilityManagementApprovals),
 	)
+
+	nodeSAC = sac.ForResource(resources.Node)
 
 	accessAllCtx = sac.WithAllAccess(context.Background())
 
@@ -108,6 +111,36 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 	return cves, nil
+}
+
+func (ds *datastoreImpl) UpsertMany(ctx context.Context, cves []*storage.NodeCVE) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "NodeCVE", "UpsertMany")
+
+	if ok, err := nodeSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	if err := ds.storage.UpsertMany(ctx, cves); err != nil {
+		return errors.Wrap(err, "Upserting node CVEs")
+	}
+	return nil
+}
+
+func (ds *datastoreImpl) PruneNodeCVEs(ctx context.Context, ids []string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "NodeCVE", "PruneNodeCVEs")
+
+	if ok, err := nodeSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	if err := ds.storage.PruneMany(ctx, ids); err != nil {
+		return errors.Wrap(err, "Pruning node CVEs")
+	}
+	return nil
 }
 
 func (ds *datastoreImpl) Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error {
