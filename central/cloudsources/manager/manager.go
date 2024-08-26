@@ -24,6 +24,7 @@ import (
 
 const (
 	discoveredClustersLoopInterval = 10 * time.Minute
+	clientCreationTimeout = 30 * time.Second
 )
 
 var (
@@ -144,8 +145,7 @@ func (m *managerImpl) getDiscoveredClustersFromCloudSources() []*discoveredclust
 		return nil
 	}
 
-	createTimeout := 30 * time.Second
-	createCtx, cancel := context.WithTimeout(context.Background(), createTimeout)
+	createCtx, cancel := context.WithTimeout(context.Background(), clientCreationTimeout)
 	defer cancel()
 	clients, err := createClients(createCtx, cloudSources)
 	if err != nil {

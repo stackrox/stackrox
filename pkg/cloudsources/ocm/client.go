@@ -32,8 +32,9 @@ func NewClient(ctx context.Context, config *storage.CloudSource, options ...opts
 		RetryLimit(opt.Retries).
 		URL(urlfmt.FormatURL(config.GetOcm().GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)).
 		Client(config.GetCredentials().GetClientId(), config.GetCredentials().GetClientSecret()).
-		Tokens(config.GetCredentials().GetSecret()).Agent(clientconn.GetUserAgent()).BuildContext(ctx)
-
+		Tokens(config.GetCredentials().GetSecret()).
+		Agent(clientconn.GetUserAgent()).
+		BuildContext(ctx)
 	if err != nil {
 		return nil, pkgErrors.Wrap(err, "creating OCM connection")
 	}
