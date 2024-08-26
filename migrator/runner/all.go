@@ -41,4 +41,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_openshift_policy_exclusions_for_4_5"
 	_ "github.com/stackrox/rox/migrator/migrations/m_204_to_m_205_clusters_platform_type_and_k8_version"
 	_ "github.com/stackrox/rox/migrator/migrations/m_205_to_m_206_remove_bad_gorm_index"
+	_ "github.com/stackrox/rox/migrator/migrations/m_206_to_m_207_add_default_policy_edge"
 )
