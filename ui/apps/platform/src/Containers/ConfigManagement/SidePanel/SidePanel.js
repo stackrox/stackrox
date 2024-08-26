@@ -1,7 +1,6 @@
-import React, { useContext } from 'react';
+import React, { useCallback, useContext, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useLocation, useHistory, useRouteMatch, Link } from 'react-router-dom';
-import onClickOutside from 'react-onclickoutside';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 
 import CloseButton from 'Components/CloseButton';
@@ -30,6 +29,27 @@ const SidePanel = ({
     const workflowState = parseURL(location);
     const searchParam = useContext(searchContext);
     const isList = !entityId1 || (entityListType2 && !entityId2);
+
+    const panelRef = useRef(null);
+
+    const handleClickOutside = useCallback(
+        (event) => {
+            if (panelRef.current && !panelRef.current.contains(event.target)) {
+                history.push(URLService.getURL(match, location).clearSidePanelParams().url());
+            }
+        },
+        [history, match, location]
+    );
+
+    useEffect(() => {
+        document.addEventListener('click', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
+    }, [handleClickOutside]);
 
     function getCurrentEntityId() {
         return entityId2 || entityId1;
@@ -94,31 +114,33 @@ const SidePanel = ({
     }
     return (
         <workflowStateContext.Provider value={workflowState}>
-            <PanelNew testid="side-panel">
-                <PanelHead>
-                    <BreadCrumbs
-                        className="leading-normal text-base-600 truncate"
-                        entityType1={entityType1 || entityListType1}
-                        entityId1={entityId1}
-                        entityType2={entityType2}
-                        entityListType2={entityListType2}
-                        entityId2={entityId2}
-                    />
-                    <PanelHeadEnd>
-                        {externalLink}
-                        <CloseButton onClose={onClose} className="border-base-400 border-l" />
-                    </PanelHeadEnd>
-                </PanelHead>
-                <PanelBody>
-                    <Entity
-                        entityContext={entityContext}
-                        entityType={entityType}
-                        entityId={entityId}
-                        entityListType={listType}
-                        query={query}
-                    />
-                </PanelBody>
-            </PanelNew>
+            <div ref={panelRef}>
+                <PanelNew testid="side-panel">
+                    <PanelHead>
+                        <BreadCrumbs
+                            className="leading-normal text-base-600 truncate"
+                            entityType1={entityType1 || entityListType1}
+                            entityId1={entityId1}
+                            entityType2={entityType2}
+                            entityListType2={entityListType2}
+                            entityId2={entityId2}
+                        />
+                        <PanelHeadEnd>
+                            {externalLink}
+                            <CloseButton onClose={onClose} className="border-base-400 border-l" />
+                        </PanelHeadEnd>
+                    </PanelHead>
+                    <PanelBody>
+                        <Entity
+                            entityContext={entityContext}
+                            entityType={entityType}
+                            entityId={entityId}
+                            entityListType={listType}
+                            query={query}
+                        />
+                    </PanelBody>
+                </PanelNew>
+            </div>
         </workflowStateContext.Provider>
     );
 };
@@ -146,12 +168,4 @@ SidePanel.defaultProps = {
     entityId2: null,
 };
 
-const clickOutsideConfig = {
-    handleClickOutside: () => SidePanel.handleClickOutside,
-};
-
-/*
- * If more than one SidePanel is rendered, this Pure Functional Component will need to be converted to
- * a Class Component in order to work correctly. See https://github.com/stackrox/rox/pull/3090#pullrequestreview-274948849
- */
-export default onClickOutside(SidePanel, clickOutsideConfig);
+export default SidePanel;
