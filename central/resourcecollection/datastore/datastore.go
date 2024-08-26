@@ -38,7 +38,7 @@ type DataStore interface {
 
 // QueryResolver provides functionality for resolving v1.Query objects from storage.ResourceCollection objects
 type QueryResolver interface {
-	ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection) (*v1.Query, error)
+	ResolveCollectionQuery(ctx context.Context, collection *storage.ResourceCollection, excludeMatches bool) (*v1.Query, error)
 }
 
 type supportedFieldKey struct {
