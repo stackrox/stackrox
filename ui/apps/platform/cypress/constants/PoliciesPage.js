@@ -31,8 +31,8 @@ export const selectors = {
         description: 'ul.pf-v5-c-alert-group .pf-v5-c-alert__description',
     },
     wizardBtns: {
-        step3: '.pf-v5-c-wizard__nav-link:contains("criteria")',
-        step5: '.pf-v5-c-wizard__nav-link:contains("Review policy")',
+        step3: '.pf-v5-c-wizard__nav-link:contains("Rules")',
+        step7: '.pf-v5-c-wizard__nav-link:contains("Review")',
     },
     step3: {
         defaultPolicyAlert: '[data-testid="default-policy-alert"]',

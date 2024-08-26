@@ -61,7 +61,7 @@ export const initialPolicy: ClientPolicy = {
     serverPolicySections: [],
     policySections: [
         {
-            sectionName: 'Policy Section 1',
+            sectionName: 'Rule 1',
             policyGroups: [],
         },
     ],
