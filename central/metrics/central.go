@@ -98,14 +98,6 @@ var (
 		Help:      "Number of elements received and processed",
 	}, []string{"Operation", "Resource"})
 
-	policyEvaluationHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "policy_evaluation_duration",
-		Help:      "Histogram of how long each policy has taken to evaluate",
-		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
-	}, []string{"Policy"})
-
 	totalNetworkFlowsReceivedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -127,13 +119,6 @@ var (
 		Help:      "Histogram of how long risk processing takes",
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Risk_Reprocessor"})
-
-	totalCacheOperationsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "total_db_cache_operations_counter",
-		Help:      "A counter of the total number of DB cache operations performed on Central",
-	}, []string{"Operation", "Type"})
 
 	datastoreFunctionDurationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
