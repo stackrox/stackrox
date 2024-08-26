@@ -13,7 +13,16 @@ Manage ACS configuration using Kube custom resources
 ### To Deploy on the cluster
 **Build and push your image to the location specified by `IMG`:**
 
-TODO(ROX-25495): Add the binary to the main stackrox image
+An example for how to build and push your image to a public image registry:
+
+```
+make main-build-dockerized
+make copy-go-binaries-to-image-dir
+podman build -t quay.io/<user>/stackrox-main:latest -f image/rhel/Dockerfile image/rhel
+podman push quay.io/<user>/stackrox-main:latest
+```
+
+Stackrox CI could also be used to push to quay.io/rhacs-eng.
 
 **Install the CRDs into the cluster:**
 
@@ -24,7 +33,7 @@ make install
 **Deploy the Manager to the cluster with the image specified by `IMG`:**
 
 ```sh
-make deploy IMG=<some-registry>/config-controller:tag
+make deploy IMG=<some-registry>/main:<tag>
 ```
 
 > **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
