@@ -5,7 +5,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import dateFns from 'date-fns';
 import computedStyleToInlineStyle from 'computed-style-to-inline-style';
-import Button from 'Components/Button';
+import { Button } from '@patternfly/react-core';
 import { enhanceWordBreak } from 'utils/pdfUtils';
 import { getProductBranding } from 'constants/productBranding';
 
@@ -286,13 +286,14 @@ class WorkflowPDFExportButton extends Component {
     render() {
         return (
             <Button
+                variant="primary"
                 isLoading={this.props.isExporting}
-                disabled={this.props.isExporting}
-                dataTestId="download-pdf-button"
+                isDisabled={this.props.isExporting}
                 className={this.props.className}
-                text="Download Page as PDF"
                 onClick={this.saveFn}
-            />
+            >
+                Download Page as PDF
+            </Button>
         );
     }
 }

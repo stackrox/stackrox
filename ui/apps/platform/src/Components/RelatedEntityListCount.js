@@ -24,13 +24,13 @@ const RelatedEntityListCount = ({ match, location, history, name, value, entityT
         history.push(url);
     }
 
-    const content = <div className="text-6xl text-lg text-primary-700">{value}</div>;
+    const content = <div className="text-6xl">{value}</div>;
 
     const result = (
         <button
             type="button"
             disabled={value === 0}
-            className="h-full w-full no-underline text-primary-700 hover:bg-primary-100"
+            className="h-full w-full"
             onClick={onClick}
             data-testid="related-entity-list-count-value"
         >
