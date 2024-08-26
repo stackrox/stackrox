@@ -1050,10 +1050,12 @@ func (g *garbageCollectorImpl) pruneOrphanedNodeCVEs() {
 	results, err := g.nodeCVEStore.Search(pruningCtx, query)
 	if err != nil {
 		log.Error(errors.Wrap(err, "Pruning orphaned node CVEs"))
+		return
 	}
 
 	if len(results) == 0 {
 		log.Debug("No orphaned node CVEs to prune")
+		return
 	}
 
 	ids := make([]string, 0, len(results))
