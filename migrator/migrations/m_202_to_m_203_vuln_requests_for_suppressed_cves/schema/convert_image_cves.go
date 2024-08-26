@@ -31,7 +31,7 @@ func ConvertImageCVEFromProto(obj *storage.ImageCVE) (*ImageCves, error) {
 // ConvertImageCVEToProto converts Gorm model `ImageCves` to its protobuf type object
 func ConvertImageCVEToProto(m *ImageCves) (*storage.ImageCVE, error) {
 	var msg storage.ImageCVE
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil
