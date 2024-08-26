@@ -18,8 +18,8 @@ An example for how to build and push your image to a public image registry:
 ```
 make main-build-dockerized
 make copy-go-binaries-to-image-dir
-podman build -t quay.io/klape/stackrox-main:latest -f image/rhel/Dockerfile image/rhel
-podman push quay.io/klape/stackrox-main:latest
+podman build -t quay.io/<user>/stackrox-main:latest -f image/rhel/Dockerfile image/rhel
+podman push quay.io/<user>/stackrox-main:latest
 ```
 
 Stackrox CI could also be used to push to quay.io/rhacs-eng.
