@@ -37,7 +37,7 @@ imagePullSecrets:
 {{- end }}
 ```
 This style provides consistency for the templating syntax and it enables us to indent the templating directives
-without having any extra whitespace ending up in the rendered output or semantically required whitespace silently eing removed.
+without having any extra whitespace ending up in the rendered output or semantically required whitespace being silently removed.
 
 ## Add new values field to StackRox Helm Chart
 
