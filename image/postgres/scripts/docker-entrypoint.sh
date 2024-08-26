@@ -182,6 +182,15 @@ docker_process_init_files() {
 			*.sql)    echo "$0: running $f"; docker_process_sql -f "$f"; echo ;;
 			*.sql.gz) echo "$0: running $f"; gunzip -c "$f" | docker_process_sql; echo ;;
 			*.sql.xz) echo "$0: running $f"; xzcat "$f" | docker_process_sql; echo ;;
+            *scl_enable)
+                if [ -x "$f" ]; then
+                    echo "$0: running $f"
+                    "$f"
+                else
+                    echo "$0: sourcing $f"
+                    . "$f"
+                fi
+                ;;
 			*)        echo "$0: ignoring $f" ;;
 		esac
 		echo
