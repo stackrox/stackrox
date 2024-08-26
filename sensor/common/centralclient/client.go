@@ -199,7 +199,7 @@ func issuedByStackRoxCA(proxyCert *x509.Certificate) bool {
 
 func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (*v1.TrustInfo, error) {
 	var trustInfo v1.TrustInfo
-	err := trustInfo.UnmarshalVT(challenge.GetTrustInfoSerialized())
+	err := trustInfo.UnmarshalVTUnsafe(challenge.GetTrustInfoSerialized())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing TrustInfo proto")
 	}

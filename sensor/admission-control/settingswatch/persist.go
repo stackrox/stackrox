@@ -80,7 +80,7 @@ func (p *persister) loadExisting() (*sensor.AdmissionControlSettings, error) {
 	}
 
 	var settings sensor.AdmissionControlSettings
-	if err := settings.UnmarshalVT(bytes); err != nil {
+	if err := settings.UnmarshalVTUnsafe(bytes); err != nil {
 		return nil, errors.Wrapf(err, "unmarshaling initial admission control settings from %s", settingsPath)
 	}
 
