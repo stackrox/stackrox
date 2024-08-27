@@ -328,7 +328,7 @@ function GcsIntegrationForm({
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                 >
-                                                    Red Hat ACS documentation
+                                                    RHACS documentation
                                                 </a>
                                             </ExternalLink>
                                         </Text>
