@@ -326,7 +326,7 @@ function GcsIntegrationForm({
                                                 <a
                                                     href="https://docs.openshift.com/acs/integration/integrate-using-short-lived-tokens.html"
                                                     target="_blank"
-                                                    rel="noreferrer"
+                                                    rel="noopener noreferrer"
                                                 >
                                                     Red Hat ACS documentation
                                                 </a>

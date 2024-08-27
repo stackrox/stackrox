@@ -407,7 +407,7 @@ function S3CompatibleIntegrationForm({
                                                 <a
                                                     href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html"
                                                     target="_blank"
-                                                    rel="noreferrer"
+                                                    rel="noopener noreferrer"
                                                 >
                                                     AWS documentation about virtual hosting
                                                 </a>

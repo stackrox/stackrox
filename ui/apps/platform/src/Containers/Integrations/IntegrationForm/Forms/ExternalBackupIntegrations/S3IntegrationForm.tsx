@@ -329,7 +329,7 @@ function S3IntegrationForm({
                                                 <a
                                                     href="https://docs.aws.amazon.com/general/latest/gr/s3.html"
                                                     target="_blank"
-                                                    rel="noreferrer"
+                                                    rel="noopener noreferrer"
                                                 >
                                                     AWS S3 documentation
                                                 </a>
@@ -369,7 +369,7 @@ function S3IntegrationForm({
                                                 <a
                                                     href="https://docs.aws.amazon.com/general/latest/gr/s3.html"
                                                     target="_blank"
-                                                    rel="noreferrer"
+                                                    rel="noopener noreferrer"
                                                 >
                                                     AWS S3 documentation
                                                 </a>
@@ -411,7 +411,7 @@ function S3IntegrationForm({
                                                 <a
                                                     href="https://docs.openshift.com/acs/integration/integrate-using-short-lived-tokens.html"
                                                     target="_blank"
-                                                    rel="noreferrer"
+                                                    rel="noopener noreferrer"
                                                 >
                                                     Red Hat ACS documentation
                                                 </a>
