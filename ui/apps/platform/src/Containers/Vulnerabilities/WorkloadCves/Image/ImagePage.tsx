@@ -11,7 +11,6 @@ import {
     Skeleton,
     Tab,
     Tabs,
-    TabsComponent,
     TabTitleText,
     Title,
     Alert,
@@ -168,7 +167,6 @@ function ImagePage() {
                             setActiveTabKey(key);
                             pagination.setPage(1);
                         }}
-                        component={TabsComponent.nav}
                         className="pf-v5-u-pl-md pf-v5-u-background-color-100"
                         mountOnEnter
                         unmountOnExit
