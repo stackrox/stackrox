@@ -16,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	pkgCVE "github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
@@ -134,6 +135,12 @@ func (s *NodeCVEViewTestSuite) createTestClusters() {
 }
 
 func (s *NodeCVEViewTestSuite) SetupSuite() {
+	s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "true")
+	if !env.OrphanedCVEsKeepAlive.BooleanSetting() {
+		s.T().Skip("Skip tests when ROX_ORPHANED_CVES_KEEP_ALIVE disabled")
+		s.T().SkipNow()
+	}
+
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 

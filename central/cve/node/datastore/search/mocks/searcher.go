@@ -73,18 +73,18 @@ func (mr *MockSearcherMockRecorder) Search(ctx, query any) *gomock.Call {
 }
 
 // SearchCVEs mocks base method.
-func (m *MockSearcher) SearchCVEs(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+func (m *MockSearcher) SearchCVEs(ctx context.Context, query *v1.Query) ([]*v1.SearchResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SearchCVEs", arg0, arg1)
+	ret := m.ctrl.Call(m, "SearchCVEs", ctx, query)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchCVEs indicates an expected call of SearchCVEs.
-func (mr *MockSearcherMockRecorder) SearchCVEs(arg0, arg1 any) *gomock.Call {
+func (mr *MockSearcherMockRecorder) SearchCVEs(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCVEs", reflect.TypeOf((*MockSearcher)(nil).SearchCVEs), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchCVEs", reflect.TypeOf((*MockSearcher)(nil).SearchCVEs), ctx, query)
 }
 
 // SearchRawCVEs mocks base method.

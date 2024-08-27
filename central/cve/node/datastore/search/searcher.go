@@ -18,7 +18,7 @@ import (
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
 	Count(ctx context.Context, query *v1.Query) (int, error)
-	SearchCVEs(context.Context, *v1.Query) ([]*v1.SearchResult, error)
+	SearchCVEs(ctx context.Context, query *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawCVEs(ctx context.Context, query *v1.Query) ([]*storage.NodeCVE, error)
 }
 
