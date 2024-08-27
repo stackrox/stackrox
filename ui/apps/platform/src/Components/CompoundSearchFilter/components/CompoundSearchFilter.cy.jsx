@@ -225,11 +225,12 @@ describe(Cypress.spec.relative, () => {
 
         cy.get(selectors.attributeSelectToggle).click();
 
-        cy.get(selectors.attributeSelectItems).should('have.length', 4);
+        cy.get(selectors.attributeSelectItems).should('have.length', 5);
         cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'ID');
         cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Name');
         cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Label');
         cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'Annotation');
+        cy.get(selectors.attributeSelectItems).eq(4).should('have.text', 'Status');
     });
 
     it('should display the text input and correctly search for image tags', () => {
