@@ -30,4 +30,17 @@ export const Annotation: CompoundSearchFilterAttribute = {
     inputType: 'autocomplete',
 };
 
-export const deploymentAttributes = [ID, Name, Label, Annotation];
+export const Inactive: CompoundSearchFilterAttribute = {
+    displayName: 'Status',
+    filterChipLabel: 'Deployment status',
+    searchTerm: 'Inactive Deployment',
+    inputType: 'select',
+    inputProps: {
+        options: [
+            { value: 'false', label: 'Active' },
+            { value: 'true', label: 'Inactive' },
+        ],
+    },
+};
+
+export const deploymentAttributes = [ID, Name, Label, Annotation, Inactive];
