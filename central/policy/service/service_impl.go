@@ -320,10 +320,14 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 		return nil, errors.Wrap(errox.InvalidArgs, "A policy id must be specified to delete a Policy")
 	}
 
+	policy, exists, err := s.policies.GetPolicy(ctx, request.GetId())
+	if !exists || err != nil {
+		return &v1.Empty{}, nil
+	}
+
 	// Note: default policies cannot be deleted, only disabled
-	policy, _, _ := s.policies.GetPolicy(ctx, request.GetId())
-	if policy.IsDefault == true {
-		return nil, errors.Wrap(errox.NotImplemented, "A default Policy cannot be deleted. (You can disable a default policy, but not delete it.)")
+	if policy.IsDefault {
+		return nil, errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
 	}
 
 	if err := s.policies.RemovePolicy(ctx, request.GetId()); err != nil {
