@@ -70,20 +70,21 @@ func (CloudSource_Type) EnumDescriptor() ([]byte, []int) {
 }
 
 type CloudSource struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id                  string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                    // @gotags: sql:"pk,type(uuid)"
-	Name                string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Integration Name,hidden"`                                // @gotags: sql:"unique" search:"Integration Name,hidden"
-	Type                CloudSource_Type         `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CloudSource_Type" json:"type,omitempty" search:"Integration Type,hidden"` // @gotags: search:"Integration Type,hidden"
-	Credentials         *CloudSource_Credentials `protobuf:"bytes,4,opt,name=credentials,proto3" json:"credentials,omitempty"`
-	SkipTestIntegration bool                     `protobuf:"varint,5,opt,name=skip_test_integration,json=skipTestIntegration,proto3" json:"skip_test_integration,omitempty"`
 	// Types that are assignable to Config:
 	//
 	//	*CloudSource_PaladinCloud
 	//	*CloudSource_Ocm
-	Config isCloudSource_Config `protobuf_oneof:"Config"`
+	Config      isCloudSource_Config `protobuf_oneof:"Config"`
+	state       protoimpl.MessageState
+	Credentials *CloudSource_Credentials `protobuf:"bytes,4,opt,name=credentials,proto3" json:"credentials,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                               // @gotags: sql:"pk,type(uuid)"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Integration Name,hidden"` // @gotags: sql:"unique" search:"Integration Name,hidden"
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache           protoimpl.SizeCache
+	Type                CloudSource_Type `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CloudSource_Type" json:"type,omitempty" search:"Integration Type,hidden"` // @gotags: search:"Integration Type,hidden"
+	SkipTestIntegration bool             `protobuf:"varint,5,opt,name=skip_test_integration,json=skipTestIntegration,proto3" json:"skip_test_integration,omitempty"`
 }
 
 func (x *CloudSource) Reset() {
@@ -191,11 +192,12 @@ func (*CloudSource_PaladinCloud) isCloudSource_Config() {}
 func (*CloudSource_Ocm) isCloudSource_Config() {}
 
 type PaladinCloudConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Endpoint      string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
 	unknownFields protoimpl.UnknownFields
 
-	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *PaladinCloudConfig) Reset() {
@@ -238,11 +240,12 @@ func (x *PaladinCloudConfig) GetEndpoint() string {
 }
 
 type OCMConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Endpoint      string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
 	unknownFields protoimpl.UnknownFields
 
-	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *OCMConfig) Reset() {
@@ -285,11 +288,12 @@ func (x *OCMConfig) GetEndpoint() string {
 }
 
 type CloudSource_Credentials struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Secret        string `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	unknownFields protoimpl.UnknownFields
 
-	Secret string `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *CloudSource_Credentials) Reset() {

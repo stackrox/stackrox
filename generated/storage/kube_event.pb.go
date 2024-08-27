@@ -160,14 +160,6 @@ func (KubernetesEvent_Object_Resource) EnumDescriptor() ([]byte, []int) {
 }
 
 type KubernetesEvent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id        string                  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Object    *KubernetesEvent_Object `protobuf:"bytes,2,opt,name=object,proto3" json:"object,omitempty"`
-	Timestamp *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	ApiVerb   KubernetesEvent_APIVerb `protobuf:"varint,4,opt,name=api_verb,json=apiVerb,proto3,enum=storage.KubernetesEvent_APIVerb" json:"api_verb,omitempty" policy:"Kubernetes API Verb"` // @gotags: policy:"Kubernetes API Verb"
 	// tags 5-14 reserved for ObjectArgs
 	// Next available tag: 7
 	//
@@ -176,14 +168,23 @@ type KubernetesEvent struct {
 	//	*KubernetesEvent_PodExecArgs_
 	//	*KubernetesEvent_PodPortForwardArgs_
 	ObjectArgs isKubernetesEvent_ObjectArgs `protobuf_oneof:"ObjectArgs"`
+	state      protoimpl.MessageState
+	Object     *KubernetesEvent_Object `protobuf:"bytes,2,opt,name=object,proto3" json:"object,omitempty"`
+	Timestamp  *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Extended arguments. May not be available for pod exec and port forward events.
 	// These start at 15 because they were added after ObjectArgs and the previous tags are reserved in case it needs to be extended in the future.
 	User             *KubernetesEvent_User           `protobuf:"bytes,15,opt,name=user,proto3" json:"user,omitempty"`
 	ImpersonatedUser *KubernetesEvent_User           `protobuf:"bytes,16,opt,name=impersonated_user,json=impersonatedUser,proto3" json:"impersonated_user,omitempty" policy:",ignore"` // this field is optional if the request wasn't an impersonated request // @gotags: policy:",ignore"
-	SourceIps        []string                        `protobuf:"bytes,17,rep,name=source_ips,json=sourceIps,proto3" json:"source_ips,omitempty" policy:"Source IP Address"`                      // @gotags: policy:"Source IP Address"
-	UserAgent        string                          `protobuf:"bytes,18,opt,name=user_agent,json=userAgent,proto3" json:"user_agent,omitempty" policy:"User Agent"`                      // @gotags: policy:"User Agent"
 	ResponseStatus   *KubernetesEvent_ResponseStatus `protobuf:"bytes,19,opt,name=response_status,json=responseStatus,proto3" json:"response_status,omitempty"`
-	RequestUri       string                          `protobuf:"bytes,20,opt,name=request_uri,json=requestUri,proto3" json:"request_uri,omitempty"` // Field will not be used for policy detection
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	UserAgent     string `protobuf:"bytes,18,opt,name=user_agent,json=userAgent,proto3" json:"user_agent,omitempty" policy:"User Agent"` // @gotags: policy:"User Agent"
+	RequestUri    string `protobuf:"bytes,20,opt,name=request_uri,json=requestUri,proto3" json:"request_uri,omitempty"`                  // Field will not be used for policy detection
+	unknownFields protoimpl.UnknownFields
+
+	SourceIps []string `protobuf:"bytes,17,rep,name=source_ips,json=sourceIps,proto3" json:"source_ips,omitempty" policy:"Source IP Address"` // @gotags: policy:"Source IP Address"
+	sizeCache protoimpl.SizeCache
+	ApiVerb   KubernetesEvent_APIVerb `protobuf:"varint,4,opt,name=api_verb,json=apiVerb,proto3,enum=storage.KubernetesEvent_APIVerb" json:"api_verb,omitempty" policy:"Kubernetes API Verb"` // @gotags: policy:"Kubernetes API Verb"
 }
 
 func (x *KubernetesEvent) Reset() {
@@ -326,14 +327,15 @@ func (*KubernetesEvent_PodExecArgs_) isKubernetesEvent_ObjectArgs() {}
 func (*KubernetesEvent_PodPortForwardArgs_) isKubernetesEvent_ObjectArgs() {}
 
 type KubernetesEvent_Object struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" policy:"Kubernetes Resource Name"` // @gotags: policy:"Kubernetes Resource Name"
+	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Namespace     string `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Name      string                          `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" policy:"Kubernetes Resource Name"`                                                       // @gotags: policy:"Kubernetes Resource Name"
+	sizeCache protoimpl.SizeCache
 	Resource  KubernetesEvent_Object_Resource `protobuf:"varint,2,opt,name=resource,proto3,enum=storage.KubernetesEvent_Object_Resource" json:"resource,omitempty" policy:"Kubernetes Resource"` // @gotags: policy:"Kubernetes Resource"
-	ClusterId string                          `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Namespace string                          `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
 }
 
 func (x *KubernetesEvent_Object) Reset() {
@@ -397,12 +399,13 @@ func (x *KubernetesEvent_Object) GetNamespace() string {
 }
 
 type KubernetesEvent_PodExecArgs struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Container     string `protobuf:"bytes,1,opt,name=container,proto3" json:"container,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Container string   `protobuf:"bytes,1,opt,name=container,proto3" json:"container,omitempty"`
 	Commands  []string `protobuf:"bytes,2,rep,name=commands,proto3" json:"commands,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *KubernetesEvent_PodExecArgs) Reset() {
@@ -453,10 +456,10 @@ func (x *KubernetesEvent_PodExecArgs) GetCommands() []string {
 
 type KubernetesEvent_PodPortForwardArgs struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Ports []int32 `protobuf:"varint,1,rep,packed,name=ports,proto3" json:"ports,omitempty"`
+	Ports     []int32 `protobuf:"varint,1,rep,packed,name=ports,proto3" json:"ports,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *KubernetesEvent_PodPortForwardArgs) Reset() {
@@ -500,11 +503,12 @@ func (x *KubernetesEvent_PodPortForwardArgs) GetPorts() []int32 {
 
 type KubernetesEvent_ResponseStatus struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Reason        string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	StatusCode int32  `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
-	Reason     string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	sizeCache protoimpl.SizeCache
+
+	StatusCode int32 `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
 }
 
 func (x *KubernetesEvent_ResponseStatus) Reset() {
@@ -554,12 +558,13 @@ func (x *KubernetesEvent_ResponseStatus) GetReason() string {
 }
 
 type KubernetesEvent_User struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Username      string `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty" policy:"Kubernetes User Name"` // @gotags: policy:"Kubernetes User Name"
 	unknownFields protoimpl.UnknownFields
 
-	Username string   `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty" policy:"Kubernetes User Name"` // @gotags: policy:"Kubernetes User Name"
-	Groups   []string `protobuf:"bytes,2,rep,name=groups,proto3" json:"groups,omitempty" policy:"Kubernetes User Groups"`     // @gotags: policy:"Kubernetes User Groups"
+	Groups    []string `protobuf:"bytes,2,rep,name=groups,proto3" json:"groups,omitempty" policy:"Kubernetes User Groups"` // @gotags: policy:"Kubernetes User Groups"
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *KubernetesEvent_User) Reset() {

@@ -127,14 +127,15 @@ func (DiscoveredCluster_Metadata_ProviderType) EnumDescriptor() ([]byte, []int) 
 // Refer to v1.DiscoveredCluster for a more detailed doc.
 type DiscoveredCluster struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Metadata      *DiscoveredCluster_Metadata `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	LastUpdatedAt *timestamppb.Timestamp      `protobuf:"bytes,5,opt,name=last_updated_at,json=lastUpdatedAt,proto3" json:"last_updated_at,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                                                             // @gotags: sql:"pk,type(uuid)"
+	SourceId      string `protobuf:"bytes,4,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty" search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"
 	unknownFields protoimpl.UnknownFields
 
-	Id            string                      `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	Metadata      *DiscoveredCluster_Metadata `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	Status        DiscoveredCluster_Status    `protobuf:"varint,3,opt,name=status,proto3,enum=storage.DiscoveredCluster_Status" json:"status,omitempty" search:"Cluster Status,hidden"` // @gotags: search:"Cluster Status,hidden"
-	SourceId      string                      `protobuf:"bytes,4,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty" search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"`                    // @gotags: search:"Integration ID,hidden" sql:"fk(CloudSource:id),no-fk-constraint,type(uuid)"
-	LastUpdatedAt *timestamppb.Timestamp      `protobuf:"bytes,5,opt,name=last_updated_at,json=lastUpdatedAt,proto3" json:"last_updated_at,omitempty" search:"Last Updated,hidden"`   // @gotags: search:"Last Updated,hidden"
+	sizeCache protoimpl.SizeCache
+	Status    DiscoveredCluster_Status `protobuf:"varint,3,opt,name=status,proto3,enum=storage.DiscoveredCluster_Status" json:"status,omitempty" search:"Cluster Status,hidden"` // @gotags: search:"Cluster Status,hidden"
 }
 
 func (x *DiscoveredCluster) Reset() {
@@ -205,16 +206,17 @@ func (x *DiscoveredCluster) GetLastUpdatedAt() *timestamppb.Timestamp {
 }
 
 type DiscoveredCluster_Metadata struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState
+	FirstDiscoveredAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=first_discovered_at,json=firstDiscoveredAt,proto3" json:"first_discovered_at,omitempty" search:"Cluster Discovered Time,hidden"` // @gotags: search:"Cluster Discovered Time,hidden"
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Cluster,hidden"` // @gotags: search:"Cluster,hidden"
+	Region        string `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id                string                                  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name              string                                  `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Cluster,hidden"`                                    // @gotags: search:"Cluster,hidden"
-	Type              ClusterMetadata_Type                    `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterMetadata_Type" json:"type,omitempty" search:"Cluster Type,hidden"` // @gotags: search:"Cluster Type,hidden"
-	ProviderType      DiscoveredCluster_Metadata_ProviderType `protobuf:"varint,4,opt,name=provider_type,json=providerType,proto3,enum=storage.DiscoveredCluster_Metadata_ProviderType" json:"provider_type,omitempty"`
-	Region            string                                  `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"`
-	FirstDiscoveredAt *timestamppb.Timestamp                  `protobuf:"bytes,6,opt,name=first_discovered_at,json=firstDiscoveredAt,proto3" json:"first_discovered_at,omitempty" search:"Cluster Discovered Time,hidden"` // @gotags: search:"Cluster Discovered Time,hidden"
+	sizeCache    protoimpl.SizeCache
+	Type         ClusterMetadata_Type                    `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterMetadata_Type" json:"type,omitempty" search:"Cluster Type,hidden"` // @gotags: search:"Cluster Type,hidden"
+	ProviderType DiscoveredCluster_Metadata_ProviderType `protobuf:"varint,4,opt,name=provider_type,json=providerType,proto3,enum=storage.DiscoveredCluster_Metadata_ProviderType" json:"provider_type,omitempty"`
 }
 
 func (x *DiscoveredCluster_Metadata) Reset() {

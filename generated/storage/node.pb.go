@@ -171,42 +171,6 @@ func (NodeInventory_Note) EnumDescriptor() ([]byte, []int) {
 // Node represents information about a node in the cluster.
 // next available tag: 28
 type Node struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// A unique ID identifying this node.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Node ID,store" sql:"pk,type(uuid)"` // @gotags: search:"Node ID,store" sql:"pk,type(uuid)"
-	// The (host)name of the node. Might or might not be the same as ID.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Node,store"` // @gotags: search:"Node,store"
-	// Taints on the host
-	Taints      []*Taint          `protobuf:"bytes,3,rep,name=taints,proto3" json:"taints,omitempty"`
-	ClusterId   string            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"`                                                                            // @gotags: search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
-	ClusterName string            `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"`                                                                      // @gotags: search:"Cluster,store"
-	Labels      map[string]string `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Node Label"`           // @gotags: search:"Node Label"
-	Annotations map[string]string `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Node Annotation"` // @gotags: search:"Node Annotation"
-	// When the cluster reported the node was added
-	JoinedAt *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty" search:"Node Join Time,store"` // @gotags: search:"Node Join Time,store"
-	// node internal IP addresses
-	InternalIpAddresses []string `protobuf:"bytes,8,rep,name=internal_ip_addresses,json=internalIpAddresses,proto3" json:"internal_ip_addresses,omitempty"`
-	// node external IP addresses
-	ExternalIpAddresses []string `protobuf:"bytes,9,rep,name=external_ip_addresses,json=externalIpAddresses,proto3" json:"external_ip_addresses,omitempty"`
-	// From NodeInfo
-	//
-	// Deprecated: Marked as deprecated in storage/node.proto.
-	ContainerRuntimeVersion string                `protobuf:"bytes,10,opt,name=container_runtime_version,json=containerRuntimeVersion,proto3" json:"container_runtime_version,omitempty"` // Use container_runtime.version
-	ContainerRuntime        *ContainerRuntimeInfo `protobuf:"bytes,14,opt,name=container_runtime,json=containerRuntime,proto3" json:"container_runtime,omitempty"`
-	KernelVersion           string                `protobuf:"bytes,11,opt,name=kernel_version,json=kernelVersion,proto3" json:"kernel_version,omitempty"`
-	// From NodeInfo. Operating system reported by the node (ex: linux).
-	OperatingSystem string `protobuf:"bytes,17,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
-	// From NodeInfo. OS image reported by the node from /etc/os-release.
-	OsImage          string                 `protobuf:"bytes,12,opt,name=os_image,json=osImage,proto3" json:"os_image,omitempty" search:"Operating System,store"` // @gotags: search:"Operating System,store"
-	KubeletVersion   string                 `protobuf:"bytes,15,opt,name=kubelet_version,json=kubeletVersion,proto3" json:"kubelet_version,omitempty"`
-	KubeProxyVersion string                 `protobuf:"bytes,16,opt,name=kube_proxy_version,json=kubeProxyVersion,proto3" json:"kube_proxy_version,omitempty"`
-	LastUpdated      *timestamppb.Timestamp `protobuf:"bytes,25,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
-	// Time we received an update from Kubernetes.
-	K8SUpdated *timestamppb.Timestamp `protobuf:"bytes,26,opt,name=k8s_updated,json=k8sUpdated,proto3" json:"k8s_updated,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
-	Scan       *NodeScan              `protobuf:"bytes,18,opt,name=scan,proto3" json:"scan,omitempty" policy:"Node Scan"`                               // @gotags: policy:"Node Scan"
 	// Types that are assignable to SetComponents:
 	//
 	//	*Node_Components
@@ -219,13 +183,50 @@ type Node struct {
 	//
 	//	*Node_FixableCves
 	SetFixable isNode_SetFixable `protobuf_oneof:"set_fixable"`
-	Priority   int64             `protobuf:"varint,22,opt,name=priority,proto3" json:"priority,omitempty" search:"Node Risk Priority,hidden"`                     // @gotags: search:"Node Risk Priority,hidden"
-	RiskScore  float32           `protobuf:"fixed32,23,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Node Risk Score,hidden"` // @gotags: search:"Node Risk Score,hidden"
 	// Types that are assignable to SetTopCvss:
 	//
 	//	*Node_TopCvss
-	SetTopCvss isNode_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	Notes      []Node_Note       `protobuf:"varint,27,rep,packed,name=notes,proto3,enum=storage.Node_Note" json:"notes,omitempty"`
+	SetTopCvss  isNode_SetTopCvss `protobuf_oneof:"set_top_cvss"`
+	state       protoimpl.MessageState
+	Labels      map[string]string `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Node Label"`                // @gotags: search:"Node Label"
+	Annotations map[string]string `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Node Annotation"` // @gotags: search:"Node Annotation"
+	// When the cluster reported the node was added
+	JoinedAt         *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty" search:"Node Join Time,store"` // @gotags: search:"Node Join Time,store"
+	ContainerRuntime *ContainerRuntimeInfo  `protobuf:"bytes,14,opt,name=container_runtime,json=containerRuntime,proto3" json:"container_runtime,omitempty"`
+	LastUpdated      *timestamppb.Timestamp `protobuf:"bytes,25,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
+	// Time we received an update from Kubernetes.
+	K8SUpdated *timestamppb.Timestamp `protobuf:"bytes,26,opt,name=k8s_updated,json=k8sUpdated,proto3" json:"k8s_updated,omitempty" sensorhash:"ignore"` // @gotags: sensorhash:"ignore"
+	Scan       *NodeScan              `protobuf:"bytes,18,opt,name=scan,proto3" json:"scan,omitempty" policy:"Node Scan"`                                // @gotags: policy:"Node Scan"
+
+	// A unique ID identifying this node.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Node ID,store" sql:"pk,type(uuid)"` // @gotags: search:"Node ID,store" sql:"pk,type(uuid)"
+	// The (host)name of the node. Might or might not be the same as ID.
+	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Node,store"`                                                                                   // @gotags: search:"Node,store"
+	ClusterId   string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: search:"Cluster ID,store" sql:"fk(Cluster:id),no-fk-constraint,type(uuid)"
+	ClusterName string `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"`                                               // @gotags: search:"Cluster,store"
+	// From NodeInfo
+	//
+	// Deprecated: Marked as deprecated in storage/node.proto.
+	ContainerRuntimeVersion string `protobuf:"bytes,10,opt,name=container_runtime_version,json=containerRuntimeVersion,proto3" json:"container_runtime_version,omitempty"` // Use container_runtime.version
+	KernelVersion           string `protobuf:"bytes,11,opt,name=kernel_version,json=kernelVersion,proto3" json:"kernel_version,omitempty"`
+	// From NodeInfo. Operating system reported by the node (ex: linux).
+	OperatingSystem string `protobuf:"bytes,17,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
+	// From NodeInfo. OS image reported by the node from /etc/os-release.
+	OsImage          string `protobuf:"bytes,12,opt,name=os_image,json=osImage,proto3" json:"os_image,omitempty" search:"Operating System,store"` // @gotags: search:"Operating System,store"
+	KubeletVersion   string `protobuf:"bytes,15,opt,name=kubelet_version,json=kubeletVersion,proto3" json:"kubelet_version,omitempty"`
+	KubeProxyVersion string `protobuf:"bytes,16,opt,name=kube_proxy_version,json=kubeProxyVersion,proto3" json:"kube_proxy_version,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+
+	// Taints on the host
+	Taints []*Taint `protobuf:"bytes,3,rep,name=taints,proto3" json:"taints,omitempty"`
+	// node internal IP addresses
+	InternalIpAddresses []string `protobuf:"bytes,8,rep,name=internal_ip_addresses,json=internalIpAddresses,proto3" json:"internal_ip_addresses,omitempty"`
+	// node external IP addresses
+	ExternalIpAddresses []string    `protobuf:"bytes,9,rep,name=external_ip_addresses,json=externalIpAddresses,proto3" json:"external_ip_addresses,omitempty"`
+	Notes               []Node_Note `protobuf:"varint,27,rep,packed,name=notes,proto3,enum=storage.Node_Note" json:"notes,omitempty"`
+	Priority            int64       `protobuf:"varint,22,opt,name=priority,proto3" json:"priority,omitempty" search:"Node Risk Priority,hidden"` // @gotags: search:"Node Risk Priority,hidden"
+	sizeCache           protoimpl.SizeCache
+	RiskScore           float32 `protobuf:"fixed32,23,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Node Risk Score,hidden"` // @gotags: search:"Node Risk Score,hidden"
 }
 
 func (x *Node) Reset() {
@@ -520,14 +521,15 @@ func (*Node_TopCvss) isNode_SetTopCvss() {}
 
 // Next tag: 5
 type NodeScan struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
-	ScanTime        *timestamppb.Timestamp       `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Node Scan Time,store"` // @gotags: search:"Node Scan Time,store"
-	OperatingSystem string                       `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
-	Components      []*EmbeddedNodeScanComponent `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty" sql:"-"` // @gotags: sql:"-"
-	Notes           []NodeScan_Note              `protobuf:"varint,4,rep,packed,name=notes,proto3,enum=storage.NodeScan_Note" json:"notes,omitempty"`
+	ScanTime        *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Node Scan Time,store"` // @gotags: search:"Node Scan Time,store"
+	OperatingSystem string                 `protobuf:"bytes,3,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+
+	Components []*EmbeddedNodeScanComponent `protobuf:"bytes,2,rep,name=components,proto3" json:"components,omitempty" sql:"-"` // @gotags: sql:"-"
+	Notes      []NodeScan_Note              `protobuf:"varint,4,rep,packed,name=notes,proto3,enum=storage.NodeScan_Note" json:"notes,omitempty"`
+	sizeCache  protoimpl.SizeCache
 }
 
 func (x *NodeScan) Reset() {
@@ -591,12 +593,7 @@ func (x *NodeScan) GetNotes() []NodeScan_Note {
 }
 
 type NodeInventory struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	NodeId   string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	NodeName string                 `protobuf:"bytes,2,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
+	state    protoimpl.MessageState
 	ScanTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
 	// Components represents a subset of the scannerV1.Components proto message containing only fields required for RHCOS node scanning.
 	// Keep scanner Components and NodeInventory_Components in sync to the degree defined by fuctions:
@@ -605,8 +602,14 @@ type NodeInventory struct {
 	// - to avoid conflicts between v1 and scannerV1 APIs when generating the code in central/graphql/resolvers/generated.go
 	// - to not expose scanner v1 API over stackrox graphql API
 	Components *NodeInventory_Components `protobuf:"bytes,4,opt,name=components,proto3" json:"components,omitempty"`
+
+	NodeId        string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	NodeName      string `protobuf:"bytes,2,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
 	// Note represents scannerV1.Note
-	Notes []NodeInventory_Note `protobuf:"varint,5,rep,packed,name=notes,proto3,enum=storage.NodeInventory_Note" json:"notes,omitempty"`
+	Notes     []NodeInventory_Note `protobuf:"varint,5,rep,packed,name=notes,proto3,enum=storage.NodeInventory_Note" json:"notes,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NodeInventory) Reset() {
@@ -677,20 +680,21 @@ func (x *NodeInventory) GetNotes() []NodeInventory_Note {
 }
 
 type EmbeddedNodeScanComponent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name            string                   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`       // @gotags: search:"Component,store"
-	Version         string                   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"` // @gotags: search:"Component Version,store"
-	Vulns           []*EmbeddedVulnerability `protobuf:"bytes,3,rep,name=vulns,proto3" json:"vulns,omitempty"`
-	Vulnerabilities []*NodeVulnerability     `protobuf:"bytes,7,rep,name=vulnerabilities,proto3" json:"vulnerabilities,omitempty"`
-	Priority        int64                    `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`
 	// Types that are assignable to SetTopCvss:
 	//
 	//	*EmbeddedNodeScanComponent_TopCvss
 	SetTopCvss isEmbeddedNodeScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	RiskScore  float32                                `protobuf:"fixed32,6,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"`
+	state      protoimpl.MessageState
+
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`               // @gotags: search:"Component,store"
+	Version       string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"` // @gotags: search:"Component Version,store"
+	unknownFields protoimpl.UnknownFields
+
+	Vulns           []*EmbeddedVulnerability `protobuf:"bytes,3,rep,name=vulns,proto3" json:"vulns,omitempty"`
+	Vulnerabilities []*NodeVulnerability     `protobuf:"bytes,7,rep,name=vulnerabilities,proto3" json:"vulnerabilities,omitempty"`
+	Priority        int64                    `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`
+	sizeCache       protoimpl.SizeCache
+	RiskScore       float32 `protobuf:"fixed32,6,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"`
 }
 
 func (x *EmbeddedNodeScanComponent) Reset() {
@@ -792,13 +796,14 @@ type EmbeddedNodeScanComponent_TopCvss struct {
 func (*EmbeddedNodeScanComponent_TopCvss) isEmbeddedNodeScanComponent_SetTopCvss() {}
 
 type NodeInventory_Components struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Namespace     string `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Namespace       string                                    `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	RhelComponents  []*NodeInventory_Components_RHELComponent `protobuf:"bytes,2,rep,name=rhel_components,json=rhelComponents,proto3" json:"rhel_components,omitempty"`
 	RhelContentSets []string                                  `protobuf:"bytes,3,rep,name=rhel_content_sets,json=rhelContentSets,proto3" json:"rhel_content_sets,omitempty"`
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *NodeInventory_Components) Reset() {
@@ -856,17 +861,18 @@ func (x *NodeInventory_Components) GetRhelContentSets() []string {
 
 type NodeInventory_Components_RHELComponent struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Namespace     string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Version       string `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
+	Arch          string `protobuf:"bytes,5,opt,name=arch,proto3" json:"arch,omitempty"`
+	Module        string `protobuf:"bytes,6,opt,name=module,proto3" json:"module,omitempty"`
+	AddedBy       string `protobuf:"bytes,7,opt,name=added_by,json=addedBy,proto3" json:"added_by,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id          int64                                                `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name        string                                               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Namespace   string                                               `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Version     string                                               `protobuf:"bytes,4,opt,name=version,proto3" json:"version,omitempty"`
-	Arch        string                                               `protobuf:"bytes,5,opt,name=arch,proto3" json:"arch,omitempty"`
-	Module      string                                               `protobuf:"bytes,6,opt,name=module,proto3" json:"module,omitempty"`
-	AddedBy     string                                               `protobuf:"bytes,7,opt,name=added_by,json=addedBy,proto3" json:"added_by,omitempty"`
 	Executables []*NodeInventory_Components_RHELComponent_Executable `protobuf:"bytes,8,rep,name=executables,proto3" json:"executables,omitempty"`
+
+	Id        int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NodeInventory_Components_RHELComponent) Reset() {
@@ -958,12 +964,13 @@ func (x *NodeInventory_Components_RHELComponent) GetExecutables() []*NodeInvento
 }
 
 type NodeInventory_Components_RHELComponent_Executable struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Path             string                                                                  `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	RequiredFeatures []*NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion `protobuf:"bytes,2,rep,name=required_features,json=requiredFeatures,proto3" json:"required_features,omitempty"`
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *NodeInventory_Components_RHELComponent_Executable) Reset() {
@@ -1013,12 +1020,13 @@ func (x *NodeInventory_Components_RHELComponent_Executable) GetRequiredFeatures(
 }
 
 type NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Version       string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Name    string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion) Reset() {

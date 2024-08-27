@@ -25,21 +25,22 @@ const (
 // (regardless of time, scope, or context)
 // ////////////////////////////////////////
 type ServiceAccount struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState
+	Labels      map[string]string      `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Service Account Label"`                // @gotags: search:"Service Account Label"
+	Annotations map[string]string      `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Service Account Annotation"` // @gotags: search:"Service Account Annotation"
+	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                              // @gotags: sql:"pk,type(uuid)"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Service Account,store"`                                               // @gotags: search:"Service Account,store"
+	Namespace     string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                                           // @gotags: search:"Namespace,store"
+	ClusterName   string `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"`                      // @gotags: search:"Cluster,store"
+	ClusterId     string `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"` // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
 	unknownFields protoimpl.UnknownFields
 
-	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                                                                           // @gotags: sql:"pk,type(uuid)"
-	Name             string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Service Account,store"`                                                                                                       // @gotags: search:"Service Account,store"
-	Namespace        string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                                                                                             // @gotags: search:"Namespace,store"
-	ClusterName      string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"`                                                                      // @gotags: search:"Cluster,store"
-	ClusterId        string                 `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`                                                                            // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-	Labels           map[string]string      `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Service Account Label"`           // @gotags: search:"Service Account Label"
-	Annotations      map[string]string      `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Service Account Annotation"` // @gotags: search:"Service Account Annotation"
-	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	AutomountToken   bool                   `protobuf:"varint,9,opt,name=automount_token,json=automountToken,proto3" json:"automount_token,omitempty"`
-	Secrets          []string               `protobuf:"bytes,10,rep,name=secrets,proto3" json:"secrets,omitempty"`
-	ImagePullSecrets []string               `protobuf:"bytes,11,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty"`
+	Secrets          []string `protobuf:"bytes,10,rep,name=secrets,proto3" json:"secrets,omitempty"`
+	ImagePullSecrets []string `protobuf:"bytes,11,rep,name=image_pull_secrets,json=imagePullSecrets,proto3" json:"image_pull_secrets,omitempty"`
+	sizeCache        protoimpl.SizeCache
+	AutomountToken   bool `protobuf:"varint,9,opt,name=automount_token,json=automountToken,proto3" json:"automount_token,omitempty"`
 }
 
 func (x *ServiceAccount) Reset() {

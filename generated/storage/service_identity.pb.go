@@ -114,18 +114,19 @@ func (ServiceType) EnumDescriptor() ([]byte, []int) {
 }
 
 type ServiceIdentity struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	SerialStr string `protobuf:"bytes,4,opt,name=serial_str,json=serialStr,proto3" json:"serial_str,omitempty" sql:"pk"` // The serial number in decimal representation. // @gotags: sql:"pk"
 	// Types that are assignable to Srl:
 	//
 	//	*ServiceIdentity_Serial
-	Srl          isServiceIdentity_Srl `protobuf_oneof:"srl"`
-	Id           string                `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Type         ServiceType           `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ServiceType" json:"type,omitempty"`
-	InitBundleId string                `protobuf:"bytes,5,opt,name=init_bundle_id,json=initBundleId,proto3" json:"init_bundle_id,omitempty"`
+	Srl   isServiceIdentity_Srl `protobuf_oneof:"srl"`
+	state protoimpl.MessageState
+
+	SerialStr     string `protobuf:"bytes,4,opt,name=serial_str,json=serialStr,proto3" json:"serial_str,omitempty" sql:"pk"` // The serial number in decimal representation. // @gotags: sql:"pk"
+	Id            string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	InitBundleId  string `protobuf:"bytes,5,opt,name=init_bundle_id,json=initBundleId,proto3" json:"init_bundle_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	Type      ServiceType `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ServiceType" json:"type,omitempty"`
 }
 
 func (x *ServiceIdentity) Reset() {
@@ -216,11 +217,11 @@ func (*ServiceIdentity_Serial) isServiceIdentity_Srl() {}
 
 type ServiceCertificate struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	CertPem []byte `protobuf:"bytes,1,opt,name=cert_pem,json=certPem,proto3" json:"cert_pem,omitempty"`
-	KeyPem  []byte `protobuf:"bytes,2,opt,name=key_pem,json=keyPem,proto3" json:"key_pem,omitempty"`
+	CertPem   []byte `protobuf:"bytes,1,opt,name=cert_pem,json=certPem,proto3" json:"cert_pem,omitempty"`
+	KeyPem    []byte `protobuf:"bytes,2,opt,name=key_pem,json=keyPem,proto3" json:"key_pem,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ServiceCertificate) Reset() {
@@ -271,11 +272,12 @@ func (x *ServiceCertificate) GetKeyPem() []byte {
 
 type TypedServiceCertificate struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Cert          *ServiceCertificate `protobuf:"bytes,2,opt,name=cert,proto3" json:"cert,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	ServiceType ServiceType         `protobuf:"varint,1,opt,name=service_type,json=serviceType,proto3,enum=storage.ServiceType" json:"service_type,omitempty"`
-	Cert        *ServiceCertificate `protobuf:"bytes,2,opt,name=cert,proto3" json:"cert,omitempty"`
+	sizeCache protoimpl.SizeCache
+
+	ServiceType ServiceType `protobuf:"varint,1,opt,name=service_type,json=serviceType,proto3,enum=storage.ServiceType" json:"service_type,omitempty"`
 }
 
 func (x *TypedServiceCertificate) Reset() {
@@ -326,11 +328,11 @@ func (x *TypedServiceCertificate) GetCert() *ServiceCertificate {
 
 type TypedServiceCertificateSet struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	CaPem        []byte                     `protobuf:"bytes,1,opt,name=ca_pem,json=caPem,proto3" json:"ca_pem,omitempty"`
 	ServiceCerts []*TypedServiceCertificate `protobuf:"bytes,2,rep,name=service_certs,json=serviceCerts,proto3" json:"service_certs,omitempty"`
+	sizeCache    protoimpl.SizeCache
 }
 
 func (x *TypedServiceCertificateSet) Reset() {

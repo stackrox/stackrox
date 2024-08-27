@@ -21,12 +21,13 @@ const (
 )
 
 type SlimUser struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"User ID"`       // @gotags: search:"User ID"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"User Name"` // @gotags: search:"User Name"
 	unknownFields protoimpl.UnknownFields
 
-	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"User ID"`     // @gotags: search:"User ID"
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"User Name"` // @gotags: search:"User Name"
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *SlimUser) Reset() {
@@ -77,14 +78,15 @@ func (x *SlimUser) GetName() string {
 
 // User is an object that allows us to track the roles a user is tied to, and how they logged in.
 type User struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
-	Id             string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	AuthProviderId string           `protobuf:"bytes,2,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty"`
-	Attributes     []*UserAttribute `protobuf:"bytes,3,rep,name=attributes,proto3" json:"attributes,omitempty"`
-	IdpToken       string           `protobuf:"bytes,4,opt,name=idp_token,json=idpToken,proto3" json:"idp_token,omitempty"`
+	Id             string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	AuthProviderId string `protobuf:"bytes,2,opt,name=auth_provider_id,json=authProviderId,proto3" json:"auth_provider_id,omitempty"`
+	IdpToken       string `protobuf:"bytes,4,opt,name=idp_token,json=idpToken,proto3" json:"idp_token,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+
+	Attributes []*UserAttribute `protobuf:"bytes,3,rep,name=attributes,proto3" json:"attributes,omitempty"`
+	sizeCache  protoimpl.SizeCache
 }
 
 func (x *User) Reset() {
@@ -148,12 +150,13 @@ func (x *User) GetIdpToken() string {
 }
 
 type UserAttribute struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Key           string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Key   string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *UserAttribute) Reset() {
@@ -203,14 +206,15 @@ func (x *UserAttribute) GetValue() string {
 }
 
 type UserInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState
+	Permissions *UserInfo_ResourceToAccess `protobuf:"bytes,4,opt,name=permissions,proto3" json:"permissions,omitempty"`
+
+	Username      string `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	FriendlyName  string `protobuf:"bytes,2,opt,name=friendly_name,json=friendlyName,proto3" json:"friendly_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Username     string                     `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	FriendlyName string                     `protobuf:"bytes,2,opt,name=friendly_name,json=friendlyName,proto3" json:"friendly_name,omitempty"`
-	Permissions  *UserInfo_ResourceToAccess `protobuf:"bytes,4,opt,name=permissions,proto3" json:"permissions,omitempty"`
-	Roles        []*UserInfo_Role           `protobuf:"bytes,5,rep,name=roles,proto3" json:"roles,omitempty"`
+	Roles     []*UserInfo_Role `protobuf:"bytes,5,rep,name=roles,proto3" json:"roles,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *UserInfo) Reset() {
@@ -276,12 +280,13 @@ func (x *UserInfo) GetRoles() []*UserInfo_Role {
 // Role is wire compatible with the old format of storage.Role and
 // hence only includes role name and associated permissions.
 type UserInfo_Role struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState
+	ResourceToAccess map[string]Access `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess,proto3" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=storage.Access"`
+
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Name             string            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	ResourceToAccess map[string]Access `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess,proto3" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=storage.Access"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *UserInfo_Role) Reset() {
@@ -334,11 +339,12 @@ func (x *UserInfo_Role) GetResourceToAccess() map[string]Access {
 // compatible with the old format of storage.Role and replaces it in
 // places where only aggregated permissions are required.
 type UserInfo_ResourceToAccess struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	ResourceToAccess map[string]Access `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess,proto3" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=storage.Access"`
+	unknownFields    protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *UserInfo_ResourceToAccess) Reset() {

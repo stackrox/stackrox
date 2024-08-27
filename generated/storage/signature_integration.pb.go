@@ -21,14 +21,15 @@ const (
 )
 
 type SignatureIntegration struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state  protoimpl.MessageState
+	Cosign *CosignPublicKeyVerification `protobuf:"bytes,3,opt,name=cosign,proto3" json:"cosign,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`         // @gotags: sql:"pk"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
 	unknownFields protoimpl.UnknownFields
 
-	Id                 string                           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name               string                           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
-	Cosign             *CosignPublicKeyVerification     `protobuf:"bytes,3,opt,name=cosign,proto3" json:"cosign,omitempty"`
 	CosignCertificates []*CosignCertificateVerification `protobuf:"bytes,4,rep,name=cosign_certificates,json=cosignCertificates,proto3" json:"cosign_certificates,omitempty"`
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *SignatureIntegration) Reset() {
@@ -93,10 +94,10 @@ func (x *SignatureIntegration) GetCosignCertificates() []*CosignCertificateVerif
 
 type CosignPublicKeyVerification struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	PublicKeys []*CosignPublicKeyVerification_PublicKey `protobuf:"bytes,3,rep,name=public_keys,json=publicKeys,proto3" json:"public_keys,omitempty"`
+	sizeCache  protoimpl.SizeCache
 }
 
 func (x *CosignPublicKeyVerification) Reset() {
@@ -143,9 +144,7 @@ func (x *CosignPublicKeyVerification) GetPublicKeys() []*CosignPublicKeyVerifica
 // If only the chain is given, this will be used over the Fulcio trusted root chain for verification.
 // If no certificate or chain is given, the Fulcio trusted root chain will be assumed and verified against.
 type CosignCertificateVerification struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// PEM encoded certificate to use for verification.
 	CertificatePemEnc string `protobuf:"bytes,1,opt,name=certificate_pem_enc,json=certificatePemEnc,proto3" json:"certificate_pem_enc,omitempty"`
@@ -163,6 +162,9 @@ type CosignCertificateVerification struct {
 	// recommended to use Fulcio compatible certificates according to the specification:
 	// https://github.com/sigstore/fulcio/blob/main/docs/certificate-specification.md.
 	CertificateIdentity string `protobuf:"bytes,4,opt,name=certificate_identity,json=certificateIdentity,proto3" json:"certificate_identity,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *CosignCertificateVerification) Reset() {
@@ -226,12 +228,13 @@ func (x *CosignCertificateVerification) GetCertificateIdentity() string {
 }
 
 type CosignPublicKeyVerification_PublicKey struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Name            string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	PublicKeyPemEnc string `protobuf:"bytes,2,opt,name=public_key_pem_enc,json=publicKeyPemEnc,proto3" json:"public_key_pem_enc,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *CosignPublicKeyVerification_PublicKey) Reset() {

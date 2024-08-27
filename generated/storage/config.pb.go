@@ -75,11 +75,12 @@ func (BannerConfig_Size) EnumDescriptor() ([]byte, []int) {
 
 type LoginNotice struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Text          string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Enabled bool   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Text    string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	sizeCache protoimpl.SizeCache
+
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
 }
 
 func (x *LoginNotice) Reset() {
@@ -129,15 +130,16 @@ func (x *LoginNotice) GetText() string {
 }
 
 type BannerConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state           protoimpl.MessageState
+	Text            string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
+	Color           string `protobuf:"bytes,4,opt,name=color,proto3" json:"color,omitempty"`
+	BackgroundColor string `protobuf:"bytes,5,opt,name=background_color,json=backgroundColor,proto3" json:"background_color,omitempty"`
+	unknownFields   protoimpl.UnknownFields
 
-	Enabled         bool              `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Text            string            `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
-	Size            BannerConfig_Size `protobuf:"varint,3,opt,name=size,proto3,enum=storage.BannerConfig_Size" json:"size,omitempty"`
-	Color           string            `protobuf:"bytes,4,opt,name=color,proto3" json:"color,omitempty"`
-	BackgroundColor string            `protobuf:"bytes,5,opt,name=background_color,json=backgroundColor,proto3" json:"background_color,omitempty"`
+	sizeCache protoimpl.SizeCache
+	Size      BannerConfig_Size `protobuf:"varint,3,opt,name=size,proto3,enum=storage.BannerConfig_Size" json:"size,omitempty"`
+
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
 }
 
 func (x *BannerConfig) Reset() {
@@ -208,14 +210,15 @@ func (x *BannerConfig) GetBackgroundColor() string {
 }
 
 type PublicConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	LoginNotice   *LoginNotice            `protobuf:"bytes,1,opt,name=login_notice,json=loginNotice,proto3" json:"login_notice,omitempty"`
+	Header        *BannerConfig           `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`
+	Footer        *BannerConfig           `protobuf:"bytes,3,opt,name=footer,proto3" json:"footer,omitempty"`
+	Telemetry     *TelemetryConfiguration `protobuf:"bytes,4,opt,name=telemetry,proto3" json:"telemetry,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	LoginNotice *LoginNotice            `protobuf:"bytes,1,opt,name=login_notice,json=loginNotice,proto3" json:"login_notice,omitempty"`
-	Header      *BannerConfig           `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`
-	Footer      *BannerConfig           `protobuf:"bytes,3,opt,name=footer,proto3" json:"footer,omitempty"`
-	Telemetry   *TelemetryConfiguration `protobuf:"bytes,4,opt,name=telemetry,proto3" json:"telemetry,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *PublicConfig) Reset() {
@@ -280,8 +283,9 @@ func (x *PublicConfig) GetTelemetry() *TelemetryConfiguration {
 
 type AlertRetentionConfig struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	ResolvedDeployRetentionDurationDays int32 `protobuf:"varint,1,opt,name=resolved_deploy_retention_duration_days,json=resolvedDeployRetentionDurationDays,proto3" json:"resolved_deploy_retention_duration_days,omitempty"`
 	// This runtime alert retention configuration takes precedence after `allRuntimeRetentionDurationDays`.
@@ -363,14 +367,15 @@ func (x *AlertRetentionConfig) GetAttemptedRuntimeRetentionDurationDays() int32 
 
 // next available tag: 5
 type DecommissionedClusterRetentionConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state               protoimpl.MessageState
+	IgnoreClusterLabels map[string]string      `protobuf:"bytes,2,rep,name=ignore_cluster_labels,json=ignoreClusterLabels,proto3" json:"ignore_cluster_labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	LastUpdated         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	CreatedAt           *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields       protoimpl.UnknownFields
 
-	RetentionDurationDays int32                  `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays,proto3" json:"retention_duration_days,omitempty"`
-	IgnoreClusterLabels   map[string]string      `protobuf:"bytes,2,rep,name=ignore_cluster_labels,json=ignoreClusterLabels,proto3" json:"ignore_cluster_labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	LastUpdated           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	CreatedAt             *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	sizeCache protoimpl.SizeCache
+
+	RetentionDurationDays int32 `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays,proto3" json:"retention_duration_days,omitempty"`
 }
 
 func (x *DecommissionedClusterRetentionConfig) Reset() {
@@ -436,8 +441,9 @@ func (x *DecommissionedClusterRetentionConfig) GetCreatedAt() *timestamppb.Times
 // next available tag: 4
 type ReportRetentionConfig struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	HistoryRetentionDurationDays           uint32 `protobuf:"varint,1,opt,name=history_retention_duration_days,json=historyRetentionDurationDays,proto3" json:"history_retention_duration_days,omitempty"`
 	DownloadableReportRetentionDays        uint32 `protobuf:"varint,2,opt,name=downloadable_report_retention_days,json=downloadableReportRetentionDays,proto3" json:"downloadable_report_retention_days,omitempty"`
@@ -499,21 +505,22 @@ func (x *ReportRetentionConfig) GetDownloadableReportGlobalRetentionBytes() uint
 
 // next available tag:9
 type PrivateConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to AlertRetention:
 	//
 	//	*PrivateConfig_DEPRECATEDAlertRetentionDurationDays
 	//	*PrivateConfig_AlertConfig
-	AlertRetention                      isPrivateConfig_AlertRetention        `protobuf_oneof:"alert_retention"`
-	ImageRetentionDurationDays          int32                                 `protobuf:"varint,2,opt,name=image_retention_duration_days,json=imageRetentionDurationDays,proto3" json:"image_retention_duration_days,omitempty"`
-	ExpiredVulnReqRetentionDurationDays int32                                 `protobuf:"varint,4,opt,name=expired_vuln_req_retention_duration_days,json=expiredVulnReqRetentionDurationDays,proto3" json:"expired_vuln_req_retention_duration_days,omitempty"`
-	DecommissionedClusterRetention      *DecommissionedClusterRetentionConfig `protobuf:"bytes,5,opt,name=decommissioned_cluster_retention,json=decommissionedClusterRetention,proto3" json:"decommissioned_cluster_retention,omitempty"`
-	ReportRetentionConfig               *ReportRetentionConfig                `protobuf:"bytes,6,opt,name=report_retention_config,json=reportRetentionConfig,proto3" json:"report_retention_config,omitempty"`
-	VulnerabilityExceptionConfig        *VulnerabilityExceptionConfig         `protobuf:"bytes,7,opt,name=vulnerability_exception_config,json=vulnerabilityExceptionConfig,proto3" json:"vulnerability_exception_config,omitempty"`
-	AdministrationEventsConfig          *AdministrationEventsConfig           `protobuf:"bytes,8,opt,name=administration_events_config,json=administrationEventsConfig,proto3" json:"administration_events_config,omitempty"`
+	AlertRetention                 isPrivateConfig_AlertRetention `protobuf_oneof:"alert_retention"`
+	state                          protoimpl.MessageState
+	DecommissionedClusterRetention *DecommissionedClusterRetentionConfig `protobuf:"bytes,5,opt,name=decommissioned_cluster_retention,json=decommissionedClusterRetention,proto3" json:"decommissioned_cluster_retention,omitempty"`
+	ReportRetentionConfig          *ReportRetentionConfig                `protobuf:"bytes,6,opt,name=report_retention_config,json=reportRetentionConfig,proto3" json:"report_retention_config,omitempty"`
+	VulnerabilityExceptionConfig   *VulnerabilityExceptionConfig         `protobuf:"bytes,7,opt,name=vulnerability_exception_config,json=vulnerabilityExceptionConfig,proto3" json:"vulnerability_exception_config,omitempty"`
+	AdministrationEventsConfig     *AdministrationEventsConfig           `protobuf:"bytes,8,opt,name=administration_events_config,json=administrationEventsConfig,proto3" json:"administration_events_config,omitempty"`
+	unknownFields                  protoimpl.UnknownFields
+
+	sizeCache                           protoimpl.SizeCache
+	ImageRetentionDurationDays          int32 `protobuf:"varint,2,opt,name=image_retention_duration_days,json=imageRetentionDurationDays,proto3" json:"image_retention_duration_days,omitempty"`
+	ExpiredVulnReqRetentionDurationDays int32 `protobuf:"varint,4,opt,name=expired_vuln_req_retention_duration_days,json=expiredVulnReqRetentionDurationDays,proto3" json:"expired_vuln_req_retention_duration_days,omitempty"`
 }
 
 func (x *PrivateConfig) Reset() {
@@ -629,12 +636,13 @@ func (*PrivateConfig_DEPRECATEDAlertRetentionDurationDays) isPrivateConfig_Alert
 func (*PrivateConfig_AlertConfig) isPrivateConfig_AlertRetention() {}
 
 type Config struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	PublicConfig  *PublicConfig  `protobuf:"bytes,1,opt,name=public_config,json=publicConfig,proto3" json:"public_config,omitempty"`
 	PrivateConfig *PrivateConfig `protobuf:"bytes,2,opt,name=private_config,json=privateConfig,proto3" json:"private_config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *Config) Reset() {
@@ -684,11 +692,12 @@ func (x *Config) GetPrivateConfig() *PrivateConfig {
 }
 
 type VulnerabilityExceptionConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	ExpiryOptions *VulnerabilityExceptionConfig_ExpiryOptions `protobuf:"bytes,1,opt,name=expiry_options,json=expiryOptions,proto3" json:"expiry_options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *VulnerabilityExceptionConfig) Reset() {
@@ -732,8 +741,9 @@ func (x *VulnerabilityExceptionConfig) GetExpiryOptions() *VulnerabilityExceptio
 
 type AdministrationEventsConfig struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	RetentionDurationDays uint32 `protobuf:"varint,1,opt,name=retention_duration_days,json=retentionDurationDays,proto3" json:"retention_duration_days,omitempty"`
 }
@@ -779,8 +789,9 @@ func (x *AdministrationEventsConfig) GetRetentionDurationDays() uint32 {
 
 type DayOption struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	NumDays uint32 `protobuf:"varint,1,opt,name=num_days,json=numDays,proto3" json:"num_days,omitempty"`
 	Enabled bool   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
@@ -834,8 +845,9 @@ func (x *DayOption) GetEnabled() bool {
 
 type VulnerabilityExceptionConfig_FixableCVEOptions struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	AllFixable bool `protobuf:"varint,1,opt,name=all_fixable,json=allFixable,proto3" json:"all_fixable,omitempty"`
 	AnyFixable bool `protobuf:"varint,2,opt,name=any_fixable,json=anyFixable,proto3" json:"any_fixable,omitempty"`
@@ -888,14 +900,14 @@ func (x *VulnerabilityExceptionConfig_FixableCVEOptions) GetAnyFixable() bool {
 }
 
 type VulnerabilityExceptionConfig_ExpiryOptions struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	DayOptions        []*DayOption                                    `protobuf:"bytes,1,rep,name=day_options,json=dayOptions,proto3" json:"day_options,omitempty"`
+	state             protoimpl.MessageState
 	FixableCveOptions *VulnerabilityExceptionConfig_FixableCVEOptions `protobuf:"bytes,2,opt,name=fixable_cve_options,json=fixableCveOptions,proto3" json:"fixable_cve_options,omitempty"`
-	CustomDate        bool                                            `protobuf:"varint,3,opt,name=custom_date,json=customDate,proto3" json:"custom_date,omitempty"`
-	Indefinite        bool                                            `protobuf:"varint,4,opt,name=indefinite,proto3" json:"indefinite,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+
+	DayOptions []*DayOption `protobuf:"bytes,1,rep,name=day_options,json=dayOptions,proto3" json:"day_options,omitempty"`
+	sizeCache  protoimpl.SizeCache
+	CustomDate bool `protobuf:"varint,3,opt,name=custom_date,json=customDate,proto3" json:"custom_date,omitempty"`
+	Indefinite bool `protobuf:"varint,4,opt,name=indefinite,proto3" json:"indefinite,omitempty"`
 }
 
 func (x *VulnerabilityExceptionConfig_ExpiryOptions) Reset() {

@@ -142,14 +142,15 @@ func (NetworkEntityInfo_Type) EnumDescriptor() ([]byte, []int) {
 }
 
 type NetworkFlow struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Props             *NetworkFlowProperties `protobuf:"bytes,1,opt,name=props,proto3" json:"props,omitempty"`
 	LastSeenTimestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_seen_timestamp,json=lastSeenTimestamp,proto3" json:"last_seen_timestamp,omitempty" sql:"index=brin"` // @gotags: sql:"index=brin"
 	// Need the clusterID as that is part of the key in RocksDB
-	ClusterId string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkFlow) Reset() {
@@ -206,14 +207,15 @@ func (x *NetworkFlow) GetClusterId() string {
 }
 
 type NetworkFlowProperties struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// The source deployment ID of the network flow
 	SrcEntity *NetworkEntityInfo `protobuf:"bytes,1,opt,name=src_entity,json=srcEntity,proto3" json:"src_entity,omitempty"`
 	// The destination deployment ID of the network flow
-	DstEntity *NetworkEntityInfo `protobuf:"bytes,2,opt,name=dst_entity,json=dstEntity,proto3" json:"dst_entity,omitempty"`
+	DstEntity     *NetworkEntityInfo `protobuf:"bytes,2,opt,name=dst_entity,json=dstEntity,proto3" json:"dst_entity,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 	// may be 0 if not applicable (e.g., icmp).
 	DstPort    uint32     `protobuf:"varint,3,opt,name=dst_port,json=dstPort,proto3" json:"dst_port,omitempty" sql:"pk"`                // @gotags: sql:"pk"
 	L4Protocol L4Protocol `protobuf:"varint,4,opt,name=l4protocol,proto3,enum=storage.L4Protocol" json:"l4protocol,omitempty" sql:"pk"` // @gotags: sql:"pk"
@@ -280,12 +282,13 @@ func (x *NetworkFlowProperties) GetL4Protocol() L4Protocol {
 }
 
 type NetworkEndpoint struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Props               *NetworkEndpointProperties `protobuf:"bytes,1,opt,name=props,proto3" json:"props,omitempty"`
 	LastActiveTimestamp *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=last_active_timestamp,json=lastActiveTimestamp,proto3" json:"last_active_timestamp,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkEndpoint) Reset() {
@@ -335,13 +338,14 @@ func (x *NetworkEndpoint) GetLastActiveTimestamp() *timestamppb.Timestamp {
 }
 
 type NetworkEndpointProperties struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Entity        *NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Entity     *NetworkEntityInfo `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
-	Port       uint32             `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	L4Protocol L4Protocol         `protobuf:"varint,3,opt,name=l4protocol,proto3,enum=storage.L4Protocol" json:"l4protocol,omitempty"`
+	sizeCache  protoimpl.SizeCache
+	Port       uint32     `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
+	L4Protocol L4Protocol `protobuf:"varint,3,opt,name=l4protocol,proto3,enum=storage.L4Protocol" json:"l4protocol,omitempty"`
 }
 
 func (x *NetworkEndpointProperties) Reset() {
@@ -398,15 +402,16 @@ func (x *NetworkEndpointProperties) GetL4Protocol() L4Protocol {
 }
 
 type NetworkEntity struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Info *NetworkEntityInfo `protobuf:"bytes,1,opt,name=info,proto3" json:"info,omitempty"`
 	// `scope` represents known cluster network peers to which the flows must be scoped. In future, to restrict flows
 	// to more granular entities, such as deployment, scope could include deployment ID.
 	// Note: The highest scope level is cluster.
-	Scope *NetworkEntity_Scope `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	Scope         *NetworkEntity_Scope `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkEntity) Reset() {
@@ -456,17 +461,18 @@ func (x *NetworkEntity) GetScope() *NetworkEntity_Scope {
 }
 
 type NetworkEntityInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Type NetworkEntityInfo_Type `protobuf:"varint,1,opt,name=type,proto3,enum=storage.NetworkEntityInfo_Type" json:"type,omitempty" sql:"index"` // @gotags: sql:"index"
-	Id   string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                          // @gotags: sql:"pk"
 	// Types that are assignable to Desc:
 	//
 	//	*NetworkEntityInfo_Deployment_
 	//	*NetworkEntityInfo_ExternalSource_
-	Desc isNetworkEntityInfo_Desc `protobuf_oneof:"desc"`
+	Desc          isNetworkEntityInfo_Desc `protobuf_oneof:"desc"`
+	state         protoimpl.MessageState
+	Id            string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+
+	Type NetworkEntityInfo_Type `protobuf:"varint,1,opt,name=type,proto3,enum=storage.NetworkEntityInfo_Type" json:"type,omitempty" sql:"index"` // @gotags: sql:"index"
 }
 
 func (x *NetworkEntityInfo) Reset() {
@@ -553,11 +559,12 @@ func (*NetworkEntityInfo_Deployment_) isNetworkEntityInfo_Desc() {}
 func (*NetworkEntityInfo_ExternalSource_) isNetworkEntityInfo_Desc() {}
 
 type NetworkEntity_Scope struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	ClusterId     string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	ClusterId string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkEntity_Scope) Reset() {
@@ -600,15 +607,16 @@ func (x *NetworkEntity_Scope) GetClusterId() string {
 }
 
 type NetworkEntityInfo_Deployment struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Name      string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Namespace string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	// Deprecated: Marked as deprecated in storage/network_flow.proto.
-	Cluster     string                                     `protobuf:"bytes,3,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	Cluster       string `protobuf:"bytes,3,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
 	ListenPorts []*NetworkEntityInfo_Deployment_ListenPort `protobuf:"bytes,4,rep,name=listen_ports,json=listenPorts,proto3" json:"listen_ports,omitempty"`
+	sizeCache   protoimpl.SizeCache
 }
 
 func (x *NetworkEntityInfo_Deployment) Reset() {
@@ -674,15 +682,16 @@ func (x *NetworkEntityInfo_Deployment) GetListenPorts() []*NetworkEntityInfo_Dep
 
 // Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated.
 type NetworkEntityInfo_ExternalSource struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Types that are assignable to Source:
 	//
 	//	*NetworkEntityInfo_ExternalSource_Cidr
 	Source isNetworkEntityInfo_ExternalSource_Source `protobuf_oneof:"source"`
+	state  protoimpl.MessageState
+
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 	// `default` indicates whether the external source is user-generated or system-generated.
 	Default bool `protobuf:"varint,3,opt,name=default,proto3" json:"default,omitempty" search:"Default External Source,hidden"` // @gotags: search:"Default External Source,hidden"
 }
@@ -759,8 +768,9 @@ func (*NetworkEntityInfo_ExternalSource_Cidr) isNetworkEntityInfo_ExternalSource
 
 type NetworkEntityInfo_Deployment_ListenPort struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	Port       uint32     `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
 	L4Protocol L4Protocol `protobuf:"varint,2,opt,name=l4protocol,proto3,enum=storage.L4Protocol" json:"l4protocol,omitempty"`

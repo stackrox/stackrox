@@ -89,14 +89,15 @@ func (RiskSubjectType) EnumDescriptor() ([]byte, []int) {
 }
 
 type Risk struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state   protoimpl.MessageState
+	Subject *RiskSubject `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
 	unknownFields protoimpl.UnknownFields
 
-	Id      string         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Subject *RiskSubject   `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
-	Score   float32        `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty" search:"Risk Score,hidden"` // @gotags: search:"Risk Score,hidden"
-	Results []*Risk_Result `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`
+	Results   []*Risk_Result `protobuf:"bytes,4,rep,name=results,proto3" json:"results,omitempty"`
+	sizeCache protoimpl.SizeCache
+	Score     float32 `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty" search:"Risk Score,hidden"` // @gotags: search:"Risk Score,hidden"
 }
 
 func (x *Risk) Reset() {
@@ -160,13 +161,14 @@ func (x *Risk) GetResults() []*Risk_Result {
 }
 
 type RiskSubject struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Namespace     string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                                           // @gotags: search:"Namespace,store"
+	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"` // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
 	unknownFields protoimpl.UnknownFields
 
-	Id        string          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Namespace string          `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                     // @gotags: search:"Namespace,store"
-	ClusterId string          `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`    // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	sizeCache protoimpl.SizeCache
 	Type      RiskSubjectType `protobuf:"varint,4,opt,name=type,proto3,enum=storage.RiskSubjectType" json:"type,omitempty" search:"Risk Subject Type,hidden"` // @gotags: search:"Risk Subject Type,hidden"
 }
 
@@ -231,13 +233,14 @@ func (x *RiskSubject) GetType() RiskSubjectType {
 }
 
 type Risk_Result struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Name    string                `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Factors []*Risk_Result_Factor `protobuf:"bytes,2,rep,name=factors,proto3" json:"factors,omitempty"`
-	Score   float32               `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty"`
+	Factors   []*Risk_Result_Factor `protobuf:"bytes,2,rep,name=factors,proto3" json:"factors,omitempty"`
+	sizeCache protoimpl.SizeCache
+	Score     float32 `protobuf:"fixed32,3,opt,name=score,proto3" json:"score,omitempty"`
 }
 
 func (x *Risk_Result) Reset() {
@@ -294,12 +297,13 @@ func (x *Risk_Result) GetScore() float32 {
 }
 
 type Risk_Result_Factor struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Message       string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	Url           string `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
-	Url     string `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *Risk_Result_Factor) Reset() {

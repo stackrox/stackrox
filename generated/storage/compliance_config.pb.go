@@ -21,12 +21,13 @@ const (
 )
 
 type ComplianceConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	StandardId    string `protobuf:"bytes,1,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" sql:"pk"` // @gotags: sql:"pk"
 	unknownFields protoimpl.UnknownFields
 
-	StandardId      string `protobuf:"bytes,1,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	HideScanResults bool   `protobuf:"varint,2,opt,name=hideScanResults,proto3" json:"hideScanResults,omitempty"`
+	sizeCache       protoimpl.SizeCache
+	HideScanResults bool `protobuf:"varint,2,opt,name=hideScanResults,proto3" json:"hideScanResults,omitempty"`
 }
 
 func (x *ComplianceConfig) Reset() {

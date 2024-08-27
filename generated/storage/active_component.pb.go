@@ -22,17 +22,18 @@ const (
 
 // Next available tag: 3
 type ActiveComponent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// base 64 encoded Deployment:ActiveComponent ids.
-	Id           string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Image Sha,hidden" sql:"pk"`                                         // @gotags: search:"Image Sha,hidden" sql:"pk"
-	DeploymentId string `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,directional,index=hash,type(uuid)"` // @gotags: search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,directional,index=hash,type(uuid)"
-	ComponentId  string `protobuf:"bytes,4,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" search:"Component ID,hidden" sql:"fk(ImageComponent:id),no-fk-constraint,directional"`    // @gotags: search:"Component ID,hidden" sql:"fk(ImageComponent:id),no-fk-constraint,directional"
+	state protoimpl.MessageState
 	// Map from container name to the active context of an edge.
 	DEPRECATEDActiveContexts map[string]*ActiveComponent_ActiveContext `protobuf:"bytes,2,rep,name=DEPRECATED_active_contexts,json=DEPRECATEDActiveContexts,proto3" json:"DEPRECATED_active_contexts,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"-"` // @gotags: search:"-"
-	ActiveContextsSlice      []*ActiveComponent_ActiveContext          `protobuf:"bytes,5,rep,name=active_contexts_slice,json=activeContextsSlice,proto3" json:"active_contexts_slice,omitempty"`
+
+	// base 64 encoded Deployment:ActiveComponent ids.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Image Sha,hidden" sql:"pk"`                                                                                                               // @gotags: search:"Image Sha,hidden" sql:"pk"
+	DeploymentId  string `protobuf:"bytes,3,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,directional,index=hash,type(uuid)"` // @gotags: search:"Deployment ID,hidden" sql:"fk(Deployment:id),no-fk-constraint,directional,index=hash,type(uuid)"
+	ComponentId   string `protobuf:"bytes,4,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty" search:"Component ID,hidden" sql:"fk(ImageComponent:id),no-fk-constraint,directional"`                       // @gotags: search:"Component ID,hidden" sql:"fk(ImageComponent:id),no-fk-constraint,directional"
+	unknownFields protoimpl.UnknownFields
+
+	ActiveContextsSlice []*ActiveComponent_ActiveContext `protobuf:"bytes,5,rep,name=active_contexts_slice,json=activeContextsSlice,proto3" json:"active_contexts_slice,omitempty"`
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ActiveComponent) Reset() {
@@ -104,12 +105,13 @@ func (x *ActiveComponent) GetActiveContextsSlice() []*ActiveComponent_ActiveCont
 
 // Represent a context of the active edge.
 type ActiveComponent_ActiveContext struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	ContainerName string `protobuf:"bytes,1,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty" search:"Container Name,hidden"` // @gotags: search:"Container Name,hidden"
-	ImageId       string `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" search:"Image Sha,hidden"`                   // @gotags: search:"Image Sha,hidden"
+	ImageId       string `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" search:"Image Sha,hidden"`                        // @gotags: search:"Image Sha,hidden"
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ActiveComponent_ActiveContext) Reset() {

@@ -86,19 +86,20 @@ func (ComplianceOperatorCheckResult_CheckStatus) EnumDescriptor() ([]byte, []int
 
 // Next Tag: 10
 type ComplianceOperatorCheckResult struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState
+	Labels      map[string]string `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Annotations map[string]string `protobuf:"bytes,9,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	CheckId       string `protobuf:"bytes,2,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
+	CheckName     string `protobuf:"bytes,3,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
+	ClusterId     string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Description   string `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
+	Instructions  string `protobuf:"bytes,7,opt,name=instructions,proto3" json:"instructions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id           string                                    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	CheckId      string                                    `protobuf:"bytes,2,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
-	CheckName    string                                    `protobuf:"bytes,3,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
-	ClusterId    string                                    `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Status       ComplianceOperatorCheckResult_CheckStatus `protobuf:"varint,5,opt,name=status,proto3,enum=storage.ComplianceOperatorCheckResult_CheckStatus" json:"status,omitempty"`
-	Description  string                                    `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
-	Instructions string                                    `protobuf:"bytes,7,opt,name=instructions,proto3" json:"instructions,omitempty"`
-	Labels       map[string]string                         `protobuf:"bytes,8,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Annotations  map[string]string                         `protobuf:"bytes,9,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	sizeCache protoimpl.SizeCache
+	Status    ComplianceOperatorCheckResult_CheckStatus `protobuf:"varint,5,opt,name=status,proto3,enum=storage.ComplianceOperatorCheckResult_CheckStatus" json:"status,omitempty"`
 }
 
 func (x *ComplianceOperatorCheckResult) Reset() {
@@ -198,18 +199,19 @@ func (x *ComplianceOperatorCheckResult) GetAnnotations() map[string]string {
 
 // Next Tag: 9
 type ComplianceOperatorProfile struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState
+	Labels      map[string]string `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Annotations map[string]string `protobuf:"bytes,6,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	ProfileId     string `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
+	Name          string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	ClusterId     string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Description   string `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id          string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	ProfileId   string                            `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
-	Name        string                            `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId   string                            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Labels      map[string]string                 `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Annotations map[string]string                 `protobuf:"bytes,6,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Description string                            `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`
-	Rules       []*ComplianceOperatorProfile_Rule `protobuf:"bytes,8,rep,name=rules,proto3" json:"rules,omitempty"`
+	Rules     []*ComplianceOperatorProfile_Rule `protobuf:"bytes,8,rep,name=rules,proto3" json:"rules,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorProfile) Reset() {
@@ -302,19 +304,20 @@ func (x *ComplianceOperatorProfile) GetRules() []*ComplianceOperatorProfile_Rule
 
 // Next Tag: 10
 type ComplianceOperatorRule struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id          string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	RuleId      string            `protobuf:"bytes,2,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
-	Name        string            `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId   string            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	state       protoimpl.MessageState
 	Labels      map[string]string `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Annotations map[string]string `protobuf:"bytes,6,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Title       string            `protobuf:"bytes,7,opt,name=title,proto3" json:"title,omitempty"`
-	Description string            `protobuf:"bytes,8,opt,name=description,proto3" json:"description,omitempty"`
-	Rationale   string            `protobuf:"bytes,9,opt,name=rationale,proto3" json:"rationale,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	RuleId        string `protobuf:"bytes,2,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
+	Name          string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	ClusterId     string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Title         string `protobuf:"bytes,7,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string `protobuf:"bytes,8,opt,name=description,proto3" json:"description,omitempty"`
+	Rationale     string `protobuf:"bytes,9,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorRule) Reset() {
@@ -414,16 +417,17 @@ func (x *ComplianceOperatorRule) GetRationale() string {
 
 // Next Tag: 7
 type ComplianceOperatorScanSettingBinding struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState
+	Labels      map[string]string `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Annotations map[string]string `protobuf:"bytes,5,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id          string                                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Name        string                                          `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId   string                                          `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Labels      map[string]string                               `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Annotations map[string]string                               `protobuf:"bytes,5,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Profiles    []*ComplianceOperatorScanSettingBinding_Profile `protobuf:"bytes,6,rep,name=profiles,proto3" json:"profiles,omitempty"`
+	Profiles  []*ComplianceOperatorScanSettingBinding_Profile `protobuf:"bytes,6,rep,name=profiles,proto3" json:"profiles,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorScanSettingBinding) Reset() {
@@ -501,16 +505,17 @@ func (x *ComplianceOperatorScanSettingBinding) GetProfiles() []*ComplianceOperat
 }
 
 type ComplianceOperatorScan struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id          string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Name        string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId   string            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	ProfileId   string            `protobuf:"bytes,4,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
+	state       protoimpl.MessageState
 	Labels      map[string]string `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Annotations map[string]string `protobuf:"bytes,6,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ProfileId     string `protobuf:"bytes,4,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorScan) Reset() {
@@ -588,11 +593,12 @@ func (x *ComplianceOperatorScan) GetAnnotations() map[string]string {
 }
 
 type ComplianceOperatorProfile_Rule struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorProfile_Rule) Reset() {
@@ -635,11 +641,12 @@ func (x *ComplianceOperatorProfile_Rule) GetName() string {
 }
 
 type ComplianceOperatorScanSettingBinding_Profile struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceOperatorScanSettingBinding_Profile) Reset() {

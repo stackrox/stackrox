@@ -21,9 +21,6 @@ const (
 )
 
 type NotifierConfiguration struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to NotifierConfig:
 	//
@@ -40,7 +37,11 @@ type NotifierConfiguration struct {
 	// Types that are assignable to Ref:
 	//
 	//	*NotifierConfiguration_Id
-	Ref isNotifierConfiguration_Ref `protobuf_oneof:"ref"`
+	Ref           isNotifierConfiguration_Ref `protobuf_oneof:"ref"`
+	state         protoimpl.MessageState
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NotifierConfiguration) Reset() {
@@ -124,14 +125,15 @@ type NotifierConfiguration_Id struct {
 func (*NotifierConfiguration_Id) isNotifierConfiguration_Ref() {}
 
 type EmailNotifierConfiguration struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	NotifierId    string `protobuf:"bytes,1,opt,name=notifier_id,json=notifierId,proto3" json:"notifier_id,omitempty"`
+	CustomSubject string `protobuf:"bytes,3,opt,name=custom_subject,json=customSubject,proto3" json:"custom_subject,omitempty"`
+	CustomBody    string `protobuf:"bytes,4,opt,name=custom_body,json=customBody,proto3" json:"custom_body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	NotifierId    string   `protobuf:"bytes,1,opt,name=notifier_id,json=notifierId,proto3" json:"notifier_id,omitempty"`
-	MailingLists  []string `protobuf:"bytes,2,rep,name=mailing_lists,json=mailingLists,proto3" json:"mailing_lists,omitempty"`
-	CustomSubject string   `protobuf:"bytes,3,opt,name=custom_subject,json=customSubject,proto3" json:"custom_subject,omitempty"`
-	CustomBody    string   `protobuf:"bytes,4,opt,name=custom_body,json=customBody,proto3" json:"custom_body,omitempty"`
+	MailingLists []string `protobuf:"bytes,2,rep,name=mailing_lists,json=mailingLists,proto3" json:"mailing_lists,omitempty"`
+	sizeCache    protoimpl.SizeCache
 }
 
 func (x *EmailNotifierConfiguration) Reset() {

@@ -7,8 +7,9 @@ package tools
 // for an explanation of the approach.
 
 import (
-	// Tool dependencies, not used anywhere in the code.
 	_ "github.com/bufbuild/buf/cmd/buf"
+	// Tool dependencies, not used anywhere in the code.
+	_ "github.com/dkorunic/betteralign/cmd/betteralign"
 	_ "github.com/favadi/protoc-go-inject-tag"
 	_ "google.golang.org/grpc/cmd/protoc-gen-go-grpc"
 )

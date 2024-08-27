@@ -74,16 +74,17 @@ func (ContainerNameAndBaselineStatus_BaselineStatus) EnumDescriptor() ([]byte, [
 }
 
 type ProcessBaselineKey struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// The idea is for the keys to be flexible.
 	// Only certain combinations of these will be supported.
 	DeploymentId  string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,hidden" sql:"type(uuid),index=hash"` // @gotags: search:"Deployment ID,hidden" sql:"type(uuid),index=hash"
 	ContainerName string `protobuf:"bytes,2,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
 	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
-	Namespace     string `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"`                  // @gotags: search:"Namespace,hidden,store"
+	Namespace     string `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"`                                    // @gotags: search:"Namespace,hidden,store"
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ProcessBaselineKey) Reset() {
@@ -147,18 +148,19 @@ func (x *ProcessBaselineKey) GetNamespace() string {
 }
 
 type ProcessBaseline struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id                      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	state                   protoimpl.MessageState
 	Key                     *ProcessBaselineKey    `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	Elements                []*BaselineElement     `protobuf:"bytes,3,rep,name=elements,proto3" json:"elements,omitempty"`
-	ElementGraveyard        []*BaselineElement     `protobuf:"bytes,8,rep,name=element_graveyard,json=elementGraveyard,proto3" json:"element_graveyard,omitempty" search:"-"` // @gotags: search:"-"
 	Created                 *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created,proto3" json:"created,omitempty"`
 	UserLockedTimestamp     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=user_locked_timestamp,json=userLockedTimestamp,proto3" json:"user_locked_timestamp,omitempty"`
 	StackRoxLockedTimestamp *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=stack_rox_locked_timestamp,json=stackRoxLockedTimestamp,proto3" json:"stack_rox_locked_timestamp,omitempty"`
 	LastUpdate              *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_update,json=lastUpdate,proto3" json:"last_update,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	unknownFields protoimpl.UnknownFields
+
+	Elements         []*BaselineElement `protobuf:"bytes,3,rep,name=elements,proto3" json:"elements,omitempty"`
+	ElementGraveyard []*BaselineElement `protobuf:"bytes,8,rep,name=element_graveyard,json=elementGraveyard,proto3" json:"element_graveyard,omitempty" search:"-"` // @gotags: search:"-"
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ProcessBaseline) Reset() {
@@ -250,12 +252,13 @@ func (x *ProcessBaseline) GetLastUpdate() *timestamppb.Timestamp {
 }
 
 type BaselineElement struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Element       *BaselineItem `protobuf:"bytes,1,opt,name=element,proto3" json:"element,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Element *BaselineItem `protobuf:"bytes,1,opt,name=element,proto3" json:"element,omitempty"`
-	Auto    bool          `protobuf:"varint,2,opt,name=auto,proto3" json:"auto,omitempty"`
+	sizeCache protoimpl.SizeCache
+	Auto      bool `protobuf:"varint,2,opt,name=auto,proto3" json:"auto,omitempty"`
 }
 
 func (x *BaselineElement) Reset() {
@@ -305,14 +308,15 @@ func (x *BaselineElement) GetAuto() bool {
 }
 
 type BaselineItem struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Item:
 	//
 	//	*BaselineItem_ProcessName
-	Item isBaselineItem_Item `protobuf_oneof:"item"`
+	Item          isBaselineItem_Item `protobuf_oneof:"item"`
+	state         protoimpl.MessageState
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *BaselineItem) Reset() {
@@ -374,11 +378,12 @@ func (*BaselineItem_ProcessName) isBaselineItem_Item() {}
 // `ContainerNameAndBaselineStatus` represents a cached result
 // of process evaluation on a specific container name.
 type ContainerNameAndBaselineStatus struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	ContainerName string `protobuf:"bytes,1,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	ContainerName              string                                        `protobuf:"bytes,1,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
+	sizeCache                  protoimpl.SizeCache
 	BaselineStatus             ContainerNameAndBaselineStatus_BaselineStatus `protobuf:"varint,2,opt,name=baseline_status,json=baselineStatus,proto3,enum=storage.ContainerNameAndBaselineStatus_BaselineStatus" json:"baseline_status,omitempty"`
 	AnomalousProcessesExecuted bool                                          `protobuf:"varint,3,opt,name=anomalous_processes_executed,json=anomalousProcessesExecuted,proto3" json:"anomalous_processes_executed,omitempty"`
 }
@@ -438,14 +443,15 @@ func (x *ContainerNameAndBaselineStatus) GetAnomalousProcessesExecuted() bool {
 
 // `ProcessBaselineResults` represent cached results of process baseline evaluation.
 type ProcessBaselineResults struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	DeploymentId  string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" sql:"pk,type(uuid)"`                      // @gotags: sql:"pk,type(uuid)"
+	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
+	Namespace     string `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"`                                    // @gotags: search:"Namespace,hidden,store"
 	unknownFields protoimpl.UnknownFields
 
-	DeploymentId     string                            `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	ClusterId        string                            `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`          // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
-	Namespace        string                            `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"`                           // @gotags: search:"Namespace,hidden,store"
 	BaselineStatuses []*ContainerNameAndBaselineStatus `protobuf:"bytes,2,rep,name=baseline_statuses,json=baselineStatuses,proto3" json:"baseline_statuses,omitempty"`
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ProcessBaselineResults) Reset() {

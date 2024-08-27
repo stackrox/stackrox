@@ -136,14 +136,15 @@ func (SetBasedLabelSelector_Operator) EnumDescriptor() ([]byte, []int) {
 //
 // Next available tag: 3
 type LabelSelector struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// This is actually a oneof, but we can't make it one due to backwards
 	// compatibility constraints.
-	MatchLabels  map[string]string            `protobuf:"bytes,1,rep,name=match_labels,json=matchLabels,proto3" json:"match_labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	MatchLabels   map[string]string `protobuf:"bytes,1,rep,name=match_labels,json=matchLabels,proto3" json:"match_labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	unknownFields protoimpl.UnknownFields
+
 	Requirements []*LabelSelector_Requirement `protobuf:"bytes,2,rep,name=requirements,proto3" json:"requirements,omitempty"`
+	sizeCache    protoimpl.SizeCache
 }
 
 func (x *LabelSelector) Reset() {
@@ -197,10 +198,10 @@ func (x *LabelSelector) GetRequirements() []*LabelSelector_Requirement {
 // Next available tag: 3
 type SetBasedLabelSelector struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Requirements []*SetBasedLabelSelector_Requirement `protobuf:"bytes,2,rep,name=requirements,proto3" json:"requirements,omitempty"`
+	sizeCache    protoimpl.SizeCache
 }
 
 func (x *SetBasedLabelSelector) Reset() {
@@ -244,13 +245,14 @@ func (x *SetBasedLabelSelector) GetRequirements() []*SetBasedLabelSelector_Requi
 
 // Next available tag: 4
 type LabelSelector_Requirement struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Key           string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Key    string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Op     LabelSelector_Operator `protobuf:"varint,2,opt,name=op,proto3,enum=storage.LabelSelector_Operator" json:"op,omitempty"`
-	Values []string               `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty"`
+	Values    []string `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty"`
+	sizeCache protoimpl.SizeCache
+	Op        LabelSelector_Operator `protobuf:"varint,2,opt,name=op,proto3,enum=storage.LabelSelector_Operator" json:"op,omitempty"`
 }
 
 func (x *LabelSelector_Requirement) Reset() {
@@ -308,13 +310,14 @@ func (x *LabelSelector_Requirement) GetValues() []string {
 
 // Next available tag: 4
 type SetBasedLabelSelector_Requirement struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Key           string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Key    string                         `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Op     SetBasedLabelSelector_Operator `protobuf:"varint,2,opt,name=op,proto3,enum=storage.SetBasedLabelSelector_Operator" json:"op,omitempty"`
-	Values []string                       `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty"`
+	Values    []string `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty"`
+	sizeCache protoimpl.SizeCache
+	Op        SetBasedLabelSelector_Operator `protobuf:"varint,2,opt,name=op,proto3,enum=storage.SetBasedLabelSelector_Operator" json:"op,omitempty"`
 }
 
 func (x *SetBasedLabelSelector_Requirement) Reset() {

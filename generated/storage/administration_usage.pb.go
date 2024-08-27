@@ -24,16 +24,16 @@ const (
 // SecuredUnits represents a record of an aggregated secured clusters usage
 // metrics. The metrics are aggregated periodically, and put into the database.
 type SecuredUnits struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// id is not used to retrieve data, but serves mostly for compatibility with
-	// the current implementation of the query generator.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	state protoimpl.MessageState
 	// timestamp stores the moment at which the values of the metrics below are
 	// aggregated.
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty" sql:"unique" search:"Administration Usage Timestamp,hidden"` // @gotags: sql:"unique" search:"Administration Usage Timestamp,hidden"
+
+	// id is not used to retrieve data, but serves mostly for compatibility with
+	// the current implementation of the query generator.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	unknownFields protoimpl.UnknownFields
+
 	// num_nodes is the maximum number of secured nodes, observed across all
 	// registered clusters during last aggregation period.
 	NumNodes int64 `protobuf:"varint,3,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty" search:"Administration Usage Nodes,hidden"` // @gotags: search:"Administration Usage Nodes,hidden"
@@ -41,6 +41,7 @@ type SecuredUnits struct {
 	// units reported by Kubernetes), observed across all registered clusters
 	// during last aggregation period.
 	NumCpuUnits int64 `protobuf:"varint,4,opt,name=num_cpu_units,json=numCpuUnits,proto3" json:"num_cpu_units,omitempty" search:"Administration Usage CPU Units,hidden"` // @gotags: search:"Administration Usage CPU Units,hidden"
+	sizeCache   protoimpl.SizeCache
 }
 
 func (x *SecuredUnits) Reset() {

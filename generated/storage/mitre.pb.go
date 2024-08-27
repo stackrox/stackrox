@@ -21,13 +21,14 @@ const (
 )
 
 type MitreTactic struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *MitreTactic) Reset() {
@@ -84,13 +85,14 @@ func (x *MitreTactic) GetDescription() string {
 }
 
 type MitreTechnique struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description   string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *MitreTechnique) Reset() {
@@ -147,12 +149,13 @@ func (x *MitreTechnique) GetDescription() string {
 }
 
 type MitreAttackVector struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Tactic        *MitreTactic `protobuf:"bytes,1,opt,name=tactic,proto3" json:"tactic,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Tactic     *MitreTactic      `protobuf:"bytes,1,opt,name=tactic,proto3" json:"tactic,omitempty"`
 	Techniques []*MitreTechnique `protobuf:"bytes,2,rep,name=techniques,proto3" json:"techniques,omitempty"`
+	sizeCache  protoimpl.SizeCache
 }
 
 func (x *MitreAttackVector) Reset() {
@@ -202,12 +205,13 @@ func (x *MitreAttackVector) GetTechniques() []*MitreTechnique {
 }
 
 type MitreAttackMatrix struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	MatrixInfo    *MitreAttackMatrix_MatrixInfo `protobuf:"bytes,1,opt,name=matrix_info,json=matrixInfo,proto3" json:"matrix_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	MatrixInfo *MitreAttackMatrix_MatrixInfo `protobuf:"bytes,1,opt,name=matrix_info,json=matrixInfo,proto3" json:"matrix_info,omitempty"`
-	Vectors    []*MitreAttackVector          `protobuf:"bytes,2,rep,name=vectors,proto3" json:"vectors,omitempty"`
+	Vectors   []*MitreAttackVector `protobuf:"bytes,2,rep,name=vectors,proto3" json:"vectors,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *MitreAttackMatrix) Reset() {
@@ -257,12 +261,13 @@ func (x *MitreAttackMatrix) GetVectors() []*MitreAttackVector {
 }
 
 type MitreAttackBundle struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Version  string               `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	Matrices []*MitreAttackMatrix `protobuf:"bytes,2,rep,name=matrices,proto3" json:"matrices,omitempty"`
+	Matrices  []*MitreAttackMatrix `protobuf:"bytes,2,rep,name=matrices,proto3" json:"matrices,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *MitreAttackBundle) Reset() {
@@ -312,12 +317,13 @@ func (x *MitreAttackBundle) GetMatrices() []*MitreAttackMatrix {
 }
 
 type MitreAttackMatrix_MatrixInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Domain        string `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty"`
+	Platform      string `protobuf:"bytes,2,opt,name=platform,proto3" json:"platform,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Domain   string `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty"`
-	Platform string `protobuf:"bytes,2,opt,name=platform,proto3" json:"platform,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *MitreAttackMatrix_MatrixInfo) Reset() {

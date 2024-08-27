@@ -129,18 +129,19 @@ func (DeclarativeConfigHealth_ResourceType) EnumDescriptor() ([]byte, []int) {
 }
 
 type DeclarativeConfigHealth struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id           string                               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	Name         string                               `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Status       DeclarativeConfigHealth_Status       `protobuf:"varint,4,opt,name=status,proto3,enum=storage.DeclarativeConfigHealth_Status" json:"status,omitempty"`
-	ErrorMessage string                               `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	ResourceName string                               `protobuf:"bytes,6,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
-	ResourceType DeclarativeConfigHealth_ResourceType `protobuf:"varint,7,opt,name=resource_type,json=resourceType,proto3,enum=storage.DeclarativeConfigHealth_ResourceType" json:"resource_type,omitempty"`
+	state protoimpl.MessageState
 	// Timestamp when the current status was set.
 	LastTimestamp *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_timestamp,json=lastTimestamp,proto3" json:"last_timestamp,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ErrorMessage  string `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ResourceName  string `protobuf:"bytes,6,opt,name=resource_name,json=resourceName,proto3" json:"resource_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache    protoimpl.SizeCache
+	Status       DeclarativeConfigHealth_Status       `protobuf:"varint,4,opt,name=status,proto3,enum=storage.DeclarativeConfigHealth_Status" json:"status,omitempty"`
+	ResourceType DeclarativeConfigHealth_ResourceType `protobuf:"varint,7,opt,name=resource_type,json=resourceType,proto3,enum=storage.DeclarativeConfigHealth_ResourceType" json:"resource_type,omitempty"`
 }
 
 func (x *DeclarativeConfigHealth) Reset() {

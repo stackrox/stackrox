@@ -126,9 +126,12 @@ func (EffectiveAccessScope_State) EnumDescriptor() ([]byte, []int) {
 // resource_to_access together with global_access or by referencing a
 // permission set by its id in permission_set_name.
 type Role struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
+	// Deprecated 2021-04-20 in favor of `permission_set_id`.
+	//
+	// Deprecated: Marked as deprecated in storage/role.proto.
+	ResourceToAccess map[string]Access `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess,proto3" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=storage.Access"`
+	Traits           *Traits           `protobuf:"bytes,8,opt,name=traits,proto3" json:"traits,omitempty"`
 
 	// `name` and `description` are provided by the user and can be changed.
 	Name        string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" sql:"pk"` // @gotags: sql:"pk"
@@ -136,6 +139,9 @@ type Role struct {
 	// The associated PermissionSet and AccessScope for this Role.
 	PermissionSetId string `protobuf:"bytes,6,opt,name=permission_set_id,json=permissionSetId,proto3" json:"permission_set_id,omitempty" sql:"type(uuid)"` // @gotags: sql:"type(uuid)"
 	AccessScopeId   string `protobuf:"bytes,7,opt,name=access_scope_id,json=accessScopeId,proto3" json:"access_scope_id,omitempty" sql:"type(uuid)"`       // @gotags: sql:"type(uuid)"
+	unknownFields   protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 	// Minimum (not default!) access level for every resource. Can be extended
 	// below by explicit permissions but not shrunk.
 	// Deprecated 2021-04-20 in favor of `permission_set_id`.
@@ -143,11 +149,6 @@ type Role struct {
 	//
 	// Deprecated: Marked as deprecated in storage/role.proto.
 	GlobalAccess Access `protobuf:"varint,2,opt,name=global_access,json=globalAccess,proto3,enum=storage.Access" json:"global_access,omitempty"`
-	// Deprecated 2021-04-20 in favor of `permission_set_id`.
-	//
-	// Deprecated: Marked as deprecated in storage/role.proto.
-	ResourceToAccess map[string]Access `protobuf:"bytes,3,rep,name=resource_to_access,json=resourceToAccess,proto3" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=storage.Access"`
-	Traits           *Traits           `protobuf:"bytes,8,opt,name=traits,proto3" json:"traits,omitempty"`
 }
 
 func (x *Role) Reset() {
@@ -235,17 +236,18 @@ func (x *Role) GetTraits() *Traits {
 
 // This encodes a set of permissions for StackRox resources.
 type PermissionSet struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state            protoimpl.MessageState
+	ResourceToAccess map[string]Access `protobuf:"bytes,4,rep,name=resource_to_access,json=resourceToAccess,proto3" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=storage.Access"`
+	Traits           *Traits           `protobuf:"bytes,5,opt,name=traits,proto3" json:"traits,omitempty"`
 
 	// id is generated and cannot be changed.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
 	// `name` and `description` are provided by the user and can be changed.
-	Name             string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
-	Description      string            `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	ResourceToAccess map[string]Access `protobuf:"bytes,4,rep,name=resource_to_access,json=resourceToAccess,proto3" json:"resource_to_access,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=storage.Access"`
-	Traits           *Traits           `protobuf:"bytes,5,opt,name=traits,proto3" json:"traits,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Description   string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *PermissionSet) Reset() {
@@ -318,17 +320,18 @@ func (x *PermissionSet) GetTraits() *Traits {
 // Simple access scope is a (simple) selection criteria for scoped resources.
 // It does *not* allow multi-component AND-rules nor set operations on names.
 type SimpleAccessScope struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state  protoimpl.MessageState
+	Rules  *SimpleAccessScope_Rules `protobuf:"bytes,4,opt,name=rules,proto3" json:"rules,omitempty"`
+	Traits *Traits                  `protobuf:"bytes,5,opt,name=traits,proto3" json:"traits,omitempty"`
 
 	// `id` is generated and cannot be changed.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
 	// `name` and `description` are provided by the user and can be changed.
-	Name        string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
-	Description string                   `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Rules       *SimpleAccessScope_Rules `protobuf:"bytes,4,opt,name=rules,proto3" json:"rules,omitempty"`
-	Traits      *Traits                  `protobuf:"bytes,5,opt,name=traits,proto3" json:"traits,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Description   string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *SimpleAccessScope) Reset() {
@@ -406,10 +409,10 @@ func (x *SimpleAccessScope) GetTraits() *Traits {
 // excluded. If a node is included, all its child nodes are included.
 type EffectiveAccessScope struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Clusters []*EffectiveAccessScope_Cluster `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	Clusters  []*EffectiveAccessScope_Cluster `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *EffectiveAccessScope) Reset() {
@@ -456,13 +459,13 @@ func (x *EffectiveAccessScope) GetClusters() []*EffectiveAccessScope_Cluster {
 // `x` is in the access scope.
 type SimpleAccessScope_Rules struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	IncludedClusters        []string                             `protobuf:"bytes,1,rep,name=included_clusters,json=includedClusters,proto3" json:"included_clusters,omitempty"`
 	IncludedNamespaces      []*SimpleAccessScope_Rules_Namespace `protobuf:"bytes,2,rep,name=included_namespaces,json=includedNamespaces,proto3" json:"included_namespaces,omitempty"`
 	ClusterLabelSelectors   []*SetBasedLabelSelector             `protobuf:"bytes,3,rep,name=cluster_label_selectors,json=clusterLabelSelectors,proto3" json:"cluster_label_selectors,omitempty"`
 	NamespaceLabelSelectors []*SetBasedLabelSelector             `protobuf:"bytes,4,rep,name=namespace_label_selectors,json=namespaceLabelSelectors,proto3" json:"namespace_label_selectors,omitempty"`
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *SimpleAccessScope_Rules) Reset() {
@@ -526,13 +529,14 @@ func (x *SimpleAccessScope_Rules) GetNamespaceLabelSelectors() []*SetBasedLabelS
 }
 
 type SimpleAccessScope_Rules_Namespace struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// Both fields must be set.
 	ClusterName   string `protobuf:"bytes,1,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	NamespaceName string `protobuf:"bytes,2,opt,name=namespace_name,json=namespaceName,proto3" json:"namespace_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *SimpleAccessScope_Rules_Namespace) Reset() {
@@ -582,14 +586,15 @@ func (x *SimpleAccessScope_Rules_Namespace) GetNamespaceName() string {
 }
 
 type EffectiveAccessScope_Namespace struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state  protoimpl.MessageState
+	Labels map[string]string `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id     string                     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name   string                     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	State  EffectiveAccessScope_State `protobuf:"varint,3,opt,name=state,proto3,enum=storage.EffectiveAccessScope_State" json:"state,omitempty"`
-	Labels map[string]string          `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	sizeCache protoimpl.SizeCache
+	State     EffectiveAccessScope_State `protobuf:"varint,3,opt,name=state,proto3,enum=storage.EffectiveAccessScope_State" json:"state,omitempty"`
 }
 
 func (x *EffectiveAccessScope_Namespace) Reset() {
@@ -653,15 +658,16 @@ func (x *EffectiveAccessScope_Namespace) GetLabels() map[string]string {
 }
 
 type EffectiveAccessScope_Cluster struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state  protoimpl.MessageState
+	Labels map[string]string `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id         string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name       string                            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	State      EffectiveAccessScope_State        `protobuf:"varint,3,opt,name=state,proto3,enum=storage.EffectiveAccessScope_State" json:"state,omitempty"`
-	Labels     map[string]string                 `protobuf:"bytes,5,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Namespaces []*EffectiveAccessScope_Namespace `protobuf:"bytes,4,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
+	sizeCache  protoimpl.SizeCache
+	State      EffectiveAccessScope_State `protobuf:"varint,3,opt,name=state,proto3,enum=storage.EffectiveAccessScope_State" json:"state,omitempty"`
 }
 
 func (x *EffectiveAccessScope_Cluster) Reset() {

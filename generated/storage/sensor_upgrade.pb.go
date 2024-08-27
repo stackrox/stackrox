@@ -23,8 +23,9 @@ const (
 // SensorUpgradeConfig encapsulates configuration relevant to sensor auto-upgrades.
 type SensorUpgradeConfig struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	// Whether to automatically trigger upgrades for out-of-date sensors.
 	EnableAutoUpgrade bool `protobuf:"varint,1,opt,name=enable_auto_upgrade,json=enableAutoUpgrade,proto3" json:"enable_auto_upgrade,omitempty"`

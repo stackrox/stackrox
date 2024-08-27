@@ -147,9 +147,6 @@ func (ComplianceAggregation_Scope) EnumDescriptor() ([]byte, []int) {
 }
 
 type ComplianceResource struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Resource:
 	//
@@ -157,7 +154,11 @@ type ComplianceResource struct {
 	//	*ComplianceResource_Deployment
 	//	*ComplianceResource_Node
 	//	*ComplianceResource_Image
-	Resource isComplianceResource_Resource `protobuf_oneof:"resource"`
+	Resource      isComplianceResource_Resource `protobuf_oneof:"resource"`
+	state         protoimpl.MessageState
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceResource) Reset() {
@@ -257,11 +258,11 @@ func (*ComplianceResource_Image) isComplianceResource_Resource() {}
 
 type ComplianceResultValue struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Evidence     []*ComplianceResultValue_Evidence `protobuf:"bytes,1,rep,name=evidence,proto3" json:"evidence,omitempty"`
-	OverallState ComplianceState                   `protobuf:"varint,2,opt,name=overall_state,json=overallState,proto3,enum=storage.ComplianceState" json:"overall_state,omitempty"`
+	sizeCache    protoimpl.SizeCache
+	OverallState ComplianceState `protobuf:"varint,2,opt,name=overall_state,json=overallState,proto3,enum=storage.ComplianceState" json:"overall_state,omitempty"`
 }
 
 func (x *ComplianceResultValue) Reset() {
@@ -311,13 +312,14 @@ func (x *ComplianceResultValue) GetOverallState() ComplianceState {
 }
 
 type ComplianceControlResult struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Resource      *ComplianceResource    `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
+	Value         *ComplianceResultValue `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	ControlId     string                 `protobuf:"bytes,2,opt,name=control_id,json=controlId,proto3" json:"control_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Resource  *ComplianceResource    `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
-	ControlId string                 `protobuf:"bytes,2,opt,name=control_id,json=controlId,proto3" json:"control_id,omitempty"`
-	Value     *ComplianceResultValue `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceControlResult) Reset() {
@@ -375,14 +377,15 @@ func (x *ComplianceControlResult) GetValue() *ComplianceResultValue {
 
 // Next available tag: 5
 type ComplianceDomain struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id          string                                  `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" sql:"pk" search:"Compliance Domain ID,hidden"` // @gotags: sql:"pk" search:"Compliance Domain ID,hidden"
+	state       protoimpl.MessageState
 	Cluster     *ComplianceDomain_Cluster               `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	Nodes       map[string]*ComplianceDomain_Node       `protobuf:"bytes,2,rep,name=nodes,proto3" json:"nodes,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Deployments map[string]*ComplianceDomain_Deployment `protobuf:"bytes,3,rep,name=deployments,proto3" json:"deployments,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+
+	Id            string `protobuf:"bytes,4,opt,name=id,proto3" json:"id,omitempty" sql:"pk" search:"Compliance Domain ID,hidden"` // @gotags: sql:"pk" search:"Compliance Domain ID,hidden"
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceDomain) Reset() {
@@ -447,18 +450,19 @@ func (x *ComplianceDomain) GetDeployments() map[string]*ComplianceDomain_Deploym
 
 // Next available tag: 5
 type ComplianceRunMetadata struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	RunId           string                 `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty" sql:"pk" search:"Compliance Run ID,hidden"`                // @gotags: sql:"pk" search:"Compliance Run ID,hidden"
-	StandardId      string                 `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,hidden,store"` // @gotags: search:"Standard ID,hidden,store"
-	ClusterId       string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`    // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+	state           protoimpl.MessageState
 	StartTimestamp  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_timestamp,json=startTimestamp,proto3" json:"start_timestamp,omitempty"`
 	FinishTimestamp *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=finish_timestamp,json=finishTimestamp,proto3" json:"finish_timestamp,omitempty" search:"Compliance Run Finished Timestamp,hidden,store"` // @gotags: search:"Compliance Run Finished Timestamp,hidden,store"
-	Success         bool                   `protobuf:"varint,6,opt,name=success,proto3" json:"success,omitempty"`
-	ErrorMessage    string                 `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	DomainId        string                 `protobuf:"bytes,8,opt,name=domain_id,json=domainId,proto3" json:"domain_id,omitempty"`
+
+	RunId         string `protobuf:"bytes,1,opt,name=run_id,json=runId,proto3" json:"run_id,omitempty" sql:"pk" search:"Compliance Run ID,hidden"`                    // @gotags: sql:"pk" search:"Compliance Run ID,hidden"
+	StandardId    string `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty" search:"Standard ID,hidden,store"`              // @gotags: search:"Standard ID,hidden,store"
+	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+	ErrorMessage  string `protobuf:"bytes,7,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	DomainId      string `protobuf:"bytes,8,opt,name=domain_id,json=domainId,proto3" json:"domain_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	Success   bool `protobuf:"varint,6,opt,name=success,proto3" json:"success,omitempty"`
 }
 
 func (x *ComplianceRunMetadata) Reset() {
@@ -551,9 +555,7 @@ func (x *ComplianceRunMetadata) GetDomainId() string {
 
 // Next available tag: 6
 type ComplianceRunResults struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Domain               *ComplianceDomain                              `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty" sql:"-"` // @gotags: sql:"-"
 	RunMetadata          *ComplianceRunMetadata                         `protobuf:"bytes,2,opt,name=run_metadata,json=runMetadata,proto3" json:"run_metadata,omitempty"`
@@ -561,6 +563,9 @@ type ComplianceRunResults struct {
 	NodeResults          map[string]*ComplianceRunResults_EntityResults `protobuf:"bytes,4,rep,name=node_results,json=nodeResults,proto3" json:"node_results,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	DeploymentResults    map[string]*ComplianceRunResults_EntityResults `protobuf:"bytes,5,rep,name=deployment_results,json=deploymentResults,proto3" json:"deployment_results,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	MachineConfigResults map[string]*ComplianceRunResults_EntityResults `protobuf:"bytes,6,rep,name=machine_config_results,json=machineConfigResults,proto3" json:"machine_config_results,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	unknownFields        protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceRunResults) Reset() {
@@ -639,12 +644,13 @@ func (x *ComplianceRunResults) GetMachineConfigResults() map[string]*ComplianceR
 
 // Next available tag: 2
 type ComplianceStrings struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
 	unknownFields protoimpl.UnknownFields
 
-	Id      string   `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Strings []string `protobuf:"bytes,1,rep,name=strings,proto3" json:"strings,omitempty"`
+	Strings   []string `protobuf:"bytes,1,rep,name=strings,proto3" json:"strings,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceStrings) Reset() {
@@ -695,8 +701,8 @@ func (x *ComplianceStrings) GetStrings() []string {
 
 type ComplianceAggregation struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ComplianceAggregation) Reset() {
@@ -733,12 +739,12 @@ func (*ComplianceAggregation) Descriptor() ([]byte, []int) {
 
 type PreComputedComplianceAggregation struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Results        []*ComplianceAggregation_Result `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
 	Sources        []*ComplianceAggregation_Source `protobuf:"bytes,2,rep,name=sources,proto3" json:"sources,omitempty"`
 	DomainPointers []string                        `protobuf:"bytes,3,rep,name=domain_pointers,json=domainPointers,proto3" json:"domain_pointers,omitempty"`
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *PreComputedComplianceAggregation) Reset() {
@@ -795,12 +801,13 @@ func (x *PreComputedComplianceAggregation) GetDomainPointers() []string {
 }
 
 type ComplianceResource_ClusterName struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceResource_ClusterName) Reset() {
@@ -850,14 +857,15 @@ func (x *ComplianceResource_ClusterName) GetName() string {
 }
 
 type ComplianceResource_DeploymentName struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Cluster       *ComplianceResource_ClusterName `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	Id            string                          `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                          `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Namespace     string                          `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Cluster   *ComplianceResource_ClusterName `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
-	Id        string                          `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Name      string                          `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Namespace string                          `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceResource_DeploymentName) Reset() {
@@ -921,13 +929,14 @@ func (x *ComplianceResource_DeploymentName) GetNamespace() string {
 }
 
 type ComplianceResource_NodeName struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Cluster       *ComplianceResource_ClusterName `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	Id            string                          `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                          `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Cluster *ComplianceResource_ClusterName `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
-	Id      string                          `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	Name    string                          `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceResource_NodeName) Reset() {
@@ -985,11 +994,12 @@ func (x *ComplianceResource_NodeName) GetName() string {
 
 type ComplianceResultValue_Evidence struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Message       string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
+	sizeCache protoimpl.SizeCache
+
 	State     ComplianceState `protobuf:"varint,1,opt,name=state,proto3,enum=storage.ComplianceState" json:"state,omitempty"`
-	Message   string          `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	MessageId int32           `protobuf:"varint,3,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
 }
 
@@ -1048,12 +1058,13 @@ func (x *ComplianceResultValue_Evidence) GetMessageId() int32 {
 
 // These must mirror the tags _exactly_ in cluster.proto for backwards compatibility
 type ComplianceDomain_Cluster struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceDomain_Cluster) Reset() {
@@ -1104,14 +1115,15 @@ func (x *ComplianceDomain_Cluster) GetName() string {
 
 // These must mirror the tags _exactly_ in node.proto for backwards compatibility
 type ComplianceDomain_Node struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ClusterId     string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ClusterName   string `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId   string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	ClusterName string `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceDomain_Node) Reset() {
@@ -1176,17 +1188,18 @@ func (x *ComplianceDomain_Node) GetClusterName() string {
 
 // This must mirror the tags _exactly_ in deployment.proto for backwards compatibility
 type ComplianceDomain_Deployment struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type          string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Namespace     string `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	NamespaceId   string `protobuf:"bytes,23,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`
+	ClusterId     string `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ClusterName   string `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id          string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Type        string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	Namespace   string `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	NamespaceId string `protobuf:"bytes,23,opt,name=namespace_id,json=namespaceId,proto3" json:"namespace_id,omitempty"`
-	ClusterId   string `protobuf:"bytes,9,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	ClusterName string `protobuf:"bytes,10,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceDomain_Deployment) Reset() {
@@ -1271,11 +1284,12 @@ func (x *ComplianceDomain_Deployment) GetClusterName() string {
 }
 
 type ComplianceRunResults_EntityResults struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	ControlResults map[string]*ComplianceResultValue `protobuf:"bytes,1,rep,name=control_results,json=controlResults,proto3" json:"control_results,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	unknownFields  protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceRunResults_EntityResults) Reset() {
@@ -1320,11 +1334,12 @@ func (x *ComplianceRunResults_EntityResults) GetControlResults() map[string]*Com
 // Next available tag: 3
 type ComplianceAggregation_AggregationKey struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	Id            string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
+	sizeCache protoimpl.SizeCache
+
 	Scope ComplianceAggregation_Scope `protobuf:"varint,1,opt,name=scope,proto3,enum=storage.ComplianceAggregation_Scope" json:"scope,omitempty"`
-	Id    string                      `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 }
 
 func (x *ComplianceAggregation_AggregationKey) Reset() {
@@ -1376,14 +1391,14 @@ func (x *ComplianceAggregation_AggregationKey) GetId() string {
 // Next available tag: 5
 type ComplianceAggregation_Result struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	AggregationKeys []*ComplianceAggregation_AggregationKey `protobuf:"bytes,1,rep,name=aggregation_keys,json=aggregationKeys,proto3" json:"aggregation_keys,omitempty"`
-	Unit            ComplianceAggregation_Scope             `protobuf:"varint,2,opt,name=unit,proto3,enum=storage.ComplianceAggregation_Scope" json:"unit,omitempty"`
-	NumPassing      int32                                   `protobuf:"varint,3,opt,name=num_passing,json=numPassing,proto3" json:"num_passing,omitempty"`
-	NumFailing      int32                                   `protobuf:"varint,4,opt,name=num_failing,json=numFailing,proto3" json:"num_failing,omitempty"`
-	NumSkipped      int32                                   `protobuf:"varint,5,opt,name=num_skipped,json=numSkipped,proto3" json:"num_skipped,omitempty"`
+	sizeCache       protoimpl.SizeCache
+	Unit            ComplianceAggregation_Scope `protobuf:"varint,2,opt,name=unit,proto3,enum=storage.ComplianceAggregation_Scope" json:"unit,omitempty"`
+	NumPassing      int32                       `protobuf:"varint,3,opt,name=num_passing,json=numPassing,proto3" json:"num_passing,omitempty"`
+	NumFailing      int32                       `protobuf:"varint,4,opt,name=num_failing,json=numFailing,proto3" json:"num_failing,omitempty"`
+	NumSkipped      int32                       `protobuf:"varint,5,opt,name=num_skipped,json=numSkipped,proto3" json:"num_skipped,omitempty"`
 }
 
 func (x *ComplianceAggregation_Result) Reset() {
@@ -1456,13 +1471,14 @@ func (x *ComplianceAggregation_Result) GetNumSkipped() int32 {
 // Next available tag: 5
 type ComplianceAggregation_Source struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	SuccessfulRun *ComplianceRunMetadata `protobuf:"bytes,3,opt,name=successful_run,json=successfulRun,proto3" json:"successful_run,omitempty"`
+
+	ClusterId     string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	StandardId    string `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	ClusterId     string                   `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	StandardId    string                   `protobuf:"bytes,2,opt,name=standard_id,json=standardId,proto3" json:"standard_id,omitempty"`
-	SuccessfulRun *ComplianceRunMetadata   `protobuf:"bytes,3,opt,name=successful_run,json=successfulRun,proto3" json:"successful_run,omitempty"`
-	FailedRuns    []*ComplianceRunMetadata `protobuf:"bytes,4,rep,name=failed_runs,json=failedRuns,proto3" json:"failed_runs,omitempty"`
+	FailedRuns []*ComplianceRunMetadata `protobuf:"bytes,4,rep,name=failed_runs,json=failedRuns,proto3" json:"failed_runs,omitempty"`
+	sizeCache  protoimpl.SizeCache
 }
 
 func (x *ComplianceAggregation_Source) Reset() {
@@ -1528,12 +1544,12 @@ func (x *ComplianceAggregation_Source) GetFailedRuns() []*ComplianceRunMetadata 
 // Next available tag: 3
 type ComplianceAggregation_Response struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	ErrorMessage  string `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Results      []*ComplianceAggregation_Result `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
-	Sources      []*ComplianceAggregation_Source `protobuf:"bytes,2,rep,name=sources,proto3" json:"sources,omitempty"`
-	ErrorMessage string                          `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Results   []*ComplianceAggregation_Result `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	Sources   []*ComplianceAggregation_Source `protobuf:"bytes,2,rep,name=sources,proto3" json:"sources,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ComplianceAggregation_Response) Reset() {

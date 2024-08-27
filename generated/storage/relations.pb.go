@@ -22,21 +22,22 @@ const (
 )
 
 type ImageComponentEdge struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// id is base 64 encoded Image:Component ids.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"` // @gotags: sql:"pk,id"
 	// / Layer that contains this component
 	//
 	// Types that are assignable to HasLayerIndex:
 	//
 	//	*ImageComponentEdge_LayerIndex
-	HasLayerIndex    isImageComponentEdge_HasLayerIndex `protobuf_oneof:"has_layer_index"`
-	Location         string                             `protobuf:"bytes,3,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"`                                           // @gotags: search:"Component Location,store,hidden"
-	ImageId          string                             `protobuf:"bytes,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"`                              // @gotags: sql:"fk(Image:id),index=hash"
-	ImageComponentId string                             `protobuf:"bytes,5,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"` // @gotags: sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"
+	HasLayerIndex isImageComponentEdge_HasLayerIndex `protobuf_oneof:"has_layer_index"`
+	state         protoimpl.MessageState
+
+	// id is base 64 encoded Image:Component ids.
+	Id               string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                                                   // @gotags: sql:"pk,id"
+	Location         string `protobuf:"bytes,3,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"`                                                          // @gotags: search:"Component Location,store,hidden"
+	ImageId          string `protobuf:"bytes,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"`                                                        // @gotags: sql:"fk(Image:id),index=hash"
+	ImageComponentId string `protobuf:"bytes,5,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"` // @gotags: sql:"fk(ImageComponent:id),no-fk-constraint,index=hash"
+	unknownFields    protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ImageComponentEdge) Reset() {
@@ -124,21 +125,22 @@ type ImageComponentEdge_LayerIndex struct {
 func (*ImageComponentEdge_LayerIndex) isImageComponentEdge_HasLayerIndex() {}
 
 type ComponentCVEEdge struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// base 64 encoded Component:CVE ids.
-	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
-	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable,store"` // @gotags: search:"Fixable,store"
 	// Whether there is a version the CVE is fixed in the component.
 	//
 	// Types that are assignable to HasFixedBy:
 	//
 	//	*ComponentCVEEdge_FixedBy
-	HasFixedBy       isComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	ImageComponentId string                        `protobuf:"bytes,4,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"fk(ImageComponent:id),index=hash"` // @gotags: sql:"fk(ImageComponent:id),index=hash"
-	ImageCveId       string                        `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"`                   // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
+	HasFixedBy isComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
+	state      protoimpl.MessageState
+
+	// base 64 encoded Component:CVE ids.
+	Id               string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                                  // @gotags: sql:"pk,id"
+	ImageComponentId string `protobuf:"bytes,4,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"fk(ImageComponent:id),index=hash"` // @gotags: sql:"fk(ImageComponent:id),index=hash"
+	ImageCveId       string `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"`        // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
+	unknownFields    protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	IsFixable bool `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable,store"` // @gotags: search:"Fixable,store"
 }
 
 func (x *ComponentCVEEdge) Reset() {
@@ -226,16 +228,17 @@ type ComponentCVEEdge_FixedBy struct {
 func (*ComponentCVEEdge_FixedBy) isComponentCVEEdge_HasFixedBy() {}
 
 type ImageCVEEdge struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state                protoimpl.MessageState
+	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
 
 	// base 64 encoded Image:CVE ids.
-	Id                   string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                   // @gotags: sql:"pk,id"
-	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
-	State                VulnerabilityState     `protobuf:"varint,3,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State"`                            // @gotags: search:"Vulnerability State"
-	ImageId              string                 `protobuf:"bytes,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"`                                          // @gotags: sql:"fk(Image:id),index=hash"
-	ImageCveId           string                 `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"`                               // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                           // @gotags: sql:"pk,id"
+	ImageId       string `protobuf:"bytes,4,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"`                                // @gotags: sql:"fk(Image:id),index=hash"
+	ImageCveId    string `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"` // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	State     VulnerabilityState `protobuf:"varint,3,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State"` // @gotags: search:"Vulnerability State"
 }
 
 func (x *ImageCVEEdge) Reset() {
@@ -306,14 +309,15 @@ func (x *ImageCVEEdge) GetImageCveId() string {
 }
 
 type NodeComponentEdge struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// base 64 encoded Node:Component ids.
-	Id              string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                    // @gotags: sql:"pk,id"
-	NodeId          string `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" sql:"fk(Node:id),index=hash,type(uuid)"`                              // @gotags: sql:"fk(Node:id),index=hash,type(uuid)"
+	Id              string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                                               // @gotags: sql:"pk,id"
+	NodeId          string `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty" sql:"fk(Node:id),index=hash,type(uuid)"`                                             // @gotags: sql:"fk(Node:id),index=hash,type(uuid)"
 	NodeComponentId string `protobuf:"bytes,3,opt,name=node_component_id,json=nodeComponentId,proto3" json:"node_component_id,omitempty" sql:"fk(NodeComponent:id),no-fk-constraint,index=hash"` // @gotags: sql:"fk(NodeComponent:id),no-fk-constraint,index=hash"
+	unknownFields   protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NodeComponentEdge) Reset() {
@@ -370,20 +374,21 @@ func (x *NodeComponentEdge) GetNodeComponentId() string {
 }
 
 type NodeComponentCVEEdge struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
-	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable,store"` // @gotags: search:"Fixable,store"
 	// Whether there is a version the CVE is fixed in the component.
 	//
 	// Types that are assignable to HasFixedBy:
 	//
 	//	*NodeComponentCVEEdge_FixedBy
-	HasFixedBy      isNodeComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	NodeComponentId string                            `protobuf:"bytes,4,opt,name=node_component_id,json=nodeComponentId,proto3" json:"node_component_id,omitempty" sql:"fk(NodeComponent:id),index=hash"` // @gotags: sql:"fk(NodeComponent:id),index=hash"
-	NodeCveId       string                            `protobuf:"bytes,5,opt,name=node_cve_id,json=nodeCveId,proto3" json:"node_cve_id,omitempty" sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"`                   // @gotags: sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"
+	HasFixedBy isNodeComponentCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
+	state      protoimpl.MessageState
+
+	Id              string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                              // @gotags: sql:"pk,id"
+	NodeComponentId string `protobuf:"bytes,4,opt,name=node_component_id,json=nodeComponentId,proto3" json:"node_component_id,omitempty" sql:"fk(NodeComponent:id),index=hash"` // @gotags: sql:"fk(NodeComponent:id),index=hash"
+	NodeCveId       string `protobuf:"bytes,5,opt,name=node_cve_id,json=nodeCveId,proto3" json:"node_cve_id,omitempty" sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"`        // @gotags: sql:"fk(NodeCVE:id),no-fk-constraint,index=hash"
+	unknownFields   protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	IsFixable bool `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Fixable,store"` // @gotags: search:"Fixable,store"
 }
 
 func (x *NodeComponentCVEEdge) Reset() {
@@ -471,21 +476,22 @@ type NodeComponentCVEEdge_FixedBy struct {
 func (*NodeComponentCVEEdge_FixedBy) isNodeComponentCVEEdge_HasFixedBy() {}
 
 type ClusterCVEEdge struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// base 64 encoded Cluster:CVE ids.
-	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                 // @gotags: sql:"pk,id"
-	IsFixable bool   `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Cluster CVE Fixable,store,hidden"` // @gotags: search:"Cluster CVE Fixable,store,hidden"
 	// Whether there is a version the CVE is fixed in the Cluster.
 	//
 	// Types that are assignable to HasFixedBy:
 	//
 	//	*ClusterCVEEdge_FixedBy
 	HasFixedBy isClusterCVEEdge_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	ClusterId  string                      `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"fk(Cluster:id),type(uuid)"` // @gotags: sql:"fk(Cluster:id),type(uuid)"
-	CveId      string                      `protobuf:"bytes,5,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty" sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"`             // @gotags: sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"
+	state      protoimpl.MessageState
+
+	// base 64 encoded Cluster:CVE ids.
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                            // @gotags: sql:"pk,id"
+	ClusterId     string `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"fk(Cluster:id),type(uuid)"`         // @gotags: sql:"fk(Cluster:id),type(uuid)"
+	CveId         string `protobuf:"bytes,5,opt,name=cve_id,json=cveId,proto3" json:"cve_id,omitempty" sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"` // @gotags: sql:"fk(ClusterCVE:id),no-fk-constraint,index=hash"
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	IsFixable bool `protobuf:"varint,2,opt,name=is_fixable,json=isFixable,proto3" json:"is_fixable,omitempty" search:"Cluster CVE Fixable,store,hidden"` // @gotags: search:"Cluster CVE Fixable,store,hidden"
 }
 
 func (x *ClusterCVEEdge) Reset() {
@@ -573,13 +579,14 @@ type ClusterCVEEdge_FixedBy struct {
 func (*ClusterCVEEdge_FixedBy) isClusterCVEEdge_HasFixedBy() {}
 
 type PolicyCategoryEdge struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                                                     // @gotags: sql:"pk,id"
+	PolicyId      string `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty" sql:"fk(Policy:id)" search:"Policy ID,store,hidden"` // @gotags: sql:"fk(Policy:id)" search:"Policy ID,store,hidden"
+	CategoryId    string `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty" sql:"fk(PolicyCategory:id)"`                   // @gotags: sql:"fk(PolicyCategory:id)"
 	unknownFields protoimpl.UnknownFields
 
-	Id         string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,id"`                                   // @gotags: sql:"pk,id"
-	PolicyId   string `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty" sql:"fk(Policy:id)" search:"Policy ID,store,hidden"`       // @gotags: sql:"fk(Policy:id)" search:"Policy ID,store,hidden"
-	CategoryId string `protobuf:"bytes,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty" sql:"fk(PolicyCategory:id)"` // @gotags: sql:"fk(PolicyCategory:id)"
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *PolicyCategoryEdge) Reset() {

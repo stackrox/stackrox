@@ -22,11 +22,12 @@ const (
 )
 
 type NotificationSchedule struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	LastRun       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_run,json=lastRun,proto3" json:"last_run,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	LastRun *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_run,json=lastRun,proto3" json:"last_run,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NotificationSchedule) Reset() {

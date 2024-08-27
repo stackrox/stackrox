@@ -500,11 +500,7 @@ func (ClusterHealthStatus_HealthStatusLabel) EnumDescriptor() ([]byte, []int) {
 
 // ClusterMetadata contains metadata information about the cluster infrastructure.
 type ClusterMetadata struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Type ClusterMetadata_Type `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterMetadata_Type" json:"type,omitempty" search:"Cluster Type"` // @gotags: search:"Cluster Type"
+	state protoimpl.MessageState
 	// Name represents the name under which the cluster is registered with the
 	// cloud provider. In case of self managed OpenShift it is the name chosen
 	// by the OpenShift installer.
@@ -512,7 +508,12 @@ type ClusterMetadata struct {
 	// Id represents a unique ID under which the cluster is registered with the
 	// cloud provider. Not all cluster types have an id. For all OpenShift
 	// clusters, this is the Red Hat `cluster_id` registered with OCM.
-	Id string `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
+	Id            string `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+
+	Type ClusterMetadata_Type `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterMetadata_Type" json:"type,omitempty" search:"Cluster Type"` // @gotags: search:"Cluster Type"
 }
 
 func (x *ClusterMetadata) Reset() {
@@ -569,15 +570,16 @@ func (x *ClusterMetadata) GetId() string {
 }
 
 type GoogleProviderMetadata struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// Deprecated in favor of providerMetadata.cluster.name.
 	//
 	// Deprecated: Marked as deprecated in storage/cluster.proto.
-	ClusterName string `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	ClusterName   string `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *GoogleProviderMetadata) Reset() {
@@ -628,11 +630,12 @@ func (x *GoogleProviderMetadata) GetClusterName() string {
 }
 
 type AWSProviderMetadata struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	AccountId     string `protobuf:"bytes,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	AccountId string `protobuf:"bytes,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *AWSProviderMetadata) Reset() {
@@ -675,11 +678,12 @@ func (x *AWSProviderMetadata) GetAccountId() string {
 }
 
 type AzureProviderMetadata struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	SubscriptionId string `protobuf:"bytes,1,opt,name=subscription_id,json=subscriptionId,proto3" json:"subscription_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *AzureProviderMetadata) Reset() {
@@ -722,20 +726,21 @@ func (x *AzureProviderMetadata) GetSubscriptionId() string {
 }
 
 type ProviderMetadata struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Region string `protobuf:"bytes,1,opt,name=region,proto3" json:"region,omitempty"`
-	Zone   string `protobuf:"bytes,2,opt,name=zone,proto3" json:"zone,omitempty"`
 	// Types that are assignable to Provider:
 	//
 	//	*ProviderMetadata_Google
 	//	*ProviderMetadata_Aws
 	//	*ProviderMetadata_Azure
 	Provider isProviderMetadata_Provider `protobuf_oneof:"Provider"`
-	Verified bool                        `protobuf:"varint,15,opt,name=verified,proto3" json:"verified,omitempty"`
-	Cluster  *ClusterMetadata            `protobuf:"bytes,16,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	state    protoimpl.MessageState
+	Cluster  *ClusterMetadata `protobuf:"bytes,16,opt,name=cluster,proto3" json:"cluster,omitempty"`
+
+	Region        string `protobuf:"bytes,1,opt,name=region,proto3" json:"region,omitempty"`
+	Zone          string `protobuf:"bytes,2,opt,name=zone,proto3" json:"zone,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	Verified  bool `protobuf:"varint,15,opt,name=verified,proto3" json:"verified,omitempty"`
 }
 
 func (x *ProviderMetadata) Reset() {
@@ -849,17 +854,18 @@ func (*ProviderMetadata_Aws) isProviderMetadata_Provider() {}
 func (*ProviderMetadata_Azure) isProviderMetadata_Provider() {}
 
 type OrchestratorMetadata struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty" search:"Cluster Kubernetes Version"` // @gotags: search:"Cluster Kubernetes Version"
 	// Types that are assignable to IsOpenshift:
 	//
 	//	*OrchestratorMetadata_OpenshiftVersion
 	IsOpenshift isOrchestratorMetadata_IsOpenshift `protobuf_oneof:"is_openshift"`
-	BuildDate   *timestamppb.Timestamp             `protobuf:"bytes,2,opt,name=build_date,json=buildDate,proto3" json:"build_date,omitempty"`
-	ApiVersions []string                           `protobuf:"bytes,3,rep,name=api_versions,json=apiVersions,proto3" json:"api_versions,omitempty"`
+	state       protoimpl.MessageState
+	BuildDate   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=build_date,json=buildDate,proto3" json:"build_date,omitempty"`
+
+	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty" search:"Cluster Kubernetes Version"` // @gotags: search:"Cluster Kubernetes Version"
+	unknownFields protoimpl.UnknownFields
+
+	ApiVersions []string `protobuf:"bytes,3,rep,name=api_versions,json=apiVersions,proto3" json:"api_versions,omitempty"`
+	sizeCache   protoimpl.SizeCache
 }
 
 func (x *OrchestratorMetadata) Reset() {
@@ -941,14 +947,15 @@ func (*OrchestratorMetadata_OpenshiftVersion) isOrchestratorMetadata_IsOpenshift
 
 type AdmissionControllerConfig struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Enabled          bool  `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	TimeoutSeconds   int32 `protobuf:"varint,2,opt,name=timeout_seconds,json=timeoutSeconds,proto3" json:"timeout_seconds,omitempty"`
-	ScanInline       bool  `protobuf:"varint,3,opt,name=scan_inline,json=scanInline,proto3" json:"scan_inline,omitempty"`
-	DisableBypass    bool  `protobuf:"varint,4,opt,name=disable_bypass,json=disableBypass,proto3" json:"disable_bypass,omitempty"`
-	EnforceOnUpdates bool  `protobuf:"varint,5,opt,name=enforce_on_updates,json=enforceOnUpdates,proto3" json:"enforce_on_updates,omitempty"`
+	sizeCache      protoimpl.SizeCache
+	TimeoutSeconds int32 `protobuf:"varint,2,opt,name=timeout_seconds,json=timeoutSeconds,proto3" json:"timeout_seconds,omitempty"`
+
+	Enabled          bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	ScanInline       bool `protobuf:"varint,3,opt,name=scan_inline,json=scanInline,proto3" json:"scan_inline,omitempty"`
+	DisableBypass    bool `protobuf:"varint,4,opt,name=disable_bypass,json=disableBypass,proto3" json:"disable_bypass,omitempty"`
+	EnforceOnUpdates bool `protobuf:"varint,5,opt,name=enforce_on_updates,json=enforceOnUpdates,proto3" json:"enforce_on_updates,omitempty"`
 }
 
 func (x *AdmissionControllerConfig) Reset() {
@@ -1020,8 +1027,9 @@ func (x *AdmissionControllerConfig) GetEnforceOnUpdates() bool {
 
 type TolerationsConfig struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	Disabled bool `protobuf:"varint,1,opt,name=disabled,proto3" json:"disabled,omitempty"`
 }
@@ -1067,20 +1075,21 @@ func (x *TolerationsConfig) GetDisabled() bool {
 
 // The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded.
 type StaticClusterConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state              protoimpl.MessageState
+	TolerationsConfig  *TolerationsConfig `protobuf:"bytes,8,opt,name=tolerations_config,json=tolerationsConfig,proto3" json:"tolerations_config,omitempty"`
+	MainImage          string             `protobuf:"bytes,2,opt,name=main_image,json=mainImage,proto3" json:"main_image,omitempty"`
+	CentralApiEndpoint string             `protobuf:"bytes,3,opt,name=central_api_endpoint,json=centralApiEndpoint,proto3" json:"central_api_endpoint,omitempty"`
+	CollectorImage     string             `protobuf:"bytes,5,opt,name=collector_image,json=collectorImage,proto3" json:"collector_image,omitempty"`
+	unknownFields      protoimpl.UnknownFields
 
-	Type                       ClusterType        `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty"`
-	MainImage                  string             `protobuf:"bytes,2,opt,name=main_image,json=mainImage,proto3" json:"main_image,omitempty"`
-	CentralApiEndpoint         string             `protobuf:"bytes,3,opt,name=central_api_endpoint,json=centralApiEndpoint,proto3" json:"central_api_endpoint,omitempty"`
-	CollectionMethod           CollectionMethod   `protobuf:"varint,4,opt,name=collection_method,json=collectionMethod,proto3,enum=storage.CollectionMethod" json:"collection_method,omitempty"`
-	CollectorImage             string             `protobuf:"bytes,5,opt,name=collector_image,json=collectorImage,proto3" json:"collector_image,omitempty"`
-	AdmissionController        bool               `protobuf:"varint,6,opt,name=admission_controller,json=admissionController,proto3" json:"admission_controller,omitempty"`
-	AdmissionControllerUpdates bool               `protobuf:"varint,7,opt,name=admission_controller_updates,json=admissionControllerUpdates,proto3" json:"admission_controller_updates,omitempty"`
-	TolerationsConfig          *TolerationsConfig `protobuf:"bytes,8,opt,name=tolerations_config,json=tolerationsConfig,proto3" json:"tolerations_config,omitempty"`
-	SlimCollector              bool               `protobuf:"varint,9,opt,name=slim_collector,json=slimCollector,proto3" json:"slim_collector,omitempty"`
-	AdmissionControllerEvents  bool               `protobuf:"varint,10,opt,name=admission_controller_events,json=admissionControllerEvents,proto3" json:"admission_controller_events,omitempty"`
+	sizeCache protoimpl.SizeCache
+
+	Type                       ClusterType      `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty"`
+	CollectionMethod           CollectionMethod `protobuf:"varint,4,opt,name=collection_method,json=collectionMethod,proto3,enum=storage.CollectionMethod" json:"collection_method,omitempty"`
+	AdmissionController        bool             `protobuf:"varint,6,opt,name=admission_controller,json=admissionController,proto3" json:"admission_controller,omitempty"`
+	AdmissionControllerUpdates bool             `protobuf:"varint,7,opt,name=admission_controller_updates,json=admissionControllerUpdates,proto3" json:"admission_controller_updates,omitempty"`
+	SlimCollector              bool             `protobuf:"varint,9,opt,name=slim_collector,json=slimCollector,proto3" json:"slim_collector,omitempty"`
+	AdmissionControllerEvents  bool             `protobuf:"varint,10,opt,name=admission_controller_events,json=admissionControllerEvents,proto3" json:"admission_controller_events,omitempty"`
 }
 
 func (x *StaticClusterConfig) Reset() {
@@ -1187,13 +1196,14 @@ func (x *StaticClusterConfig) GetAdmissionControllerEvents() bool {
 
 // The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for "hot reloading" of values without restarting Secured cluster components.
 type DynamicClusterConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	AdmissionControllerConfig *AdmissionControllerConfig `protobuf:"bytes,1,opt,name=admission_controller_config,json=admissionControllerConfig,proto3" json:"admission_controller_config,omitempty"`
 	RegistryOverride          string                     `protobuf:"bytes,2,opt,name=registry_override,json=registryOverride,proto3" json:"registry_override,omitempty"`
-	DisableAuditLogs          bool                       `protobuf:"varint,3,opt,name=disable_audit_logs,json=disableAuditLogs,proto3" json:"disable_audit_logs,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+
+	sizeCache        protoimpl.SizeCache
+	DisableAuditLogs bool `protobuf:"varint,3,opt,name=disable_audit_logs,json=disableAuditLogs,proto3" json:"disable_audit_logs,omitempty"`
 }
 
 func (x *DynamicClusterConfig) Reset() {
@@ -1252,14 +1262,15 @@ func (x *DynamicClusterConfig) GetDisableAuditLogs() bool {
 // Encodes a complete cluster configuration minus ID/Name identifiers
 // including static and dynamic settings.
 type CompleteClusterConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	DynamicConfig     *DynamicClusterConfig `protobuf:"bytes,1,opt,name=dynamic_config,json=dynamicConfig,proto3" json:"dynamic_config,omitempty"`
 	StaticConfig      *StaticClusterConfig  `protobuf:"bytes,2,opt,name=static_config,json=staticConfig,proto3" json:"static_config,omitempty"`
-	ConfigFingerprint string                `protobuf:"bytes,3,opt,name=config_fingerprint,json=configFingerprint,proto3" json:"config_fingerprint,omitempty"`
 	ClusterLabels     map[string]string     `protobuf:"bytes,4,rep,name=cluster_labels,json=clusterLabels,proto3" json:"cluster_labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	ConfigFingerprint string                `protobuf:"bytes,3,opt,name=config_fingerprint,json=configFingerprint,proto3" json:"config_fingerprint,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *CompleteClusterConfig) Reset() {
@@ -1326,9 +1337,7 @@ func (x *CompleteClusterConfig) GetClusterLabels() map[string]string {
 // whether a sensor connection comes from a sensor pod that has restarted or was recreated (possibly after a network
 // partition), or from a deployment in a different namespace or cluster.
 type SensorDeploymentIdentification struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	SystemNamespaceId   string `protobuf:"bytes,1,opt,name=system_namespace_id,json=systemNamespaceId,proto3" json:"system_namespace_id,omitempty"`
 	DefaultNamespaceId  string `protobuf:"bytes,2,opt,name=default_namespace_id,json=defaultNamespaceId,proto3" json:"default_namespace_id,omitempty"`
@@ -1336,6 +1345,9 @@ type SensorDeploymentIdentification struct {
 	AppNamespaceId      string `protobuf:"bytes,4,opt,name=app_namespace_id,json=appNamespaceId,proto3" json:"app_namespace_id,omitempty"`
 	AppServiceaccountId string `protobuf:"bytes,5,opt,name=app_serviceaccount_id,json=appServiceaccountId,proto3" json:"app_serviceaccount_id,omitempty"`
 	K8SNodeName         string `protobuf:"bytes,6,opt,name=k8s_node_name,json=k8sNodeName,proto3" json:"k8s_node_name,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *SensorDeploymentIdentification) Reset() {
@@ -1413,37 +1425,38 @@ func (x *SensorDeploymentIdentification) GetK8SNodeName() string {
 }
 
 type Cluster struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id                 string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"`                                                                                                  // @gotags: search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"
-	Name               string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Cluster,store" sql:"unique"`                                                                                              // @gotags: search:"Cluster,store" sql:"unique"
-	Type               ClusterType       `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty" search:"Cluster Platform Type"`                                                                    // @gotags: search:"Cluster Platform Type"
-	Labels             map[string]string `protobuf:"bytes,27,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Cluster Label"` // @gotags: search:"Cluster Label"
-	MainImage          string            `protobuf:"bytes,4,opt,name=main_image,json=mainImage,proto3" json:"main_image,omitempty"`
-	CollectorImage     string            `protobuf:"bytes,16,opt,name=collector_image,json=collectorImage,proto3" json:"collector_image,omitempty"`
-	CentralApiEndpoint string            `protobuf:"bytes,5,opt,name=central_api_endpoint,json=centralApiEndpoint,proto3" json:"central_api_endpoint,omitempty"`
-	// Deprecated: Marked as deprecated in storage/cluster.proto.
-	RuntimeSupport             bool                  `protobuf:"varint,7,opt,name=runtime_support,json=runtimeSupport,proto3" json:"runtime_support,omitempty"`
-	CollectionMethod           CollectionMethod      `protobuf:"varint,17,opt,name=collection_method,json=collectionMethod,proto3,enum=storage.CollectionMethod" json:"collection_method,omitempty"`
-	AdmissionController        bool                  `protobuf:"varint,13,opt,name=admission_controller,json=admissionController,proto3" json:"admission_controller,omitempty"`
-	AdmissionControllerUpdates bool                  `protobuf:"varint,21,opt,name=admission_controller_updates,json=admissionControllerUpdates,proto3" json:"admission_controller_updates,omitempty"`
-	AdmissionControllerEvents  bool                  `protobuf:"varint,25,opt,name=admission_controller_events,json=admissionControllerEvents,proto3" json:"admission_controller_events,omitempty"`
-	Status                     *ClusterStatus        `protobuf:"bytes,15,opt,name=status,proto3" json:"status,omitempty"`
-	DynamicConfig              *DynamicClusterConfig `protobuf:"bytes,18,opt,name=dynamic_config,json=dynamicConfig,proto3" json:"dynamic_config,omitempty"`
-	TolerationsConfig          *TolerationsConfig    `protobuf:"bytes,19,opt,name=tolerations_config,json=tolerationsConfig,proto3" json:"tolerations_config,omitempty"`
-	Priority                   int64                 `protobuf:"varint,20,opt,name=priority,proto3" json:"priority,omitempty"`
-	HealthStatus               *ClusterHealthStatus  `protobuf:"bytes,22,opt,name=health_status,json=healthStatus,proto3" json:"health_status,omitempty" sql:"-"` // @gotags: sql:"-"
-	SlimCollector              bool                  `protobuf:"varint,23,opt,name=slim_collector,json=slimCollector,proto3" json:"slim_collector,omitempty"`
+	state             protoimpl.MessageState
+	Labels            map[string]string     `protobuf:"bytes,27,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" search:"Cluster Label"` // @gotags: search:"Cluster Label"
+	Status            *ClusterStatus        `protobuf:"bytes,15,opt,name=status,proto3" json:"status,omitempty"`
+	DynamicConfig     *DynamicClusterConfig `protobuf:"bytes,18,opt,name=dynamic_config,json=dynamicConfig,proto3" json:"dynamic_config,omitempty"`
+	TolerationsConfig *TolerationsConfig    `protobuf:"bytes,19,opt,name=tolerations_config,json=tolerationsConfig,proto3" json:"tolerations_config,omitempty"`
+	HealthStatus      *ClusterHealthStatus  `protobuf:"bytes,22,opt,name=health_status,json=healthStatus,proto3" json:"health_status,omitempty" sql:"-"` // @gotags: sql:"-"
 	// The Helm configuration of a cluster is only present in case the cluster is Helm- or Operator-managed.
 	HelmConfig *CompleteClusterConfig `protobuf:"bytes,24,opt,name=helm_config,json=helmConfig,proto3" json:"helm_config,omitempty"`
 	// most_recent_sensor_id is the current or most recent identification of a successfully connected sensor (if any).
 	MostRecentSensorId *SensorDeploymentIdentification `protobuf:"bytes,26,opt,name=most_recent_sensor_id,json=mostRecentSensorId,proto3" json:"most_recent_sensor_id,omitempty"`
 	// For internal use only.
 	AuditLogState map[string]*AuditLogFileState `protobuf:"bytes,28,rep,name=audit_log_state,json=auditLogState,proto3" json:"audit_log_state,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	InitBundleId  string                        `protobuf:"bytes,29,opt,name=init_bundle_id,json=initBundleId,proto3" json:"init_bundle_id,omitempty"`
-	ManagedBy     ManagerType                   `protobuf:"varint,30,opt,name=managed_by,json=managedBy,proto3,enum=storage.ManagerType" json:"managed_by,omitempty"`
+
+	Id                 string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"pk,type(uuid)"
+	Name               string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Cluster,store" sql:"unique"`              // @gotags: search:"Cluster,store" sql:"unique"
+	MainImage          string `protobuf:"bytes,4,opt,name=main_image,json=mainImage,proto3" json:"main_image,omitempty"`
+	CollectorImage     string `protobuf:"bytes,16,opt,name=collector_image,json=collectorImage,proto3" json:"collector_image,omitempty"`
+	CentralApiEndpoint string `protobuf:"bytes,5,opt,name=central_api_endpoint,json=centralApiEndpoint,proto3" json:"central_api_endpoint,omitempty"`
+	InitBundleId       string `protobuf:"bytes,29,opt,name=init_bundle_id,json=initBundleId,proto3" json:"init_bundle_id,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+
+	Priority         int64 `protobuf:"varint,20,opt,name=priority,proto3" json:"priority,omitempty"`
+	sizeCache        protoimpl.SizeCache
+	Type             ClusterType      `protobuf:"varint,3,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty" search:"Cluster Platform Type"` // @gotags: search:"Cluster Platform Type"
+	CollectionMethod CollectionMethod `protobuf:"varint,17,opt,name=collection_method,json=collectionMethod,proto3,enum=storage.CollectionMethod" json:"collection_method,omitempty"`
+	ManagedBy        ManagerType      `protobuf:"varint,30,opt,name=managed_by,json=managedBy,proto3,enum=storage.ManagerType" json:"managed_by,omitempty"`
+	// Deprecated: Marked as deprecated in storage/cluster.proto.
+	RuntimeSupport             bool `protobuf:"varint,7,opt,name=runtime_support,json=runtimeSupport,proto3" json:"runtime_support,omitempty"`
+	AdmissionController        bool `protobuf:"varint,13,opt,name=admission_controller,json=admissionController,proto3" json:"admission_controller,omitempty"`
+	AdmissionControllerUpdates bool `protobuf:"varint,21,opt,name=admission_controller_updates,json=admissionControllerUpdates,proto3" json:"admission_controller_updates,omitempty"`
+	AdmissionControllerEvents  bool `protobuf:"varint,25,opt,name=admission_controller_events,json=admissionControllerEvents,proto3" json:"admission_controller_events,omitempty"`
+	SlimCollector              bool `protobuf:"varint,23,opt,name=slim_collector,json=slimCollector,proto3" json:"slim_collector,omitempty"`
 }
 
 func (x *Cluster) Reset() {
@@ -1641,12 +1654,13 @@ func (x *Cluster) GetManagedBy() ManagerType {
 }
 
 type ClusterCertExpiryStatus struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	SensorCertExpiry    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=sensor_cert_expiry,json=sensorCertExpiry,proto3" json:"sensor_cert_expiry,omitempty"`
 	SensorCertNotBefore *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=sensor_cert_not_before,json=sensorCertNotBefore,proto3" json:"sensor_cert_not_before,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ClusterCertExpiryStatus) Reset() {
@@ -1696,17 +1710,18 @@ func (x *ClusterCertExpiryStatus) GetSensorCertNotBefore() *timestamppb.Timestam
 }
 
 type ClusterStatus struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	SensorVersion string `protobuf:"bytes,1,opt,name=sensor_version,json=sensorVersion,proto3" json:"sensor_version,omitempty"`
+	state protoimpl.MessageState
 	// This field has been deprecated starting release 49.0. Use healthStatus.lastContact instead.
 	DEPRECATEDLastContact *timestamppb.Timestamp   `protobuf:"bytes,2,opt,name=DEPRECATED_last_contact,json=DEPRECATEDLastContact,proto3" json:"DEPRECATED_last_contact,omitempty"`
 	ProviderMetadata      *ProviderMetadata        `protobuf:"bytes,3,opt,name=provider_metadata,json=providerMetadata,proto3" json:"provider_metadata,omitempty"`
 	OrchestratorMetadata  *OrchestratorMetadata    `protobuf:"bytes,4,opt,name=orchestrator_metadata,json=orchestratorMetadata,proto3" json:"orchestrator_metadata,omitempty"`
 	UpgradeStatus         *ClusterUpgradeStatus    `protobuf:"bytes,5,opt,name=upgrade_status,json=upgradeStatus,proto3" json:"upgrade_status,omitempty"`
 	CertExpiryStatus      *ClusterCertExpiryStatus `protobuf:"bytes,6,opt,name=cert_expiry_status,json=certExpiryStatus,proto3" json:"cert_expiry_status,omitempty"`
+
+	SensorVersion string `protobuf:"bytes,1,opt,name=sensor_version,json=sensorVersion,proto3" json:"sensor_version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ClusterStatus) Reset() {
@@ -1784,17 +1799,18 @@ func (x *ClusterStatus) GetCertExpiryStatus() *ClusterCertExpiryStatus {
 }
 
 type ClusterUpgradeStatus struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Upgradability             ClusterUpgradeStatus_Upgradability `protobuf:"varint,1,opt,name=upgradability,proto3,enum=storage.ClusterUpgradeStatus_Upgradability" json:"upgradability,omitempty"`
-	UpgradabilityStatusReason string                             `protobuf:"bytes,2,opt,name=upgradability_status_reason,json=upgradabilityStatusReason,proto3" json:"upgradability_status_reason,omitempty"`
+	state protoimpl.MessageState
 	// The progress of the current or most recent upgrade, if any,
 	// Note that we don't store any historical data -- the moment
 	// a new upgrade attempt is triggered, we overwrite
 	// information from the previous attempt.
-	MostRecentProcess *ClusterUpgradeStatus_UpgradeProcessStatus `protobuf:"bytes,3,opt,name=most_recent_process,json=mostRecentProcess,proto3" json:"most_recent_process,omitempty"`
+	MostRecentProcess         *ClusterUpgradeStatus_UpgradeProcessStatus `protobuf:"bytes,3,opt,name=most_recent_process,json=mostRecentProcess,proto3" json:"most_recent_process,omitempty"`
+	UpgradabilityStatusReason string                                     `protobuf:"bytes,2,opt,name=upgradability_status_reason,json=upgradabilityStatusReason,proto3" json:"upgradability_status_reason,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+
+	Upgradability ClusterUpgradeStatus_Upgradability `protobuf:"varint,1,opt,name=upgradability,proto3,enum=storage.ClusterUpgradeStatus_Upgradability" json:"upgradability,omitempty"`
 }
 
 func (x *ClusterUpgradeStatus) Reset() {
@@ -1851,13 +1867,14 @@ func (x *ClusterUpgradeStatus) GetMostRecentProcess() *ClusterUpgradeStatus_Upgr
 }
 
 type UpgradeProgress struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state               protoimpl.MessageState
+	Since               *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
+	UpgradeStatusDetail string                 `protobuf:"bytes,2,opt,name=upgrade_status_detail,json=upgradeStatusDetail,proto3" json:"upgrade_status_detail,omitempty"`
+	unknownFields       protoimpl.UnknownFields
 
-	UpgradeState        UpgradeProgress_UpgradeState `protobuf:"varint,1,opt,name=upgrade_state,json=upgradeState,proto3,enum=storage.UpgradeProgress_UpgradeState" json:"upgrade_state,omitempty"`
-	UpgradeStatusDetail string                       `protobuf:"bytes,2,opt,name=upgrade_status_detail,json=upgradeStatusDetail,proto3" json:"upgrade_status_detail,omitempty"`
-	Since               *timestamppb.Timestamp       `protobuf:"bytes,3,opt,name=since,proto3" json:"since,omitempty"`
+	sizeCache protoimpl.SizeCache
+
+	UpgradeState UpgradeProgress_UpgradeState `protobuf:"varint,1,opt,name=upgrade_state,json=upgradeState,proto3,enum=storage.UpgradeProgress_UpgradeState" json:"upgrade_state,omitempty"`
 }
 
 func (x *UpgradeProgress) Reset() {
@@ -1916,12 +1933,13 @@ func (x *UpgradeProgress) GetSince() *timestamppb.Timestamp {
 // AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance
 // For internal use only
 type AuditLogFileState struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	CollectLogsSince *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=collect_logs_since,json=collectLogsSince,proto3" json:"collect_logs_since,omitempty"`
 	LastAuditId      string                 `protobuf:"bytes,2,opt,name=last_audit_id,json=lastAuditId,proto3" json:"last_audit_id,omitempty"` // Previously received audit id. May be empty
+	unknownFields    protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *AuditLogFileState) Reset() {
@@ -1971,25 +1989,26 @@ func (x *AuditLogFileState) GetLastAuditId() string {
 }
 
 type ClusterHealthStatus struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id                         string                      `protobuf:"bytes,9,opt,name=id,proto3" json:"id,omitempty" sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"
+	state                      protoimpl.MessageState
 	CollectorHealthInfo        *CollectorHealthInfo        `protobuf:"bytes,1,opt,name=collector_health_info,json=collectorHealthInfo,proto3" json:"collector_health_info,omitempty"`
 	AdmissionControlHealthInfo *AdmissionControlHealthInfo `protobuf:"bytes,8,opt,name=admission_control_health_info,json=admissionControlHealthInfo,proto3" json:"admission_control_health_info,omitempty"`
 	// scanner_health_info is filled when the scanner is deployed on a secured cluster (so called "local scanner").
 	// Please do not confuse this with the default scanner deployment on a central cluster.
 	ScannerHealthInfo *ScannerHealthInfo `protobuf:"bytes,10,opt,name=scanner_health_info,json=scannerHealthInfo,proto3" json:"scanner_health_info,omitempty"`
-	// The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
-	SensorHealthStatus           ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,2,opt,name=sensor_health_status,json=sensorHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"sensor_health_status,omitempty" search:"Sensor Status,store"`                                 // @gotags: search:"Sensor Status,store"
-	CollectorHealthStatus        ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,3,opt,name=collector_health_status,json=collectorHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"collector_health_status,omitempty" search:"Collector Status,store"`                        // @gotags: search:"Collector Status,store"
-	OverallHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,4,opt,name=overall_health_status,json=overallHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"overall_health_status,omitempty" search:"Cluster Status,store"`                              // @gotags: search:"Cluster Status,store"
-	AdmissionControlHealthStatus ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,7,opt,name=admission_control_health_status,json=admissionControlHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"admission_control_health_status,omitempty" search:"Admission Control Status,store"` // @gotags: search:"Admission Control Status,store"
-	ScannerHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,11,opt,name=scanner_health_status,json=scannerHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"scanner_health_status,omitempty" search:"Scanner Status,store"`                             // @gotags: search:"Scanner Status,store"
 	// For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
 	// this timestamp will be updated by central pipeline when message is processed
 	LastContact *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_contact,json=lastContact,proto3" json:"last_contact,omitempty" search:"Last Contact,store"` // @gotags: search:"Last Contact,store"
+
+	Id            string `protobuf:"bytes,9,opt,name=id,proto3" json:"id,omitempty" sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"` // @gotags: sql:"pk,fk(Cluster:id),no-fk-constraint,type(uuid)"
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	// The following _health_status fields provide aggregated health status of the respective components and are assigned by central.
+	SensorHealthStatus           ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,2,opt,name=sensor_health_status,json=sensorHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"sensor_health_status,omitempty" search:"Sensor Status,store"`                                            // @gotags: search:"Sensor Status,store"
+	CollectorHealthStatus        ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,3,opt,name=collector_health_status,json=collectorHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"collector_health_status,omitempty" search:"Collector Status,store"`                                // @gotags: search:"Collector Status,store"
+	OverallHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,4,opt,name=overall_health_status,json=overallHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"overall_health_status,omitempty" search:"Cluster Status,store"`                                        // @gotags: search:"Cluster Status,store"
+	AdmissionControlHealthStatus ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,7,opt,name=admission_control_health_status,json=admissionControlHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"admission_control_health_status,omitempty" search:"Admission Control Status,store"` // @gotags: search:"Admission Control Status,store"
+	ScannerHealthStatus          ClusterHealthStatus_HealthStatusLabel `protobuf:"varint,11,opt,name=scanner_health_status,json=scannerHealthStatus,proto3,enum=storage.ClusterHealthStatus_HealthStatusLabel" json:"scanner_health_status,omitempty" search:"Scanner Status,store"`                                       // @gotags: search:"Scanner Status,store"
 	// To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
 	HealthInfoComplete bool `protobuf:"varint,6,opt,name=health_info_complete,json=healthInfoComplete,proto3" json:"health_info_complete,omitempty"`
 }
@@ -2107,12 +2126,6 @@ func (x *ClusterHealthStatus) GetHealthInfoComplete() bool {
 // Aggregated collector health status is not included because it is derived in central and not in the component that
 // first reports CollectorHealthInfo (sensor).
 type CollectorHealthInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// This is the version of the collector deamonset as returned by k8s API
-	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	// Types that are assignable to TotalDesiredPodsOpt:
 	//
 	//	*CollectorHealthInfo_TotalDesiredPods
@@ -2125,8 +2138,15 @@ type CollectorHealthInfo struct {
 	//
 	//	*CollectorHealthInfo_TotalRegisteredNodes
 	TotalRegisteredNodesOpt isCollectorHealthInfo_TotalRegisteredNodesOpt `protobuf_oneof:"total_registered_nodes_opt"`
+	state                   protoimpl.MessageState
+
+	// This is the version of the collector deamonset as returned by k8s API
+	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
 	// Collection of errors that occurred while trying to obtain collector health info.
 	StatusErrors []string `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors,proto3" json:"status_errors,omitempty"`
+	sizeCache    protoimpl.SizeCache
 }
 
 func (x *CollectorHealthInfo) Reset() {
@@ -2252,9 +2272,6 @@ func (*CollectorHealthInfo_TotalRegisteredNodes) isCollectorHealthInfo_TotalRegi
 // Aggregated admission control health status is not included because it is derived in central and not in the component that
 // first reports AdmissionControlHealthInfo (sensor).
 type AdmissionControlHealthInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to TotalDesiredPodsOpt:
 	//
@@ -2264,8 +2281,12 @@ type AdmissionControlHealthInfo struct {
 	//
 	//	*AdmissionControlHealthInfo_TotalReadyPods
 	TotalReadyPodsOpt isAdmissionControlHealthInfo_TotalReadyPodsOpt `protobuf_oneof:"total_ready_pods_opt"`
+	state             protoimpl.MessageState
+	unknownFields     protoimpl.UnknownFields
+
 	// Collection of errors that occurred while trying to obtain admission control health info.
 	StatusErrors []string `protobuf:"bytes,3,rep,name=status_errors,json=statusErrors,proto3" json:"status_errors,omitempty"`
+	sizeCache    protoimpl.SizeCache
 }
 
 func (x *AdmissionControlHealthInfo) Reset() {
@@ -2363,9 +2384,6 @@ func (*AdmissionControlHealthInfo_TotalReadyPods) isAdmissionControlHealthInfo_T
 // Aggregated scanner health status is not included because it is derived in central and not in the component that
 // first reports ScannerHealthInfo (sensor).
 type ScannerHealthInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to TotalDesiredAnalyzerPodsOpt:
 	//
@@ -2383,8 +2401,12 @@ type ScannerHealthInfo struct {
 	//
 	//	*ScannerHealthInfo_TotalReadyDbPods
 	TotalReadyDbPodsOpt isScannerHealthInfo_TotalReadyDbPodsOpt `protobuf_oneof:"total_ready_db_pods_opt"`
+	state               protoimpl.MessageState
+	unknownFields       protoimpl.UnknownFields
+
 	// Collection of errors that occurred while trying to obtain scanner health info.
 	StatusErrors []string `protobuf:"bytes,5,rep,name=status_errors,json=statusErrors,proto3" json:"status_errors,omitempty"`
+	sizeCache    protoimpl.SizeCache
 }
 
 func (x *ScannerHealthInfo) Reset() {
@@ -2525,16 +2547,17 @@ func (*ScannerHealthInfo_TotalReadyDbPods) isScannerHealthInfo_TotalReadyDbPodsO
 
 type ClusterUpgradeStatus_UpgradeProcessStatus struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	InitiatedAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=initiated_at,json=initiatedAt,proto3" json:"initiated_at,omitempty"`
+	Progress      *UpgradeProgress       `protobuf:"bytes,6,opt,name=progress,proto3" json:"progress,omitempty"`
+	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	TargetVersion string                 `protobuf:"bytes,3,opt,name=target_version,json=targetVersion,proto3" json:"target_version,omitempty"` // only relevant if type == Upgrade
+	UpgraderImage string                 `protobuf:"bytes,4,opt,name=upgrader_image,json=upgraderImage,proto3" json:"upgrader_image,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Active        bool                                                         `protobuf:"varint,1,opt,name=active,proto3" json:"active,omitempty"`
-	Id            string                                                       `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
-	TargetVersion string                                                       `protobuf:"bytes,3,opt,name=target_version,json=targetVersion,proto3" json:"target_version,omitempty"` // only relevant if type == Upgrade
-	UpgraderImage string                                                       `protobuf:"bytes,4,opt,name=upgrader_image,json=upgraderImage,proto3" json:"upgrader_image,omitempty"`
-	InitiatedAt   *timestamppb.Timestamp                                       `protobuf:"bytes,5,opt,name=initiated_at,json=initiatedAt,proto3" json:"initiated_at,omitempty"`
-	Progress      *UpgradeProgress                                             `protobuf:"bytes,6,opt,name=progress,proto3" json:"progress,omitempty"`
-	Type          ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType `protobuf:"varint,7,opt,name=type,proto3,enum=storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType" json:"type,omitempty"`
+	sizeCache protoimpl.SizeCache
+	Type      ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType `protobuf:"varint,7,opt,name=type,proto3,enum=storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType" json:"type,omitempty"`
+
+	Active bool `protobuf:"varint,1,opt,name=active,proto3" json:"active,omitempty"`
 }
 
 func (x *ClusterUpgradeStatus_UpgradeProcessStatus) Reset() {

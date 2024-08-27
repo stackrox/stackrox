@@ -21,13 +21,14 @@ const (
 )
 
 type Scope struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+	Label *Scope_Label `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
+
+	Cluster       string `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	Namespace     string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Cluster   string       `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
-	Namespace string       `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Label     *Scope_Label `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *Scope) Reset() {
@@ -84,12 +85,13 @@ func (x *Scope) GetLabel() *Scope_Label {
 }
 
 type Scope_Label struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Key           string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Key   string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *Scope_Label) Reset() {

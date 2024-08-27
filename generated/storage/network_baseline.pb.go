@@ -25,15 +25,16 @@ const (
 // next available tag: 4
 type NetworkBaselineConnectionProperties struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	// May be 0 if not applicable (e.g., icmp), and denotes the destination port
+	Port     uint32     `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
+	Protocol L4Protocol `protobuf:"varint,3,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
 
 	// Whether this connection is an ingress/egress, from the PoV
 	// of the deployment whose baseline this is in
 	Ingress bool `protobuf:"varint,1,opt,name=ingress,proto3" json:"ingress,omitempty"`
-	// May be 0 if not applicable (e.g., icmp), and denotes the destination port
-	Port     uint32     `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	Protocol L4Protocol `protobuf:"varint,3,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
 }
 
 func (x *NetworkBaselineConnectionProperties) Reset() {
@@ -92,13 +93,14 @@ func (x *NetworkBaselineConnectionProperties) GetProtocol() L4Protocol {
 // NetworkBaselinePeer represents a baseline peer.
 // next available tag: 3
 type NetworkBaselinePeer struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Entity        *NetworkEntity `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Entity *NetworkEntity `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`
 	// Will always have at least one element
 	Properties []*NetworkBaselineConnectionProperties `protobuf:"bytes,2,rep,name=properties,proto3" json:"properties,omitempty"`
+	sizeCache  protoimpl.SizeCache
 }
 
 func (x *NetworkBaselinePeer) Reset() {
@@ -151,28 +153,29 @@ func (x *NetworkBaselinePeer) GetProperties() []*NetworkBaselineConnectionProper
 // the baseline peers and their respective connections.
 // next available tag: 8
 type NetworkBaseline struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state                protoimpl.MessageState
+	ObservationPeriodEnd *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=observation_period_end,json=observationPeriodEnd,proto3" json:"observation_period_end,omitempty"`
 
 	// This is the ID of the baseline.
-	DeploymentId string                 `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	ClusterId    string                 `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"`          // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
-	Namespace    string                 `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"`                           // @gotags: search:"Namespace,hidden,store"
-	Peers        []*NetworkBaselinePeer `protobuf:"bytes,4,rep,name=peers,proto3" json:"peers,omitempty" search:"-"`                                   // @gotags: search:"-"
+	DeploymentId   string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" sql:"pk,type(uuid)"`                      // @gotags: sql:"pk,type(uuid)"
+	ClusterId      string `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+	Namespace      string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"`                                    // @gotags: search:"Namespace,hidden,store"
+	DeploymentName string `protobuf:"bytes,8,opt,name=deployment_name,json=deploymentName,proto3" json:"deployment_name,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+
+	Peers []*NetworkBaselinePeer `protobuf:"bytes,4,rep,name=peers,proto3" json:"peers,omitempty" search:"-"` // @gotags: search:"-"
 	// A list of peers that will never be added to the baseline.
 	// For now, this contains peers that the user has manually removed.
 	// This is used to ensure we don't add it back in the event
 	// we see the flow again.
-	ForbiddenPeers       []*NetworkBaselinePeer `protobuf:"bytes,5,rep,name=forbidden_peers,json=forbiddenPeers,proto3" json:"forbidden_peers,omitempty" search:"-"` // @gotags: search:"-"
-	ObservationPeriodEnd *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=observation_period_end,json=observationPeriodEnd,proto3" json:"observation_period_end,omitempty"`
+	ForbiddenPeers []*NetworkBaselinePeer `protobuf:"bytes,5,rep,name=forbidden_peers,json=forbiddenPeers,proto3" json:"forbidden_peers,omitempty" search:"-"` // @gotags: search:"-"
+	sizeCache      protoimpl.SizeCache
 	// Indicates if this baseline has been locked by user.
 	// Here locking means:
 	//
 	//	1: Do not let system automatically add any allowed peer to baseline
 	//	2: Start reporting violations on flows that are not in the baseline
-	Locked         bool   `protobuf:"varint,7,opt,name=locked,proto3" json:"locked,omitempty"`
-	DeploymentName string `protobuf:"bytes,8,opt,name=deployment_name,json=deploymentName,proto3" json:"deployment_name,omitempty"`
+	Locked bool `protobuf:"varint,7,opt,name=locked,proto3" json:"locked,omitempty"`
 }
 
 func (x *NetworkBaseline) Reset() {

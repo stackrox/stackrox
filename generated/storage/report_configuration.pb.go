@@ -206,30 +206,31 @@ func (VulnerabilityReportFilters_ImageType) EnumDescriptor() ([]byte, []int) {
 }
 
 type ReportConfiguration struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id          string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name        string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Report Name"` // @gotags: search:"Report Name"
-	Description string                         `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Type        ReportConfiguration_ReportType `protobuf:"varint,4,opt,name=type,proto3,enum=storage.ReportConfiguration_ReportType" json:"type,omitempty" search:"Report Type"` // @gotags: search:"Report Type"
 	// Types that are assignable to Filter:
 	//
 	//	*ReportConfiguration_VulnReportFilters
-	Filter  isReportConfiguration_Filter `protobuf_oneof:"filter"`
-	ScopeId string                       `protobuf:"bytes,6,opt,name=scope_id,json=scopeId,proto3" json:"scope_id,omitempty" search:"Embedded Collection ID"` // @gotags: search:"Embedded Collection ID"
+	Filter isReportConfiguration_Filter `protobuf_oneof:"filter"`
 	// Types that are assignable to NotifierConfig:
 	//
 	//	*ReportConfiguration_EmailConfig
 	NotifierConfig        isReportConfiguration_NotifierConfig `protobuf_oneof:"notifier_config"`
-	Schedule              *Schedule                            `protobuf:"bytes,8,opt,name=schedule,proto3" json:"schedule,omitempty"`
-	LastRunStatus         *ReportLastRunStatus                 `protobuf:"bytes,9,opt,name=last_run_status,json=lastRunStatus,proto3" json:"last_run_status,omitempty"`
-	LastSuccessfulRunTime *timestamppb.Timestamp               `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime,proto3" json:"last_successful_run_time,omitempty"`
-	ResourceScope         *ResourceScope                       `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
-	Notifiers             []*NotifierConfiguration             `protobuf:"bytes,12,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	Creator               *SlimUser                            `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty" sql:"ignore_labels(User ID)"`  // @gotags: sql:"ignore_labels(User ID)"
-	Version               int32                                `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"` // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
+	state                 protoimpl.MessageState
+	Schedule              *Schedule              `protobuf:"bytes,8,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	LastRunStatus         *ReportLastRunStatus   `protobuf:"bytes,9,opt,name=last_run_status,json=lastRunStatus,proto3" json:"last_run_status,omitempty"`
+	LastSuccessfulRunTime *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime,proto3" json:"last_successful_run_time,omitempty"`
+	ResourceScope         *ResourceScope         `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
+	Creator               *SlimUser              `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                 // @gotags: sql:"pk"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Report Name"` // @gotags: search:"Report Name"
+	Description   string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	ScopeId       string `protobuf:"bytes,6,opt,name=scope_id,json=scopeId,proto3" json:"scope_id,omitempty" search:"Embedded Collection ID"` // @gotags: search:"Embedded Collection ID"
+	unknownFields protoimpl.UnknownFields
+
+	Notifiers []*NotifierConfiguration `protobuf:"bytes,12,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	sizeCache protoimpl.SizeCache
+	Type      ReportConfiguration_ReportType `protobuf:"varint,4,opt,name=type,proto3,enum=storage.ReportConfiguration_ReportType" json:"type,omitempty" search:"Report Type"` // @gotags: search:"Report Type"
+	Version   int32                          `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"`                                                           // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
 }
 
 func (x *ReportConfiguration) Reset() {
@@ -398,12 +399,13 @@ func (*ReportConfiguration_EmailConfig) isReportConfiguration_NotifierConfig() {
 
 type ReportLastRunStatus struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	LastRunTime   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_run_time,json=lastRunTime,proto3" json:"last_run_time,omitempty"`
+	ErrorMsg      string                 `protobuf:"bytes,3,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
+	sizeCache protoimpl.SizeCache
+
 	ReportStatus ReportLastRunStatus_RunStatus `protobuf:"varint,1,opt,name=report_status,json=reportStatus,proto3,enum=storage.ReportLastRunStatus_RunStatus" json:"report_status,omitempty"`
-	LastRunTime  *timestamppb.Timestamp        `protobuf:"bytes,2,opt,name=last_run_time,json=lastRunTime,proto3" json:"last_run_time,omitempty"`
-	ErrorMsg     string                        `protobuf:"bytes,3,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`
 }
 
 func (x *ReportLastRunStatus) Reset() {
@@ -460,21 +462,22 @@ func (x *ReportLastRunStatus) GetErrorMsg() string {
 }
 
 type VulnerabilityReportFilters struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Fixability      VulnerabilityReportFilters_Fixability  `protobuf:"varint,1,opt,name=fixability,proto3,enum=storage.VulnerabilityReportFilters_Fixability" json:"fixability,omitempty"`
-	SinceLastReport bool                                   `protobuf:"varint,2,opt,name=since_last_report,json=sinceLastReport,proto3" json:"since_last_report,omitempty"`
-	Severities      []VulnerabilitySeverity                `protobuf:"varint,3,rep,packed,name=severities,proto3,enum=storage.VulnerabilitySeverity" json:"severities,omitempty"`
-	ImageTypes      []VulnerabilityReportFilters_ImageType `protobuf:"varint,4,rep,packed,name=image_types,json=imageTypes,proto3,enum=storage.VulnerabilityReportFilters_ImageType" json:"image_types,omitempty"`
 	// Types that are assignable to CvesSince:
 	//
 	//	*VulnerabilityReportFilters_AllVuln
 	//	*VulnerabilityReportFilters_SinceLastSentScheduledReport
 	//	*VulnerabilityReportFilters_SinceStartDate
-	CvesSince        isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
+	CvesSince     isVulnerabilityReportFilters_CvesSince `protobuf_oneof:"cves_since"`
+	state         protoimpl.MessageState
+	unknownFields protoimpl.UnknownFields
+
+	Severities       []VulnerabilitySeverity                `protobuf:"varint,3,rep,packed,name=severities,proto3,enum=storage.VulnerabilitySeverity" json:"severities,omitempty"`
+	ImageTypes       []VulnerabilityReportFilters_ImageType `protobuf:"varint,4,rep,packed,name=image_types,json=imageTypes,proto3,enum=storage.VulnerabilityReportFilters_ImageType" json:"image_types,omitempty"`
 	AccessScopeRules []*SimpleAccessScope_Rules             `protobuf:"bytes,8,rep,name=access_scope_rules,json=accessScopeRules,proto3" json:"access_scope_rules,omitempty"`
+	sizeCache        protoimpl.SizeCache
+
+	Fixability      VulnerabilityReportFilters_Fixability `protobuf:"varint,1,opt,name=fixability,proto3,enum=storage.VulnerabilityReportFilters_Fixability" json:"fixability,omitempty"`
+	SinceLastReport bool                                  `protobuf:"varint,2,opt,name=since_last_report,json=sinceLastReport,proto3" json:"since_last_report,omitempty"`
 }
 
 func (x *VulnerabilityReportFilters) Reset() {
@@ -596,14 +599,15 @@ func (*VulnerabilityReportFilters_SinceLastSentScheduledReport) isVulnerabilityR
 func (*VulnerabilityReportFilters_SinceStartDate) isVulnerabilityReportFilters_CvesSince() {}
 
 type ResourceScope struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to ScopeReference:
 	//
 	//	*ResourceScope_CollectionId
 	ScopeReference isResourceScope_ScopeReference `protobuf_oneof:"scope_reference"`
+	state          protoimpl.MessageState
+	unknownFields  protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ResourceScope) Reset() {

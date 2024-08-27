@@ -23,20 +23,21 @@ const (
 
 // The API returns an array of these
 type ProcessListeningOnPort struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Endpoint           *ProcessListeningOnPort_Endpoint `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"`
+	Signal             *ProcessSignal                   `protobuf:"bytes,6,opt,name=signal,proto3" json:"signal,omitempty"`
+	ContainerStartTime *timestamppb.Timestamp           `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime,proto3" json:"container_start_time,omitempty"`
 	DeploymentId       string                           `protobuf:"bytes,2,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
 	ContainerName      string                           `protobuf:"bytes,3,opt,name=container_name,json=containerName,proto3" json:"container_name,omitempty"`
 	PodId              string                           `protobuf:"bytes,4,opt,name=pod_id,json=podId,proto3" json:"pod_id,omitempty"`
 	PodUid             string                           `protobuf:"bytes,5,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty"`
-	Signal             *ProcessSignal                   `protobuf:"bytes,6,opt,name=signal,proto3" json:"signal,omitempty"`
 	ClusterId          string                           `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	Namespace          string                           `protobuf:"bytes,8,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	ContainerStartTime *timestamppb.Timestamp           `protobuf:"bytes,9,opt,name=container_start_time,json=containerStartTime,proto3" json:"container_start_time,omitempty"`
 	ImageId            string                           `protobuf:"bytes,10,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ProcessListeningOnPort) Reset() {
@@ -143,18 +144,19 @@ func (x *ProcessListeningOnPort) GetImageId() string {
 
 // This is what sensor sends to central
 type ProcessListeningOnPortFromSensor struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Port           uint32                     `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
-	Protocol       L4Protocol                 `protobuf:"varint,2,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
+	state          protoimpl.MessageState
 	Process        *ProcessIndicatorUniqueKey `protobuf:"bytes,3,opt,name=process,proto3" json:"process,omitempty"`
 	CloseTimestamp *timestamppb.Timestamp     `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty"`
 	ClusterId      string                     `protobuf:"bytes,6,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	DeploymentId   string                     `protobuf:"bytes,7,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty"`
 	PodUid         string                     `protobuf:"bytes,8,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty"`
 	Namespace      string                     `protobuf:"bytes,9,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+
+	Port     uint32     `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
+	Protocol L4Protocol `protobuf:"varint,2,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`
 }
 
 func (x *ProcessListeningOnPortFromSensor) Reset() {
@@ -247,27 +249,28 @@ func (x *ProcessListeningOnPortFromSensor) GetNamespace() string {
 
 // This is what is stored in the database
 type ProcessListeningOnPortStorage struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state          protoimpl.MessageState
+	CloseTimestamp *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty" search:"Closed Time,hidden"` // @gotags: search:"Closed Time,hidden"
+	// ProcessIndicator will be not empty only for those cases when we were not
+	// able to find references process in the database
+	Process *ProcessIndicatorUniqueKey `protobuf:"bytes,7,opt,name=process,proto3" json:"process,omitempty"`
 
 	// Ideally it has to be GENERATED ALWAYS AS IDENTITY, which will make it a
 	// bigint with a sequence. Unfortunately at the moment some bits of store
 	// generator assume an id has to be a string.
-	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                             // @gotags: sql:"pk,type(uuid)"
-	Port               uint32                 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty" search:"Port,store"`                                                        // @gotags: search:"Port,store"
-	Protocol           L4Protocol             `protobuf:"varint,3,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty" search:"Port Protocol,store"`                        // @gotags: search:"Port Protocol,store"
-	CloseTimestamp     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=close_timestamp,json=closeTimestamp,proto3" json:"close_timestamp,omitempty" search:"Closed Time,hidden"`               // @gotags: search:"Closed Time,hidden"
-	ProcessIndicatorId string                 `protobuf:"bytes,5,opt,name=process_indicator_id,json=processIndicatorId,proto3" json:"process_indicator_id,omitempty" search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"` // @gotags: search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"
+	Id                 string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                                                                                                                         // @gotags: sql:"pk,type(uuid)"
+	ProcessIndicatorId string `protobuf:"bytes,5,opt,name=process_indicator_id,json=processIndicatorId,proto3" json:"process_indicator_id,omitempty" search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"` // @gotags: search:"Process ID,store" sql:"fk(ProcessIndicator:id),no-fk-constraint,index=btree,type(uuid)"
+	DeploymentId       string `protobuf:"bytes,8,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"`                        // @gotags: search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"
+	PodUid             string `protobuf:"bytes,9,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty" search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"`                                                       // @gotags: search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"
+	ClusterId          string `protobuf:"bytes,10,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`                                                                                        // @gotags: search:"Cluster ID" sql:"type(uuid)"
+	Namespace          string `protobuf:"bytes,11,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                                                                                                                           // @gotags: search:"Namespace"
+	unknownFields      protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	Port      uint32     `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty" search:"Port,store"`                                          // @gotags: search:"Port,store"
+	Protocol  L4Protocol `protobuf:"varint,3,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty" search:"Port Protocol,store"` // @gotags: search:"Port Protocol,store"
 	// XXX: Make it a partial index on only active, not closed, PLOP
 	Closed bool `protobuf:"varint,6,opt,name=closed,proto3" json:"closed,omitempty" search:"Closed,store" sql:"index=btree"` // @gotags: search:"Closed,store" sql:"index=btree"
-	// ProcessIndicator will be not empty only for those cases when we were not
-	// able to find references process in the database
-	Process      *ProcessIndicatorUniqueKey `protobuf:"bytes,7,opt,name=process,proto3" json:"process,omitempty"`
-	DeploymentId string                     `protobuf:"bytes,8,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"` // @gotags: search:"Deployment ID,store" sql:"fk(Deployment:id),no-fk-constraint,index=btree,type(uuid)"
-	PodUid       string                     `protobuf:"bytes,9,opt,name=pod_uid,json=podUid,proto3" json:"pod_uid,omitempty" search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"`                   // @gotags: search:"Pod UID,hidden" sql:"fk(Pod:id),no-fk-constraint,index=hash,type(uuid)"
-	ClusterId    string                     `protobuf:"bytes,10,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID" sql:"type(uuid)"`         // @gotags: search:"Cluster ID" sql:"type(uuid)"
-	Namespace    string                     `protobuf:"bytes,11,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace"`                          // @gotags: search:"Namespace"
 }
 
 func (x *ProcessListeningOnPortStorage) Reset() {
@@ -381,8 +384,9 @@ func (x *ProcessListeningOnPortStorage) GetNamespace() string {
 
 type ProcessListeningOnPort_Endpoint struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	Port     uint32     `protobuf:"varint,1,opt,name=port,proto3" json:"port,omitempty"`
 	Protocol L4Protocol `protobuf:"varint,2,opt,name=protocol,proto3,enum=storage.L4Protocol" json:"protocol,omitempty"`

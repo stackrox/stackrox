@@ -22,12 +22,13 @@ const (
 )
 
 type InstallationInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state   protoimpl.MessageState
+	Created *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Created *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *InstallationInfo) Reset() {

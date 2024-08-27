@@ -21,20 +21,21 @@ const (
 )
 
 type NodeComponent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id        string  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`                                  // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
-	Name      string  `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`                              // @gotags: search:"Component,store"
-	Version   string  `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"`                        // @gotags: search:"Component Version,store"
-	Priority  int64   `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
-	RiskScore float32 `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
 	// Types that are assignable to SetTopCvss:
 	//
 	//	*NodeComponent_TopCvss
-	SetTopCvss      isNodeComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
-	OperatingSystem string                     `protobuf:"bytes,9,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
+	SetTopCvss isNodeComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
+	state      protoimpl.MessageState
+
+	Id              string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`                             // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
+	Name            string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`                                               // @gotags: search:"Component,store"
+	Version         string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"`                                 // @gotags: search:"Component Version,store"
+	OperatingSystem string `protobuf:"bytes,9,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
+	unknownFields   protoimpl.UnknownFields
+
+	Priority  int64 `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"` // @gotags: search:"Component Risk Priority,hidden"
+	sizeCache protoimpl.SizeCache
+	RiskScore float32 `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
 }
 
 func (x *NodeComponent) Reset() {

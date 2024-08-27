@@ -123,21 +123,22 @@ func (NetworkPolicyType) EnumDescriptor() ([]byte, []int) {
 }
 
 type NetworkPolicy struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId   string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
-	ClusterName string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	Namespace   string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"` // @gotags: search:"Namespace,hidden,store"
+	state       protoimpl.MessageState
 	Labels      map[string]string      `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Annotations map[string]string      `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Spec        *NetworkPolicySpec     `protobuf:"bytes,8,opt,name=spec,proto3" json:"spec,omitempty"`
-	Yaml        string                 `protobuf:"bytes,9,opt,name=yaml,proto3" json:"yaml,omitempty"`
-	ApiVersion  string                 `protobuf:"bytes,10,opt,name=api_version,json=apiVersion,proto3" json:"api_version,omitempty"`
 	Created     *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created,proto3" json:"created,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store" sql:"type(uuid)"
+	ClusterName   string `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	Namespace     string `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,hidden,store"` // @gotags: search:"Namespace,hidden,store"
+	Yaml          string `protobuf:"bytes,9,opt,name=yaml,proto3" json:"yaml,omitempty"`
+	ApiVersion    string `protobuf:"bytes,10,opt,name=api_version,json=apiVersion,proto3" json:"api_version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkPolicy) Reset() {
@@ -250,14 +251,15 @@ func (x *NetworkPolicy) GetCreated() *timestamppb.Timestamp {
 }
 
 type NetworkPolicySpec struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	PodSelector   *LabelSelector `protobuf:"bytes,1,opt,name=pod_selector,json=podSelector,proto3" json:"pod_selector,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	PodSelector *LabelSelector              `protobuf:"bytes,1,opt,name=pod_selector,json=podSelector,proto3" json:"pod_selector,omitempty"`
 	Ingress     []*NetworkPolicyIngressRule `protobuf:"bytes,2,rep,name=ingress,proto3" json:"ingress,omitempty"`
 	Egress      []*NetworkPolicyEgressRule  `protobuf:"bytes,3,rep,name=egress,proto3" json:"egress,omitempty"`
 	PolicyTypes []NetworkPolicyType         `protobuf:"varint,4,rep,packed,name=policy_types,json=policyTypes,proto3,enum=storage.NetworkPolicyType" json:"policy_types,omitempty"`
+	sizeCache   protoimpl.SizeCache
 }
 
 func (x *NetworkPolicySpec) Reset() {
@@ -322,11 +324,11 @@ func (x *NetworkPolicySpec) GetPolicyTypes() []NetworkPolicyType {
 
 type NetworkPolicyEgressRule struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Ports []*NetworkPolicyPort `protobuf:"bytes,1,rep,name=ports,proto3" json:"ports,omitempty"`
-	To    []*NetworkPolicyPeer `protobuf:"bytes,2,rep,name=to,proto3" json:"to,omitempty"`
+	Ports     []*NetworkPolicyPort `protobuf:"bytes,1,rep,name=ports,proto3" json:"ports,omitempty"`
+	To        []*NetworkPolicyPeer `protobuf:"bytes,2,rep,name=to,proto3" json:"to,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyEgressRule) Reset() {
@@ -376,13 +378,14 @@ func (x *NetworkPolicyEgressRule) GetTo() []*NetworkPolicyPeer {
 }
 
 type NetworkPolicyPeer struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	PodSelector       *LabelSelector `protobuf:"bytes,1,opt,name=pod_selector,json=podSelector,proto3" json:"pod_selector,omitempty"`
 	NamespaceSelector *LabelSelector `protobuf:"bytes,2,opt,name=namespace_selector,json=namespaceSelector,proto3" json:"namespace_selector,omitempty"`
 	IpBlock           *IPBlock       `protobuf:"bytes,3,opt,name=ip_block,json=ipBlock,proto3" json:"ip_block,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyPeer) Reset() {
@@ -439,12 +442,13 @@ func (x *NetworkPolicyPeer) GetIpBlock() *IPBlock {
 }
 
 type IPBlock struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Cidr          string `protobuf:"bytes,1,opt,name=cidr,proto3" json:"cidr,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Cidr   string   `protobuf:"bytes,1,opt,name=cidr,proto3" json:"cidr,omitempty"`
-	Except []string `protobuf:"bytes,2,rep,name=except,proto3" json:"except,omitempty"`
+	Except    []string `protobuf:"bytes,2,rep,name=except,proto3" json:"except,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *IPBlock) Reset() {
@@ -494,16 +498,17 @@ func (x *IPBlock) GetExcept() []string {
 }
 
 type NetworkPolicyPort struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Protocol Protocol `protobuf:"varint,1,opt,name=protocol,proto3,enum=storage.Protocol" json:"protocol,omitempty"`
 	// Types that are assignable to PortRef:
 	//
 	//	*NetworkPolicyPort_Port
 	//	*NetworkPolicyPort_PortName
-	PortRef isNetworkPolicyPort_PortRef `protobuf_oneof:"port_ref"`
+	PortRef       isNetworkPolicyPort_PortRef `protobuf_oneof:"port_ref"`
+	state         protoimpl.MessageState
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+
+	Protocol Protocol `protobuf:"varint,1,opt,name=protocol,proto3,enum=storage.Protocol" json:"protocol,omitempty"`
 }
 
 func (x *NetworkPolicyPort) Reset() {
@@ -584,11 +589,11 @@ func (*NetworkPolicyPort_PortName) isNetworkPolicyPort_PortRef() {}
 
 type NetworkPolicyIngressRule struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Ports []*NetworkPolicyPort `protobuf:"bytes,1,rep,name=ports,proto3" json:"ports,omitempty"`
-	From  []*NetworkPolicyPeer `protobuf:"bytes,2,rep,name=from,proto3" json:"from,omitempty"`
+	Ports     []*NetworkPolicyPort `protobuf:"bytes,1,rep,name=ports,proto3" json:"ports,omitempty"`
+	From      []*NetworkPolicyPeer `protobuf:"bytes,2,rep,name=from,proto3" json:"from,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyIngressRule) Reset() {
@@ -639,12 +644,13 @@ func (x *NetworkPolicyIngressRule) GetFrom() []*NetworkPolicyPeer {
 
 // Next available tag: 3
 type NetworkPolicyReference struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Namespace     string `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Namespace string `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Name      string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyReference) Reset() {
@@ -695,12 +701,13 @@ func (x *NetworkPolicyReference) GetName() string {
 
 // Next available tag: 3
 type NetworkPolicyModification struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	ApplyYaml     string `protobuf:"bytes,1,opt,name=apply_yaml,json=applyYaml,proto3" json:"apply_yaml,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	ApplyYaml string                    `protobuf:"bytes,1,opt,name=apply_yaml,json=applyYaml,proto3" json:"apply_yaml,omitempty"`
 	ToDelete  []*NetworkPolicyReference `protobuf:"bytes,2,rep,name=to_delete,json=toDelete,proto3" json:"to_delete,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyModification) Reset() {
@@ -750,15 +757,16 @@ func (x *NetworkPolicyModification) GetToDelete() []*NetworkPolicyReference {
 }
 
 type NetworkPolicyApplicationUndoRecord struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	ClusterId            string                     `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
-	User                 string                     `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	state                protoimpl.MessageState
 	ApplyTimestamp       *timestamppb.Timestamp     `protobuf:"bytes,2,opt,name=apply_timestamp,json=applyTimestamp,proto3" json:"apply_timestamp,omitempty"`
 	OriginalModification *NetworkPolicyModification `protobuf:"bytes,3,opt,name=original_modification,json=originalModification,proto3" json:"original_modification,omitempty"`
 	UndoModification     *NetworkPolicyModification `protobuf:"bytes,4,opt,name=undo_modification,json=undoModification,proto3" json:"undo_modification,omitempty"`
+
+	ClusterId     string `protobuf:"bytes,5,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
+	User          string `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyApplicationUndoRecord) Reset() {
@@ -829,15 +837,16 @@ func (x *NetworkPolicyApplicationUndoRecord) GetUndoModification() *NetworkPolic
 }
 
 type NetworkPolicyApplicationUndoDeploymentRecord struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state      protoimpl.MessageState
+	UndoRecord *NetworkPolicyApplicationUndoRecord `protobuf:"bytes,4,opt,name=undo_record,json=undoRecord,proto3" json:"undo_record,omitempty" sql:"-"` // @gotags: sql:"-"
 
 	DeploymentId string `protobuf:"bytes,1,opt,name=deployment_id,json=deploymentId,proto3" json:"deployment_id,omitempty" sql:"pk,type(uuid)"` // @gotags: sql:"pk,type(uuid)"
 	// For SAC
-	ClusterId  string                              `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	Namespace  string                              `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	UndoRecord *NetworkPolicyApplicationUndoRecord `protobuf:"bytes,4,opt,name=undo_record,json=undoRecord,proto3" json:"undo_record,omitempty" sql:"-"` // @gotags: sql:"-"
+	ClusterId     string `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Namespace     string `protobuf:"bytes,3,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *NetworkPolicyApplicationUndoDeploymentRecord) Reset() {

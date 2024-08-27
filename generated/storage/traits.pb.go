@@ -195,8 +195,9 @@ func (Traits_Origin) EnumDescriptor() ([]byte, []int) {
 
 type Traits struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	MutabilityMode Traits_MutabilityMode `protobuf:"varint,1,opt,name=mutability_mode,json=mutabilityMode,proto3,enum=storage.Traits_MutabilityMode" json:"mutability_mode,omitempty"`
 	Visibility     Traits_Visibility     `protobuf:"varint,2,opt,name=visibility,proto3,enum=storage.Traits_Visibility" json:"visibility,omitempty"`

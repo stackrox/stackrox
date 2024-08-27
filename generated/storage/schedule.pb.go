@@ -73,19 +73,20 @@ func (Schedule_IntervalType) EnumDescriptor() ([]byte, []int) {
 }
 
 type Schedule struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	IntervalType Schedule_IntervalType `protobuf:"varint,1,opt,name=interval_type,json=intervalType,proto3,enum=storage.Schedule_IntervalType" json:"interval_type,omitempty"`
-	Hour         int32                 `protobuf:"varint,2,opt,name=hour,proto3" json:"hour,omitempty"`
-	Minute       int32                 `protobuf:"varint,3,opt,name=minute,proto3" json:"minute,omitempty"`
 	// Types that are assignable to Interval:
 	//
 	//	*Schedule_Weekly
 	//	*Schedule_DaysOfWeek_
 	//	*Schedule_DaysOfMonth_
-	Interval isSchedule_Interval `protobuf_oneof:"Interval"`
+	Interval      isSchedule_Interval `protobuf_oneof:"Interval"`
+	state         protoimpl.MessageState
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+
+	IntervalType Schedule_IntervalType `protobuf:"varint,1,opt,name=interval_type,json=intervalType,proto3,enum=storage.Schedule_IntervalType" json:"interval_type,omitempty"`
+	Hour         int32                 `protobuf:"varint,2,opt,name=hour,proto3" json:"hour,omitempty"`
+	Minute       int32                 `protobuf:"varint,3,opt,name=minute,proto3" json:"minute,omitempty"`
 }
 
 func (x *Schedule) Reset() {
@@ -193,8 +194,9 @@ func (*Schedule_DaysOfMonth_) isSchedule_Interval() {}
 
 type Schedule_WeeklyInterval struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	Day int32 `protobuf:"varint,1,opt,name=day,proto3" json:"day,omitempty"`
 }
@@ -241,10 +243,10 @@ func (x *Schedule_WeeklyInterval) GetDay() int32 {
 // Sunday = 0, Monday = 1, .... Saturday =  6
 type Schedule_DaysOfWeek struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Days []int32 `protobuf:"varint,1,rep,packed,name=days,proto3" json:"days,omitempty"`
+	Days      []int32 `protobuf:"varint,1,rep,packed,name=days,proto3" json:"days,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *Schedule_DaysOfWeek) Reset() {
@@ -289,10 +291,10 @@ func (x *Schedule_DaysOfWeek) GetDays() []int32 {
 // 1 for 1st, 2 for 2nd .... 31 for 31st
 type Schedule_DaysOfMonth struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Days []int32 `protobuf:"varint,1,rep,packed,name=days,proto3" json:"days,omitempty"`
+	Days      []int32 `protobuf:"varint,1,rep,packed,name=days,proto3" json:"days,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *Schedule_DaysOfMonth) Reset() {

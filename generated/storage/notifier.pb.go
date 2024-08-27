@@ -181,16 +181,6 @@ func (Syslog_MessageFormat) EnumDescriptor() ([]byte, []int) {
 
 // Next Tag: 19
 type Notifier struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id           string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name         string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
-	Type         string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	UiEndpoint   string `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
-	LabelKey     string `protobuf:"bytes,8,opt,name=label_key,json=labelKey,proto3" json:"label_key,omitempty"`
-	LabelDefault string `protobuf:"bytes,9,opt,name=label_default,json=labelDefault,proto3" json:"label_default,omitempty"`
 	// Types that are assignable to Config:
 	//
 	//	*Notifier_Jira
@@ -202,9 +192,20 @@ type Notifier struct {
 	//	*Notifier_Sumologic
 	//	*Notifier_AwsSecurityHub
 	//	*Notifier_Syslog
-	Config         isNotifier_Config `protobuf_oneof:"config"`
-	NotifierSecret string            `protobuf:"bytes,19,opt,name=notifier_secret,json=notifierSecret,proto3" json:"notifier_secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	Traits         *Traits           `protobuf:"bytes,50,opt,name=traits,proto3" json:"traits,omitempty"`
+	Config isNotifier_Config `protobuf_oneof:"config"`
+	state  protoimpl.MessageState
+	Traits *Traits `protobuf:"bytes,50,opt,name=traits,proto3" json:"traits,omitempty"`
+
+	Id             string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`         // @gotags: sql:"pk"
+	Name           string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Type           string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	UiEndpoint     string `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
+	LabelKey       string `protobuf:"bytes,8,opt,name=label_key,json=labelKey,proto3" json:"label_key,omitempty"`
+	LabelDefault   string `protobuf:"bytes,9,opt,name=label_default,json=labelDefault,proto3" json:"label_default,omitempty"`
+	NotifierSecret string `protobuf:"bytes,19,opt,name=notifier_secret,json=notifierSecret,proto3" json:"notifier_secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	unknownFields  protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *Notifier) Reset() {
@@ -424,13 +425,14 @@ func (*Notifier_AwsSecurityHub) isNotifier_Config() {}
 func (*Notifier_Syslog) isNotifier_Config() {}
 
 type AWSSecurityHub struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state       protoimpl.MessageState
+	Credentials *AWSSecurityHub_Credentials `protobuf:"bytes,2,opt,name=credentials,proto3" json:"credentials,omitempty"`
+
+	Region        string `protobuf:"bytes,1,opt,name=region,proto3" json:"region,omitempty"`
+	AccountId     string `protobuf:"bytes,3,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Region      string                      `protobuf:"bytes,1,opt,name=region,proto3" json:"region,omitempty"`
-	Credentials *AWSSecurityHub_Credentials `protobuf:"bytes,2,opt,name=credentials,proto3" json:"credentials,omitempty"`
-	AccountId   string                      `protobuf:"bytes,3,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *AWSSecurityHub) Reset() {
@@ -487,14 +489,15 @@ func (x *AWSSecurityHub) GetAccountId() string {
 }
 
 type CSCC struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// The service account for the integration. The server will mask the value of this credential in responses and logs.
 	ServiceAccount string `protobuf:"bytes,1,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	SourceId       string `protobuf:"bytes,4,opt,name=source_id,json=sourceId,proto3" json:"source_id,omitempty"`
-	WifEnabled     bool   `protobuf:"varint,5,opt,name=wif_enabled,json=wifEnabled,proto3" json:"wif_enabled,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+
+	sizeCache  protoimpl.SizeCache
+	WifEnabled bool `protobuf:"varint,5,opt,name=wif_enabled,json=wifEnabled,proto3" json:"wif_enabled,omitempty"`
 }
 
 func (x *CSCC) Reset() {
@@ -551,18 +554,19 @@ func (x *CSCC) GetWifEnabled() bool {
 }
 
 type Jira struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
-	Url      string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty" scrub:"dependent" validate:"nolocalendpoint"`           // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	Url      string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"`                  // @gotags: scrub:"dependent"
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password          string                  `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	IssueType         string                  `protobuf:"bytes,4,opt,name=issue_type,json=issueType,proto3" json:"issue_type,omitempty"`
-	PriorityMappings  []*Jira_PriorityMapping `protobuf:"bytes,5,rep,name=priority_mappings,json=priorityMappings,proto3" json:"priority_mappings,omitempty"`
-	DefaultFieldsJson string                  `protobuf:"bytes,6,opt,name=default_fields_json,json=defaultFieldsJson,proto3" json:"default_fields_json,omitempty"`
-	DisablePriority   bool                    `protobuf:"varint,7,opt,name=disablePriority,proto3" json:"disablePriority,omitempty"`
+	Password          string `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	IssueType         string `protobuf:"bytes,4,opt,name=issue_type,json=issueType,proto3" json:"issue_type,omitempty"`
+	DefaultFieldsJson string `protobuf:"bytes,6,opt,name=default_fields_json,json=defaultFieldsJson,proto3" json:"default_fields_json,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+
+	PriorityMappings []*Jira_PriorityMapping `protobuf:"bytes,5,rep,name=priority_mappings,json=priorityMappings,proto3" json:"priority_mappings,omitempty"`
+	sizeCache        protoimpl.SizeCache
+	DisablePriority  bool `protobuf:"varint,7,opt,name=disablePriority,proto3" json:"disablePriority,omitempty"`
 }
 
 func (x *Jira) Reset() {
@@ -647,19 +651,20 @@ func (x *Jira) GetDisablePriority() bool {
 }
 
 type Email struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Server   string `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
 	Sender   string `protobuf:"bytes,2,opt,name=sender,proto3" json:"sender,omitempty"`
 	Username string `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
 	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password              string           `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	Password      string `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	From          string `protobuf:"bytes,7,opt,name=from,proto3" json:"from,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache             protoimpl.SizeCache
+	StartTLSAuthMethod    Email_AuthMethod `protobuf:"varint,8,opt,name=startTLSAuthMethod,proto3,enum=storage.Email_AuthMethod" json:"startTLSAuthMethod,omitempty"`
 	DisableTLS            bool             `protobuf:"varint,5,opt,name=disableTLS,proto3" json:"disableTLS,omitempty"`
 	DEPRECATEDUseStartTLS bool             `protobuf:"varint,6,opt,name=DEPRECATED_useStartTLS,json=DEPRECATEDUseStartTLS,proto3" json:"DEPRECATED_useStartTLS,omitempty"` // useStartTLS has been deprecated for startTLSAuthMethod
-	From                  string           `protobuf:"bytes,7,opt,name=from,proto3" json:"from,omitempty"`
-	StartTLSAuthMethod    Email_AuthMethod `protobuf:"varint,8,opt,name=startTLSAuthMethod,proto3,enum=storage.Email_AuthMethod" json:"startTLSAuthMethod,omitempty"`
 	// Set to true to allow unauthenticated SMTP
 	AllowUnauthenticatedSmtp bool `protobuf:"varint,9,opt,name=allow_unauthenticated_smtp,json=allowUnauthenticatedSmtp,proto3" json:"allow_unauthenticated_smtp,omitempty" scrub:"disableDependentIfTrue"` // @gotags: scrub:"disableDependentIfTrue"
 }
@@ -760,21 +765,22 @@ func (x *Email) GetAllowUnauthenticatedSmtp() bool {
 }
 
 type Splunk struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// The HTTP token for the integration. The server will mask the value of this credential in responses and logs.
-	HttpToken           string `protobuf:"bytes,1,opt,name=http_token,json=httpToken,proto3" json:"http_token,omitempty" scrub:"always"`          // @gotags: scrub:"always"
-	HttpEndpoint        string `protobuf:"bytes,2,opt,name=http_endpoint,json=httpEndpoint,proto3" json:"http_endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	Insecure            bool   `protobuf:"varint,3,opt,name=insecure,proto3" json:"insecure,omitempty"`
-	Truncate            int64  `protobuf:"varint,4,opt,name=truncate,proto3" json:"truncate,omitempty"`
-	AuditLoggingEnabled bool   `protobuf:"varint,5,opt,name=audit_logging_enabled,json=auditLoggingEnabled,proto3" json:"audit_logging_enabled,omitempty"`
 	// Types that are assignable to DerivedSourceTypeDeprecated:
 	//
 	//	*Splunk_DerivedSourceType
 	DerivedSourceTypeDeprecated isSplunk_DerivedSourceTypeDeprecated `protobuf_oneof:"derived_source_type_deprecated"`
-	SourceTypes                 map[string]string                    `protobuf:"bytes,7,rep,name=source_types,json=sourceTypes,proto3" json:"source_types,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	state                       protoimpl.MessageState
+	SourceTypes                 map[string]string `protobuf:"bytes,7,rep,name=source_types,json=sourceTypes,proto3" json:"source_types,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+
+	// The HTTP token for the integration. The server will mask the value of this credential in responses and logs.
+	HttpToken     string `protobuf:"bytes,1,opt,name=http_token,json=httpToken,proto3" json:"http_token,omitempty" scrub:"always"`                                        // @gotags: scrub:"always"
+	HttpEndpoint  string `protobuf:"bytes,2,opt,name=http_endpoint,json=httpEndpoint,proto3" json:"http_endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	unknownFields protoimpl.UnknownFields
+
+	Truncate            int64 `protobuf:"varint,4,opt,name=truncate,proto3" json:"truncate,omitempty"`
+	sizeCache           protoimpl.SizeCache
+	Insecure            bool `protobuf:"varint,3,opt,name=insecure,proto3" json:"insecure,omitempty"`
+	AuditLoggingEnabled bool `protobuf:"varint,5,opt,name=audit_logging_enabled,json=auditLoggingEnabled,proto3" json:"audit_logging_enabled,omitempty"`
 }
 
 func (x *Splunk) Reset() {
@@ -880,12 +886,13 @@ type Splunk_DerivedSourceType struct {
 func (*Splunk_DerivedSourceType) isSplunk_DerivedSourceTypeDeprecated() {}
 
 type PagerDuty struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// The API key for the integration. The server will mask the value of this credential in responses and logs.
-	ApiKey string `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	ApiKey        string `protobuf:"bytes,1,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *PagerDuty) Reset() {
@@ -928,19 +935,20 @@ func (x *PagerDuty) GetApiKey() string {
 }
 
 type Generic struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Endpoint string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	CaCert   string `protobuf:"bytes,3,opt,name=ca_cert,json=caCert,proto3" json:"ca_cert,omitempty"`
+	Username string `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	// The password for the integration. The server will mask the value of this credential in responses and logs.
+	Password      string `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	unknownFields protoimpl.UnknownFields
 
-	Endpoint      string `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
-	SkipTLSVerify bool   `protobuf:"varint,2,opt,name=skipTLSVerify,proto3" json:"skipTLSVerify,omitempty"`
-	CaCert        string `protobuf:"bytes,3,opt,name=ca_cert,json=caCert,proto3" json:"ca_cert,omitempty"`
-	Username      string `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	// The password for the integration. The server will mask the value of this credential in responses and logs.
-	Password            string          `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	Headers             []*KeyValuePair `protobuf:"bytes,6,rep,name=headers,proto3" json:"headers,omitempty"`
 	ExtraFields         []*KeyValuePair `protobuf:"bytes,7,rep,name=extra_fields,json=extraFields,proto3" json:"extra_fields,omitempty"`
-	AuditLoggingEnabled bool            `protobuf:"varint,8,opt,name=audit_logging_enabled,json=auditLoggingEnabled,proto3" json:"audit_logging_enabled,omitempty"`
+	sizeCache           protoimpl.SizeCache
+	SkipTLSVerify       bool `protobuf:"varint,2,opt,name=skipTLSVerify,proto3" json:"skipTLSVerify,omitempty"`
+	AuditLoggingEnabled bool `protobuf:"varint,8,opt,name=audit_logging_enabled,json=auditLoggingEnabled,proto3" json:"audit_logging_enabled,omitempty"`
 }
 
 func (x *Generic) Reset() {
@@ -1032,12 +1040,13 @@ func (x *Generic) GetAuditLoggingEnabled() bool {
 }
 
 type SumoLogic struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	HttpSourceAddress string `protobuf:"bytes,1,opt,name=http_source_address,json=httpSourceAddress,proto3" json:"http_source_address,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
-	SkipTLSVerify     bool   `protobuf:"varint,2,opt,name=skipTLSVerify,proto3" json:"skipTLSVerify,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+
+	sizeCache     protoimpl.SizeCache
+	SkipTLSVerify bool `protobuf:"varint,2,opt,name=skipTLSVerify,proto3" json:"skipTLSVerify,omitempty"`
 }
 
 func (x *SumoLogic) Reset() {
@@ -1087,18 +1096,19 @@ func (x *SumoLogic) GetSkipTLSVerify() bool {
 }
 
 type Syslog struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	LocalFacility Syslog_LocalFacility `protobuf:"varint,1,opt,name=local_facility,json=localFacility,proto3,enum=storage.Syslog_LocalFacility" json:"local_facility,omitempty"`
 	// Eventually this will support TCP, UDP, and local endpoints
 	//
 	// Types that are assignable to Endpoint:
 	//
 	//	*Syslog_TcpConfig
-	Endpoint      isSyslog_Endpoint    `protobuf_oneof:"endpoint"`
-	ExtraFields   []*KeyValuePair      `protobuf:"bytes,3,rep,name=extra_fields,json=extraFields,proto3" json:"extra_fields,omitempty"`
+	Endpoint      isSyslog_Endpoint `protobuf_oneof:"endpoint"`
+	state         protoimpl.MessageState
+	unknownFields protoimpl.UnknownFields
+
+	ExtraFields []*KeyValuePair `protobuf:"bytes,3,rep,name=extra_fields,json=extraFields,proto3" json:"extra_fields,omitempty"`
+	sizeCache   protoimpl.SizeCache
+
+	LocalFacility Syslog_LocalFacility `protobuf:"varint,1,opt,name=local_facility,json=localFacility,proto3,enum=storage.Syslog_LocalFacility" json:"local_facility,omitempty"`
 	MessageFormat Syslog_MessageFormat `protobuf:"varint,4,opt,name=message_format,json=messageFormat,proto3,enum=storage.Syslog_MessageFormat" json:"message_format,omitempty"`
 }
 
@@ -1180,13 +1190,14 @@ type Syslog_TcpConfig struct {
 func (*Syslog_TcpConfig) isSyslog_Endpoint() {}
 
 type AWSSecurityHub_Credentials struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	AccessKeyId     string `protobuf:"bytes,1,opt,name=access_key_id,json=accessKeyId,proto3" json:"access_key_id,omitempty" scrub:"always"`             // @gotags: scrub:"always"
 	SecretAccessKey string `protobuf:"bytes,2,opt,name=secret_access_key,json=secretAccessKey,proto3" json:"secret_access_key,omitempty" scrub:"always"` // @gotags: scrub:"always"
-	StsEnabled      bool   `protobuf:"varint,3,opt,name=sts_enabled,json=stsEnabled,proto3" json:"sts_enabled,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+
+	sizeCache  protoimpl.SizeCache
+	StsEnabled bool `protobuf:"varint,3,opt,name=sts_enabled,json=stsEnabled,proto3" json:"sts_enabled,omitempty"`
 }
 
 func (x *AWSSecurityHub_Credentials) Reset() {
@@ -1244,11 +1255,12 @@ func (x *AWSSecurityHub_Credentials) GetStsEnabled() bool {
 
 type Jira_PriorityMapping struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	PriorityName  string `protobuf:"bytes,2,opt,name=priority_name,json=priorityName,proto3" json:"priority_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Severity     Severity `protobuf:"varint,1,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"`
-	PriorityName string   `protobuf:"bytes,2,opt,name=priority_name,json=priorityName,proto3" json:"priority_name,omitempty"`
+	sizeCache protoimpl.SizeCache
+
+	Severity Severity `protobuf:"varint,1,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"`
 }
 
 func (x *Jira_PriorityMapping) Reset() {
@@ -1298,14 +1310,15 @@ func (x *Jira_PriorityMapping) GetPriorityName() string {
 }
 
 type Syslog_TCPConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Hostname      string `protobuf:"bytes,1,opt,name=hostname,proto3" json:"hostname,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
-	Port          int32  `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	SkipTlsVerify bool   `protobuf:"varint,3,opt,name=skip_tls_verify,json=skipTlsVerify,proto3" json:"skip_tls_verify,omitempty"`
-	UseTls        bool   `protobuf:"varint,4,opt,name=use_tls,json=useTls,proto3" json:"use_tls,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache     protoimpl.SizeCache
+	Port          int32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
+	SkipTlsVerify bool  `protobuf:"varint,3,opt,name=skip_tls_verify,json=skipTlsVerify,proto3" json:"skip_tls_verify,omitempty"`
+	UseTls        bool  `protobuf:"varint,4,opt,name=use_tls,json=useTls,proto3" json:"use_tls,omitempty"`
 }
 
 func (x *Syslog_TCPConfig) Reset() {

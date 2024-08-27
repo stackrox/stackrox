@@ -71,15 +71,6 @@ func (S3URLStyle) EnumDescriptor() ([]byte, []int) {
 
 // Next available tag: 10
 type ExternalBackup struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id            string    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Name          string    `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Type          string    `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	Schedule      *Schedule `protobuf:"bytes,4,opt,name=schedule,proto3" json:"schedule,omitempty"`
-	BackupsToKeep int32     `protobuf:"varint,5,opt,name=backups_to_keep,json=backupsToKeep,proto3" json:"backups_to_keep,omitempty"`
 	// Types that are assignable to Config:
 	//
 	//	*ExternalBackup_S3
@@ -90,6 +81,16 @@ type ExternalBackup struct {
 	//
 	//	*ExternalBackup_IncludeCertificates
 	IncludeCertificatesOpt isExternalBackup_IncludeCertificatesOpt `protobuf_oneof:"include_certificates_opt"`
+	state                  protoimpl.MessageState
+	Schedule               *Schedule `protobuf:"bytes,4,opt,name=schedule,proto3" json:"schedule,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type          string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache     protoimpl.SizeCache
+	BackupsToKeep int32 `protobuf:"varint,5,opt,name=backups_to_keep,json=backupsToKeep,proto3" json:"backups_to_keep,omitempty"`
 }
 
 func (x *ExternalBackup) Reset() {
@@ -237,12 +238,9 @@ func (*ExternalBackup_IncludeCertificates) isExternalBackup_IncludeCertificatesO
 
 // S3Config configures the backup integration with AWS S3.
 type S3Config struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
-	UseIam bool   `protobuf:"varint,2,opt,name=use_iam,json=useIam,proto3" json:"use_iam,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
 	// The access key ID for the storage integration. The server will mask the value of this credential in responses and logs.
 	AccessKeyId string `protobuf:"bytes,3,opt,name=access_key_id,json=accessKeyId,proto3" json:"access_key_id,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	// The secret access key for the storage integration. The server will mask the value of this credential in responses and logs.
@@ -250,6 +248,10 @@ type S3Config struct {
 	Region          string `protobuf:"bytes,5,opt,name=region,proto3" json:"region,omitempty"`
 	ObjectPrefix    string `protobuf:"bytes,6,opt,name=object_prefix,json=objectPrefix,proto3" json:"object_prefix,omitempty"`
 	Endpoint        string `protobuf:"bytes,7,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	unknownFields   protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	UseIam    bool `protobuf:"varint,2,opt,name=use_iam,json=useIam,proto3" json:"use_iam,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
 }
 
 func (x *S3Config) Reset() {
@@ -336,9 +338,7 @@ func (x *S3Config) GetEndpoint() string {
 // S3Compatible configures the backup integration with an S3 compatible storage provider.
 // S3 compatible is intended for non-AWS providers. For AWS S3 use S3Config.
 type S3Compatible struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	// The access key ID to use. The server will mask the value of this credential in responses and logs.
@@ -348,6 +348,9 @@ type S3Compatible struct {
 	Region          string `protobuf:"bytes,4,opt,name=region,proto3" json:"region,omitempty"`
 	ObjectPrefix    string `protobuf:"bytes,5,opt,name=object_prefix,json=objectPrefix,proto3" json:"object_prefix,omitempty"`
 	Endpoint        string `protobuf:"bytes,6,opt,name=endpoint,proto3" json:"endpoint,omitempty" scrub:"dependent" validate:"nolocalendpoint"` // @gotags: scrub:"dependent" validate:"nolocalendpoint"
+	unknownFields   protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 	// The URL style defines the bucket URL addressing.
 	// Virtual-hosted-style buckets are addressed as `https://<bucket>.<endpoint>'
 	// while path-style buckets are addressed as `https://<endpoint>/<bucket>`.
@@ -436,15 +439,16 @@ func (x *S3Compatible) GetUrlStyle() S3URLStyle {
 }
 
 type GCSConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	// The service account for the storage integration. The server will mask the value of this credential in responses and logs.
 	ServiceAccount string `protobuf:"bytes,2,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty" scrub:"always"` // @gotags: scrub:"always"
 	ObjectPrefix   string `protobuf:"bytes,3,opt,name=object_prefix,json=objectPrefix,proto3" json:"object_prefix,omitempty"`
-	UseWorkloadId  bool   `protobuf:"varint,4,opt,name=use_workload_id,json=useWorkloadId,proto3" json:"use_workload_id,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	unknownFields  protoimpl.UnknownFields
+
+	sizeCache     protoimpl.SizeCache
+	UseWorkloadId bool `protobuf:"varint,4,opt,name=use_workload_id,json=useWorkloadId,proto3" json:"use_workload_id,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
 }
 
 func (x *GCSConfig) Reset() {

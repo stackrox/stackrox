@@ -21,11 +21,12 @@ const (
 )
 
 type HelmCluster struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Cluster       *Cluster `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Cluster *Cluster `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *HelmCluster) Reset() {

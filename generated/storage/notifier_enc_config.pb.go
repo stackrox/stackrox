@@ -23,8 +23,9 @@ const (
 // Next Tag: 2
 type NotifierEncConfig struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 
 	ActiveKeyIndex int32 `protobuf:"varint,1,opt,name=active_key_index,json=activeKeyIndex,proto3" json:"active_key_index,omitempty"`
 }

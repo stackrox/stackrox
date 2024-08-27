@@ -23,15 +23,7 @@ const (
 
 // Next Tag: 15.
 type AuthProvider struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id         string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name       string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
-	Type       string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	UiEndpoint string `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
-	Enabled    bool   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	state protoimpl.MessageState
 	// Config holds auth provider specific configuration. Each configuration options
 	// are different based on the given auth provider type.
 	// OIDC:
@@ -61,17 +53,7 @@ type AuthProvider struct {
 	// IAP:
 	// - "audience": the audience to use.
 	Config map[string]string `protobuf:"bytes,6,rep,name=config,proto3" json:"config,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3" scrub:"map-values"` // @gotags: scrub:"map-values"
-	// The login URL will be provided by the backend, and may not be specified in a request.
-	LoginUrl string `protobuf:"bytes,7,opt,name=login_url,json=loginUrl,proto3" json:"login_url,omitempty"`
-	// Deprecated: Marked as deprecated in storage/auth_provider.proto.
-	Validated bool `protobuf:"varint,8,opt,name=validated,proto3" json:"validated,omitempty"`
-	// UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request
-	// is coming from any of these, the auth request will use these for the callback URL,
-	// not ui_endpoint.
-	ExtraUiEndpoints   []string                          `protobuf:"bytes,9,rep,name=extra_ui_endpoints,json=extraUiEndpoints,proto3" json:"extra_ui_endpoints,omitempty"`
-	Active             bool                              `protobuf:"varint,10,opt,name=active,proto3" json:"active,omitempty"`
-	RequiredAttributes []*AuthProvider_RequiredAttribute `protobuf:"bytes,11,rep,name=required_attributes,json=requiredAttributes,proto3" json:"required_attributes,omitempty"`
-	Traits             *Traits                           `protobuf:"bytes,12,opt,name=traits,proto3" json:"traits,omitempty"`
+	Traits *Traits           `protobuf:"bytes,12,opt,name=traits,proto3" json:"traits,omitempty"`
 	// Specifies claims from IdP token that will be copied to Rox token attributes.
 	//
 	// Each key in this map contains a path in IdP token we want to map. Path is separated by "." symbol.
@@ -121,6 +103,25 @@ type AuthProvider struct {
 	// invalid. Subsequently, all clients will have to re-issue their tokens (either by refreshing or by an additional
 	// login attempt).
 	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+
+	Id         string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`         // @gotags: sql:"pk"
+	Name       string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Type       string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	UiEndpoint string `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
+	// The login URL will be provided by the backend, and may not be specified in a request.
+	LoginUrl      string `protobuf:"bytes,7,opt,name=login_url,json=loginUrl,proto3" json:"login_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	// UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request
+	// is coming from any of these, the auth request will use these for the callback URL,
+	// not ui_endpoint.
+	ExtraUiEndpoints   []string                          `protobuf:"bytes,9,rep,name=extra_ui_endpoints,json=extraUiEndpoints,proto3" json:"extra_ui_endpoints,omitempty"`
+	RequiredAttributes []*AuthProvider_RequiredAttribute `protobuf:"bytes,11,rep,name=required_attributes,json=requiredAttributes,proto3" json:"required_attributes,omitempty"`
+	sizeCache          protoimpl.SizeCache
+	Enabled            bool `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// Deprecated: Marked as deprecated in storage/auth_provider.proto.
+	Validated bool `protobuf:"varint,8,opt,name=validated,proto3" json:"validated,omitempty"`
+	Active    bool `protobuf:"varint,10,opt,name=active,proto3" json:"active,omitempty"`
 }
 
 func (x *AuthProvider) Reset() {
@@ -259,12 +260,13 @@ func (x *AuthProvider) GetLastUpdated() *timestamppb.Timestamp {
 // If any attribute is missing within the external claims of the token issued by Central, the
 // authentication request to this IdP is considered failed.
 type AuthProvider_RequiredAttribute struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	AttributeKey   string `protobuf:"bytes,1,opt,name=attribute_key,json=attributeKey,proto3" json:"attribute_key,omitempty"`
 	AttributeValue string `protobuf:"bytes,2,opt,name=attribute_value,json=attributeValue,proto3" json:"attribute_value,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *AuthProvider_RequiredAttribute) Reset() {

@@ -21,12 +21,13 @@ const (
 )
 
 type Hash struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state  protoimpl.MessageState
+	Hashes map[string]uint64 `protobuf:"bytes,2,rep,name=hashes,proto3" json:"hashes,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
+
+	ClusterId     string `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"pk"` // @gotags: sql:"pk"
 	unknownFields protoimpl.UnknownFields
 
-	ClusterId string            `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	Hashes    map[string]uint64 `protobuf:"bytes,2,rep,name=hashes,proto3" json:"hashes,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *Hash) Reset() {

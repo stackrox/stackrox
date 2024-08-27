@@ -21,24 +21,25 @@ const (
 )
 
 type ImageComponent struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id        string     `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"`           // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
-	Name      string     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`       // @gotags: search:"Component,store"
-	Version   string     `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"` // @gotags: search:"Component Version,store"
-	License   *License   `protobuf:"bytes,4,opt,name=license,proto3" json:"license,omitempty"`
-	Priority  int64      `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"`                     // @gotags: search:"Component Risk Priority,hidden"
-	Source    SourceType `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source,store"` // @gotags: search:"Component Source,store"
-	RiskScore float32    `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
 	// Types that are assignable to SetTopCvss:
 	//
 	//	*ImageComponent_TopCvss
 	SetTopCvss isImageComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
+	state      protoimpl.MessageState
+	License    *License `protobuf:"bytes,4,opt,name=license,proto3" json:"license,omitempty"`
+
+	Id      string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Component ID,store,hidden" sql:"pk,id"` // This field is composite id over name, version, and operating system. // @gotags: search:"Component ID,store,hidden" sql:"pk,id"
+	Name    string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Component,store"`                   // @gotags: search:"Component,store"
+	Version string `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty" search:"Component Version,store"`     // @gotags: search:"Component Version,store"
 	// Component version that fixes all the fixable vulnerabilities in this component.
 	FixedBy         string `protobuf:"bytes,9,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
 	OperatingSystem string `protobuf:"bytes,10,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
+	unknownFields   protoimpl.UnknownFields
+
+	Priority  int64 `protobuf:"varint,5,opt,name=priority,proto3" json:"priority,omitempty" search:"Component Risk Priority,hidden"` // @gotags: search:"Component Risk Priority,hidden"
+	sizeCache protoimpl.SizeCache
+	Source    SourceType `protobuf:"varint,6,opt,name=source,proto3,enum=storage.SourceType" json:"source,omitempty" search:"Component Source,store"`      // @gotags: search:"Component Source,store"
+	RiskScore float32    `protobuf:"fixed32,7,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Component Risk Score,hidden"` // @gotags: search:"Component Risk Score,hidden"
 }
 
 func (x *ImageComponent) Reset() {

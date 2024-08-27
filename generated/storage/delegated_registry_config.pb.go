@@ -75,13 +75,14 @@ func (DelegatedRegistryConfig_EnabledFor) EnumDescriptor() ([]byte, []int) {
 //
 // Any changes made to this message must also be reflected in central/delegatedregistryconfig/convert/convert.go.
 type DelegatedRegistryConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state            protoimpl.MessageState
+	DefaultClusterId string `protobuf:"bytes,2,opt,name=default_cluster_id,json=defaultClusterId,proto3" json:"default_cluster_id,omitempty"`
+	unknownFields    protoimpl.UnknownFields
 
-	EnabledFor       DelegatedRegistryConfig_EnabledFor           `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,proto3,enum=storage.DelegatedRegistryConfig_EnabledFor" json:"enabled_for,omitempty"`
-	DefaultClusterId string                                       `protobuf:"bytes,2,opt,name=default_cluster_id,json=defaultClusterId,proto3" json:"default_cluster_id,omitempty"`
-	Registries       []*DelegatedRegistryConfig_DelegatedRegistry `protobuf:"bytes,3,rep,name=registries,proto3" json:"registries,omitempty"`
+	Registries []*DelegatedRegistryConfig_DelegatedRegistry `protobuf:"bytes,3,rep,name=registries,proto3" json:"registries,omitempty"`
+	sizeCache  protoimpl.SizeCache
+
+	EnabledFor DelegatedRegistryConfig_EnabledFor `protobuf:"varint,1,opt,name=enabled_for,json=enabledFor,proto3,enum=storage.DelegatedRegistryConfig_EnabledFor" json:"enabled_for,omitempty"`
 }
 
 func (x *DelegatedRegistryConfig) Reset() {
@@ -138,12 +139,13 @@ func (x *DelegatedRegistryConfig) GetRegistries() []*DelegatedRegistryConfig_Del
 }
 
 type DelegatedRegistryConfig_DelegatedRegistry struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	ClusterId     string `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Path      string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	ClusterId string `protobuf:"bytes,2,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *DelegatedRegistryConfig_DelegatedRegistry) Reset() {

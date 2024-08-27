@@ -68,20 +68,21 @@ func (MatchType) EnumDescriptor() ([]byte, []int) {
 }
 
 type ResourceCollection struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Collection ID" sql:"pk"`     // @gotags: search:"Collection ID" sql:"pk"
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Collection Name" sql:"unique"` // @gotags: search:"Collection Name" sql:"unique"
-	Description string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	state       protoimpl.MessageState
 	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 	CreatedBy   *SlimUser              `protobuf:"bytes,6,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
 	UpdatedBy   *SlimUser              `protobuf:"bytes,7,opt,name=updated_by,json=updatedBy,proto3" json:"updated_by,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Collection ID" sql:"pk"`           // @gotags: search:"Collection ID" sql:"pk"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Collection Name" sql:"unique"` // @gotags: search:"Collection Name" sql:"unique"
+	Description   string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
 	// `resource_selectors` resolve as disjunction (OR) with each-other and with selectors from `embedded_collections`. For MVP, the size of resource_selectors will at most be 1 from UX standpoint.
 	ResourceSelectors   []*ResourceSelector                              `protobuf:"bytes,8,rep,name=resource_selectors,json=resourceSelectors,proto3" json:"resource_selectors,omitempty"`
 	EmbeddedCollections []*ResourceCollection_EmbeddedResourceCollection `protobuf:"bytes,9,rep,name=embedded_collections,json=embeddedCollections,proto3" json:"embedded_collections,omitempty"`
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ResourceCollection) Reset() {
@@ -181,11 +182,11 @@ func (x *ResourceCollection) GetEmbeddedCollections() []*ResourceCollection_Embe
 
 type ResourceSelector struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// `rules` resolve as a conjunction (AND).
-	Rules []*SelectorRule `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty"`
+	Rules     []*SelectorRule `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ResourceSelector) Reset() {
@@ -228,9 +229,7 @@ func (x *ResourceSelector) GetRules() []*SelectorRule {
 }
 
 type SelectorRule struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// `field_name` can be one of the following:
 	// - Cluster
@@ -241,11 +240,14 @@ type SelectorRule struct {
 	// - Deployment
 	// - Deployment Label
 	// - Deployment Annotation
-	FieldName string `protobuf:"bytes,1,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`
+	FieldName     string `protobuf:"bytes,1,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	// `values` resolve as a conjunction (AND) or disjunction (OR) depending on operator. For MVP, only OR is supported from UX standpoint.
+	Values    []*RuleValue `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty"`
+	sizeCache protoimpl.SizeCache
 	// 'operator' only supports disjunction (OR) currently
 	Operator BooleanOperator `protobuf:"varint,2,opt,name=operator,proto3,enum=storage.BooleanOperator" json:"operator,omitempty"`
-	// `values` resolve as a conjunction (AND) or disjunction (OR) depending on operator. For MVP, only OR is supported from UX standpoint.
-	Values []*RuleValue `protobuf:"bytes,3,rep,name=values,proto3" json:"values,omitempty"`
 }
 
 func (x *SelectorRule) Reset() {
@@ -302,11 +304,12 @@ func (x *SelectorRule) GetValues() []*RuleValue {
 }
 
 type RuleValue struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Value         string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Value     string    `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	sizeCache protoimpl.SizeCache
 	MatchType MatchType `protobuf:"varint,2,opt,name=match_type,json=matchType,proto3,enum=storage.MatchType" json:"match_type,omitempty"`
 }
 
@@ -357,12 +360,13 @@ func (x *RuleValue) GetMatchType() MatchType {
 }
 
 type ResourceCollection_EmbeddedResourceCollection struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// 'id' is searchable to force a separate table
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Embedded Collection ID" sql:"fk(ResourceCollection:id),restrict-delete"` // @gotags: search:"Embedded Collection ID" sql:"fk(ResourceCollection:id),restrict-delete"
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Embedded Collection ID" sql:"fk(ResourceCollection:id),restrict-delete"` // @gotags: search:"Embedded Collection ID" sql:"fk(ResourceCollection:id),restrict-delete"
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ResourceCollection_EmbeddedResourceCollection) Reset() {

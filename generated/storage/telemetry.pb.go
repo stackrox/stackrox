@@ -22,13 +22,14 @@ const (
 )
 
 type TelemetryConfiguration struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+	// Deprecated: Marked as deprecated in storage/telemetry.proto.
+	LastSetTime   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_set_time,json=lastSetTime,proto3" json:"last_set_time,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
+	sizeCache protoimpl.SizeCache
+
 	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	// Deprecated: Marked as deprecated in storage/telemetry.proto.
-	LastSetTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_set_time,json=lastSetTime,proto3" json:"last_set_time,omitempty"`
 }
 
 func (x *TelemetryConfiguration) Reset() {

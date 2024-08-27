@@ -23,16 +23,17 @@ const (
 
 // Next Tag: 7
 type Blob struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name         string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" sql:"pk" search:"Blob Name"` // @gotags: sql:"pk" search:"Blob Name"
-	Oid          uint32                 `protobuf:"varint,2,opt,name=oid,proto3" json:"oid,omitempty"`
-	Checksum     string                 `protobuf:"bytes,3,opt,name=checksum,proto3" json:"checksum,omitempty"`
-	Length       int64                  `protobuf:"varint,4,opt,name=length,proto3" json:"length,omitempty" search:"Blob Length"` // @gotags: search:"Blob Length"
+	state        protoimpl.MessageState
 	LastUpdated  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 	ModifiedTime *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=modified_time,json=modifiedTime,proto3" json:"modified_time,omitempty" search:"Blob Modified On"` // @gotags: search:"Blob Modified On"
+
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" sql:"pk" search:"Blob Name"` // @gotags: sql:"pk" search:"Blob Name"
+	Checksum      string `protobuf:"bytes,3,opt,name=checksum,proto3" json:"checksum,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	Length    int64 `protobuf:"varint,4,opt,name=length,proto3" json:"length,omitempty" search:"Blob Length"` // @gotags: search:"Blob Length"
+	sizeCache protoimpl.SizeCache
+	Oid       uint32 `protobuf:"varint,2,opt,name=oid,proto3" json:"oid,omitempty"`
 }
 
 func (x *Blob) Reset() {

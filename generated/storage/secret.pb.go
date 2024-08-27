@@ -102,23 +102,24 @@ func (SecretType) EnumDescriptor() ([]byte, []int) {
 // (regardless of time, scope, or context)
 // ////////////////////////////////////////
 type Secret struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state        protoimpl.MessageState
+	Labels       map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Annotations  map[string]string      `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"` // @gotags: search:"Created Time"
+	Relationship *SecretRelationship    `protobuf:"bytes,11,opt,name=relationship,proto3" json:"relationship,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Secret ID,store,hidden" sql:"pk,type(uuid)"`                              // @gotags: search:"Secret ID,store,hidden" sql:"pk,type(uuid)"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Secret,store"`                                                        // @gotags: search:"Secret,store"
+	ClusterId     string `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"` // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
+	ClusterName   string `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"`                      // @gotags: search:"Cluster,store"
+	Namespace     string `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                                           // @gotags: search:"Namespace,store"
+	Type          string `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Secret ID,store,hidden" sql:"pk,type(uuid)"`                                      // @gotags: search:"Secret ID,store,hidden" sql:"pk,type(uuid)"
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Secret,store"`                                  // @gotags: search:"Secret,store"
-	ClusterId   string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,store,hidden" sql:"type(uuid)"`       // @gotags: search:"Cluster ID,store,hidden" sql:"type(uuid)"
-	ClusterName string                 `protobuf:"bytes,4,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty" search:"Cluster,store"` // @gotags: search:"Cluster,store"
-	Namespace   string                 `protobuf:"bytes,5,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                        // @gotags: search:"Namespace,store"
-	Type        string                 `protobuf:"bytes,6,opt,name=type,proto3" json:"type,omitempty"`
-	Labels      map[string]string      `protobuf:"bytes,7,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Annotations map[string]string      `protobuf:"bytes,8,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"` // @gotags: search:"Created Time"
 	// Metadata about the secrets.
 	// The secret need not be a file, but rather may be an arbitrary value.
-	Files        []*SecretDataFile   `protobuf:"bytes,10,rep,name=files,proto3" json:"files,omitempty" sql:"flag=ROX_SECRET_FILE_SEARCH" search:"flag=ROX_SECRET_FILE_SEARCH"` // @gotags: sql:"flag=ROX_SECRET_FILE_SEARCH" search:"flag=ROX_SECRET_FILE_SEARCH"
-	Relationship *SecretRelationship `protobuf:"bytes,11,opt,name=relationship,proto3" json:"relationship,omitempty"`
+	Files     []*SecretDataFile `protobuf:"bytes,10,rep,name=files,proto3" json:"files,omitempty" sql:"flag=ROX_SECRET_FILE_SEARCH" search:"flag=ROX_SECRET_FILE_SEARCH"` // @gotags: sql:"flag=ROX_SECRET_FILE_SEARCH" search:"flag=ROX_SECRET_FILE_SEARCH"
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *Secret) Reset() {
@@ -231,17 +232,18 @@ func (x *Secret) GetRelationship() *SecretRelationship {
 }
 
 type ListSecret struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ClusterId     string `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ClusterName   string `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	Namespace     string `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ClusterId   string                 `protobuf:"bytes,7,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
-	ClusterName string                 `protobuf:"bytes,3,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	Namespace   string                 `protobuf:"bytes,4,opt,name=namespace,proto3" json:"namespace,omitempty"`
-	Types       []SecretType           `protobuf:"varint,5,rep,packed,name=types,proto3,enum=storage.SecretType" json:"types,omitempty"`
-	CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Types     []SecretType `protobuf:"varint,5,rep,packed,name=types,proto3,enum=storage.SecretType" json:"types,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ListSecret) Reset() {
@@ -328,16 +330,17 @@ func (x *ListSecret) GetCreatedAt() *timestamppb.Timestamp {
 // The combined relationships that belong to the secret.
 // Next Tag: 6
 type SecretRelationship struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// Secret id
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
 	// Container id to relationship.s
 	ContainerRelationships []*SecretContainerRelationship `protobuf:"bytes,4,rep,name=container_relationships,json=containerRelationships,proto3" json:"container_relationships,omitempty"`
 	// Deployment id to relationship.
 	DeploymentRelationships []*SecretDeploymentRelationship `protobuf:"bytes,5,rep,name=deployment_relationships,json=deploymentRelationships,proto3" json:"deployment_relationships,omitempty"`
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *SecretRelationship) Reset() {
@@ -396,14 +399,15 @@ func (x *SecretRelationship) GetDeploymentRelationships() []*SecretDeploymentRel
 // Secrets can be used by a deployment.
 // Next Tag: 3
 type SecretDeploymentRelationship struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// Id of the deployment using the secret within a container.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Name of the deployment.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *SecretDeploymentRelationship) Reset() {
@@ -455,14 +459,15 @@ func (x *SecretDeploymentRelationship) GetName() string {
 // Secrets can be mounted in a path in a container.
 // Next Tag: 3
 type SecretContainerRelationship struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	// Id of the container the secret is mounted in.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Path is a container specific mounting directory.
-	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *SecretContainerRelationship) Reset() {
@@ -513,10 +518,10 @@ func (x *SecretContainerRelationship) GetPath() string {
 
 type ImagePullSecret struct {
 	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Registries []*ImagePullSecret_Registry `protobuf:"bytes,1,rep,name=registries,proto3" json:"registries,omitempty"`
+	sizeCache  protoimpl.SizeCache
 }
 
 func (x *ImagePullSecret) Reset() {
@@ -561,17 +566,18 @@ func (x *ImagePullSecret) GetRegistries() []*ImagePullSecret_Registry {
 // Metadata about secret. Additional information is presented for a certificate file and
 // imagePullSecret, but the "file" may also represent some arbitrary value.
 type SecretDataFile struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name string     `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Type SecretType `protobuf:"varint,2,opt,name=type,proto3,enum=storage.SecretType" json:"type,omitempty" search:"Secret Type"` // @gotags: search:"Secret Type"
 	// Types that are assignable to Metadata:
 	//
 	//	*SecretDataFile_Cert
 	//	*SecretDataFile_ImagePullSecret
 	Metadata isSecretDataFile_Metadata `protobuf_oneof:"metadata"`
+	state    protoimpl.MessageState
+
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	Type      SecretType `protobuf:"varint,2,opt,name=type,proto3,enum=storage.SecretType" json:"type,omitempty" search:"Secret Type"` // @gotags: search:"Secret Type"
 }
 
 func (x *SecretDataFile) Reset() {
@@ -658,16 +664,17 @@ func (*SecretDataFile_Cert) isSecretDataFile_Metadata() {}
 func (*SecretDataFile_ImagePullSecret) isSecretDataFile_Metadata() {}
 
 type Cert struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Subject       *CertName              `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
+	Issuer        *CertName              `protobuf:"bytes,2,opt,name=issuer,proto3" json:"issuer,omitempty"`
+	StartDate     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"`
+	EndDate       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty" search:"Cert Expiration"` // @gotags: search:"Cert Expiration"
+	Algorithm     string                 `protobuf:"bytes,6,opt,name=algorithm,proto3" json:"algorithm,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Subject   *CertName              `protobuf:"bytes,1,opt,name=subject,proto3" json:"subject,omitempty"`
-	Issuer    *CertName              `protobuf:"bytes,2,opt,name=issuer,proto3" json:"issuer,omitempty"`
-	Sans      []string               `protobuf:"bytes,3,rep,name=sans,proto3" json:"sans,omitempty"`
-	StartDate *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_date,json=startDate,proto3" json:"start_date,omitempty"`
-	EndDate   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_date,json=endDate,proto3" json:"end_date,omitempty" search:"Cert Expiration"` // @gotags: search:"Cert Expiration"
-	Algorithm string                 `protobuf:"bytes,6,opt,name=algorithm,proto3" json:"algorithm,omitempty"`
+	Sans      []string `protobuf:"bytes,3,rep,name=sans,proto3" json:"sans,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *Cert) Reset() {
@@ -745,19 +752,20 @@ func (x *Cert) GetAlgorithm() string {
 }
 
 type CertName struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
-	CommonName       string   `protobuf:"bytes,1,opt,name=common_name,json=commonName,proto3" json:"common_name,omitempty"`
-	Country          string   `protobuf:"bytes,2,opt,name=country,proto3" json:"country,omitempty"`
-	Organization     string   `protobuf:"bytes,3,opt,name=organization,proto3" json:"organization,omitempty"`
-	OrganizationUnit string   `protobuf:"bytes,4,opt,name=organization_unit,json=organizationUnit,proto3" json:"organization_unit,omitempty"`
-	Locality         string   `protobuf:"bytes,5,opt,name=locality,proto3" json:"locality,omitempty"`
-	Province         string   `protobuf:"bytes,6,opt,name=province,proto3" json:"province,omitempty"`
-	StreetAddress    string   `protobuf:"bytes,7,opt,name=street_address,json=streetAddress,proto3" json:"street_address,omitempty"`
-	PostalCode       string   `protobuf:"bytes,8,opt,name=postal_code,json=postalCode,proto3" json:"postal_code,omitempty"`
-	Names            []string `protobuf:"bytes,9,rep,name=names,proto3" json:"names,omitempty"`
+	CommonName       string `protobuf:"bytes,1,opt,name=common_name,json=commonName,proto3" json:"common_name,omitempty"`
+	Country          string `protobuf:"bytes,2,opt,name=country,proto3" json:"country,omitempty"`
+	Organization     string `protobuf:"bytes,3,opt,name=organization,proto3" json:"organization,omitempty"`
+	OrganizationUnit string `protobuf:"bytes,4,opt,name=organization_unit,json=organizationUnit,proto3" json:"organization_unit,omitempty"`
+	Locality         string `protobuf:"bytes,5,opt,name=locality,proto3" json:"locality,omitempty"`
+	Province         string `protobuf:"bytes,6,opt,name=province,proto3" json:"province,omitempty"`
+	StreetAddress    string `protobuf:"bytes,7,opt,name=street_address,json=streetAddress,proto3" json:"street_address,omitempty"`
+	PostalCode       string `protobuf:"bytes,8,opt,name=postal_code,json=postalCode,proto3" json:"postal_code,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+
+	Names     []string `protobuf:"bytes,9,rep,name=names,proto3" json:"names,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *CertName) Reset() {
@@ -856,12 +864,13 @@ func (x *CertName) GetNames() []string {
 }
 
 type ImagePullSecret_Registry struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Image Pull Secret Registry,store"` // @gotags: search:"Image Pull Secret Registry,store"
+	Username      string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	Name     string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty" search:"Image Pull Secret Registry,store"` // @gotags: search:"Image Pull Secret Registry,store"
-	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *ImagePullSecret_Registry) Reset() {

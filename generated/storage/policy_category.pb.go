@@ -21,13 +21,14 @@ const (
 )
 
 type PolicyCategory struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                               // @gotags: sql:"pk"
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Policy Category,store,hidden" sql:"unique"` // @gotags: search:"Policy Category,store,hidden" sql:"unique"
 	unknownFields protoimpl.UnknownFields
 
-	Id        string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name      string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Policy Category,store,hidden" sql:"unique"` // @gotags: search:"Policy Category,store,hidden" sql:"unique"
-	IsDefault bool   `protobuf:"varint,3,opt,name=isDefault,proto3" json:"isDefault,omitempty"`
+	sizeCache protoimpl.SizeCache
+	IsDefault bool `protobuf:"varint,3,opt,name=isDefault,proto3" json:"isDefault,omitempty"`
 }
 
 func (x *PolicyCategory) Reset() {

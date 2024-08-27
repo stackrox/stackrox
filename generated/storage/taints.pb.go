@@ -122,12 +122,13 @@ func (Toleration_Operator) EnumDescriptor() ([]byte, []int) {
 }
 
 type Taint struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Key           string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" search:"Taint Key"`       // @gotags: search:"Taint Key"
+	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty" search:"Taint Value"` // @gotags: search:"Taint Value"
 	unknownFields protoimpl.UnknownFields
 
-	Key         string      `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" search:"Taint Key"`                                                              // @gotags: search:"Taint Key"
-	Value       string      `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty" search:"Taint Value"`                                                          // @gotags: search:"Taint Value"
+	sizeCache   protoimpl.SizeCache
 	TaintEffect TaintEffect `protobuf:"varint,3,opt,name=taint_effect,json=taintEffect,proto3,enum=storage.TaintEffect" json:"taint_effect,omitempty" search:"Taint Effect"` // @gotags: search:"Taint Effect"
 }
 
@@ -185,13 +186,14 @@ func (x *Taint) GetTaintEffect() TaintEffect {
 }
 
 type Toleration struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Key           string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" search:"Toleration Key"`       // @gotags: search:"Toleration Key"
+	Value         string `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty" search:"Toleration Value"` // @gotags: search:"Toleration Value"
 	unknownFields protoimpl.UnknownFields
 
-	Key         string              `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty" search:"Toleration Key"` // @gotags: search:"Toleration Key"
+	sizeCache   protoimpl.SizeCache
 	Operator    Toleration_Operator `protobuf:"varint,2,opt,name=operator,proto3,enum=storage.Toleration_Operator" json:"operator,omitempty"`
-	Value       string              `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty" search:"Toleration Value"` // @gotags: search:"Toleration Value"
 	TaintEffect TaintEffect         `protobuf:"varint,4,opt,name=taint_effect,json=taintEffect,proto3,enum=storage.TaintEffect" json:"taint_effect,omitempty"`
 }
 

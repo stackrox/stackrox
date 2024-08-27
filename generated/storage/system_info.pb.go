@@ -22,13 +22,14 @@ const (
 )
 
 type BackupInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
+	state protoimpl.MessageState
 
 	BackupLastRunAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=backup_last_run_at,json=backupLastRunAt,proto3" json:"backup_last_run_at,omitempty"`
-	Status          OperationStatus        `protobuf:"varint,2,opt,name=status,proto3,enum=storage.OperationStatus" json:"status,omitempty"`
 	Requestor       *SlimUser              `protobuf:"bytes,3,opt,name=requestor,proto3" json:"requestor,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	unknownFields   protoimpl.UnknownFields
+
+	sizeCache protoimpl.SizeCache
+	Status    OperationStatus `protobuf:"varint,2,opt,name=status,proto3,enum=storage.OperationStatus" json:"status,omitempty"`
 }
 
 func (x *BackupInfo) Reset() {
@@ -85,11 +86,12 @@ func (x *BackupInfo) GetRequestor() *SlimUser {
 }
 
 type SystemInfo struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	BackupInfo    *BackupInfo `protobuf:"bytes,1,opt,name=backup_info,json=backupInfo,proto3" json:"backup_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 
-	BackupInfo *BackupInfo `protobuf:"bytes,1,opt,name=backup_info,json=backupInfo,proto3" json:"backup_info,omitempty"`
+	sizeCache protoimpl.SizeCache
 }
 
 func (x *SystemInfo) Reset() {

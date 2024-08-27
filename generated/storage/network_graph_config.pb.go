@@ -21,12 +21,13 @@ const (
 )
 
 type NetworkGraphConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState
+
+	Id            string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
 	unknownFields protoimpl.UnknownFields
 
-	Id                      string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
-	HideDefaultExternalSrcs bool   `protobuf:"varint,1,opt,name=hide_default_external_srcs,json=hideDefaultExternalSrcs,proto3" json:"hide_default_external_srcs,omitempty"`
+	sizeCache               protoimpl.SizeCache
+	HideDefaultExternalSrcs bool `protobuf:"varint,1,opt,name=hide_default_external_srcs,json=hideDefaultExternalSrcs,proto3" json:"hide_default_external_srcs,omitempty"`
 }
 
 func (x *NetworkGraphConfig) Reset() {
