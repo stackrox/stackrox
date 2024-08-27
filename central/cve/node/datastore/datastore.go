@@ -29,6 +29,9 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.NodeCVE, error)
 
+	UpsertMany(ctx context.Context, cves []*storage.NodeCVE) error
+	PruneNodeCVEs(ctx context.Context, ids []string) error
+
 	// Suppress suppresses node vulnerabilities with provided cve names (not ids) for the duration provided.
 	Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error
 	// Unsuppress unsuppresses node vulnerabilities with provided cve names (not ids).

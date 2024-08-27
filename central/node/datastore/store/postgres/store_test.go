@@ -171,7 +171,7 @@ func (s *NodesStoreSuite) TestStore_OrphanedCVEs() {
 	}
 
 	// Remove all node Vulnerabilities
-	node = foundNode.CloneVT()
+	node = foundNode.Clone()
 	node.GetScan().GetComponents()[0].Vulnerabilities = nil
 	iTime := time.Now()
 	node.Scan.ScanTime = protocompat.ConvertTimeToTimestampOrNil(&iTime)
