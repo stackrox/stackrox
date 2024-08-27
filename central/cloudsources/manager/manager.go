@@ -24,7 +24,7 @@ import (
 
 const (
 	discoveredClustersLoopInterval = 10 * time.Minute
-	clientCreationTimeout = 30 * time.Second
+	clientCreationTimeout          = 30 * time.Second
 )
 
 var (
