@@ -14,19 +14,11 @@ import IntegrationFormActions from '../../IntegrationFormActions';
 import useIntegrationForm from '../../useIntegrationForm';
 import { IntegrationFormProps } from '../../integrationFormTypes';
 
-function testTokenValue(value, context: yup.TestContext): boolean {
-    const requireSecretField =
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        !!context?.from[2]?.value?.updateCredentials;
-    const clientIdEntered =
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        !!context?.from[2]?.value?.cloudSource?.credentials?.clientId?.trim();
+function testTokenValue(value: string | undefined, context: yup.TestContext): boolean {
+    const requireSecretField = !!context?.from?.[2]?.value?.updateCredentials;
+    const clientIdEntered = !!context?.from?.[2]?.value?.cloudSource?.credentials?.clientId?.trim();
     const clientSecretEntered =
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        !!context?.from[2]?.value?.cloudSource?.credentials?.clientSecret?.trim();
+        !!context?.from?.[2]?.value?.cloudSource?.credentials?.clientSecret?.trim();
 
     if (!requireSecretField || clientIdEntered || clientSecretEntered) {
         return true;
@@ -34,15 +26,9 @@ function testTokenValue(value, context: yup.TestContext): boolean {
     return !!value?.trim();
 }
 
-function testClientValue(value, context: yup.TestContext): boolean {
-    const requireSecretField =
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        !!context?.from[2]?.value?.updateCredentials;
-    const tokenEntered =
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        !!context?.from[2]?.value?.cloudSource?.credentials?.secret?.trim();
+function testClientValue(value: string | undefined, context: yup.TestContext): boolean {
+    const requireSecretField = !!context?.from?.[2]?.value?.updateCredentials;
+    const tokenEntered = !!context?.from?.[2]?.value?.cloudSource?.credentials?.secret?.trim();
 
     if (!requireSecretField || tokenEntered) {
         return true;
