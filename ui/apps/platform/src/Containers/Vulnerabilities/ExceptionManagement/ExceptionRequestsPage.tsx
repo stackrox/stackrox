@@ -60,7 +60,7 @@ function ExceptionRequestsPage() {
         history.push(url);
     };
 
-    /* eslint-disable accessibility/Tab-empty-contentId-prop */
+    /* eslint-disable accessibility/Tab-empty-contentId */
     // ROX-25890 after React Router upgrade:
     // Add tabContentId prop to Tab elements.
     // Add TabContent elements with id props in routes.
