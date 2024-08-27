@@ -1,6 +1,14 @@
 import React, { ReactElement } from 'react';
 import * as yup from 'yup';
-import { Button, Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
+import {
+    Button,
+    Checkbox,
+    Flex,
+    FlexItem,
+    Form,
+    PageSection,
+    TextInput,
+} from '@patternfly/react-core';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
@@ -150,11 +158,13 @@ function OcmIntegrationForm({
                             <IntegrationHelpIcon
                                 helpTitle="OpenShift Cluster Manager endpoint"
                                 helpText={
-                                    <div>
-                                        The API endpoint under which OpenShift Cluster Manager is
-                                        available. Most users will not need to change the preset
-                                        value.
-                                    </div>
+                                    <Flex direction={{ default: 'column' }}>
+                                        <FlexItem>
+                                            The API endpoint under which OpenShift Cluster Manager
+                                            is available. Most users will not need to change the
+                                            preset value.
+                                        </FlexItem>
+                                    </Flex>
                                 }
                                 ariaLabel="Help for endpoint"
                             />
@@ -197,37 +207,41 @@ function OcmIntegrationForm({
                             <IntegrationHelpIcon
                                 helpTitle="Service account client ID"
                                 helpText={
-                                    <div>
-                                        Client identifier for a{' '}
-                                        <Button variant="link" isInline>
-                                            <a
+                                    <Flex direction={{ default: 'column' }}>
+                                        <FlexItem>
+                                            Client identifier for a{' '}
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                component="a"
                                                 href="https://console.redhat.com/iam/service-accounts"
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >
                                                 Red Hat service account
-                                            </a>
-                                        </Button>
-                                        . The service account must belong to a group with the{' '}
-                                        <strong>Subscription Viewer</strong> role. See{' '}
-                                        <Button variant="link" isInline>
-                                            <a
+                                            </Button>
+                                            . The service account must belong to a group with the{' '}
+                                            <strong>Subscription Viewer</strong> role. See{' '}
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                component="a"
                                                 href="https://docs.redhat.com/en/documentation/openshift_cluster_manager/1-latest/html-single/managing_clusters/index#assembly-user-management-ocm"
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >
                                                 Configuring access to clusters in OpenShift Cluster
                                                 Manager
-                                            </a>
-                                        </Button>{' '}
-                                        for more information.
-                                        <br />
-                                        <br />
-                                        <em>
-                                            Service accounts are the preferred authentication method
-                                            over the deprecated API token.
-                                        </em>
-                                    </div>
+                                            </Button>{' '}
+                                            for more information.
+                                        </FlexItem>
+                                        <FlexItem>
+                                            <em>
+                                                Service accounts are the preferred authentication
+                                                method over the deprecated API token.
+                                            </em>
+                                        </FlexItem>
+                                    </Flex>
                                 }
                                 ariaLabel="Help for client ID"
                             />
@@ -260,37 +274,41 @@ function OcmIntegrationForm({
                             <IntegrationHelpIcon
                                 helpTitle="Service account client secret"
                                 helpText={
-                                    <div>
-                                        Client secret for a{' '}
-                                        <Button variant="link" isInline>
-                                            <a
+                                    <Flex direction={{ default: 'column' }}>
+                                        <FlexItem>
+                                            Client secret for a{' '}
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                component="a"
                                                 href="https://console.redhat.com/iam/service-accounts"
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >
                                                 Red Hat service account
-                                            </a>
-                                        </Button>
-                                        . The service account must belong to a group with the{' '}
-                                        <strong>Subscription Viewer</strong> role. See{' '}
-                                        <Button variant="link" isInline>
-                                            <a
+                                            </Button>
+                                            . The service account must belong to a group with the{' '}
+                                            <strong>Subscription Viewer</strong> role. See{' '}
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                component="a"
                                                 href="https://docs.redhat.com/en/documentation/openshift_cluster_manager/1-latest/html-single/managing_clusters/index#assembly-user-management-ocm"
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >
                                                 Configuring access to clusters in OpenShift Cluster
                                                 Manager
-                                            </a>
-                                        </Button>{' '}
-                                        for more information.
-                                        <br />
-                                        <br />
-                                        <em>
-                                            Service accounts are the preferred authentication method
-                                            over the deprecated API token.
-                                        </em>
-                                    </div>
+                                            </Button>{' '}
+                                            for more information.
+                                        </FlexItem>
+                                        <FlexItem>
+                                            <em>
+                                                Service accounts are the preferred authentication
+                                                method over the deprecated API token.
+                                            </em>
+                                        </FlexItem>
+                                    </Flex>
                                 }
                                 ariaLabel="Help for client secret"
                             />
@@ -323,24 +341,27 @@ function OcmIntegrationForm({
                             <IntegrationHelpIcon
                                 helpTitle="API token"
                                 helpText={
-                                    <div>
-                                        <Button variant="link" isInline>
-                                            <a
+                                    <Flex direction={{ default: 'column' }}>
+                                        <FlexItem>
+                                            <Button
+                                                variant="link"
+                                                isInline
+                                                component="a"
                                                 href="https://console.redhat.com/openshift/token"
                                                 target="_blank"
                                                 rel="noreferrer"
                                             >
                                                 OpenShift Cluster Manager offline token
-                                            </a>
-                                        </Button>
-                                        .
-                                        <br />
-                                        <br />
-                                        <em>
-                                            Service accounts are the preferred authentication method
-                                            over the deprecated API token.
-                                        </em>
-                                    </div>
+                                            </Button>
+                                            .
+                                        </FlexItem>
+                                        <FlexItem>
+                                            <em>
+                                                Service accounts are the preferred authentication
+                                                method over the deprecated API token.
+                                            </em>
+                                        </FlexItem>
+                                    </Flex>
                                 }
                                 ariaLabel="Help for API token"
                             />
