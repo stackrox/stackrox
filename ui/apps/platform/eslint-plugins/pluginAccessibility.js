@@ -36,7 +36,7 @@ const rules = {
             };
         },
     },
-    'CardHeader-onExpand-toggleButtonProps-prop': {
+    'CardHeader-onExpand-toggleButtonProps': {
         // Require prop for aria-label attribute to prevent axe DevTools issue:
         // Buttons must have discernable text
         // https://dequeuniversity.com/rules/axe/4.10/button-name
