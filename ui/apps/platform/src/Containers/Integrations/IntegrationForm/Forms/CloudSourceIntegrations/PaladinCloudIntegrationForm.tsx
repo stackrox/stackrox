@@ -68,7 +68,7 @@ function PaladinCloudIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<CloudSourceIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
         formInitialValues.cloudSource = merge({}, formInitialValues.cloudSource, initialValues);
         formInitialValues.cloudSource.credentials.secret = '';
