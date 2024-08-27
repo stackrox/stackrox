@@ -92,7 +92,7 @@ function PolicyScopeForm() {
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsNone' }}>
             <FlexItem flex={{ default: 'flex_1' }} className="pf-v5-u-p-lg">
-                <Title headingLevel="h2">Policy scope</Title>
+                <Title headingLevel="h2">Scope</Title>
                 <div className="pf-v5-u-mt-sm">
                     Create scopes to restrict or exclude your policy from entities within your
                     environment.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # publish.sh
-# Publishes roxctl artifacts from a local directory to a GCS bucket directory.
+# Publishes artifacts from a local directory to a GCS bucket directory.
 
 set -euxo pipefail
 
