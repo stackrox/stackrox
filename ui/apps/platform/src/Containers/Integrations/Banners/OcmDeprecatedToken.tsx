@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Alert, PageSection } from '@patternfly/react-core';
+import { Alert } from '@patternfly/react-core';
 import { useSelector } from 'react-redux';
 
 import { selectors } from 'reducers';
@@ -20,18 +20,17 @@ function OcmDeprecatedTokenBanner(): ReactElement | null {
         return null;
     }
     return (
-        <PageSection variant="light">
-            <Alert
-                variant="warning"
-                component="p"
-                title="Deprecated cloud source configuration found"
-            >
-                <p>
-                    A OpenShift Cluster Manager integration has been configured with the deprecated
-                    API token option. Use service account authentication instead.
-                </p>
-            </Alert>
-        </PageSection>
+        <Alert
+            isInline
+            variant="warning"
+            component="p"
+            title="Deprecated cloud source configuration found"
+        >
+            <p>
+                An OpenShift Cluster Manager integration has been configured with the deprecated API
+                token option. Use service account authentication instead.
+            </p>
+        </Alert>
     );
 }
 

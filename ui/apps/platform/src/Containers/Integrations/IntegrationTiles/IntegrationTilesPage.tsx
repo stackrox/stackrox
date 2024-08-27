@@ -19,12 +19,12 @@ function IntegrationTilesPage(): ReactElement {
 
     return (
         <>
-            {/*TODO(ROX-25633): Remove the banner again.*/}
-            <OcmDeprecatedTokenBanner />
             <PageSection variant="light" component="div">
                 <Title headingLevel="h1">Integrations</Title>
             </PageSection>
             <PageSection component="div">
+                {/*TODO(ROX-25633): Remove the banner again.*/}
+                <OcmDeprecatedTokenBanner />
                 <ImageIntegrationsSection />
                 <SignatureIntegrationsSection />
                 <NotifierIntegrationsSection />
