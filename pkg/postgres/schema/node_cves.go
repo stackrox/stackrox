@@ -62,5 +62,7 @@ type NodeCves struct {
 	ImpactScore            float32                       `gorm:"column:impactscore;type:numeric"`
 	Snoozed                bool                          `gorm:"column:snoozed;type:bool"`
 	SnoozeExpiry           *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
+	Orphaned               bool                          `gorm:"column:orphaned;type:bool"`
+	OrphanedTime           *time.Time                    `gorm:"column:orphanedtime;type:timestamp"`
 	Serialized             []byte                        `gorm:"column:serialized;type:bytea"`
 }
