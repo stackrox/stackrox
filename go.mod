@@ -80,8 +80,8 @@ require (
 	github.com/mailru/easyjson v0.7.7
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0
-	github.com/np-guard/netpol-analyzer v1.2.0
+	github.com/np-guard/cluster-topology-analyzer/v2 v2.2.1
+	github.com/np-guard/netpol-analyzer v1.1.0
 	github.com/nxadm/tail v1.4.11
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.20.0
@@ -381,7 +381,6 @@ require (
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 // indirect
-	github.com/np-guard/models v0.3.4 // indirect
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/runtime-spec v1.2.0 // indirect
