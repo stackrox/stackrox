@@ -330,14 +330,13 @@ function AuthProviderForm({
                             ) : (
                                 <ToolbarGroup variant="button-group">
                                     <ToolbarItem>
-                                        <Button variant="link" size="sm">
-                                            <Link
-                                                to="/main/access-control/auth-providers"
-                                                aria-current="page"
-                                            >
-                                                Return to auth providers list
-                                            </Link>
-                                        </Button>
+                                        <Link
+                                            to="/main/access-control/auth-providers"
+                                            aria-current="page"
+                                            className="pf-v5-u-font-size-sm"
+                                        >
+                                            Return to auth providers list
+                                        </Link>
                                     </ToolbarItem>
                                     {testModeSupported(selectedAuthProvider) &&
                                         selectedAuthProvider.id && (

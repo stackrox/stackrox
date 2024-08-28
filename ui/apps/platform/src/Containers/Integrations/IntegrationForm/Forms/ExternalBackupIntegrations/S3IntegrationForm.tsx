@@ -1,6 +1,6 @@
 /* eslint-disable no-void */
 import React, { ReactElement } from 'react';
-import { Button, Checkbox, Form, FormSelect, PageSection, TextInput } from '@patternfly/react-core';
+import { Checkbox, Form, FormSelect, PageSection, Text, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
@@ -10,6 +10,7 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 import useIntegrationForm from '../../useIntegrationForm';
 import { IntegrationFormProps } from '../../integrationFormTypes';
@@ -315,22 +316,26 @@ function S3IntegrationForm({
                             <IntegrationHelpIcon
                                 helpTitle="AWS S3 endpoint"
                                 helpText={
-                                    <div>
-                                        Modifies the endpoint under which S3 is reached. Note that
-                                        when using a non-AWS service provider, it is recommended to
-                                        create an <em>S3 API Compatible</em> integration instead.
-                                        See the{' '}
-                                        <Button variant="link" isInline>
-                                            <a
-                                                href="https://docs.aws.amazon.com/general/latest/gr/s3.html"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                AWS S3 documentation
-                                            </a>
-                                        </Button>{' '}
-                                        for more information.
-                                    </div>
+                                    <>
+                                        <Text>
+                                            Modifies the endpoint under which S3 is reached. Note
+                                            that when using a non-AWS service provider, it is
+                                            recommended to create an <em>S3 API Compatible</em>{' '}
+                                            integration instead.
+                                        </Text>
+                                        <Text>
+                                            For more information, see{' '}
+                                            <ExternalLink>
+                                                <a
+                                                    href="https://docs.aws.amazon.com/general/latest/gr/s3.html"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    AWS S3 documentation
+                                                </a>
+                                            </ExternalLink>
+                                        </Text>
+                                    </>
                                 }
                                 ariaLabel="Help for AWS S3 endpoint"
                             />
@@ -356,19 +361,21 @@ function S3IntegrationForm({
                             <IntegrationHelpIcon
                                 helpTitle="AWS S3 region"
                                 helpText={
-                                    <div>
-                                        Specifies the AWS region. See the{' '}
-                                        <Button variant="link" isInline>
-                                            <a
-                                                href="https://docs.aws.amazon.com/general/latest/gr/s3.html"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                AWS S3 documentation
-                                            </a>
-                                        </Button>{' '}
-                                        for a complete list of AWS regions.
-                                    </div>
+                                    <>
+                                        <Text>Specifies the AWS region.</Text>
+                                        <Text>
+                                            For a complete list of AWS regions, see{' '}
+                                            <ExternalLink>
+                                                <a
+                                                    href="https://docs.aws.amazon.com/general/latest/gr/s3.html"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    AWS S3 documentation
+                                                </a>
+                                            </ExternalLink>
+                                        </Text>
+                                    </>
                                 }
                                 ariaLabel="Help for AWS S3 region"
                             />
@@ -393,20 +400,24 @@ function S3IntegrationForm({
                             <IntegrationHelpIcon
                                 helpTitle="AWS container IAM role"
                                 helpText={
-                                    <div>
-                                        Enables authentication via short-lived tokens using AWS
-                                        Secure Token Service. See the{' '}
-                                        <Button variant="link" isInline>
-                                            <a
-                                                href="https://docs.openshift.com/acs/integration/integrate-using-short-lived-tokens.html"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                Red Hat ACS documentation
-                                            </a>
-                                        </Button>{' '}
-                                        for more information.
-                                    </div>
+                                    <>
+                                        <Text>
+                                            Enables authentication via short-lived tokens using AWS
+                                            Secure Token Service.
+                                        </Text>
+                                        <Text>
+                                            For more information, see{' '}
+                                            <ExternalLink>
+                                                <a
+                                                    href="https://docs.openshift.com/acs/integration/integrate-using-short-lived-tokens.html"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    RHACS documentation
+                                                </a>
+                                            </ExternalLink>
+                                        </Text>
+                                    </>
                                 }
                                 ariaLabel="Help for short-lived tokens"
                             />
