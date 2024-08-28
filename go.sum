@@ -1138,10 +1138,12 @@ github.com/ncruces/go-strftime v0.1.9/go.mod h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJm
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 h1:Up6+btDp321ZG5/zdSLo48H9Iaq0UQGthrhWC6pCxzE=
 github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481/go.mod h1:yKZQO8QE2bHlgozqWDiRVqTFlLQSj30K/6SAK8EeYFw=
-github.com/np-guard/cluster-topology-analyzer/v2 v2.2.1 h1:DBNUNzpUr5gt/ABZXbGx1pF5nYs21h21SNJnfpUD0BI=
-github.com/np-guard/cluster-topology-analyzer/v2 v2.2.1/go.mod h1:ZU7GPqKzqv+jlnGIRD4hRy7UGYlPN1UqWjovj+UxqM8=
-github.com/np-guard/netpol-analyzer v1.1.0 h1:ggDZpcKVdYkNCuK0AfUhq0BBWhC0fIkpnq3/kxzsG50=
-github.com/np-guard/netpol-analyzer v1.1.0/go.mod h1:vNb2Al8JAM1EyGEc4qVHsiKjEBn3la9Ij3AUdtcxv7g=
+github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0 h1:xCG4o7tO/MloIU5vo8sjXqwF6YuTNPBHmH0dILJcNSo=
+github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0/go.mod h1:Xg979Vq4Z7eZa01X8XYzr8nPBD2tvNcbnF8Fkkeqv+c=
+github.com/np-guard/models v0.3.4 h1:HOhVi6wyGvo+KmYBnQ5Km5HYCF+/PQlDs1v7mL1v05g=
+github.com/np-guard/models v0.3.4/go.mod h1:mqE2Irf8r+7HWh8fII0fWbWyQRMHGEo2SgSLN/6VKs8=
+github.com/np-guard/netpol-analyzer v1.2.0 h1:Hk8cWkOZ6n/rAQRnTZJ9r61aKgRmoYkvW8VZhJgztS0=
+github.com/np-guard/netpol-analyzer v1.2.0/go.mod h1:TkDwB3ToxRSr8xdpa5TTvbya64VfjQ97je99DjVA+k4=
 github.com/nwaples/rardecode v1.1.0 h1:vSxaY8vQhOcVr4mm5e8XllHWTiM4JF507A0Katqw7MQ=
 github.com/nwaples/rardecode v1.1.0/go.mod h1:5DzqNKiOdpKKBH87u8VlvAnPZMXcGRhxWkRpHbbfGS0=
 github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=
