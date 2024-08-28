@@ -309,11 +309,18 @@ func TestLocalScanningSecretDelete(t *testing.T) {
 	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
 	assert.Nil(t, regs)
 	assert.NoError(t, err)
+
+	// Repeat the remove action to ensure no breakage when there is nothing to delete.
+	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_REMOVE_RESOURCE)
+	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
+	assert.Nil(t, regs)
+	assert.NoError(t, err)
 }
 
 // TestSAAnnotationImageIntegrationEvents tests that image integration events
 // are not generated for secrets that contain a service account annotation
 func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
+	defaultSA := "default"
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
 	d := newSecretDispatcher(regStore)
 

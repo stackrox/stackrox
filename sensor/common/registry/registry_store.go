@@ -142,8 +142,8 @@ func (rs *Store) cleanupRegistries() {
 	rs.storeMutux.Lock()
 	defer rs.storeMutux.Unlock()
 
-	rs.storeByHost = make(map[string]registries.Set)
-	rs.storeByName = make(namespaceToSecretName)
+	clear(rs.storeByHost)
+	clear(rs.storeByName)
 }
 
 func (rs *Store) cleanupClusterLocalRegistryHosts() {
@@ -214,14 +214,13 @@ func genIntegrationName(prefix, namespace, secretName, registry string) string {
 
 // upsertRegistry upserts the given registry with the given credentials in the given namespace into the store.
 func (rs *Store) upsertRegistry(namespace, registry string, dce config.DockerConfigEntry) error {
-	var err error
 	regs := rs.getRegistries(namespace)
 
 	// remove http/https prefixes from registry, matching may fail otherwise, the created registry.url will have
 	// the appropriate prefix
 	registry = urlfmt.TrimHTTPPrefixes(registry)
 	name := genIntegrationName(pullSecretNamePrefix, namespace, "", registry)
-	err = regs.UpdateImageIntegration(createImageIntegration(registry, dce, name))
+	err := regs.UpdateImageIntegration(createImageIntegration(registry, dce, name))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
@@ -447,6 +446,7 @@ func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig c
 
 func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig config.DockerConfig, serviceAcctName string) {
 	isGlobalPullSecret := namespace == openshiftConfigNamespace && secretName == openshiftConfigPullSecret
+	hasBoundServiceAccount := serviceAcctName != ""
 
 	// To avoid partial upserts - hold the lock until the entire secret upserted.
 	rs.storeMutux.Lock()
@@ -455,7 +455,7 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 	for registryAddress, dce := range dockerConfig {
 		registryAddr := strings.TrimSpace(registryAddress)
 
-		if serviceAcctName != "" {
+		if hasBoundServiceAccount {
 			// We assume that registries found in dockercfg secrets managed by OCP only
 			// reference hostnames for the OCP internal registry.
 			rs.upsertPullSecretByNameNoLock(namespace, secretName, registryAddr, dce)

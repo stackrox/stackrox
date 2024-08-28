@@ -29,10 +29,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-const (
-	defaultSA = "default"
-)
-
 var (
 	saAnnotations = []string{
 		"kubernetes.io/service-account.name",
@@ -276,8 +272,10 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 			Username: dce.Username,
 		})
 
-		// only send integrations to central that do not have the k8s SA annotation
-		// this will ignore secrets associated with OCP default, builder, deployer, etc. service accounts
+		// Only send integrations to Central that are not bound to a service account and managed by k8s.
+		// This will ignore the secrets generated for the OCP default, builder, deployer, etc. service accounts.
+		// These pull secrets are used only for accessing the OCP internal registry, which is only accessible
+		// from within the Secured Cluster. Central will be unable to use these credentials.
 		if saName != "" {
 			continue
 		}
@@ -362,8 +360,8 @@ func (s *secretDispatcher) processSecretForLocalScanning(secret *v1.Secret, acti
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		if s.regStore.DeleteSecret(secret.GetNamespace(), secret.GetName()) {
 			log.Debugf("Deleted secret %q from %q namespace in registry store", secret.GetName(), secret.GetNamespace())
-			return
 		}
+		return
 	}
 
 	s.regStore.UpsertSecret(secret.GetNamespace(), secret.GetName(), dockerConfig, saName)
