@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	fakeClusterID   = "FAKECLUSTERID"
 	mainImage       = "docker.io/stackrox/rox:latest"
 	centralEndpoint = "central.stackrox:443"
 )

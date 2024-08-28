@@ -27,14 +27,10 @@ import (
 )
 
 const (
-	fakeClusterID      = "fakeClusterId"
-	fakeClusterName    = "fakeClusterName"
-	fakeNamespaceID    = "fakeNamespaceId"
-	fakeNamespaceName  = "fakeNamespaceName"
-	fakeDeploymentID   = "fakeDeploymentID"
-	fakeDeploymentName = "fakeDeploymentName"
-	fakeSecretID       = "fakeSecretID"
-	fakeSecretName     = "fakeSecret"
+	fakeClusterID     = "fakeClusterId"
+	fakeClusterName   = "fakeClusterName"
+	fakeNamespaceID   = "fakeNamespaceId"
+	fakeNamespaceName = "fakeNamespaceName"
 )
 
 var (

@@ -27,11 +27,6 @@ var (
 	}()
 )
 
-const (
-	// ComplianceIntegrationsTableName specifies the name of the table in postgres.
-	ComplianceIntegrationsTableName = "compliance_integrations"
-)
-
 // ComplianceIntegrations holds the Gorm model for Postgres table `compliance_integrations`.
 type ComplianceIntegrations struct {
 	ID                string           `gorm:"column:id;type:uuid;primaryKey"`

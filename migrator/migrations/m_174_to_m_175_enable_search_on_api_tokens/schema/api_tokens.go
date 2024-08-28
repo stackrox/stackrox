@@ -26,11 +26,6 @@ var (
 	}()
 )
 
-const (
-	// APITokensTableName is the name of the table used for storage.
-	APITokensTableName = "api_tokens"
-)
-
 // APITokens holds the Gorm model for Postgres table `api_tokens`.
 type APITokens struct {
 	ID         string     `gorm:"column:id;type:varchar;primaryKey"`

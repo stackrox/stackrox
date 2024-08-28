@@ -10,9 +10,6 @@ const (
 	FakeAlertID     = fixtureconsts.AlertFake
 	FakeClusterName = "fakeCluster"
 	FakePolicyID    = fixtureconsts.PolicyFake
-	FakeTag1        = "FakeTag1"
-	FakeTag2        = "FakeTag2"
-	FakeTag3        = "FakeTag3"
 )
 
 // NewFakeListAlert constructs and returns a new V1.ListAlert object suitable for unit-testing.

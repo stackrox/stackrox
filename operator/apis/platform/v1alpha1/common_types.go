@@ -72,22 +72,14 @@ type ConditionReason string
 
 // These are the allowed values for StackRoxCondition fields.
 const (
-	ConditionInitialized    ConditionType = "Initialized"
-	ConditionDeployed       ConditionType = "Deployed"
-	ConditionReleaseFailed  ConditionType = "ReleaseFailed"
-	ConditionIrreconcilable ConditionType = "Irreconcilable"
+	ConditionDeployed      ConditionType = "Deployed"
+	ConditionReleaseFailed ConditionType = "ReleaseFailed"
 
-	StatusTrue    ConditionStatus = "True"
-	StatusFalse   ConditionStatus = "False"
-	StatusUnknown ConditionStatus = "Unknown"
+	StatusTrue  ConditionStatus = "True"
+	StatusFalse ConditionStatus = "False"
 
-	ReasonInstallSuccessful   ConditionReason = "InstallSuccessful"
-	ReasonUpgradeSuccessful   ConditionReason = "UpgradeSuccessful"
-	ReasonUninstallSuccessful ConditionReason = "UninstallSuccessful"
-	ReasonInstallError        ConditionReason = "InstallError"
-	ReasonUpgradeError        ConditionReason = "UpgradeError"
-	ReasonReconcileError      ConditionReason = "ReconcileError"
-	ReasonUninstallError      ConditionReason = "UninstallError"
+	ReasonInstallError   ConditionReason = "InstallError"
+	ReasonReconcileError ConditionReason = "ReconcileError"
 )
 
 // StackRoxRelease describes the Helm "release" that was most recently applied.

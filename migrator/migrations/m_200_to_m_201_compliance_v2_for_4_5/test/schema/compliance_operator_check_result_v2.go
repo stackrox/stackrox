@@ -26,11 +26,6 @@ var (
 	}()
 )
 
-const (
-	// ComplianceOperatorCheckResultV2TableName specifies the name of the table in postgres.
-	ComplianceOperatorCheckResultV2TableName = "compliance_operator_check_result_v2"
-)
-
 // ComplianceOperatorCheckResultV2 holds the Gorm model for Postgres table `compliance_operator_check_result_v2`.
 type ComplianceOperatorCheckResultV2 struct {
 	ID             string                                              `gorm:"column:id;type:varchar;primaryKey"`
