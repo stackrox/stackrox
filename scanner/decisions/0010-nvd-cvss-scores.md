@@ -123,7 +123,7 @@ However, this field will be deprecated because the repeated CVSS cvss_metrics fi
 **JSON example**:
 
 
-```sh
+```json
 "9216828": {
 	"id": "9216828",
 	"name": "CVE-2023-48231",
@@ -139,26 +139,27 @@ However, this field will be deprecated because the repeated CVSS cvss_metrics fi
 		"v3": {
 			"base_score": 4.3,
 			"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
-			},
-		"url":"https://access.redhat.com/security/cve/CVE-2023-48231"
 		},
-	"cvss_metrics": [{
-		"source": "SOURCE_RED_HAT",
-		"v3": {
-			"base_score": 4.3,
-			"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
+		"url": "https://access.redhat.com/security/cve/CVE-2023-48231"
+	},
+	"cvss_metrics": [
+		{
+			"source": "SOURCE_RED_HAT",
+			"v3": {
+				"base_score": 4.3,
+				"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
 			},
-		"url":"https://access.redhat.com/security/cve/CVE-2023-48231"
-		},{
-		"source": "SOURCE_NVD",
-		"v3": {
-			"base_score": 4.3,
-			"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
+			"url": "https://access.redhat.com/security/cve/CVE-2023-48231"
+		}, {
+			"source": "SOURCE_NVD",
+			"v3": {
+				"base_score": 4.3,
+				"vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
 			},
-		"url":"https://nvd.nist.gov/vuln/detail/CVE-2023-48231"
-		}]
+			"url": "https://nvd.nist.gov/vuln/detail/CVE-2023-48231"
+		}
+	]
 }
-```
 ### Handling RHSA/RHBA/RHEA
 
 Without loss of generality, RHSA/RHBA/RHEA will just be referred to as the more well-known RHSA variant of the three.
