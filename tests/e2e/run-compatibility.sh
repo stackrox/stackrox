@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-# Runs all e2e tests. Derived from the workload of CircleCI gke-api-nongroovy-tests.
+# Runs all e2e go tests marked as compatibility.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
@@ -52,7 +52,7 @@ _test_compatibility() {
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
     export ROX_NETPOL_FIELDS=true
 
-    test_preamble central_version
+    test_preamble
     setup_deployment_env false false
     remove_existing_stackrox_resources
     setup_default_TLS_certs
@@ -83,9 +83,6 @@ _test_compatibility() {
 
 test_preamble() {
     require_executable "roxctl"
-
-    MAIN_TAG={$1}
-    export MAIN_TAG
 
     export ROX_PLAINTEXT_ENDPOINTS="8080,grpc@8081"
     export ROXDEPLOY_CONFIG_FILE_MAP="$ROOT/scripts/ci/endpoints/endpoints.yaml"
