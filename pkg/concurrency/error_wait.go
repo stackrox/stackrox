@@ -6,19 +6,6 @@ import (
 
 //lint:file-ignore ST1008 We do want to return errors as the first value here.
 
-// CheckError returns true as the second return value if the given ErrorWaitable was in the triggered state, along with
-// the respective error (which might be nil). If the ErrorWaitable was not triggered, `nil, false` is returned.
-// CAVEAT: This function is not safe to be used if concurrent goroutines might reset the underlying waitable. When using
-// this function with an `ErrorSignal` and this might happen, obtain a snapshot beforehand.
-func CheckError(ew ErrorWaitable) (Error, bool) {
-	select {
-	case <-ew.Done():
-		return ew.Err(), true
-	default:
-		return nil, false
-	}
-}
-
 // WaitForError unconditionally waits until the given error waitable is triggered, and returns its error, if any.
 func WaitForError(ew ErrorWaitable) Error {
 	<-ew.Done()
