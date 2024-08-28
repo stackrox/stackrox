@@ -8,19 +8,6 @@ import (
 	types "github.com/stackrox/rox/pkg/protocompat"
 )
 
-type checkResultKey struct {
-	scanConfigName string
-	scanConfigID   string
-	profileName    string
-	checkName      string
-}
-
-type scanResultKey struct {
-	scanConfigName string
-	scanConfigID   string
-	profileName    string
-}
-
 // ComplianceV2CheckResult converts a storage check result to a v2 check result
 func ComplianceV2CheckResult(incoming *storage.ComplianceOperatorCheckResultV2, lastScanTime *types.Timestamp, ruleName string, controlResults []*compRule.ControlResult) *v2.ComplianceClusterCheckStatus {
 	converted := &v2.ComplianceClusterCheckStatus{

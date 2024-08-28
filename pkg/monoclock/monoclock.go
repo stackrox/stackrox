@@ -2,10 +2,6 @@ package monoclock
 
 import "time"
 
-var (
-	instance = New().(monoClock)
-)
-
 // MonoClock is a monotonic clock, that only allows for retrieving the duration since some unspecified epoch.
 type MonoClock interface {
 	SinceEpoch() time.Duration
