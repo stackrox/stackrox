@@ -182,7 +182,7 @@ This URL encoding will be extended to include `cve=<CVE ID>`.
 * Creating an `enum` for `Source` instead of just using a `string` ensures consistency and limits mistakes which may be made
 * `repeated CVSS` field `cvss_metrics` will always include CVSS metrics from all data sources, including the Scanner's preferred CVSS metric.
   * This approach simplifies data querying and filtering, as `cvss_metrics` will be the sole field used for filtering data or making policies.
-* OSV.dev sometimes does not related non-CVEs (like GHSAs) back to CVEs. When this happens, we cannot determine the CVSS score from NVD.
+* OSV.dev sometimes does not relate non-CVEs (like GHSAs) back to CVEs. When this happens, we cannot determine the CVSS score from NVD.
 * protobufs do not support enums as key types, so we cannot do something like `map<Source, CVSS> cvss_metrics = 13`.
   * We could just use a `string`, but then we run into the same potential pitfalls mentioned previously.
 * Keeping `cvss` as-is allows for easy access to Scanner's preferred CVSS score.
