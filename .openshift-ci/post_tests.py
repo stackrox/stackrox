@@ -186,6 +186,7 @@ class PostClusterTest(StoreArtifacts):
             self.collect_collector_metrics()
         if self.collect_central_artifacts and self.wait_for_central_api():
             self.get_central_debug_dump()
+            self.process_central_metrics()
             self.get_central_diagnostics()
             self.grab_central_data()
         if self._collect_service_logs:
@@ -241,6 +242,16 @@ class PostClusterTest(StoreArtifacts):
             timeout=PostTestsConstants.COLLECT_TIMEOUT,
         )
         self.data_to_store.append(PostTestsConstants.DEBUG_OUTPUT)
+
+    def process_central_metrics(self):
+        self.run_with_best_effort(
+            [
+                "scripts/ci/lib.sh",
+                "process_central_metrics",
+                PostTestsConstants.DEBUG_OUTPUT,
+            ],
+            timeout=PostTestsConstants.COLLECT_TIMEOUT,
+        )
 
     def get_central_diagnostics(self):
         self.run_with_best_effort(
