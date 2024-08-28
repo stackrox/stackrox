@@ -39,9 +39,6 @@ const (
 	endTime                                 = "end"
 	stackroxKubernetesSecurityPlatformAlert = "stackroxKubernetesSecurityPlatformAlert"
 
-	// This happens to be the same string as the stackroxKubernetesSecurityPlatformAlert const but that's an accident.
-	// stackroxKubernetesSecurityPlatformAlert is a CEF custom key and alertMessageID is a syslog message ID
-	alertMessageID    = "stackroxKubernetesSecurityPlatformAlert"
 	auditLogMessageID = "stackroxKubernetesSecurityPlatformAudit"
 
 	// Debug level

@@ -8,12 +8,6 @@ type (
 	EphemeralPortConfidence int
 )
 
-const (
-	// AbsoluteEphemeralPortConfidenceThreshold is the confidence threshold when a port can be assumed
-	// to be ephemeral in the absence of the port of a remote counterpart to compare it to.
-	AbsoluteEphemeralPortConfidenceThreshold EphemeralPortConfidence = 3
-)
-
 // IsEphemeralPort returns a confidence value indicating how confident we are that a given port is ephemeral.
 // This is not an absolute value, but rather can be used to determine which endpoint of a connection (local/remote)
 // is the client by determining for which port there is the higher confidence that it is ephemeral.

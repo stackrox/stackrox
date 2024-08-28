@@ -17,10 +17,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// TenantIDLabel is the name of the k8s object label that holds the cloud
-// services tenant ID. The value of the label becomes the group ID if not empty.
-const TenantIDLabel = "rhacs.redhat.com/tenant"
-
 // Interceptor is a function which will be called on every API call if none of
 // the previous interceptors in the chain returned false.
 // An Interceptor function may add custom properties to the props map so that

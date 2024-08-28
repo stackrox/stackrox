@@ -14,7 +14,6 @@ const (
 	ClusterFake2            = "caaaaaaa-bbbb-4011-9999-222222222222"
 	ComplianceScanConfigID1 = "caaaaaaa-bbbb-4011-1111-111111111111"
 	ComplianceScanConfigID2 = "caaaaaaa-bbbb-4011-2222-222222222222"
-	ComplianceScanConfigID3 = "caaaaaaa-bbbb-4011-3333-333333333333"
 	Deployment1             = "deaaaaaa-bbbb-4011-0000-111111111111"
 	Deployment2             = "deaaaaaa-bbbb-4011-0000-222222222222"
 	Deployment3             = "deaaaaaa-bbbb-4011-0000-333333333333"

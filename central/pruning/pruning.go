@@ -57,8 +57,7 @@ const (
 	logImbueGCFreq     = 24 * time.Hour
 	logImbueWindow     = 24 * 7 * time.Hour
 
-	alertQueryTimeout    = 10 * time.Minute
-	alertDeleteBatchSize = 5000
+	alertQueryTimeout = 10 * time.Minute
 
 	flowsSemaphoreWeight = 5
 

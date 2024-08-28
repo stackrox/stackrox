@@ -24,8 +24,6 @@ const (
 
 	// YAMLNotificationColor is color of YAML notification used by slack, teams etc.
 	YAMLNotificationColor = "#FF9365"
-	// Timeout is timeout for HTTP requests sent to various integrations such as slack, teams etc.
-	Timeout = 10 * time.Second
 )
 
 const (

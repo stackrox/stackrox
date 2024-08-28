@@ -108,14 +108,3 @@ func scoreVersionFromEmbeddedVuln(vuln *storage.EmbeddedVulnerability) storage.C
 		return storage.CVEInfo_UNKNOWN
 	}
 }
-
-func scoreVersionFromCVE(vuln *storage.CVE) storage.CVEInfo_ScoreVersion {
-	switch vuln.GetScoreVersion() {
-	case storage.CVE_V3:
-		return storage.CVEInfo_V3
-	case storage.CVE_V2:
-		return storage.CVEInfo_V2
-	default:
-		return storage.CVEInfo_UNKNOWN
-	}
-}

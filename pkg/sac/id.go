@@ -58,16 +58,6 @@ func validateClusterID(clusterID string) error {
 	return nil
 }
 
-func validateNamespaceID(namespaceID string) error {
-	if namespaceID == "" {
-		return errors.New("namespace ID must be specified")
-	}
-	if strings.Contains(namespaceID, separator) {
-		return errors.Errorf("namespace ID %s must not contain %q", namespaceID, separator)
-	}
-	return nil
-}
-
 func validateSuffix(suffix string) error {
 	if strings.Contains(suffix, separator) {
 		return errors.Errorf("suffix %s must not contain %q", suffix, separator)

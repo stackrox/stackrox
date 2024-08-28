@@ -30,11 +30,6 @@ var (
 	}()
 )
 
-const (
-	// PoliciesTableName is the name of the table used for storage.
-	PoliciesTableName = "policies"
-)
-
 // Policies holds the Gorm model for Postgres table `policies`.
 type Policies struct {
 	ID                 string           `gorm:"column:id;type:varchar;primaryKey"`

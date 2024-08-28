@@ -30,8 +30,6 @@ const (
 	// PostgresQueryTimeout - timeout time for query
 	PostgresQueryTimeout = 5 * time.Second
 
-	getCloneStmt = "SELECT datname FROM pg_catalog.pg_database WHERE datname ~ '^%s_.*'"
-
 	// terminateConnectionStmt - terminates connections to the specified database
 	terminateConnectionStmt = "SELECT pg_terminate_backend(pg_stat_activity.pid) " +
 		"FROM pg_stat_activity " +
