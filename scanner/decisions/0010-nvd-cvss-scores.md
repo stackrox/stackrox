@@ -99,7 +99,7 @@ message VulnerabilityReport {
     ...
     string severity = 6;
     ...
-    CVSS cvss = 12;
+    CVSS cvss = 12 [deprecated = true];
     repeated CVSS cvss_metrics = 13; <-- New field.
   }
   ...
@@ -117,8 +117,8 @@ There will be a new type plus two new fields added:
 * `cvss_metrics`
   * This is a list of each unique CVSS metric based on the source.
 
-The original `cvss` field will remain and will continue to represent the Scanner's preferred CVSS score.
-This is currently the score from the vulnerability's original data source, if available, otherwise NVD.
+The original cvss field will remain for backward compatibility, as it represents the Scanner's preferred CVSS score, typically derived from the vulnerability's original data source if available, or from the NVD otherwise. 
+However, this field will be deprecated because the repeated CVSS cvss_metrics field can now include CVSS scores from all data sources, making it more comprehensive.
 
 **JSON example**:
 
