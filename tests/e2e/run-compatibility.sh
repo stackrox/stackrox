@@ -80,7 +80,7 @@ _test_compatibility() {
         echo "Running e2e tests in release mode"
         export GOTAGS=release
     fi
-    make -C tests || touch FAIL
+    make -C tests compatibility-tests || touch FAIL
     store_test_results "tests/all-tests-results" "${compatibility_dir}/all-tests-results"
     [[ ! -f FAIL ]] || die "e2e API tests failed"
 
