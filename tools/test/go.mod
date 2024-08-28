@@ -7,7 +7,7 @@ toolchain go1.21.7
 require (
 	github.com/jstemmer/go-junit-report/v2 v2.1.0
 	github.com/stackrox/image-prefetcher/deploy v0.2.2
-	github.com/stackrox/prometheus-metric-parser v0.0.0-20240603145310-f3efb3ede19a
+	github.com/stackrox/prometheus-metric-parser v0.0.0-20240716100533-5e8c5cbfbc0e
 )
 
 require (
