@@ -53,9 +53,3 @@ func Any(cancelCond Waitable, waitables ...Waitable) WaitableChan {
 
 	return sig.WaitC()
 }
-
-// WaitForAny waits until any of the given waitables is triggered. It returns true if this happens, false if cancelCond
-// is triggered beforehand.
-func WaitForAny(cancelCond Waitable, waitables ...Waitable) bool {
-	return WaitInContext(Any(cancelCond, waitables...), cancelCond)
-}

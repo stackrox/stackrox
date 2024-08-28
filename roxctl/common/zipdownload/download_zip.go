@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/ioutils"
 	"github.com/stackrox/rox/pkg/roxctl"
 	"github.com/stackrox/rox/pkg/utils"
-	pkgZip "github.com/stackrox/rox/pkg/zip"
 	"github.com/stackrox/rox/roxctl/common/download"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/logger"
@@ -160,57 +159,4 @@ func GetZip(opts GetZipOptions, env environment.Environment) error {
 	}
 
 	return extractZipToFolder(contents, size, opts.BundleType, outputDir, env.Logger())
-}
-
-// GetZipFiles downloads a zip from the given endpoint and returns a slice of zip Files.
-func GetZipFiles(opts GetZipOptions, env environment.Environment) (map[string]*pkgZip.File, error) {
-	client, err := env.HTTPClient(opts.Timeout)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating HTTP client")
-	}
-	resp, err := client.DoReqAndVerifyStatusCode(opts.Path, opts.Method, http.StatusOK, bytes.NewBuffer(opts.Body))
-	if err != nil {
-		return nil, errors.Wrap(err, "could not download zip")
-	}
-	defer utils.IgnoreError(resp.Body.Close)
-
-	buf := ioutils.NewRWBuf(ioutils.RWBufOptions{MemLimit: inMemFileSizeThreshold})
-	defer utils.IgnoreError(buf.Close)
-
-	if _, err := io.Copy(buf, resp.Body); err != nil {
-		return nil, errors.Wrap(err, "error downloading Zip file")
-	}
-
-	contents, size, err := buf.Contents()
-	if err != nil {
-		return nil, errors.Wrap(err, "accessing buffer contents")
-	}
-
-	zipReader, err := zip.NewReader(contents, size)
-	if err != nil {
-		return nil, errors.Wrap(err, "create reader from zip contents")
-	}
-	fileMap := make(map[string]*pkgZip.File, len(zipReader.File))
-	for _, f := range zipReader.File {
-		bytes, err := readContents(f)
-		if err != nil {
-			return nil, errors.Wrapf(err, "read from zip file %s", f.Name)
-		}
-		fileMap[f.Name] = pkgZip.NewFile(f.Name, bytes, pkgZip.Sensitive)
-		env.Logger().InfofLn("%s extracted", f.Name)
-	}
-	return fileMap, nil
-}
-
-func readContents(file *zip.File) ([]byte, error) {
-	rd, err := file.Open()
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open zipped file %q", file.Name)
-	}
-	defer utils.IgnoreError(rd.Close)
-	bytes, err := io.ReadAll(rd)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read content from zip file %q", file.Name)
-	}
-	return bytes, nil
 }

@@ -21,15 +21,6 @@ type ObjectArrayCache[T any] struct {
 	refreshFn      RefreshFunction[T]
 }
 
-// NewObjectArrayCache returns a cache for an object array where the cached
-// objects are retrieved using refreshFn and are valid for validityPeriod.
-func NewObjectArrayCache[T any](validityPeriod time.Duration, refreshFn RefreshFunction[T]) *ObjectArrayCache[T] {
-	return &ObjectArrayCache[T]{
-		validityPeriod: validityPeriod,
-		refreshFn:      refreshFn,
-	}
-}
-
 // GetObjects retrieves the array of objects, either from cache (when not
 // expired), or using the refresh function (when the cache is expired).
 func (c *ObjectArrayCache[T]) GetObjects(ctx context.Context) ([]*T, error) {

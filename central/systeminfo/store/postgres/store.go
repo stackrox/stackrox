@@ -163,10 +163,3 @@ func insert(ctx context.Context, tx *postgres.Tx, obj *storage.SystemInfo) error
 	}
 	return nil
 }
-
-// Used for Testing
-
-// Destroy is Used for Testing
-func Destroy(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+tableName+" CASCADE")
-}

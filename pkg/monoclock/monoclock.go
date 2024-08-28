@@ -26,8 +26,3 @@ func New() MonoClock {
 func (m monoClock) SinceEpoch() time.Duration {
 	return time.Since(m.epoch)
 }
-
-// SinceEpoch returns the elapsed time since the default monotonic clocks epoch.
-func SinceEpoch() time.Duration {
-	return instance.SinceEpoch()
-}

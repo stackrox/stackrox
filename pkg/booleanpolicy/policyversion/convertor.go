@@ -59,12 +59,3 @@ func CloneAndEnsureConverted(p *storage.Policy) (*storage.Policy, error) {
 	}
 	return cloned, nil
 }
-
-// MustEnsureConverted converts the passed policy if required.
-// The passed policy is modified in-place, but returned for convenience.
-// Any error in conversion results in a panic.
-// ONLY USE in program initialization blocks, similar to regexp.MustCompile.
-func MustEnsureConverted(p *storage.Policy) *storage.Policy {
-	utils.Must(EnsureConvertedToLatest(p))
-	return p
-}

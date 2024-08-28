@@ -10,12 +10,3 @@ func GetCategoryNameToIDs(categories []*storage.PolicyCategory) map[string]strin
 	}
 	return nameIDMap
 }
-
-// GetCategoryIDToNames gets a map of category id to category name
-func GetCategoryIDToNames(categories []*storage.PolicyCategory) map[string]string {
-	idNameMap := make(map[string]string, len(categories))
-	for _, c := range categories {
-		idNameMap[c.GetId()] = c.GetName()
-	}
-	return idNameMap
-}

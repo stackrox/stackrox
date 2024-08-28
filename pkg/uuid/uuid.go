@@ -22,11 +22,6 @@ var Nil = UUID{
 	uuid: uuid.Nil,
 }
 
-// Equal returns true if u1 and u2 equals, otherwise returns false.
-func Equal(u1 UUID, u2 UUID) bool {
-	return u1.uuid == u2.uuid
-}
-
 // Bytes returns bytes slice representation of UUID.
 func (u UUID) Bytes() []byte {
 	return u.uuid.Bytes()

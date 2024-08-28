@@ -10,14 +10,6 @@ func UnsafeUnlock(locker sync.Locker) {
 	defer locker.Unlock()
 }
 
-// UnsafeRUnlock calls RUnlock on RLocker without triggering a roxvet error.
-// Use wisely, prefer WithRLock if possible. For more info, see
-//
-//	tools/roxvet/analyzers/undeferredmutexunlocks/analyzer.go
-func UnsafeRUnlock(rlocker RLocker) {
-	defer rlocker.RUnlock()
-}
-
 // RLocker is an interface for objects that allow locking for read access only (such as `sync.RWMutex`).
 type RLocker interface {
 	RLock()

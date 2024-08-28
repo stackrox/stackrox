@@ -24,16 +24,6 @@ func NewFromEmbeddedVulnerability(vuln *storage.EmbeddedVulnerability) VulnI {
 	}
 }
 
-// NewFromCVE returns an instance of VulnI for *storage.CVE.
-func NewFromCVE(vuln *storage.CVE) VulnI {
-	return &vulnScoreInfo{
-		severity:     vuln.GetSeverity(),
-		cvssV3:       vuln.GetCvssV3(),
-		cvssv2:       vuln.GetCvssV2(),
-		scoreVersion: scoreVersionFromCVE(vuln),
-	}
-}
-
 // NewFromNodeVulnerability returns an instance of VulnI for *storage.NodeVulnerability.
 func NewFromNodeVulnerability(vuln *storage.NodeVulnerability) VulnI {
 	return &vulnScoreInfo{

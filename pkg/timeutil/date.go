@@ -45,11 +45,6 @@ func DaysInMonth(month int, year int) int {
 	return maxDaysInMonth[month-1]
 }
 
-// MaxDaysInMonth returns the number of days in the given month in *any* year.
-func MaxDaysInMonth(month int) int {
-	return maxDaysInMonth[month-1]
-}
-
 // IsLeapYear returns whether the given year is a leap year.
 func IsLeapYear(year int) bool {
 	return year%4 == 0 && (year%100 != 0 || year%400 == 0)
@@ -164,18 +159,6 @@ func (d Date) ToTime(loc *time.Location) time.Time {
 func (d Date) WeekdayOfMonth() int {
 	t := d.ToTime(time.UTC)
 	return int(t.Weekday()) + ((d.Day-1)/DaysInWeek)*DaysInWeek
-}
-
-// DateFromTime converts a `time.Time` to a `Date` representation.
-func DateFromTime(t time.Time) Date {
-	return Date{
-		Year:   t.Year(),
-		Month:  int(t.Month()),
-		Day:    t.Day(),
-		Hour:   t.Hour(),
-		Minute: t.Minute(),
-		Second: t.Second(),
-	}
 }
 
 // AdvanceMonth advances this date to the next calendar date where month has the given value (wrapping the year around,

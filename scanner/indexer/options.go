@@ -40,15 +40,6 @@ var defaultPlatform = v1.Platform{
 	OS:           "linux", // We only support Linux containers at this time.
 }
 
-// WithPlatform specifies the desired OS and architecture of the image.
-//
-// Default: defaultPlatform.
-func WithPlatform(platform v1.Platform) Option {
-	return func(o *options) {
-		o.platform = platform
-	}
-}
-
 func makeOptions(opts ...Option) options {
 	o := options{
 		auth:     authn.Anonymous,

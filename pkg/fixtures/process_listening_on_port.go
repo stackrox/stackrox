@@ -27,25 +27,6 @@ func GetOpenPlopObject1() *storage.ProcessListeningOnPortFromSensor {
 	}
 }
 
-// GetClosePlopObject1 Return an open plop object
-func GetClosePlopObject1() *storage.ProcessListeningOnPortFromSensor {
-	return &storage.ProcessListeningOnPortFromSensor{
-		Port:           1234,
-		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-		CloseTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodName1,
-			ContainerName:       "containername",
-			ProcessName:         "test_process1",
-			ProcessArgs:         "test_arguments1",
-			ProcessExecFilePath: "test_path1",
-		},
-		DeploymentId: fixtureconsts.Deployment1,
-		ClusterId:    fixtureconsts.Cluster1,
-		PodUid:       fixtureconsts.PodUID1,
-	}
-}
-
 // GetOpenPlopObject2 Return an open plop object
 func GetOpenPlopObject2() *storage.ProcessListeningOnPortFromSensor {
 	return &storage.ProcessListeningOnPortFromSensor{
@@ -81,25 +62,6 @@ func GetOpenPlopObject3() *storage.ProcessListeningOnPortFromSensor {
 		DeploymentId: fixtureconsts.Deployment1,
 		ClusterId:    fixtureconsts.Cluster1,
 		PodUid:       fixtureconsts.PodUID2,
-	}
-}
-
-// GetOpenPlopObject4 Return an open plop object
-func GetOpenPlopObject4() *storage.ProcessListeningOnPortFromSensor {
-	return &storage.ProcessListeningOnPortFromSensor{
-		Port:           80,
-		Protocol:       storage.L4Protocol_L4_PROTOCOL_TCP,
-		CloseTimestamp: nil,
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               fixtureconsts.PodName2,
-			ContainerName:       "containername",
-			ProcessName:         "apt-get",
-			ProcessArgs:         "install nmap",
-			ProcessExecFilePath: "bin",
-		},
-		DeploymentId: fixtureconsts.Deployment1,
-		ClusterId:    fixtureconsts.Cluster1,
-		PodUid:       fixtureconsts.PodUID3,
 	}
 }
 

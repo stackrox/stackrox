@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -64,12 +63,6 @@ func RoxPassword(t testutils.T) string {
 // RoxAPIEndpoint returns the central API endpoint (or fails the test if not found).
 func RoxAPIEndpoint(t testutils.T) string {
 	return stringutils.FirstNonEmpty(mustGetEnvVarInCI(t, apiEndpointEnvVar), defaultAPIEndpoint)
-}
-
-// UnauthenticatedGRPCConnectionToCentral is like GRPCConnectionToCentral,
-// but does not inject credentials into the request.
-func UnauthenticatedGRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
-	return grpcConnectionToCentral(t, nil)
 }
 
 // GRPCConnectionToCentral returns a GRPC connection to Central, which can be used in E2E tests.

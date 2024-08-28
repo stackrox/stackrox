@@ -56,14 +56,6 @@ func StatusFromError(err error) int {
 	return grpc_errors.ErrToHTTPStatus(err)
 }
 
-// ErrorFromStatus returns a HTTP error for the given status, or nil if the status does not indicate an error.
-func ErrorFromStatus(status HTTPStatus) HTTPError {
-	if err, ok := status.(HTTPError); ok {
-		return err
-	}
-	return nil
-}
-
 // WriteGRPCStyleError writes a gRPC-style error to an http response writer.
 // It's useful when you have to write an http method.
 func WriteGRPCStyleError(w http.ResponseWriter, c codes.Code, err error) {

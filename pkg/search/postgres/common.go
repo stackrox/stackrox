@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/random"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
@@ -732,19 +731,6 @@ func tracedQueryRow(ctx context.Context, pool postgres.DB, sql string, args ...i
 	return row
 }
 
-// RunSearchRequest executes a request against the database for given category
-func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db postgres.DB) ([]searchPkg.Result, error) {
-	if q == nil {
-		q = searchPkg.EmptyQuery()
-	}
-
-	schema := mapping.GetTableFromCategory(category)
-
-	return pgutils.Retry2(ctx, func() ([]searchPkg.Result, error) {
-		return RunSearchRequestForSchema(ctx, schema, q, db)
-	})
-}
-
 func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db postgres.DB) ([]searchPkg.Result, error) {
 	queryStr := query.AsSQL()
 
@@ -858,19 +844,6 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	return pgutils.Retry2(ctx, func() ([]searchPkg.Result, error) {
 
 		return retryableRunSearchRequestForSchema(ctx, query, schema, db)
-	})
-}
-
-// RunCountRequest executes a request for just the count against the database
-func RunCountRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db postgres.DB) (int, error) {
-	if q == nil {
-		q = searchPkg.EmptyQuery()
-	}
-
-	schema := mapping.GetTableFromCategory(category)
-
-	return pgutils.Retry2(ctx, func() (int, error) {
-		return RunCountRequestForSchema(ctx, schema, q, db)
 	})
 }
 

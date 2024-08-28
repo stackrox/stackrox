@@ -16,15 +16,6 @@ func ToListDeployment(d *storage.Deployment) *storage.ListDeployment {
 	}
 }
 
-// DeploymentsMapByID converts the given Deployment slice into a map indexed by the deployment ID.
-func DeploymentsMapByID(deployments []*storage.Deployment) map[string]*storage.Deployment {
-	result := make(map[string]*storage.Deployment)
-	for _, deployment := range deployments {
-		result[deployment.GetId()] = deployment
-	}
-	return result
-}
-
 // ListDeploymentsMapByID converts the given ListDeployment slice into a map indexed by the deployment ID.
 func ListDeploymentsMapByID(deployments []*storage.ListDeployment) map[string]*storage.ListDeployment {
 	result := make(map[string]*storage.ListDeployment)

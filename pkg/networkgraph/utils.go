@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -39,31 +38,9 @@ func IsKnownExternalSrc(entity *storage.NetworkEntityInfo) bool {
 	return entity.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE
 }
 
-// AnyExternal returns true if at least one network entity is external to cluster (by type).
-func AnyExternal(src, dst *storage.NetworkEntityInfo) bool {
-	return IsExternal(src) || IsExternal(dst)
-}
-
 // AllExternal returns true iff both network entities are external to cluster (by type).
 func AllExternal(src, dst *storage.NetworkEntityInfo) bool {
 	return IsExternal(src) && IsExternal(dst)
-}
-
-// AnyExternalInFilter accepts two network entities, source and destination, and external network entity ID set, and returns true if
-// input set contains at least one endpoint and is external to cluster. Note: We regard UNKNOWN and LISTEN_ENDPOINTS as invisible.
-func AnyExternalInFilter(src, dst *storage.NetworkEntityInfo, filter set.StringSet) bool {
-	if IsExternal(src) && filter.Contains(src.GetId()) {
-		return true
-	}
-	if IsExternal(dst) && filter.Contains(dst.GetId()) {
-		return true
-	}
-	return false
-}
-
-// AnyDeployment returns true if at least one network entity is a deployment (by type).
-func AnyDeployment(src, dst *storage.NetworkEntityInfo) bool {
-	return IsDeployment(src) || IsDeployment(dst)
 }
 
 // AnyDeploymentInFilter accepts two network entities, source and destination, and deployments map, and returns true if

@@ -40,17 +40,6 @@ func ConvertImageFromProto(obj *storage.Image) (*Images, error) {
 	return model, nil
 }
 
-// ConvertImageLayerFromProto converts a `*storage.ImageLayer` to Gorm model
-func ConvertImageLayerFromProto(obj *storage.ImageLayer, idx int, images_Id string) (*ImagesLayers, error) {
-	model := &ImagesLayers{
-		ImagesId:    images_Id,
-		Idx:         idx,
-		Instruction: obj.GetInstruction(),
-		Value:       obj.GetValue(),
-	}
-	return model, nil
-}
-
 // ConvertImageToProto converts Gorm model `Images` to its protobuf type object
 func ConvertImageToProto(m *Images) (*storage.Image, error) {
 	var msg storage.Image

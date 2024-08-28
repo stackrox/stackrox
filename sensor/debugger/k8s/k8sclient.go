@@ -32,18 +32,6 @@ func MakeFakeClient() *ClientSet {
 	}
 }
 
-// MakeFakeClientFromRest creates a k8s client from rest.Config
-func MakeFakeClientFromRest(restConfig *rest.Config) *ClientSet {
-	client, err := kubernetes.NewForConfig(restConfig)
-	if err != nil {
-		log.Panicf("Creating Kubernetes clientset: %v", err)
-	}
-
-	return &ClientSet{
-		k8s: client,
-	}
-}
-
 // ClientSet is a test version of kubernetes.ClientSet
 type ClientSet struct {
 	dynamic           dynamic.Interface

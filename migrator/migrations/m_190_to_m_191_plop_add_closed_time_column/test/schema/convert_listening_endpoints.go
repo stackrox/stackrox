@@ -23,12 +23,3 @@ func ConvertProcessListeningOnPortStorageFromProto(obj *storage.ProcessListening
 	}
 	return model, nil
 }
-
-// ConvertProcessListeningOnPortStorageToProto converts Gorm model `ListeningEndpoints` to its protobuf type object
-func ConvertProcessListeningOnPortStorageToProto(m *ListeningEndpoints) (*storage.ProcessListeningOnPortStorage, error) {
-	var msg storage.ProcessListeningOnPortStorage
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
-		return nil, err
-	}
-	return &msg, nil
-}

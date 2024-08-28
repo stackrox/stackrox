@@ -57,16 +57,3 @@ func TimeoutOr(duration time.Duration, cancelCond Waitable) WaitableChan {
 
 	return ch
 }
-
-// Deadline returns a waitable that is done after the given deadline.
-// Note: Every call to `Deadline` with a future time point spawns a new goroutine that lives until the given deadline,
-// hence this function should not be used in potentially hot code sites. If possible, prefer `DeadlineOr`.
-func Deadline(deadline time.Time) WaitableChan {
-	return Timeout(time.Until(deadline))
-}
-
-// DeadlineOr returns a waitable that is triggered when the given deadline expires, unless cancelCond is triggered
-// beforehand.
-func DeadlineOr(deadline time.Time, cancelCond Waitable) WaitableChan {
-	return TimeoutOr(time.Until(deadline), cancelCond)
-}

@@ -8,20 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
-// GetNode returns a mock *storage.Node
-func GetNode() *storage.Node {
-	componentCount := 50
-	components := make([]*storage.EmbeddedNodeScanComponent, 0, componentCount)
-	for i := 0; i < componentCount; i++ {
-		components = append(components, &storage.EmbeddedNodeScanComponent{
-			Name:    "name",
-			Version: "1.2.3.4",
-			Vulns:   getVulnsPerComponent(i, 5, storage.EmbeddedVulnerability_NODE_VULNERABILITY),
-		})
-	}
-	return getNodeWithComponents(components)
-}
-
 // GetNodeWithUniqueComponents returns a mock Node where each component is unique
 func GetNodeWithUniqueComponents(numComponents, numVulns int) *storage.Node {
 	components := make([]*storage.EmbeddedNodeScanComponent, 0, numComponents)

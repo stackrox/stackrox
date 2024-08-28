@@ -1,8 +1,6 @@
 package protocompat
 
 import (
-	"errors"
-
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 )
@@ -17,24 +15,6 @@ func Clone(msg proto.Message) proto.Message {
 		return vtMsg.CloneMessageVT()
 	}
 	return proto.Clone(msg)
-}
-
-// ErrNil is the error returned if Marshal is called with nil.
-var ErrNil = errors.New("proto: Marshal called with nil")
-
-// Marshal takes a protocol buffer message and encodes it into
-// the wire format, returning the data. This is the main entry point.
-func Marshal[T any, PT marshalable[T]](msg PT) ([]byte, error) {
-	var null PT
-	if msg == null {
-		return nil, ErrNil
-	}
-	return msg.MarshalVT()
-}
-
-type marshalable[T any] interface {
-	*T
-	MarshalVT() ([]byte, error)
 }
 
 // MarshalTextString writes a given protocol buffer in text format,

@@ -2,14 +2,12 @@ package pgadmin
 
 import (
 	"context"
-	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/config"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -138,44 +136,6 @@ func CheckIfDBExists(postgresConfig *postgres.Config, dbName string) (bool, erro
 
 	log.Debugf("%q database exists => %t", dbName, exists)
 	return exists, nil
-}
-
-// GetDatabaseClones - returns list of database clones based off base database
-func GetDatabaseClones(postgresConfig *postgres.Config) ([]string, error) {
-	log.Debug("GetDatabaseClones")
-
-	// Connect to different database for admin functions
-	connectPool, err := GetAdminPool(postgresConfig)
-	if err != nil {
-		return nil, err
-	}
-	// Close the admin connection pool
-	defer connectPool.Close()
-
-	ctx, cancel := context.WithTimeout(context.Background(), PostgresQueryTimeout)
-	defer cancel()
-
-	cloneStmt := fmt.Sprintf(getCloneStmt, config.GetConfig().CentralDB.DatabaseName)
-
-	rows, err := connectPool.Query(ctx, cloneStmt)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var clones []string
-	for rows.Next() {
-		var cloneName string
-		if err := rows.Scan(&cloneName); err != nil {
-			return nil, err
-		}
-
-		clones = append(clones, cloneName)
-	}
-
-	log.Debugf("database clones => %s", clones)
-
-	return clones, nil
 }
 
 // AnalyzeDatabase - runs ANALYZE on the database named dbName
