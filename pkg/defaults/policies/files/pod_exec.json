@@ -49,7 +49,7 @@
       }
       },
       {
-      "name": "Don't alert on deployment workspace\\w{16} in namespace openshift-terminal",
+      "name": "Don't alert on deployments workspace\\w{16} in namespace openshift-terminal; note we assume how the devworkspace operator generates deployment names",
       "deployment": {
         "name": "workspace\\w{16}",
         "scope": {
