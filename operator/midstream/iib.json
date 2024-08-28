@@ -9,6 +9,6 @@
   },
   "operator": {
     "version": "4.4.5",
-    "channel": "stable"
+    "channel": "rhacs-4.4"
   }
 }
