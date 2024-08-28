@@ -49,7 +49,7 @@ setup_file() {
     export CI=${CI:-false}
     OS="$(uname | tr '[:upper:]' '[:lower:]')"
     export OS
-    export ORCH_CMD=kubectl
+    export ORCH_CMD="${ROOT}/scripts/retry-kubectl.sh"
     export SENSOR_HELM_MANAGED=true
     export CENTRAL_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/central-deploy/chart"
     export SENSOR_CHART_DIR="${ROOT}/deploy/${ORCHESTRATOR_FLAVOR}/sensor-deploy/chart"
@@ -131,14 +131,14 @@ describe_pods_in_namespace() {
     info "==============================="
     info "Pods in namespace ${namespace}:"
     info "==============================="
-    "${ORCH_CMD}" -n "${namespace}" get pods || true
+    "${ORCH_CMD}" </dev/null -n "${namespace}" get pods || true
     echo
-    "${ORCH_CMD}" -n "${namespace}" get pods -o name | while read -r pod_name; do
+    "${ORCH_CMD}" </dev/null -n "${namespace}" get pods -o name | while read -r pod_name; do
       echo "** DESCRIBING POD: ${namespace}/${pod_name}:"
-      "${ORCH_CMD}" -n "${namespace}" describe "${pod_name}" || true
+      "${ORCH_CMD}" </dev/null -n "${namespace}" describe "${pod_name}" || true
       echo
       echo "** LOGS FOR POD: ${namespace}/${pod_name}:"
-      "${ORCH_CMD}" -n "${namespace}" logs "${pod_name}" || true
+      "${ORCH_CMD}" </dev/null -n "${namespace}" logs "${pod_name}" || true
       echo
 
     done
@@ -149,11 +149,11 @@ describe_deployments_in_namespace() {
     info "====================================="
     info "Deployments in namespace ${namespace}:"
     info "====================================="
-    "${ORCH_CMD}" -n "${namespace}" get deployments || true
+    "${ORCH_CMD}" </dev/null -n "${namespace}" get deployments || true
     echo
-    "${ORCH_CMD}" -n "${namespace}" get deployments -o name | while read -r name; do
+    "${ORCH_CMD}" </dev/null -n "${namespace}" get deployments -o name | while read -r name; do
       echo "** DESCRIBING DEPLOYMENT: ${namespace}/${name}:"
-      "${ORCH_CMD}" -n "${namespace}" describe "${name}" || true
+      "${ORCH_CMD}" </dev/null -n "${namespace}" describe "${name}" || true
     done
 }
 
@@ -175,14 +175,14 @@ teardown() {
     local central_namespace=""
     local sensor_namespace=""
 
-    if "${ORCH_CMD}" get ns "stackrox" >/dev/null 2>&1; then
+    if "${ORCH_CMD}" </dev/null get ns "stackrox" >/dev/null 2>&1; then
         central_namespace="stackrox"
         sensor_namespace="stackrox"
     fi
-    if "${ORCH_CMD}" get ns "${CUSTOM_CENTRAL_NAMESPACE}" >/dev/null 2>&1; then
+    if "${ORCH_CMD}" </dev/null get ns "${CUSTOM_CENTRAL_NAMESPACE}" >/dev/null 2>&1; then
         central_namespace="${CUSTOM_CENTRAL_NAMESPACE}"
     fi
-    if "${ORCH_CMD}" get ns "${CUSTOM_SENSOR_NAMESPACE}" >/dev/null 2>&1; then
+    if "${ORCH_CMD}" </dev/null get ns "${CUSTOM_SENSOR_NAMESPACE}" >/dev/null 2>&1; then
         sensor_namespace="${CUSTOM_SENSOR_NAMESPACE}"
     fi
 
@@ -351,7 +351,7 @@ EOF
     if [[ -x "${scanner_bundle}/scanner-v4/scripts/setup.sh" ]]; then
         "${scanner_bundle}/scanner-v4/scripts/setup.sh"
     fi
-    ${ORCH_CMD} apply -R -f "${scanner_bundle}/scanner-v4"
+    "${ORCH_CMD}" </dev/null apply -R -f "${scanner_bundle}/scanner-v4"
 
     verify_scannerV4_deployed
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
@@ -443,7 +443,7 @@ EOF
     # would confuse the kubectl wait invocation below, which notices pods
     # vanishing while actually waiting for them to become ready.
     sleep 60
-    "${ORCH_CMD}" -n stackrox-operator wait --for=condition=Ready --timeout=3m pods -l app=rhacs-operator
+    "${ORCH_CMD}" </dev/null -n stackrox-operator wait --for=condition=Ready --timeout=3m pods -l app=rhacs-operator
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
@@ -456,7 +456,7 @@ EOF
 
     # Enable Scanner V4 on central side.
     info "Patching Central"
-    "${ORCH_CMD}" -n "${CUSTOM_CENTRAL_NAMESPACE}" \
+    "${ORCH_CMD}" </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" \
       patch Central stackrox-central-services --type=merge --patch-file=<(cat <<EOT
 spec:
   scannerV4:
@@ -496,11 +496,11 @@ EOT
 
     info "Waiting for central to come back up after patching CR for activating Scanner V4"
     sleep 60
-    "${ORCH_CMD}" -n "${CUSTOM_CENTRAL_NAMESPACE}" wait --for=condition=Ready pods -l app=central || true
+    "${ORCH_CMD}" </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" wait --for=condition=Ready pods -l app=central || true
 
     info "Patching SecuredCluster"
     # Enable Scanner V4 on secured-cluster side
-    "${ORCH_CMD}" -n "${CUSTOM_SENSOR_NAMESPACE}" \
+    "${ORCH_CMD}" </dev/null -n "${CUSTOM_SENSOR_NAMESPACE}" \
       patch SecuredCluster stackrox-secured-cluster-services --type=merge --patch-file=<(cat <<EOT
 spec:
   scannerV4:
@@ -529,7 +529,7 @@ EOT
 
     info "Waiting for sensor to come back up after patching CR for activating Scanner V4"
     sleep 60
-    "${ORCH_CMD}" -n "${CUSTOM_SENSOR_NAMESPACE}" wait --for=condition=Ready pods -l app=sensor || true
+    "${ORCH_CMD}" </dev/null -n "${CUSTOM_SENSOR_NAMESPACE}" wait --for=condition=Ready pods -l app=sensor || true
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
@@ -540,7 +540,7 @@ EOT
 
     # Test disabling of Scanner V4.
     info "Disabling Scanner V4 for Central"
-    "${ORCH_CMD}" -n "${CUSTOM_CENTRAL_NAMESPACE}" \
+    "${ORCH_CMD}" </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" \
       patch Central stackrox-central-services --type=merge --patch-file=<(cat <<EOT
 spec:
   scannerV4:
@@ -549,7 +549,7 @@ EOT
     )
 
     info "Disabling Scanner V4 for SecuredCluster"
-    "${ORCH_CMD}" -n "${CUSTOM_SENSOR_NAMESPACE}" \
+    "${ORCH_CMD}" </dev/null -n "${CUSTOM_SENSOR_NAMESPACE}" \
       patch SecuredCluster stackrox-secured-cluster-services --type=merge --patch-file=<(cat <<EOT
 spec:
   scannerV4:
@@ -615,13 +615,13 @@ verify_no_scannerV4_deployed() {
 
 verify_no_scannerV4_indexer_deployed() {
     local namespace=${1:-stackrox}
-    run kubectl -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+    run "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4-indexer"
 }
 
 verify_no_scannerV4_matcher_deployed() {
     local namespace=${1:-stackrox}
-    run kubectl -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
+    run "${ORCH_CMD}" </dev/null -n "$namespace" get deployments -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}'
     refute_output --regexp "scanner-v4-matcher"
 }
 
@@ -667,7 +667,7 @@ verify_deployment_scannerV4_env_var_set() {
     local deployment_env_vars
     local scanner_v4_value
 
-    deployment_env_vars="$("${ORCH_CMD}" -n "${namespace}" get deploy/"${deployment}" -o jsonpath="{.spec.template.spec.containers[?(@.name=='${deployment}')].env}")"
+    deployment_env_vars="$("${ORCH_CMD}" </dev/null -n "${namespace}" get deploy/"${deployment}" -o jsonpath="{.spec.template.spec.containers[?(@.name=='${deployment}')].env}")"
     scanner_v4_value="$(echo "${deployment_env_vars}" | jq -r '.[] | select(.name == "ROX_SCANNER_V4").value')"
 
     if [[ "${scanner_v4_value}" == "true" ]]; then
@@ -703,7 +703,7 @@ _deploy_stackrox() {
     sensor_wait "${sensor_namespace}"
 
     # Bounce collectors to avoid restarts on initial module pull
-    "${ORCH_CMD}" -n "${sensor_namespace}" delete pod -l app=collector --grace-period=0
+    "${ORCH_CMD}" </dev/null -n "${sensor_namespace}" delete pod -l app=collector --grace-period=0
 
     sensor_wait "${sensor_namespace}"
 
@@ -730,8 +730,8 @@ patch_down_central() {
 patch_down_central_directly() {
    local central_namespace="$1"
 
-    if "$ORCH_CMD" -n "${central_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
-        "${ORCH_CMD}" -n "${central_namespace}" patch "hpa/scanner-v4-indexer" --patch-file <(cat <<EOF
+    if "${ORCH_CMD}" </dev/null -n "${central_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
+        "${ORCH_CMD}" </dev/null -n "${central_namespace}" patch "hpa/scanner-v4-indexer" --patch-file <(cat <<EOF
 spec:
   minReplicas: 1
   maxReplicas: 1
@@ -739,23 +739,23 @@ EOF
         )
     fi
 
-    if "$ORCH_CMD" -n "${central_namespace}" get hpa scanner-v4-matcher >/dev/null 2>&1; then
-        "${ORCH_CMD}" -n "${central_namespace}" patch "hpa/scanner-v4-matcher" --patch-file <(cat <<EOF
+    if "${ORCH_CMD}" </dev/null -n "${central_namespace}" get hpa scanner-v4-matcher >/dev/null 2>&1; then
+        "${ORCH_CMD}" </dev/null -n "${central_namespace}" patch "hpa/scanner-v4-matcher" --patch-file <(cat <<EOF
 spec:
   minReplicas: 1
   maxReplicas: 1
 EOF
         )
     fi
-    if "${ORCH_CMD}" -n "${central_namespace}" get deploy/scanner-v4-indexer >/dev/null 2>&1; then
-        "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
+    if "${ORCH_CMD}" </dev/null -n "${central_namespace}" get deploy/scanner-v4-indexer >/dev/null 2>&1; then
+        "${ORCH_CMD}" </dev/null -n "${central_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
 spec:
   replicas: 1
 EOF
         )
     fi
-    if "${ORCH_CMD}" -n "${central_namespace}" get deploy/scanner-v4-matcher >/dev/null 2>&1; then
-        "${ORCH_CMD}" -n "${central_namespace}" patch "deploy/scanner-v4-matcher" --patch-file <(cat <<EOF
+    if "${ORCH_CMD}" </dev/null -n "${central_namespace}" get deploy/scanner-v4-matcher >/dev/null 2>&1; then
+        "${ORCH_CMD}" </dev/null -n "${central_namespace}" patch "deploy/scanner-v4-matcher" --patch-file <(cat <<EOF
 spec:
   replicas: 1
 EOF
@@ -782,24 +782,24 @@ patch_down_sensor() {
 patch_down_sensor_directly() {
    local sensor_namespace="$1"
 
-    if "$ORCH_CMD" -n "${sensor_namespace}" get hpa scanner >/dev/null 2>&1; then
-        "${ORCH_CMD}" -n "${sensor_namespace}" patch "hpa/scanner" --patch-file <(cat <<EOF
+    if "${ORCH_CMD}" </dev/null -n "${sensor_namespace}" get hpa scanner >/dev/null 2>&1; then
+        "${ORCH_CMD}" </dev/null -n "${sensor_namespace}" patch "hpa/scanner" --patch-file <(cat <<EOF
 spec:
   minReplicas: 1
   maxReplicas: 1
 EOF
         )
     fi
-    if "$ORCH_CMD" -n "${sensor_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
-        "${ORCH_CMD}" -n "${sensor_namespace}" patch "hpa/scanner-v4-indexer" --patch-file <(cat <<EOF
+    if "${ORCH_CMD}" </dev/null -n "${sensor_namespace}" get hpa scanner-v4-indexer >/dev/null 2>&1; then
+        "${ORCH_CMD}" </dev/null -n "${sensor_namespace}" patch "hpa/scanner-v4-indexer" --patch-file <(cat <<EOF
 spec:
   minReplicas: 1
   maxReplicas: 1
 EOF
         )
     fi
-    if "${ORCH_CMD}" -n "${central_namespace}" get deploy/scanner-v4-indexer >/dev/null 2>&1; then
-        "${ORCH_CMD}" -n "${sensor_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
+    if "${ORCH_CMD}" </dev/null -n "${central_namespace}" get deploy/scanner-v4-indexer >/dev/null 2>&1; then
+        "${ORCH_CMD}" </dev/null -n "${sensor_namespace}" patch "deploy/scanner-v4-indexer" --patch-file <(cat <<EOF
 spec:
   replicas: 1
 EOF
@@ -828,7 +828,7 @@ wait_for_ready_pods() {
     echo "Waiting for pod within deployment ${namespace}/${deployment} to become ready in ${timeout_seconds} seconds"
 
     while true; do
-      deployment_json="$("${ORCH_CMD}" -n "${namespace}" get "deployment/${deployment}" -o json)"
+      deployment_json="$("${ORCH_CMD}" </dev/null -n "${namespace}" get "deployment/${deployment}" -o json)"
       num_replicas="$(jq '.status.replicas // 0' <<<"${deployment_json}")"
       num_ready_replicas="$(jq '.status.readyReplicas // 0' <<<"${deployment_json}")"
       echo "${deployment} replicas: ${num_replicas}"
@@ -839,8 +839,8 @@ wait_for_ready_pods() {
       now=$(date '+%s')
       if (( now - start_time > timeout_seconds)); then
         echo >&2 "Timed out after ${timeout_seconds} seconds while waiting for ready pods within deployment ${namespace}/${deployment}"
-        "${ORCH_CMD}" -n "${namespace}" get pod -o wide
-        "${ORCH_CMD}" -n "${namespace}" get deploy -o wide
+        "${ORCH_CMD}" </dev/null -n "${namespace}" get pod -o wide
+        "${ORCH_CMD}" </dev/null -n "${namespace}" get deploy -o wide
         exit 1
       fi
       sleep 2
@@ -871,5 +871,5 @@ spec:
       - name: IGNORE_THIS_PLEASE
         value: it-is-just-about-checking-validationhook-readiness
 EOT
-    retry 7 true "${ORCH_CMD}" -n "${central_namespace}" patch Central stackrox-central-services --type=merge --patch-file="${patch_test_file}"
+    retry 7 true "${ORCH_CMD}" </dev/null -n "${central_namespace}" patch Central stackrox-central-services --type=merge --patch-file="${patch_test_file}"
 }
