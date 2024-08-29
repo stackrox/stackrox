@@ -362,7 +362,7 @@ func (h *httpHandler) openOfflineDefinitions(ctx context.Context, t updaterType,
 		}
 
 		if v != minorVersionPattern.FindString(opts.vulnVersion) && (opts.vulnVersion != "dev" || buildinfo.ReleaseBuild) {
-			msg := fmt.Sprintf("Failed to get Scanner V4 offline data file: uploaded file is version != requested file version (%s != %s)", v, opts.vulnVersion)
+			msg := fmt.Sprintf("failed to get Scanner V4 offline data file: the offline data version != requested file version (%s != %s)", v, opts.vulnVersion)
 			log.Error(msg)
 			return nil, errors.New(msg)
 		}
@@ -467,7 +467,7 @@ func (h *httpHandler) getUpdater(t updaterType, urlPath string) (*requestedUpdat
 	defer h.updatersLock.Unlock()
 
 	fileName := strings.ReplaceAll(filepath.Join(t.String(), urlPath), "/", "-")
-	u, exists := h.updaters[fileName]
+	updater, exists := h.updaters[fileName]
 	if !exists {
 		var updateURL *url.URL
 		switch t {
@@ -481,19 +481,20 @@ func (h *httpHandler) getUpdater(t updaterType, urlPath string) (*requestedUpdat
 			return nil, fmt.Errorf("unknown updater type: %s", t)
 		}
 		filePath := filepath.Join(h.dataDir, fileName)
-		u = &requestedUpdater{
+		updater = &requestedUpdater{
 			updater: newUpdater(file.New(filePath), client, updateURL.String(), h.updaterInterval),
 		}
-		h.updaters[fileName] = u
+		h.updaters[fileName] = updater
 	}
 
-	u.lastRequestedTime = time.Now()
-	return u, nil
+	updater.lastRequestedTime = time.Now()
+	return updater, nil
 }
 
 func (h *httpHandler) post(w http.ResponseWriter, r *http.Request) {
 	if r.Body == nil {
-		writeErrorBadPOSTRequest(w)
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("request missing body"))
 		return
 	}
 
@@ -595,23 +596,22 @@ func (h *httpHandler) handleZipContentsFromVulnDump(ctx context.Context) error {
 	// In the future, we may decide to support other files (like we have in the past), which is why we
 	// loop through this ZIP of ZIPs.
 	for _, zipF := range zipR.File {
-		if zipF.Name == scannerV2DefsFile {
+		switch {
+		case zipF.Name == scannerV2DefsFile:
 			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV2DefsBlobName); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-defs sub file")
 			}
 			log.Debugf("Successfully processed file: %s", zipF.Name)
 			count++
-			continue
-		}
-		if strings.HasPrefix(zipF.Name, scannerV4DefsPrefix) {
+		case strings.HasPrefix(zipF.Name, scannerV4DefsPrefix):
 			if err := h.handleScannerDefsFile(ctx, zipF, offlineScannerV4DefsBlobName); err != nil {
 				return errors.Wrap(err, "couldn't handle scanner-v4-defs sub file")
 			}
 			log.Debugf("Successfully processed file: %s", zipF.Name)
 			count++
-			continue
+		default:
+			// Ignore any other files which may be in the ZIP.
 		}
-		// Ignore any other files which may be in the ZIP.
 	}
 	// Just do a simple check for at least one valid file.
 	// Anything stricter may come with incompatibilities.
@@ -748,11 +748,6 @@ func writeErrorNotFound(w http.ResponseWriter) {
 func writeErrorBadRequest(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusBadRequest)
 	_, _ = w.Write([]byte("at least one of file or uuid must be specified"))
-}
-
-func writeErrorBadPOSTRequest(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusBadRequest)
-	_, _ = w.Write([]byte("request missing body"))
 }
 
 func writeErrorForFile(w http.ResponseWriter, err error, path string) {
