@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,7 +85,7 @@ func getCurrentComplianceResults(t *testing.T) (rhcos, ocp *storage.ComplianceRu
 		for _, run := range statusRunResp.GetRuns() {
 			if run.GetState() != v1.ComplianceRun_FINISHED {
 				finished = false
-				Log.Infof("Run for %v is in state %v", run.GetStandardId(), run.GetState())
+				e2etests.Log.Infof("Run for %v is in state %v", run.GetStandardId(), run.GetState())
 			}
 		}
 		if finished {

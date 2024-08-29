@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -93,8 +94,8 @@ func scaleToN(ctx context.Context, client kubernetes.Interface, deploymentName s
 }
 
 func createDynamicClient(t *testing.T) dynclient.Client {
-	restCfg := GetConfig(t)
-	k8sClient := CreateK8sClient(t)
+	restCfg := e2etests.GetConfig(t)
+	k8sClient := e2etests.CreateK8sClient(t)
 
 	k8sScheme := runtime.NewScheme()
 
@@ -134,7 +135,7 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
-	Log.Info("Waiting for ComplianceSuite to reach DONE phase")
+	e2etests.Log.Info("Waiting for ComplianceSuite to reach DONE phase")
 	for {
 		select {
 		case <-ticker.C:
@@ -143,10 +144,10 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 			require.NoError(t, err, "failed to get ComplianceSuite %s", suiteName)
 
 			if suite.Status.Phase == "DONE" {
-				Log.Infof("ComplianceSuite %s reached DONE phase", suiteName)
+				e2etests.Log.Infof("ComplianceSuite %s reached DONE phase", suiteName)
 				return
 			}
-			Log.Infof("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
+			e2etests.Log.Infof("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
 		case <-timer.C:
 			t.Fatalf("Timed out waiting for ComplianceSuite to complete")
 		}
@@ -226,7 +227,7 @@ func waitForDeploymentReady(ctx context.Context, t *testing.T, name string, name
 
 func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	ctx := context.Background()
-	k8sClient := CreateK8sClient(t)
+	k8sClient := e2etests.CreateK8sClient(t)
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	// Create the ScanConfiguration service

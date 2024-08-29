@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,7 @@ func TestCustomCert(t *testing.T) {
 		t.Skip("No test CA pem specified")
 	}
 
-	centralCN := MustGetEnv(t, "ROX_TEST_CENTRAL_CN")
+	centralCN := e2etests.MustGetEnv(t, "ROX_TEST_CENTRAL_CN")
 
 	trustPool := x509.NewCertPool()
 	ok := trustPool.AppendCertsFromPEM([]byte(testCentralCertCAPEM))

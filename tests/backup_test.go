@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/backup"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,9 +32,9 @@ func TestBackup(t *testing.T) {
 	}
 	deploymentName := fmt.Sprintf("test-backup-%d", rand.Intn(10000))
 
-	SetupDeployment(t, "nginx", deploymentName)
-	defer TeardownDeploymentWithoutCheck(deploymentName)
-	WaitForDeployment(t, deploymentName)
+	e2etests.SetupDeployment(t, "nginx", deploymentName)
+	defer e2etests.TeardownDeploymentWithoutCheck(deploymentName)
+	e2etests.WaitForDeployment(t, deploymentName)
 
 	for _, includeCerts := range []bool{false, true} {
 		t.Run(fmt.Sprintf("includeCerts=%t", includeCerts), func(t *testing.T) {

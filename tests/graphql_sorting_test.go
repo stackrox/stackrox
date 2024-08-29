@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,7 +31,7 @@ func getDeploymentsWithSortOption(t *testing.T, field string, reversed bool) []*
 		"pagination": map[string]interface{}{
 			"sortOption": map[string]interface{}{"field": field, "reversed": reversed},
 		},
-	}, &resp, Timeout)
+	}, &resp, e2etests.Timeout)
 
 	require.True(t, len(resp.Deployments) > 0, "UNEXPECTED: no deployments found in API!")
 

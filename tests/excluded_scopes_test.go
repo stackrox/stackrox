@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,9 +25,9 @@ func TestExcludedScopes(t *testing.T) {
 	}
 	deploymentName := fmt.Sprintf("test-excluded-scopes-%d", rand.Intn(10000))
 
-	SetupDeployment(t, "nginx", deploymentName)
-	defer TeardownDeploymentWithoutCheck(deploymentName)
-	WaitForDeployment(t, deploymentName)
+	e2etests.SetupDeployment(t, "nginx", deploymentName)
+	defer e2etests.TeardownDeploymentWithoutCheck(deploymentName)
+	e2etests.WaitForDeployment(t, deploymentName)
 
 	verifyNoAlertForExcludedScopes(t, deploymentName)
 	verifyAlertForExcludedScopesRemoval(t, deploymentName)
@@ -50,7 +51,7 @@ func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlert
 	for _, alert := range alerts {
 		alertStrings = fmt.Sprintf("%s%s\n", alertStrings, protocompat.MarshalTextString(alert))
 	}
-	Log.Infof("Received alerts:\n%s", alertStrings)
+	e2etests.Log.Infof("Received alerts:\n%s", alertStrings)
 	require.Fail(t, fmt.Sprintf("Failed to have %d alerts, instead received %d alerts", desired, len(alerts)))
 }
 
@@ -61,7 +62,7 @@ func verifyNoAlertForExcludedScopes(t *testing.T, deploymentName string) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
-		Query: search.NewQueryBuilder().AddStrings(search.PolicyName, ExpectedLatestTagPolicy).Query(),
+		Query: search.NewQueryBuilder().AddStrings(search.PolicyName, e2etests.ExpectedLatestTagPolicy).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -98,7 +99,7 @@ func verifyAlertForExcludedScopesRemoval(t *testing.T, deploymentName string) {
 
 	service := v1.NewPolicyServiceClient(conn)
 
-	qb := search.NewQueryBuilder().AddStrings(search.PolicyName, ExpectedLatestTagPolicy)
+	qb := search.NewQueryBuilder().AddStrings(search.PolicyName, e2etests.ExpectedLatestTagPolicy)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
 		Query: qb.Query(),

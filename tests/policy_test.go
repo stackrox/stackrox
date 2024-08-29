@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/fieldnames"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -67,7 +68,7 @@ func tearDownImportExportTest(t *testing.T) {
 
 	var cleanupErrors []error
 	for _, id := range addedPolicies {
-		Log.Infof("Added policy: %s", id)
+		e2etests.Log.Infof("Added policy: %s", id)
 		if id == knownPolicyID {
 			continue
 		}
@@ -77,7 +78,7 @@ func tearDownImportExportTest(t *testing.T) {
 		})
 		cancel()
 		if err != nil {
-			Log.Infof("error deleting policy %s, error: %v", id, err)
+			e2etests.Log.Infof("error deleting policy %s, error: %v", id, err)
 			cleanupErrors = append(cleanupErrors, err)
 		}
 	}
@@ -135,7 +136,7 @@ func validateImport(t *testing.T, importResp *v1.ImportPoliciesResponse, policie
 
 func validateSuccess(t *testing.T, importPolicyResponse *v1.ImportPolicyResponse, expectedPolicy *storage.Policy, ignoreID bool) {
 	require.True(t, importPolicyResponse.GetSucceeded())
-	Log.Infof("Adding policy %s with id: %s", importPolicyResponse.GetPolicy().GetName(), importPolicyResponse.GetPolicy().GetId())
+	e2etests.Log.Infof("Adding policy %s with id: %s", importPolicyResponse.GetPolicy().GetName(), importPolicyResponse.GetPolicy().GetId())
 	addedPolicies = append(addedPolicies, importPolicyResponse.GetPolicy().GetId())
 	if ignoreID {
 		expectedPolicy.Id = ""

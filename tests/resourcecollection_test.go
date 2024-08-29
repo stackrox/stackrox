@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	appsv1 "k8s.io/api/apps/v1"
@@ -70,7 +71,7 @@ func (s *CollectionE2ETestSuite) SetupSuite() {
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.service = v1.NewCollectionServiceClient(conn)
 	s.depService = v1.NewDeploymentServiceClient(conn)
-	k8sInterface := CreateK8sClient(s.T())
+	k8sInterface := e2etests.CreateK8sClient(s.T())
 
 	// create testing namespaces
 	s.nsClient = k8sInterface.CoreV1().Namespaces()
@@ -137,7 +138,7 @@ func (s *CollectionE2ETestSuite) SetupSuite() {
 
 	// wait for deployments to propagate
 	qb := search.NewQueryBuilder().AddRegexes(search.Namespace, "collections-test-.")
-	WaitForDeploymentCount(s.T(), qb.Query(), len(collectionNamespaces)*len(testDeployments))
+	e2etests.WaitForDeploymentCount(s.T(), qb.Query(), len(collectionNamespaces)*len(testDeployments))
 }
 
 func (s *CollectionE2ETestSuite) TearDownSuite() {
@@ -145,7 +146,7 @@ func (s *CollectionE2ETestSuite) TearDownSuite() {
 	for _, ns := range collectionNamespaces {
 		err := s.nsClient.Delete(s.ctx, ns, metav1.DeleteOptions{})
 		if err != nil {
-			Log.Errorf("failed deleting %q testing namespace %q", ns, err)
+			e2etests.Log.Errorf("failed deleting %q testing namespace %q", ns, err)
 		}
 	}
 
@@ -153,7 +154,7 @@ func (s *CollectionE2ETestSuite) TearDownSuite() {
 	for _, id := range s.collectionIDs {
 		_, err := s.service.DeleteCollection(s.ctx, &v1.ResourceByID{Id: id})
 		if err != nil {
-			Log.Errorf("failed deleting %q testing collection %q", id, err)
+			e2etests.Log.Errorf("failed deleting %q testing collection %q", id, err)
 		}
 	}
 }

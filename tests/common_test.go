@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,31 +20,31 @@ Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deseru
 
 func TestLogMatcher(t *testing.T) {
 	tests := map[string]struct {
-		funcs          []LogMatcher
+		funcs          []e2etests.LogMatcher
 		expectedResult assert.BoolAssertionFunc
 		expectedError  assert.ErrorAssertionFunc
 		expectedString string
 	}{
 		"one match": {
-			funcs: []LogMatcher{
-				ContainsLineMatching(regexp.MustCompile("sunt in culpa qui officia deserunt")),
+			funcs: []e2etests.LogMatcher{
+				e2etests.ContainsLineMatching(regexp.MustCompile("sunt in culpa qui officia deserunt")),
 			},
 			expectedResult: assert.True,
 			expectedError:  assert.NoError,
 			expectedString: `[contains line matching "sunt in culpa qui officia deserunt"]`,
 		},
 		"two matches": {
-			funcs: []LogMatcher{
-				ContainsLineMatching(regexp.MustCompile("Lorem ipsum dolor")),
-				ContainsLineMatching(regexp.MustCompile("Duis aute irure")),
+			funcs: []e2etests.LogMatcher{
+				e2etests.ContainsLineMatching(regexp.MustCompile("Lorem ipsum dolor")),
+				e2etests.ContainsLineMatching(regexp.MustCompile("Duis aute irure")),
 			},
 			expectedResult: assert.True,
 			expectedError:  assert.NoError,
 			expectedString: `[contains line matching "Lorem ipsum dolor" contains line matching "Duis aute irure"]`,
 		},
 		"text divided with newline": {
-			funcs: []LogMatcher{
-				ContainsLineMatching(regexp.MustCompile("labore et dolore.*magna aliqua")),
+			funcs: []e2etests.LogMatcher{
+				e2etests.ContainsLineMatching(regexp.MustCompile("labore et dolore.*magna aliqua")),
 			},
 			expectedResult: assert.False,
 			expectedError:  assert.NoError,
@@ -53,7 +54,7 @@ func TestLogMatcher(t *testing.T) {
 	r := bytes.NewReader(text)
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			actual, actualErr := AllMatch(r, test.funcs...)
+			actual, actualErr := e2etests.AllMatch(r, test.funcs...)
 			test.expectedResult(t, actual)
 			test.expectedError(t, actualErr)
 			assert.Equal(t, test.expectedString, fmt.Sprintf("%s", test.funcs))

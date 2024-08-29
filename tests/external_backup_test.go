@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/api/iterator"
@@ -89,7 +90,7 @@ func TestGCSExternalBackup(t *testing.T) {
 			time.Sleep(10 * time.Second)
 		}),
 		retry.OnFailedAttempts(func(err error) {
-			Log.Error(err.Error())
+			e2etests.Log.Error(err.Error())
 		}),
 	)
 	assert.NoError(t, err)
@@ -133,7 +134,7 @@ func TestGCSExternalBackup(t *testing.T) {
 			time.Sleep(1 * time.Second)
 		}),
 		retry.OnFailedAttempts(func(err error) {
-			Log.Error(err.Error())
+			e2etests.Log.Error(err.Error())
 		}),
 	)
 	require.NoError(t, err)

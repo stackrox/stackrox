@@ -10,6 +10,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,12 +24,12 @@ type ContainerNameGroup struct {
 func TestContainerInstances(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6493
 	// - the process events expected in this test are not reliably detected.
-	kPod := GetPodFromFile(testT, "yamls/multi-container-pod.yaml")
-	client := CreateK8sClient(testT)
+	kPod := e2etests.GetPodFromFile(testT, "yamls/multi-container-pod.yaml")
+	client := e2etests.CreateK8sClient(testT)
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
 		// Set up testing environment
-		defer TeardownPod(testT, client, kPod)
-		CreatePod(testT, client, kPod)
+		defer e2etests.TeardownPod(testT, client, kPod)
+		e2etests.CreatePod(testT, client, kPod)
 
 		// Get the test pod.
 		deploymentID := getDeploymentID(retryT, kPod.GetName())
@@ -89,8 +90,8 @@ func getGroupedContainerInstances(t testutils.T, podID string) []ContainerNameGr
 		}
 	`, map[string]interface{}{
 		"containersQuery": fmt.Sprintf("Pod ID: %s", podID),
-	}, &respData, Timeout)
-	Log.Info(respData)
+	}, &respData, e2etests.Timeout)
+	e2etests.Log.Info(respData)
 
 	return respData.GroupedContainerInstances
 }

@@ -18,6 +18,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -45,7 +46,7 @@ const (
 
 var (
 	dialer = net.Dialer{
-		Timeout: Timeout,
+		Timeout: e2etests.Timeout,
 	}
 )
 
@@ -151,7 +152,7 @@ func (c *endpointsTestCase) verifyDialResult(t *testing.T, conn *tls.Conn, err e
 	}
 
 	if err == nil {
-		_ = conn.SetReadDeadline(time.Now().Add(Timeout))
+		_ = conn.SetReadDeadline(time.Now().Add(e2etests.Timeout))
 		_, err = conn.Read(make([]byte, 1))
 	}
 	assert.EqualErrorf(t, err, "remote error: tls: certificate required", "expected a bad certificate error after handshake")
@@ -241,7 +242,7 @@ func (c *endpointsTestCase) runGRPCTest(t *testing.T, testCtx *endpointsTestCont
 	}
 
 	pingClient := v1.NewPingServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), e2etests.Timeout)
 	defer cancel()
 	_, err = pingClient.Ping(ctx, &v1.Empty{})
 	if !c.expectGRPCSuccess {
@@ -251,7 +252,7 @@ func (c *endpointsTestCase) runGRPCTest(t *testing.T, testCtx *endpointsTestCont
 	assert.NoError(t, err, "expected ping request to succeed")
 
 	authClient := v1.NewAuthServiceClient(conn)
-	ctx, cancel = context.WithTimeout(context.Background(), Timeout)
+	ctx, cancel = context.WithTimeout(context.Background(), e2etests.Timeout)
 	defer cancel()
 
 	authStatus, err := authClient.GetAuthStatus(ctx, &v1.Empty{})
@@ -306,7 +307,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   Timeout,
+		Timeout:   e2etests.Timeout,
 	}
 
 	resp, err := client.Get(fmt.Sprintf("%s://%s/v1/ping", scheme, targetHost))
@@ -353,20 +354,20 @@ func TestEndpoints(t *testing.T) {
 	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
 		t.Skip("Skipping endpoints test on OCP: TODO(ROX-24688)")
 	}
-	userCert, err := tls.LoadX509KeyPair(MustGetEnv(t, "CLIENT_CERT_PATH"), MustGetEnv(t, "CLIENT_KEY_PATH"))
+	userCert, err := tls.LoadX509KeyPair(e2etests.MustGetEnv(t, "CLIENT_CERT_PATH"), e2etests.MustGetEnv(t, "CLIENT_KEY_PATH"))
 	require.NoError(t, err, "failed to load user certificate")
 
-	serviceCert, err := tls.LoadX509KeyPair(MustGetEnv(t, "SERVICE_CERT_FILE"), MustGetEnv(t, "SERVICE_KEY_FILE"))
+	serviceCert, err := tls.LoadX509KeyPair(e2etests.MustGetEnv(t, "SERVICE_CERT_FILE"), e2etests.MustGetEnv(t, "SERVICE_KEY_FILE"))
 	require.NoError(t, err, "failed to load service certificate")
 
 	trustPool := x509.NewCertPool()
-	serviceCAPEMBytes, err := os.ReadFile(MustGetEnv(t, "SERVICE_CA_FILE"))
+	serviceCAPEMBytes, err := os.ReadFile(e2etests.MustGetEnv(t, "SERVICE_CA_FILE"))
 	require.NoError(t, err, "failed to load service CA file")
 	serviceCACert, err := helpers.ParseCertificatePEM(serviceCAPEMBytes)
 	require.NoError(t, err, "failed to parse service CA cert")
 	trustPool.AddCert(serviceCACert)
 
-	defaultCAPEMBytes, err := os.ReadFile(MustGetEnv(t, "DEFAULT_CA_FILE"))
+	defaultCAPEMBytes, err := os.ReadFile(e2etests.MustGetEnv(t, "DEFAULT_CA_FILE"))
 	require.NoError(t, err, "failed to load default CA file")
 	defaultCACert, err := helpers.ParseCertificatePEM(defaultCAPEMBytes)
 	require.NoError(t, err, "failed to parse default CA cert")

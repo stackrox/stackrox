@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/namespaces"
+	"github.com/stackrox/rox/pkg/testutils/e2etests"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -44,7 +45,7 @@ func TestTLSChallenge(t *testing.T) {
 }
 
 type TLSChallengeSuite struct {
-	KubernetesSuite
+	e2etests.KubernetesSuite
 	ctx                     context.Context
 	cleanupCtx              context.Context
 	cancel                  func()
@@ -53,10 +54,10 @@ type TLSChallengeSuite struct {
 
 func (ts *TLSChallengeSuite) SetupSuite() {
 	ts.KubernetesSuite.SetupSuite()
-	ts.ctx, ts.cleanupCtx, ts.cancel = TestContexts(ts.T(), "TestTLSChallenge", 15*time.Minute)
+	ts.ctx, ts.cleanupCtx, ts.cancel = e2etests.TestContexts(ts.T(), "TestTLSChallenge", 15*time.Minute)
 
 	// Check sanity before test.
-	WaitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
+	e2etests.WaitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 
 	ts.Logf("Gathering original central endpoint value from sensor...")
 	ts.originalCentralEndpoint = ts.GetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
@@ -71,7 +72,7 @@ func (ts *TLSChallengeSuite) TearDownSuite() {
 		ts.SetDeploymentEnvVal(ts.cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, ts.originalCentralEndpoint)
 	}
 	// Check sanity after test.
-	WaitUntilCentralSensorConnectionIs(ts.T(), ts.cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
+	e2etests.WaitUntilCentralSensorConnectionIs(ts.T(), ts.cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
 	ts.cancel()
 }
 
@@ -86,12 +87,12 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 	ts.Logf("Sensor will now attempt connecting via the nginx proxy.")
 
 	ts.WaitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection",
-		ContainsLineMatching(regexp.MustCompile("Info: Add central CA cert with CommonName: 'Custom Root'")),
-		ContainsLineMatching(regexp.MustCompile("Info: Connecting to Central server "+proxyEndpoint)),
-		ContainsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
-		ContainsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
+		e2etests.ContainsLineMatching(regexp.MustCompile("Info: Add central CA cert with CommonName: 'Custom Root'")),
+		e2etests.ContainsLineMatching(regexp.MustCompile("Info: Connecting to Central server "+proxyEndpoint)),
+		e2etests.ContainsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
+		e2etests.ContainsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
 	)
-	WaitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
+	e2etests.WaitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 }
 
 func (ts *TLSChallengeSuite) setupProxy(centralEndpoint string) {
@@ -121,8 +122,8 @@ func (ts *TLSChallengeSuite) installImagePullSecret() {
 	configBytes, err := json.Marshal(config.DockerConfigJSON{
 		Auths: map[string]config.DockerConfigEntry{
 			"https://quay.io": {
-				Username: MustGetEnv(ts.T(), "REGISTRY_USERNAME"),
-				Password: MustGetEnv(ts.T(), "REGISTRY_PASSWORD"),
+				Username: e2etests.MustGetEnv(ts.T(), "REGISTRY_USERNAME"),
+				Password: e2etests.MustGetEnv(ts.T(), "REGISTRY_PASSWORD"),
 			},
 		},
 	})
@@ -244,8 +245,8 @@ func (ts *TLSChallengeSuite) createProxyDeployment(name string, nginxLabels map[
 func (ts *TLSChallengeSuite) cleanupProxy(ctx context.Context, proxyNs string) {
 	if ts.T().Failed() {
 		ts.Logf("Test failed. Collecting k8s artifacts before cleanup.")
-		CollectLogs(ts.T(), namespaces.StackRox, "tls-challenge-failure")
-		CollectLogs(ts.T(), proxyNs, "tls-challenge-failure")
+		e2etests.CollectLogs(ts.T(), namespaces.StackRox, "tls-challenge-failure")
+		e2etests.CollectLogs(ts.T(), proxyNs, "tls-challenge-failure")
 	}
 	ts.Logf("Cleaning up nginx proxy in namespace %q...", proxyNs)
 	err := ts.k8s.CoreV1().Namespaces().Delete(ctx, proxyNs, metaV1.DeleteOptions{})
