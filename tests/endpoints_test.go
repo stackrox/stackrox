@@ -353,20 +353,20 @@ func TestEndpoints(t *testing.T) {
 	if os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift" {
 		t.Skip("Skipping endpoints test on OCP: TODO(ROX-24688)")
 	}
-	userCert, err := tls.LoadX509KeyPair(mustGetEnv(t, "CLIENT_CERT_PATH"), mustGetEnv(t, "CLIENT_KEY_PATH"))
+	userCert, err := tls.LoadX509KeyPair(MustGetEnv(t, "CLIENT_CERT_PATH"), MustGetEnv(t, "CLIENT_KEY_PATH"))
 	require.NoError(t, err, "failed to load user certificate")
 
-	serviceCert, err := tls.LoadX509KeyPair(mustGetEnv(t, "SERVICE_CERT_FILE"), mustGetEnv(t, "SERVICE_KEY_FILE"))
+	serviceCert, err := tls.LoadX509KeyPair(MustGetEnv(t, "SERVICE_CERT_FILE"), MustGetEnv(t, "SERVICE_KEY_FILE"))
 	require.NoError(t, err, "failed to load service certificate")
 
 	trustPool := x509.NewCertPool()
-	serviceCAPEMBytes, err := os.ReadFile(mustGetEnv(t, "SERVICE_CA_FILE"))
+	serviceCAPEMBytes, err := os.ReadFile(MustGetEnv(t, "SERVICE_CA_FILE"))
 	require.NoError(t, err, "failed to load service CA file")
 	serviceCACert, err := helpers.ParseCertificatePEM(serviceCAPEMBytes)
 	require.NoError(t, err, "failed to parse service CA cert")
 	trustPool.AddCert(serviceCACert)
 
-	defaultCAPEMBytes, err := os.ReadFile(mustGetEnv(t, "DEFAULT_CA_FILE"))
+	defaultCAPEMBytes, err := os.ReadFile(MustGetEnv(t, "DEFAULT_CA_FILE"))
 	require.NoError(t, err, "failed to load default CA file")
 	defaultCACert, err := helpers.ParseCertificatePEM(defaultCAPEMBytes)
 	require.NoError(t, err, "failed to parse default CA cert")

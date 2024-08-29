@@ -37,11 +37,11 @@ type Event struct {
 func TestPod(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
-	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
-	client := createK8sClient(testT)
+	kPod := GetPodFromFile(testT, "yamls/multi-container-pod.yaml")
+	client := CreateK8sClient(testT)
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
-		defer teardownPod(testT, client, kPod)
-		createPod(testT, client, kPod)
+		defer TeardownPod(testT, client, kPod)
+		CreatePod(testT, client, kPod)
 
 		// Get the test deployment.
 		deploymentID := getDeploymentID(retryT, kPod.GetName())

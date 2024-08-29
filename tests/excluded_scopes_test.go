@@ -24,9 +24,9 @@ func TestExcludedScopes(t *testing.T) {
 	}
 	deploymentName := fmt.Sprintf("test-excluded-scopes-%d", rand.Intn(10000))
 
-	setupDeployment(t, "nginx", deploymentName)
-	defer teardownDeploymentWithoutCheck(deploymentName)
-	waitForDeployment(t, deploymentName)
+	SetupDeployment(t, "nginx", deploymentName)
+	defer TeardownDeploymentWithoutCheck(deploymentName)
+	WaitForDeployment(t, deploymentName)
 
 	verifyNoAlertForExcludedScopes(t, deploymentName)
 	verifyAlertForExcludedScopesRemoval(t, deploymentName)
@@ -61,7 +61,7 @@ func verifyNoAlertForExcludedScopes(t *testing.T, deploymentName string) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
-		Query: search.NewQueryBuilder().AddStrings(search.PolicyName, expectedLatestTagPolicy).Query(),
+		Query: search.NewQueryBuilder().AddStrings(search.PolicyName, ExpectedLatestTagPolicy).Query(),
 	})
 	cancel()
 	require.NoError(t, err)
@@ -98,7 +98,7 @@ func verifyAlertForExcludedScopesRemoval(t *testing.T, deploymentName string) {
 
 	service := v1.NewPolicyServiceClient(conn)
 
-	qb := search.NewQueryBuilder().AddStrings(search.PolicyName, expectedLatestTagPolicy)
+	qb := search.NewQueryBuilder().AddStrings(search.PolicyName, ExpectedLatestTagPolicy)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.ListPolicies(ctx, &v1.RawQuery{
 		Query: qb.Query(),

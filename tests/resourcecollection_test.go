@@ -70,7 +70,7 @@ func (s *CollectionE2ETestSuite) SetupSuite() {
 	conn := centralgrpc.GRPCConnectionToCentral(s.T())
 	s.service = v1.NewCollectionServiceClient(conn)
 	s.depService = v1.NewDeploymentServiceClient(conn)
-	k8sInterface := createK8sClient(s.T())
+	k8sInterface := CreateK8sClient(s.T())
 
 	// create testing namespaces
 	s.nsClient = k8sInterface.CoreV1().Namespaces()
@@ -137,7 +137,7 @@ func (s *CollectionE2ETestSuite) SetupSuite() {
 
 	// wait for deployments to propagate
 	qb := search.NewQueryBuilder().AddRegexes(search.Namespace, "collections-test-.")
-	waitForDeploymentCount(s.T(), qb.Query(), len(collectionNamespaces)*len(testDeployments))
+	WaitForDeploymentCount(s.T(), qb.Query(), len(collectionNamespaces)*len(testDeployments))
 }
 
 func (s *CollectionE2ETestSuite) TearDownSuite() {

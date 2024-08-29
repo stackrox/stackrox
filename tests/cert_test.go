@@ -43,7 +43,7 @@ func TestCustomCert(t *testing.T) {
 		t.Skip("No test CA pem specified")
 	}
 
-	centralCN := mustGetEnv(t, "ROX_TEST_CENTRAL_CN")
+	centralCN := MustGetEnv(t, "ROX_TEST_CENTRAL_CN")
 
 	trustPool := x509.NewCertPool()
 	ok := trustPool.AppendCertsFromPEM([]byte(testCentralCertCAPEM))

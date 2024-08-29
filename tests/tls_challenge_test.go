@@ -53,14 +53,14 @@ type TLSChallengeSuite struct {
 
 func (ts *TLSChallengeSuite) SetupSuite() {
 	ts.KubernetesSuite.SetupSuite()
-	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(ts.T(), "TestTLSChallenge", 15*time.Minute)
+	ts.ctx, ts.cleanupCtx, ts.cancel = TestContexts(ts.T(), "TestTLSChallenge", 15*time.Minute)
 
 	// Check sanity before test.
-	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
+	WaitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 
-	ts.logf("Gathering original central endpoint value from sensor...")
-	ts.originalCentralEndpoint = ts.getDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
-	ts.logf("Original value is %q. (Will restore this value on cleanup.)", ts.originalCentralEndpoint)
+	ts.Logf("Gathering original central endpoint value from sensor...")
+	ts.originalCentralEndpoint = ts.GetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
+	ts.Logf("Original value is %q. (Will restore this value on cleanup.)", ts.originalCentralEndpoint)
 
 	ts.setupProxy(ts.originalCentralEndpoint)
 }
@@ -68,10 +68,10 @@ func (ts *TLSChallengeSuite) SetupSuite() {
 func (ts *TLSChallengeSuite) TearDownSuite() {
 	ts.cleanupProxy(ts.cleanupCtx, proxyNs)
 	if ts.originalCentralEndpoint != "" {
-		ts.setDeploymentEnvVal(ts.cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, ts.originalCentralEndpoint)
+		ts.SetDeploymentEnvVal(ts.cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, ts.originalCentralEndpoint)
 	}
 	// Check sanity after test.
-	waitUntilCentralSensorConnectionIs(ts.T(), ts.cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
+	WaitUntilCentralSensorConnectionIs(ts.T(), ts.cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
 	ts.cancel()
 }
 
@@ -81,17 +81,17 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 		proxyEndpoint    = proxyServiceName + "." + proxyNs + ":443"
 	)
 
-	ts.logf("Pointing sensor at the proxy...")
-	ts.setDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
-	ts.logf("Sensor will now attempt connecting via the nginx proxy.")
+	ts.Logf("Pointing sensor at the proxy...")
+	ts.SetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
+	ts.Logf("Sensor will now attempt connecting via the nginx proxy.")
 
-	ts.waitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection",
-		containsLineMatching(regexp.MustCompile("Info: Add central CA cert with CommonName: 'Custom Root'")),
-		containsLineMatching(regexp.MustCompile("Info: Connecting to Central server "+proxyEndpoint)),
-		containsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
-		containsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
+	ts.WaitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection",
+		ContainsLineMatching(regexp.MustCompile("Info: Add central CA cert with CommonName: 'Custom Root'")),
+		ContainsLineMatching(regexp.MustCompile("Info: Connecting to Central server "+proxyEndpoint)),
+		ContainsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
+		ContainsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
 	)
-	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
+	WaitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 }
 
 func (ts *TLSChallengeSuite) setupProxy(centralEndpoint string) {
@@ -99,14 +99,14 @@ func (ts *TLSChallengeSuite) setupProxy(centralEndpoint string) {
 	nginxLabels := map[string]string{"app": "nginx"}
 	nginxTLSSecretName := "nginx-tls-conf" //nolint:gosec // G101
 	nginxConfigName := "nginx-proxy-conf"
-	ts.logf("Setting up nginx proxy in namespace %q...", proxyNs)
+	ts.Logf("Setting up nginx proxy in namespace %q...", proxyNs)
 	ts.createProxyNamespace()
 	ts.installImagePullSecret()
 	ts.createProxyTLSSecret(nginxTLSSecretName)
 	ts.createProxyConfigMap(centralEndpoint, nginxConfigName)
-	ts.createService(ts.ctx, proxyNs, name, nginxLabels, map[int32]int32{443: 8443})
+	ts.CreateService(ts.ctx, proxyNs, name, nginxLabels, map[int32]int32{443: 8443})
 	ts.createProxyDeployment(name, nginxLabels, nginxConfigName, nginxTLSSecretName)
-	ts.logf("Nginx proxy is now set up in namespace %q.", proxyNs)
+	ts.Logf("Nginx proxy is now set up in namespace %q.", proxyNs)
 }
 
 func (ts *TLSChallengeSuite) createProxyNamespace() {
@@ -121,20 +121,20 @@ func (ts *TLSChallengeSuite) installImagePullSecret() {
 	configBytes, err := json.Marshal(config.DockerConfigJSON{
 		Auths: map[string]config.DockerConfigEntry{
 			"https://quay.io": {
-				Username: mustGetEnv(ts.T(), "REGISTRY_USERNAME"),
-				Password: mustGetEnv(ts.T(), "REGISTRY_PASSWORD"),
+				Username: MustGetEnv(ts.T(), "REGISTRY_USERNAME"),
+				Password: MustGetEnv(ts.T(), "REGISTRY_PASSWORD"),
 			},
 		},
 	})
 	ts.Require().NoError(err, "cannot serialize docker config for image pull secret %q in namespace %q", proxyImagePullSecretName, proxyNs)
-	ts.ensureSecretExists(ts.ctx, proxyNs, proxyImagePullSecretName, v1.SecretTypeDockerConfigJson, map[string][]byte{v1.DockerConfigJsonKey: configBytes})
+	ts.EnsureSecretExists(ts.ctx, proxyNs, proxyImagePullSecretName, v1.SecretTypeDockerConfigJson, map[string][]byte{v1.DockerConfigJsonKey: configBytes})
 }
 
 func (ts *TLSChallengeSuite) createProxyTLSSecret(nginxTLSSecretName string) {
 	var certChain []byte
 	certChain = append(certChain, leafCert...)
 	certChain = append(certChain, additionalCA...)
-	ts.ensureSecretExists(ts.ctx, proxyNs, nginxTLSSecretName, v1.SecretTypeTLS, map[string][]byte{
+	ts.EnsureSecretExists(ts.ctx, proxyNs, nginxTLSSecretName, v1.SecretTypeTLS, map[string][]byte{
 		v1.TLSCertKey:       certChain,
 		v1.TLSPrivateKeyKey: leafKey,
 	})
@@ -161,7 +161,7 @@ server {
 	}
 }
 `
-	ts.ensureConfigMapExists(ts.ctx, proxyNs, nginxConfigName, map[string]string{
+	ts.EnsureConfigMapExists(ts.ctx, proxyNs, nginxConfigName, map[string]string{
 		"nginx-proxy-grpc-tls.conf": fmt.Sprintf(nginxConfigTmpl, centralEndpoint),
 	})
 }
@@ -243,11 +243,11 @@ func (ts *TLSChallengeSuite) createProxyDeployment(name string, nginxLabels map[
 
 func (ts *TLSChallengeSuite) cleanupProxy(ctx context.Context, proxyNs string) {
 	if ts.T().Failed() {
-		ts.logf("Test failed. Collecting k8s artifacts before cleanup.")
-		collectLogs(ts.T(), namespaces.StackRox, "tls-challenge-failure")
-		collectLogs(ts.T(), proxyNs, "tls-challenge-failure")
+		ts.Logf("Test failed. Collecting k8s artifacts before cleanup.")
+		CollectLogs(ts.T(), namespaces.StackRox, "tls-challenge-failure")
+		CollectLogs(ts.T(), proxyNs, "tls-challenge-failure")
 	}
-	ts.logf("Cleaning up nginx proxy in namespace %q...", proxyNs)
+	ts.Logf("Cleaning up nginx proxy in namespace %q...", proxyNs)
 	err := ts.k8s.CoreV1().Namespaces().Delete(ctx, proxyNs, metaV1.DeleteOptions{})
 	if apiErrors.IsNotFound(err) {
 		return

@@ -45,10 +45,10 @@ import (
 // within every tag, hence the linter incorrectly shows most functions in this file as unused.
 
 const (
-	nginxDeploymentName     = `nginx`
-	expectedLatestTagPolicy = `Latest tag`
+	NginxDeploymentName     = `nginx`
+	ExpectedLatestTagPolicy = `Latest tag`
 
-	waitTimeout = 5 * time.Minute
+	WaitTimeout = 5 * time.Minute
 	timeout     = 30 * time.Second
 )
 
@@ -62,9 +62,9 @@ func logf(t *testing.T, format string, args ...any) {
 	t.Logf(time.Now().Format(time.StampMilli)+" "+format, args...)
 }
 
-// testContexts returns a couple of contexts for the given test: with a timeout for the testing logic and another
+// TestContexts returns a couple of contexts for the given test: with a timeout for the testing logic and another
 // with an additional longer timeout for debug artifact gathering and cleanup.
-func testContexts(t *testing.T, name string, timeout time.Duration) (testCtx context.Context, overallCtx context.Context, cancel func()) {
+func TestContexts(t *testing.T, name string, timeout time.Duration) (testCtx context.Context, overallCtx context.Context, cancel func()) {
 	var (
 		overallCancel func()
 		testCancel    func()
@@ -83,23 +83,23 @@ func testContexts(t *testing.T, name string, timeout time.Duration) (testCtx con
 	return
 }
 
-// mustGetEnv calls os.GetEnv and fails the test if result is empty.
-func mustGetEnv(t *testing.T, varName string) string {
+// MustGetEnv calls os.GetEnv and fails the test if result is empty.
+func MustGetEnv(t *testing.T, varName string) string {
 	val := os.Getenv(varName)
 	require.NotEmptyf(t, val, "Environment variable %q must be set.", varName)
 	return val
 }
 
-func retrieveDeployment(service v1.DeploymentServiceClient, deploymentID string) (*storage.Deployment, error) {
+func RetrieveDeployment(service v1.DeploymentServiceClient, deploymentID string) (*storage.Deployment, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return service.GetDeployment(ctx, &v1.ResourceByID{Id: deploymentID})
 }
 
-func retrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.ListDeployment) ([]*storage.Deployment, error) {
+func RetrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.ListDeployment) ([]*storage.Deployment, error) {
 	deployments := make([]*storage.Deployment, 0, len(deps))
 	for _, d := range deps {
-		deployment, err := retrieveDeployment(service, d.GetId())
+		deployment, err := RetrieveDeployment(service, d.GetId())
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +108,7 @@ func retrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.Lis
 	return deployments, nil
 }
 
-func waitForDeploymentCount(t testutils.T, query string, count int) {
+func WaitForDeploymentCount(t testutils.T, query string, count int) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -116,7 +116,7 @@ func waitForDeploymentCount(t testutils.T, query string, count int) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	timer := time.NewTimer(waitTimeout)
+	timer := time.NewTimer(WaitTimeout)
 	defer timer.Stop()
 
 	for {
@@ -140,7 +140,7 @@ func waitForDeploymentCount(t testutils.T, query string, count int) {
 
 }
 
-func waitForDeployment(t testutils.T, deploymentName string) {
+func WaitForDeployment(t testutils.T, deploymentName string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -148,7 +148,7 @@ func waitForDeployment(t testutils.T, deploymentName string) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	timer := time.NewTimer(waitTimeout)
+	timer := time.NewTimer(WaitTimeout)
 	defer timer.Stop()
 
 	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentName, deploymentName)
@@ -167,7 +167,7 @@ func waitForDeployment(t testutils.T, deploymentName string) {
 				continue
 			}
 
-			deployments, err := retrieveDeployments(service, listDeployments.GetDeployments())
+			deployments, err := RetrieveDeployments(service, listDeployments.GetDeployments())
 			if err != nil {
 				log.Errorf("Error retrieving deployments: %s", err)
 				continue
@@ -186,7 +186,7 @@ func waitForDeployment(t testutils.T, deploymentName string) {
 	}
 }
 
-func waitForTermination(t testutils.T, deploymentName string) {
+func WaitForTermination(t testutils.T, deploymentName string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -194,7 +194,7 @@ func waitForTermination(t testutils.T, deploymentName string) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	timer := time.NewTimer(waitTimeout)
+	timer := time.NewTimer(WaitTimeout)
 	defer timer.Stop()
 
 	query := search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentName).Query()
@@ -221,7 +221,7 @@ func waitForTermination(t testutils.T, deploymentName string) {
 	}
 }
 
-func getPodFromFile(t testutils.T, path string) *coreV1.Pod {
+func GetPodFromFile(t testutils.T, path string) *coreV1.Pod {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 
@@ -232,27 +232,27 @@ func getPodFromFile(t testutils.T, path string) *coreV1.Pod {
 	return &pod
 }
 
-func setupDeployment(t *testing.T, image, deploymentName string) {
-	setupDeploymentWithReplicas(t, image, deploymentName, 1)
+func SetupDeployment(t *testing.T, image, deploymentName string) {
+	SetupDeploymentWithReplicas(t, image, deploymentName, 1)
 }
 
-func setupDeploymentWithReplicas(t *testing.T, image, deploymentName string, replicas int) {
+func SetupDeploymentWithReplicas(t *testing.T, image, deploymentName string, replicas int) {
 	cmd := exec.Command(`kubectl`, `create`, `deployment`, deploymentName, fmt.Sprintf("--image=%s", image), fmt.Sprintf("--replicas=%d", replicas))
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
-	waitForDeployment(t, deploymentName)
+	WaitForDeployment(t, deploymentName)
 }
 
-func setImage(t *testing.T, deploymentName string, deploymentID string, containerName string, image string) {
+func SetImage(t *testing.T, deploymentName string, deploymentID string, containerName string, image string) {
 	cmd := exec.Command(`kubectl`, `set`, `image`, fmt.Sprintf("deployment/%s", deploymentName), fmt.Sprintf("%s=%s", containerName, image))
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewDeploymentServiceClient(conn)
 
-	waitForCondition(t, func() bool {
-		deployment, err := retrieveDeployment(service, deploymentID)
+	WaitForCondition(t, func() bool {
+		deployment, err := RetrieveDeployment(service, deploymentID)
 		if err != nil {
 			log.Error(err)
 			return false
@@ -268,7 +268,7 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 	}, "image updated", time.Minute, 5*time.Second)
 }
 
-func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
+func CreatePod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -276,34 +276,34 @@ func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	_, err := client.CoreV1().Pods(pod.GetNamespace()).Create(ctx, pod, metaV1.CreateOptions{})
 	require.NoError(t, err)
 
-	waitForDeployment(t, pod.GetName())
+	WaitForDeployment(t, pod.GetName())
 }
 
-func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
+func TeardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
 	require.NoError(t, err)
 
-	waitForTermination(t, pod.GetName())
+	WaitForTermination(t, pod.GetName())
 }
 
-func teardownDeployment(t *testing.T, deploymentName string) {
+func TeardownDeployment(t *testing.T, deploymentName string) {
 	cmd := exec.Command(`kubectl`, `delete`, `deployment`, deploymentName, `--ignore-not-found=true`, `--grace-period=1`)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
 
-	waitForTermination(t, deploymentName)
+	WaitForTermination(t, deploymentName)
 }
 
-func teardownDeploymentWithoutCheck(deploymentName string) {
+func TeardownDeploymentWithoutCheck(deploymentName string) {
 	// In cases where deployment will not impact other tests,
 	// we can trigger deletion and assume that it will be deleted eventually.
 	exec.Command(`kubectl`, `delete`, `deployment`, deploymentName, `--ignore-not-found=true`, `--grace-period=1`)
 }
 
-func getConfig(t *testing.T) *rest.Config {
+func GetConfig(t *testing.T) *rest.Config {
 	config, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
 	require.NoError(t, err, "could not load default Kubernetes client config")
 
@@ -313,15 +313,15 @@ func getConfig(t *testing.T) *rest.Config {
 	return restCfg
 }
 
-func createK8sClient(t *testing.T) kubernetes.Interface {
-	restCfg := getConfig(t)
+func CreateK8sClient(t *testing.T) kubernetes.Interface {
+	restCfg := GetConfig(t)
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 
 	return k8sClient
 }
 
-func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
+func WaitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
 	ticker := time.NewTicker(frequency)
 	defer ticker.Stop()
 
@@ -346,20 +346,20 @@ type KubernetesSuite struct {
 }
 
 func (ks *KubernetesSuite) SetupSuite() {
-	ks.k8s = createK8sClient(ks.T())
+	ks.k8s = CreateK8sClient(ks.T())
 }
 
-func (ks *KubernetesSuite) logf(format string, args ...any) {
+func (ks *KubernetesSuite) Logf(format string, args ...any) {
 	logf(ks.T(), format, args...)
 }
 
-type logMatcher interface {
+type LogMatcher interface {
 	Match(reader io.Reader) (bool, error)
 	fmt.Stringer
 }
 
-// waitUntilLog waits until ctx expires or logs of container in all pods matching podLabels satisfy all logMatchers.
-func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
+// WaitUntilLog waits until ctx expires or logs of container in all pods matching podLabels satisfy all logMatchers.
+func (ks *KubernetesSuite) WaitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...LogMatcher) {
 	ls := labels.SelectorFromSet(podLabels).String()
 	checkLogs := func() error {
 		podList, err := ks.k8s.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{LabelSelector: ls})
@@ -367,7 +367,7 @@ func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, p
 			return fmt.Errorf("could not list pods matching %q in namespace %q: %w", ls, namespace, err)
 		}
 		if len(podList.Items) == 0 {
-			if ok, err := allMatch(strings.NewReader(""), logMatchers...); ok {
+			if ok, err := AllMatch(strings.NewReader(""), logMatchers...); ok {
 				return nil
 			} else if err != nil {
 				return fmt.Errorf("empty list of pods caused failure: %w", err)
@@ -380,7 +380,7 @@ func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, p
 			if err != nil {
 				return fmt.Errorf("retrieving logs of pod %q in namespace %q failed: %w", pod.GetName(), namespace, err)
 			}
-			if ok, err := allMatch(bytes.NewReader(log), logMatchers...); ok {
+			if ok, err := AllMatch(bytes.NewReader(log), logMatchers...); ok {
 				continue
 			} else if err != nil {
 				return fmt.Errorf("log of pod %q in namespace %q caused failure: %w", pod.GetName(), namespace, err)
@@ -389,17 +389,17 @@ func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, p
 		}
 		return nil
 	}
-	ks.logf("Waiting until %q pods logs "+description+": %s", ls, logMatchers)
-	mustEventually(ks.T(), ctx, checkLogs, 10*time.Second, fmt.Sprintf("Not all %q pods logs "+description, ls))
+	ks.Logf("Waiting until %q pods logs "+description+": %s", ls, logMatchers)
+	MustEventually(ks.T(), ctx, checkLogs, 10*time.Second, fmt.Sprintf("Not all %q pods logs "+description, ls))
 }
 
-// containsLineMatching returns a simple line-based regex matcher to go with waitUntilLog.
+// ContainsLineMatching returns a simple line-based regex matcher to go with WaitUntilLog.
 // Note: currently limited by bufio.Reader default buffer size (4KB) for simplicity.
-func containsLineMatching(re *regexp.Regexp) *lineMatcher {
+func ContainsLineMatching(re *regexp.Regexp) *lineMatcher {
 	return &lineMatcher{re: re}
 }
 
-func allMatch(reader io.ReadSeeker, matchers ...logMatcher) (ok bool, err error) {
+func AllMatch(reader io.ReadSeeker, matchers ...LogMatcher) (ok bool, err error) {
 	for i, matcher := range matchers {
 		_, err := reader.Seek(0, io.SeekStart)
 		if err != nil {
@@ -416,8 +416,8 @@ func allMatch(reader io.ReadSeeker, matchers ...logMatcher) (ok bool, err error)
 	return true, nil
 }
 
-// mustEventually retries every pauseInterval until ctx expires or f succeeds.
-func mustEventually(t *testing.T, ctx context.Context, f func() error, pauseInterval time.Duration, failureMsgPrefix string) {
+// MustEventually retries every pauseInterval until ctx expires or f succeeds.
+func MustEventually(t *testing.T, ctx context.Context, f func() error, pauseInterval time.Duration, failureMsgPrefix string) {
 	require.NoError(t, retry.WithRetry(f,
 		retry.Tries(math.MaxInt),
 		retry.WithContext(ctx),
@@ -452,8 +452,8 @@ func (lm *lineMatcher) Match(reader io.Reader) (ok bool, err error) {
 	}
 }
 
-// createService creates a k8s Service object.
-func (ks *KubernetesSuite) createService(ctx context.Context, namespace string, name string, labels map[string]string, ports map[int32]int32) {
+// CreateService creates a k8s Service object.
+func (ks *KubernetesSuite) CreateService(ctx context.Context, namespace string, name string, labels map[string]string, ports map[int32]int32) {
 	svc := &coreV1.Service{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:   name,
@@ -476,8 +476,8 @@ func (ks *KubernetesSuite) createService(ctx context.Context, namespace string, 
 	ks.Require().NoError(err, "cannot create service %q in namespace %q", name, namespace)
 }
 
-// ensureSecretExists creates a k8s Secret object. If one exists, it makes sure the type and data matches.
-func (ks *KubernetesSuite) ensureSecretExists(ctx context.Context, namespace string, name string, secretType coreV1.SecretType, data map[string][]byte) {
+// EnsureSecretExists creates a k8s Secret object. If one exists, it makes sure the type and data matches.
+func (ks *KubernetesSuite) EnsureSecretExists(ctx context.Context, namespace string, name string, secretType coreV1.SecretType, data map[string][]byte) {
 	secret := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name: name,
@@ -497,8 +497,8 @@ func (ks *KubernetesSuite) ensureSecretExists(ctx context.Context, namespace str
 	}
 }
 
-// ensureConfigMapExists creates a k8s ConfigMap object. If one exists, it makes sure the data matches.
-func (ks *KubernetesSuite) ensureConfigMapExists(ctx context.Context, namespace string, name string, data map[string]string) {
+// EnsureConfigMapExists creates a k8s ConfigMap object. If one exists, it makes sure the data matches.
+func (ks *KubernetesSuite) EnsureConfigMapExists(ctx context.Context, namespace string, name string, data map[string]string) {
 	cm := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
 			Name: name,
@@ -515,9 +515,9 @@ func (ks *KubernetesSuite) ensureConfigMapExists(ctx context.Context, namespace 
 	}
 }
 
-// waitUntilCentralSensorConnectionIs makes sure there is only one cluster defined on central, and its status is eventually
+// WaitUntilCentralSensorConnectionIs makes sure there is only one cluster defined on central, and its status is eventually
 // one of the specified statuses.
-func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statuses ...storage.ClusterHealthStatus_HealthStatusLabel) {
+func WaitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statuses ...storage.ClusterHealthStatus_HealthStatusLabel) {
 	logf(t, "Waiting until central-sensor connection is in state(s) %s...", statuses)
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	checkCentralSensorConnection := func() error {
@@ -542,21 +542,21 @@ func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 		}
 		return fmt.Errorf("encountered cluster status %q", clusterStatus.String())
 	}
-	mustEventually(t, ctx, checkCentralSensorConnection, 10*time.Second, "Central-sensor connection not in desired state (yet)")
+	MustEventually(t, ctx, checkCentralSensorConnection, 10*time.Second, "Central-sensor connection not in desired state (yet)")
 }
 
-// setDeploymentEnvVal sets the specified env variable on a container in a deployment using strategic merge patch, or fails the test.
-func (ks *KubernetesSuite) setDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string, value string) {
+// SetDeploymentEnvVal sets the specified env variable on a container in a deployment using strategic merge patch, or fails the test.
+func (ks *KubernetesSuite) SetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string, value string) {
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":%q,"value":%q}]}]}}}}`,
 		container, envVar, value))
-	ks.logf("Setting variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
+	ks.Logf("Setting variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
 	_, err := ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
 	ks.Require().NoError(err, "cannot patch deployment %q in namespace %q", deployment, namespace)
 
 }
 
-// getDeploymentEnvVal retrieves the value of environment variable in a deployment, or fails the test.
-func (ks *KubernetesSuite) getDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) string {
+// GetDeploymentEnvVal retrieves the value of environment variable in a deployment, or fails the test.
+func (ks *KubernetesSuite) GetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) string {
 	d, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
 	ks.Require().NoError(err, "cannot retrieve deployment %q in namespace %q", deployment, namespace)
 	c, err := getContainer(d, container)
@@ -590,8 +590,8 @@ func getContainer(deployment *appsV1.Deployment, container string) (*coreV1.Cont
 	return nil, fmt.Errorf("actual containers are %q", containers)
 }
 
-// collectLogs collects service logs from a given namespace into a subdirectory that will be gathered by the CI scripts.
-func collectLogs(t *testing.T, ns string, dir string) {
+// CollectLogs collects service logs from a given namespace into a subdirectory that will be gathered by the CI scripts.
+func CollectLogs(t *testing.T, ns string, dir string) {
 	err := exec.Command("../scripts/ci/collect-service-logs.sh", ns, "/tmp/e2e-test-logs/"+dir).Run()
 	if err != nil {
 		t.Logf("Collecting %q logs returned error %s", ns, err)

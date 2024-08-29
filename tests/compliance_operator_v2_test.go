@@ -93,8 +93,8 @@ func scaleToN(ctx context.Context, client kubernetes.Interface, deploymentName s
 }
 
 func createDynamicClient(t *testing.T) dynclient.Client {
-	restCfg := getConfig(t)
-	k8sClient := createK8sClient(t)
+	restCfg := GetConfig(t)
+	k8sClient := CreateK8sClient(t)
 
 	k8sScheme := runtime.NewScheme()
 
@@ -226,7 +226,7 @@ func waitForDeploymentReady(ctx context.Context, t *testing.T, name string, name
 
 func TestComplianceV2CentralSendsScanConfiguration(t *testing.T) {
 	ctx := context.Background()
-	k8sClient := createK8sClient(t)
+	k8sClient := CreateK8sClient(t)
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	// Create the ScanConfiguration service

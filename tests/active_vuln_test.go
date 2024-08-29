@@ -79,8 +79,8 @@ func TestActiveVulnerability(t *testing.T) {
 func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
 	log.Infof("test case %v", testCase)
 	deploymentName := fmt.Sprintf("%s-%d", avmDeploymentName, idx)
-	setupDeployment(t, testCase.getImage(), deploymentName)
-	defer teardownDeployment(t, deploymentName)
+	SetupDeployment(t, testCase.getImage(), deploymentName)
+	defer TeardownDeployment(t, deploymentName)
 	fmt.Println(idx, testCase, deploymentName)
 	deploymentID := getDeploymentID(t, deploymentName)
 	checkActiveVulnerability(t, testCase, deploymentID)
@@ -89,37 +89,37 @@ func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
 func TestActiveVulnerability_SetImage(t *testing.T) {
 	t.Skipf("Active Vunerability feature has been disabled for rebuilt later")
 	waitForImageScanned(t)
-	setupDeploymentWithReplicas(t, nginxImages[0].getImage(), avmDeploymentName, 3)
-	defer teardownDeployment(t, avmDeploymentName)
+	SetupDeploymentWithReplicas(t, nginxImages[0].getImage(), avmDeploymentName, 3)
+	defer TeardownDeployment(t, avmDeploymentName)
 	deploymentID := getDeploymentID(t, avmDeploymentName)
 
 	checkActiveVulnerability(t, nginxImages[0], deploymentID)
 
 	// Upgrade image and check result
-	setImage(t, avmDeploymentName, deploymentID, "nginx", nginxImages[1].getImage())
+	SetImage(t, avmDeploymentName, deploymentID, "nginx", nginxImages[1].getImage())
 	checkActiveVulnerability(t, nginxImages[1], deploymentID)
 
 	// Downgrade image and check result
-	setImage(t, avmDeploymentName, deploymentID, "nginx", nginxImages[0].getImage())
+	SetImage(t, avmDeploymentName, deploymentID, "nginx", nginxImages[0].getImage())
 	checkActiveVulnerability(t, nginxImages[0], deploymentID)
 }
 
 func checkActiveVulnerability(t *testing.T, image nginxImage, deploymentID string) {
 	deploymentQuery := fmt.Sprintf("DEPLOYMENT ID:%q", deploymentID)
 	imageQuery := fmt.Sprintf("IMAGE SHA:%q", image.SHA)
-	waitForCondition(t, func() bool {
+	WaitForCondition(t, func() bool {
 		fromDeployment := getImageComponents(t, deploymentQuery, deploymentQuery)
 		return image.activeComponents <= getActiveComponentCount(fromDeployment, deploymentQuery)
 	}, "active components for the deployment populated", 5*time.Minute, 30*time.Second)
 
-	waitForCondition(t, func() bool {
+	WaitForCondition(t, func() bool {
 		fromImage := getImageComponents(t, imageQuery, deploymentQuery)
 		return image.activeComponents <= getActiveComponentCount(fromImage, fmt.Sprintf("%v+%v", deploymentQuery, imageQuery))
 	}, "active components for the image populated", 3*time.Minute, 20*time.Second)
 
 	// The active vulns are not stable over time. But at least one vuln should exist and the same
 	// number of vulns from the deployment and the image.
-	waitForCondition(t, func() bool {
+	WaitForCondition(t, func() bool {
 		fromDeployment := getImageVulnerabilities(t, deploymentQuery, deploymentQuery)
 		fromImage := getImageVulnerabilities(t, imageQuery, deploymentQuery)
 		numVulnFromDeployment := getActiveVulnCount(fromDeployment, deploymentQuery)

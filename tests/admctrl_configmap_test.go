@@ -23,7 +23,7 @@ import (
 
 func TestAdmissionControllerConfigMapWithPostgres(t *testing.T) {
 
-	k8sClient := createK8sClient(t)
+	k8sClient := CreateK8sClient(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
