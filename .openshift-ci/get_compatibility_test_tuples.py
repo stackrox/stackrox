@@ -19,13 +19,13 @@ def main():
     logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
     test_tuples = get_compatibility_test_tuples()
     logging.info(
-        f"Listing supported versions tuples:"
+        "Listing supported versions tuples:"
     )
     i = 0
     for test_tuple in test_tuples:
         i += 1
         logging.info(
-            f"Tuple {i}: {{Central v{test_tuple.central_version} - Sensor v{test_tuple.sensor_version}}}"
+            "Tuple %s: {Central v%s - Sensor v%s}", str(i), test_tuple.central_version, test_tuple.sensor_version
         )
 
 
