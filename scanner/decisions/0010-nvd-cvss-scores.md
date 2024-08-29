@@ -97,6 +97,7 @@ message VulnerabilityReport {
       string url = 4;    <-- New field
     }
     ...
+    string link = 5 [deprecated = true];
     string severity = 6;
     ...
     CVSS cvss = 12 [deprecated = true];
@@ -117,8 +118,9 @@ There will be a new type plus two new fields added:
 * `cvss_metrics`
   * This is a list of each unique CVSS metric based on the source.
 
-The original cvss field will remain for backward compatibility, as it represents the Scanner's preferred CVSS score, typically derived from the vulnerability's original data source if available, or from the NVD otherwise. 
-However, this field will be deprecated because the repeated CVSS cvss_metrics field can now include CVSS scores from all data sources, making it more comprehensive.
+The original `cvss` field will remain for backward compatibility, as it represents the Scanner's preferred CVSS score, typically derived from the vulnerability's original data source if available, or from the NVD otherwise. 
+However, this field will be deprecated because the `repeated CVSS cvss_metrics` field can now include CVSS scores from all data sources, making it more comprehensive.
+Similarly, the link field will also be remained for backward compatibility but will be deprecated in favor of the new url field, which is associated with the data source of each CVSS metric.
 
 **JSON example**:
 
