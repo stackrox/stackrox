@@ -6,7 +6,6 @@ import {
     PageSection,
     Tab,
     Tabs,
-    TabsComponent,
 } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
 
@@ -192,7 +191,6 @@ function CheckDetails() {
                 onSelect={(_e, key) => {
                     setActiveTabKey(key);
                 }}
-                component={TabsComponent.nav}
                 className="pf-v5-u-pl-md pf-v5-u-background-color-100 pf-v5-u-flex-shrink-0"
             >
                 <Tab

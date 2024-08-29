@@ -9,7 +9,6 @@ import {
     Bullseye,
     Tab,
     Tabs,
-    TabsComponent,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
@@ -97,7 +96,6 @@ function ClusterPage() {
                                 setActiveTabKey(key);
                                 // pagination.setPage(1);
                             }}
-                            component={TabsComponent.nav}
                             className="pf-v5-u-pl-md pf-v5-u-background-color-100"
                             role="region"
                         >
