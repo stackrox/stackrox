@@ -35,13 +35,14 @@ body {
     text-decoration: var(--pf-v5-global--link--TextDecoration) !important;
 }
 
-/* PatternFly style for links in classic related entity, widget body, and table cell. */
+/* PatternFly style for links in classic related entity, widget body, and React Table cell plus PatternFly table in classic page. */
 /* Also PatternFly Popover element. */
 
 button[data-testid="related-entity-list-count-value"],
 button[data-testid="related-entity-value"],
 [data-testid="widget-body"] a,
 .rt-td a,
+.pf-v5-c-table td a,
 .pf-v5-c-popover a {
     color: var(--pf-v5-global--link--Color);
 }
@@ -54,6 +55,7 @@ button[data-testid="related-entity-list-count-value"]:hover {
 button[data-testid="related-entity-value"]:hover,
 [data-testid="widget-body"] a:hover,
 .rt-td a:hover,
+.pf-v5-c-table td a:hover,
 .pf-v5-c-popover a:hover {
     color: var(--pf-v5-global--link--Color--hover);
     text-decoration: var(--pf-v5-global--link--TextDecoration--hover);

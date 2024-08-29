@@ -115,9 +115,16 @@ jobs:
         df -h
 
     - name: Authenticate with Google Cloud
+      if: github.ref_name == 'master'
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+
+    - name: Authenticate with Google Cloud
+      if: github.ref_name != 'master'
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
@@ -172,15 +179,22 @@ jobs:
             ;;
         esac
 
-        # Upload all bundles.
-        gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "gs://definitions.stackrox.io/v4/vulnerability-bundles"
+        bucket="gs://definitions.stackrox.io/v4/vulnerability-bundles"
+        if [[ "${{ github.ref_name }}" != "master" ]]; then
+          # If dispatched from a branch other then master, upload bundles
+          # to a test bucket for inspection.
+          bucket="gs://scanner-v4-test/vulnerability-bundles"
+        fi
+
+        echo "Copying ${{ env.ROX_PRODUCT_VERSION }} to $bucket"
+        gsutil cp -r "${{ env.ROX_PRODUCT_VERSION }}" "$bucket"
 
   send-notification:
     needs:
     - read-release-versions
     - upload-release-vulnerabilities
     runs-on: ubuntu-latest
-    if: failure()
+    if: ${{ failure() && github.ref_name == 'master' }}
     steps:
     - name: Send Slack notification on workflow failure
       run: |

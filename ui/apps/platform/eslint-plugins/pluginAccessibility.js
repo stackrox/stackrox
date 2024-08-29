@@ -36,6 +36,48 @@ const rules = {
             };
         },
     },
+    'CardHeader-onExpand-toggleButtonProps': {
+        // Require prop for aria-label attribute to prevent axe DevTools issue:
+        // Buttons must have discernable text
+        // https://dequeuniversity.com/rules/axe/4.10/button-name
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that CardHeader element with onExpand has toggleButtonProps prop with aria-label property',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'CardHeader') {
+                        if (
+                            node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'onExpand'
+                            )
+                        ) {
+                            if (
+                                !node.attributes.some(
+                                    (nodeAttribute) =>
+                                        nodeAttribute.name?.name === 'toggleButtonProps' &&
+                                        nodeAttribute.value?.expression?.properties?.some(
+                                            (property) => property?.key?.value === 'aria-label'
+                                        )
+                                )
+                            ) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Require that CardHeader element with onExpand has toggleButtonProps prop with aria-label property',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'Chart-ariaTitle-prop': {
         // Require prop for aria-labelledby attribute to prevent axe DevTools issue:
         // <svg> elements with an img role must have an alternative text
@@ -216,6 +258,39 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
+    'no-Button-Link': {
+        // Forbid Button that has Link, HashLink, or a element as child to prevent axe DevTools issue:
+        // Interactive controls must not be nested
+        // https://dequeuniversity.com/rules/axe/4.10/nested-interactive
+        //
+        // The rule does not forbid Button element with component={LinkShim} prop for link that looks like a button.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Forbid Button that has Link, HashLink, or a element as child',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXElement(node) {
+                    if (node.openingElement?.name?.name === 'Button') {
+                        if (
+                            node.children?.some((child) =>
+                                ['Link', 'HashLink', 'a'].includes(child.openingElement?.name?.name)
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message:
+                                    'Forbid Button that has Link, HashLink, or a element as child',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-Popover-footerContent-headerContent-props': {
         // Forbid props that cause axe DevTools issues:
         // Heading levels should only increase by one

@@ -1,11 +1,11 @@
 /* eslint-disable no-void */
 import React, { ReactElement } from 'react';
 import {
-    Button,
     Checkbox,
     Form,
     FormSelect,
     PageSection,
+    Text,
     TextInput,
     TextArea,
 } from '@patternfly/react-core';
@@ -18,6 +18,7 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 import useIntegrationForm from '../../useIntegrationForm';
 import { IntegrationFormProps } from '../../integrationFormTypes';
@@ -314,20 +315,24 @@ function GcsIntegrationForm({
                             <IntegrationHelpIcon
                                 helpTitle="GCP workload identity"
                                 helpText={
-                                    <div>
-                                        Enables authentication via short-lived tokens using GCP
-                                        workload identities. See the{' '}
-                                        <Button variant="link" isInline>
-                                            <a
-                                                href="https://docs.openshift.com/acs/integration/integrate-using-short-lived-tokens.html"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                Red Hat ACS documentation
-                                            </a>
-                                        </Button>{' '}
-                                        for more information.
-                                    </div>
+                                    <>
+                                        <Text>
+                                            Enables authentication via short-lived tokens using GCP
+                                            workload identities.
+                                        </Text>
+                                        <Text>
+                                            For more information, see{' '}
+                                            <ExternalLink>
+                                                <a
+                                                    href="https://docs.openshift.com/acs/integration/integrate-using-short-lived-tokens.html"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    RHACS documentation
+                                                </a>
+                                            </ExternalLink>
+                                        </Text>
+                                    </>
                                 }
                                 ariaLabel="Help for short-lived tokens"
                             />
