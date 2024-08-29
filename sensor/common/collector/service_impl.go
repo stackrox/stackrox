@@ -92,20 +92,10 @@ func (c *connectionManager) remove(connection sensor.CollectorService_Communicat
 	c.connectionLock.Lock()
 	defer c.connectionLock.Unlock()
 
-	// delete(c.connectionMap, node)
 	log.Info("In remove")
 	delete(c.connectionMap, connection)
 	log.Infof("len(c.connectionMap)= %+v", len(c.connectionMap))
 }
-
-// func (c *connectionManager) forEach(fn func(node string, server sensor.CollectorService_CommunicateServer)) {
-//	c.connectionLock.RLock()
-//	defer c.connectionLock.RUnlock()
-//
-//	for node, server := range c.connectionMap {
-//		fn(node, server)
-//	}
-//}
 
 func (s *serviceImpl) startSendingLoop() {
 	log.Info("In startSendingLoop")
@@ -120,60 +110,17 @@ func (s *serviceImpl) startSendingLoop() {
 				return
 			}
 		}
-		// if msg.Broadcast {
-		//	log.Info("Sending runtimeconfig broadcast message")
-		//	log.Infof("msg is %+v", msg)
-		//	s.connectionManager.forEach(func(node string, server sensor.CollectorService_CommunicateServer) {
-		//		log.Infof("node= %+v", node)
-		//		err := server.Send(msg.Msg)
-		//		if err != nil {
-
-		//			return
-		//		}
-		//	})
-		// } else { // Probably everything will be sent as a broadcast so there is no need for this
-		//	con, ok := s.connectionManager.connectionMap[msg.Hostname]
-		//	if !ok {
-		//		log.Errorf("Unable to find connection to collector: %q", msg.Hostname)
-		//		return
-		//	}
-		//	err := con.Send(msg.Msg)
-		//	if err != nil {
-		//		log.Errorf("Error sending MessageToCollectorWithAddress to node %q: %v", msg.Hostname, err)
-		//		return
-		//	}
-		//}
 	}
 }
 
 //func (s *serviceImpl) Communicate(empty *protocompat.Empty, server sensor.CollectorService_CommunicateServer) error {
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
 	log.Info("In Communicate")
-	// incomingMD := metautils.ExtractIncoming(server.Context())
-	// hostname := incomingMD.Get("rox-collector-nodename")
-	// complianceHostname := incomingMD.Get("rox-compliance-nodename")
-	// log.Infof("Collector hostname= %+v", hostname)
-	// log.Infof("Compliance hostname= %+v", complianceHostname) // Just as a test
-	// if hostname == "" {
-	//	return errors.New("collector did not transmit a hostname in initial metadata")
-	//}
 
 	s.connectionManager.add(server)
 	defer s.connectionManager.remove(server)
-	// defer s.connectionManager.remove(hostname)
 
 	go s.startSendingLoop()
-
-	//for {
-	//	msg, err := server.Recv()
-	//	if err != nil {
-	//		log.Errorf("Receiving message from collector")
-	//		return err
-	//	}
-	//	if msg.GetRuntimeFiltersAck() != nil {
-	//		log.Infof("Received ack from collector %+v", msg)
-	//	}
-	//}
 
 	return nil
 }
