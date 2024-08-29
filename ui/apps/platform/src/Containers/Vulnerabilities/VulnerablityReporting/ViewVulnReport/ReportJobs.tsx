@@ -327,7 +327,10 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                 <Flex>
                                                     <FlexItem>
                                                         <JobDetails
-                                                            reportSnapshot={reportSnapshot}
+                                                            reportStatus={reportStatus}
+                                                            isDownloadAvailable={
+                                                                isDownloadAvailable
+                                                            }
                                                         />
                                                     </FlexItem>
                                                     <Divider

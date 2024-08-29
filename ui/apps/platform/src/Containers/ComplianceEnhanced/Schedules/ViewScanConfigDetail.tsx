@@ -182,7 +182,7 @@ function ViewScanConfigDetail({
             )}
             {selectedTab === 'ALL_REPORT_JOBS' && (
                 <PageSection isCenterAligned id={allReportJobsTabId}>
-                    <ReportJobs />
+                    <ReportJobs scanConfig={scanConfig} />
                 </PageSection>
             )}
         </>

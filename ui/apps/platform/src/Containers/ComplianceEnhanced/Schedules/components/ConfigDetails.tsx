@@ -14,6 +14,7 @@ import {
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
+import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import {
     getBodyDefault,
     getSubjectDefault,
@@ -23,9 +24,15 @@ import ScanConfigParametersView from './ScanConfigParametersView';
 import ScanConfigClustersTable from './ScanConfigClustersTable';
 import ScanConfigProfilesView from './ScanConfigProfilesView';
 
+export type ConfigDetailsProps = {
+    scanConfig?: ComplianceScanConfigurationStatus;
+    isLoading?: boolean;
+    error?: Error | string | null;
+};
+
 const headingLevel = 'h2';
 
-function ConfigDetails({ isLoading, error, scanConfig }) {
+function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 

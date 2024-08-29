@@ -10,15 +10,15 @@ import {
 } from '@patternfly/react-core';
 
 import { getDateTime } from 'utils/dateUtils';
-import { ReportSnapshot } from 'services/ReportsService.types';
+import { ReportStatus } from 'services/ReportsService.types';
 import { getReportStatusText } from '../utils';
 
 export type JobDetailsProps = {
-    reportSnapshot: ReportSnapshot;
+    reportStatus: ReportStatus;
+    isDownloadAvailable: boolean;
 };
 
-function JobDetails({ reportSnapshot }: JobDetailsProps): ReactElement {
-    const { isDownloadAvailable, reportStatus } = reportSnapshot;
+function JobDetails({ reportStatus, isDownloadAvailable }: JobDetailsProps): ReactElement {
     const { reportRequestType, completedAt } = reportStatus;
     return (
         <Flex direction={{ default: 'column' }}>
