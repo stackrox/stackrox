@@ -77,7 +77,7 @@ func TestActiveVulnerability(t *testing.T) {
 }
 
 func runTestActiveVulnerability(t *testing.T, idx int, testCase nginxImage) {
-	log.Infof("test case %v", testCase)
+	Log.Infof("test case %v", testCase)
 	deploymentName := fmt.Sprintf("%s-%d", avmDeploymentName, idx)
 	SetupDeployment(t, testCase.getImage(), deploymentName)
 	defer TeardownDeployment(t, deploymentName)
@@ -136,7 +136,7 @@ func getActiveComponentCount(entities []ActiveComponent, from string) int {
 			count++
 		}
 	}
-	log.Infof("Found %d active components(s) for %s: %v", count, from, activeComponents)
+	Log.Infof("Found %d active components(s) for %s: %v", count, from, activeComponents)
 	return count
 }
 
@@ -149,7 +149,7 @@ func getActiveVulnCount(vulnerabilities []ActiveVulnerability, from string) int 
 			count++
 		}
 	}
-	log.Infof("Found %d active vuln(s) for %s: %v", count, from, activeVulns)
+	Log.Infof("Found %d active vuln(s) for %s: %v", count, from, activeVulns)
 	return count
 }
 
@@ -206,7 +206,7 @@ func waitForImageScanned(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		defer cancel()
 		for _, image := range nginxImages {
-			log.Infof("wait for image %s scanned ...", image.getImage())
+			Log.Infof("wait for image %s scanned ...", image.getImage())
 			err := retry.WithRetry(func() error {
 				_, err := imageService.ScanImage(ctx, &v1.ScanImageRequest{
 					ImageName: image.getImage(),

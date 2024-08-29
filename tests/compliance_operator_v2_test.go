@@ -134,7 +134,7 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
-	log.Info("Waiting for ComplianceSuite to reach DONE phase")
+	Log.Info("Waiting for ComplianceSuite to reach DONE phase")
 	for {
 		select {
 		case <-ticker.C:
@@ -143,10 +143,10 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 			require.NoError(t, err, "failed to get ComplianceSuite %s", suiteName)
 
 			if suite.Status.Phase == "DONE" {
-				log.Infof("ComplianceSuite %s reached DONE phase", suiteName)
+				Log.Infof("ComplianceSuite %s reached DONE phase", suiteName)
 				return
 			}
-			log.Infof("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
+			Log.Infof("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
 		case <-timer.C:
 			t.Fatalf("Timed out waiting for ComplianceSuite to complete")
 		}

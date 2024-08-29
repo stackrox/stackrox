@@ -90,7 +90,7 @@ func getGroupedContainerInstances(t testutils.T, podID string) []ContainerNameGr
 	`, map[string]interface{}{
 		"containersQuery": fmt.Sprintf("Pod ID: %s", podID),
 	}, &respData, timeout)
-	log.Info(respData)
+	Log.Info(respData)
 
 	return respData.GroupedContainerInstances
 }

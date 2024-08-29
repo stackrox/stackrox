@@ -53,12 +53,12 @@ const (
 )
 
 var (
-	log = logging.LoggerForModule()
+	Log = logging.LoggerForModule()
 )
 
-// logf logs using the testing logger, prefixing a high-resolution timestamp.
+// Logf logs using the testing logger, prefixing a high-resolution timestamp.
 // Using testing.T.Logf means that the output is hidden unless the test fails or verbose logging is enabled with -v.
-func logf(t *testing.T, format string, args ...any) {
+func Logf(t *testing.T, format string, args ...any) {
 	t.Logf(time.Now().Format(time.StampMilli)+" "+format, args...)
 }
 
@@ -126,7 +126,7 @@ func WaitForDeploymentCount(t testutils.T, query string, count int) {
 			deploymentCount, err := service.CountDeployments(ctx, &v1.RawQuery{Query: query})
 			cancel()
 			if err != nil {
-				log.Errorf("Error listing deployments: %s", err)
+				Log.Errorf("Error listing deployments: %s", err)
 				continue
 			}
 			if deploymentCount.GetCount() == int32(count) {
@@ -163,13 +163,13 @@ func WaitForDeployment(t testutils.T, deploymentName string) {
 			)
 			cancel()
 			if err != nil {
-				log.Errorf("Error listing deployments: %s", err)
+				Log.Errorf("Error listing deployments: %s", err)
 				continue
 			}
 
 			deployments, err := RetrieveDeployments(service, listDeployments.GetDeployments())
 			if err != nil {
-				log.Errorf("Error retrieving deployments: %s", err)
+				Log.Errorf("Error retrieving deployments: %s", err)
 				continue
 			}
 
@@ -208,7 +208,7 @@ func WaitForTermination(t testutils.T, deploymentName string) {
 			})
 			cancel()
 			if err != nil {
-				log.Error(err)
+				Log.Error(err)
 				continue
 			}
 
@@ -254,7 +254,7 @@ func SetImage(t *testing.T, deploymentName string, deploymentID string, containe
 	WaitForCondition(t, func() bool {
 		deployment, err := RetrieveDeployment(service, deploymentID)
 		if err != nil {
-			log.Error(err)
+			Log.Error(err)
 			return false
 		}
 		containers := deployment.GetContainers()
@@ -263,7 +263,7 @@ func SetImage(t *testing.T, deploymentName string, deploymentID string, containe
 				return false
 			}
 		}
-		log.Infof("Image set to %s for deployment %s(%s) container %s", image, deploymentName, deploymentID, containerName)
+		Log.Infof("Image set to %s for deployment %s(%s) container %s", image, deploymentName, deploymentID, containerName)
 		return true
 	}, "image updated", time.Minute, 5*time.Second)
 }
@@ -272,7 +272,7 @@ func CreatePod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	log.Infof("Creating pod %s %s", pod.GetNamespace(), pod.GetName())
+	Log.Infof("Creating pod %s %s", pod.GetNamespace(), pod.GetName())
 	_, err := client.CoreV1().Pods(pod.GetNamespace()).Create(ctx, pod, metaV1.CreateOptions{})
 	require.NoError(t, err)
 
@@ -350,7 +350,7 @@ func (ks *KubernetesSuite) SetupSuite() {
 }
 
 func (ks *KubernetesSuite) Logf(format string, args ...any) {
-	logf(ks.T(), format, args...)
+	Logf(ks.T(), format, args...)
 }
 
 type LogMatcher interface {
@@ -383,9 +383,9 @@ func (ks *KubernetesSuite) WaitUntilLog(ctx context.Context, namespace string, p
 			if ok, err := AllMatch(bytes.NewReader(log), logMatchers...); ok {
 				continue
 			} else if err != nil {
-				return fmt.Errorf("log of pod %q in namespace %q caused failure: %w", pod.GetName(), namespace, err)
+				return fmt.Errorf("Log of pod %q in namespace %q caused failure: %w", pod.GetName(), namespace, err)
 			}
-			return fmt.Errorf("log of pod %q in namespace %q does not satisfy the condition", pod.GetName(), namespace)
+			return fmt.Errorf("Log of pod %q in namespace %q does not satisfy the condition", pod.GetName(), namespace)
 		}
 		return nil
 	}
@@ -424,7 +424,7 @@ func MustEventually(t *testing.T, ctx context.Context, f func() error, pauseInte
 		retry.BetweenAttempts(func(_ int) {
 			time.Sleep(pauseInterval)
 		}),
-		retry.OnFailedAttempts(func(err error) { logf(t, failureMsgPrefix+": %s", err) })))
+		retry.OnFailedAttempts(func(err error) { Logf(t, failureMsgPrefix+": %s", err) })))
 }
 
 type lineMatcher struct {
@@ -518,7 +518,7 @@ func (ks *KubernetesSuite) EnsureConfigMapExists(ctx context.Context, namespace 
 // WaitUntilCentralSensorConnectionIs makes sure there is only one cluster defined on central, and its status is eventually
 // one of the specified statuses.
 func WaitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statuses ...storage.ClusterHealthStatus_HealthStatusLabel) {
-	logf(t, "Waiting until central-sensor connection is in state(s) %s...", statuses)
+	Logf(t, "Waiting until central-sensor connection is in state(s) %s...", statuses)
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	checkCentralSensorConnection := func() error {
 		clustersSvc := v1.NewClustersServiceClient(conn)
@@ -536,7 +536,7 @@ func WaitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 		clusterStatus := clusters.Clusters[0].GetHealthStatus().GetSensorHealthStatus()
 		for _, status := range statuses {
 			if clusterStatus == status {
-				logf(t, "Central-sensor connection now in state %q.", clusterStatus)
+				Logf(t, "Central-sensor connection now in state %q.", clusterStatus)
 				return nil
 			}
 		}

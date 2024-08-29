@@ -89,7 +89,7 @@ func TestGCSExternalBackup(t *testing.T) {
 			time.Sleep(10 * time.Second)
 		}),
 		retry.OnFailedAttempts(func(err error) {
-			log.Error(err.Error())
+			Log.Error(err.Error())
 		}),
 	)
 	assert.NoError(t, err)
@@ -133,7 +133,7 @@ func TestGCSExternalBackup(t *testing.T) {
 			time.Sleep(1 * time.Second)
 		}),
 		retry.OnFailedAttempts(func(err error) {
-			log.Error(err.Error())
+			Log.Error(err.Error())
 		}),
 	)
 	require.NoError(t, err)
