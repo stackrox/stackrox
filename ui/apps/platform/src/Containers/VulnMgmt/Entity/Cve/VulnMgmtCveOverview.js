@@ -1,11 +1,11 @@
 /* eslint-disable no-nested-ternary */
 import React from 'react';
-import { ExternalLink } from 'react-feather';
 import { format } from 'date-fns';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import CveType from 'Components/CveType';
 import Metadata from 'Components/Metadata';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import entityTypes from 'constants/entityTypes';
 import { isValidURL } from 'utils/urlUtils';
@@ -54,20 +54,13 @@ const VulnMgmtCveOverview = ({ data, entityContext }) => {
     const operatingSystem = safeData?.operatingSystem;
 
     const linkToMoreInfo = isValidURL(link) ? (
-        <a
-            href={link}
-            className="btn-sm btn-base no-underline p-1"
-            target="_blank"
-            rel="noopener noreferrer nofollow"
-            data-testid="more-info-link"
-        >
-            <span className="pr-1">View Full CVE Description</span>
-            <ExternalLink size={16} />
-        </a>
+        <ExternalLink>
+            <a href={link} target="_blank" rel="noopener noreferrer">
+                View Full CVE Description
+            </a>
+        </ExternalLink>
     ) : (
-        <span className="text-center text-base-600 bg-base-100 text-sm p-1">
-            Full description unavailable
-        </span>
+        <span>Full description unavailable</span>
     );
 
     const cvssScoreBreakdown = [

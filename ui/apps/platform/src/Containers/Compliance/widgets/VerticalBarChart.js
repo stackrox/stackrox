@@ -32,7 +32,6 @@ class VerticalBarChart extends Component {
         seriesProps: PropTypes.shape({}),
         tickValues: PropTypes.arrayOf(PropTypes.number),
         tickFormat: PropTypes.func,
-        labelLinks: PropTypes.shape({}),
         onValueClick: PropTypes.func,
         legend: PropTypes.bool,
     };
@@ -43,13 +42,12 @@ class VerticalBarChart extends Component {
         seriesProps: {},
         tickValues: [25, 50, 75, 100],
         tickFormat: (x) => `${x}%`,
-        labelLinks: {},
         onValueClick: null,
         legend: true,
     };
 
     render() {
-        const { tickValues, tickFormat, labelLinks, onValueClick } = this.props;
+        const { tickValues, tickFormat, onValueClick } = this.props;
 
         const data = this.props.data.sort(sortByXValue);
 
@@ -95,16 +93,7 @@ class VerticalBarChart extends Component {
         }));
 
         function formatTicks(value) {
-            let inner = value;
-            if (labelLinks[value]) {
-                inner = (
-                    <a className="underline" href={labelLinks[value]}>
-                        {value}
-                    </a>
-                );
-            }
-
-            return <tspan>{inner}</tspan>;
+            return <tspan>{value}</tspan>;
         }
 
         return (

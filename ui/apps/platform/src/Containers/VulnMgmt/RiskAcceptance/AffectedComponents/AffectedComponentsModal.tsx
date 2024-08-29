@@ -1,4 +1,5 @@
 import React, { ReactElement, useContext, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
     Card,
     CodeBlock,
@@ -107,9 +108,13 @@ function AffectedComponentsModal({
                                         }}
                                     />
                                     <Td dataLabel="Component">
-                                        <a href={componentURL} target="_blank" rel="noreferrer">
+                                        <Link
+                                            to={componentURL}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
                                             {component.name}
-                                        </a>
+                                        </Link>
                                     </Td>
                                     <Td dataLabel="Version">{component.version}</Td>
                                     <Td dataLabel="Fixed in">{component.fixedIn || '-'}</Td>

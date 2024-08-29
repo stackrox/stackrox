@@ -141,6 +141,9 @@ class LoginPage extends Component {
         if (authProviderResponse && authProviderResponse.error) {
             const errorKey = authProviderResponse.error.replace('_', ' ');
             const errorMsg = authProviderResponse.error_description || '';
+            // TODO is the link external or internal?
+            /* eslint-disable generic/ExternalLink-a */
+            /* eslint-disable generic/a-target-rel */
             const errorLink = ((url) =>
                 url ? (
                     <span>
@@ -149,6 +152,8 @@ class LoginPage extends Component {
                 ) : (
                     []
                 ))(authProviderResponse.error_uri);
+            /* eslint-enable generic/ExternalLink-a */
+            /* eslint-enable generic/a-target-rel */
             return (
                 <Alert
                     variant="danger"
