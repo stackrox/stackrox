@@ -19,7 +19,7 @@ func getDeploymentsWithSortOption(t *testing.T, field string, reversed bool) []*
 	var resp struct {
 		Deployments []*storage.Deployment
 	}
-	makeGraphQLRequest(t, `
+	e2etests.MakeGraphQLRequest(t, `
   		query deployments($query: String, $pagination: Pagination) {
   			deployments(query: $query, pagination: $pagination) {
 				id

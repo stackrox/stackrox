@@ -39,7 +39,7 @@ type summaryCountsResp struct {
 
 func getSummaryCounts(t *testing.T) summaryCountsResp {
 	var resp summaryCountsResp
-	makeGraphQLRequest(t, `
+	e2etests.MakeGraphQLRequest(t, `
 		query summary_counts {
 			clusterCount
 			nodeCount

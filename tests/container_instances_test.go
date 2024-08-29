@@ -75,7 +75,7 @@ func getGroupedContainerInstances(t testutils.T, podID string) []ContainerNameGr
 		GroupedContainerInstances []ContainerNameGroup `json:"groupedContainerInstances"`
 	}
 
-	makeGraphQLRequest(t, `
+	e2etests.MakeGraphQLRequest(t, `
 		query getGroupedContainerInstances($containersQuery: String) {
 			groupedContainerInstances(query: $containersQuery) {
 				id

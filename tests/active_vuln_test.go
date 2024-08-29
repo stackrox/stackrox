@@ -158,7 +158,7 @@ func getImageVulnerabilities(t *testing.T, query string, scopeQuery string) []Ac
 	var resp struct {
 		Vulnerabilities []ActiveVulnerability `json:"imageVulnerabilities"`
 	}
-	makeGraphQLRequest(t, `
+	e2etests.MakeGraphQLRequest(t, `
 		query getImageVulnerabilities($query: String, $scopeQuery: String) {
             imageVulnerabilities(query: $query, scopeQuery: $scopeQuery) {
 				id
@@ -181,7 +181,7 @@ func getImageComponents(t *testing.T, query string, scopeQuery string) []ActiveC
 	var resp struct {
 		Components []ActiveComponent `json:"imageComponents"`
 	}
-	makeGraphQLRequest(t, `
+	e2etests.MakeGraphQLRequest(t, `
 		query getImageComponents($query: String, $scopeQuery: String) {
             imageComponents(query: $query, scopeQuery: $scopeQuery) {
 				id

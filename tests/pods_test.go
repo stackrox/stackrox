@@ -119,7 +119,7 @@ func getDeploymentID(t testutils.T, deploymentName string) string {
 		Deployments []IDStruct `json:"deployments"`
 	}
 
-	makeGraphQLRequest(t, `
+	e2etests.MakeGraphQLRequest(t, `
 		query deployments($query: String) {
 			deployments(query: $query) {
 				id
@@ -152,7 +152,7 @@ func getPods(t testutils.T, deploymentID string) []Pod {
 		},
 	}
 
-	makeGraphQLRequest(t, `
+	e2etests.MakeGraphQLRequest(t, `
 		query getPods($podsQuery: String, $pagination: Pagination) {
 			pods(query: $podsQuery, pagination: $pagination) {
 				id
@@ -179,7 +179,7 @@ func getPodCount(t testutils.T, deploymentID string) int {
 		PodCount int32 `json:"podCount"`
 	}
 
-	makeGraphQLRequest(t, `
+	e2etests.MakeGraphQLRequest(t, `
 		query getPodCount($podsQuery: String) {
 			podCount(query: $podsQuery)
 		}
@@ -196,7 +196,7 @@ func getEvents(t testutils.T, pod Pod) []Event {
 		Pod Pod `json:"pod"`
 	}
 
-	makeGraphQLRequest(t, `
+	e2etests.MakeGraphQLRequest(t, `
 		query getEvents($podId: ID!) {
 			pod(id: $podId) {
 				id
