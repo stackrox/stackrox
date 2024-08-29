@@ -897,3 +897,84 @@ func getFakeVector(tactic string, techniques ...string) *storage.MitreAttackVect
 
 	return resp
 }
+
+func (s *PolicyServiceTestSuite) TestDeletingDefaultPolicyIsBlocked() {
+	s.T().Log("foo")
+	ctx := context.Background()
+	basePolicy := fixtures.GetPolicy()
+	policies := make([]*storage.Policy, 4)
+	for i := 0; i < 4; i++ {
+		p := basePolicy.CloneVT()
+		p.Id = fmt.Sprintf("policy-%d", i)
+		policies = append(policies, p)
+	}
+	listPolicies := convertPoliciesToListPolicies(policies)
+	policyDisabledBaseQuery := &v1.Query_BaseQuery{
+		BaseQuery: &v1.BaseQuery{
+			Query: &v1.BaseQuery_MatchFieldQuery{
+				MatchFieldQuery: &v1.MatchFieldQuery{Field: search.Disabled.String(), Value: "false"},
+			},
+		},
+	}
+
+	cases := []struct {
+		name          string
+		request       *v1.RawQuery
+		expectedQuery *v1.Query
+	}{
+		{
+			name:          "Empty query, get all policies",
+			request:       &v1.RawQuery{},
+			expectedQuery: &v1.Query{Pagination: &v1.QueryPagination{Limit: maxPoliciesReturned, Offset: 0}},
+		},
+		{
+			name:          "Empty query, paginate",
+			request:       &v1.RawQuery{Pagination: &v1.Pagination{Limit: 2}},
+			expectedQuery: &v1.Query{Pagination: &v1.QueryPagination{Limit: 2, Offset: 0}},
+		},
+		{
+			name:          "Empty query, paginate and offset",
+			request:       &v1.RawQuery{Pagination: &v1.Pagination{Limit: 20, Offset: 4}},
+			expectedQuery: &v1.Query{Pagination: &v1.QueryPagination{Limit: 20, Offset: 4}},
+		},
+		{
+			name:    "Non-empty query gets parsed properly",
+			request: &v1.RawQuery{Query: search.NewQueryBuilder().AddBools(search.Disabled, false).Query()},
+			expectedQuery: &v1.Query{
+				Query:      policyDisabledBaseQuery,
+				Pagination: &v1.QueryPagination{Limit: maxPoliciesReturned, Offset: 0},
+			},
+		},
+		{
+			name: "Non-empty query gets parsed properly, paginate",
+			request: &v1.RawQuery{
+				Query:      search.NewQueryBuilder().AddBools(search.Disabled, false).Query(),
+				Pagination: &v1.Pagination{Limit: 2},
+			},
+			expectedQuery: &v1.Query{
+				Query:      policyDisabledBaseQuery,
+				Pagination: &v1.QueryPagination{Limit: 2, Offset: 0},
+			},
+		},
+		{
+			name: "Non-empty query gets parsed properly, limit pagination to max and offset",
+			request: &v1.RawQuery{
+				Query:      search.NewQueryBuilder().AddBools(search.Disabled, false).Query(),
+				Pagination: &v1.Pagination{Limit: 2000, Offset: 50},
+			},
+			expectedQuery: &v1.Query{
+				Query:      policyDisabledBaseQuery,
+				Pagination: &v1.QueryPagination{Limit: 1000, Offset: 50},
+			},
+		},
+	}
+	for _, c := range cases {
+		s.T().Run(c.name, func(t *testing.T) {
+			s.policies.EXPECT().SearchRawPolicies(ctx, c.expectedQuery).Return(policies, nil).Times(1)
+			resp, err := s.tested.ListPolicies(ctx, c.request)
+			s.NoError(err)
+			s.NotNil(resp)
+			protoassert.SlicesEqual(s.T(), listPolicies, resp.Policies)
+		})
+	}
+}
