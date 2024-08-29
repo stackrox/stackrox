@@ -160,6 +160,7 @@ export_test_environment() {
     ci_export ROX_COMPLIANCE_REPORTING "${ROX_COMPLIANCE_REPORTING:-true}"
     ci_export ROX_REGISTRY_RESPONSE_TIMEOUT "${ROX_REGISTRY_RESPONSE_TIMEOUT:-90s}"
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
+    ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -293,6 +294,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_WORKLOAD_CVES_FIXABILITY_FILTERS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_POLICY_VIOLATIONS_ADVANCED_FILTERS'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_SCAN_SCHEDULE_REPORT_JOBS'
     customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
@@ -1228,6 +1231,18 @@ _EO_DETAILS_
         save_junit_failure "${images_available[@]}" "${build_details}"
     fi
 
+    case "$CI_JOB_NAME" in
+    *gke-upgrade-tests)
+        record_upgrade_test_progess
+        ;;
+    *operator-e2e-tests)
+        check_deployment=false
+        ;;
+    *)
+        info "No job specific progress markers are saved for: ${CI_JOB_NAME}"
+        ;;
+    esac
+
     if $check_deployment; then
         if [[ -f "${STATE_DEPLOYED}" ]]; then
             save_junit_success "${stackrox_deployed[@]}"
@@ -1237,19 +1252,6 @@ _EO_DETAILS_
     else
         save_junit_skipped "${stackrox_deployed[@]}"
     fi
-
-    record_job_specific_progress
-}
-
-record_job_specific_progress() {
-    case "$CI_JOB_NAME" in
-    *gke-upgrade-tests)
-        record_upgrade_test_progess
-        ;;
-    *)
-        info "No job specific progress markers are saved for: ${CI_JOB_NAME}"
-        ;;
-    esac
 }
 
 record_upgrade_test_progess() {

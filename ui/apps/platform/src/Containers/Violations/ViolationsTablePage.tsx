@@ -219,7 +219,6 @@ function ViolationsTablePage(): ReactElement {
                         setSearchFilter({});
                         setActiveViolationStateTab(tab);
                     }}
-                    component="nav"
                 >
                     <Tab eventKey="ACTIVE" title={<TabTitleText>Active</TabTitleText>} />
                     <Tab eventKey="RESOLVED" title={<TabTitleText>Resolved</TabTitleText>} />

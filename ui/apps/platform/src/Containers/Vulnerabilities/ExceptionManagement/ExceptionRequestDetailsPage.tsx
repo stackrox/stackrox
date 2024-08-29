@@ -237,7 +237,6 @@ function ExceptionRequestDetailsPage() {
                     <Tabs
                         activeKey={selectedContext}
                         onSelect={handleTabClick}
-                        component="nav"
                         className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
                     >
                         <Tab
