@@ -58,7 +58,7 @@ func (s *nodeIndexerSuite) TestRunRespositoryScanner() {
 	repositories, err := runRepositoryScanner(context.TODO(), layer)
 	s.NoError(err)
 
-	s.Len(repositories, 2)
+	s.Len(repositories, 4)
 	s.NoError(layer.Close())
 }
 
@@ -110,7 +110,7 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 	s.NotNil(report)
 	s.True(report.Success)
 	s.Len(report.GetContents().GetPackages(), 106, "Expected number of installed packages differs")
-	s.Len(report.GetContents().GetRepositories(), 2, "Expected number of discovered repositories differs")
+	s.Len(report.GetContents().GetRepositories(), 4, "Expected number of discovered repositories differs")
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
