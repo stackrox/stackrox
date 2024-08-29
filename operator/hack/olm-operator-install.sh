@@ -17,7 +17,6 @@ function main() {
 
   local -r operator_ns="${1:-}"
   local -r image_tag_base="${2:-}"
-  local -r image_registry="${image_tag_base%%/*}"
 
   case $# in
   3)
