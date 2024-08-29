@@ -99,7 +99,7 @@ require (
 	github.com/planetscale/vtprotobuf v0.6.0
 	github.com/prometheus/client_golang v1.20.0
 	github.com/prometheus/client_model v0.6.1
-	github.com/prometheus/common v0.55.0
+	github.com/prometheus/common v0.57.0
 	github.com/quay/claircore v1.5.29-0.20240812155114-de6d8475516c
 	github.com/quay/claircore/toolkit v1.2.4
 	github.com/quay/goval-parser v0.8.8
