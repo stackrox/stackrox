@@ -25,10 +25,6 @@ def run_compatibility_tests(testfunc, cluster_name):
     # start logging
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-    Release = namedtuple("Release", ["major", "minor"])
-    ChartVersions = namedtuple(
-        "Chart_versions", ["central_version", "sensor_version"])
-
     # Get the test tuples (central_version, sensor_version) for supported versions with available helm charts
     test_tuples = get_compatibility_test_tuples()
 
