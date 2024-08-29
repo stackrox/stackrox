@@ -1,6 +1,4 @@
-//go:build test_e2e || test_compatibility
-
-package tests
+package e2etests
 
 import (
 	"encoding/csv"
@@ -16,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func verifyRiskEventTimelineCSV(t testutils.T, deploymentID string, eventNamesExpected []string) {
+func VerifyRiskEventTimelineCSV(t testutils.T, deploymentID string, eventNamesExpected []string) {
 	// Export a CSV of the deployment's event timeline, and verify its content
 	const baseURL = "/api/risk/timeline/export/csv"
 	params := url.Values{}

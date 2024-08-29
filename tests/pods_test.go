@@ -90,7 +90,7 @@ func TestPod(testT *testing.T) {
 
 		// Verify risk event timeline csv
 		e2etests.Log.Info("Before CSV Check")
-		verifyRiskEventTimelineCSV(retryT, deploymentID, eventNames)
+		e2etests.VerifyRiskEventTimelineCSV(retryT, deploymentID, eventNames)
 		e2etests.Log.Info("After CSV Check")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

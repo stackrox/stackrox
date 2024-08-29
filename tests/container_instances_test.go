@@ -65,7 +65,7 @@ func TestContainerInstances(testT *testing.T) {
 
 			// Number of events expected should be the aggregate of the above
 
-			verifyRiskEventTimelineCSV(retryEventsT, deploymentID, append(firstContainerEvents, secondContainerEvents...))
+			e2etests.VerifyRiskEventTimelineCSV(retryEventsT, deploymentID, append(firstContainerEvents, secondContainerEvents...))
 		})
 	})
 }
