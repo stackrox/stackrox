@@ -162,6 +162,9 @@ Similarly, the link field will also be remained for backward compatibility but w
 		}
 	]
 }
+```
+
+### Handling RHSA/RHBA/RHEA
 
 Without loss of generality, RHSA/RHBA/RHEA will just be referred to as the more well-known RHSA variant of the three.
 
