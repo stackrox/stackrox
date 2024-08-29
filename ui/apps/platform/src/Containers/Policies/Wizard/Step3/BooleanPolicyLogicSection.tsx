@@ -10,10 +10,16 @@ import PolicySection from './PolicySection';
 import './BooleanPolicyLogicSection.css';
 
 type BooleanPolicyLogicSectionProps = {
+    onChangeSelected?: (sectionIndex: number) => void;
     readOnly?: boolean;
+    selectedSection?: number;
 };
 
-function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSectionProps) {
+function BooleanPolicyLogicSection({
+    onChangeSelected = () => {},
+    selectedSection = -1,
+    readOnly = false,
+}: BooleanPolicyLogicSectionProps) {
     const { values } = useFormikContext<Policy>();
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
@@ -33,6 +39,7 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                         <GridItem>
                             <PolicySection
                                 sectionIndex={sectionIndex}
+                                onChangeSelected={onChangeSelected}
                                 descriptors={filteredDescriptors}
                                 readOnly={readOnly}
                             />
@@ -59,9 +66,11 @@ function BooleanPolicyLogicSection({ readOnly = false }: BooleanPolicyLogicSecti
                     // eslint-disable-next-line react/no-array-index-key
                     <React.Fragment key={sectionIndex}>
                         <PolicySection
+                            onChangeSelected={onChangeSelected}
                             sectionIndex={sectionIndex}
                             descriptors={filteredDescriptors}
                             readOnly={readOnly}
+                            selectedSectionIndex={selectedSection}
                         />
                         {sectionIndex !== values.policySections.length - 1 && (
                             <Flex

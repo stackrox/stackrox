@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, CSSProperties } from 'react';
 import { Alert, Button, Divider, Flex, FlexItem, Title } from '@patternfly/react-core';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -8,9 +8,15 @@ import { Policy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getPolicyDescriptors } from 'Containers/Policies/policies.utils';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
+import PolicyCriteriaOptions from './PolicyCriteriaOptions';
 import BooleanPolicyLogicSection from './BooleanPolicyLogicSection';
 
 import './PolicyCriteriaForm.css';
+
+const policyCriteriaOptionsStyleConstant = {
+    '--pf-v5-u-min-width--MinWidth': '35ch',
+    '--pf-v5-u-max-width--MaxWidth': '35ch',
+} as CSSProperties;
 
 const MAX_POLICY_SECTIONS = 16;
 
@@ -19,11 +25,14 @@ type PolicyBehaviorFormProps = {
 };
 
 function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
+    const [selectedSection, setSelectedSection] = useState(0);
     const { values, setFieldValue } = useFormikContext<Policy>();
     const { criteriaLocked } = values;
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
-    const showPolicyCriteriaModal = isFeatureFlagEnabled('ROX_POLICY_CRITERIA_MODAL');
+    const showAccessiblePolicyCriteria = isFeatureFlagEnabled(
+        'ROX_ACCESSIBLE_POLICY_CRITERIA_EDITING'
+    );
 
     function addNewPolicySection() {
         if (values.policySections.length < MAX_POLICY_SECTIONS) {
@@ -33,6 +42,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
             };
             const newPolicySections = [...values.policySections, newPolicySection];
             setFieldValue('policySections', newPolicySections);
+            setSelectedSection(newPolicySections.length - 1);
             // document.getElementById('policy-sections').scrollLeft += 20;
         }
     }
@@ -88,8 +98,65 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         );
     }
 
-    return (
-        // TODO: (vjw, 15-Nov-2023) remove the DndProvider after the PolicyCriteriaModal flag has been made unflagged
+    return showAccessiblePolicyCriteria ? (
+        <Flex
+            direction={{ default: 'column' }}
+            className="pf-v5-u-h-100"
+            spaceItems={{ default: 'spaceItemsNone' }}
+            fullWidth={{ default: 'fullWidth' }}
+            flexWrap={{ default: 'nowrap' }}
+        >
+            <FlexItem span={12}>
+                <Flex direction={{ default: 'row' }} className="pf-v5-u-p-lg">
+                    <FlexItem flex={{ default: 'flex_1' }}>{headingElements}</FlexItem>
+                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                        <Button
+                            variant="secondary"
+                            onClick={addNewPolicySection}
+                            data-testid="add-section-btn"
+                        >
+                            Add condition
+                        </Button>
+                    </FlexItem>
+                </Flex>
+            </FlexItem>
+            <FlexItem>
+                <Divider component="div" />
+            </FlexItem>
+            <FlexItem span={12}>
+                <Flex flexWrap={{ default: 'nowrap' }} direction={{ default: 'row' }} className="">
+                    <FlexItem
+                        flex={{ default: 'flex_1' }}
+                        className="pf-v5-u-pr-0 pf-v5-u-mr-0"
+                        style={{ overflow: 'auto' }}
+                    >
+                        <Flex
+                            direction={{ default: 'column', lg: 'row' }}
+                            flexWrap={{ default: 'nowrap' }}
+                            id="policy-sections"
+                            className="pf-v5-u-p-lg pf-v5-u-h-100 pf-v5-u-align-items-stretch"
+                        >
+                            <BooleanPolicyLogicSection
+                                selectedSection={selectedSection}
+                                onChangeSelected={setSelectedSection}
+                            />
+                        </Flex>
+                    </FlexItem>
+                    <Divider component="div" orientation={{ default: 'vertical' }} />
+                    <FlexItem
+                        alignSelf={{ default: 'alignSelfCenter' }}
+                        className="pf-v5-u-h-100 pf-v5-u-pt-lg pf-v5-u-min-width pf-v5-u-max-width"
+                        style={policyCriteriaOptionsStyleConstant}
+                    >
+                        <PolicyCriteriaOptions
+                            descriptors={filteredDescriptors}
+                            selectedSectionIndex={selectedSection}
+                        />
+                    </FlexItem>
+                </Flex>
+            </FlexItem>
+        </Flex>
+    ) : (
         /*
         (dv 2024-05-01) Upgrading to React types 18 causes a type error below
 
@@ -97,7 +164,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
         <DndProvider backend={HTML5Backend}>
             <Flex fullWidth={{ default: 'fullWidth' }} className="pf-v5-u-h-100">
                 <Flex
-                    flex={{ default: 'flex_1' }}
+                    flex={{ default: 'flex_2' }}
                     direction={{ default: 'column' }}
                     className="pf-v5-u-h-100"
                     spaceItems={{ default: 'spaceItemsNone' }}
@@ -128,14 +195,9 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                     </Flex>
                 </Flex>
                 <Divider component="div" orientation={{ default: 'vertical' }} />
-                {!showPolicyCriteriaModal && (
-                    <Flex
-                        className="pf-v5-u-h-100 pf-v5-u-pt-lg"
-                        id="policy-criteria-keys-container"
-                    >
-                        <PolicyCriteriaKeys keys={filteredDescriptors} />
-                    </Flex>
-                )}
+                <Flex className="pf-v5-u-h-100 pf-v5-u-pt-lg" id="policy-criteria-keys-container">
+                    <PolicyCriteriaKeys keys={filteredDescriptors} />
+                </Flex>
             </Flex>
         </DndProvider>
     );

@@ -58,7 +58,10 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
     withAuth();
 
     before(function () {
-        if (hasFeatureFlag('ROX_POLICY_CRITERIA_MODAL')) {
+        if (
+            hasFeatureFlag('ROX_POLICY_CRITERIA_MODAL') ||
+            hasFeatureFlag('ROX_ACCESSIBLE_POLICY_CRITERIA_EDITING')
+        ) {
             this.skip();
         }
     });
