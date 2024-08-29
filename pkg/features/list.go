@@ -117,9 +117,6 @@ var (
 	// checks will be performed on startup and immediately when secrets are discovered.
 	SensorLazyTLSChecks = registerFeature("Sensor will perform lazy TLS checks instead of immediate", "ROX_SENSOR_LAZY_TLS_CHECKS", enabled)
 
-	// PolicyViolationsAdvancedFilters enables improved filtering capabilities for Policy Violations
-	PolicyViolationsAdvancedFilters = registerFeature("Enables improved filtering capabilities for Policy Violations", "ROX_POLICY_VIOLATIONS_ADVANCED_FILTERS", enabled)
-
 	// PolicyAsCode enables policy definition and lifecycle changes to be managed in external repositories.
 	PolicyAsCode = registerFeature("Enables policy definition and lifecycle changes to be managed in external repositories.", "ROX_POLICY_AS_CODE")
 
