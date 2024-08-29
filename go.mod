@@ -23,12 +23,12 @@ require (
 	github.com/andygrunwald/go-jira v1.16.0
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/aws/aws-sdk-go-v2 v1.30.4
-	github.com/aws/aws-sdk-go-v2/config v1.27.29
+	github.com/aws/aws-sdk-go-v2/config v1.27.31
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.30
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.12
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.13
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.16
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.30.3
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.60.1
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.61.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.5
 	github.com/aws/smithy-go v1.20.4
 	github.com/cenkalti/backoff/v3 v3.2.2
