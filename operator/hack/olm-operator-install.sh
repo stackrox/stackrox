@@ -38,7 +38,6 @@ function main() {
 
   check_version_tag "${operator_version}" "${allow_dirty_tag}"
   create_namespace "${operator_ns}"
-  create_pull_secret "${operator_ns}" "${image_registry}"
   apply_operator_manifests "${operator_ns}" "${image_tag_base}" "${index_version}" "${operator_version}"
 
   if ! [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then

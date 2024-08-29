@@ -18,16 +18,6 @@ function create_namespace() {
     | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" apply -f -
 }
 
-function create_pull_secret() {
-  local -r operator_ns="$1"
-  local -r registry_hostname="$2"
-  # Note: can get rid of this secret once its in the cluster global pull secrets,
-  # see https://stack-rox.atlassian.net/browse/RS-261
-  log "Creating image pull secret..."
-  "${ROOT_DIR}/deploy/common/pull-secret.sh" "${pull_secret}" "${registry_hostname}" \
-    | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
-}
-
 function apply_operator_manifests() {
   log "Applying operator manifests..."
   local -r operator_ns="$1"
@@ -136,16 +126,6 @@ function approve_install_plan() {
 function nurse_deployment_until_available() {
   local -r operator_ns="$1"
   local -r version_tag="$2"
-
-  log "Patching image pull secret into ${version_tag} CSV..."
-  retry 30 10 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" patch clusterserviceversions.operators.coreos.com \
-    "rhacs-operator.v${version_tag}" --type json \
-    -p '[ { "op": "add", "path": "/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets", "value": [{"name": "'"${pull_secret}"'"}] } ]'
-
-  # Just waiting turns out to be the quickest and most reliable way of propagating the change.
-  # Deleting the deployment sometimes tends to never get reconciled, with evidence of the
-  # reconciliation failing with "not found" errors. OTOH simply leaving an unhealthy deployment around
-  # means it will get updated eventually (and usually in under a minute).
 
   # We check the CSV status first, because it is hard to wait for the deployment in a non-racy way:
   # the deployment .status is set separately from the .spec, so the .status reflects the status of
