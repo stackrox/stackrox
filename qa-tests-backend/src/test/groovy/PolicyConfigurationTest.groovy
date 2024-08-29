@@ -207,6 +207,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                 .build()
         long beforeTime = System.currentTimeMillis() / 1000L - 5
         Services.updatePolicy(updatedPolicy)
+        sleep(2000)
         long afterTime = System.currentTimeMillis() / 1000L + 5
         Policy policy1 = Services.getPolicy(policyId)
         then:
