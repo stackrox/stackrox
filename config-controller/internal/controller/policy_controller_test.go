@@ -67,8 +67,8 @@ var _ = Describe("Policy Controller", func() {
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
 			controllerReconciler := &PolicyReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
+				K8sClient: k8sClient,
+				Scheme:    k8sClient.Scheme(),
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{

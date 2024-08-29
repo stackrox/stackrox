@@ -22,14 +22,8 @@ import (
 
 	"github.com/pkg/errors"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/config-controller/pkg/client"
 	storage "github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/auth"
-	roxctlIO "github.com/stackrox/rox/roxctl/common/io"
-	"github.com/stackrox/rox/roxctl/common/logger"
-	"github.com/stackrox/rox/roxctl/common/printer"
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/protoadapt"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
@@ -41,9 +35,9 @@ import (
 
 // PolicyReconciler reconciles a Policy object
 type PolicyReconciler struct {
-	ctrlClient.Client
-	Scheme *runtime.Scheme
-	conn   *grpc.ClientConn
+	K8sClient    ctrlClient.Client
+	Scheme       *runtime.Scheme
+	policyClient client.CachedPolicyClient
 }
 
 //+kubebuilder:rbac:groups=config.stackrox.io,resources=policies,verbs=get;list;watch;create;update;patch;delete
@@ -54,9 +48,13 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	rlog := log.FromContext(ctx)
 	rlog.Info("Reconciling", "namespace", req.Namespace, "name", req.Name)
 
+	if err := r.policyClient.EnsureFresh(ctx); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "Failed to refresh cache")
+	}
+
 	// Get the policy CR
 	policyCR := &configstackroxiov1alpha1.Policy{}
-	if err := r.Client.Get(ctx, req.NamespacedName, policyCR); err != nil {
+	if err := r.K8sClient.Get(ctx, req.NamespacedName, policyCR); err != nil {
 		if k8serr.IsNotFound(err) {
 			// Must have been deleted
 			return ctrl.Result{}, nil
@@ -69,54 +67,59 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, errors.Wrap(err, "Failed to parse policy JSON")
 	}
 
-	svc := v1.NewPolicyServiceClient(r.conn)
-	allPolicies, err := svc.ListPolicies(ctx, &v1.RawQuery{})
+	policy, exists, err := r.policyClient.GetPolicy(ctx, req.Name)
 
 	if err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "Failed to list all policies")
+		return ctrl.Result{Requeue: true}, errors.Wrap(err, "Failed to fetch policy")
 	}
 
-	for _, policy := range allPolicies.Policies {
-		if policy.Name == req.Name {
-			desiredState.Id = policy.Id
-			if _, err = svc.PutPolicy(ctx, desiredState); err != nil {
-				return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to PUT policy %s", req.Name))
-			}
+	var retErr error
+	result := ctrl.Result{}
+	if exists {
+		desiredState.Id = policy.Id
+		if err = r.policyClient.UpdatePolicy(ctx, desiredState); err != nil {
+			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy %s", req.Name))
+			policyCR.Status.Accepted = false
+			policyCR.Status.Message = retErr.Error()
+			result.Requeue = true
+		} else {
 			policyCR.Status.Accepted = true
 			policyCR.Status.Message = "Successfully updated policy"
-			if err = r.Client.Status().Update(ctx, policyCR); err != nil {
-				return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on policy %s", req.Name))
-			}
-			return ctrl.Result{}, nil
 		}
-	}
-
-	if _, err = svc.PostPolicy(ctx, &v1.PostPolicyRequest{Policy: desiredState}); err != nil {
-		wrappedErr := errors.Wrap(err, fmt.Sprintf("Failed to create policy %s", req.Name))
-		policyCR.Status.Accepted = false
-		policyCR.Status.Message = wrappedErr.Error()
-		if err = r.Client.Status().Update(ctx, policyCR); err != nil {
-			return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on policy %s", req.Name))
-		}
-		return ctrl.Result{}, wrappedErr
 	} else {
-		policyCR.Status.Accepted = true
-		policyCR.Status.Message = "Successfully created policy"
-		if err = r.Client.Status().Update(ctx, policyCR); err != nil {
-			return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on policy %s", req.Name))
+		if _, err = r.policyClient.CreatePolicy(ctx, desiredState); err != nil {
+			retErr := errors.Wrap(err, fmt.Sprintf("Failed to create policy %s", req.Name))
+			policyCR.Status.Accepted = false
+			policyCR.Status.Message = retErr.Error()
+			result.Requeue = true
+		} else {
+			policyCR.Status.Accepted = true
+			policyCR.Status.Message = "Successfully created policy"
 		}
 	}
 
-	return ctrl.Result{}, nil
+	if err = r.K8sClient.Status().Update(ctx, policyCR); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on policy %s", req.Name))
+	}
+
+	if result.Requeue {
+		if err = r.policyClient.FlushCache(ctx); err != nil {
+			return result, errors.Wrap(err, "Failed to flush cache")
+		}
+	}
+
+	return result, retErr
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	conn, err := common.GetGRPCConnection(auth.TokenAuth(), logger.NewLogger(roxctlIO.DefaultIO(), printer.DefaultColorPrinter()))
+	policyClient, err := client.New(context.Background())
 	if err != nil {
-		return errors.Wrap(err, "could not establish gRPC connection to Central")
+		return errors.Wrap(err, "Error creating policy client for Central")
 	}
-	r.conn = conn
+
+	r.policyClient = policyClient
+
 	err = ctrl.NewControllerManagedBy(mgr).
 		For(&configstackroxiov1alpha1.Policy{}).
 		Complete(r)
