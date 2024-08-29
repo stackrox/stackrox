@@ -6,13 +6,11 @@ Runs version compatibility tests against the supplied testfunc
 import logging
 import os
 import sys
-from collections import namedtuple
 
 from pre_tests import (
     PreSystemTests,
     CollectionMethodOverridePreTest
 )
-from ci_tests import QaE2eGoCompatibilityTest
 from post_tests import PostClusterTest, FinalPost
 from runners import ClusterTestSetsRunner
 from clusters import GKECluster
