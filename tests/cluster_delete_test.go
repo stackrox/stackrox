@@ -46,7 +46,7 @@ func getSummaryCounts(t *testing.T) summaryCountsResp {
 			deploymentCount
 			secretCount
 		}
-	`, map[string]interface{}{}, &resp, timeout)
+	`, map[string]interface{}{}, &resp, Timeout)
 	return resp
 }
 
@@ -54,7 +54,7 @@ func getAllCounts(t *testing.T) allCounts {
 	summaryCounts := getSummaryCounts(t)
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	podSvc := v1.NewPodServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
 	podsResp, err := podSvc.GetPods(ctx, &v1.RawQuery{})
 	require.NoError(t, err)
@@ -80,13 +80,13 @@ func TestClusterDeletion(t *testing.T) {
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewClustersServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	getClustersResp, err := service.GetClusters(ctx, &v1.GetClustersRequest{})
 	require.NoError(t, err)
 	cancel()
 
 	for _, cluster := range getClustersResp.GetClusters() {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 		_, err := service.DeleteCluster(ctx, &v1.ResourceByID{Id: cluster.GetId()})
 		assert.NoError(t, err)
 		cancel()

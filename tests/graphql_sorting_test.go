@@ -30,7 +30,7 @@ func getDeploymentsWithSortOption(t *testing.T, field string, reversed bool) []*
 		"pagination": map[string]interface{}{
 			"sortOption": map[string]interface{}{"field": field, "reversed": reversed},
 		},
-	}, &resp, timeout)
+	}, &resp, Timeout)
 
 	require.True(t, len(resp.Deployments) > 0, "UNEXPECTED: no deployments found in API!")
 

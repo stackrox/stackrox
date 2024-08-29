@@ -45,7 +45,7 @@ const (
 
 var (
 	dialer = net.Dialer{
-		Timeout: timeout,
+		Timeout: Timeout,
 	}
 )
 
@@ -140,7 +140,7 @@ func (c *endpointsTestCase) verifyDialResult(t *testing.T, conn *tls.Conn, err e
 		t.Error("conn is nil")
 	}
 	if err == nil {
-		ctx, cancel := context.WithTimeoutCause(context.Background(), 2*time.Second, errors.New("TLS handshake timeout"))
+		ctx, cancel := context.WithTimeoutCause(context.Background(), 2*time.Second, errors.New("TLS handshake Timeout"))
 		defer cancel()
 		err = conn.HandshakeContext(ctx)
 	}
@@ -151,7 +151,7 @@ func (c *endpointsTestCase) verifyDialResult(t *testing.T, conn *tls.Conn, err e
 	}
 
 	if err == nil {
-		_ = conn.SetReadDeadline(time.Now().Add(timeout))
+		_ = conn.SetReadDeadline(time.Now().Add(Timeout))
 		_, err = conn.Read(make([]byte, 1))
 	}
 	assert.EqualErrorf(t, err, "remote error: tls: certificate required", "expected a bad certificate error after handshake")
@@ -241,7 +241,7 @@ func (c *endpointsTestCase) runGRPCTest(t *testing.T, testCtx *endpointsTestCont
 	}
 
 	pingClient := v1.NewPingServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
 	_, err = pingClient.Ping(ctx, &v1.Empty{})
 	if !c.expectGRPCSuccess {
@@ -251,7 +251,7 @@ func (c *endpointsTestCase) runGRPCTest(t *testing.T, testCtx *endpointsTestCont
 	assert.NoError(t, err, "expected ping request to succeed")
 
 	authClient := v1.NewAuthServiceClient(conn)
-	ctx, cancel = context.WithTimeout(context.Background(), timeout)
+	ctx, cancel = context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
 
 	authStatus, err := authClient.GetAuthStatus(ctx, &v1.Empty{})
@@ -306,7 +306,7 @@ func (c *endpointsTestCase) runHTTPTest(t *testing.T, testCtx *endpointsTestCont
 
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   timeout,
+		Timeout:   Timeout,
 	}
 
 	resp, err := client.Get(fmt.Sprintf("%s://%s/v1/ping", scheme, targetHost))

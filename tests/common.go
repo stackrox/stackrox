@@ -49,7 +49,7 @@ const (
 	ExpectedLatestTagPolicy = `Latest tag`
 
 	WaitTimeout = 5 * time.Minute
-	timeout     = 30 * time.Second
+	Timeout     = 30 * time.Second
 )
 
 var (
@@ -62,18 +62,18 @@ func Logf(t *testing.T, format string, args ...any) {
 	t.Logf(time.Now().Format(time.StampMilli)+" "+format, args...)
 }
 
-// TestContexts returns a couple of contexts for the given test: with a timeout for the testing logic and another
-// with an additional longer timeout for debug artifact gathering and cleanup.
+// TestContexts returns a couple of contexts for the given test: with a Timeout for the testing logic and another
+// with an additional longer Timeout for debug artifact gathering and cleanup.
 func TestContexts(t *testing.T, name string, timeout time.Duration) (testCtx context.Context, overallCtx context.Context, cancel func()) {
 	var (
 		overallCancel func()
 		testCancel    func()
 	)
 	cleanupTimeout := 10 * time.Minute
-	t.Logf("Running %s with a timeout of %s plus %s for cleanup", name, timeout, cleanupTimeout)
+	t.Logf("Running %s with a Timeout of %s plus %s for cleanup", name, timeout, cleanupTimeout)
 	overallTimeout := timeout + cleanupTimeout
-	overallErr := fmt.Errorf("overall %s test+cleanup timeout of %s reached", name, overallTimeout)
-	testErr := fmt.Errorf("%s test timeout of %s reached", name, timeout)
+	overallErr := fmt.Errorf("overall %s test+cleanup Timeout of %s reached", name, overallTimeout)
+	testErr := fmt.Errorf("%s test Timeout of %s reached", name, timeout)
 	overallCtx, overallCancel = context.WithTimeoutCause(context.Background(), overallTimeout, overallErr)
 	testCtx, testCancel = context.WithTimeoutCause(overallCtx, timeout, testErr)
 	cancel = func() {

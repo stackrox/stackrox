@@ -172,7 +172,7 @@ func getImageVulnerabilities(t *testing.T, query string, scopeQuery string) []Ac
 	`, map[string]interface{}{
 		"query":      query,
 		"scopeQuery": scopeQuery,
-	}, &resp, timeout)
+	}, &resp, Timeout)
 	return resp.Vulnerabilities
 }
 
@@ -195,7 +195,7 @@ func getImageComponents(t *testing.T, query string, scopeQuery string) []ActiveC
 	`, map[string]interface{}{
 		"query":      query,
 		"scopeQuery": scopeQuery,
-	}, &resp, timeout)
+	}, &resp, Timeout)
 	return resp.Components
 }
 

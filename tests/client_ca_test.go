@@ -112,7 +112,7 @@ func getAuthStatus(t *testing.T, tlsConf *tls.Config, token string) (*v1.AuthSta
 	if token != "" {
 		opts = append(opts, grpc.WithPerRPCCredentials(tokenbased.PerRPCCredentials(token)))
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
 	conn, err := clientconn.DialTLS(ctx, centralgrpc.RoxAPIEndpoint(t), tlsConf, opts...)
 	require.NoError(t, err)
@@ -160,7 +160,7 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	authService := v1.NewAuthProviderServiceClient(conn)
 	groupService := v1.NewGroupServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
 	createdAuthProvider, err := authService.PostAuthProvider(ctx, req)
 	require.NoError(t, err)
@@ -173,7 +173,7 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 		defer cancel()
 		_, err := authService.DeleteAuthProvider(ctx, &v1.DeleteByIDWithForce{Id: createdAuthProvider.GetId()})
 		require.NoError(t, err)
