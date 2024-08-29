@@ -8,14 +8,20 @@ import (
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/node/datastore/search"
 	"github.com/stackrox/rox/central/cve/node/datastore/store"
+	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+const (
+	deleteBatchSize = 5000
 )
 
 var (
@@ -24,11 +30,15 @@ var (
 		sac.ForResource(resources.VulnerabilityManagementApprovals),
 	)
 
+	nodeSAC = sac.ForResource(resources.Node)
+
 	accessAllCtx = sac.WithAllAccess(context.Background())
 
 	errNilSuppressionStart = errors.New("suppression start time is nil")
 
 	errNilSuppressionDuration = errors.New("suppression duration is nil")
+
+	log = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -108,6 +118,65 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 	return cves, nil
+}
+
+func (ds *datastoreImpl) UpsertMany(ctx context.Context, cves []*storage.NodeCVE) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "NodeCVE", "UpsertMany")
+
+	if ok, err := nodeSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	if err := ds.storage.UpsertMany(ctx, cves); err != nil {
+		return errors.Wrap(err, "Upserting node CVEs")
+	}
+	return nil
+}
+
+func (ds *datastoreImpl) PruneNodeCVEs(ctx context.Context, ids []string) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "NodeCVE", "PruneNodeCVEs")
+
+	if ok, err := nodeSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	// Batch the deletes
+	initialSize := len(ids)
+	localBatchSize := deleteBatchSize
+	var successfullyPruned int
+	for {
+		if len(ids) == 0 {
+			break
+		}
+		if len(ids) < localBatchSize {
+			localBatchSize = len(ids)
+		}
+
+		identifierBatch := ids[:localBatchSize]
+		q := pkgSearch.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
+
+		deletedIDs, err := ds.storage.DeleteByQuery(ctx, q)
+		if err != nil {
+			log.Errorf("unable to prune the records: %v", err)
+		} else {
+			successfullyPruned = successfullyPruned + len(deletedIDs)
+			log.Debugf("deleted batch of %d records", len(deletedIDs))
+		}
+
+		// Move the slice forward to start the next batch
+		ids = ids[localBatchSize:]
+	}
+
+	log.Debugf("successfully deleted %d of %d records", successfullyPruned, initialSize)
+	return nil
 }
 
 func (ds *datastoreImpl) Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error {

@@ -427,12 +427,12 @@ func testImagesWithOperatingSystems() []*storage.Image {
 	return ret
 }
 
-func testNodes() []*storage.Node {
+func testNodes(includeCVEsToOrphan bool) []*storage.Node {
 	t1, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
 	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
 	utils.CrashOnError(err)
-	return []*storage.Node{
+	nodes := []*storage.Node{
 		{
 			Id:   fixtureconsts.Node1,
 			Name: "node1",
@@ -557,10 +557,30 @@ func testNodes() []*storage.Node {
 			},
 		},
 	}
+
+	if includeCVEsToOrphan {
+		for _, node := range nodes {
+			if len(node.GetScan().GetComponents()) > 0 {
+				node.Scan.Components = append(node.Scan.Components, &storage.EmbeddedNodeScanComponent{
+					Name:    "comp5",
+					Version: "1.0",
+					Vulnerabilities: []*storage.NodeVulnerability{
+						{
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "cve-to-be-orphaned",
+							},
+						},
+					},
+				})
+			}
+		}
+	}
+
+	return nodes
 }
 
 // returns clusters and associated nodes for testing
-func testClustersWithNodes() ([]*storage.Cluster, []*storage.Node) {
+func testClustersWithNodes(includeCVEsToOrphan bool) ([]*storage.Cluster, []*storage.Node) {
 	clusters := []*storage.Cluster{
 		{
 			Id:        fixtureconsts.Cluster1,
@@ -574,7 +594,7 @@ func testClustersWithNodes() ([]*storage.Cluster, []*storage.Node) {
 		},
 	}
 
-	nodes := testNodes()
+	nodes := testNodes(includeCVEsToOrphan)
 	nodes[0].ClusterId = clusters[0].Id
 	nodes[0].ClusterName = clusters[0].Name
 

@@ -20,4 +20,5 @@ type Store interface {
 	GetMany(ctx context.Context, ids []string) ([]*storage.NodeCVE, []int, error)
 
 	UpsertMany(ctx context.Context, cves []*storage.NodeCVE) error
+	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
 }
