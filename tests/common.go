@@ -3,16 +3,13 @@
 package tests
 
 import (
-	"bufio"
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"math"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -47,6 +44,9 @@ import (
 const (
 	nginxDeploymentName     = `nginx`
 	expectedLatestTagPolicy = `Latest tag`
+
+	sensorDeployment = "sensor"
+	sensorContainer  = "sensor"
 
 	waitTimeout = 5 * time.Minute
 	timeout     = 30 * time.Second
@@ -361,10 +361,25 @@ type logMatcher interface {
 // waitUntilLog waits until ctx expires or logs of container in all pods matching podLabels satisfy all logMatchers.
 func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
 	ls := labels.SelectorFromSet(podLabels).String()
-	checkLogs := func() error {
-		podList, err := ks.k8s.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{LabelSelector: ls})
+	checkLogs := ks.checkLogsClosure(ctx, namespace, ls, container, logMatchers...)
+	ks.logf("Waiting until %q pods logs "+description+": %s", ls, logMatchers)
+	mustEventually(ks.T(), ctx, checkLogs, 10*time.Second, fmt.Sprintf("Not all %q pods logs "+description, ls))
+}
+
+// checkLogsMatch will check if the logs of container in all pods matching pod labels satisfy all log matchers.
+func (ks *KubernetesSuite) checkLogsMatch(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
+	ls := labels.SelectorFromSet(podLabels).String()
+	ks.logf("Checking %q pods logs "+description+": %s", ls, logMatchers)
+	err := ks.checkLogsClosure(ctx, namespace, ls, container, logMatchers...)()
+	require.NoError(ks.T(), err, fmt.Sprintf("%q was untrue", description))
+}
+
+// checkLogsClosure returns a function that checks if the logs of container in all pods matching pod labels satisfy all the log matchers.
+func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labelSelector, container string, logMatchers ...logMatcher) func() error {
+	return func() error {
+		podList, err := ks.k8s.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{LabelSelector: labelSelector})
 		if err != nil {
-			return fmt.Errorf("could not list pods matching %q in namespace %q: %w", ls, namespace, err)
+			return fmt.Errorf("could not list pods matching %q in namespace %q: %w", labelSelector, namespace, err)
 		}
 		if len(podList.Items) == 0 {
 			if ok, err := allMatch(strings.NewReader(""), logMatchers...); ok {
@@ -389,14 +404,36 @@ func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, p
 		}
 		return nil
 	}
-	ks.logf("Waiting until %q pods logs "+description+": %s", ls, logMatchers)
-	mustEventually(ks.T(), ctx, checkLogs, 10*time.Second, fmt.Sprintf("Not all %q pods logs "+description, ls))
 }
 
-// containsLineMatching returns a simple line-based regex matcher to go with waitUntilLog.
-// Note: currently limited by bufio.Reader default buffer size (4KB) for simplicity.
-func containsLineMatching(re *regexp.Regexp) *lineMatcher {
-	return &lineMatcher{re: re}
+// waitUntilK8sDeploymentReady waits until k8s reports all pods for a deployment are consistently ready or context done.
+func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, namespace string, deploymentName string) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	// TODO: Can this be adjusted to use the 'wait for condition' method in this file?
+
+	// Wait for multiple consecutive ready states, so we don't return too soon
+	// before k8s has a chance to process/schedule a previous API request.
+	maxSuccessCount := 3
+	var successCount int
+	for successCount < maxSuccessCount {
+		select {
+		case <-ctx.Done():
+			require.NoError(ks.T(), ctx.Err())
+
+		case <-ticker.C:
+			deploy, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
+			require.NoError(ks.T(), err, "getting deployment %q from namespace %q", deploymentName, namespace)
+			if deploy.Status.Replicas == 0 || deploy.Status.Replicas != deploy.Status.ReadyReplicas {
+				ks.logf("deployment %q in namespace %q NOT ready (%d/%d ready replicas)", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
+				successCount = 0
+				continue
+			}
+			successCount++
+			ks.logf("deployment %q in namespace %q READY (%d/%d ready replicas) [%d/%d]", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas, successCount, maxSuccessCount)
+		}
+	}
 }
 
 func allMatch(reader io.ReadSeeker, matchers ...logMatcher) (ok bool, err error) {
@@ -425,31 +462,6 @@ func mustEventually(t *testing.T, ctx context.Context, f func() error, pauseInte
 			time.Sleep(pauseInterval)
 		}),
 		retry.OnFailedAttempts(func(err error) { logf(t, failureMsgPrefix+": %s", err) })))
-}
-
-type lineMatcher struct {
-	re *regexp.Regexp
-}
-
-func (lm *lineMatcher) String() string {
-	return fmt.Sprintf("contains line matching %q", lm.re)
-}
-
-func (lm *lineMatcher) Match(reader io.Reader) (ok bool, err error) {
-	br := bufio.NewReader(reader)
-	for {
-		// We do not care about partial reads, as the things we look for should fit in default buf size.
-		line, _, err := br.ReadLine()
-		if errors.Is(err, io.EOF) {
-			return false, nil
-		}
-		if err != nil {
-			return false, err
-		}
-		if lm.re.Match(line) {
-			return true, nil
-		}
-	}
 }
 
 // createService creates a k8s Service object.
@@ -545,18 +557,17 @@ func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 	mustEventually(t, ctx, checkCentralSensorConnection, 10*time.Second, "Central-sensor connection not in desired state (yet)")
 }
 
-// setDeploymentEnvVal sets the specified env variable on a container in a deployment using strategic merge patch, or fails the test.
-func (ks *KubernetesSuite) setDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string, value string) {
+// mustSetDeploymentEnvVal sets the specified env variable on a container in a deployment using strategic merge patch, or fails the test.
+func (ks *KubernetesSuite) mustSetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string, value string) {
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":%q,"value":%q}]}]}}}}`,
 		container, envVar, value))
 	ks.logf("Setting variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
 	_, err := ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
 	ks.Require().NoError(err, "cannot patch deployment %q in namespace %q", deployment, namespace)
-
 }
 
-// getDeploymentEnvVal retrieves the value of environment variable in a deployment, or fails the test.
-func (ks *KubernetesSuite) getDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) string {
+// mustGetDeploymentEnvVal retrieves the value of environment variable in a deployment, or fails the test.
+func (ks *KubernetesSuite) mustGetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) string {
 	d, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
 	ks.Require().NoError(err, "cannot retrieve deployment %q in namespace %q", deployment, namespace)
 	c, err := getContainer(d, container)
@@ -564,6 +575,43 @@ func (ks *KubernetesSuite) getDeploymentEnvVal(ctx context.Context, namespace st
 	val, err := getEnvVal(c, envVar)
 	ks.Require().NoError(err, "cannot find envVar %q in container %q in deployment %q in namespace %q", envVar, container, deployment, namespace)
 	return val
+}
+
+// getDeploymentEnvVal returns the value of an environment variable or the empty string if not found.
+func (ks *KubernetesSuite) getDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) string {
+	d, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
+	if err != nil {
+		ks.logf("cannot retrieve deployment %q in namespace %q: %v", deployment, namespace, err)
+		return ""
+	}
+
+	c, err := getContainer(d, container)
+	if err != nil {
+		ks.logf("cannot find container %q in deployment %q in namespace %q: %v", container, deployment, namespace, err)
+		return ""
+	}
+
+	val, _ := getEnvVal(c, envVar)
+	return val
+}
+
+// mustDeleteDeploymentEnvVar deletes an env var from all containers of a deployment, if any errors
+// are encountered the suite will fail. This is a no-op if the env var is not found.
+func (ks *KubernetesSuite) mustDeleteDeploymentEnvVar(ctx context.Context, namespace, deployment, envVar string) {
+	d, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
+	ks.Require().NoError(err, "cannot retrieve deployment %q in namespace %q", deployment, namespace)
+
+	for i, c := range d.Spec.Template.Spec.Containers {
+		for j, e := range c.Env {
+			if e.Name == envVar {
+				p := fmt.Sprintf(`[{"op":"remove", "path":"/spec/template/spec/containers/%d/env/%d"}]`, i, j)
+				_, err := ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.JSONPatchType, []byte(p), metaV1.PatchOptions{})
+				ks.Require().NoError(err, "failed to remove env var %q in container %q deployment %q namespace %q", envVar, c.Name, deployment, namespace)
+				ks.logf("Removed env variable %q in container %q deployment %q  namespace %q", envVar, c.Name, deployment, namespace)
+				break
+			}
+		}
+	}
 }
 
 // getEnvVal returns the value of envVar from a given container or returns a helpful error.
@@ -578,7 +626,7 @@ func getEnvVal(c *coreV1.Container, envVar string) (string, error) {
 	return "", fmt.Errorf("actual vars are %q", vars)
 }
 
-// getEnvVal returns the given container from a deployment or returns a helpful error.
+// getContainer returns the given container from a deployment or returns a helpful error.
 func getContainer(deployment *appsV1.Deployment, container string) (*coreV1.Container, error) {
 	var containers []string
 	for _, c := range deployment.Spec.Template.Spec.Containers {
@@ -596,4 +644,20 @@ func collectLogs(t *testing.T, ns string, dir string) {
 	if err != nil {
 		t.Logf("Collecting %q logs returned error %s", ns, err)
 	}
+}
+
+// isOpenshift returns true when the test env is a flavor of OCP, false otherwise.
+func isOpenshift() bool {
+	return os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift"
+}
+
+func mustGetCluster(t *testing.T, ctx context.Context) *storage.Cluster {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	clustersSvc := v1.NewClustersServiceClient(conn)
+
+	clusters, err := clustersSvc.GetClusters(ctx, &v1.GetClustersRequest{})
+	require.NoError(t, err)
+	require.Len(t, clusters.Clusters, 1)
+
+	return clusters.Clusters[0]
 }
