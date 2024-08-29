@@ -1,0 +1,34 @@
+{
+  "id": "842feb9f-ecb1-4e3c-a4bf-8a1dcb63948a",
+  "name": "Wget in Image",
+  "description": "Alert on deployments with wget present",
+  "rationale": "Leaving download tools like wget in an image makes it easier for attackers to use compromised containers, since they can easily download software.",
+  "remediation": "Use your package manager's \"remove\" command to remove wget from the image build for production containers.",
+  "disabled": true,
+  "categories": [
+    "Security Best Practices"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "severity": "LOW_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Component",
+          "values": [
+            {
+              "value": "wget="
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}
