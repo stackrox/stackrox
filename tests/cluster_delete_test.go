@@ -1,4 +1,4 @@
-//go:build destructive
+//go:build destructive || test_compatibility
 
 package tests
 
