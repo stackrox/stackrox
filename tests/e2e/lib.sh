@@ -891,6 +891,13 @@ remove_existing_stackrox_resources() {
     (
         # Delete StackRox CRs first to give the operator a chance to properly finish the resource cleanup.
         if [[ "${securedclusters_supported}" == "true" ]]; then
+            # Remove stackrox.io/pause-reconcile annotation since it prevents
+            # deletion of secured cluster in static clusters
+            kubectl annotate -n stackrox \
+            securedclusters.platform.stackrox.io \
+            stackrox-secured-cluster-services \
+            stackrox.io/pause-reconcile-
+
             kubectl get securedclusters -o name | while read -r securedcluster; do
                 kubectl -n "${namespace}" delete --ignore-not-found --wait "${securedcluster}"
                 # Wait until resources are actually deleted.
@@ -898,6 +905,13 @@ remove_existing_stackrox_resources() {
             done
         fi
         if [[ "${centrals_supported}" == "true" ]]; then
+            # Remove stackrox.io/pause-reconcile annotation since it prevents
+            # deletion of central in static clusters
+               kubectl annotate -n stackrox \
+                centrals.platform.stackrox.io \
+                stackrox-central-services \
+                stackrox.io/pause-reconcile-
+
             kubectl get centrals -o name | while read -r central; do
                 kubectl -n "${namespace}" delete --ignore-not-found --wait "${central}"
                 kubectl wait -n "${namespace}"  --for=delete deployment/central --timeout=60s
@@ -1214,6 +1228,18 @@ _EO_DETAILS_
         save_junit_failure "${images_available[@]}" "${build_details}"
     fi
 
+    case "$CI_JOB_NAME" in
+    *gke-upgrade-tests)
+        record_upgrade_test_progess
+        ;;
+    *operator-e2e-tests)
+        check_deployment=false
+        ;;
+    *)
+        info "No job specific progress markers are saved for: ${CI_JOB_NAME}"
+        ;;
+    esac
+
     if $check_deployment; then
         if [[ -f "${STATE_DEPLOYED}" ]]; then
             save_junit_success "${stackrox_deployed[@]}"
@@ -1223,19 +1249,6 @@ _EO_DETAILS_
     else
         save_junit_skipped "${stackrox_deployed[@]}"
     fi
-
-    record_job_specific_progress
-}
-
-record_job_specific_progress() {
-    case "$CI_JOB_NAME" in
-    *gke-upgrade-tests)
-        record_upgrade_test_progess
-        ;;
-    *)
-        info "No job specific progress markers are saved for: ${CI_JOB_NAME}"
-        ;;
-    esac
 }
 
 record_upgrade_test_progess() {
