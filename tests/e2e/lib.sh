@@ -1228,6 +1228,18 @@ _EO_DETAILS_
         save_junit_failure "${images_available[@]}" "${build_details}"
     fi
 
+    case "$CI_JOB_NAME" in
+    *gke-upgrade-tests)
+        record_upgrade_test_progess
+        ;;
+    *operator-e2e-tests)
+        check_deployment=false
+        ;;
+    *)
+        info "No job specific progress markers are saved for: ${CI_JOB_NAME}"
+        ;;
+    esac
+
     if $check_deployment; then
         if [[ -f "${STATE_DEPLOYED}" ]]; then
             save_junit_success "${stackrox_deployed[@]}"
@@ -1237,19 +1249,6 @@ _EO_DETAILS_
     else
         save_junit_skipped "${stackrox_deployed[@]}"
     fi
-
-    record_job_specific_progress
-}
-
-record_job_specific_progress() {
-    case "$CI_JOB_NAME" in
-    *gke-upgrade-tests)
-        record_upgrade_test_progess
-        ;;
-    *)
-        info "No job specific progress markers are saved for: ${CI_JOB_NAME}"
-        ;;
-    esac
 }
 
 record_upgrade_test_progess() {
