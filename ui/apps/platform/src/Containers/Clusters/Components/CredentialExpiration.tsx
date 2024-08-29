@@ -77,7 +77,7 @@ function CredentialExpiration({
 
     return (
         <HealthStatus icon={icon} iconColor={fgColor}>
-            {isList || healthStatus !== 'HEALTHY' ? (
+            {isList || healthStatus === 'HEALTHY' ? (
                 expirationElement
             ) : (
                 <div>
