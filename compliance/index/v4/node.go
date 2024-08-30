@@ -30,12 +30,20 @@ var (
 	log         = logging.LoggerForModule()
 )
 
+type NodeIndexerConfig struct {
+	DisableAPI         bool
+	API                string
+	Repo2CPEMappingURL string
+	Timeout            time.Duration
+}
+
 type localNodeIndexer struct {
+	config *NodeIndexerConfig
 }
 
 // NewNodeIndexer creates a new node indexer
-func NewNodeIndexer() compliance.NodeIndexer {
-	return &localNodeIndexer{}
+func NewNodeIndexer(config *NodeIndexerConfig) compliance.NodeIndexer {
+	return &localNodeIndexer{config: config}
 }
 
 // GetIntervals
@@ -64,7 +72,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (r *v4.IndexReport, er
 		}
 	}()
 
-	reps, err := runRepositoryScanner(ctx, layer)
+	reps, err := runRepositoryScanner(ctx, l.config, layer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run repository scanner")
 	}
@@ -140,14 +148,14 @@ func filterPackages(_ context.Context, pck []*claircore.Package) []*claircore.Pa
 	return filtered
 }
 
-func runRepositoryScanner(ctx context.Context, l *claircore.Layer) ([]*claircore.Repository, error) {
+func runRepositoryScanner(ctx context.Context, cfg *NodeIndexerConfig, l *claircore.Layer) ([]*claircore.Repository, error) {
 	c := http.DefaultClient
 	sc := rhel.RepositoryScanner{}
 	config := rhel.RepositoryScannerConfig{
-		DisableAPI:         false,
-		API:                "https://catalog.redhat.com/api/containers/",
-		Repo2CPEMappingURL: "https://access.redhat.com/security/data/metrics/repository-to-cpe.json",
-		Timeout:            10 * time.Second,
+		DisableAPI:         cfg.DisableAPI,
+		API:                cfg.API,
+		Repo2CPEMappingURL: cfg.Repo2CPEMappingURL,
+		Timeout:            cfg.Timeout,
 	}
 
 	var buf bytes.Buffer
