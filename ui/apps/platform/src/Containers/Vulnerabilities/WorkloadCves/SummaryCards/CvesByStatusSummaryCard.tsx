@@ -74,22 +74,14 @@ const statusHiddenText = {
 export type CvesByStatusSummaryCardProps = {
     cveStatusCounts: ResourceCountByCveSeverityAndStatus;
     hiddenStatuses: Set<FixableStatus>;
-    isBusy: boolean;
 };
 
 function CvesByStatusSummaryCard({
     cveStatusCounts,
     hiddenStatuses,
-    isBusy,
 }: CvesByStatusSummaryCardProps) {
     return (
-        <Card
-            role="region"
-            aria-live="polite"
-            aria-busy={isBusy ? 'true' : 'false'}
-            isCompact
-            isFlat
-        >
+        <Card isCompact isFlat>
             <CardTitle>CVEs by status</CardTitle>
             <CardBody>
                 <Grid className="pf-v5-u-pl-sm">

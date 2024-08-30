@@ -280,7 +280,6 @@ function ViewVulnReportPage() {
                     className="pf-v5-u-background-color-100"
                     defaultActiveKey={0}
                     aria-label="Report details tabs"
-                    role="region"
                 >
                     <Tab
                         eventKey={0}
