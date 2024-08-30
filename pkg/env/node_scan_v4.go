@@ -8,9 +8,9 @@ var (
 	// that should be scanned by Scanners NodeIndexer
 	NodeIndexHostPath = RegisterSetting("ROX_NODE_INDEX_HOST_PATH", WithDefault("/host"))
 
-	// NodeIndexContainerAPI .
+	// NodeIndexContainerAPI Defines the API endpoint for the RepositoryScanner to reach out to
 	NodeIndexContainerAPI = RegisterSetting("ROX_NODE_INDEX_CONTAINER_API", WithDefault("https://catalog.redhat.com/api/containers/"))
 
-	// NodeIndexMappingURL .
+	// NodeIndexMappingURL Defines the endpoint for the RepositoryScanner to download mapping information from
 	NodeIndexMappingURL = RegisterSetting("ROX_NODE_INDEX_MAPPING_URL", WithDefault("https://access.redhat.com/security/data/metrics/repository-to-cpe.json"))
 )
