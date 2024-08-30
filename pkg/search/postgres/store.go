@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
@@ -43,16 +42,23 @@ type Deleter interface {
 	PruneMany(ctx context.Context, identifiers []string) error
 }
 
-type primaryKeyGetter[T any, PT protocompat.ClonedUnmarshaler[T]] func(obj PT) string
+// ClonedUnmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler
+// and that have a Clone deep-copy method.
+type ClonedUnmarshaler[T any] interface {
+	pgutils.Unmarshaler[T]
+	CloneVT() *T
+}
+
+type primaryKeyGetter[T any, PT ClonedUnmarshaler[T]] func(obj PT) string
 type durationTimeSetter func(start time.Time, op ops.Op)
-type inserter[T any, PT protocompat.ClonedUnmarshaler[T]] func(batch *pgx.Batch, obj PT) error
-type copier[T any, PT protocompat.ClonedUnmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
-type upsertChecker[T any, PT protocompat.ClonedUnmarshaler[T]] func(ctx context.Context, objs ...PT) error
+type inserter[T any, PT ClonedUnmarshaler[T]] func(batch *pgx.Batch, obj PT) error
+type copier[T any, PT ClonedUnmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
+type upsertChecker[T any, PT ClonedUnmarshaler[T]] func(ctx context.Context, objs ...PT) error
 
 func doNothingDurationTimeSetter(_ time.Time, _ ops.Op) {}
 
 // Store is the interface to interact with the storage for the generic type T.
-type Store[T any, PT protocompat.Unmarshaler[T]] interface {
+type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
@@ -73,7 +79,7 @@ type Store[T any, PT protocompat.Unmarshaler[T]] interface {
 }
 
 // genericStore implements subset of Store interface for resources with single ID.
-type genericStore[T any, PT protocompat.ClonedUnmarshaler[T]] struct {
+type genericStore[T any, PT ClonedUnmarshaler[T]] struct {
 	mutex                            sync.RWMutex
 	db                               postgres.DB
 	schema                           *walker.Schema
@@ -89,7 +95,7 @@ type genericStore[T any, PT protocompat.ClonedUnmarshaler[T]] struct {
 
 // NewGenericStore returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStore[T any, PT protocompat.ClonedUnmarshaler[T]](
+func NewGenericStore[T any, PT ClonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -125,7 +131,7 @@ func NewGenericStore[T any, PT protocompat.ClonedUnmarshaler[T]](
 
 // NewGenericStoreWithPermissionChecker returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithPermissionChecker[T any, PT protocompat.ClonedUnmarshaler[T]](
+func NewGenericStoreWithPermissionChecker[T any, PT ClonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -547,7 +553,7 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 }
 
 // GloballyScopedUpsertChecker returns upsertChecker for globally scoped objects
-func GloballyScopedUpsertChecker[T any, PT protocompat.ClonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
+func GloballyScopedUpsertChecker[T any, PT ClonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
 	return func(ctx context.Context, objs ...PT) error {
 		scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 		if !scopeChecker.IsAllowed() {
