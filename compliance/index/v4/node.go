@@ -37,6 +37,15 @@ type NodeIndexerConfig struct {
 	Timeout            time.Duration
 }
 
+func NewNodeIndexerConfigFromEnv() *NodeIndexerConfig {
+	return &NodeIndexerConfig{
+		DisableAPI:         false,
+		API:                env.NodeIndexContainerAPI.Setting(), // TODO(ROX-25540): Set in sync with Scanner via Helm charts
+		Repo2CPEMappingURL: env.NodeIndexMappingURL.Setting(),   // TODO(ROX-25540): Set in sync with Scanner via Helm charts
+		Timeout:            10 * time.Second,
+	}
+}
+
 type localNodeIndexer struct {
 	config *NodeIndexerConfig
 }

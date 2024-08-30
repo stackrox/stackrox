@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"time"
 
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	v4 "github.com/stackrox/rox/compliance/index/v4"
@@ -17,12 +16,7 @@ func init() {
 
 func main() {
 	np := &compliance.EnvNodeNameProvider{}
-	cfg := &v4.NodeIndexerConfig{
-		DisableAPI:         false,
-		API:                env.NodeIndexContainerAPI.Setting(), // TODO(ROX-25540): Set in sync with Scanner via Helm charts
-		Repo2CPEMappingURL: env.NodeIndexMappingURL.Setting(),   // TODO(ROX-25540): Set in sync with Scanner via Helm charts
-		Timeout:            10 * time.Second,
-	}
+	cfg := v4.NewNodeIndexerConfigFromEnv()
 
 	scanner := compliance.NewNodeInventoryComponentScanner(np)
 	scanner.Connect(env.NodeScanningEndpoint.Setting())
