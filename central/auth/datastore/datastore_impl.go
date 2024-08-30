@@ -9,12 +9,12 @@ import (
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -54,12 +54,17 @@ func (d *datastoreImpl) listAuthM2MConfigsNoLock(ctx context.Context) ([]*storag
 
 func (d *datastoreImpl) UpsertAuthM2MConfig(ctx context.Context,
 	config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+
+	return d.UpsertAuthM2MConfigNoLock(ctx, config)
+}
+
+func (d *datastoreImpl) UpsertAuthM2MConfigNoLock(ctx context.Context,
+	config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
 	}
-
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
 
 	// Get the existing stored config, if any.
 	storedConfig, exists, err := d.getAuthM2MConfigNoLock(ctx, config.GetId())
@@ -142,27 +147,12 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 
 	configs, err := d.listAuthM2MConfigsNoLock(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to list auth m2m configs: %w", err)
 	}
 
-	kubeSAIssuer, err := d.issuerFetcher.GetServiceAccountIssuer()
-	if err != nil {
-		return fmt.Errorf("Failed to get service account issuer: %w", err)
+	if err = d.configureConfigControllerAccess(configs); err != nil {
+		return fmt.Errorf("Failed to configure config controller access: %w", err)
 	}
-
-	// Unconditionally add K8s service account exchanger.
-	// This is required for config-controller auth.
-	configs = append(configs, &storage.AuthMachineToMachineConfig{
-		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-		TokenExpirationDuration: "1m",
-		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{{
-			// sub stands for "subject identifier", a required field on an OIDC token
-			Key:             "sub",
-			ValueExpression: configControllerServiceAccountName,
-			Role:            accesscontrol.ConfigController,
-		}},
-		Issuer: kubeSAIssuer,
-	})
 
 	tokenExchangerErrors := []error{}
 	for _, config := range configs {
@@ -172,6 +162,69 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 	}
 
 	return errors.Join(tokenExchangerErrors...)
+}
+
+// configureConfigControllerAccess ensures the config-controller has access to Central APIs via k8s service account token m2m auth
+//
+// What this function does in plain english:
+//
+// * See if any existing m2m configs from the db are for the kube sa issuer
+// * If yes, make sure the role mapping for config-controller is present
+// * If no, create a new m2m config for kube sa issuer like we do today and save it to the db
+//
+// This allows customers to add their own role mappings for this config.
+// If a customer breaks config-controller auth, they can simply restart Central to get it back to a working state.
+func (d *datastoreImpl) configureConfigControllerAccess(configs []*storage.AuthMachineToMachineConfig) error {
+	kubeSAIssuer, err := d.issuerFetcher.GetServiceAccountIssuer()
+	if err != nil {
+		return fmt.Errorf("Failed to get service account issuer: %w", err)
+	}
+
+	var kubeSAConfig *storage.AuthMachineToMachineConfig
+
+	for _, config := range configs {
+		if config.Issuer == kubeSAIssuer {
+			kubeSAConfig = config
+			break
+		}
+	}
+
+	if kubeSAConfig == nil {
+		kubeSAConfig = &storage.AuthMachineToMachineConfig{
+			Id:                      uuid.NewV4().String(),
+			Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+			TokenExpirationDuration: "1h",
+			Mappings:                []*storage.AuthMachineToMachineConfig_Mapping{},
+			Issuer:                  kubeSAIssuer,
+		}
+	}
+
+	var mappingFound bool
+	for _, mapping := range kubeSAConfig.Mappings {
+		if mapping.Key == "sub" && mapping.ValueExpression == configControllerServiceAccountName && mapping.Role == "Configuration Controller" {
+			mappingFound = true
+			break
+		}
+	}
+
+	if !mappingFound {
+		kubeSAConfig.Mappings = append(kubeSAConfig.Mappings, &storage.AuthMachineToMachineConfig_Mapping{
+			Key:             "sub",
+			ValueExpression: configControllerServiceAccountName,
+			Role:            "Configuration Controller",
+		})
+	}
+
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS), sac.ResourceScopeKeys(resources.Access)))
+
+	// This inits the token exchanger, too
+	_, err = d.UpsertAuthM2MConfigNoLock(ctx, kubeSAConfig)
+	if err != nil {
+		return fmt.Errorf("Failed to upsert auth m2m config: %w", err)
+	}
+
+	return err
 }
 
 // wrapRollback wraps the error with potential rollback errors.
