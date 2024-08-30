@@ -51,7 +51,7 @@ func (s *service) handleRestore(req *http.Request) error {
 	}
 
 	var header v1.DBRestoreRequestHeader
-	if err := header.UnmarshalVT(headerBytes); err != nil {
+	if err := header.UnmarshalVTUnsafe(headerBytes); err != nil {
 		return errors.Wrapf(errox.InvalidArgs, "could not parse restore request header: %v", err)
 	}
 
