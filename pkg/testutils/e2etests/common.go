@@ -370,7 +370,7 @@ func (ks *KubernetesSuite) WaitUntilLog(ctx context.Context, namespace string, p
 			} else if err != nil {
 				return fmt.Errorf("empty list of pods caused failure: %w", err)
 			}
-			return fmt.Errorf("empty list of pods does not satisfy the condition")
+			return errors.New("empty list of pods does not satisfy the condition")
 		}
 		for _, pod := range podList.Items {
 			resp := ks.K8s.CoreV1().Pods(namespace).GetLogs(pod.GetName(), &coreV1.PodLogOptions{Container: container}).Do(ctx)
