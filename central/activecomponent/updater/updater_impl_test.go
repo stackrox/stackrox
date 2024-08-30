@@ -36,6 +36,18 @@ type indicatorModel struct {
 	ExePaths      []string
 }
 
+type testCase struct {
+	description string
+
+	updates     []*aggregatorPkg.ProcessUpdate
+	indicators  map[string]indicatorModel
+	existingAcs map[string]set.StringSet // componentID to container name map
+
+	acsToUpdate map[string]set.StringSet // expected Acs to be updated, componentID to container name map
+	acsToDelete []string
+	imageChange bool
+}
+
 var (
 	mockDeployments = []*storage.Deployment{
 		{
@@ -409,17 +421,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs(gomock.Any()).AnyTimes().Return([]string{deployment.GetId()}, nil)
 
 	// Test active components with designated image and deployment
-	var testCases = []struct {
-		description string
-
-		updates     []*aggregatorPkg.ProcessUpdate
-		indicators  map[string]indicatorModel
-		existingAcs map[string]set.StringSet // componentID to container name map
-
-		acsToUpdate map[string]set.StringSet // expected Acs to be updated, componentID to container name map
-		acsToDelete []string
-		imageChange bool
-	}{
+	var testCases = []testCase{
 		{
 			description: "First populate from database",
 			updates: []*aggregatorPkg.ProcessUpdate{
@@ -826,16 +828,26 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 		},
 	}
 
-	for _, testCase := range testCases {
-		s.T().Run(testCase.description, func(t *testing.T) {
+	// Note: The new loop variable semantics introduced in go1.22
+	// breaks these tests when defining the variable tc
+	// in the for loop with :=. It was found that each call to
+	// `s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn` as used below
+	// would always use the very first version of tc
+	// instead of the current version.
+	// We believe this to be due to how the mock library works.
+	// As a workaround, we define tc beforehand and overwrite the data
+	// opposed to creating a new variable each iteration via :=.
+	var tc testCase
+	for _, tc = range testCases {
+		s.T().Run(tc.description, func(t *testing.T) {
 			s.mockAggregator.EXPECT().GetAndPrune(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 				func(_ func(string) bool, deploymentsSet set.StringSet) map[string][]*aggregatorPkg.ProcessUpdate {
 					return map[string][]*aggregatorPkg.ProcessUpdate{
-						deployment.GetId(): testCase.updates,
+						deployment.GetId(): tc.updates,
 					}
 				})
 			var databaseFetchCount int
-			for _, update := range testCase.updates {
+			for _, update := range tc.updates {
 				if update.FromDatabase() {
 					databaseFetchCount++
 				}
@@ -861,10 +873,10 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 
 						var ret []*storage.ProcessIndicator
 
-						for _, exec := range testCase.indicators[containerName].ExePaths {
+						for _, exec := range tc.indicators[containerName].ExePaths {
 							ret = append(ret, &storage.ProcessIndicator{
 								Id:            uuid.NewV4().String(),
-								ImageId:       testCase.indicators[containerName].ImageID,
+								ImageId:       tc.indicators[containerName].ImageID,
 								DeploymentId:  deployment.GetId(),
 								ContainerName: containerName,
 								Signal:        &storage.ProcessSignal{ExecFilePath: exec}},
@@ -876,14 +888,14 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 			s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
 				func(ctx context.Context, query *v1.Query) ([]*storage.ActiveComponent, error) {
 					existingImageID := image.GetId()
-					if testCase.imageChange {
+					if tc.imageChange {
 						existingImageID = "something_else"
 					}
 					// Verify query
 					assert.Equal(t, search.DeploymentID.String(), query.GetBaseQuery().GetMatchFieldQuery().GetField())
 					assert.Equal(t, strconv.Quote(deployment.GetId()), query.GetBaseQuery().GetMatchFieldQuery().GetValue())
 					var ret []*storage.ActiveComponent
-					for componentID, containerNames := range testCase.existingAcs {
+					for componentID, containerNames := range tc.existingAcs {
 						acID := acConverter.ComposeID(deployment.GetId(), componentID)
 						ac := &storage.ActiveComponent{
 							Id:           acID,
@@ -900,12 +912,12 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 			s.mockActiveComponentDataStore.EXPECT().GetBatch(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
 				func(ctx context.Context, ids []string) ([]*storage.ActiveComponent, error) {
 					existingImageID := image.GetId()
-					if testCase.imageChange {
+					if tc.imageChange {
 						existingImageID = "something_else"
 					}
 					var ret []*storage.ActiveComponent
 					requestedIds := set.NewStringSet(ids...)
-					for componentID, containerNames := range testCase.existingAcs {
+					for componentID, containerNames := range tc.existingAcs {
 						acID := acConverter.ComposeID(deployment.GetId(), componentID)
 						if !requestedIds.Contains(acID) {
 							continue
@@ -927,21 +939,21 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				})
 
 			// Verify active components to be updated or deleted
-			if len(testCase.acsToDelete) > 0 {
+			if len(tc.acsToDelete) > 0 {
 				s.mockActiveComponentDataStore.EXPECT().DeleteBatch(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 					func(ctx context.Context, ids ...string) error {
 						expectedToDelete := set.NewStringSet()
-						for _, componentID := range testCase.acsToDelete {
+						for _, componentID := range tc.acsToDelete {
 							expectedToDelete.Add(acConverter.ComposeID(deployment.GetId(), componentID))
 						}
 						assert.Equal(t, expectedToDelete, set.NewStringSet(ids...))
 						return nil
 					})
 			}
-			if len(testCase.acsToUpdate) > 0 {
+			if len(tc.acsToUpdate) > 0 {
 				s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(func(_ context.Context, acs []*storage.ActiveComponent) {
 					// Verify active components
-					assert.Equal(t, len(testCase.acsToUpdate), len(acs))
+					assert.Equal(t, len(tc.acsToUpdate), len(acs))
 					actualAcs := make(map[string]*storage.ActiveComponent, len(acs))
 					for _, ac := range acs {
 						_, _, err := acConverter.DecomposeID(ac.GetId())
@@ -949,7 +961,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 						actualAcs[ac.GetId()] = ac
 					}
 
-					for componentID, expectedContexts := range testCase.acsToUpdate {
+					for componentID, expectedContexts := range tc.acsToUpdate {
 						acID := acConverter.ComposeID(deployment.GetId(), componentID)
 						assert.Contains(t, actualAcs, acID)
 						assert.Equal(t, deployment.GetId(), actualAcs[acID].GetDeploymentId())
