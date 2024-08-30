@@ -54,7 +54,7 @@ resolve_tag() {
 json_array=()
 
 # Read the versions and their corresponding tags from the VULNERABILITY_BUNDLE_VERSION file.
-while IFS=, read -r version tag; do
+while IFS=, read -r version ref; do
     # Skip lines that are comments or empty
     echo "$version" | grep -qE '^\s*(#.*|$)' && continue
     tag=$(echo "$tag" | xargs)
