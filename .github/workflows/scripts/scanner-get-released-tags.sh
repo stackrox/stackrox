@@ -16,12 +16,6 @@ resolve_tag() {
     local ver=${1:?"missing required argument: version"}
     local tag=${2:?"missing required argument: tag"}
 
-    # If the tag is "master", return it as is
-    if [ "$tag" == "master" ]; then
-        echo "master"
-        return
-    fi
-
     # Check if the tag exists in the repository
     if grep -qx "$tag" "$tags"; then
         echo "$tag"
@@ -57,22 +51,24 @@ json_array=()
 while IFS=, read -r version ref; do
     # Skip lines that are comments or empty
     echo "$version" | grep -qE '^\s*(#.*|$)' && continue
-    tag=$(echo "$tag" | xargs)
+    ref=$(echo "$ref" | xargs)
+
     # Check prefix
-    if [[ $tag == heads/* ]]; then
+    if [[ $ref == heads/* ]]; then
         # Extract branch name from "heads/<branch-name>"
-        resolved_tag="${tag#heads/}"
-    elif [[ $tag == tags/* ]]; then
+        resolved_tag="${ref#heads/}"
+    elif [[ $ref == tags/* ]]; then
         # Extract tag name from "tags/<tag-name>"
-        resolved_tag="${tag#tags/}"
+        resolved_tag="${ref#tags/}"
     else
         # Resolve tag as before for tags with no prefix
-        resolved_tag=$(resolve_tag "$version" "$tag")
+        resolved_tag=$(resolve_tag "$version" "$ref")
     fi
 
     # Add the JSON object to the array
     json_array+=("{\"version\":\"$version\",\"tag\":\"$resolved_tag\"}")
 done < scanner/updater/version/VULNERABILITY_BUNDLE_VERSION
+
 
 # Convert the array to a single-line JSON array
 json_output=$(printf "%s," "${json_array[@]}" | sed 's/,$//')
