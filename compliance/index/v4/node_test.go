@@ -2,9 +2,14 @@ package v4
 
 import (
 	"context"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/quay/claircore"
 	"github.com/stretchr/testify/suite"
@@ -16,6 +21,33 @@ func TestNodeIndexerSuite(t *testing.T) {
 
 type nodeIndexerSuite struct {
 	suite.Suite
+}
+
+func createConfig(server string) *NodeIndexerConfig {
+	return &NodeIndexerConfig{
+		DisableAPI:         true,
+		Repo2CPEMappingURL: server,
+		Timeout:            10 * time.Second,
+	}
+}
+
+func createTestServer() *httptest.Server {
+	mappingData := strings.NewReader(`{"data":{"rhocp-4.16-for-rhel-9-x86_64-rpms":{"cpes":["cpe:/a:redhat:openshift:4.16::el9"]},"rhel-9-for-x86_64-baseos-eus-rpms__9_DOT_4":{"cpes":["cpe:/o:redhat:rhel_eus:9.4::baseos"]}}}`)
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.URL.Path, "") {
+			w.WriteHeader(http.StatusNotFound)
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("last-modified", "Mon, 02 Jan 2006 15:04:05 MST")
+		if _, err := mappingData.Seek(0, io.SeekStart); err != nil {
+			log.Error(err)
+		}
+		if _, err := io.Copy(w, mappingData); err != nil {
+			log.Error(err)
+		}
+	}))
+	return s
 }
 
 func createLayer(path string) (layer *claircore.Layer, e error) {
@@ -54,19 +86,25 @@ func (s *nodeIndexerSuite) TestConstructLayerIllegalDigest() {
 func (s *nodeIndexerSuite) TestRunRespositoryScanner() {
 	layer, err := createLayer("testdata")
 	s.NoError(err)
+	server := createTestServer()
+	defer server.Close()
+	c := createConfig(server.URL)
 
-	repositories, err := runRepositoryScanner(context.TODO(), layer)
+	repositories, err := runRepositoryScanner(context.TODO(), c, layer)
 	s.NoError(err)
 
-	s.Len(repositories, 4)
+	s.Len(repositories, 2)
 	s.NoError(layer.Close())
 }
 
 func (s *nodeIndexerSuite) TestRunRespositoryScannerAnyPath() {
 	layer, err := createLayer(s.T().TempDir())
 	s.NoError(err)
+	server := createTestServer()
+	defer server.Close()
+	c := createConfig(server.URL)
 
-	repositories, err := runRepositoryScanner(context.TODO(), layer)
+	repositories, err := runRepositoryScanner(context.TODO(), c, layer)
 	s.NoError(err)
 
 	// The scanner must not error out, but produce 0 results
@@ -100,9 +138,11 @@ func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 func (s *nodeIndexerSuite) TestIndexerE2E() {
 	testdir, err := filepath.Abs("testdata")
 	s.NoError(err)
-	err = os.Setenv("ROX_NODE_SCANNING_V4_HOST_PATH", testdir)
+	err = os.Setenv("ROX_NODE_INDEX_HOST_PATH", testdir)
 	s.NoError(err)
-	ni := NewNodeIndexer()
+	srv := createTestServer()
+	defer srv.Close()
+	ni := NewNodeIndexer(createConfig(srv.URL))
 
 	report, err := ni.IndexNode(context.TODO())
 	s.NoError(err)
@@ -110,13 +150,15 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 	s.NotNil(report)
 	s.True(report.Success)
 	s.Len(report.GetContents().GetPackages(), 106, "Expected number of installed packages differs")
-	s.Len(report.GetContents().GetRepositories(), 4, "Expected number of discovered repositories differs")
+	s.Len(report.GetContents().GetRepositories(), 2, "Expected number of discovered repositories differs")
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
-	err := os.Setenv("ROX_NODE_SCANNING_V4_HOST_PATH", "/notexisting")
+	err := os.Setenv("ROX_NODE_INDEX_HOST_PATH", "/notexisting")
 	s.NoError(err)
-	ni := NewNodeIndexer()
+	srv := createTestServer()
+	defer srv.Close()
+	ni := NewNodeIndexer(createConfig(srv.URL))
 
 	report, err := ni.IndexNode(context.TODO())
 
