@@ -48,12 +48,13 @@ resolve_tag() {
 json_array=()
 
 # Read the versions and their corresponding tags from the VULNERABILITY_BUNDLE_VERSION file.
-while IFS=, read -r version ref; do
+while read -r line; do
     # Skip lines that are comments or empty
-    echo "$version" | grep -qE '^\s*(#.*|$)' && continue
+    echo "$line" | grep -qE '^\s*(#.*|$)' && continue
+
+    read -r version ref <<< "$line"
     ref=$(echo "$ref" | xargs)
 
-    # Check prefix
     if [[ $ref == heads/* ]]; then
         # Extract branch name from "heads/<branch-name>"
         resolved_tag="${ref#heads/}"
@@ -61,11 +62,9 @@ while IFS=, read -r version ref; do
         # Extract tag name from "tags/<tag-name>"
         resolved_tag="${ref#tags/}"
     else
-        # Resolve tag as before for tags with no prefix
         resolved_tag=$(resolve_tag "$version" "$ref")
     fi
 
-    # Add the JSON object to the array
     json_array+=("{\"version\":\"$version\",\"tag\":\"$resolved_tag\"}")
 done < scanner/updater/version/VULNERABILITY_BUNDLE_VERSION
 

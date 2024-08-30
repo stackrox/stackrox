@@ -96,7 +96,7 @@ jobs:
         path: nvd.zip
         if-no-files-found: error
 
-  build-updater:
+  build-and-run:
     needs:
     - parse-versions
     - prepare-environment
@@ -114,8 +114,8 @@ jobs:
       matrix:
         include: ${{ fromJson(needs.parse-versions.outputs.versions) }}
     env:
-      ROX_BUNDLE_VERSION: ${{ matrix.version }}
-      ROX_PRODUCT_TAG: ${{ matrix.tag }}
+      SCANNER_BUNDLE_VERSION: ${{ matrix.version }}
+      ROX_GIT_REF: ${{ matrix.tag }}
     steps:
     - name: Free up disk space
       shell: bash
@@ -132,7 +132,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        ref: ${{ env.ROX_PRODUCT_TAG }}
+        ref: ${{ env.ROX_GIT_REF }}
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -140,7 +140,7 @@ jobs:
 
     - name: Build updater
       run: |
-        echo "Building updater for version ${{ env.ROX_BUNDLE_VERSION }} on branch ${{ env.ROX_PRODUCT_TAG }}..."
+        echo "Building updater for version ${{ env.SCANNER_BUNDLE_VERSION }} on branch ${{ env.ROX_GIT_REF }}..."
         make tag
         make -C scanner bin/updater
 
@@ -156,32 +156,32 @@ jobs:
         mkdir vulns
 
     - name: Create Folder
-      run: mkdir -p definitions/${{ env.ROX_BUNDLE_VERSION }}
+      run: mkdir -p definitions/${{ env.SCANNER_BUNDLE_VERSION }}
 
     - name: Run Updater (single bundle)
       env:
         STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export vulns --manual-url "${{ needs.prepare-environment.outputs.manual_url }}"
-        mv vulns/* definitions/${{ env.ROX_BUNDLE_VERSION }}/
+        mv vulns/* definitions/${{ env.SCANNER_BUNDLE_VERSION }}/
 
     - name: Run updater (multi bundle)
       env:
         STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
-        zip definitions/${{ env.ROX_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
+        zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
 
     - name: Upload definitions artifacts
       if: success() || failure()
       uses: actions/upload-artifact@v4
       with:
-        name: artifact_${{ env.ROX_BUNDLE_VERSION }}
+        name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
 
   upload-definitions:
     needs:
-    - build-updater
+    - build-and-run
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -214,7 +214,7 @@ jobs:
 
   send-notification:
     needs:
-    - build-updater
+    - build-and-run
     - upload-definitions
     runs-on: ubuntu-latest
     if: ${{ failure() && github.ref_name == 'master' }}
