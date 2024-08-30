@@ -17,6 +17,8 @@ jobs:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
@@ -68,6 +70,7 @@ jobs:
 
     - name: Report test failures to Jira
       if: (!cancelled())
+      id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
@@ -80,6 +83,8 @@ jobs:
       matrix:
         gotags: [ 'GOTAGS=""', 'GOTAGS=release' ]
     runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
@@ -123,6 +128,7 @@ jobs:
 
     - name: Report junit failures in jira
       if: (!cancelled())
+      id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
@@ -173,6 +179,8 @@ jobs:
 
   ui:
     runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
@@ -202,6 +210,7 @@ jobs:
 
     - name: Report junit failures in jira
       if: (!cancelled())
+      id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
@@ -211,6 +220,8 @@ jobs:
 
   local-roxctl-tests:
     runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
@@ -240,6 +251,7 @@ jobs:
 
     - name: Report junit failures in jira
       if: (!cancelled())
+      id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
@@ -249,6 +261,8 @@ jobs:
 
   shell-unit-tests:
     runs-on: ubuntu-latest
+    outputs:
+      new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
     steps:
@@ -273,6 +287,7 @@ jobs:
 
     - name: Report junit failures in jira
       if: (!cancelled())
+      id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
         create-jiras: ${{ github.event_name == 'push' }}
@@ -327,6 +342,7 @@ jobs:
     - name: Slack message
       env:
         GITHUB_CONTEXT: ${{ toJSON(github) }}
+        mention_author: ${{ needs.go.outputs.new-jiras && needs.go-postgres.outputs.new-jiras && needs.local-roxctl-tests.outputs.new-jiras && needs.ui.outputs.new-jiras && needs.go.outputs.new-jiras && needs.shell-unit-tests.outputs.new-jiras }}
       run: |
         source scripts/ci/lib.sh
         slack_workflow_failure
