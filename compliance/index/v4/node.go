@@ -54,7 +54,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (r *v4.IndexReport, er
 		Files:         map[string]claircore.File{},
 	}
 
-	layer, err := constructLayer(ctx, layerDigest, env.NodeScanningV4HostPath.Setting())
+	layer, err := constructLayer(ctx, layerDigest, env.NodeIndexHostPath.Setting())
 	if err != nil {
 		return nil, err
 	}
