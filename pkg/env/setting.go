@@ -1,7 +1,6 @@
 package env
 
 import (
-	"fmt"
 	"os"
 	"strings"
 )
@@ -98,14 +97,4 @@ func (s *setting) Setting() string {
 		return val
 	}
 	return s.defaultValue
-}
-
-// CombineSetting returns the a string in the form KEY=VALUE based on the Setting
-func CombineSetting(s Setting) string {
-	return Combine(s.EnvVar(), s.Setting())
-}
-
-// Combine concatenates a key and value into the environment variable format
-func Combine(k, v string) string {
-	return fmt.Sprintf("%s=%s", k, v)
 }

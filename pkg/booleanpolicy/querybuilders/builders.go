@@ -73,11 +73,6 @@ func (f *fieldLabelQueryBuilder) FieldQueriesForGroup(group *storage.PolicyGroup
 	return []*query.FieldQuery{fieldQueryFromGroup(group, f.fieldLabel, f.valueMapFunc)}
 }
 
-// ForFieldLabelExact returns a query builder that simply queries for the exact field value with the given search field label.
-func ForFieldLabelExact(label search.FieldLabel) QueryBuilder {
-	return &fieldLabelQueryBuilder{fieldLabel: label, valueMapFunc: valueToStringExact}
-}
-
 // ForFieldLabel returns a query builder that does a prefix match for the field value with the given search field label.
 func ForFieldLabel(label search.FieldLabel) QueryBuilder {
 	return &fieldLabelQueryBuilder{fieldLabel: label}

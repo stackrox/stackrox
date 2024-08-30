@@ -25,11 +25,6 @@ var (
 	}()
 )
 
-const (
-	// ReportConfigurationsTableName is the name of the table used for storage.
-	ReportConfigurationsTableName = "report_configurations"
-)
-
 // ReportConfigurations holds the Gorm model for Postgres table `report_configurations`.
 type ReportConfigurations struct {
 	ID         string                                 `gorm:"column:id;type:varchar;primaryKey"`

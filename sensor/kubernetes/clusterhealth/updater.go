@@ -30,7 +30,6 @@ const (
 	collectorContainerName = "collector"
 
 	admissionControlDeploymentName = "admission-control"
-	admissionControlContainerName  = "admission-control"
 
 	localScannerDeploymentName   = "scanner"
 	localScannerDBDeploymentName = "scanner-db"

@@ -48,45 +48,12 @@ func NewClusterScopeResourceID(clusterID, suffix string) (ResourceID, error) {
 	}, nil
 }
 
-// NewNamespaceScopeResourceID returns new ID for namespace scoped resource.
-func NewNamespaceScopeResourceID(clusterID, namespaceID, suffix string) (ResourceID, error) {
-	if err := validateClusterID(clusterID); err != nil {
-		return ResourceID{}, err
-	}
-
-	if err := validateNamespaceID(namespaceID); err != nil {
-		return ResourceID{}, err
-	}
-
-	if suffix == "" {
-		suffix = uuid.NewV4().String()
-	} else if err := validateSuffix(suffix); err != nil {
-		return ResourceID{}, err
-	}
-
-	return ResourceID{
-		clusterID:   clusterID,
-		namespaceID: namespaceID,
-		suffix:      suffix,
-	}, nil
-}
-
 func validateClusterID(clusterID string) error {
 	if clusterID == "" {
 		return errors.New("cluster ID must be specified")
 	}
 	if strings.Contains(clusterID, separator) {
 		return errors.Errorf("cluster ID %s must not contain %q", clusterID, separator)
-	}
-	return nil
-}
-
-func validateNamespaceID(namespaceID string) error {
-	if namespaceID == "" {
-		return errors.New("namespace ID must be specified")
-	}
-	if strings.Contains(namespaceID, separator) {
-		return errors.Errorf("namespace ID %s must not contain %q", namespaceID, separator)
 	}
 	return nil
 }

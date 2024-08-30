@@ -27,8 +27,7 @@ import (
 )
 
 const (
-	mockClusterName = "mock-cluster"
-	mockScanName    = "mock-scan"
+	mockScanName = "mock-scan"
 
 	unrestrictedReadCtx         = "unrestrictedReadCtx"
 	unrestrictedReadWriteCtx    = "unrestrictedReadWriteCtx"

@@ -24,11 +24,6 @@ var (
 	}()
 )
 
-const (
-	// BlobsTableName specifies the name of the table in postgres.
-	BlobsTableName = "blobs"
-)
-
 // Blobs holds the Gorm model for Postgres table `blobs`.
 type Blobs struct {
 	Name       string `gorm:"column:name;type:varchar;primaryKey"`

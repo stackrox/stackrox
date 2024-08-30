@@ -13,8 +13,6 @@ import (
 type AckOrigin string
 
 const (
-	// AckOriginUnknown is default value and should be used when origin of the ack is unknown
-	AckOriginUnknown AckOrigin = "Unknown"
 	// AckOriginCentral marks Central as the entity that produced the ack
 	AckOriginCentral AckOrigin = "Central"
 	// AckOriginSensor marks Sensor as the entity that produced the ack

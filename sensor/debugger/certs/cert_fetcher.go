@@ -30,39 +30,6 @@ func WithOutputDir(outputDir string) OptionFunc {
 	}
 }
 
-// WithNamespace specifies the namespace from which to retrieve the secrets.
-func WithNamespace(namespace string) OptionFunc {
-	return func(fetcher *CertificateFetcher) {
-		fetcher.namespace = namespace
-	}
-}
-
-// WithCertNames specifies the secret containing the certificates and a map of certificate names to retrieve and write.
-func WithCertNames(secretName string, certNames map[string]string) OptionFunc {
-	return func(fetcher *CertificateFetcher) {
-		fetcher.secretName = secretName
-		fetcher.certNames = certNames
-	}
-}
-
-// WithHelmConfig specifies the secret containing the Helm configuration, the name of the file within the secret, and the output file name.
-func WithHelmConfig(helmConfigSecretName string, helmConfigFile string, helmConfigOutputFileName string) OptionFunc {
-	return func(fetcher *CertificateFetcher) {
-		fetcher.helmClusterConfigSecretName = helmConfigSecretName
-		fetcher.helmClusterConfigFileName = helmConfigFile
-		fetcher.helmClusterConfigOutputFileName = helmConfigOutputFileName
-	}
-}
-
-// WithClusterName specifies the secret containing the cluster information, the name of the filed within the secret, and the output file name.
-func WithClusterName(clusterNameSecretName string, clusterNameField string, clusterNameOutputFileName string) OptionFunc {
-	return func(fetcher *CertificateFetcher) {
-		fetcher.helmEffectiveClusterSecretName = clusterNameSecretName
-		fetcher.clusterNameField = clusterNameField
-		fetcher.clusterNameOutputFileName = clusterNameOutputFileName
-	}
-}
-
 // WithSetEnvFunc specifies the function to set the environment variables.
 func WithSetEnvFunc(fn func(string, string) error) OptionFunc {
 	return func(fetcher *CertificateFetcher) {

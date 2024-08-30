@@ -34,9 +34,6 @@ const (
 	// ScopedImageIntegrations identifies the capability to have image integrations with sources from image pull secrets
 	ScopedImageIntegrations SensorCapability = "ScopedImageIntegrations"
 
-	// ListeningEndpointsWithProcessesCap identifies the capability for sensor to process and send information about listening endpoints and their processes, AKA processes listening on ports
-	ListeningEndpointsWithProcessesCap SensorCapability = "ListeningEndpointsWithProcesses"
-
 	// DelegatedRegistryCap identifies the capability for a secured cluster to interact directly with registries (ie: for scanning images in local registries).
 	DelegatedRegistryCap SensorCapability = "DelegatedRegistryCap"
 

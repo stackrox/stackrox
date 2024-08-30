@@ -50,15 +50,3 @@ func RegisterBooleanSetting(envVar string, defaultBoolean bool) *BooleanSetting 
 	Settings[s.EnvVar()] = s
 	return s
 }
-
-// RegisterPermanentBooleanSetting global registers and returns a new boolean setting that is always locked to the default value.
-func RegisterPermanentBooleanSetting(envVar string, defaultBoolean bool) *BooleanSetting {
-	s := &BooleanSetting{
-		envVar:         envVar,
-		defaultBoolean: defaultBoolean,
-		unchangeable:   true,
-	}
-
-	Settings[s.EnvVar()] = s
-	return s
-}

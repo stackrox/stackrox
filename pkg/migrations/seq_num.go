@@ -11,13 +11,6 @@ func CurrentDBVersionSeqNum() int {
 	return internal.CurrentDBVersionSeqNum
 }
 
-// BasePostgresDBVersionSeqNum is the base of DB version number
-// for Postgres migrations. This function should only be used in Postgres
-// migrations.
-func BasePostgresDBVersionSeqNum() int {
-	return internal.LastRocksDBVersionSeqNum - 1
-}
-
 // MinimumSupportedDBVersionSeqNum is the oldest database version supported
 // by the schema at this point in time.
 func MinimumSupportedDBVersionSeqNum() int {

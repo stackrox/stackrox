@@ -13,8 +13,6 @@ import (
 
 const (
 	policyCategoryParentDirName = "categories_add_and_remove"
-	addDirName                  = policyCategoryParentDirName + "/add"
-	removeDirName               = policyCategoryParentDirName + "/remove"
 )
 
 // ReadPolicyCategoryFromFile reads categories from file given the path and the collection of files.

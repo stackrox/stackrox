@@ -6,15 +6,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// AvailableBytesIn gets available capacity in bytes from file system of path.
-func AvailableBytesIn(path string) (uint64, error) {
-	stat, err := getDiskStats(path)
-	if err != nil {
-		return 0, err
-	}
-	return stat.Bavail * uint64(stat.Bsize), nil
-}
-
 // DiskStatsIn gets file system overall and used capacity in bytes from file system of path.
 func DiskStatsIn(path string) (capacity uint64, used uint64, err error) {
 	stat, err := getDiskStats(path)

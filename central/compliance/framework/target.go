@@ -38,20 +38,6 @@ func GetTargetRef(target ComplianceTarget) TargetRef {
 	}
 }
 
-// TargetObject obtains the underlying object for a target.
-func TargetObject(tgt ComplianceTarget) interface{} {
-	switch tgt.Kind() {
-	case framework.ClusterKind:
-		return tgt.Cluster()
-	case framework.NodeKind:
-		return tgt.Node()
-	case framework.DeploymentKind:
-		return tgt.Deployment()
-	default:
-		panic(fmt.Errorf("unknown target kind %v", tgt.Kind()))
-	}
-}
-
 type baseTarget struct {
 	kind framework.TargetKind
 }

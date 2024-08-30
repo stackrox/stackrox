@@ -11,9 +11,3 @@ var (
 func StartMain() {
 	hasEnteredMain.Set(true)
 }
-
-// IsInPreMain checks whether we are still in the `pre-main()` phase of running the program (e.g., `init()` functions
-// or evaluating RHSs of global variables).
-func IsInPreMain() bool {
-	return !hasEnteredMain.Get()
-}

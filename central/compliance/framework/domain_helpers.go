@@ -21,14 +21,3 @@ func Deployments(domain ComplianceDomain) []*storage.Deployment {
 	}
 	return deployments
 }
-
-// AllTargets returns all targets in the given domain.
-func AllTargets(domain ComplianceDomain) []ComplianceTarget {
-	nodeTargets := domain.Nodes()
-	deploymentTargets := domain.Deployments()
-	result := make([]ComplianceTarget, 0, len(nodeTargets)+len(deploymentTargets)+1)
-	result = append(result, domain.Cluster())
-	result = append(result, nodeTargets...)
-	result = append(result, deploymentTargets...)
-	return result
-}

@@ -7,8 +7,3 @@ var (
 		return ch
 	}()
 )
-
-// ClosedChannel returns a struct{} channel that is closed.
-func ClosedChannel() <-chan struct{} {
-	return closedCh
-}

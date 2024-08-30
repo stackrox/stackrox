@@ -7,13 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 )
 
-// RunWithFeatureFlagEnabled runs the given subtest if the feature can be enabled.
-func RunWithFeatureFlagEnabled(t *testing.T, flag features.FeatureFlag, subTest func(t *testing.T)) {
-	MustUpdateFeature(t, flag, true)
-
-	subTest(t)
-}
-
 // MustUpdateFeature will attempt to set the feature flag to the desired value,
 // if unable to do so will skip the test.
 func MustUpdateFeature(t *testing.T, flag features.FeatureFlag, desired bool) {

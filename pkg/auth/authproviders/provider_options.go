@@ -129,17 +129,6 @@ func WithActive(active bool) ProviderOption {
 	}
 }
 
-// WithConfig sets the config for the provider.
-func WithConfig(config map[string]string) ProviderOption {
-	return func(pr *providerImpl) error {
-		if pr.storedInfo == nil {
-			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
-		}
-		pr.storedInfo.Config = config
-		return nil
-	}
-}
-
 // WithAttributeVerifier adds an attribute verifier to the provider based on the list of
 // required attributes from the provided auth provider instance.
 func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {

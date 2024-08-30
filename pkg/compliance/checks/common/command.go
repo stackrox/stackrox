@@ -23,14 +23,6 @@ type FailOverride func(msg string) []*storage.ComplianceResultValue_Evidence
 type CommandEvaluationFunc func([]string, string, string, string, ...FailOverride) []*storage.ComplianceResultValue_Evidence
 type helperEvaluationFunc func([]string, string, string, string) (message string, passes bool)
 
-// Info returns info with values set for the flag. Info is used when there is no strict determination of if the check is met
-func Info(values []string, key, _, defaultVal string, _ ...FailOverride) []*storage.ComplianceResultValue_Evidence {
-	if len(values) == 0 {
-		return NoteListf("%q is to the default value of %q", key, defaultVal)
-	}
-	return NoteListf("%q is set to %q", key, msgfmt.FormatStrings(values...))
-}
-
 // Set checks whether or not a value is set in the command line
 func Set(values []string, key, target, defaultVal string, overrides ...FailOverride) []*storage.ComplianceResultValue_Evidence {
 	return resultWrapper(values, key, target, defaultVal, valuesAreSet, overrides)

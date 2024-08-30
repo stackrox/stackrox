@@ -305,26 +305,6 @@ func IncrementDetectorDeploymentProcessed() {
 	detectorDeploymentProcessed.Inc()
 }
 
-// IncrementPanicCounter increments the number of panic calls seen in a function
-func IncrementPanicCounter(functionName string) {
-	panicCounter.With(prometheus.Labels{"FunctionName": functionName}).Inc()
-}
-
-// IncrementProcessDedupeCacheHits increments the number of times we deduped a process
-func IncrementProcessDedupeCacheHits() {
-	processDedupeCacheHits.Inc()
-}
-
-// IncrementProcessDedupeCacheMisses increments the number of times we failed to dedupe a process
-func IncrementProcessDedupeCacheMisses() {
-	processDedupeCacheMisses.Inc()
-}
-
-// RegisterSensorIndicatorChannelFullCounter registers the number of indicators dropped
-func RegisterSensorIndicatorChannelFullCounter() {
-	sensorIndicatorChannelFullCounter.Inc()
-}
-
 // IncrementDeploymentEnhancerQueueSize increments the deployment enhancer queue size by one.
 func IncrementDeploymentEnhancerQueueSize() {
 	deploymentEnhancementQueueSize.Inc()
@@ -365,19 +345,9 @@ func IncrementTotalNetworkEndpointsSentCounter(numberOfEndpoints int) {
 	totalNetworkEndpointsSentCounter.Add(float64(numberOfEndpoints))
 }
 
-// IncrementTotalNetworkEndpointsReceivedCounter increments the total number of endpoints received
-func IncrementTotalNetworkEndpointsReceivedCounter(numberOfEndpoints int) {
-	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfEndpoints))
-}
-
 // IncrementTotalProcessesSentCounter increments the total number of endpoints sent
 func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
 	totalProcessesSentCounter.Add(float64(numberOfProcesses))
-}
-
-// IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
-func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
-	totalProcessesReceivedCounter.Add(float64(numberOfProcesses))
 }
 
 // SetProcessSignalBufferSizeGauge set process signal buffer size gauge.

@@ -66,11 +66,6 @@ func NegateQueryString(query string) string {
 	return fmt.Sprintf("%s%s", NegationPrefix, query)
 }
 
-// IsNegationQuery returns whether or not this would turn into a negation query
-func IsNegationQuery(value string) bool {
-	return strings.HasPrefix(value, NegationPrefix)
-}
-
 // NumericQueryString converts a numeric query to the string query format.
 func NumericQueryString(comparator storage.Comparator, value float32) string {
 	return fmt.Sprintf("%s%.2f", comparatorRepresentation[comparator], value)

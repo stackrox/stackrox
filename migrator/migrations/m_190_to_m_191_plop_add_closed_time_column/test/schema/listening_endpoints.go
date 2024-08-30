@@ -30,11 +30,6 @@ var (
 	}()
 )
 
-const (
-	// ListeningEndpointsTableName specifies the name of the table in postgres.
-	ListeningEndpointsTableName = "listening_endpoints"
-)
-
 // ListeningEndpoints holds the Gorm model for Postgres table `listening_endpoints`.
 type ListeningEndpoints struct {
 	ID                 string             `gorm:"column:id;type:uuid;primaryKey"`

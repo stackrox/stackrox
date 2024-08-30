@@ -135,11 +135,6 @@ func RenderScannerOnly(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File,
 	return render(c, scannerOnly, imageFlavor)
 }
 
-// RenderCentralDBOnly renders the zip files for the Central DB
-func RenderCentralDBOnly(c Config, imageFlavor defaults.ImageFlavor) ([]*zip.File, error) {
-	return render(c, centralDBOnly, imageFlavor)
-}
-
 func renderAndExtractSingleFileContents(c Config, mode mode, imageFlavor defaults.ImageFlavor) ([]byte, error) {
 	return renderAndExtractFileContents(c, mode, imageFlavor, 1)
 }

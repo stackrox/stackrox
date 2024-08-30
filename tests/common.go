@@ -45,7 +45,6 @@ import (
 // within every tag, hence the linter incorrectly shows most functions in this file as unused.
 
 const (
-	nginxDeploymentName     = `nginx`
 	expectedLatestTagPolicy = `Latest tag`
 
 	waitTimeout = 5 * time.Minute

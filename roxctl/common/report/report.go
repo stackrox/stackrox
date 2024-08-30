@@ -110,11 +110,6 @@ func PrettyWithResourceName(output io.Writer, alerts []*storage.Alert, enforceme
 	return errors.Wrap(t.Execute(output, templateMap), "could not render alert policies")
 }
 
-// Pretty is a wrapper around PrettyWithResourceName that gets called with an empty resource name
-func Pretty(output io.Writer, alerts []*storage.Alert, enforcementStage storage.EnforcementAction, resourceType string, printAllViolations bool) error {
-	return PrettyWithResourceName(output, alerts, enforcementStage, resourceType, "", printAllViolations)
-}
-
 // EnforcementFailedBuild returns a function which returns true if the given policy has an enforcement
 // action that fails the CI build. Intended to be used as a test template
 // function.

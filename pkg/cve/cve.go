@@ -18,36 +18,6 @@ var componentCVETypes = map[storage.CVE_CVEType]struct{}{
 	storage.CVE_NODE_CVE:  {},
 }
 
-// ContainsCVEType returns whether or not typ exists in the cve type slice
-func ContainsCVEType(types []storage.CVE_CVEType, typ storage.CVE_CVEType) bool {
-	for _, t := range types {
-		if t == typ {
-			return true
-		}
-	}
-	return false
-}
-
-// ContainsComponentBasedCVE returns true if a component-based CVE type exists in the type slice
-func ContainsComponentBasedCVE(types []storage.CVE_CVEType) bool {
-	for _, t := range types {
-		if _, ok := componentCVETypes[t]; ok {
-			return true
-		}
-	}
-	return false
-}
-
-// ContainsClusterCVE returns true if a cluster CVE type exists in the type slice
-func ContainsClusterCVE(types []storage.CVE_CVEType) bool {
-	for _, t := range types {
-		if _, ok := clusterCVETypes[t]; ok {
-			return true
-		}
-	}
-	return false
-}
-
 // ID creates a CVE ID from the given cve id (and os if postgres is enabled).
 func ID(cve, os string) string {
 	return pgSearch.IDFromPks([]string{cve, os})

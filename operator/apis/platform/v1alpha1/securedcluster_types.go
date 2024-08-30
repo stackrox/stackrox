@@ -237,8 +237,6 @@ const (
 	CollectionCOREBPF CollectionMethod = "CORE_BPF"
 	// CollectionNone means: NO_COLLECTION.
 	CollectionNone CollectionMethod = "NoCollection"
-	// CollectionKernelModule means: use KERNEL_MODULE collection.
-	CollectionKernelModule CollectionMethod = "KernelModule"
 )
 
 // Pointer returns the given CollectionMethod as a pointer, needed in k8s resource structs.

@@ -343,15 +343,6 @@ func NodeVulnerabilityToNodeCVE(os string, from *storage.NodeVulnerability) *sto
 	return ret
 }
 
-// EmbeddedCVEsToProtoCVEs converts *storage.EmbeddedVulnerability to *storage.CVE
-func EmbeddedCVEsToProtoCVEs(os string, froms ...*storage.EmbeddedVulnerability) []*storage.CVE {
-	ret := make([]*storage.CVE, 0, len(froms))
-	for _, from := range froms {
-		ret = append(ret, EmbeddedCVEToProtoCVE(os, from))
-	}
-	return ret
-}
-
 func embeddedVulnTypeToProtoType(protoCVEType storage.EmbeddedVulnerability_VulnerabilityType) storage.CVE_CVEType {
 	switch protoCVEType {
 	case storage.EmbeddedVulnerability_IMAGE_VULNERABILITY:
@@ -389,16 +380,4 @@ func GetFixedVersions(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem) []string {
 	}
 
 	return versions
-}
-
-// CVEScoreVersionToEmbeddedScoreVersion converts versions between cve protos.
-func CVEScoreVersionToEmbeddedScoreVersion(v storage.CVE_ScoreVersion) storage.EmbeddedVulnerability_ScoreVersion {
-	switch v {
-	case storage.CVE_V2:
-		return storage.EmbeddedVulnerability_V2
-	case storage.CVE_V3:
-		return storage.EmbeddedVulnerability_V3
-	default:
-		return storage.EmbeddedVulnerability_V2
-	}
 }

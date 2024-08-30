@@ -2,7 +2,6 @@ package dbhelper
 
 import (
 	"bytes"
-	"slices"
 )
 
 var (
@@ -16,20 +15,6 @@ func GetBucketKey(prefix []byte, id []byte) []byte {
 	result = append(result, separator...)
 	result = append(result, id...)
 	return result
-}
-
-// GetBucketKeyLen returns the length of the bucket
-func GetBucketKeyLen(prefix []byte) int {
-	return len(prefix) + len(separator)
-}
-
-// GetPrefix returns the first prefix found on the input key, and it's remainder afterwards.
-func GetPrefix(key []byte) (prefix []byte) {
-	idx := bytes.Index(key, separator)
-	if idx == -1 {
-		return nil
-	}
-	return slices.Clone(key[:idx])
 }
 
 // HasPrefix returns if the given key has the given prefix.
@@ -52,14 +37,6 @@ func StripPrefix(prefix []byte, val []byte) []byte {
 func StripBucket(prefix []byte, val []byte) []byte {
 	bucket := GetBucketKey(prefix, nil)
 	return StripPrefix(bucket, val)
-}
-
-// AppendSeparator appends the separator to the end of the key
-func AppendSeparator(key []byte) []byte {
-	newKey := make([]byte, 0, len(key)+len(separator))
-	newKey = append(newKey, key...)
-	newKey = append(newKey, separator...)
-	return newKey
 }
 
 // KV is a key/value pair.
