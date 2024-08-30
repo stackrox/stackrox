@@ -26,7 +26,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -273,7 +272,7 @@ func (rg *reportGeneratorImpl) runPaginatedDeploymentsQuery(cveQuery string, dep
 			break
 		}
 		scopeQuery := fmt.Sprintf("%s:%s", search.DeploymentID.String(),
-			strings.Join(deploymentIds[offset:mathutil.MinInt(offset+paginationLimit, len(deploymentIds))], ","))
+			strings.Join(deploymentIds[offset:min(offset+paginationLimit, len(deploymentIds))], ","))
 		r, err := execQuery[common.DeployedImagesResult](rg, deployedImagesReportQuery, deployedImagesReportQueryOpName,
 			scopeQuery, cveQuery, nil)
 		if err != nil {
@@ -294,7 +293,7 @@ func (rg *reportGeneratorImpl) runPaginatedImagesQuery(cveQuery string, watchedI
 			break
 		}
 		scopeQuery := fmt.Sprintf("%s:%s", search.ImageName.String(),
-			strings.Join(watchedImages[offset:mathutil.MinInt(offset+paginationLimit, len(watchedImages))], ","))
+			strings.Join(watchedImages[offset:min(offset+paginationLimit, len(watchedImages))], ","))
 		sortOpt := map[string]interface{}{
 			"field": search.ImageName.String(),
 			"aggregateBy": map[string]interface{}{

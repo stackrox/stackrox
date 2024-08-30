@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
 	imageSamples "github.com/stackrox/rox/pkg/fixtures/image"
-	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -800,7 +799,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 					cveMap[val.CVE] = val
 				}
 
-				val.TopCVSS = mathutil.MaxFloat32(val.GetTopCVSS(), vuln.GetCvss())
+				val.TopCVSS = max(val.GetTopCVSS(), vuln.GetCvss())
 
 				id := cve.ID(val.GetCVE(), image.GetScan().GetOperatingSystem())
 				var found bool
