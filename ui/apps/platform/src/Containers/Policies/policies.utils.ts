@@ -159,7 +159,7 @@ export function getExcludedDeployments(exclusions: PolicyExclusion[]): PolicyExc
     const excludedDeploymentScopes: PolicyExcludedDeployment[] = [];
 
     exclusions
-        .filter((e): e is PolicyDeploymentExclusion => 'deployment' in e)
+        .filter((e): e is PolicyDeploymentExclusion => !!e.deployment)
         .forEach(({ deployment }) => {
             if (deployment?.name || deployment?.scope) {
                 excludedDeploymentScopes.push(deployment);
@@ -173,7 +173,7 @@ export function getExcludedImageNames(exclusions: PolicyExclusion[]): string[] {
     const excludedImageNames: string[] = [];
 
     exclusions
-        .filter((e): e is PolicyImageExclusion => 'image' in e)
+        .filter((e): e is PolicyImageExclusion => !!e.image)
         .forEach(({ image }) => {
             if (image?.name) {
                 excludedImageNames.push(image.name);
@@ -438,11 +438,11 @@ function getExclusionFields({ exclusions }: Policy): {
     excludedDeploymentScopes: ClientPolicy['excludedDeploymentScopes'];
 } {
     const excludedImageNames = exclusions
-        .filter((o): o is PolicyImageExclusion => 'image' in o)
+        .filter((o): o is PolicyImageExclusion => !!o.image)
         .map((ie) => ie.image.name);
 
     const excludedDeploymentScopes = exclusions
-        .filter((o): o is PolicyDeploymentExclusion => 'deployment' in o)
+        .filter((o): o is PolicyDeploymentExclusion => !!o.deployment)
         .map((d) => d.deployment);
 
     return {
@@ -458,11 +458,11 @@ export function getServerPolicyExclusions(policy: ClientPolicy): Policy['exclusi
     const exclusions: Policy['exclusions'] = [];
 
     policy.excludedDeploymentScopes.forEach((deployment) => {
-        exclusions.push({ deployment });
+        exclusions.push({ deployment, image: null });
     });
 
     policy.excludedImageNames.forEach((name) => {
-        exclusions.push({ image: { name } });
+        exclusions.push({ image: { name }, deployment: null });
     });
 
     return exclusions;

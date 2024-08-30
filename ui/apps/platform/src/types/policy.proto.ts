@@ -55,6 +55,7 @@ export type PolicyExclusion = PolicyDeploymentExclusion | PolicyImageExclusion;
 
 export type PolicyDeploymentExclusion = {
     deployment: PolicyExcludedDeployment;
+    image: null;
 } & PolicyBaseExclusion;
 
 export type PolicyExcludedDeployment = {
@@ -63,6 +64,7 @@ export type PolicyExcludedDeployment = {
 };
 
 export type PolicyImageExclusion = {
+    deployment: null;
     image: {
         name: string;
     };
