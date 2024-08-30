@@ -22,6 +22,13 @@ enum VulnerabilitySeverity {
   CRITICAL_VULNERABILITY_SEVERITY = 4;
 }
 
+enum Source {
+  SOURCE_UNKNOWN = 0;
+  SOURCE_RED_HAT = 1;
+  SOURCE_OSV = 2;
+  SOURCE_NVD = 3;
+}
+
 // ******************************
 // This proto is deprecated.
 // ******************************
@@ -161,6 +168,13 @@ message ClusterCVE {
   CVE.CVEType type = 9; // @gotags: search:"CVE Type"
 }
 
+message CVSSScore{
+  oneof cvss_score{
+    CVSSV2 cvssv2 = 1;
+    CVSSV3 cvssv3 = 2;
+  }
+}
+
 message CVSSV2 {
   enum Impact {
     IMPACT_NONE = 0;
@@ -200,6 +214,8 @@ message CVSSV2 {
   float impact_score = 9;
   float score = 10;
   Severity severity = 11;
+  Source source = 12; // @gotags: search:"CVSS Source";
+  string url = 13;
 }
 
 message CVSSV3 {
@@ -253,4 +269,6 @@ message CVSSV3 {
   Impact availability = 11;
   float score = 12;
   Severity severity = 13;
+  Source source = 14; // @gotags: search:"CVSS Source";
+  string url = 15;
 }

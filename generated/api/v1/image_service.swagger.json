@@ -802,6 +802,17 @@
       ],
       "default": "UNSET_SOURCE_TYPE"
     },
+    "storageCVSSScore": {
+      "type": "object",
+      "properties": {
+        "cvssv2": {
+          "$ref": "#/definitions/storageCVSSV2"
+        },
+        "cvssv3": {
+          "$ref": "#/definitions/storageCVSSV3"
+        }
+      }
+    },
     "storageCVSSV2": {
       "type": "object",
       "properties": {
@@ -840,6 +851,12 @@
         },
         "severity": {
           "$ref": "#/definitions/storageCVSSV2Severity"
+        },
+        "source": {
+          "$ref": "#/definitions/storageSource"
+        },
+        "url": {
+          "type": "string"
         }
       }
     },
@@ -915,6 +932,12 @@
         },
         "severity": {
           "$ref": "#/definitions/storageCVSSV3Severity"
+        },
+        "source": {
+          "$ref": "#/definitions/storageSource"
+        },
+        "url": {
+          "type": "string"
         }
       }
     },
@@ -1150,6 +1173,13 @@
         },
         "state": {
           "$ref": "#/definitions/storageVulnerabilityState"
+        },
+        "cvssMetrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageCVSSScore"
+          }
         }
       },
       "title": "Next Tag: 21"
@@ -1487,6 +1517,16 @@
           "$ref": "#/definitions/storageCosignSignature"
         }
       }
+    },
+    "storageSource": {
+      "type": "string",
+      "enum": [
+        "SOURCE_UNKNOWN",
+        "SOURCE_RED_HAT",
+        "SOURCE_OSV",
+        "SOURCE_NVD"
+      ],
+      "default": "SOURCE_UNKNOWN"
     },
     "storageSourceType": {
       "type": "string",

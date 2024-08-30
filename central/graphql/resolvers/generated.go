@@ -189,6 +189,15 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"uRI: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVE_ScoreVersion(0)))
+	utils.Must(builder.AddType("CVSSScore", []string{
+		"cvssv2: CVSSV2",
+		"cvssv3: CVSSV3",
+		"cvssScore: CVSSScoreCvssScore",
+	}))
+	utils.Must(builder.AddUnionType("CVSSScoreCvssScore", []string{
+		"CVSSV2",
+		"CVSSV3",
+	}))
 	utils.Must(builder.AddType("CVSSV2", []string{
 		"accessComplexity: CVSSV2_AccessComplexity!",
 		"attackVector: CVSSV2_AttackVector!",
@@ -200,6 +209,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"integrity: CVSSV2_Impact!",
 		"score: Float!",
 		"severity: CVSSV2_Severity!",
+		"source: Source!",
+		"url: String!",
 		"vector: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_AccessComplexity(0)))
@@ -219,6 +230,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scope: CVSSV3_Scope!",
 		"score: Float!",
 		"severity: CVSSV3_Severity!",
+		"source: Source!",
+		"url: String!",
 		"userInteraction: CVSSV3_UserInteraction!",
 		"vector: String!",
 	}))
@@ -1326,6 +1339,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"field: String",
 		"reversed: Boolean",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Source(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SourceType(0)))
 	utils.Must(builder.AddType("Splunk", []string{
 		"auditLoggingEnabled: Boolean!",
@@ -3203,6 +3217,86 @@ func toCVE_ScoreVersions(values *[]string) []storage.CVE_ScoreVersion {
 	return output
 }
 
+type cVSSScoreResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CVSSScore
+}
+
+func (resolver *Resolver) wrapCVSSScore(value *storage.CVSSScore, ok bool, err error) (*cVSSScoreResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVSSScoreResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCVSSScores(values []*storage.CVSSScore, err error) ([]*cVSSScoreResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVSSScoreResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVSSScoreResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapCVSSScoreWithContext(ctx context.Context, value *storage.CVSSScore, ok bool, err error) (*cVSSScoreResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVSSScoreResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCVSSScoresWithContext(ctx context.Context, values []*storage.CVSSScore, err error) ([]*cVSSScoreResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVSSScoreResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVSSScoreResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *cVSSScoreResolver) Cvssv2(ctx context.Context) (*cVSSV2Resolver, error) {
+	value := resolver.data.GetCvssv2()
+	return resolver.root.wrapCVSSV2(value, true, nil)
+}
+
+func (resolver *cVSSScoreResolver) Cvssv3(ctx context.Context) (*cVSSV3Resolver, error) {
+	value := resolver.data.GetCvssv3()
+	return resolver.root.wrapCVSSV3(value, true, nil)
+}
+
+type cVSSScoreCvssScoreResolver struct {
+	resolver interface{}
+}
+
+func (resolver *cVSSScoreResolver) CvssScore() *cVSSScoreCvssScoreResolver {
+	if val := resolver.data.GetCvssv2(); val != nil {
+		return &cVSSScoreCvssScoreResolver{
+			resolver: &cVSSV2Resolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetCvssv3(); val != nil {
+		return &cVSSScoreCvssScoreResolver{
+			resolver: &cVSSV3Resolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *cVSSScoreCvssScoreResolver) ToCVSSV2() (*cVSSV2Resolver, bool) {
+	res, ok := resolver.resolver.(*cVSSV2Resolver)
+	return res, ok
+}
+
+func (resolver *cVSSScoreCvssScoreResolver) ToCVSSV3() (*cVSSV3Resolver, bool) {
+	res, ok := resolver.resolver.(*cVSSV3Resolver)
+	return res, ok
+}
+
 type cVSSV2Resolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -3293,6 +3387,16 @@ func (resolver *cVSSV2Resolver) Score(ctx context.Context) float64 {
 func (resolver *cVSSV2Resolver) Severity(ctx context.Context) string {
 	value := resolver.data.GetSeverity()
 	return value.String()
+}
+
+func (resolver *cVSSV2Resolver) Source(ctx context.Context) string {
+	value := resolver.data.GetSource()
+	return value.String()
+}
+
+func (resolver *cVSSV2Resolver) Url(ctx context.Context) string {
+	value := resolver.data.GetUrl()
+	return value
 }
 
 func (resolver *cVSSV2Resolver) Vector(ctx context.Context) string {
@@ -3485,6 +3589,16 @@ func (resolver *cVSSV3Resolver) Score(ctx context.Context) float64 {
 func (resolver *cVSSV3Resolver) Severity(ctx context.Context) string {
 	value := resolver.data.GetSeverity()
 	return value.String()
+}
+
+func (resolver *cVSSV3Resolver) Source(ctx context.Context) string {
+	value := resolver.data.GetSource()
+	return value.String()
+}
+
+func (resolver *cVSSV3Resolver) Url(ctx context.Context) string {
+	value := resolver.data.GetUrl()
+	return value
 }
 
 func (resolver *cVSSV3Resolver) UserInteraction(ctx context.Context) string {
@@ -14354,6 +14468,24 @@ func (resolver *slimUserResolver) Id(ctx context.Context) graphql.ID {
 func (resolver *slimUserResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func toSource(value *string) storage.Source {
+	if value != nil {
+		return storage.Source(storage.Source_value[*value])
+	}
+	return storage.Source(0)
+}
+
+func toSources(values *[]string) []storage.Source {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Source, len(*values))
+	for i, v := range *values {
+		output[i] = toSource(&v)
+	}
+	return output
 }
 
 func toSourceType(value *string) storage.SourceType {
