@@ -340,11 +340,11 @@ func WaitForCondition(t testutils.T, condition func() bool, desc string, timeout
 
 type KubernetesSuite struct {
 	suite.Suite
-	k8s kubernetes.Interface
+	K8s kubernetes.Interface
 }
 
 func (ks *KubernetesSuite) SetupSuite() {
-	ks.k8s = CreateK8sClient(ks.T())
+	ks.K8s = CreateK8sClient(ks.T())
 }
 
 func (ks *KubernetesSuite) Logf(format string, args ...any) {
@@ -360,7 +360,7 @@ type LogMatcher interface {
 func (ks *KubernetesSuite) WaitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...LogMatcher) {
 	ls := labels.SelectorFromSet(podLabels).String()
 	checkLogs := func() error {
-		podList, err := ks.k8s.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{LabelSelector: ls})
+		podList, err := ks.K8s.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{LabelSelector: ls})
 		if err != nil {
 			return fmt.Errorf("could not list pods matching %q in namespace %q: %w", ls, namespace, err)
 		}
@@ -373,7 +373,7 @@ func (ks *KubernetesSuite) WaitUntilLog(ctx context.Context, namespace string, p
 			return fmt.Errorf("empty list of pods does not satisfy the condition")
 		}
 		for _, pod := range podList.Items {
-			resp := ks.k8s.CoreV1().Pods(namespace).GetLogs(pod.GetName(), &coreV1.PodLogOptions{Container: container}).Do(ctx)
+			resp := ks.K8s.CoreV1().Pods(namespace).GetLogs(pod.GetName(), &coreV1.PodLogOptions{Container: container}).Do(ctx)
 			log, err := resp.Raw()
 			if err != nil {
 				return fmt.Errorf("retrieving logs of pod %q in namespace %q failed: %w", pod.GetName(), namespace, err)
@@ -450,7 +450,7 @@ func (lm *lineMatcher) Match(reader io.Reader) (ok bool, err error) {
 	}
 }
 
-// CreateService creates a k8s Service object.
+// CreateService creates a K8s Service object.
 func (ks *KubernetesSuite) CreateService(ctx context.Context, namespace string, name string, labels map[string]string, ports map[int32]int32) {
 	svc := &coreV1.Service{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -470,11 +470,11 @@ func (ks *KubernetesSuite) CreateService(ctx context.Context, namespace string, 
 			TargetPort: intstr.IntOrString{IntVal: targetPortNum},
 		})
 	}
-	_, err := ks.k8s.CoreV1().Services(namespace).Create(ctx, svc, metaV1.CreateOptions{})
+	_, err := ks.K8s.CoreV1().Services(namespace).Create(ctx, svc, metaV1.CreateOptions{})
 	ks.Require().NoError(err, "cannot create service %q in namespace %q", name, namespace)
 }
 
-// EnsureSecretExists creates a k8s Secret object. If one exists, it makes sure the type and data matches.
+// EnsureSecretExists creates a K8s Secret object. If one exists, it makes sure the type and data matches.
 func (ks *KubernetesSuite) EnsureSecretExists(ctx context.Context, namespace string, name string, secretType coreV1.SecretType, data map[string][]byte) {
 	secret := &coreV1.Secret{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -483,9 +483,9 @@ func (ks *KubernetesSuite) EnsureSecretExists(ctx context.Context, namespace str
 		Type: secretType,
 		Data: data,
 	}
-	if _, err := ks.k8s.CoreV1().Secrets(namespace).Create(ctx, secret, metaV1.CreateOptions{}); err != nil {
+	if _, err := ks.K8s.CoreV1().Secrets(namespace).Create(ctx, secret, metaV1.CreateOptions{}); err != nil {
 		if apiErrors.IsAlreadyExists(err) {
-			actualSecret, err := ks.k8s.CoreV1().Secrets(namespace).Get(ctx, name, metaV1.GetOptions{})
+			actualSecret, err := ks.K8s.CoreV1().Secrets(namespace).Get(ctx, name, metaV1.GetOptions{})
 			ks.Require().NoError(err, "secret %q in namespace %q already exists but cannot retrieve it for verification", name, namespace)
 			ks.Equal(secretType, actualSecret.Type, "secret %q in namespace %q already exists but its type is not as expected", name, namespace)
 			ks.Equal(data, actualSecret.Data, "secret %q in namespace %q already exists but its data is not as expected", name, namespace)
@@ -495,7 +495,7 @@ func (ks *KubernetesSuite) EnsureSecretExists(ctx context.Context, namespace str
 	}
 }
 
-// EnsureConfigMapExists creates a k8s ConfigMap object. If one exists, it makes sure the data matches.
+// EnsureConfigMapExists creates a K8s ConfigMap object. If one exists, it makes sure the data matches.
 func (ks *KubernetesSuite) EnsureConfigMapExists(ctx context.Context, namespace string, name string, data map[string]string) {
 	cm := &coreV1.ConfigMap{
 		ObjectMeta: metaV1.ObjectMeta{
@@ -503,9 +503,9 @@ func (ks *KubernetesSuite) EnsureConfigMapExists(ctx context.Context, namespace 
 		},
 		Data: data,
 	}
-	if _, err := ks.k8s.CoreV1().ConfigMaps(namespace).Create(ctx, cm, metaV1.CreateOptions{}); err != nil {
+	if _, err := ks.K8s.CoreV1().ConfigMaps(namespace).Create(ctx, cm, metaV1.CreateOptions{}); err != nil {
 		if apiErrors.IsAlreadyExists(err) {
-			actualCM, err := ks.k8s.CoreV1().ConfigMaps(namespace).Get(ctx, name, metaV1.GetOptions{})
+			actualCM, err := ks.K8s.CoreV1().ConfigMaps(namespace).Get(ctx, name, metaV1.GetOptions{})
 			ks.Require().NoError(err, "configMap %q in namespace %q already exists but cannot retrieve it for verification", name, namespace)
 			ks.Require().Equal(data, actualCM.Data, "configMap %q in namespace %q already exists but its data is not as expected", name, namespace)
 		}
@@ -548,14 +548,14 @@ func (ks *KubernetesSuite) SetDeploymentEnvVal(ctx context.Context, namespace st
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":%q,"value":%q}]}]}}}}`,
 		container, envVar, value))
 	ks.Logf("Setting variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
-	_, err := ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
+	_, err := ks.K8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
 	ks.Require().NoError(err, "cannot patch deployment %q in namespace %q", deployment, namespace)
 
 }
 
 // GetDeploymentEnvVal retrieves the value of environment variable in a deployment, or fails the test.
 func (ks *KubernetesSuite) GetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) string {
-	d, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
+	d, err := ks.K8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
 	ks.Require().NoError(err, "cannot retrieve deployment %q in namespace %q", deployment, namespace)
 	c, err := getContainer(d, container)
 	ks.Require().NoError(err, "cannot find container %q in deployment %q in namespace %q", container, deployment, namespace)

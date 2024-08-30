@@ -111,7 +111,7 @@ func (ts *TLSChallengeSuite) setupProxy(centralEndpoint string) {
 }
 
 func (ts *TLSChallengeSuite) createProxyNamespace() {
-	_, err := ts.k8s.CoreV1().Namespaces().Create(ts.ctx, &v1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: proxyNs}}, metaV1.CreateOptions{})
+	_, err := ts.K8s.CoreV1().Namespaces().Create(ts.ctx, &v1.Namespace{ObjectMeta: metaV1.ObjectMeta{Name: proxyNs}}, metaV1.CreateOptions{})
 	if apiErrors.IsAlreadyExists(err) {
 		return
 	}
@@ -238,7 +238,7 @@ func (ts *TLSChallengeSuite) createProxyDeployment(name string, nginxLabels map[
 			},
 		},
 	}
-	_, err := ts.k8s.AppsV1().Deployments(proxyNs).Create(ts.ctx, d, metaV1.CreateOptions{})
+	_, err := ts.K8s.AppsV1().Deployments(proxyNs).Create(ts.ctx, d, metaV1.CreateOptions{})
 	ts.Require().NoError(err, "cannot create deployment %q in namespace %q", name, proxyNs)
 }
 
@@ -249,7 +249,7 @@ func (ts *TLSChallengeSuite) cleanupProxy(ctx context.Context, proxyNs string) {
 		e2etests.CollectLogs(ts.T(), proxyNs, "tls-challenge-failure")
 	}
 	ts.Logf("Cleaning up nginx proxy in namespace %q...", proxyNs)
-	err := ts.k8s.CoreV1().Namespaces().Delete(ctx, proxyNs, metaV1.DeleteOptions{})
+	err := ts.K8s.CoreV1().Namespaces().Delete(ctx, proxyNs, metaV1.DeleteOptions{})
 	if apiErrors.IsNotFound(err) {
 		return
 	}
