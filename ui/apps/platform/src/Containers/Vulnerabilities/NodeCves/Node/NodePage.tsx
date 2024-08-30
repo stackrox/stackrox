@@ -91,7 +91,6 @@ function NodePage() {
                                 // pagination.setPage(1);
                             }}
                             className="pf-v5-u-pl-md pf-v5-u-background-color-100"
-                            role="region"
                         >
                             <Tab eventKey={vulnTabKey} title={vulnTabKey} />
                             <Tab eventKey={detailTabKey} title={detailTabKey} />
