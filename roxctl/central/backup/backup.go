@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fileutils"
 	"github.com/stackrox/rox/pkg/httputil"
-	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/central/db/transfer"
@@ -168,7 +167,7 @@ func (cmd *centralBackupCommand) backup(timeout time.Duration, full bool) error 
 	}
 	defer utils.IgnoreError(file.Close)
 
-	if err := transfer.Copy(reqCtx, cancel, filename, mathutil.MaxInt64(0, resp.ContentLength), resp.Body, file, deadline, idleTimeout); err != nil {
+	if err := transfer.Copy(reqCtx, cancel, filename, max(0, resp.ContentLength), resp.Body, file, deadline, idleTimeout); err != nil {
 		return err
 	}
 
