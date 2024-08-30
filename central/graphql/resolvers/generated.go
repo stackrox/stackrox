@@ -169,6 +169,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("CVEInfo", []string{
 		"createdAt: Time",
 		"cve: String!",
+		"cvssInfo: [CVSSScore]!",
 		"cvssV2: CVSSV2",
 		"cvssV3: CVSSV3",
 		"lastModified: Time",
@@ -192,6 +193,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("CVSSScore", []string{
 		"cvssv2: CVSSV2",
 		"cvssv3: CVSSV3",
+		"source: Source!",
+		"url: String!",
 		"cvssScore: CVSSScoreCvssScore",
 	}))
 	utils.Must(builder.AddUnionType("CVSSScoreCvssScore", []string{
@@ -209,8 +212,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"integrity: CVSSV2_Impact!",
 		"score: Float!",
 		"severity: CVSSV2_Severity!",
-		"source: Source!",
-		"url: String!",
 		"vector: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_AccessComplexity(0)))
@@ -230,8 +231,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scope: CVSSV3_Scope!",
 		"score: Float!",
 		"severity: CVSSV3_Severity!",
-		"source: Source!",
-		"url: String!",
 		"userInteraction: CVSSV3_UserInteraction!",
 		"vector: String!",
 	}))
@@ -684,8 +683,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ImageCVE", []string{
 		"cveBaseInfo: CVEInfo",
 		"cvss: Float!",
+		"cvssMetrics: [CVSSScore]!",
 		"id: ID!",
 		"impactScore: Float!",
+		"nvdcvss: Float!",
 		"operatingSystem: String!",
 		"severity: VulnerabilitySeverity!",
 		"snoozeExpiry: Time",
@@ -3019,6 +3020,11 @@ func (resolver *cVEInfoResolver) Cve(ctx context.Context) string {
 	return value
 }
 
+func (resolver *cVEInfoResolver) CvssInfo(ctx context.Context) ([]*cVSSScoreResolver, error) {
+	value := resolver.data.GetCvssInfo()
+	return resolver.root.wrapCVSSScores(value, nil)
+}
+
 func (resolver *cVEInfoResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
 	value := resolver.data.GetCvssV2()
 	return resolver.root.wrapCVSSV2(value, true, nil)
@@ -3269,6 +3275,16 @@ func (resolver *cVSSScoreResolver) Cvssv3(ctx context.Context) (*cVSSV3Resolver,
 	return resolver.root.wrapCVSSV3(value, true, nil)
 }
 
+func (resolver *cVSSScoreResolver) Source(ctx context.Context) string {
+	value := resolver.data.GetSource()
+	return value.String()
+}
+
+func (resolver *cVSSScoreResolver) Url(ctx context.Context) string {
+	value := resolver.data.GetUrl()
+	return value
+}
+
 type cVSSScoreCvssScoreResolver struct {
 	resolver interface{}
 }
@@ -3387,16 +3403,6 @@ func (resolver *cVSSV2Resolver) Score(ctx context.Context) float64 {
 func (resolver *cVSSV2Resolver) Severity(ctx context.Context) string {
 	value := resolver.data.GetSeverity()
 	return value.String()
-}
-
-func (resolver *cVSSV2Resolver) Source(ctx context.Context) string {
-	value := resolver.data.GetSource()
-	return value.String()
-}
-
-func (resolver *cVSSV2Resolver) Url(ctx context.Context) string {
-	value := resolver.data.GetUrl()
-	return value
 }
 
 func (resolver *cVSSV2Resolver) Vector(ctx context.Context) string {
@@ -3589,16 +3595,6 @@ func (resolver *cVSSV3Resolver) Score(ctx context.Context) float64 {
 func (resolver *cVSSV3Resolver) Severity(ctx context.Context) string {
 	value := resolver.data.GetSeverity()
 	return value.String()
-}
-
-func (resolver *cVSSV3Resolver) Source(ctx context.Context) string {
-	value := resolver.data.GetSource()
-	return value.String()
-}
-
-func (resolver *cVSSV3Resolver) Url(ctx context.Context) string {
-	value := resolver.data.GetUrl()
-	return value
 }
 
 func (resolver *cVSSV3Resolver) UserInteraction(ctx context.Context) string {
@@ -8164,6 +8160,11 @@ func (resolver *imageCVEResolver) Cvss(ctx context.Context) float64 {
 	return float64(value)
 }
 
+func (resolver *imageCVEResolver) CvssMetrics(ctx context.Context) ([]*cVSSScoreResolver, error) {
+	value := resolver.data.GetCvssMetrics()
+	return resolver.root.wrapCVSSScores(value, nil)
+}
+
 func (resolver *imageCVEResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -8171,6 +8172,11 @@ func (resolver *imageCVEResolver) Id(ctx context.Context) graphql.ID {
 
 func (resolver *imageCVEResolver) ImpactScore(ctx context.Context) float64 {
 	value := resolver.data.GetImpactScore()
+	return float64(value)
+}
+
+func (resolver *imageCVEResolver) Nvdcvss(ctx context.Context) float64 {
+	value := resolver.data.GetNvdcvss()
 	return float64(value)
 }
 

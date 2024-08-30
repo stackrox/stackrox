@@ -283,6 +283,12 @@
     "storageCVSSScore": {
       "type": "object",
       "properties": {
+        "source": {
+          "$ref": "#/definitions/storageSource"
+        },
+        "url": {
+          "type": "string"
+        },
         "cvssv2": {
           "$ref": "#/definitions/storageCVSSV2"
         },
@@ -329,12 +335,6 @@
         },
         "severity": {
           "$ref": "#/definitions/storageCVSSV2Severity"
-        },
-        "source": {
-          "$ref": "#/definitions/storageSource"
-        },
-        "url": {
-          "type": "string"
         }
       }
     },
@@ -410,12 +410,6 @@
         },
         "severity": {
           "$ref": "#/definitions/storageCVSSV3Severity"
-        },
-        "source": {
-          "$ref": "#/definitions/storageSource"
-        },
-        "url": {
-          "type": "string"
         }
       }
     },

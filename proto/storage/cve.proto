@@ -121,6 +121,7 @@ message CVEInfo {
   CVSSV2 cvss_v2 = 8;
   CVSSV3 cvss_v3 = 9;
   repeated Reference references = 10;
+  repeated CVSSScore cvss_info = 11;
 }
 
 message ImageCVE {
@@ -135,6 +136,8 @@ message ImageCVE {
   bool snoozed = 7 [deprecated = true]; // @gotags: search:"CVE Snoozed"
   google.protobuf.Timestamp snooze_start = 8 [deprecated = true];
   google.protobuf.Timestamp snooze_expiry = 9 [deprecated = true]; // @gotags: search:"CVE Snooze Expiry,hidden"
+  float nvdcvss = 10; // @gotags: search:"NVD CVSS",store"
+  repeated CVSSScore cvss_metrics = 11;
 }
 
 message NodeCVE {
@@ -168,10 +171,12 @@ message ClusterCVE {
   CVE.CVEType type = 9; // @gotags: search:"CVE Type"
 }
 
-message CVSSScore{
-  oneof cvss_score{
-    CVSSV2 cvssv2 = 1;
-    CVSSV3 cvssv3 = 2;
+message CVSSScore {
+  Source source = 1;
+  string url = 2;
+  oneof cvss_score {
+    CVSSV2 cvssv2 = 3;
+    CVSSV3 cvssv3 = 4;
   }
 }
 
@@ -214,8 +219,6 @@ message CVSSV2 {
   float impact_score = 9;
   float score = 10;
   Severity severity = 11;
-  Source source = 12; // @gotags: search:"CVSS Source";
-  string url = 13;
 }
 
 message CVSSV3 {
@@ -269,6 +272,4 @@ message CVSSV3 {
   Impact availability = 11;
   float score = 12;
   Severity severity = 13;
-  Source source = 14; // @gotags: search:"CVSS Source";
-  string url = 15;
 }
