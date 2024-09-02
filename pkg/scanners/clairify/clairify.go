@@ -11,6 +11,7 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -452,7 +453,10 @@ func retryOnGRPCErrors(ctx context.Context, name string, f func() error) error {
 	return backoff.RetryNotify(op, backoff.WithContext(eb, ctx), notify)
 }
 
-func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory) (*storage.NodeScan, error) {
+func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {
+	if inv == nil && ir != nil {
+		return nil, errors.New("Received a Scanner v4 request for Scanner v2")
+	}
 	req := convertNodeToVulnRequest(node, inv)
 	ctx, cancel := context.WithTimeout(context.Background(), nodeScanClientTimeout)
 	defer cancel()
@@ -477,7 +481,7 @@ func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInv
 
 // GetNodeScan retrieves the most recent node scan
 func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
-	return c.GetNodeInventoryScan(node, nil)
+	return c.GetNodeInventoryScan(node, nil, nil)
 }
 
 // Match decides if the image is contained within this scanner

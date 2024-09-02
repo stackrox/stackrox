@@ -35,6 +35,7 @@ type managerImpl struct {
 // It loops through the categories, which is a very small slice.
 func isNodeIntegration(integration *storage.ImageIntegration) bool {
 	for _, category := range integration.GetCategories() {
+		log.Infof("isNodeintegration for integration %s: Node_Scanner %v", integration.GetName(), category == storage.ImageIntegrationCategory_NODE_SCANNER)
 		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
 			return true
 		}
@@ -43,20 +44,34 @@ func isNodeIntegration(integration *storage.ImageIntegration) bool {
 }
 
 // imageIntegrationToNodeIntegration converts the given image integration into a node integration.
-// Currently, only StackRox Scanner is a supported node integration.
-// Assumes integration.GetCategories() includes storage.ImageIntegrationCategory_NODE.
+// Currently, only StackRox Scanner and Scanner v4 are supported node integrations.
+// Assumes integration.GetCategories() includes storage.ImageIntegrationCategory_NODE_SCANNER.
 func imageIntegrationToNodeIntegration(integration *storage.ImageIntegration) (*storage.NodeIntegration, error) {
-	if integration.GetType() != scannerTypes.Clairify {
-		return nil, errors.Errorf("requires a %s config: %q", scannerTypes.Clairify, integration.GetName())
+	if integration.GetType() != scannerTypes.Clairify && integration.GetType() != scannerTypes.ScannerV4 {
+		return nil, errors.Errorf("requires a %s or %s config: %q", scannerTypes.Clairify, scannerTypes.ScannerV4, integration.GetName())
 	}
-	return &storage.NodeIntegration{
+	i := &storage.NodeIntegration{
 		Id:   integration.GetId(),
 		Name: integration.GetName(),
 		Type: integration.GetType(),
-		IntegrationConfig: &storage.NodeIntegration_Clairify{
+	}
+
+	log.Infof("Switching type to convert ")
+	switch integration.GetType() {
+	case scannerTypes.ScannerV4:
+		i.IntegrationConfig = &storage.NodeIntegration_Scannerv4{
+			Scannerv4: integration.GetScannerV4(),
+		}
+	case scannerTypes.Clairify:
+		i.IntegrationConfig = &storage.NodeIntegration_Clairify{
 			Clairify: integration.GetClairify(),
-		},
-	}, nil
+		}
+	default:
+		return nil, errors.Errorf("unsupported integration type: %q", integration.GetType())
+	}
+	log.Infof("Created Node Integration %s / %s from Image integration", i.GetName(), i.GetType())
+
+	return i, nil
 }
 
 func imageIntegrationToOrchestratorIntegration(integration *storage.ImageIntegration) (*storage.OrchestratorIntegration, error) {
@@ -74,6 +89,7 @@ func imageIntegrationToOrchestratorIntegration(integration *storage.ImageIntegra
 }
 
 func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {
+	log.Infof("Upserting Integration %s / %s", integration.GetName(), integration.GetType())
 	if err := m.imageIntegrationSet.UpdateImageIntegration(integration); err != nil {
 		return err
 	}
@@ -83,6 +99,7 @@ func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {
 		m.cveFetcher.RemoveIntegration(integration.GetId())
 		return nil
 	}
+	log.Infof("Converting Integration to Node: %s / %s", integration.GetName(), integration.GetType())
 	nodeIntegration, err := imageIntegrationToNodeIntegration(integration)
 	if err != nil {
 		return err
@@ -90,6 +107,11 @@ func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {
 	err = m.nodeEnricher.UpsertNodeIntegration(nodeIntegration)
 	if err != nil {
 		return err
+	}
+
+	if integration.GetType() == scannerTypes.ScannerV4 {
+		log.Debugf("Scanner v4 is not an orchestrator Scanner, exiting")
+		return nil
 	}
 
 	orchestratorIntegration, err := imageIntegrationToOrchestratorIntegration(integration)

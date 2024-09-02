@@ -14,6 +14,7 @@ import (
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	nodeMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
@@ -75,7 +76,7 @@ func (*fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) {
 	panic("implement me")
 }
 
-func (*fakeNodeScanner) GetNodeInventoryScan(_ *storage.Node, _ *storage.NodeInventory) (*storage.NodeScan, error) {
+func (*fakeNodeScanner) GetNodeInventoryScan(_ *storage.Node, _ *storage.NodeInventory, _ *v4.IndexReport) (*storage.NodeScan, error) {
 	panic("implement me")
 }
 

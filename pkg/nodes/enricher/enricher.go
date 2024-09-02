@@ -6,6 +6,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scanners/types"
 )
 
@@ -14,14 +15,14 @@ import (
 //go:generate mockgen-wrapper
 type NodeEnricher interface {
 	// Node Scan / Scanner v2
-	EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error
+	EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error
 	EnrichNode(node *storage.Node) error
 	CreateNodeScanner(integration *storage.NodeIntegration) (types.NodeScannerWithDataSource, error)
 	UpsertNodeIntegration(integration *storage.NodeIntegration) error
 	RemoveNodeIntegration(id string)
 	// Node Index / Scanner v4
-	EnrichNodeWithIndexReport(node *storage.Node, indexReport *v4.IndexReport) error
-	CreateNodeMatcher(integration *storage.NodeMatcherIntegration) (types.NodeMatcherWithDataSource, error)
+	// EnrichNodeWithIndexReport(node *storage.Node, indexReport *v4.IndexReport) error
+	// CreateNodeMatcer(integration *storage.NodeMatcherIntegration) (types.NodeMatcherWithDataSource, error)
 	// UpsertNodeMatcherIntegration(integration *storage.NodeMatcherIntegration) error
 	// RemoveNodeMatcherIntegration(id string)
 }
@@ -36,17 +37,16 @@ func New(cves CVESuppressor, subsystem pkgMetrics.Subsystem) NodeEnricher {
 	return NewWithCreator(cves, subsystem,
 		func() (string, scanners.NodeScannerCreator) {
 			return clairify.NodeScannerCreator()
+		},
+		func() (string, scanners.NodeScannerCreator) {
+			return scannerv4.NodeScannerCreator()
 		})
-	// func() (string, scanners.NodeScannerCreator) {
-	// 	return clairv4.Nod
-	// }
-	// )
 }
 
 // NewWithCreator returns a new NodeEnricher for the given Prometheus metrics subsystem and node scanner creator.
 func NewWithCreator(cves CVESuppressor, subsystem pkgMetrics.Subsystem,
 	fn func() (string, scanners.NodeScannerCreator),
-	// fn4 func() (string, scanners.NodeMatcherCreator),
+	fn4 func() (string, scanners.NodeScannerCreator),
 ) NodeEnricher {
 	enricher := &enricherImpl{
 		cves: cves,
@@ -54,16 +54,12 @@ func NewWithCreator(cves CVESuppressor, subsystem pkgMetrics.Subsystem,
 		scanners: make(map[string]types.NodeScannerWithDataSource),
 		creators: make(map[string]scanners.NodeScannerCreator),
 
-		matchers:   make(map[string]types.NodeMatcherWithDataSource),
-		v4creators: make(map[string]scanners.NodeMatcherCreator),
-
 		metrics: newMetrics(subsystem),
 	}
 	name, creator := fn()
+	name4, creator4 := fn4()
 	enricher.creators[name] = creator
-
-	// v4name, v4creator := fn4()
-	// enricher.v4creators[v4name] = v4creator
+	enricher.creators[name4] = creator4
 
 	return enricher
 }

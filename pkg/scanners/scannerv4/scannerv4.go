@@ -2,12 +2,12 @@ package scannerv4
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -24,7 +25,7 @@ import (
 var (
 	_ types.Scanner                  = (*scannerv4)(nil)
 	_ types.ImageVulnerabilityGetter = (*scannerv4)(nil)
-	_ types.NodeMatcher              = (*scannerv4)(nil)
+	_ types.NodeScanner              = (*scannerv4)(nil)
 
 	log = logging.LoggerForModule()
 
@@ -50,7 +51,7 @@ func Creator(set registries.Set) (string, func(integration *storage.ImageIntegra
 
 type scannerv4 struct {
 	types.ScanSemaphore
-	types.NodeMatchSemaphore
+	types.NodeScanSemaphore
 
 	name             string
 	activeRegistries registries.Set
@@ -89,11 +90,11 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 	}
 
 	scanner := &scannerv4{
-		name:               integration.GetName(),
-		activeRegistries:   activeRegistries,
-		ScanSemaphore:      types.NewSemaphoreWithValue(numConcurrentScans),
-		NodeMatchSemaphore: types.NewNodeMatchSemaphoreWithValue(numConcurrentScans), // TODO: Set custom value
-		scannerClient:      c,
+		name:              integration.GetName(),
+		activeRegistries:  activeRegistries,
+		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
+		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans), // TODO: Set custom value
+		scannerClient:     c,
 	}
 
 	return scanner, nil
@@ -227,7 +228,78 @@ func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *
 	vr, err := s.scannerClient.GetVulnerabilities(ctx, nodedigest, indexReport.GetContents())
 	if err != nil {
 		log.Errorf("Failed to create vulnerability report: %v", err)
+		return nil, errors.Wrap(err, "Failed to create vulnerability report")
 	}
 
 	return vr, nil
+}
+
+func (s *scannerv4) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {
+	if ir == nil && inv != nil {
+		return nil, errors.New("Received Scanner v2 data for Scanner v4. Exiting.")
+	}
+	vr, err := s.GetNodeVulnerabilityReport(node, ir)
+	if err != nil {
+		log.Errorf("Failed to create vulnerability report: %v", err)
+		return nil, errors.Wrap(err, "Failed to create vulnerability report")
+	}
+	log.Infof("Received Vulnerability Report with %d vulnerabilities: %v", len(vr.Vulnerabilities), vr)
+	return nil, nil
+}
+
+func (s *scannerv4) GetNodeScan(_ *storage.Node) (*storage.NodeScan, error) {
+	return nil, errors.New("Not implemented for Scanner v4")
+}
+
+func (s *scannerv4) TestNodeScanner() error {
+	log.Warn("NodeScanner v4 - Returning FAKE 'success' to Test")
+	return nil
+}
+
+// NodeScannerCreator provides the type scanners.NodeScannerCreator to add to the scanners registry.
+func NodeScannerCreator() (string, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error)) {
+	return scannerTypes.ScannerV4, func(integration *storage.NodeIntegration) (scannerTypes.NodeScanner, error) {
+		return newNodeScanner(integration)
+	}
+}
+
+func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
+	conf := integration.GetScannerv4()
+	if conf == nil {
+		return nil, errors.New("scanner v4 configuration required")
+	}
+	indexerEndpoint := DefaultIndexerEndpoint
+	if conf.IndexerEndpoint != "" {
+		indexerEndpoint = conf.IndexerEndpoint
+	}
+
+	matcherEndpoint := DefaultMatcherEndpoint
+	if conf.MatcherEndpoint != "" {
+		matcherEndpoint = conf.MatcherEndpoint
+	}
+
+	numConcurrentScans := defaultMaxConcurrentScans
+	if conf.GetNumConcurrentScans() > 0 {
+		numConcurrentScans = int64(conf.GetNumConcurrentScans())
+	}
+
+	log.Debugf("Creating Scanner V4 with name [%s] indexer address [%s], matcher address [%s], num concurrent scans [%d]", integration.GetName(), indexerEndpoint, matcherEndpoint, numConcurrentScans)
+	ctx := context.Background()
+	c, err := client.NewGRPCScanner(ctx,
+		client.WithIndexerAddress(indexerEndpoint),
+		client.WithMatcherAddress(matcherEndpoint),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	scanner := &scannerv4{
+		name:              integration.GetName(),
+		activeRegistries:  nil,
+		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
+		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans), // TODO: Set custom value
+		scannerClient:     c,
+	}
+
+	return scanner, nil
 }

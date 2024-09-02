@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodes"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/metrics"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
@@ -346,7 +347,7 @@ func (f *fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) 
 	return nodeScanFixtureWithKernel("v1"), nil
 }
 
-func (f *fakeNodeScanner) GetNodeInventoryScan(*storage.Node, *storage.NodeInventory) (*storage.NodeScan, error) {
+func (f *fakeNodeScanner) GetNodeInventoryScan(*storage.Node, *storage.NodeInventory, *v4.IndexReport) (*storage.NodeScan, error) {
 	f.requestedScan = true
 	return nodeScanFixtureWithKernel("v2"), nil
 }

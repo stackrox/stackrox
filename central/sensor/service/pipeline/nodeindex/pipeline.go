@@ -82,7 +82,7 @@ func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.Ms
 	}
 
 	// Send the Node and Index Report to Scanner for enrichment
-	err = p.enricher.EnrichNodeWithIndexReport(node, cr)
+	err = p.enricher.EnrichNodeWithInventory(node, nil, cr)
 	if err != nil {
 		log.Errorf("enriching node %s with index report: %v", event.GetId(), err)
 		return errors.WithMessagef(err, "enriching node %s with index report", event.GetId())

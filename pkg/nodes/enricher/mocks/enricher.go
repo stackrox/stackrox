@@ -41,6 +41,21 @@ func (m *MockNodeEnricher) EXPECT() *MockNodeEnricherMockRecorder {
 	return m.recorder
 }
 
+// CreateNodeMatcher mocks base method.
+func (m *MockNodeEnricher) CreateNodeMatcher(integration *storage.NodeMatcherIntegration) (types.NodeMatcherWithDataSource, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateNodeMatcher", integration)
+	ret0, _ := ret[0].(types.NodeMatcherWithDataSource)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateNodeMatcher indicates an expected call of CreateNodeMatcher.
+func (mr *MockNodeEnricherMockRecorder) CreateNodeMatcher(integration any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNodeMatcher", reflect.TypeOf((*MockNodeEnricher)(nil).CreateNodeMatcher), integration)
+}
+
 // CreateNodeScanner mocks base method.
 func (m *MockNodeEnricher) CreateNodeScanner(integration *storage.NodeIntegration) (types.NodeScannerWithDataSource, error) {
 	m.ctrl.T.Helper()
@@ -85,17 +100,17 @@ func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithIndexReport(node, indexRep
 }
 
 // EnrichNodeWithInventory mocks base method.
-func (m *MockNodeEnricher) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error {
+func (m *MockNodeEnricher) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnrichNodeWithInventory", node, nodeInventory)
+	ret := m.ctrl.Call(m, "EnrichNodeWithInventory", node, nodeInventory, indexReport)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EnrichNodeWithInventory indicates an expected call of EnrichNodeWithInventory.
-func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithInventory(node, nodeInventory any) *gomock.Call {
+func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithInventory(node, nodeInventory, indexReport any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithInventory", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNodeWithInventory), node, nodeInventory)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithInventory", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNodeWithInventory), node, nodeInventory, indexReport)
 }
 
 // RemoveNodeIntegration mocks base method.
