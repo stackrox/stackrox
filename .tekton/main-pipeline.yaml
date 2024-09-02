@@ -548,23 +548,3 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
-
-  - name: sbom-json-check
-    params:
-    - name: IMAGE_URL
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
-    - name: IMAGE_DIGEST
-      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
-    taskRef:
-      params:
-      - name: name
-        value: sbom-json-check
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-sbom-json-check:0.2@sha256:d4eee0cfef2069273752f6d27088b147ae6eac5f5db45e481efb4ae1a07883f6
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(params.skip-checks)
-      operator: in
-      values: [ "false" ]
