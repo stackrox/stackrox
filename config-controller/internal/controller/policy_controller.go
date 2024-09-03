@@ -67,7 +67,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, errors.Wrap(err, "Failed to parse policy JSON")
 	}
 
-	policy, exists, err := r.policyClient.Get(ctx, req.Name)
+	policy, exists, err := r.policyClient.GetPolicy(ctx, req.Name)
 
 	if err != nil {
 		return ctrl.Result{Requeue: true}, errors.Wrap(err, "Failed to fetch policy")
@@ -77,7 +77,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	result := ctrl.Result{}
 	if exists {
 		desiredState.Id = policy.Id
-		if err = r.policyClient.Update(ctx, desiredState); err != nil {
+		if err = r.policyClient.UpdatePolicy(ctx, desiredState); err != nil {
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy %s", req.Name))
 			policyCR.Status.Accepted = false
 			policyCR.Status.Message = retErr.Error()
@@ -87,7 +87,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			policyCR.Status.Message = "Successfully updated policy"
 		}
 	} else {
-		if _, err = r.policyClient.Create(ctx, desiredState); err != nil {
+		if _, err = r.policyClient.CreatePolicy(ctx, desiredState); err != nil {
 			retErr := errors.Wrap(err, fmt.Sprintf("Failed to create policy %s", req.Name))
 			policyCR.Status.Accepted = false
 			policyCR.Status.Message = retErr.Error()

@@ -1,5 +1,7 @@
 package client
 
+//go:generate mockgen-wrapper CachedPolicyClient,PolicyClient
+
 import (
 	"context"
 	"time"
@@ -16,22 +18,20 @@ import (
 	"github.com/stackrox/rox/roxctl/common/printer"
 )
 
-//go:generate mockgen-wrapper
 type CachedPolicyClient interface {
-	List(ctx context.Context) ([]*storage.Policy, error)
-	Get(ctx context.Context, name string) (*storage.Policy, bool, error)
-	Create(ctx context.Context, policy *storage.Policy) (*storage.Policy, error)
-	Update(ctx context.Context, policy *storage.Policy) error
+	ListPolicies(ctx context.Context) ([]*storage.Policy, error)
+	GetPolicy(ctx context.Context, name string) (*storage.Policy, bool, error)
+	CreatePolicy(ctx context.Context, policy *storage.Policy) (*storage.Policy, error)
+	UpdatePolicy(ctx context.Context, policy *storage.Policy) error
 	FlushCache(ctx context.Context) error
 	EnsureFresh(ctx context.Context) error
 }
 
-//go:generate mockgen-wrapper
 type PolicyClient interface {
-	List(context.Context) ([]*storage.ListPolicy, error)
-	Get(ctx context.Context, id string) (*storage.Policy, error)
-	Post(context.Context, *storage.Policy) (*storage.Policy, error)
-	Put(context.Context, *storage.Policy) error
+	ListPolicies(context.Context) ([]*storage.ListPolicy, error)
+	GetPolicy(ctx context.Context, id string) (*storage.Policy, error)
+	PostPolicy(context.Context, *storage.Policy) (*storage.Policy, error)
+	PutPolicy(context.Context, *storage.Policy) error
 }
 
 type grpcClient struct {
@@ -50,7 +50,7 @@ func newGrpcClient(ctx context.Context) (PolicyClient, error) {
 	}, nil
 }
 
-func (gc *grpcClient) List(ctx context.Context) ([]*storage.ListPolicy, error) {
+func (gc *grpcClient) ListPolicies(ctx context.Context) ([]*storage.ListPolicy, error) {
 	allPolicies, err := gc.svc.ListPolicies(ctx, &v1.RawQuery{})
 	if err != nil {
 		return []*storage.ListPolicy{}, errors.Wrap(err, "Failed to list policies from grpc client")
@@ -59,7 +59,7 @@ func (gc *grpcClient) List(ctx context.Context) ([]*storage.ListPolicy, error) {
 	return allPolicies.Policies, err
 }
 
-func (gc *grpcClient) Get(ctx context.Context, id string) (*storage.Policy, error) {
+func (gc *grpcClient) GetPolicy(ctx context.Context, id string) (*storage.Policy, error) {
 	policy, err := gc.svc.GetPolicy(ctx, &v1.ResourceByID{Id: id})
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to fetch policy %s", id)
@@ -68,7 +68,7 @@ func (gc *grpcClient) Get(ctx context.Context, id string) (*storage.Policy, erro
 	return policy, nil
 }
 
-func (gc *grpcClient) Post(ctx context.Context, policy *storage.Policy) (*storage.Policy, error) {
+func (gc *grpcClient) PostPolicy(ctx context.Context, policy *storage.Policy) (*storage.Policy, error) {
 	req := &v1.PostPolicyRequest{
 		Policy:                 policy,
 		EnableStrictValidation: true,
@@ -83,7 +83,7 @@ func (gc *grpcClient) Post(ctx context.Context, policy *storage.Policy) (*storag
 	return policy, nil
 }
 
-func (gc *grpcClient) Put(ctx context.Context, policy *storage.Policy) error {
+func (gc *grpcClient) PutPolicy(ctx context.Context, policy *storage.Policy) error {
 	_, err := gc.svc.PutPolicy(ctx, policy)
 
 	if err != nil {
@@ -126,7 +126,7 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 	return &c, nil
 }
 
-func (c *client) List(ctx context.Context) ([]*storage.Policy, error) {
+func (c *client) ListPolicies(ctx context.Context) ([]*storage.Policy, error) {
 	list := make([]*storage.Policy, len(c.cache))
 	i := 0
 	for _, value := range c.cache {
@@ -136,13 +136,13 @@ func (c *client) List(ctx context.Context) ([]*storage.Policy, error) {
 	return list, nil
 }
 
-func (c *client) Get(ctx context.Context, name string) (*storage.Policy, bool, error) {
+func (c *client) GetPolicy(ctx context.Context, name string) (*storage.Policy, bool, error) {
 	policy, exists := c.cache[name]
 	return policy, exists, nil
 }
 
-func (c *client) Create(ctx context.Context, policy *storage.Policy) (*storage.Policy, error) {
-	policy, err := c.svc.Post(ctx, policy)
+func (c *client) CreatePolicy(ctx context.Context, policy *storage.Policy) (*storage.Policy, error) {
+	policy, err := c.svc.PostPolicy(ctx, policy)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "Failed to POST policy")
@@ -153,8 +153,8 @@ func (c *client) Create(ctx context.Context, policy *storage.Policy) (*storage.P
 	return policy, nil
 }
 
-func (c *client) Update(ctx context.Context, policy *storage.Policy) error {
-	err := c.svc.Put(ctx, policy)
+func (c *client) UpdatePolicy(ctx context.Context, policy *storage.Policy) error {
+	err := c.svc.PutPolicy(ctx, policy)
 
 	if err != nil {
 		return errors.Wrap(err, "Failed to PUT policy")
@@ -174,7 +174,7 @@ func (c *client) FlushCache(ctx context.Context) error {
 	rlog := log.FromContext(ctx)
 	rlog.Info("Flushing policy cache")
 
-	allPolicies, err := c.svc.List(ctx)
+	allPolicies, err := c.svc.ListPolicies(ctx)
 	if err != nil {
 		return errors.Wrap(err, "Failed to list policies")
 	}
@@ -182,7 +182,7 @@ func (c *client) FlushCache(ctx context.Context) error {
 	newCache := make(map[string]*storage.Policy, len(allPolicies))
 
 	for _, listPolicy := range allPolicies {
-		policy, err := c.svc.Get(ctx, listPolicy.Id)
+		policy, err := c.svc.GetPolicy(ctx, listPolicy.Id)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to fetch policy %s", listPolicy.Id)
 		}
