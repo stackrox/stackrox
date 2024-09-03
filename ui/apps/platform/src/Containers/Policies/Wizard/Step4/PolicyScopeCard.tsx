@@ -96,6 +96,7 @@ function PolicyScopeCard({
                                 variant="plain"
                                 className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
                                 onClick={onDelete}
+                                aria-label={`Delete ${type} scope`}
                             >
                                 <TrashIcon />
                             </Button>

@@ -36,6 +36,47 @@ const rules = {
             };
         },
     },
+    'Button-Icon-name': {
+        // Require prop for aria-label attribute to prevent axe DevTools issue:
+        // Buttons must have discernable text
+        // https://dequeuniversity.com/rules/axe/4.10/button-name
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that Button element has aria-label prop if its child is an icon',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXElement(node) {
+                    if (node.openingElement?.name?.name === 'Button') {
+                        // TODO ternary expression in PolicySection.tsx file.
+                        if (
+                            node.children?.some((child) =>
+                                child.openingElement?.name?.name?.endsWith('Icon')
+                            )
+                        ) {
+                            if (
+                                !node.openingElement?.attributes?.some((attribute) =>
+                                    ['aria-label', 'aria-labelledby', 'title'].includes(
+                                        attribute.name?.name
+                                    )
+                                )
+                            ) {
+                                context.report({
+                                    node,
+                                    message:
+                                        'Require that Button element has aria-label prop if its child is an icon',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'CardHeader-onExpand-toggleButtonProps': {
         // Require prop for aria-label attribute to prevent axe DevTools issue:
         // Buttons must have discernable text
