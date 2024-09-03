@@ -304,7 +304,7 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 	}
 
 	serviceAccountName := p.chooseServiceAccount()
-	log.Infof("Using service account %q for upgrade process %q", serviceAccountName, p.GetID())
+	log.Infof("Using service account %q for upgrade process %s", serviceAccountName, p.GetID())
 
 	newDeployment, err := p.createDeployment(serviceAccountName, sensorDeployment)
 	if err != nil {
