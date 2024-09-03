@@ -439,8 +439,21 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 		--echo-replaced-version-only \
 		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml); \
 	if ! ../scripts/ci/lib.sh check_rhacs_eng_image_exists $(INDEX_IMG_BASE) v$${candidate_version}; then unreleased_opt="--unreleased=$${candidate_version}"; fi; \
+	operator_version_subst=""; \
+	if operator_img_details=$$(../scripts/ci/lib.sh check_rhacs_eng_image_exists $(IMAGE_TAG_BASE) $${candidate_version}); then \
+		operator_version_subst=$$(jq -r '.tags[0].manifest_digest' <<<"${operator_img_details}"); \
+		if [ -z "$${operator_version_subst}" ]; then \
+			echo >&2 "Failed to retrieve image digest for image $(IMAGE_TAG_BASE):$${candidate_version}"; \
+			echo >&2 "Retrieved operator image details: $${operator_img_details}"; \
+			exit 1; \
+		fi; \
+	else \
+		echo >&2 "Failed to retrieve image details for image $(IMAGE_TAG_BASE):$${candidate_version}"; \
+		echo >&2 "Retrieved operator image details: $${operator_img_details}"; \
+		exit 1; \
+	fi; \
 	./bundle_helpers/patch-csv.py \
-		--use-version $(VERSION) \
+		--use-version $${operator_version_subst} \
 		--first-version $${first_version} \
 		--operator-image $(IMG) \
 		$${unreleased_opt} \
