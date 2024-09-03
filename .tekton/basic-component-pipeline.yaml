@@ -489,6 +489,20 @@ spec:
       operator: in
       values: [ "false" ]
 
+  - name: ecosystem-cert-preflight-checks
+    runAfter:
+      - build-image-manifest-konflux
+    params:
+    - name: image-url
+      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+    taskRef:
+      name: ecosystem-cert-preflight-checks
+      version: "0.1"
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: ["false"]
+
   - name: sast-snyk-check
     params:
     - name: SOURCE_ARTIFACT
