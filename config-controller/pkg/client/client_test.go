@@ -92,13 +92,13 @@ func setUp(t *testing.T, fn func(*mocks.MockPolicyClient, []*storage.Policy)) cl
 func TestCachedClientList(t *testing.T) {
 
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
-		mockClient.EXPECT().List(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
-	returnedPolicies, err := clientTest.client.List(clientTest.ctx)
+	returnedPolicies, err := clientTest.client.ListPolicies(clientTest.ctx)
 
 	assert.NoError(t, err, "Unexpected error listing policies")
 	assert.Equal(t, 2, len(returnedPolicies), "Wrong size of returned policy list")
@@ -108,19 +108,19 @@ func TestCachedClientList(t *testing.T) {
 // TestCachedClientList validates that the cached client fetches policies as expected
 func TestCachedClientGet(t *testing.T) {
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
-		mockClient.EXPECT().List(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
-	returnedPolicy, exists, err := clientTest.client.Get(clientTest.ctx, clientTest.policies[0].Name)
+	returnedPolicy, exists, err := clientTest.client.GetPolicy(clientTest.ctx, clientTest.policies[0].Name)
 
 	assert.NoError(t, err, "Unexpected error GETting a policy")
 	assert.True(t, exists, "Policy doesn't exist when it should")
 	assert.Equal(t, clientTest.policies[0].Id, returnedPolicy.Id)
 
-	returnedPolicy, exists, err = clientTest.client.Get(clientTest.ctx, "Policy name that doesn't exist")
+	returnedPolicy, exists, err = clientTest.client.GetPolicy(clientTest.ctx, "Policy name that doesn't exist")
 
 	assert.NoError(t, err, "Unexpected error GETting a policy")
 	assert.False(t, exists, "Policy exists when it should not")
@@ -148,14 +148,14 @@ func TestCachedClientCreate(t *testing.T) {
 	mockPolicyToReturn.Id = "abc123"
 
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
-		mockClient.EXPECT().List(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
-		mockClient.EXPECT().Post(gomock.Any(), &newPolicy).Return(mockPolicyToReturn, nil).Times(1)
+		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().PostPolicy(gomock.Any(), &newPolicy).Return(mockPolicyToReturn, nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
-	createdPolicy, err := clientTest.client.Create(clientTest.ctx, &newPolicy)
+	createdPolicy, err := clientTest.client.CreatePolicy(clientTest.ctx, &newPolicy)
 
 	assert.NoError(t, err, "Unexpected error creating a policy")
 	assert.Equal(t, "abc123", createdPolicy.Id)
@@ -164,17 +164,17 @@ func TestCachedClientCreate(t *testing.T) {
 // TestCachedClientList validates that the cached client updates policies as expected
 func TestCachedClientUpdate(t *testing.T) {
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
-		mockClient.EXPECT().List(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
 	policyToUpdate := clientTest.policies[0]
 	policyToUpdate.Description = "Update this description"
-	clientTest.mockClient.EXPECT().Put(gomock.Any(), policyToUpdate).Return(nil).Times(1)
+	clientTest.mockClient.EXPECT().PutPolicy(gomock.Any(), policyToUpdate).Return(nil).Times(1)
 
-	err := clientTest.client.Update(clientTest.ctx, policyToUpdate)
+	err := clientTest.client.UpdatePolicy(clientTest.ctx, policyToUpdate)
 
 	assert.NoError(t, err, "Unexpected error updating a policy")
 }
@@ -183,9 +183,9 @@ func TestCachedClientUpdate(t *testing.T) {
 // In this test, FlushCache is a no-op since the last updated timestamp is too recent.
 func TestCachedClientFlushCacheNoUpdate(t *testing.T) {
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
-		mockClient.EXPECT().List(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
@@ -198,9 +198,9 @@ func TestCachedClientFlushCacheNoUpdate(t *testing.T) {
 // In this test, the last updated timestamp is "hacked" to make it appear older so as to trigger a real flush.
 func TestCachedClientFlushCacheWithUpdate(t *testing.T) {
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
-		mockClient.EXPECT().List(gomock.Any()).Return(createListPolicies(policies), nil).Times(2)
-		mockClient.EXPECT().Get(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(2)
-		mockClient.EXPECT().Get(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(2)
+		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(2)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(2)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(2)
 	})
 	defer clientTest.controller.Finish()
 
@@ -216,9 +216,9 @@ func TestCachedClientFlushCacheWithUpdate(t *testing.T) {
 // In this test, EnsureFresh is a no-op since the last updated timestamp is too recent.
 func TestCachedClientEnsureFreshNoUpdate(t *testing.T) {
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
-		mockClient.EXPECT().List(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
-		mockClient.EXPECT().Get(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
@@ -231,9 +231,9 @@ func TestCachedClientEnsureFreshNoUpdate(t *testing.T) {
 // In this test, the last updated timestamp is "hacked" to make it appear older so as to trigger a real flush.
 func TestCachedClientEnsureFreshWithUpdate(t *testing.T) {
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
-		mockClient.EXPECT().List(gomock.Any()).Return(createListPolicies(policies), nil).Times(2)
-		mockClient.EXPECT().Get(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(2)
-		mockClient.EXPECT().Get(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(2)
+		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(2)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(2)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(2)
 	})
 	defer clientTest.controller.Finish()
 
