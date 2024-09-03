@@ -58,6 +58,7 @@ DOCKERBUILD := $(CURDIR)/scripts/docker-build.sh
 GO_TEST_OUTPUT_PATH=$(CURDIR)/test-output/test.log
 GOPATH_VOLUME_NAME := stackrox-rox-gopath
 GOCACHE_VOLUME_NAME := stackrox-rox-gocache
+GENERATE_PATH ?= ./...
 
 # If git branch name contains substring "-debug", a debug build will be made, unless overridden by environment variable.
 ifneq (,$(findstring -debug,$(shell git rev-parse --abbrev-ref HEAD)))
@@ -336,7 +337,7 @@ clean-easyjson-srcs:
 .PHONY: go-generated-srcs
 go-generated-srcs: deps clean-easyjson-srcs go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN)
 	@echo "+ $@"
-	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x ./...
+	PATH="$(GOTOOLS_BIN):$(PATH):$(BASE_DIR)/tools/generate-helpers" MOCKGEN_BIN="$(MOCKGEN_BIN)" go generate -v -x $(GENERATE_PATH)
 
 proto-generated-srcs: $(PROTO_GENERATED_SRCS) $(GENERATED_API_SWAGGER_SPECS) $(GENERATED_API_SWAGGER_SPECS_V2) inject-proto-tags cleanup-swagger-json-gotags
 	@echo "+ $@"
