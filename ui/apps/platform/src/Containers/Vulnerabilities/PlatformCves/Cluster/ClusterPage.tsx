@@ -8,6 +8,7 @@ import {
     Skeleton,
     Bullseye,
     Tab,
+    TabContent,
     Tabs,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
@@ -25,6 +26,9 @@ import { detailsTabValues } from '../../types';
 import ClusterPageHeader, { ClusterMetadata, clusterMetadataFragment } from './ClusterPageHeader';
 import ClusterPageDetails from './ClusterPageDetails';
 import ClusterPageVulnerabilities from './ClusterPageVulnerabilities';
+
+const idDetails = 'ClusterPageDetails';
+const idVulnerabilities = 'ClusterPageVulnerabilities';
 
 const platformCvesClusterOverviewPath = getOverviewPagePath('Platform', {
     entityTab: 'Cluster',
@@ -98,8 +102,16 @@ function ClusterPage() {
                             }}
                             className="pf-v5-u-pl-md pf-v5-u-background-color-100"
                         >
-                            <Tab eventKey={vulnTabKey} title={vulnTabKey} />
-                            <Tab eventKey={detailTabKey} title={detailTabKey} />
+                            <Tab
+                                eventKey={vulnTabKey}
+                                tabContentId={idVulnerabilities}
+                                title={vulnTabKey}
+                            />
+                            <Tab
+                                eventKey={detailTabKey}
+                                tabContentId={idDetails}
+                                title={detailTabKey}
+                            />
                         </Tabs>
                     </PageSection>
                     <PageSection
@@ -108,10 +120,14 @@ function ClusterPage() {
                         className="pf-v5-u-display-flex pf-v5-u-flex-direction-column"
                     >
                         {activeTabKey === vulnTabKey && (
-                            <ClusterPageVulnerabilities clusterId={clusterId} />
+                            <TabContent id={idVulnerabilities}>
+                                <ClusterPageVulnerabilities clusterId={clusterId} />
+                            </TabContent>
                         )}
                         {activeTabKey === detailTabKey && (
-                            <ClusterPageDetails clusterId={clusterId} />
+                            <TabContent id={idDetails}>
+                                <ClusterPageDetails clusterId={clusterId} />
+                            </TabContent>
                         )}
                     </PageSection>
                 </>
