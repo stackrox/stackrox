@@ -916,6 +916,6 @@ func (s *PolicyServiceTestSuite) TestDeletingDefaultPolicyIsBlocked() {
 	resp, err := s.tested.DeletePolicy(ctx, fakeResourceByIDRequest)
 
 	// assert
-	errors.Is(err, expectedError)
-	s.Nil(resp)
+        s.Require().Error(err, tc.expectedErr)
+	s.Require().Nil(resp)
 }
