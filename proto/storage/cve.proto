@@ -121,7 +121,7 @@ message CVEInfo {
   CVSSV2 cvss_v2 = 8;
   CVSSV3 cvss_v3 = 9;
   repeated Reference references = 10;
-  repeated CVSSScore cvss_info = 11;
+  repeated CVSSScore cvss_scores = 11;
 }
 
 message ImageCVE {

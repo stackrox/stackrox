@@ -255,7 +255,7 @@
             "$ref": "#/definitions/storageCVEInfoReference"
           }
         },
-        "cvssInfo": {
+        "cvssScores": {
           "type": "array",
           "items": {
             "type": "object",
@@ -596,7 +596,7 @@
           }
         }
       },
-      "title": "Next Tag: 21"
+      "title": "Next Tag: 22"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",
