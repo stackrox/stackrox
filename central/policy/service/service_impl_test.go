@@ -908,7 +908,7 @@ func (s *PolicyServiceTestSuite) TestDeletingDefaultPolicyIsBlocked() {
 		Id:        mockRequestOneID.PolicyIds[0],
 		IsDefault: true,
 	}
-	expectedError := errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
+	expectedErr := errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
 	s.policies.EXPECT().GetPolicy(ctx, mockPolicy.Id).Return(mockPolicy, true, nil)
 
 	// act
@@ -916,6 +916,6 @@ func (s *PolicyServiceTestSuite) TestDeletingDefaultPolicyIsBlocked() {
 	resp, err := s.tested.DeletePolicy(ctx, fakeResourceByIDRequest)
 
 	// assert
-        s.Require().Error(err, tc.expectedErr)
+	s.Require().Error(err, expectedErr)
 	s.Require().Nil(resp)
 }
