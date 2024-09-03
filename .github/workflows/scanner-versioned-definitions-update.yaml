@@ -173,7 +173,6 @@ jobs:
         zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
 
     - name: Upload definitions artifacts
-      if: success() || failure()
       uses: actions/upload-artifact@v4
       with:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
