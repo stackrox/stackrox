@@ -32,7 +32,7 @@ func ParseToken(token string, maxLeeway time.Duration) (*x509.Certificate, error
 	}
 
 	var auth central.ServiceCertAuth
-	if err := auth.UnmarshalVT(authBytes); err != nil {
+	if err := auth.UnmarshalVTUnsafe(authBytes); err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal service cert auth structure")
 	}
 

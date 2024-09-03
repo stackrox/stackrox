@@ -27,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -382,7 +381,7 @@ func (s *scheduler) runPaginatedDeploymentsQuery(ctx context.Context, cveQuery s
 		// string equivalent of deploymentsQuery for graphQL. Because of this, we first fetch deploymentIDs from
 		// deploymentDatastore using deploymentsQuery and then build string query for graphQL using those deploymentIDs.
 		scopeQuery := fmt.Sprintf("%s:%s", search.DeploymentID.String(),
-			strings.Join(deploymentIds[offset:mathutil.MinInt(offset+deploymentsPaginationLimit, len(deploymentIds))], ","))
+			strings.Join(deploymentIds[offset:min(offset+deploymentsPaginationLimit, len(deploymentIds))], ","))
 		r, err := s.execReportDataQuery(ctx, reportQueryPostgres, scopeQuery, cveQuery, paginatedQueryStartOffset)
 		if err != nil {
 			return r, err

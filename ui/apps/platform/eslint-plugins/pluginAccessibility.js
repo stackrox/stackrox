@@ -4,7 +4,7 @@ const rules = {
     // ESLint naming convention for positive rules:
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
 
-    'Alert-component-prop': {
+    'Alert-component': {
         // Require alternative markup to prevent axe DevTools issue:
         // Heading levels should only increase by one
         // https://dequeuniversity.com/rules/axe/4.9/heading-order
@@ -78,7 +78,7 @@ const rules = {
             };
         },
     },
-    'Chart-ariaTitle-prop': {
+    'Chart-ariaTitle': {
         // Require prop for aria-labelledby attribute to prevent axe DevTools issue:
         // <svg> elements with an img role must have an alternative text
         // https://dequeuniversity.com/rules/axe/4.10/svg-img-alt
@@ -108,7 +108,7 @@ const rules = {
             };
         },
     },
-    'ExpandableSection-isDetached-contentId-toggleId-props': {
+    'ExpandableSection-isDetached-contentId-toggleId': {
         // Require props to prevent axe DevTools issue:
         // Landmarks should have a unique role or role/label/title (i.e. accessible name) combination
         // https://dequeuniversity.com/rules/axe/4.10/landmark-unique
@@ -148,7 +148,7 @@ const rules = {
             };
         },
     },
-    'ExpandableSectionToggle-contentId-toggleId-props': {
+    'ExpandableSectionToggle-contentId-toggleId': {
         // Require props to prevent axe DevTools issue:
         // Landmarks should have a unique role or role/label/title (i.e. accessible name) combination
         // https://dequeuniversity.com/rules/axe/4.10/landmark-unique
@@ -183,7 +183,7 @@ const rules = {
             };
         },
     },
-    'Popover-aria-label-prop': {
+    'Popover-aria-label': {
         // Require prop to prevent axe DevTools issue:
         // ARIA dialog and alertdialog nodes should have an accessible name
         // https://dequeuniversity.com/rules/axe/4.9/aria-dialog-name
@@ -213,7 +213,39 @@ const rules = {
             };
         },
     },
-    'Th-screenReaderText-prop': {
+    'Tab-empty-contentId': {
+        // Require that empty Tab element has tabContentId prop to prevent axe DevTools issue:
+        // ARIA attributes must conform to valid values
+        // https://dequeuniversity.com/rules/axe/4.10/aria-valid-attr-value
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Require that empty Tab element has tabContentId prop',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXElement(node) {
+                    if (node.openingElement?.name?.name === 'Tab') {
+                        if (node.children?.length === 0) {
+                            if (
+                                !node.openingElement?.attributes?.some(
+                                    (nodeAttribute) => nodeAttribute.name?.name === 'tabContentId'
+                                )
+                            ) {
+                                context.report({
+                                    node,
+                                    message: 'Require that empty Tab element has tabContentId prop',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'Th-screenReaderText': {
         // Require prop to prevent axe DevTools issue:
         // Table header text should not be empty
         // https://dequeuniversity.com/rules/axe/4.9/empty-table-header
@@ -291,7 +323,7 @@ const rules = {
             };
         },
     },
-    'no-Popover-footerContent-headerContent-props': {
+    'no-Popover-footerContent-headerContent': {
         // Forbid props that cause axe DevTools issues:
         // Heading levels should only increase by one
         // https://dequeuniversity.com/rules/axe/4.9/heading-order
@@ -332,6 +364,39 @@ const rules = {
             };
         },
     },
+    'no-Tabs-component': {
+        // Forbid Tabs element with component="nav" prop to prevent axe DevTools issue:
+        // Landmarks should have a unique role or role/label/title (i.e. accessible name) combination
+        // https://dequeuniversity.com/rules/axe/4.10/landmark-unique
+        //
+        // For the record, accessibility issue is when main element has multiple nav elements.
+        // For accessibility, consistency, and semantics, let Tabs render default div element.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Forbid Tabs element with component prop',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Tabs') {
+                        if (
+                            node.attributes.some(
+                                (nodeAttribute) => nodeAttribute.name?.name === 'component'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message: 'Forbid Tabs element with component prop',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-Td-in-Thead': {
         // Forbid work-around to prevent axe DevTools issue:
         // Table header text should not be empty
@@ -363,7 +428,7 @@ const rules = {
             };
         },
     },
-    'no-Th-aria-label-prop': {
+    'no-Th-aria-label': {
         // Forbid work-around to prevent axe DevTools issue:
         // Table header text should not be empty
         // https://dequeuniversity.com/rules/axe/4.9/empty-table-header
@@ -405,7 +470,7 @@ const pluginKey = 'accessibility'; // key of pluginAccessibility in eslint.confi
 
 const pluginAccessibility = {
     meta: {
-        name: 'pluginAccessibility',
+        name: 'accessibility',
         version: '0.0.1',
     },
     rules,

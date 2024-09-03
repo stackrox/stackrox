@@ -60,6 +60,10 @@ function ExceptionRequestsPage() {
         history.push(url);
     };
 
+    /* eslint-disable accessibility/Tab-empty-contentId */
+    // ROX-25890 after React Router upgrade:
+    // Add tabContentId prop to Tab elements.
+    // Add TabContent elements with id props in routes.
     return (
         <>
             <PageTitle title="Exception Management" />
@@ -78,7 +82,6 @@ function ExceptionRequestsPage() {
                 <Tabs
                     activeKey={activeTabKey}
                     onSelect={handleTabClick}
-                    component="nav"
                     className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
                 >
                     <Tab

@@ -19,7 +19,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	_ "github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -134,7 +133,7 @@ func renderFile(templateMap map[string]interface{}, temp func(s string) *templat
 		e := target[0]
 		fileLines := strings.Split(string(file), "\n")
 		fmt.Printf("There is an error in following snippet: %s\n", e.Msg)
-		fmt.Println(strings.Join(fileLines[mathutil.MaxInt(0, e.Pos.Line-2):mathutil.MinInt(len(fileLines), e.Pos.Line+1)], "\n"))
+		fmt.Println(strings.Join(fileLines[max(0, e.Pos.Line-2):min(len(fileLines), e.Pos.Line+1)], "\n"))
 		return err
 	}
 	if err := os.WriteFile(templateFileName, formatted, 0644); err != nil {

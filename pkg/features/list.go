@@ -125,4 +125,10 @@ var (
 
 	// MicrosoftSentinelNotifier enables the Microsoft Sentinel notifier.
 	MicrosoftSentinelNotifier = registerFeature("Enable the Microsoft Sentinel notifier", "ROX_MICROSOFT_SENTINEL")
+
+	// ScanScheduleReportJobs enables support for compliance scan schedule report jobs
+	ScanScheduleReportJobs = registerFeature("Enables support for compliance scan schedule report jobs", "ROX_SCAN_SCHEDULE_REPORT_JOBS", enabled)
+
+	// PlatformComponents introduces the concept of platform collections and filtered views across the app.
+	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS", enabled)
 )

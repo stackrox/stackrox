@@ -168,6 +168,5 @@ func (u *upgradeController) doProcessCheckInFromSensor(req *central.UpgradeCheck
 	default:
 		return errors.Errorf("Unknown or malformed upgrade check-in from sensor: %+v", req)
 	}
-
 	return u.setUpgradeProgress(req.GetUpgradeProcessId(), nextState, detail)
 }

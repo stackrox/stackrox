@@ -40,6 +40,8 @@ import './ViolationsTablePage.css';
 
 const searchCategory = 'ALERTS';
 
+const tabContentId = 'ViolationsTable';
+
 function ViolationsTablePage(): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_POLICY_VIOLATIONS_ADVANCED_FILTERS');
@@ -219,13 +221,20 @@ function ViolationsTablePage(): ReactElement {
                         setSearchFilter({});
                         setActiveViolationStateTab(tab);
                     }}
-                    component="nav"
                 >
-                    <Tab eventKey="ACTIVE" title={<TabTitleText>Active</TabTitleText>} />
-                    <Tab eventKey="RESOLVED" title={<TabTitleText>Resolved</TabTitleText>} />
+                    <Tab
+                        eventKey="ACTIVE"
+                        tabContentId={tabContentId}
+                        title={<TabTitleText>Active</TabTitleText>}
+                    />
+                    <Tab
+                        eventKey="RESOLVED"
+                        tabContentId={tabContentId}
+                        title={<TabTitleText>Resolved</TabTitleText>}
+                    />
                 </Tabs>
             </PageSection>
-            <PageSection variant="default">
+            <PageSection variant="default" id={tabContentId}>
                 {isLoadingAlerts && (
                     <Bullseye>
                         <Spinner size="xl" />

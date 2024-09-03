@@ -105,7 +105,6 @@ function AffectedNodesTable({
         <Table
             borders={tableState.type === 'COMPLETE'}
             variant="compact"
-            role="region"
             aria-live="polite"
             aria-busy={tableState.type === 'LOADING' ? 'true' : 'false'}
         >

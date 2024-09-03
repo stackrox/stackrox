@@ -8,7 +8,6 @@ import {
     Tab,
     TabTitleText,
     Tabs,
-    TabsComponent,
 } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom';
 import { gql, useQuery } from '@apollo/client';
@@ -108,7 +107,6 @@ function DeploymentPage() {
                                 setActiveTabKey(key);
                                 pagination.setPage(1);
                             }}
-                            component={TabsComponent.nav}
                             className="pf-v5-u-pl-md pf-v5-u-background-color-100"
                             mountOnEnter
                             unmountOnExit

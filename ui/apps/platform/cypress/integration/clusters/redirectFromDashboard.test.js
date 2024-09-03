@@ -26,7 +26,8 @@ describe('Clusters', () => {
             );
         }, staticResponseMapForClusters);
 
-        cy.get('h2:contains("Secure clusters with a reusable init bundle")');
+        // Replace with h2 if refactoring restores h1 element with Clusters
+        cy.get('h1:contains("Secure clusters with a reusable init bundle")');
         // Button text depends whether or not init bundles exist.
         cy.get('button:contains("View installation methods")');
     });
