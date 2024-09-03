@@ -9,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/roxctl/common"
@@ -167,7 +166,7 @@ func (c *client) UpdatePolicy(ctx context.Context, policy *storage.Policy) error
 }
 
 func (c *client) FlushCache(ctx context.Context) error {
-	if time.Now().Sub(c.lastUpdated).Seconds() < float64(10) {
+	if time.Since(c.lastUpdated).Seconds() < float64(10) {
 		// Don't flush the cache more often than every 10s
 		return nil
 	}
@@ -197,7 +196,7 @@ func (c *client) FlushCache(ctx context.Context) error {
 }
 
 func (c *client) EnsureFresh(ctx context.Context) error {
-	if time.Now().Sub(c.lastUpdated).Minutes() > float64(5.0) {
+	if time.Since(c.lastUpdated).Minutes() > float64(5.0) {
 		return c.FlushCache(ctx)
 	}
 	return nil
