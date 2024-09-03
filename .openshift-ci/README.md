@@ -46,7 +46,7 @@ Config Definition: https://github.com/openshift/release/tree/master/ci-operator/
 
 #### Check StackRox logs and build logs
 
-Path in articafts:
+Path in artifacts:
 ```
 download build logs: artifacts/gke-qa-e2e-tests/stackrox-stackrox-e2e-test/artifacts/howto-locate-other-artifacts-summary.html
 ```
