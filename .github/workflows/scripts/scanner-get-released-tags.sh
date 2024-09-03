@@ -20,7 +20,6 @@ while read -r line; do
     echo "$line" | grep -qE '^\s*(#.*|$)' && continue
 
     read -r version ref <<< "$line"
-    ref=$(echo "$ref" | xargs)
 
     case $ref in
         heads/*)
@@ -42,7 +41,7 @@ while read -r line; do
     fi
 
     # Add the JSON object to the array
-    json_array+=("{\"version\":\"$version\",\"tag\":\"$resolved_tag\"}")
+    json_array+=("{\"version\":\"$version\",\"ref\":\"$resolved_tag\"}")
 done < scanner/updater/version/VULNERABILITY_BUNDLE_VERSION
 
 # Convert the array to a single-line JSON array

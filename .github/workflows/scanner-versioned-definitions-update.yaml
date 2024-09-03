@@ -31,8 +31,10 @@ jobs:
     - name: Parse VULNERABILITY_BUNDLE_VERSION
       id: set-versions
       run: |
-        versions_output=$(./.github/workflows/scripts/scanner-get-released-tags.sh)
-        echo "versions=$versions_output" >> "$GITHUB_OUTPUT"
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        echo "versions<<$EOF" >> "$GITHUB_OUTPUT"
+        ./.github/workflows/scripts/scanner-get-released-tags.sh | tee -a "$GITHUB_OUTPUT"
+        echo "$EOF" >> "$GITHUB_OUTPUT"
 
   prepare-environment:
     needs: parse-versions
@@ -97,6 +99,7 @@ jobs:
         if-no-files-found: error
 
   build-and-run:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs:
     - parse-versions
     - prepare-environment
@@ -115,7 +118,7 @@ jobs:
         include: ${{ fromJson(needs.parse-versions.outputs.versions) }}
     env:
       SCANNER_BUNDLE_VERSION: ${{ matrix.version }}
-      ROX_GIT_REF: ${{ matrix.tag }}
+      ROX_GIT_REF: ${{ matrix.ref }}
     steps:
     - name: Free up disk space
       shell: bash
@@ -178,9 +181,97 @@ jobs:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
 
+  build-upload-pr-vulnerabilities:
+    if: github.event_name == 'pull_request'
+    needs:
+    - prepare-environment
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
+      volumes:
+      # The updater makes heavy use of /tmp files.
+      - /tmp:/tmp
+      - /usr:/mnt/usr
+      - /opt:/mnt/opt
+    steps:
+    - name: Free up disk space
+      shell: bash
+      run: |
+        set +e
+        set -x
+        df -h
+        for delete in /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL; do
+          rm -rf "/mnt${delete:?}"
+        done
+        df -h
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Build updater
+      run: |
+        echo "Building updater for pull request ${{ env.PR_NAME }}..."
+        make tag
+        make -C scanner bin/updater
+
+    - name: Download NVD
+      uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd
+        path: nvd.zip
+
+    - name: Set Updater
+      run: |
+        chmod +x scanner/bin/updater
+        mkdir vulns
+
+    - name: Create Folder
+      run: mkdir -p definitions/${{ github.event.pull_request.number }}
+
+    - name: Authenticate with test GCS bucket
+      if: github.event_name == 'pull_request'
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Run Updater (single bundle)
+      env:
+        STACKROX_NVD_ZIP_PATH: nvd.zip
+      run: |
+        scanner/bin/updater export vulns --manual-url "${{ needs.prepare-environment.outputs.manual_url }}"
+        mv vulns/* definitions/${{ github.event.pull_request.number }}/
+
+    - name: Run updater (multi bundle)
+      env:
+        STACKROX_NVD_ZIP_PATH: nvd.zip
+      run: |
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
+        zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
+
+    # PR owner is responsible for verifying vulnerability bundles are generated
+    - name: Update PR vulnerabilities
+      run: |
+        branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+        # Replace / with -, so the branch name isn't truncated when pushed to GCS.
+        dir=${branch////-}
+        mkdir -p "$dir"
+        cp -r "definitions/${{ github.event.pull_request.number }}/." "$dir/"
+        gsutil -m cp -r "$dir" "gs://scanner-v4-test/vulnerability-bundles/"
+
   upload-definitions:
     needs:
     - build-and-run
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
