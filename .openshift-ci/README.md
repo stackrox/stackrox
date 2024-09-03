@@ -38,7 +38,7 @@ Config Definition: https://github.com/openshift/release/tree/master/ci-operator/
 
 #### Access Job Cluster and Real Time Logs
 
-- To access the OpenShift UI to view the logs directly search for something like `Using namespace https://console.build01.ci.openshift.org/k8s/cluster/projects/ci-op-yz5q9nlt`.
+- To access the OpenShift UI to view the pod logs directly in OpenShift UI search for something like `Using namespace https://console.build01.ci.openshift.org/k8s/cluster/projects/ci-op-yz5q9nlt`.
 - Access OpenShift UI, open `Administrator` overview on the top left.
 - View the `Environment`, copy the `KUBECONFIG` path, open the Pod's `Terminal` view in the UI and run `cat <KUBECONFIG_PATH>`
 - Copy KUBECONFIG content and create the KUBECONFIG locally
