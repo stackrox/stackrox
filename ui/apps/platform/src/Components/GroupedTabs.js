@@ -5,7 +5,7 @@ import upperFirst from 'lodash/upperFirst';
 
 import { useTheme } from 'Containers/ThemeProvider';
 
-const Tab = ({ text, index, active, to }) => (
+const GroupedTab = ({ text, index, active, to }) => (
     <li
         className={`flex flex-grow items-center border-t border-base-400 ${
             active ? 'bg-primary-200' : 'bg-base-100'
@@ -19,7 +19,7 @@ const Tab = ({ text, index, active, to }) => (
     </li>
 );
 
-Tab.propTypes = {
+GroupedTab.propTypes = {
     text: PropTypes.string.isRequired,
     index: PropTypes.number.isRequired,
     active: PropTypes.bool.isRequired,
@@ -58,7 +58,7 @@ const GroupedTabs = ({ groups, tabs, activeTab }) => {
                         } flex border-l border-base-400 border-r`}
                     >
                         {grouppedTabs.map((datum, i) => (
-                            <Tab
+                            <GroupedTab
                                 key={datum.value}
                                 index={i}
                                 text={datum.text}

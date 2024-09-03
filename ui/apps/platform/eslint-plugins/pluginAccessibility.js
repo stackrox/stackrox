@@ -213,6 +213,38 @@ const rules = {
             };
         },
     },
+    'Tab-empty-contentId': {
+        // Require that empty Tab element has tabContentId prop to prevent axe DevTools issue:
+        // ARIA attributes must conform to valid values
+        // https://dequeuniversity.com/rules/axe/4.10/aria-valid-attr-value
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Require that empty Tab element has tabContentId prop',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXElement(node) {
+                    if (node.openingElement?.name?.name === 'Tab') {
+                        if (node.children?.length === 0) {
+                            if (
+                                !node.openingElement?.attributes?.some(
+                                    (nodeAttribute) => nodeAttribute.name?.name === 'tabContentId'
+                                )
+                            ) {
+                                context.report({
+                                    node,
+                                    message: 'Require that empty Tab element has tabContentId prop',
+                                });
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'Th-screenReaderText': {
         // Require prop to prevent axe DevTools issue:
         // Table header text should not be empty
@@ -438,7 +470,7 @@ const pluginKey = 'accessibility'; // key of pluginAccessibility in eslint.confi
 
 const pluginAccessibility = {
     meta: {
-        name: 'pluginAccessibility',
+        name: 'accessibility',
         version: '0.0.1',
     },
     rules,
