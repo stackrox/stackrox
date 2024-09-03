@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/encoding/protojson"
-
 	"github.com/stackrox/rox/config-controller/pkg/client/mocks"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -120,7 +119,7 @@ func TestCachedClientGet(t *testing.T) {
 	assert.True(t, exists, "Policy doesn't exist when it should")
 	assert.Equal(t, clientTest.policies[0].Id, returnedPolicy.Id)
 
-	returnedPolicy, exists, err = clientTest.client.GetPolicy(clientTest.ctx, "Policy name that doesn't exist")
+	_, exists, err = clientTest.client.GetPolicy(clientTest.ctx, "Policy name that doesn't exist")
 
 	assert.NoError(t, err, "Unexpected error GETting a policy")
 	assert.False(t, exists, "Policy exists when it should not")
