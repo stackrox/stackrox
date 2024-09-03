@@ -4,6 +4,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -127,13 +128,13 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 }
 
 func (c *client) ListPolicies(ctx context.Context) ([]*storage.Policy, error) {
-	list := make([]*storage.Policy, len(c.cache))
+	policies := make([]*storage.Policy, len(c.cache))
 	i := 0
 	for _, value := range c.cache {
-		list[i] = value
+		policies[i] = value
 		i++
 	}
-	return list, nil
+	return policies, nil
 }
 
 func (c *client) GetPolicy(ctx context.Context, name string) (*storage.Policy, bool, error) {
@@ -145,7 +146,7 @@ func (c *client) CreatePolicy(ctx context.Context, policy *storage.Policy) (*sto
 	policy, err := c.svc.PostPolicy(ctx, policy)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to POST policy")
+		return nil, errors.Wrap(err, fmt.Sprintf("Failed to POST policy '%s'", policy.Name))
 	}
 
 	c.cache[policy.Name] = policy
