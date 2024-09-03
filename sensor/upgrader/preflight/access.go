@@ -21,7 +21,7 @@ const (
 	upgraderTroubleshootingLink = "https://docs.openshift.com/acs/upgrading/upgrade-roxctl.html#troubleshooting_upgrader_upgrade-roxctl"
 )
 
-var defaultClusterRoleBinding = pods.GetPodNamespace(pods.NoSATokenNamespace) + ":upgrade-sensors"
+var defaultClusterRoleBinding = pods.GetPodNamespace() + ":upgrade-sensors"
 
 type accessCheck struct{}
 
@@ -164,7 +164,7 @@ func (c accessCheck) auxiliaryInfoOnPermissionDenied(ctx *upgradectx.UpgradeCont
 
 // getUpgraderSAName returns the name of the SA that is currently used by the upgrader
 func (c accessCheck) getUpgraderSAName(ctx *upgradectx.UpgradeContext) (string, error) {
-	deplClient := ctx.ClientSet().AppsV1().Deployments(pods.GetPodNamespace(pods.NoSATokenNamespace))
+	deplClient := ctx.ClientSet().AppsV1().Deployments(pods.GetPodNamespace())
 	depl, err := deplClient.Get(ctx.Context(), "sensor-upgrader", metav1.GetOptions{})
 	if err != nil {
 		return "", err
