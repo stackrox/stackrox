@@ -321,8 +321,12 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	}
 
 	policy, exists, err := s.policies.GetPolicy(ctx, request.GetId())
-	if !exists || err != nil {
+	if !exists {
+		// make repeated calls with the same policy ID idempotent
 		return &v1.Empty{}, nil
+	} else if err != nil {
+		// if any database error other than not exist occurs, bail early
+		return nil, errors.Wrap(err, "Database error while trying to delete policy")
 	}
 
 	// Note: default policies cannot be deleted, only disabled

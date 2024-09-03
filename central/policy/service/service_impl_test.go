@@ -908,11 +908,45 @@ func (s *PolicyServiceTestSuite) TestDeletingDefaultPolicyIsBlocked() {
 		Id:        mockRequestOneID.PolicyIds[0],
 		IsDefault: true,
 	}
-	expectedErr := errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
 	s.policies.EXPECT().GetPolicy(ctx, mockPolicy.Id).Return(mockPolicy, true, nil)
+	expectedErr := errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
 
 	// act
 	fakeResourceByIDRequest := &v1.ResourceByID{Id: mockPolicy.Id}
+	resp, err := s.tested.DeletePolicy(ctx, fakeResourceByIDRequest)
+
+	// assert
+	s.Require().Error(err, expectedErr)
+	s.Require().Nil(resp)
+}
+
+func (s *PolicyServiceTestSuite) TestDeletingNonExistentPolicyDoesNothing() {
+	ctx := context.Background()
+
+	// arrange
+	mockPolicyID := mockRequestOneID.PolicyIds[0] // used only for the ID
+	s.policies.EXPECT().GetPolicy(ctx, mockPolicyID).Return(nil, false, nil)
+
+	// act
+	fakeResourceByIDRequest := &v1.ResourceByID{Id: mockPolicyID}
+	resp, err := s.tested.DeletePolicy(ctx, fakeResourceByIDRequest)
+
+	// assert
+	s.NoError(err)
+	s.Empty(resp)
+}
+
+func (s *PolicyServiceTestSuite) TestDeletingPolicyErrOnDbError() {
+	ctx := context.Background()
+
+	// arrange
+	mockPolicyID := mockRequestOneID.PolicyIds[0] // used only for the ID
+	dbErr := errors.New("the deebee has failed you")
+	s.policies.EXPECT().GetPolicy(ctx, mockPolicyID).Return(nil, true, dbErr)
+	expectedErr := errors.Wrap(dbErr, "DB error while trying to delete policy")
+
+	// act
+	fakeResourceByIDRequest := &v1.ResourceByID{Id: mockPolicyID}
 	resp, err := s.tested.DeletePolicy(ctx, fakeResourceByIDRequest)
 
 	// assert
