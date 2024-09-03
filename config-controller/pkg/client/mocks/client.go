@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	client "github.com/stackrox/rox/config-controller/pkg/client"
 	storage "github.com/stackrox/rox/generated/storage"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -208,4 +209,39 @@ func (m *MockPolicyClient) Put(arg0 context.Context, arg1 *storage.Policy) error
 func (mr *MockPolicyClientMockRecorder) Put(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockPolicyClient)(nil).Put), arg0, arg1)
+}
+
+// MockclientOptions is a mock of clientOptions interface.
+type MockclientOptions struct {
+	ctrl     *gomock.Controller
+	recorder *MockclientOptionsMockRecorder
+}
+
+// MockclientOptionsMockRecorder is the mock recorder for MockclientOptions.
+type MockclientOptionsMockRecorder struct {
+	mock *MockclientOptions
+}
+
+// NewMockclientOptions creates a new mock instance.
+func NewMockclientOptions(ctrl *gomock.Controller) *MockclientOptions {
+	mock := &MockclientOptions{ctrl: ctrl}
+	mock.recorder = &MockclientOptionsMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockclientOptions) EXPECT() *MockclientOptionsMockRecorder {
+	return m.recorder
+}
+
+// Apply mocks base method.
+func (m *MockclientOptions) Apply(arg0 client.CachedPolicyClient) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Apply", arg0)
+}
+
+// Apply indicates an expected call of Apply.
+func (mr *MockclientOptionsMockRecorder) Apply(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Apply", reflect.TypeOf((*MockclientOptions)(nil).Apply), arg0)
 }
