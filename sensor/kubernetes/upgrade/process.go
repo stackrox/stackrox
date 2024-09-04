@@ -291,9 +291,6 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 		return err
 	}
 
-	serviceAccountName := p.chooseServiceAccount()
-	log.Infof("Using service account %s for upgrade process %s", serviceAccountName, p.GetID())
-
 	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
 
 	// Fetch Sensor deployment to carry through some features of the pod spec
@@ -301,6 +298,9 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing sensor deployment")
 	}
+
+	serviceAccountName := p.chooseServiceAccount()
+	log.Infof("Using service account %q for upgrade process %s", serviceAccountName, p.GetID())
 
 	newDeployment, err := p.createDeployment(serviceAccountName, sensorDeployment)
 	if err != nil {
