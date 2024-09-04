@@ -812,8 +812,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.Metadata_LicenseStatus(0)))
 	utils.Must(builder.AddType("MicrosoftSentinel", []string{
+		"alertDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig",
 		"applicationClientId: String!",
-		"dataCollectionRuleConfig: MicrosoftSentinel_DataCollectionRuleConfig",
 		"directoryTenantId: String!",
 		"logIngestionEndpoint: String!",
 		"secret: String!",
@@ -9544,14 +9544,14 @@ func (resolver *Resolver) wrapMicrosoftSentinelsWithContext(ctx context.Context,
 	return output, nil
 }
 
+func (resolver *microsoftSentinelResolver) AlertDcrConfig(ctx context.Context) (*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	value := resolver.data.GetAlertDcrConfig()
+	return resolver.root.wrapMicrosoftSentinel_DataCollectionRuleConfig(value, true, nil)
+}
+
 func (resolver *microsoftSentinelResolver) ApplicationClientId(ctx context.Context) string {
 	value := resolver.data.GetApplicationClientId()
 	return value
-}
-
-func (resolver *microsoftSentinelResolver) DataCollectionRuleConfig(ctx context.Context) (*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
-	value := resolver.data.GetDataCollectionRuleConfig()
-	return resolver.root.wrapMicrosoftSentinel_DataCollectionRuleConfig(value, true, nil)
 }
 
 func (resolver *microsoftSentinelResolver) DirectoryTenantId(ctx context.Context) string {
