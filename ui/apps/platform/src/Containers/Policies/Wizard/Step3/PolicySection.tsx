@@ -70,8 +70,8 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                         onClick={() => setIsEditingName(!isEditingName)}
                                         aria-label={
                                             isEditingName
-                                                ? 'Save section name'
-                                                : 'Edit section name'
+                                                ? 'Save name of policy section'
+                                                : 'Edit name of policy section'
                                         }
                                     >
                                         {isEditingName ? <CheckIcon /> : <PencilAltIcon />}
