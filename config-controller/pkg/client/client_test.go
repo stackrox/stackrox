@@ -14,14 +14,14 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-//go:embed exec-sshd.json wget.json
+//go:embed test-policy-1.json test-policy-2.json
 var AssetFS embed.FS
 
 func loadPolicies() []*storage.Policy {
 	policies := make([]*storage.Policy, 2)
 	unmashaller := protojson.UnmarshalOptions{}
 
-	for i, name := range []string{"exec-sshd.json", "wget.json"} {
+	for i, name := range []string{"test-policy-1.json", "test-policy-2.json"} {
 		bytes, err := AssetFS.ReadFile(name)
 		if err != nil {
 			panic(err)
