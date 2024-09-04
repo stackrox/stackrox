@@ -11521,6 +11521,53 @@
             ]
           },
           {
+            "name": "MicrosoftSentinel",
+            "fields": [
+              {
+                "id": 1,
+                "name": "log_ingestion_endpoint",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "directory_tenant_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "application_client_id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "secret",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "alert_notifier",
+                "type": "DataCollectionRuleConfig"
+              }
+            ],
+            "messages": [
+              {
+                "name": "DataCollectionRuleConfig",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "stream_name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "data_collection_rule_id",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "name": "Syslog",
             "fields": [
               {
