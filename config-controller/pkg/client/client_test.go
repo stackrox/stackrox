@@ -6,11 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/config-controller/pkg/client/mocks"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/encoding/protojson"
-	"github.com/stackrox/rox/config-controller/pkg/client/mocks"
-	"github.com/stackrox/rox/generated/storage"
 )
 
 //go:embed exec-sshd.json wget.json
@@ -101,7 +102,7 @@ func TestCachedClientList(t *testing.T) {
 
 	assert.NoError(t, err, "Unexpected error listing policies")
 	assert.Equal(t, 2, len(returnedPolicies), "Wrong size of returned policy list")
-	assert.ElementsMatch(t, clientTest.policies, returnedPolicies)
+	protoassert.SlicesEqual(t, clientTest.policies, returnedPolicies)
 }
 
 // TestCachedClientList validates that the cached client fetches policies as expected
