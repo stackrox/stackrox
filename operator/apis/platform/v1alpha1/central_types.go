@@ -280,13 +280,13 @@ type DBConnectionPoolSize struct {
 	//+kubebuilder:default=10
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Minimum Connections"
-	MinConnections int `json:"minConnections"`
+	MinConnections *int32 `json:"minConnections"`
 
 	// Maximum number of connections in the connection pool.
 	//+kubebuilder:default=90
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Maximum Connections"
-	MaxConnections int `json:"maxConnections"`
+	MaxConnections *int32 `json:"maxConnections"`
 }
 
 // CentralDBEnabledPtr return a pointer for the given CentralDBEnabled value

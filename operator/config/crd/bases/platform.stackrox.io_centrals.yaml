@@ -83,12 +83,14 @@ spec:
                             default: 90
                             description: Maximum number of connections in the connection
                               pool.
+                            format: int32
                             minimum: 1
                             type: integer
                           minConnections:
                             default: 10
                             description: Minimum number of connections in the connection
                               pool.
+                            format: int32
                             minimum: 1
                             type: integer
                         required:

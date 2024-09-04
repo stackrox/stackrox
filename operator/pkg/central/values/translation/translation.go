@@ -279,6 +279,12 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 		cv.SetStringValue("configOverride", c.ConfigOverride.Name)
 	}
 
+	source := translation.NewValuesBuilder()
+	if c.ConnectionPoolSize != nil {
+		source.SetInt32("minConns", c.ConnectionPoolSize.MinConnections)
+		source.SetInt32("maxConns", c.ConnectionPoolSize.MaxConnections)
+	}
+
 	if c.ConnectionStringOverride != nil {
 		if c.GetPersistence() != nil {
 			cv.SetError(errors.New("if a connection string is provided, no persistence settings must be supplied"))
@@ -293,12 +299,12 @@ func getCentralDBComponentValues(c *platform.CentralDBSpec) *translation.ValuesB
 		// See https://github.com/stackrox/stackrox/pull/3322#discussion_r1005954280 for more details.
 
 		cv.SetBoolValue("external", true)
-		source := translation.NewValuesBuilder()
 		source.SetString("connectionString", c.ConnectionStringOverride)
 		cv.AddChild("source", &source)
 		return &cv
 	}
 
+	cv.AddChild("source", &source)
 	cv.AddChild(translation.ResourcesKey, translation.GetResources(c.Resources))
 	cv.SetStringMap("nodeSelector", c.NodeSelector)
 	cv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, c.Tolerations))
