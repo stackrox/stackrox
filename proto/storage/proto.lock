@@ -11551,7 +11551,7 @@
               },
               {
                 "id": 5,
-                "name": "data_collection_rule_config",
+                "name": "alert_dcr_config",
                 "type": "DataCollectionRuleConfig"
               }
             ],
