@@ -350,8 +350,23 @@ _main() {
 			echo
 			echo 'PostgreSQL Database directory appears to contain a database; Check for upgrade'
 #			docker_process_init_files /usr/share/container-scripts/postgresql/*
-			export POSTGRESQL_UPGRADE=copy
-			cat "$PGDATA/postgresql.conf"
+            # pulled from slc image common.sh
+            local versionfile="$PGDATA"/PG_VERSION version upgrade_available
+
+            # This file always exists.
+            test -f "$versionfile"
+            version=$(cat "$versionfile")
+
+            if test "13" = "$version"; then
+                # try upgrade
+                export POSTGRESQL_PREV_VERSION="13"
+                export POSTGRESQL_VERSION="15"
+                export POSTGRESQL_UPGRADE=copy
+                run_pgupgrade
+            fi
+
+#
+#			cat "$PGDATA/postgresql.conf"
 #			export POSTGRESQL_LOG_DESTINATION=/dev/stderr
 #			cat /usr/share/container-scripts/postgresql/common.sh
 #			try_pgupgrade
