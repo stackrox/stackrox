@@ -128,6 +128,15 @@ func (m *Notifier_Syslog) CloneVT() isNotifier_Config {
 	return r
 }
 
+func (m *Notifier_MicrosoftSentinel) CloneVT() isNotifier_Config {
+	if m == nil {
+		return (*Notifier_MicrosoftSentinel)(nil)
+	}
+	r := new(Notifier_MicrosoftSentinel)
+	r.MicrosoftSentinel = m.MicrosoftSentinel.CloneVT()
+	return r
+}
+
 func (m *AWSSecurityHub_Credentials) CloneVT() *AWSSecurityHub_Credentials {
 	if m == nil {
 		return (*AWSSecurityHub_Credentials)(nil)
@@ -397,7 +406,7 @@ func (m *MicrosoftSentinel) CloneVT() *MicrosoftSentinel {
 	r.DirectoryTenantId = m.DirectoryTenantId
 	r.ApplicationClientId = m.ApplicationClientId
 	r.Secret = m.Secret
-	r.AlertNotifier = m.AlertNotifier.CloneVT()
+	r.AlertDcrConfig = m.AlertDcrConfig.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -733,6 +742,31 @@ func (this *Notifier_Syslog) EqualVT(thatIface isNotifier_Config) bool {
 		}
 		if q == nil {
 			q = &Syslog{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *Notifier_MicrosoftSentinel) EqualVT(thatIface isNotifier_Config) bool {
+	that, ok := thatIface.(*Notifier_MicrosoftSentinel)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.MicrosoftSentinel, that.MicrosoftSentinel; p != q {
+		if p == nil {
+			p = &MicrosoftSentinel{}
+		}
+		if q == nil {
+			q = &MicrosoftSentinel{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1153,7 +1187,7 @@ func (this *MicrosoftSentinel) EqualVT(that *MicrosoftSentinel) bool {
 	if this.Secret != that.Secret {
 		return false
 	}
-	if !this.AlertNotifier.EqualVT(that.AlertNotifier) {
+	if !this.AlertDcrConfig.EqualVT(that.AlertDcrConfig) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1547,6 +1581,27 @@ func (m *Notifier_Syslog) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		dAtA[i] = 0x1
 		i--
 		dAtA[i] = 0x92
+	}
+	return len(dAtA) - i, nil
+}
+func (m *Notifier_MicrosoftSentinel) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *Notifier_MicrosoftSentinel) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.MicrosoftSentinel != nil {
+		size, err := m.MicrosoftSentinel.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
 	}
 	return len(dAtA) - i, nil
 }
@@ -2348,8 +2403,8 @@ func (m *MicrosoftSentinel) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.AlertNotifier != nil {
-		size, err := m.AlertNotifier.MarshalToSizedBufferVT(dAtA[:i])
+	if m.AlertDcrConfig != nil {
+		size, err := m.AlertDcrConfig.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2690,6 +2745,18 @@ func (m *Notifier_Syslog) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *Notifier_MicrosoftSentinel) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.MicrosoftSentinel != nil {
+		l = m.MicrosoftSentinel.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
 func (m *AWSSecurityHub_Credentials) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -3014,8 +3081,8 @@ func (m *MicrosoftSentinel) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.AlertNotifier != nil {
-		l = m.AlertNotifier.SizeVT()
+	if m.AlertDcrConfig != nil {
+		l = m.AlertDcrConfig.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -3703,6 +3770,47 @@ func (m *Notifier) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.NotifierSecret = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MicrosoftSentinel", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Config.(*Notifier_MicrosoftSentinel); ok {
+				if err := oneof.MicrosoftSentinel.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &MicrosoftSentinel{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Config = &Notifier_MicrosoftSentinel{MicrosoftSentinel: v}
+			}
 			iNdEx = postIndex
 		case 50:
 			if wireType != 2 {
@@ -5909,7 +6017,7 @@ func (m *MicrosoftSentinel) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AlertNotifier", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AlertDcrConfig", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -5936,10 +6044,10 @@ func (m *MicrosoftSentinel) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.AlertNotifier == nil {
-				m.AlertNotifier = &MicrosoftSentinel_DataCollectionRuleConfig{}
+			if m.AlertDcrConfig == nil {
+				m.AlertDcrConfig = &MicrosoftSentinel_DataCollectionRuleConfig{}
 			}
-			if err := m.AlertNotifier.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AlertDcrConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

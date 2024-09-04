@@ -36,4 +36,7 @@ const (
 
 	// SyslogType represents notifier type syslog
 	SyslogType = "syslog"
+
+	// MicrosoftSentinelType represents notifier type Microsoft Sentinel
+	MicrosoftSentinelType = "microsoftSentinel"
 )
