@@ -146,12 +146,6 @@ jobs:
         chmod +x /usr/local/bin/updater
         mkdir vulns
 
-    - name: Run updater (single bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
-      run: |
-        updater export vulns --manual-url "$MANUAL_URL"
-
     - name: Run updater (multi bundle)
       env:
         STACKROX_NVD_ZIP_PATH: nvd.zip
