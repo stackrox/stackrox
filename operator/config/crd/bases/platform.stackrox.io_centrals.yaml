@@ -76,6 +76,25 @@ spec:
                         required:
                         - name
                         type: object
+                      connectionPoolSize:
+                        description: Configures the database connection pool size.
+                        properties:
+                          maxConnections:
+                            default: 90
+                            description: Maximum number of connections in the connection
+                              pool.
+                            minimum: 1
+                            type: integer
+                          minConnections:
+                            default: 10
+                            description: Minimum number of connections in the connection
+                              pool.
+                            minimum: 1
+                            type: integer
+                        required:
+                        - maxConnections
+                        - minConnections
+                        type: object
                       connectionString:
                         description: |-
                           Specify a connection string that corresponds to a database managed elsewhere. If set, the operator will not manage the Central DB.

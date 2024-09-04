@@ -249,8 +249,12 @@ type CentralDBSpec struct {
 	Persistence *DBPersistence `json:"persistence,omitempty"`
 
 	// Config map containing postgresql.conf and pg_hba.conf that will be used if modifications need to be applied.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Config map that will override postgresql.conf and pg_hba.conf"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="Config map that will override postgresql.conf and pg_hba.conf"
 	ConfigOverride LocalConfigMapReference `json:"configOverride,omitempty"`
+
+	// Configures the database connection pool size.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,displayName="Database Connection Pool Size Settings"
+	ConnectionPoolSize *DBConnectionPoolSize `json:"connectionPoolSize,omitempty"`
 
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=99
 	DeploymentSpec `json:",inline"`
@@ -269,6 +273,21 @@ const (
 	// Deprecated const.
 	CentralDBEnabledTrue CentralDBEnabled = "Enabled"
 )
+
+// DBConnectionPoolSize configures the database connection pool size.
+type DBConnectionPoolSize struct {
+	// Minimum number of connections in the connection pool.
+	//+kubebuilder:default=10
+	//+kubebuilder:validation:Minimum=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Minimum Connections"
+	MinConnections int `json:"minConnections"`
+
+	// Maximum number of connections in the connection pool.
+	//+kubebuilder:default=90
+	//+kubebuilder:validation:Minimum=1
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Maximum Connections"
+	MaxConnections int `json:"maxConnections"`
+}
 
 // CentralDBEnabledPtr return a pointer for the given CentralDBEnabled value
 func CentralDBEnabledPtr(c CentralDBEnabled) *CentralDBEnabled {
