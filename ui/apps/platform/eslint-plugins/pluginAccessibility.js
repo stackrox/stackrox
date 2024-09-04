@@ -52,7 +52,8 @@ const rules = {
             return {
                 JSXElement(node) {
                     if (node.openingElement?.name?.name === 'Button') {
-                        // TODO ternary expression in PolicySection.tsx file.
+                        // For now at least, does not suppert ternary expression:
+                        // {isEditingName ? <CheckIcon /> : <PencilAltIcon />}
                         if (
                             node.children?.some((child) =>
                                 child.openingElement?.name?.name?.endsWith('Icon')
