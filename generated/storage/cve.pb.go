@@ -285,6 +285,7 @@ func (CVE_ScoreVersion) EnumDescriptor() ([]byte, []int) {
 	return file_storage_cve_proto_rawDescGZIP(), []int{0, 1}
 }
 
+// ScoreVersion can be deprecated ROX-26066
 type CVEInfo_ScoreVersion int32
 
 const (
@@ -1139,10 +1140,12 @@ type CVEInfo struct {
 	CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"CVE Created Time"` // @gotags: search:"CVE Created Time"
 	LastModified *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"`
 	ScoreVersion CVEInfo_ScoreVersion   `protobuf:"varint,7,opt,name=score_version,json=scoreVersion,proto3,enum=storage.CVEInfo_ScoreVersion" json:"score_version,omitempty"`
-	CvssV2       *CVSSV2                `protobuf:"bytes,8,opt,name=cvss_v2,json=cvssV2,proto3" json:"cvss_v2,omitempty"`
-	CvssV3       *CVSSV3                `protobuf:"bytes,9,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
-	References   []*CVEInfo_Reference   `protobuf:"bytes,10,rep,name=references,proto3" json:"references,omitempty"`
-	CvssScores   []*CVSSScore           `protobuf:"bytes,11,rep,name=cvss_scores,json=cvssScores,proto3" json:"cvss_scores,omitempty"`
+	// CVSSV2 CVSSV3 ScoreVersion can be deprecated ROX-26066
+	CvssV2     *CVSSV2              `protobuf:"bytes,8,opt,name=cvss_v2,json=cvssV2,proto3" json:"cvss_v2,omitempty"`
+	CvssV3     *CVSSV3              `protobuf:"bytes,9,opt,name=cvss_v3,json=cvssV3,proto3" json:"cvss_v3,omitempty"`
+	References []*CVEInfo_Reference `protobuf:"bytes,10,rep,name=references,proto3" json:"references,omitempty"`
+	// cvss_scores stores list of cvss scores from different sources like nvd, Redhat etc
+	CvssScores []*CVSSScore `protobuf:"bytes,11,rep,name=cvss_scores,json=cvssScores,proto3" json:"cvss_scores,omitempty"`
 }
 
 func (x *CVEInfo) Reset() {

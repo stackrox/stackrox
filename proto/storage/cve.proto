@@ -104,6 +104,7 @@ message CVEInfo {
     string URI = 1;
     repeated string tags = 2;
   }
+  // ScoreVersion can be deprecated ROX-26066
   enum ScoreVersion {
     V2 = 0; // No unset for automatic backwards compatibility
     V3 = 1;
@@ -118,9 +119,12 @@ message CVEInfo {
   google.protobuf.Timestamp created_at = 5; // @gotags: search:"CVE Created Time"
   google.protobuf.Timestamp last_modified = 6;
   ScoreVersion score_version = 7;
+  // CVSSV2 CVSSV3 ScoreVersion can be deprecated ROX-26066
   CVSSV2 cvss_v2 = 8;
   CVSSV3 cvss_v3 = 9;
   repeated Reference references = 10;
+
+  // cvss_scores stores list of cvss scores from different sources like nvd, Redhat etc
   repeated CVSSScore cvss_scores = 11;
 }
 
