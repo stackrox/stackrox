@@ -80,6 +80,7 @@ jobs:
         branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
+      UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
