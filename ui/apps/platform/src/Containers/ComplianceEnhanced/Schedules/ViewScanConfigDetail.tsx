@@ -41,6 +41,9 @@ type ViewScanConfigDetailProps = {
     error?: Error | string | null;
 };
 
+const configDetailsTabId = 'ComplianceScanConfigDetails';
+const allReportJobsTabId = 'ComplianceScanConfigReportJobs';
+
 function ViewScanConfigDetail({
     hasWriteAccessForCompliance,
     scanConfig,
@@ -159,11 +162,13 @@ function ViewScanConfigDetail({
                         aria-label="Scan schedule details tabs"
                     >
                         <Tab
+                            tabContentId={configDetailsTabId}
                             eventKey="CONFIGURATION_DETAILS"
                             title={<TabTitleText>Configuration details</TabTitleText>}
                             aria-label="Configuration details tab"
                         />
                         <Tab
+                            tabContentId={allReportJobsTabId}
                             eventKey="ALL_REPORT_JOBS"
                             title={<TabTitleText>All report jobs</TabTitleText>}
                             actions={<ReportJobsHelpAction reportType="Scan schedule" />}
@@ -172,12 +177,16 @@ function ViewScanConfigDetail({
                     </Tabs>
                 </PageSection>
             )}
-            <PageSection isCenterAligned>
-                {selectedTab === 'CONFIGURATION_DETAILS' && (
+            {selectedTab === 'CONFIGURATION_DETAILS' && (
+                <PageSection isCenterAligned id={configDetailsTabId}>
                     <ConfigDetails isLoading={isLoading} error={error} scanConfig={scanConfig} />
-                )}
-                {selectedTab === 'ALL_REPORT_JOBS' && <ReportJobs />}
-            </PageSection>
+                </PageSection>
+            )}
+            {selectedTab === 'ALL_REPORT_JOBS' && (
+                <PageSection isCenterAligned id={allReportJobsTabId}>
+                    <ReportJobs />
+                </PageSection>
+            )}
         </>
     );
 }
