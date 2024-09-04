@@ -281,12 +281,12 @@ ensure-rox-main-image-exists:
 
 ##@ Build
 
-
 .PHONY: build-installer
 build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
 	mkdir -p dist
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default > dist/install.yaml
+
 .PHONY: build
 build: manifests generate fmt vet ## Build operator local binary.
 	../scripts/go-build-file.sh ./main.go bin/manager
