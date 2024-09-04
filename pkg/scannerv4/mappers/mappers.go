@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -25,6 +26,11 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/constants"
 	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+const (
+	nvdBaseUrl  = "https://nvd.nist.gov/vuln/detail"
+	rhelBaseUrl = "https://access.redhat.com/security/cve"
 )
 
 var (
@@ -332,7 +338,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 				}
 			}
 		}
-		sev, err := severityAndScores(ctx, v, &nvdVuln)
+		cvssMetrics, sev, err := severityAndCvssMetrics(ctx, v, &nvdVuln)
 		if err != nil {
 			zlog.Warn(ctx).
 				Err(err).
@@ -344,22 +350,12 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		}
 		// Look for CVSS scores in the severity field, then set the
 		// scores only if at least one is found.
-		var cvss *v4.VulnerabilityReport_Vulnerability_CVSS
-		hasV2, hasV3 := sev.v2Vector != "", sev.v3Vector != ""
-		if hasV2 || hasV3 {
-			cvss = &v4.VulnerabilityReport_Vulnerability_CVSS{}
-		}
-		if hasV2 {
-			cvss.V2 = &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
-				BaseScore: sev.v2Score,
-				Vector:    sev.v2Vector,
-			}
-		}
-		if hasV3 {
-			cvss.V3 = &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-				BaseScore: sev.v3Score,
-				Vector:    sev.v3Vector,
-			}
+		cvss, err := toCVSSMetric(sev)
+		if err != nil {
+			zlog.Warn(ctx).
+				Err(err).
+				Str("source", sev.source.String()).
+				Msg("no CVSS Metric")
 		}
 		description := v.Description
 		if description == "" {
@@ -383,7 +379,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		if vulnerabilities == nil {
 			vulnerabilities = make(map[string]*v4.VulnerabilityReport_Vulnerability, len(vulns))
 		}
-		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
+		vuln := &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
 			Name:               name,
 			Description:        description,
@@ -397,6 +393,13 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			FixedInVersion:     fixedInVersion(v),
 			Cvss:               cvss,
 		}
+		if len(cvssMetrics) > 0 {
+			vuln.CvssMetrics = cvssMetrics
+		}
+		if vulnerabilities == nil {
+			vulnerabilities = make(map[string]*v4.VulnerabilityReport_Vulnerability, len(vulns))
+		}
+		vulnerabilities[k] = vuln
 	}
 	return vulnerabilities, nil
 }
@@ -413,6 +416,47 @@ func issuedTime(ccTime time.Time, nvdTime string) *timestamppb.Timestamp {
 	}
 
 	return nil
+}
+
+// toCVSSMetrics adds a CVSS metric, based on the provided severity values, to the list of CVSS metrics in the v4 vulnerability report.
+func toCVSSMetrics(ctx context.Context, sev severityValues, cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) []*v4.VulnerabilityReport_Vulnerability_CVSS {
+	cvss, err := toCVSSMetric(sev)
+	if err != nil {
+		zlog.Warn(ctx).
+			Err(err).
+			Str("source", sev.source.String()).
+			Msg("No CVSS Metric")
+		return cvssMetrics
+	}
+	cvss.Source = sev.source
+	cvssMetrics = append(cvssMetrics, cvss)
+	return cvssMetrics
+}
+
+// toCVSSMetric converts the given severity values into a CVSS metric.
+// It returns the constructed CVSS metric or an error if neither CVSS v2 nor v3 vectors are available.
+func toCVSSMetric(sev severityValues) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+	hasV2, hasV3 := sev.v2Vector != "", sev.v3Vector != ""
+	if !hasV2 && !hasV3 {
+		return nil, errors.New("both CVSS v2 and v3 vectors are missing")
+	}
+	cvss := &v4.VulnerabilityReport_Vulnerability_CVSS{}
+	if hasV2 {
+		cvss.V2 = &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+			BaseScore: sev.v2Score,
+			Vector:    sev.v2Vector,
+		}
+	}
+	if hasV3 {
+		cvss.V3 = &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+			BaseScore: sev.v3Score,
+			Vector:    sev.v3Vector,
+		}
+	}
+	if sev.url != "" {
+		cvss.Url = sev.url
+	}
+	return cvss, nil
 }
 
 func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Severity) v4.VulnerabilityReport_Vulnerability_Severity {
@@ -658,22 +702,40 @@ type severityValues struct {
 	v2Score  float32
 	v3Vector string
 	v3Score  float32
+	source   v4.VulnerabilityReport_Vulnerability_CVSS_Source
+	url      string
 }
 
-// severityAndScores returns the severity and scores information out of a
-// ClairCore vulnerability. The returned information is dependent on the
-// underlying updater.
-func severityAndScores(ctx context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) (severityValues, error) {
+// severityAndCvssMetrics processes the severity and CVSS scores
+// for a given vulnerability based on the updater type (RHEL, NVD, OSV, etc.).
+// The returned data includes CVSS metrics, ACS preferred severity values, and potential errors
+// encountered during the calculation process for each source.
+func severityAndCvssMetrics(ctx context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, severityValues, error) {
 	ctx = zlog.ContextWithValues(ctx,
-		"component", "mappers/severityAndScores",
+		"component", "mappers/severityAndCvssMetrics",
 		"updater", vuln.Updater,
 		"vuln_id", vuln.ID,
 		"vuln_name", vuln.Name,
 	)
-
+	var cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS
+	rhelSev, rhelErr := rhelSeverityAndScores(vuln)
+	if rhelErr == nil {
+		cvssMetrics = toCVSSMetrics(ctx, rhelSev, cvssMetrics)
+	}
+	nvdSev, nvdErr := nvdSeverityAndScores(vuln, nvdVuln)
+	if nvdErr == nil {
+		cvssMetrics = toCVSSMetrics(ctx, nvdSev, cvssMetrics)
+	}
+	unknwonSev, unknownErr := cvssVector(vuln.Severity)
+	if unknownErr == nil {
+		// source needs to be specified for OSV as cvssVector() method only provides severity vector
+		unknwonSev.source = v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_UNKNOWN
+		unknwonSev.url = vuln.Links
+		cvssMetrics = toCVSSMetrics(ctx, unknwonSev, cvssMetrics)
+	}
 	switch {
 	case rhelUpdaterPattern.MatchString(vuln.Updater):
-		return rhelSeverityAndScores(vuln)
+		return cvssMetrics, rhelSev, rhelErr
 	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix):
 		if isOSVDBSpecificSeverity(vuln.Severity) {
 			zlog.Debug(ctx).
@@ -684,19 +746,18 @@ func severityAndScores(ctx context.Context, vuln *claircore.Vulnerability, nvdVu
 		// The severity may be a CVSS vector, so fallthrough to check.
 		fallthrough
 	case strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
-		sev, err := cvssVector(vuln.Severity)
-		if err != nil {
+		if unknownErr != nil {
 			zlog.Debug(ctx).
-				Err(err).
+				Err(unknownErr).
 				Str("severity", vuln.Severity).
 				Msg("parsing severity, falling back to NVD")
 			break
 		}
-		return sev, nil
+		return cvssMetrics, unknwonSev, nil
 	}
 
 	// Default/fallback is NVD.
-	return nvdSeverityAndScores(vuln, nvdVuln)
+	return cvssMetrics, nvdSev, nvdErr
 }
 
 func rhelSeverityAndScores(vuln *claircore.Vulnerability) (severityValues, error) {
@@ -711,6 +772,7 @@ func rhelSeverityAndScores(vuln *claircore.Vulnerability) (severityValues, error
 
 	values := severityValues{
 		severity: q.Get("severity"),
+		source:   v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 	}
 
 	if v := q.Get("cvss2_vector"); v != "" {
@@ -741,7 +803,10 @@ func rhelSeverityAndScores(vuln *claircore.Vulnerability) (severityValues, error
 		values.v3Vector = v
 		values.v3Score = float32(f)
 	}
-
+	if cveId := q.Get("cve"); cveId != "" {
+		// rhel url links to the CVE that provides the highest CVSS score
+		values.url = path.Join(rhelBaseUrl, cveId)
+	}
 	return values, nil
 }
 
@@ -789,6 +854,7 @@ func cvssVector(cvssVector string) (severityValues, error) {
 
 func nvdSeverityAndScores(vuln *claircore.Vulnerability, v *nvdschema.CVEAPIJSON20CVEItem) (severityValues, error) {
 	values := severityValues{
+		source:   v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 		severity: vuln.Severity,
 	}
 
@@ -816,7 +882,8 @@ func nvdSeverityAndScores(vuln *claircore.Vulnerability, v *nvdschema.CVEAPIJSON
 			values.v2Vector = cvssv2.CvssData.VectorString
 		}
 	}
-
+	nvdUrl := path.Join(nvdBaseUrl, v.ID)
+	values.url = nvdUrl
 	return values, nil
 }
 
