@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/timeutil"
@@ -291,9 +290,6 @@ func (p *process) createUpgraderDeploymentIfNecessary() error {
 		}
 		return err
 	}
-
-	serviceAccountName := p.chooseServiceAccount()
-	log.Infof("Using service account %q for upgrade process %q", serviceAccountName, p.GetID())
 
 	deploymentsClient := p.k8sClient.AppsV1().Deployments(pods.GetPodNamespace())
 
