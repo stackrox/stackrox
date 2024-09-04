@@ -55,7 +55,6 @@ type ViolationsTablePanelProps = {
     setPerPage: (perPage) => void;
     getSortParams: GetSortParams;
     columns: TableColumn[];
-    isAdvancedFiltersEnabled?: boolean;
     searchFilter: SearchFilter;
     onSearch: OnSearchCallback;
 };
@@ -71,7 +70,6 @@ function ViolationsTablePanel({
     excludableAlerts,
     getSortParams,
     columns,
-    isAdvancedFiltersEnabled = false,
     searchFilter,
     onSearch,
 }: ViolationsTablePanelProps): ReactElement {
@@ -196,12 +194,8 @@ function ViolationsTablePanel({
                     </Alert>
                 ))}
             </AlertGroup>
-            {isAdvancedFiltersEnabled && (
-                <>
-                    <ViolationsTableSearchFilter searchFilter={searchFilter} onSearch={onSearch} />
-                    <Divider component="div" />
-                </>
-            )}
+            <ViolationsTableSearchFilter searchFilter={searchFilter} onSearch={onSearch} />
+            <Divider component="div" />
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem>
