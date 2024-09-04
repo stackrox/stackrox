@@ -129,6 +129,31 @@ message SumoLogic {
   bool skipTLSVerify = 2;
 }
 
+message MicrosoftSentinel {
+  // log_ingestion_endpoint is the log ingestion endpoint.
+  string log_ingestion_endpoint = 1;
+
+  // directory_tenant_id contains the ID of the Microsoft Directory ID of the selected tenant.
+  string directory_tenant_id = 2;
+
+  // application_client_id contains the ID of the application ID of the service principal.
+  string application_client_id = 3;
+
+  // secret contains the client secret.
+  string secret = 4; // @gotags: scrub:"always"
+  // TODO(ROX-25739): Add client certificate
+
+  // NotifierConfig contains information about the data collection rule which is a config per notifier type.
+  message DataCollectionRuleConfig {
+    string stream_name = 1;
+    string data_collection_rule_id = 2;
+  }
+  DataCollectionRuleConfig alert_notifier = 5;
+
+  // TODO(ROX-25848): Add NetworkPolicyNotifier configuration
+  // TODO(ROX-25546): Add Audit Log configuration
+}
+
 message Syslog {
   enum LocalFacility {
     LOCAL0 = 0;
