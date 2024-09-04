@@ -127,11 +127,9 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 }
 
 func (c *client) ListPolicies(ctx context.Context) ([]*storage.Policy, error) {
-	policies := make([]*storage.Policy, len(c.cache))
-	i := 0
+	policies := make([]*storage.Policy, 0, len(c.cache))
 	for _, value := range c.cache {
-		policies[i] = value
-		i++
+		policies = append(policies, value)
 	}
 	return policies, nil
 }
