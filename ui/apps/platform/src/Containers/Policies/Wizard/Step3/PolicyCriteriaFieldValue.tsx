@@ -33,7 +33,7 @@ function PolicyCriteriaFieldValue({
                     <Button
                         onClick={handleRemoveValue}
                         variant="tertiary"
-                        aria-label="Delete value of policy field"
+                        title="Delete value of policy field"
                     >
                         <TimesIcon />
                     </Button>

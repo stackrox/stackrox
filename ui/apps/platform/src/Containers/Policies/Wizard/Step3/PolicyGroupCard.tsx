@@ -103,7 +103,7 @@ function PolicyGroupCard({
                                             variant="plain"
                                             className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
                                             onClick={onDeleteGroup}
-                                            aria-label="Delete policy field"
+                                            title="Delete policy field"
                                         >
                                             <TrashIcon />
                                         </Button>
@@ -176,7 +176,7 @@ function PolicyGroupCard({
                                 <Button
                                     onClick={handleAddValue}
                                     variant="plain"
-                                    aria-label="Add value of policy field"
+                                    title="Add value of policy field"
                                 >
                                     <PlusIcon />
                                 </Button>

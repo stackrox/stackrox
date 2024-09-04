@@ -68,7 +68,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                         variant="plain"
                                         className="pf-v5-u-px-sm"
                                         onClick={() => setIsEditingName(!isEditingName)}
-                                        aria-label={
+                                        title={
                                             isEditingName
                                                 ? 'Save name of policy section'
                                                 : 'Edit name of policy section'
@@ -83,7 +83,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                     <Button
                                         variant="plain"
                                         className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
-                                        aria-label="Delete policy section"
+                                        title="Delete policy section"
                                         onClick={onDeleteSection}
                                     >
                                         <TrashIcon />
