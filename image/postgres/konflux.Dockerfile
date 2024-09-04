@@ -37,6 +37,8 @@ RUN dnf upgrade -y --nobest && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
+COPY LICENSE /licenses/LICENSE
+
 COPY image/postgres/scripts \
     /usr/local/bin/
 
