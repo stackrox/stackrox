@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/roxctl/common"
@@ -16,6 +15,7 @@ import (
 	roxctlIO "github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/common/printer"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type CachedPolicyClient interface {
