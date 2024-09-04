@@ -70,7 +70,7 @@ COPY --chown=default . .
 # ROX_PRODUCT_BRANDING is also set in the resulting image so that Central Go code knows its RHACS.
 ENV ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 # Default execution of the `npm ci` command causes postinstall scripts to run and spawn a new child process
-# for each script. When building in konflux for s390x and ppc64le architectures, spawing 
+# for each script. When building in konflux for s390x and ppc64le architectures, spawing
 # these child processes causes excessive memory usage and ENOMEM errors, resulting
 # in build failures. Currently the only postinstall scripts that run for the UI dependencies are:
 #   `core-js` prints a banner with links for donations
