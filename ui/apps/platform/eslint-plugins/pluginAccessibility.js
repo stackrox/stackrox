@@ -37,14 +37,14 @@ const rules = {
         },
     },
     'Button-Icon-name': {
-        // Require prop for aria-label attribute to prevent axe DevTools issue:
+        // Require prop for aria-label, aria-labelledby, or title attribute to prevent axe DevTools issue:
         // Buttons must have discernable text
         // https://dequeuniversity.com/rules/axe/4.10/button-name
         meta: {
             type: 'problem',
             docs: {
                 description:
-                    'Require that Button element has aria-label prop if its child is an icon',
+                    'Require that Button element has aria-label, aria-labelledby, or title prop if its child is an icon',
             },
             schema: [],
         },
@@ -69,7 +69,7 @@ const rules = {
                                 context.report({
                                     node,
                                     message:
-                                        'Require that Button element has aria-label prop if its child is an icon',
+                                        'Require that Button element has aria-label, aria-labelledby, or title prop if its child is an icon',
                                 });
                             }
                         }
