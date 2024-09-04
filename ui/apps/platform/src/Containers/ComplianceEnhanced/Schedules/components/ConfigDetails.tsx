@@ -45,7 +45,7 @@ function ConfigDetails({ isLoading, error, scanConfig }) {
         );
     }
 
-    if (!isLoading && scanConfig) {
+    if (scanConfig) {
         return (
             <Card>
                 <CardBody>

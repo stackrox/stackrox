@@ -272,13 +272,11 @@ function ViewVulnReportPage() {
                     <Tab
                         eventKey="CONFIGURATION_DETAILS"
                         title={<TabTitleText>Configuration details</TabTitleText>}
-                        aria-label="Configuration details tab"
                     />
                     <Tab
                         eventKey="ALL_REPORT_JOBS"
                         title={<TabTitleText>All report jobs</TabTitleText>}
                         actions={<ReportJobsHelpAction reportType="Vulnerability" />}
-                        aria-label="Report jobs tab"
                     />
                 </Tabs>
             </PageSection>

@@ -165,14 +165,12 @@ function ViewScanConfigDetail({
                             tabContentId={configDetailsTabId}
                             eventKey="CONFIGURATION_DETAILS"
                             title={<TabTitleText>Configuration details</TabTitleText>}
-                            aria-label="Configuration details tab"
                         />
                         <Tab
                             tabContentId={allReportJobsTabId}
                             eventKey="ALL_REPORT_JOBS"
                             title={<TabTitleText>All report jobs</TabTitleText>}
                             actions={<ReportJobsHelpAction reportType="Scan schedule" />}
-                            aria-label="Report jobs tab"
                         />
                     </Tabs>
                 </PageSection>
