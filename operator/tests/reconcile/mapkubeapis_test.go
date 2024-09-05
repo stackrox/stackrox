@@ -112,7 +112,7 @@ var _ = Describe("MapKubeAPIsExtension", func() {
 				req = reconcile.Request{NamespacedName: objKey}
 				Expect(mgr.GetClient().Create(ctx, obj)).To(Succeed())
 
-				actionConfigGetter, err := helmClient.NewActionConfigGetter(mgr.GetConfig(), mgr.GetRESTMapper(), logr.Discard())
+				actionConfigGetter, err := helmClient.NewActionConfigGetter(mgr.GetConfig(), mgr.GetRESTMapper())
 				Expect(err).NotTo(HaveOccurred())
 				acfg, err := actionConfigGetter.ActionConfigFor(obj)
 				Expect(err).NotTo(HaveOccurred())
