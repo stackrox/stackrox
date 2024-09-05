@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"time"
 
+	azureErrors "github.com/Azure/azure-sdk-for-go-extensions/pkg/errors"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
@@ -113,8 +115,14 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		// UploadResponse is unhandled because it currently is only a placeholder in the azure client library and does not
 		// contain any information to be processed.
 		_, err := s.azlogsClient.Upload(ctx, s.sentinel().GetAlertDcrConfig().GetDataCollectionRuleId(), s.sentinel().GetAlertDcrConfig().GetStreamName(), bytesToSend, &azlogs.UploadOptions{})
+		azRespErr := azureErrors.IsResponseError(err)
+		if azRespErr != nil {
+			return notifiers.CreateError(s.notifier.GetName(), azRespErr.RawResponse, codes.MicrosoftSentinelGeneric)
+		}
 		return err
 	},
+		retry.OnlyRetryableErrors(),
+		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
 		retry.BetweenAttempts(func(previousAttempt int) {
 			wait := time.Duration(previousAttempt * previousAttempt * 100)
