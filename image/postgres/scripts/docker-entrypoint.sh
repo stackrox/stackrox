@@ -439,7 +439,7 @@ shrews_pgupgrade ()
 
   # Ensure $PGDATA_new doesn't exist yet, so we can immediately remove it if
   # there's some problem.
-  test ! -e "$PGDATA_new"
+#  test ! -e "$PGDATA_new"
 
   # initialize the database
   info_msg "Initialize new data directory; we will migrate to that."
