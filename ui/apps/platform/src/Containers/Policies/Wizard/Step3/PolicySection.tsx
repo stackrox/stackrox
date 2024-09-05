@@ -68,12 +68,13 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                         variant="plain"
                                         className="pf-v5-u-px-sm"
                                         onClick={() => setIsEditingName(!isEditingName)}
+                                        title={
+                                            isEditingName
+                                                ? 'Save name of policy section'
+                                                : 'Edit name of policy section'
+                                        }
                                     >
-                                        {isEditingName ? (
-                                            <CheckIcon data-testid="save-section-name-btn" />
-                                        ) : (
-                                            <PencilAltIcon data-testid="edit-section-name-btn" />
-                                        )}
+                                        {isEditingName ? <CheckIcon /> : <PencilAltIcon />}
                                     </Button>
                                     <Divider
                                         component="div"
@@ -82,7 +83,7 @@ function PolicySection({ sectionIndex, descriptors, readOnly = false }: PolicySe
                                     <Button
                                         variant="plain"
                                         className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
-                                        data-testid="delete-section-btn"
+                                        title="Delete policy section"
                                         onClick={onDeleteSection}
                                     >
                                         <TrashIcon />
