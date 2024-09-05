@@ -68,3 +68,5 @@ LABEL com.redhat.openshift.versions="v4.12"
 COPY --from=builder /stackrox/operator/build/bundle/manifests /manifests/
 COPY --from=builder /stackrox/operator/build/bundle/metadata /metadata/
 COPY --from=builder /stackrox/operator/build/bundle/tests/scorecard /tests/scorecard/
+
+COPY LICENSE /licenses/LICENSE

@@ -73,6 +73,8 @@ RUN microdnf upgrade --nobest && \
     # during the container start.
     chown -R 65534:65534 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl
 
+COPY LICENSE /licenses/LICENSE
+
 # This is equivalent to nobody:nobody.
 USER 65534:65534
 
