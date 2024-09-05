@@ -153,7 +153,6 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
             >
                 <FormikProvider value={formik}>
                     <Wizard
-                        title={`${pageAction} policy wizard`}
                         navAriaLabel={`${pageAction} policy steps`}
                         onClose={closeWizard}
                         onSave={submitForm}
