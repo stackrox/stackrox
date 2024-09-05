@@ -15,7 +15,7 @@ import (
 )
 
 func tryExport(outputDir string) error {
-	const timeout = 1 * time.Hour
+	const timeout = 2 * time.Hour
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
