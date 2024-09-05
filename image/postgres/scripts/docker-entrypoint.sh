@@ -463,7 +463,7 @@ shrews_pgupgrade ()
   eval "upgrade_cmd+=(${POSTGRESQL_UPGRADE_PGUPGRADE_OPTIONS-})"
 
   # On non-intel arches the data_sync_retry set to on
-  sed -i -e 's/data_sync_retry/#data_sync_retry/' "${POSTGRESQL_CONFIG_FILE}"
+#  sed -i -e 's/data_sync_retry/#data_sync_retry/' "${POSTGRESQL_CONFIG_FILE}"
 
   # the upgrade
   info_msg "Starting the pg_upgrade process."
