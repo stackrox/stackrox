@@ -76,7 +76,6 @@ function ImagesTableContainer({
             <Divider component="div" />
             <div
                 className="workload-cves-table-container"
-                role="region"
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >
