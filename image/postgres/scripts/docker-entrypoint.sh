@@ -362,7 +362,7 @@ _main() {
                 echo "Found database of version $version time to try to upgrade"
                 export POSTGRESQL_PREV_VERSION="13"
                 export POSTGRESQL_VERSION="15"
-                export POSTGRESQL_UPGRADE=copy
+                export POSTGRESQL_UPGRADE="copy"
                 run_pgupgrade
             fi
 
