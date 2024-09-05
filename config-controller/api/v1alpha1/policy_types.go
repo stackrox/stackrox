@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/stackrox/rox/generated/storage"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,8 +40,8 @@ type Policy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PolicySpec   `json:"spec,omitempty"`
-	Status PolicyStatus `json:"status,omitempty"`
+	Spec   storage.Policy `json:"spec,omitempty"`
+	Status PolicyStatus   `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
