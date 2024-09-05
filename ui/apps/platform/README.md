@@ -13,41 +13,41 @@ The documentation below is only specific to this package.
 
 ### Running the development server
 
-To start the local development server in watch mode, run `yarn start`.
+To start the local development server in watch mode, run `npm run start`.
 
-The behavior of `yarn start` can be changed with the following environment variables:
+The behavior of `npm run start` can be changed with the following environment variables:
 
 
-#### YARN_START_TARGET
-`YARN_START_TARGET` will set the default endpoint that API requests are forwarded to from
+#### UI_START_TARGET
+`UI_START_TARGET` will set the default endpoint that API requests are forwarded to from
 the UI. By default the UI will forward API requests to `https://localhost:8000`.
 
 ```sh
-YARN_START_TARGET=https://8.8.8.8:443 yarn start
+UI_START_TARGET=https://8.8.8.8:443 npm run start
 ```
 will start the development server
 and forward all API requests to `https://8.8.8.8:443`. _Note that the protocol (https) is required to
 be set for this option._
 
 
-#### YARN_CUSTOM_PROXIES
+#### UI_CUSTOM_PROXIES
 
-`YARN_CUSTOM_PROXIES` will override the endpoint that API requests are forwarded to for specific
-endpoints that you define. The value of `YARN_CUSTOM_PROXIES` is a comma separated list of URL and
+`UI_CUSTOM_PROXIES` will override the endpoint that API requests are forwarded to for specific
+endpoints that you define. The value of `UI_CUSTOM_PROXIES` is a comma separated list of URL and
 remote endpoint pairs. ('url1,endpoint1,url2,endpoint2...') This value can be combined with
-`YARN_START_TARGET` and will take precedence over the latter for the endpoints that are defined.
+`UI_START_TARGET` and will take precedence over the latter for the endpoints that are defined.
 
 ```sh
-YARN_CUSTOM_PROXIES='/v1/newapi,https://localhost:3030,/sso,https://localhost:9000' yarn start
+UI_CUSTOM_PROXIES='/v1/newapi,https://localhost:3030,/sso,https://localhost:9000' npm run start
 ```
 will forward any requests from `/v1/newapi` to `https://localhost:3030` and from `/sso` to `https://localhost:9000`. All
 other requests will be forwarded to the default location of `https://localhost:8000`.
 
 ```sh
-YARN_START_TARGET='https://8.8.8.8:443' YARN_CUSTOM_PROXIES='/v1/newapi,https://localhost:3030' yarn start
+UI_START_TARGET='https://8.8.8.8:443' UI_CUSTOM_PROXIES='/v1/newapi,https://localhost:3030' npm run start
 ```
 will forward any request from `/v1/newapi` to `https://localhost:3030` and all other requests will be forwarded to
-the value of `YARN_START_TARGET`: `https://8.8.8.8:443`.
+the value of `UI_START_TARGET`: `https://8.8.8.8:443`.
 
 ### Linting
 
@@ -66,15 +66,15 @@ If **stackrox/ui** is your workspace root folder, you can create or edit stackro
 
 #### Unit Tests
 
-Use `yarn test` to run all unit tests and show test coverage. To run tests and
-continuously watch for changes use `yarn test-watch`.
+Use `npm run test` to run all unit tests and show test coverage. To run tests and
+continuously watch for changes use `npm run test-watch`.
 
 #### End-to-end Tests (Cypress)
 
-To bring up [Cypress](https://www.cypress.io/) UI use `yarn cypress-open`. To
-run all end-to-end tests in a headless mode use `yarn test-e2e-local`. To run
+To bring up [Cypress](https://www.cypress.io/) UI use `npm run cypress-open`. To
+run all end-to-end tests in a headless mode use `npm run test-e2e-local`. To run
 one test suite specifically in headless mode, use
-`yarn cypress-spec <spec-file>`.
+`npm run cypress-spec <spec-file>`.
 
 ### Feature flags
 
@@ -177,8 +177,8 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 
 5. To turn on a feature flag for **local deployment**, do either or both of the following:
 
-    * Before you enter `yarn deploy-local` command in **ui** directory, enter `export ROX_WHATEVER=true` command
-    * Before you enter `yarn cypress-open` command in **ui/apps/platform** directory, enter `export CYPRESS_ROX_WHATEVER=true` command
+    * Before you enter `npm run deploy-local` command in **ui** directory, enter `export ROX_WHATEVER=true` command
+    * Before you enter `npm run cypress-open` command in **ui/apps/platform** directory, enter `export CYPRESS_ROX_WHATEVER=true` command
 
 #### Delete a feature flag from frontend code
 
