@@ -284,7 +284,7 @@ function SearchFilterAutocomplete({
                 }}
                 toggle={toggle}
             >
-                <SelectList aria-label="Filter results select menu">
+                <SelectList id="select-typeahead-listbox" aria-label="Filter results select menu">
                     {selectOptions.map((option, index) => (
                         <SelectOption
                             key={option.value || option.children}
