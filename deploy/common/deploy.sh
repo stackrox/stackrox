@@ -85,25 +85,6 @@ function curl_central_retry() {
     return 1
 }
 
-# generate_ca
-# arguments:
-#   - directory to drop files in
-function generate_ca {
-    OUTPUT_DIR="$1"
-
-    if [ ! -f "$OUTPUT_DIR/ca-key.pem" ]; then
-        echo "Generating CA key..."
-        echo " + Getting cfssl..."
-        go install github.com/cloudflare/cfssl/cmd/...@latest
-        echo " + Generating keypair..."
-        PWD=$(pwd)
-        cd "$OUTPUT_DIR"
-        echo '{"CN":"CA","key":{"algo":"ecdsa"}}' | cfssl gencert -initca - | cfssljson -bare ca -
-        cd "$PWD"
-    fi
-    echo
-}
-
 # wait_for_central
 # arguments:
 #   - API server endpoint to ping
