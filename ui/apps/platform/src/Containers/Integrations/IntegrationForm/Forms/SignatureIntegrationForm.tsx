@@ -106,7 +106,7 @@ function regularExpressionIcon(): ReactElement {
                             <a
                                 href="https://golang.org/s/re2syntax"
                                 target="_blank"
-                                rel="noreferrer"
+                                rel="noopener noreferrer"
                             >
                                 See RE2 syntax reference
                             </a>

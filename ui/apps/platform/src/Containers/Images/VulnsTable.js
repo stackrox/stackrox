@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Tooltip } from '@patternfly/react-core';
 
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import Table from 'Components/Table';
 
 const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
@@ -11,14 +12,16 @@ const VulnsTable = ({ vulns, containsFixableCVEs, isOSPkg }) => {
             accessor: 'cve',
             Cell: (ci) => (
                 <div>
-                    <a
-                        href={ci.original.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary-600 font-700 pointer-events-auto"
-                    >
-                        {ci.value}
-                    </a>
+                    <ExternalLink>
+                        <a
+                            href={ci.original.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="pointer-events-auto"
+                        >
+                            {ci.value}
+                        </a>
+                    </ExternalLink>
                     <div className="mt-2">{ci.original.summary}</div>
                 </div>
             ),

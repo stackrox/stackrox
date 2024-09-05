@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { Link, withRouter } from 'react-router-dom';
-import { ExternalLink } from 'react-feather';
+import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 
 import Query from 'Components/CacheFirstQuery';
 import CloseButton from 'Components/CloseButton';
@@ -56,18 +56,19 @@ const ComplianceListSidePanel = ({ entityType, entityId, match, location, histor
                 const headerTextComponent = (
                     <div className="w-full flex items-center">
                         <div className="flex items-center" data-testid="side-panel-header">
-                            <Link to={headerUrl} className="w-full flex pf-v5-u-link-color">
-                                <div className="flex flex-1 items-center pl-4 leading-normal font-700">
+                            <Link to={headerUrl} className="w-full flex ml-4">
+                                <div className="flex flex-1 items-center leading-normal">
                                     {linkText}
                                 </div>
                             </Link>
                             <Link
-                                className="mx-2 pf-v5-u-link-color p-1 rounded flex"
+                                className="mx-4 p-1 rounded flex"
                                 to={headerUrl}
                                 target="_blank"
+                                rel="noopener noreferrer"
                                 aria-label="External link"
                             >
-                                <ExternalLink size="14" />
+                                <ExternalLinkAltIcon />
                             </Link>
                         </div>
                     </div>

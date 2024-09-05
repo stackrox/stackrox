@@ -1,7 +1,8 @@
 import React from 'react';
-import { Alert } from '@patternfly/react-core';
+import { Alert, Text } from '@patternfly/react-core';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import ToggleSwitch from 'Components/ToggleSwitch';
 import Select from 'Components/Select';
 import {
@@ -350,19 +351,20 @@ const StaticConfigurationSection = ({
                             title="Kernel support package"
                             component="p"
                         >
-                            <span>
-                                Central doesn’t have the required Kernel support package. Retrieve
-                                it from{' '}
-                                <a
-                                    href="https://install.stackrox.io/collector/support-packages/index.html"
-                                    className="underline text-primary-900"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    stackrox.io
-                                </a>{' '}
-                                and upload it to Central using roxctl.
-                            </span>
+                            <Text>Central does not have the required Kernel support package.</Text>
+                            <Text>
+                                Retrieve it from{' '}
+                                <ExternalLink>
+                                    <a
+                                        href="https://install.stackrox.io/collector/support-packages/index.html"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        stackrox.io
+                                    </a>
+                                </ExternalLink>
+                            </Text>
+                            <Text>Upload it to Central using roxctl</Text>
                         </Alert>
                     )}
                 </div>
