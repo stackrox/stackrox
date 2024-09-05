@@ -41,7 +41,7 @@ const rules = {
             type: 'problem',
             docs: {
                 description:
-                    'Require if Link element has target="_blank" that it has rel="noopener noreferrer" props',
+                    'Require tbat Link element with target="_blank" also has rel="noopener noreferrer" prop',
             },
             schema: [],
         },
@@ -66,7 +66,7 @@ const rules = {
                                 context.report({
                                     node,
                                     message:
-                                        'Require if Link element has target="_blank" that it has rel="noopener noreferrer" props',
+                                        'Require tbat Link element with target="_blank" also has rel="noopener noreferrer" prop',
                                 });
                             }
                         }
