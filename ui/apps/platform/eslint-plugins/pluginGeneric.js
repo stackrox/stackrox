@@ -81,7 +81,7 @@ const rules = {
             type: 'problem',
             docs: {
                 description:
-                    'Require that a element has target="_blank" rel="noopener noreferrer" props',
+                    'Require that anchor element has target="_blank" and rel="noopener noreferrer" props',
             },
             schema: [],
         },
@@ -104,7 +104,7 @@ const rules = {
                             context.report({
                                 node,
                                 message:
-                                    'Require that a element has target="_blank" rel="noopener noreferrer" props',
+                                    'Require that anchor element has target="_blank" and rel="noopener noreferrer" props',
                             });
                         }
                     }
