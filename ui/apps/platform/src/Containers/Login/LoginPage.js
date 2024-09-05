@@ -10,6 +10,7 @@ import { Alert, Button, Title, TitleSizes } from '@patternfly/react-core';
 import { AUTH_STATUS } from 'reducers/auth';
 import { selectors } from 'reducers';
 import { ThemeContext } from 'Containers/ThemeProvider';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import LoadingSection from 'Components/PatternFly/LoadingSection';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
@@ -141,19 +142,18 @@ class LoginPage extends Component {
         if (authProviderResponse && authProviderResponse.error) {
             const errorKey = authProviderResponse.error.replace('_', ' ');
             const errorMsg = authProviderResponse.error_description || '';
-            // TODO is the link external or internal?
-            /* eslint-disable generic/ExternalLink-a */
-            /* eslint-disable generic/a-target-rel */
             const errorLink = ((url) =>
                 url ? (
-                    <span>
-                        (<a href={url}>more info</a>)
-                    </span>
+                    <ExternalLink>
+                        (
+                        <a href={url} target="_blank" rel="noopener noreferrer">
+                            more info
+                        </a>
+                        )
+                    </ExternalLink>
                 ) : (
                     []
                 ))(authProviderResponse.error_uri);
-            /* eslint-enable generic/ExternalLink-a */
-            /* eslint-enable generic/a-target-rel */
             return (
                 <Alert
                     variant="danger"
