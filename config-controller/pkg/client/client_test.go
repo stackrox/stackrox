@@ -95,6 +95,7 @@ func TestCachedClientList(t *testing.T) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
@@ -105,12 +106,13 @@ func TestCachedClientList(t *testing.T) {
 	protoassert.SlicesEqual(t, clientTest.policies, returnedPolicies)
 }
 
-// TestCachedClientList validates that the cached client fetches policies as expected
+// TestCachedClientGet validates that the cached client fetches policies as expected
 func TestCachedClientGet(t *testing.T) {
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
@@ -126,7 +128,7 @@ func TestCachedClientGet(t *testing.T) {
 	assert.False(t, exists, "Policy exists when it should not")
 }
 
-// TestCachedClientList validates that the cached client creates policies as expected
+// TestCachedClientCreate validates that the cached client creates policies as expected
 func TestCachedClientCreate(t *testing.T) {
 	newPolicy := storage.Policy{
 		Name:            "This is a new policy",
@@ -152,6 +154,7 @@ func TestCachedClientCreate(t *testing.T) {
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
 		mockClient.EXPECT().PostPolicy(gomock.Any(), &newPolicy).Return(mockPolicyToReturn, nil).Times(1)
+		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
@@ -161,12 +164,13 @@ func TestCachedClientCreate(t *testing.T) {
 	assert.Equal(t, "abc123", createdPolicy.Id)
 }
 
-// TestCachedClientList validates that the cached client updates policies as expected
+// TestCachedClientUpdate validates that the cached client updates policies as expected
 func TestCachedClientUpdate(t *testing.T) {
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
@@ -179,13 +183,14 @@ func TestCachedClientUpdate(t *testing.T) {
 	assert.NoError(t, err, "Unexpected error updating a policy")
 }
 
-// TestCachedClientList validates that the cached client flushes the cache as expected
+// TestCachedClientFlushCacheNoUpdate validates that the cached client flushes the cache as expected
 // In this test, FlushCache is a no-op since the last updated timestamp is too recent.
 func TestCachedClientFlushCacheNoUpdate(t *testing.T) {
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
@@ -194,13 +199,14 @@ func TestCachedClientFlushCacheNoUpdate(t *testing.T) {
 	assert.NoError(t, err, "Unexpected error flushing cache")
 }
 
-// TestCachedClientList validates that the cached client flushes the cache as expected
+// TestCachedClientFlushCacheWithUpdate validates that the cached client flushes the cache as expected
 // In this test, the last updated timestamp is "hacked" to make it appear older so as to trigger a real flush.
 func TestCachedClientFlushCacheWithUpdate(t *testing.T) {
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(2)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(2)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(2)
+		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
 	})
 	defer clientTest.controller.Finish()
 
@@ -219,6 +225,7 @@ func TestCachedClientEnsureFreshNoUpdate(t *testing.T) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(2)
 	})
 	defer clientTest.controller.Finish()
 
@@ -227,13 +234,14 @@ func TestCachedClientEnsureFreshNoUpdate(t *testing.T) {
 	assert.NoError(t, err, "Unexpected error flushing cache")
 }
 
-// TestCachedClientEnsureFreshNoUpdate validates that EnsureFresh works as expected
+// TestCachedClientEnsureFreshWithUpdate validates that EnsureFresh works as expected
 // In this test, the last updated timestamp is "hacked" to make it appear older so as to trigger a real flush.
 func TestCachedClientEnsureFreshWithUpdate(t *testing.T) {
 	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
 		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(2)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(2)
 		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(2)
+		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(2)
 	})
 	defer clientTest.controller.Finish()
 
