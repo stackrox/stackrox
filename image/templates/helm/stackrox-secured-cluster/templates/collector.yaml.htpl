@@ -133,8 +133,10 @@ spec:
           value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
         - name: ROX_NODE_INDEX_ENABLED
           value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
+      {{ if eq ._rox.env.openshift 4 }}
         - name: ROX_NODE_INDEX_HOST_PATH
           value: "/hostindex"
+      {{ end }}
         - name: ROX_METRICS_PORT
         {{- if ._rox.collector.exposeMonitoring }}
           value: ":9091"
@@ -180,11 +182,13 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
+      {{ if eq ._rox.env.openshift 4 }}
         - mountPath: /hostindex/usr/share
           name: usr-share-ro
           readOnly: true
         - mountPath: /tmp
           name: index-volume
+      {{ end }}
       {{- if eq ._rox.env.openshift 4 }}
       - name: node-inventory
         image: {{ quote ._rox.image.scanner.fullRef }}
@@ -224,9 +228,7 @@ spec:
       - hostPath:
           path: /usr/lib
         name: usr-lib-ro
-      - hostPath:
-          path: /usr/share
-        name: usr-share-ro
+
       - hostPath:
           path: /sys/
         name: sys-ro
@@ -246,6 +248,13 @@ spec:
       - hostPath:
           path: /
         name: host-root-ro
+    {{ if eq ._rox.env.openshift 4 }}
+      - hostPath:
+        path: /usr/share
+        name: usr-share-ro
+      - name: index-volume
+        emptyDir: {}
+    {{ end }}
       - name: etc-ssl
         emptyDir: {}
       - name: etc-pki-volume
@@ -255,8 +264,7 @@ spec:
       - name: cache-volume
         emptyDir:
           sizeLimit: 200Mi
-      - name: index-volume
-        emptyDir: {}
+
       [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
       {{- if ._rox.collector.containerd.enabled }}
       - name: containerd-sock
