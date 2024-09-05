@@ -364,7 +364,10 @@ _main() {
                 export POSTGRESQL_VERSION="15"
                 export POSTGRESQL_UPGRADE="copy"
                 export POSTGRESQL_LOG_DESTINATION="/dev/stderr"
-                run_pgupgrade
+#                run_pgupgrade
+                echo 'Running copy of upgrade to see where it falls down'
+                shrews_pgupgrade
+                echo 'Done running copy of upgrade to see where it falls down'
             fi
 
 #
@@ -381,6 +384,108 @@ _main() {
 	echo "Waiting for child process $child to exit"
 	wait "$child"
 }
+
+shrews_pgupgrade ()
+(
+  # Remove .pid file if the file persists after ugly shut down
+  if [ -f "$PGDATA/postmaster.pid" ] && ! pg_isready > /dev/null; then
+    rm -rf "$PGDATA/postmaster.pid"
+  fi
+
+  optimized=false
+  old_raw_version=${POSTGRESQL_PREV_VERSION//\./}
+  new_raw_version=${POSTGRESQL_VERSION//\./}
+
+  old_pgengine=/usr/lib64/pgsql/postgresql-$old_raw_version/bin
+  new_pgengine=/usr/bin
+
+  PGDATA_new="${PGDATA}-new"
+
+  printf >&2 "\n==========  \$PGDATA upgrade: %s -> %s  ==========\n\n" \
+             "$POSTGRESQL_PREV_VERSION" \
+             "$POSTGRESQL_VERSION"
+
+  info_msg () { printf >&2 "\n===>  $*\n\n" ;}
+
+  # pg_upgrade writes logs to cwd, so go to the persistent storage first
+  cd "$HOME"/data
+  echo "$pwd"
+
+  # disable this because of scl_source, 'set +u' just makes the code ugly
+  # anyways
+  set +u
+
+  case $POSTGRESQL_UPGRADE in
+    copy) # we accept this
+      ;;
+    hardlink)
+      optimized=:
+      ;;
+    *)
+      echo >&2 "Unsupported value: \$POSTGRESQL_UPGRADE=$POSTGRESQL_UPGRADE"
+      false
+      ;;
+  esac
+
+  # boot up data directory with old postgres once again to make sure
+  # it was shut down properly, otherwise the upgrade process fails
+  info_msg "Starting old postgresql once again for a clean shutdown..."
+  "${old_pgengine}/pg_ctl" start -w --timeout 86400 -o "-h 127.0.0.1''"
+  info_msg "Waiting for postgresql to be ready for shutdown again..."
+  "${old_pgengine}/pg_isready" -h 127.0.0.1
+  info_msg "Shutting down old postgresql cleanly..."
+  "${old_pgengine}/pg_ctl" stop
+  info_msg "SHREWS -0- Shut down old, about to test PGDATA_new"
+
+  # Ensure $PGDATA_new doesn't exist yet, so we can immediately remove it if
+  # there's some problem.
+  test ! -e "$PGDATA_new"
+
+  # initialize the database
+  info_msg "Initialize new data directory; we will migrate to that."
+  initdb_cmd=( initdb_wrapper "$new_pgengine"/initdb "$PGDATA_new" )
+  eval "\${initdb_cmd[@]} ${POSTGRESQL_UPGRADE_INITDB_OPTIONS-}" || \
+    { rm -rf "$PGDATA_new" ; false ; }
+
+  info_msg "building upgrade command"
+  upgrade_cmd=(
+      "$new_pgengine"/pg_upgrade
+      "--old-bindir=$old_pgengine"
+      "--new-bindir=$new_pgengine"
+      "--old-datadir=$PGDATA"
+      "--new-datadir=$PGDATA_new"
+  )
+
+  # Dangerous --link option, we loose $DATADIR if something goes wrong.
+  ! $optimized || upgrade_cmd+=(--link)
+
+  # User-specififed options for pg_upgrade.
+  eval "upgrade_cmd+=(${POSTGRESQL_UPGRADE_PGUPGRADE_OPTIONS-})"
+
+  # On non-intel arches the data_sync_retry set to on
+  sed -i -e 's/data_sync_retry/#data_sync_retry/' "${POSTGRESQL_CONFIG_FILE}"
+
+  # the upgrade
+  info_msg "Starting the pg_upgrade process."
+
+  # Once we stop support for PostgreSQL 9.4, we don't need
+  # REDHAT_PGUPGRADE_FROM_RHEL hack as we don't upgrade from 9.2 -- that means
+  # that we don't need to fiddle with unix_socket_director{y,ies} option.
+  REDHAT_PGUPGRADE_FROM_RHEL=1 \
+  "${upgrade_cmd[@]}" || { cat $(find "$PGDATA_new"/.. -name pg_upgrade_server.log) ; rm -rf "$PGDATA_new" && false ; }
+
+  # Move the important configuration and remove old data.  This is highly
+  # careless, but we can't do more for this over-automatized process.
+  info_msg "Swap the old and new PGDATA and cleanup."
+  mv "$PGDATA"/*.conf "$PGDATA_new"
+  rm -rf "$PGDATA"
+  mv "$PGDATA_new" "$PGDATA"
+
+  # Get back the option we changed above
+  sed -i -e 's/#data_sync_retry/data_sync_retry/' "${POSTGRESQL_CONFIG_FILE}"
+
+  info_msg "Upgrade DONE."
+)
 
 if ! _is_sourced; then
 	_main "$@"
