@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -32,6 +33,8 @@ var (
 			"/v1.NetworkBaselineService/UnlockNetworkBaseline",
 		},
 	})
+
+	log = logging.LoggerForModule()
 )
 
 type serviceImpl struct {
@@ -71,6 +74,12 @@ func (s *serviceImpl) GetNetworkBaselineStatusForFlows(
 		if err != nil {
 			return nil, err
 		}
+	}
+	log.Info("Baseline for deployment ", request.GetDeploymentId())
+	for _, peer := range baseline.GetPeers() {
+		peerType := peer.GetEntity().GetInfo().GetType()
+		peerID := peer.GetEntity().GetInfo().GetId()
+		log.Info("baseline peer for deployment ", baseline.GetDeploymentId(), " : ", peerType, " ", peerID)
 	}
 
 	// Got the baseline, check status of each passed in peer
@@ -143,6 +152,7 @@ func (s *serviceImpl) getStatusesForPeers(
 				}
 			}
 		}
+		log.Info("Peer status for ", examinedPeer.GetEntity().GetType(), " ", examinedPeer.GetEntity().GetId(), " : ", status)
 		statuses =
 			append(
 				statuses,
