@@ -38,6 +38,8 @@ RUN dnf upgrade -y --nobest && \
     rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum
 
+COPY LICENSE /licenses/LICENSE
+
 ENV LANG=en_US.utf8
 
 STOPSIGNAL SIGINT
