@@ -3,6 +3,7 @@ package microsoftsentinel
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs"
@@ -14,7 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -25,7 +27,7 @@ var (
 
 func init() {
 	if features.MicrosoftSentinelNotifier.Enabled() {
-		log.Info("Microsoft Sentinel notifier enabled.")
+		log.Debug("Microsoft Sentinel notifier enabled.")
 		notifiers.Add(notifiers.MicrosoftSentinelType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 			return newSentinelNotifier(notifier)
 		})
@@ -39,6 +41,11 @@ type sentinel struct {
 
 func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	config := notifier.GetMicrosoftSentinel()
+
+	err := Validate(config, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create sentinel notifier, validation failed")
+	}
 
 	// TODO(ROX-25739): Support certificate authentication
 	azureCredentials, err := azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), config.GetSecret(), &azidentity.ClientSecretCredentialOptions{})
@@ -70,30 +77,26 @@ func (s sentinel) ProtoNotifier() *storage.Notifier {
 }
 
 func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
-	// TODO(ROX-25857): test call will be updated when implementing the table in Microsoft Sentinel
-	alert := &storage.Alert{
-		ClusterId:   "cluster-id",
-		ClusterName: "cluster-01",
-		Namespace:   "default",
-		NamespaceId: "default-ns-id",
-		Policy: &storage.Policy{
-			Id:              "policy-id",
-			Name:            "some-policy",
-			Categories:      make([]string, 0),
-			Description:     "",
-			Remediation:     "",
-			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY},
-		},
-		Time:          timestamppb.Now(),
-		FirstOccurred: timestamppb.Now(),
-		ResolvedAt:    timestamppb.Now(),
-		State:         storage.ViolationState_ACTIVE,
-		SnoozeTill:    timestamppb.Now(),
-	}
-	if err := s.AlertNotify(ctx, alert); err != nil {
+	alert := s.getTestAlert()
+
+	err := s.AlertNotify(ctx, alert)
+	if err != nil {
 		return notifiers.NewNotifierError("could not send event", err)
 	}
 	return nil
+}
+
+func (s sentinel) getTestAlert() *storage.Alert {
+	alert := &storage.Alert{
+		Policy: &storage.Policy{
+			Name:        "test-policy",
+			Description: "Test policy description",
+		},
+		ClusterName: "test-cluster",
+		ClusterId:   uuid.NewDummy().String(),
+		Namespace:   "test-namespace",
+	}
+	return alert
 }
 
 func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
@@ -101,27 +104,48 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return errors.New("Microsoft Sentinel notifier is disabled.")
 	}
 
-	// convert object to an unstructured map to later wrap it as an array.
-	logToSendObj, err := protocompat.MarshalMap(alert)
+	bytesToSend, err := s.prepareLogsToSend(alert)
 	if err != nil {
-		return errors.Wrap(err, "failed to convert alert to map")
+		return err
 	}
 
-	// Wrap object in a slice because Sentinel expects it.
-	logsToSend := []map[string]interface{}{logToSendObj}
-	data, err := json.Marshal(logsToSend)
-	if err != nil {
-		return errors.Wrap(err, "failed to wrap into an array")
-	}
+	err = retry.WithRetry(func() error {
+		// UploadResponse is unhandled because it currently is only a placeholder in the azure client library and does not
+		// contain any information to be processed.
+		_, err := s.azlogsClient.Upload(ctx, s.sentinel().GetAlertDcrConfig().GetDataCollectionRuleId(), s.sentinel().GetAlertDcrConfig().GetStreamName(), bytesToSend, &azlogs.UploadOptions{})
+		return err
+	},
+		retry.Tries(3),
+		retry.BetweenAttempts(func(previousAttempt int) {
+			wait := time.Duration(previousAttempt * previousAttempt * 100)
+			time.Sleep(wait * time.Millisecond)
+		}),
+	)
 
-	// UploadResponse is unhandled because it currently is only a placeholder in the azure client library and does not
-	// contain any information to be processed.
-	_, err = s.azlogsClient.Upload(ctx, s.sentinel().GetAlertDcrConfig().GetDataCollectionRuleId(), s.sentinel().GetAlertDcrConfig().GetStreamName(), data, &azlogs.UploadOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to upload logs to azure")
 	}
-
 	return nil
+}
+
+func (s sentinel) prepareLogsToSend(alert *storage.Alert) ([]byte, error) {
+	// convert object to an unstructured map to later wrap it as an array.
+	logToSendObj, err := protocompat.MarshalMap(alert)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to send alert to Microsoft Sentinel")
+	}
+
+	// Wrap object in a slice because Sentinel expects it.
+	logsToSend := []map[string]interface{}{
+		{"msg": logToSendObj},
+	}
+
+	bytesToSend, err := json.Marshal(logsToSend)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to wrap alert for Microsoft Sentinel to a slice")
+	}
+
+	return bytesToSend, nil
 }
 
 // Validate validates a Microsoft Sentinel configuration.
