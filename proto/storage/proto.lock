@@ -11205,6 +11205,12 @@
                 "oneof_parent": "config"
               },
               {
+                "id": 20,
+                "name": "microsoft_sentinel",
+                "type": "MicrosoftSentinel",
+                "oneof_parent": "config"
+              },
+              {
                 "id": 19,
                 "name": "notifier_secret",
                 "type": "string"
@@ -11545,7 +11551,7 @@
               },
               {
                 "id": 5,
-                "name": "alert_notifier",
+                "name": "alert_dcr_config",
                 "type": "DataCollectionRuleConfig"
               }
             ],
