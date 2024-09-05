@@ -828,15 +828,27 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 		},
 	}
 
-	// Note: The new loop variable semantics introduced in go1.22
-	// breaks these tests when defining the variable tc
-	// in the for loop with :=. It was found that each call to
-	// `s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn` as used below
-	// would always use the very first version of tc
-	// instead of the current version.
-	// We believe this to be due to how the mock library works.
-	// As a workaround, we define tc beforehand and overwrite the data
-	// opposed to creating a new variable each iteration via :=.
+	// Note: The new loop variable semantics introduced in go1.22 breaks these
+	// tests when using loop variables in closures such that the test code
+	// expects those loop variables to change on each iteration of the loop.
+	// The problem stems from what a closure captures, or "sees", loop
+	// variables on each iteration. Before go1.22, loop variables had per-loop
+	// scope, which is to say that any closure inside the loop using loop
+	// variables would have the reference of the loop variable updated on each
+	// iteration. In go1.22+, loop variables have per-iteration scope, which,
+	// for closures inside the loop, means that when a given closure first
+	// captures the variable, that value will always be used in that particular
+	// closure.
+	// To get around this, we define variables outside the loop and then set
+	// those variables to the loop variables on each iteration, then use the
+	// variables in the outer scope (relative to the loop) in the closure,
+	// effectively achieving per-loop scoped variables.
+	// References and further reading:
+	// - https://web.archive.org/web/20240905192132/https://go.dev/blog/go1.22
+	// - https://web.archive.org/web/20240905181916/https://go.dev/blog/loopvar-preview
+	// - https://web.archive.org/web/20240905191855/https://go.dev/wiki/LoopvarExperiment
+	// - https://web.archive.org/web/20240905192225/https://go.googlesource.com/proposal/+/master/design/60078-loopvar.md
+	// - https://web.archive.org/web/20240905191656/https://go101.org/blog/2024-03-01-for-loop-semantic-changes-in-go-1.22.html
 	var tc testCase
 	for _, tc = range testCases {
 		s.T().Run(tc.description, func(t *testing.T) {
