@@ -400,10 +400,14 @@ func (h *httpHandler) openOfflineBlob(ctx context.Context, blobName string) (*vu
 	return &vulDefFile{snap.File, modTime, snap.Close}, nil
 }
 
+// errNotExist is a wrapper meant to turn an error into a fs.ErrNotExist error.
 type errNotExist struct {
 	error
 }
 
+// Is informs errors.Is that errNotExist is equivalent to fs.ErrNotExist.
+//
+// See https://pkg.go.dev/errors#Is for more information.
 func (e errNotExist) Is(target error) bool {
 	return target == fs.ErrNotExist
 }
@@ -422,6 +426,7 @@ func (h *httpHandler) openOnlineDefinitions(_ context.Context, t updaterType, op
 		return nil, err
 	}
 	if online == nil {
+		// Return an errNotExist so it's clear this is meant to be handled the same as fs.ErrNotExist errors.
 		return nil, errNotExist{fmt.Errorf("scanner %s file %s not found", t, opts.urlPath)}
 	}
 	log.Debugf("Online data %s file %s is available: %s", t, opts.urlPath, online.Name())
