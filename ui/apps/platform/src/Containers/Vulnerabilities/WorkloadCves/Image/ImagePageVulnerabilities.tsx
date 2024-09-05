@@ -280,7 +280,6 @@ function ImagePageVulnerabilities({
                                 <CvesByStatusSummaryCard
                                     cveStatusCounts={data.imageCVECountBySeverity}
                                     hiddenStatuses={hiddenStatuses}
-                                    isBusy={loading}
                                 />
                             )}
                         />
@@ -347,7 +346,6 @@ function ImagePageVulnerabilities({
                         </Split>
                         <div
                             className="workload-cves-table-container"
-                            role="region"
                             aria-live="polite"
                             aria-busy={loading ? 'true' : 'false'}
                         >
