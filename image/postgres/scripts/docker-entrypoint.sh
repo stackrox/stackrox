@@ -363,6 +363,7 @@ _main() {
                 export POSTGRESQL_PREV_VERSION="13"
                 export POSTGRESQL_VERSION="15"
                 export POSTGRESQL_UPGRADE="copy"
+                export POSTGRESQL_LOG_DESTINATION="/dev/stderr"
                 run_pgupgrade
             fi
 
