@@ -61,6 +61,9 @@ export type TabTitleProps = {
     children: string;
 };
 
+const configDetailsTabId = 'VulnReportsConfigDetails';
+const allReportJobsTabId = 'VulnReportsConfigReportJobs';
+
 function ViewVulnReportPage() {
     const history = useHistory();
     const { reportId } = useParams();
@@ -270,18 +273,20 @@ function ViewVulnReportPage() {
                     aria-label="Report details tabs"
                 >
                     <Tab
+                        tabContentId={configDetailsTabId}
                         eventKey="CONFIGURATION_DETAILS"
                         title={<TabTitleText>Configuration details</TabTitleText>}
                     />
                     <Tab
+                        tabContentId={allReportJobsTabId}
                         eventKey="ALL_REPORT_JOBS"
                         title={<TabTitleText>All report jobs</TabTitleText>}
                         actions={<ReportJobsHelpAction reportType="Vulnerability" />}
                     />
                 </Tabs>
             </PageSection>
-            <PageSection isCenterAligned>
-                {selectedTab === 'CONFIGURATION_DETAILS' && (
+            {selectedTab === 'CONFIGURATION_DETAILS' && (
+                <PageSection isCenterAligned id={configDetailsTabId}>
                     <Card>
                         <CardBody>
                             <ReportParametersDetails formValues={reportFormValues} />
@@ -310,9 +315,13 @@ function ViewVulnReportPage() {
                             <ScheduleDetails formValues={reportFormValues} />
                         </CardBody>
                     </Card>
-                )}
-                {selectedTab === 'ALL_REPORT_JOBS' && <ReportJobs reportId={reportId} />}
-            </PageSection>
+                </PageSection>
+            )}
+            {selectedTab === 'ALL_REPORT_JOBS' && (
+                <PageSection isCenterAligned id={allReportJobsTabId}>
+                    <ReportJobs reportId={reportId} />
+                </PageSection>
+            )}
             <DeleteModal
                 title="Permanently delete report?"
                 isOpen={isDeleteModalOpen}
