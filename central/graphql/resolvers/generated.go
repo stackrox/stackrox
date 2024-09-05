@@ -811,6 +811,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"version: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.Metadata_LicenseStatus(0)))
+	utils.Must(builder.AddType("MicrosoftSentinel", []string{
+		"alertDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig",
+		"applicationClientId: String!",
+		"directoryTenantId: String!",
+		"logIngestionEndpoint: String!",
+		"secret: String!",
+	}))
+	utils.Must(builder.AddType("MicrosoftSentinel_DataCollectionRuleConfig", []string{
+		"dataCollectionRuleId: String!",
+		"streamName: String!",
+	}))
 	utils.Must(builder.AddType("MitreAttackVector", []string{
 		"tactic: MitreTactic",
 		"techniques: [MitreTechnique]!",
@@ -939,6 +950,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"jira: Jira",
 		"labelDefault: String!",
 		"labelKey: String!",
+		"microsoftSentinel: MicrosoftSentinel",
 		"name: String!",
 		"notifierSecret: String!",
 		"pagerduty: PagerDuty",
@@ -960,6 +972,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"SumoLogic",
 		"AWSSecurityHub",
 		"Syslog",
+		"MicrosoftSentinel",
 	}))
 	utils.Must(builder.AddType("OrchestratorMetadata", []string{
 		"apiVersions: [String!]!",
@@ -9489,6 +9502,125 @@ func toMetadata_LicenseStatuses(values *[]string) []v1.Metadata_LicenseStatus {
 	return output
 }
 
+type microsoftSentinelResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.MicrosoftSentinel
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel(value *storage.MicrosoftSentinel, ok bool, err error) (*microsoftSentinelResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinelResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinels(values []*storage.MicrosoftSentinel, err error) ([]*microsoftSentinelResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinelResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinelResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinelWithContext(ctx context.Context, value *storage.MicrosoftSentinel, ok bool, err error) (*microsoftSentinelResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinelResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinelsWithContext(ctx context.Context, values []*storage.MicrosoftSentinel, err error) ([]*microsoftSentinelResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinelResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinelResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *microsoftSentinelResolver) AlertDcrConfig(ctx context.Context) (*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	value := resolver.data.GetAlertDcrConfig()
+	return resolver.root.wrapMicrosoftSentinel_DataCollectionRuleConfig(value, true, nil)
+}
+
+func (resolver *microsoftSentinelResolver) ApplicationClientId(ctx context.Context) string {
+	value := resolver.data.GetApplicationClientId()
+	return value
+}
+
+func (resolver *microsoftSentinelResolver) DirectoryTenantId(ctx context.Context) string {
+	value := resolver.data.GetDirectoryTenantId()
+	return value
+}
+
+func (resolver *microsoftSentinelResolver) LogIngestionEndpoint(ctx context.Context) string {
+	value := resolver.data.GetLogIngestionEndpoint()
+	return value
+}
+
+func (resolver *microsoftSentinelResolver) Secret(ctx context.Context) string {
+	value := resolver.data.GetSecret()
+	return value
+}
+
+type microsoftSentinel_DataCollectionRuleConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.MicrosoftSentinel_DataCollectionRuleConfig
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_DataCollectionRuleConfig(value *storage.MicrosoftSentinel_DataCollectionRuleConfig, ok bool, err error) (*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinel_DataCollectionRuleConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_DataCollectionRuleConfigs(values []*storage.MicrosoftSentinel_DataCollectionRuleConfig, err error) ([]*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinel_DataCollectionRuleConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinel_DataCollectionRuleConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_DataCollectionRuleConfigWithContext(ctx context.Context, value *storage.MicrosoftSentinel_DataCollectionRuleConfig, ok bool, err error) (*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinel_DataCollectionRuleConfigResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_DataCollectionRuleConfigsWithContext(ctx context.Context, values []*storage.MicrosoftSentinel_DataCollectionRuleConfig, err error) ([]*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinel_DataCollectionRuleConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinel_DataCollectionRuleConfigResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *microsoftSentinel_DataCollectionRuleConfigResolver) DataCollectionRuleId(ctx context.Context) string {
+	value := resolver.data.GetDataCollectionRuleId()
+	return value
+}
+
+func (resolver *microsoftSentinel_DataCollectionRuleConfigResolver) StreamName(ctx context.Context) string {
+	value := resolver.data.GetStreamName()
+	return value
+}
+
 type mitreAttackVectorResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -10688,6 +10820,11 @@ func (resolver *notifierResolver) LabelKey(ctx context.Context) string {
 	return value
 }
 
+func (resolver *notifierResolver) MicrosoftSentinel(ctx context.Context) (*microsoftSentinelResolver, error) {
+	value := resolver.data.GetMicrosoftSentinel()
+	return resolver.root.wrapMicrosoftSentinel(value, true, nil)
+}
+
 func (resolver *notifierResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
@@ -10783,6 +10920,11 @@ func (resolver *notifierResolver) Config() *notifierConfigResolver {
 			resolver: &syslogResolver{root: resolver.root, data: val},
 		}
 	}
+	if val := resolver.data.GetMicrosoftSentinel(); val != nil {
+		return &notifierConfigResolver{
+			resolver: &microsoftSentinelResolver{root: resolver.root, data: val},
+		}
+	}
 	return nil
 }
 
@@ -10828,6 +10970,11 @@ func (resolver *notifierConfigResolver) ToAWSSecurityHub() (*aWSSecurityHubResol
 
 func (resolver *notifierConfigResolver) ToSyslog() (*syslogResolver, bool) {
 	res, ok := resolver.resolver.(*syslogResolver)
+	return res, ok
+}
+
+func (resolver *notifierConfigResolver) ToMicrosoftSentinel() (*microsoftSentinelResolver, bool) {
+	res, ok := resolver.resolver.(*microsoftSentinelResolver)
 	return res, ok
 }
 
