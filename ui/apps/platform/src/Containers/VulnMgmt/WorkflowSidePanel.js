@@ -1,6 +1,6 @@
 import React from 'react';
 import { withRouter, Link } from 'react-router-dom';
-import { ExternalLink } from 'react-feather';
+import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
@@ -22,12 +22,8 @@ const WorkflowSidePanel = ({ history, location, children }) => {
     const url = workflowState.getSkimmedStack().toUrl();
     const externalLink = (
         <div className="flex items-center h-full hover:bg-base-300">
-            <Link
-                to={url}
-                aria-label="External link"
-                className="border-base-400 border-l h-full p-4"
-            >
-                <ExternalLink className="h-6 w-6 text-base-600" />
+            <Link to={url} aria-label="link" className="border-base-400 border-l h-full p-4">
+                <ExternalLinkAltIcon />
             </Link>
         </div>
     );

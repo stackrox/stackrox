@@ -19,6 +19,7 @@ const pluginTypeScriptESLint = require('@typescript-eslint/eslint-plugin');
 const { browser: browserGlobals, jest: jestGlobals, node: nodeGlobals } = require('globals');
 
 const pluginAccessibility = require('./eslint-plugins/pluginAccessibility');
+const pluginGeneric = require('./eslint-plugins/pluginGeneric');
 
 const parserAndOptions = {
     parser: parserTypeScriptESLint,
@@ -531,12 +532,14 @@ module.exports = [
         // Key of plugin is namespace of its rules.
         plugins: {
             accessibility: pluginAccessibility,
+            generic: pluginGeneric,
             import: pluginImport,
             react: pluginReact,
             'react-hooks': pluginReactHooks,
         },
         rules: {
             ...pluginAccessibility.configs.recommended.rules,
+            ...pluginGeneric.configs.recommended.rules,
 
             'no-restricted-imports': [
                 'error',

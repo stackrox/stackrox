@@ -244,7 +244,7 @@ function MachineAccessIntegrationForm({
                                                                                     <a
                                                                                         href="https://golang.org/s/re2syntax"
                                                                                         target="_blank"
-                                                                                        rel="noreferrer"
+                                                                                        rel="noopener noreferrer"
                                                                                     >
                                                                                         Learn how to
                                                                                         use regex

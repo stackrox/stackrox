@@ -258,12 +258,12 @@ export function interactAndWaitForConfigurationManagementScan(interactionCallbac
 
 export function navigateToSingleEntityPage(entitiesKey) {
     // interactAndWaitForConfigurationManagementEntityPage(() => {
-    //     cy.get('[data-testid="side-panel"] [aria-label="External link"]').click();
+    //     cy.get('[data-testid="side-panel"] [aria-label="link"]').click();
     // }, entitiesKey);
 
     // no longer intercepting on second gql request as on slow connections the
     // second request is not made since it's still waiting on first request
-    cy.get('[data-testid="side-panel"] [aria-label="External link"]').click();
+    cy.get('[data-testid="side-panel"] [aria-label="link"]').click();
     cy.location('pathname').should('contain', getEntityPagePath(entitiesKey)); // contains because it ends with id
     cy.get(`h1 + div:contains("${headingForEntity[entitiesKey]}")`);
 }
