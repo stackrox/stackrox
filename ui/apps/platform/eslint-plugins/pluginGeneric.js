@@ -5,12 +5,12 @@ const rules = {
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
 
     'ExternalLink-a': {
-        // Require ExternalLink and a elements for consistent presentation.
-        // For example, ExternalLinkAltIcon follows a element.
+        // Require ExternalLink with anchor element as child for consistent presentation of external links.
         meta: {
             type: 'problem',
             docs: {
-                description: 'Require ExternalLink and a elements for consistent presentation',
+                description:
+                    'Require ExternalLink with anchor element as child for consistent presentation of external links',
             },
             schema: [],
         },
@@ -27,7 +27,7 @@ const rules = {
                             context.report({
                                 node,
                                 message:
-                                    'Require ExternalLink and a elements for consistent presentation',
+                                    'Require ExternalLink with anchor element as child for consistent presentation of external links',
                             });
                         }
                     }
