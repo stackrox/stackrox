@@ -3,8 +3,10 @@
 package tests
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -54,6 +56,8 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	sensorPodLabels = map[string]string{"app": "sensor"}
 )
 
 // logf logs using the testing logger, prefixing a high-resolution timestamp.
@@ -406,6 +410,46 @@ func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labe
 	}
 }
 
+// getNumLogLines will return the number of the last log entry for a particular pod.  This is intended to be used with
+// <matcher> to ensure a log didn't occur from a previous test.
+func (ks *KubernetesSuite) getNumLogLines(ctx context.Context, namespace, pod, container string) (int, error) {
+	resp := ks.k8s.CoreV1().Pods(namespace).GetLogs(pod, &coreV1.PodLogOptions{Container: container}).Do(ctx)
+	logB, err := resp.Raw()
+	if err != nil {
+		return 0, fmt.Errorf("retrieving logs of pod %q in namespace %q failed: %w", pod, namespace, err)
+	}
+
+	var count int
+	br := bufio.NewReader(bytes.NewReader(logB))
+	for {
+		_, _, err := br.ReadLine()
+		if errors.Is(err, io.EOF) {
+			return count, nil
+		}
+		if err != nil {
+			return 0, err
+		}
+		count++
+	}
+}
+
+// getSensorPod is a convenience method to get details of the Sensor pod.
+func (ks *KubernetesSuite) getSensorPod(ctx context.Context, namespace string) (*coreV1.Pod, error) {
+	ls := labels.SelectorFromSet(sensorPodLabels).String()
+	podList, err := ks.k8s.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{LabelSelector: ls})
+	if err != nil {
+		return nil, fmt.Errorf("could not list pods matching %q in namespace %q: %w", sensorPodLabels, namespace, err)
+	}
+	if len(podList.Items) == 0 {
+		return nil, fmt.Errorf("empty list of pods does not satisfy the condition")
+	}
+	if len(podList.Items) > 1 {
+		return nil, fmt.Errorf("more than one sensor pod running")
+	}
+
+	return &podList.Items[0], nil
+}
+
 // waitUntilK8sDeploymentReady waits until k8s reports all pods for a deployment are consistently ready or context done.
 func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, namespace string, deploymentName string) {
 	ticker := time.NewTicker(2 * time.Second)
@@ -434,23 +478,6 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 			ks.logf("deployment %q in namespace %q READY (%d/%d ready replicas) [%d/%d]", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas, successCount, maxSuccessCount)
 		}
 	}
-}
-
-func allMatch(reader io.ReadSeeker, matchers ...logMatcher) (ok bool, err error) {
-	for i, matcher := range matchers {
-		_, err := reader.Seek(0, io.SeekStart)
-		if err != nil {
-			return false, fmt.Errorf("could not rewind the reader: %w", err)
-		}
-		ok, err := matcher.Match(reader)
-		if err != nil {
-			return false, fmt.Errorf("matcher %d returned an error: %w", i, err)
-		}
-		if !ok {
-			return false, nil
-		}
-	}
-	return true, nil
 }
 
 // mustEventually retries every pauseInterval until ctx expires or f succeeds.
