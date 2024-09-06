@@ -37,7 +37,6 @@ jobs:
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
   prepare-environment:
-    needs: parse-versions
     runs-on: ubuntu-latest
     outputs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
