@@ -365,6 +365,7 @@ _main() {
                 export POSTGRESQL_UPGRADE="copy"
                 export POSTGRESQL_LOG_DESTINATION="/dev/stderr"
                 export POSTGRESQL_UPGRADE_INITDB_OPTIONS="--data-checksums"
+                export PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}"
 #                run_pgupgrade
                 echo 'Running copy of upgrade to see where it falls down'
                 shrews_pgupgrade
@@ -484,7 +485,7 @@ shrews_pgupgrade ()
   mv "$PGDATA_new" "$PGDATA"
 
   # Get back the option we changed above
-  sed -i -e 's/#data_sync_retry/data_sync_retry/' "${POSTGRESQL_CONFIG_FILE}"
+#  sed -i -e 's/#data_sync_retry/data_sync_retry/' "${POSTGRESQL_CONFIG_FILE}"
 
   info_msg "Upgrade DONE."
 )
