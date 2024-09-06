@@ -171,6 +171,30 @@ type MatcherConfig struct {
 	VulnerabilityVersion string `yaml:"vulnerability_version"`
 }
 
+// resolveVersions returns values for ROX_VERSION and ROX_VULNERABILITY_VERSION
+// based on the current build information and version string name.  If the user
+// has explicitly set a VulnerabilityVersion in the configuration, it overrides
+// the default values to maintain backward compatibility with pre-existing
+// configs.
+func (c *MatcherConfig) resolveVersions() (roxVer, vulnVer string) {
+	roxVer = "dev"
+	vulnVer = "dev"
+	// Rely on buildinfo first to check release builds. It is defined by
+	// build tags and has stronger reliability.
+	if buildinfo.ReleaseBuild {
+		roxVer = version.Version
+		vulnVer = version.VulnerabilityVersion
+	}
+	if c.VulnerabilityVersion != "" {
+		// We overwrite ROX_VERSION to not break existing
+		// configurations, acknowledging that the configuration name
+		// VulnerabilityVersion is confusing.
+		roxVer = c.VulnerabilityVersion
+		vulnVer = c.VulnerabilityVersion
+	}
+	return
+}
+
 func (c *MatcherConfig) validate() error {
 	if !c.Enable {
 		return nil
@@ -195,14 +219,10 @@ func (c *MatcherConfig) validate() error {
 		return fmt.Errorf("vulnerabilities_url: invalid URL: %w", err)
 	}
 
-	v := "dev"
-	if buildinfo.ReleaseBuild {
-		v = version.Version
-	}
-	if c.VulnerabilityVersion != "" {
-		v = c.VulnerabilityVersion
-	}
-	c.VulnerabilitiesURL = strings.ReplaceAll(c.VulnerabilitiesURL, "ROX_VERSION", v)
+	roxVer, vulnVer := c.resolveVersions()
+	c.VulnerabilitiesURL = strings.ReplaceAll(c.VulnerabilitiesURL, "ROX_VERSION", roxVer)
+	c.VulnerabilitiesURL = strings.ReplaceAll(c.VulnerabilitiesURL, "ROX_VULNERABILITY_VERSION", vulnVer)
+
 	return nil
 }
 
