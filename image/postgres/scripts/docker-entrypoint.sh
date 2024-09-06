@@ -231,7 +231,7 @@ docker_setup_db() {
 # Loads various settings that are used elsewhere in the script
 # This should be called before any other functions
 docker_setup_env() {
-	file_env 'POSTGRES_PASSWORD'
+	file_env 'POSTGRES_PASSWORD' "testPass1"
 
 	file_env 'POSTGRES_USER' 'postgres'
 	file_env 'POSTGRES_DB' "$POSTGRES_USER"
