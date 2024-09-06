@@ -132,11 +132,11 @@ spec:
         - name: ROX_CALL_NODE_INVENTORY_ENABLED
           value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
         - name: ROX_NODE_INDEX_ENABLED
-          value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
-      {{ if eq ._rox.env.openshift 4 }}
+          value: {{ eq ._rox.env.openshift 4 | quote }}
+      {{- if eq ._rox.env.openshift 4 }}
         - name: ROX_NODE_INDEX_HOST_PATH
           value: "/hostindex"
-      {{ end }}
+      {{- end }}
         - name: ROX_METRICS_PORT
         {{- if ._rox.collector.exposeMonitoring }}
           value: ":9091"
@@ -182,13 +182,13 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
-      {{ if eq ._rox.env.openshift 4 }}
+      {{- if eq ._rox.env.openshift 4 }}
         - mountPath: /hostindex/usr/share
           name: usr-share-ro
           readOnly: true
         - mountPath: /tmp
           name: index-volume
-      {{ end }}
+      {{- end }}
       {{- if eq ._rox.env.openshift 4 }}
       - name: node-inventory
         image: {{ quote ._rox.image.scanner.fullRef }}
@@ -228,7 +228,6 @@ spec:
       - hostPath:
           path: /usr/lib
         name: usr-lib-ro
-
       - hostPath:
           path: /sys/
         name: sys-ro
@@ -248,13 +247,13 @@ spec:
       - hostPath:
           path: /
         name: host-root-ro
-    {{ if eq ._rox.env.openshift 4 }}
+    {{- if eq ._rox.env.openshift 4 }}
       - hostPath:
         path: /usr/share
         name: usr-share-ro
       - name: index-volume
         emptyDir: {}
-    {{ end }}
+    {{- end }}
       - name: etc-ssl
         emptyDir: {}
       - name: etc-pki-volume
