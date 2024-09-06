@@ -820,6 +820,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("MicrosoftSentinel_DataCollectionRuleConfig", []string{
 		"dataCollectionRuleId: String!",
+		"enabled: Boolean!",
 		"streamName: String!",
 	}))
 	utils.Must(builder.AddType("MitreAttackVector", []string{
@@ -9613,6 +9614,11 @@ func (resolver *Resolver) wrapMicrosoftSentinel_DataCollectionRuleConfigsWithCon
 
 func (resolver *microsoftSentinel_DataCollectionRuleConfigResolver) DataCollectionRuleId(ctx context.Context) string {
 	value := resolver.data.GetDataCollectionRuleId()
+	return value
+}
+
+func (resolver *microsoftSentinel_DataCollectionRuleConfigResolver) Enabled(ctx context.Context) bool {
+	value := resolver.data.GetEnabled()
 	return value
 }
 
