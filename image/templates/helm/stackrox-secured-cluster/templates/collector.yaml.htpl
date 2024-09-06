@@ -249,7 +249,7 @@ spec:
         name: host-root-ro
     {{- if eq ._rox.env.openshift 4 }}
       - hostPath:
-        path: /usr/share
+          path: /usr/share
         name: usr-share-ro
       - name: index-volume
         emptyDir: {}
