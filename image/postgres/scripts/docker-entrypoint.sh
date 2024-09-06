@@ -364,6 +364,7 @@ _main() {
                 export POSTGRESQL_VERSION="15"
                 export POSTGRESQL_UPGRADE="copy"
                 export POSTGRESQL_LOG_DESTINATION="/dev/stderr"
+                export POSTGRESQL_UPGRADE_INITDB_OPTIONS="--data-checksums"
 #                run_pgupgrade
                 echo 'Running copy of upgrade to see where it falls down'
                 shrews_pgupgrade
