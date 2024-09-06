@@ -455,6 +455,7 @@ shrews_pgupgrade ()
       "--new-bindir=$new_pgengine"
       "--old-datadir=$PGDATA"
       "--new-datadir=$PGDATA_new"
+      "--password=$POSTGRES_PASSWORD"
   )
 
   # Dangerous --link option, we loose $DATADIR if something goes wrong.
