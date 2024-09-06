@@ -291,6 +291,7 @@ func (r *registryImpl) GetBackendFactories() map[string]BackendFactory {
 }
 
 func (r *registryImpl) addProvider(provider Provider) {
+	log.Info("Adding provider ", provider.ID(), " (name: ", provider.Name(), " )")
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -305,8 +306,10 @@ func (r *registryImpl) updatedNoLock(provider Provider) {
 		return
 	}
 	if provider.Enabled() {
+		log.Info("Enabling provider ", provider.ID(), " (name: ", provider.Name(), " )")
 		backend.OnEnable(provider)
 	} else {
+		log.Info("Disabling provider ", provider.ID(), " (name: ", provider.Name(), " )")
 		backend.OnDisable(provider)
 	}
 }

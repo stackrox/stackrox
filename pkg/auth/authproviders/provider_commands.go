@@ -17,13 +17,17 @@ import (
 // DefaultAddToStore adds the providers stored data to the input store.
 func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
 	return func(pr *providerImpl) error {
+		log.Info("DefaultAddToStore provider with name ", pr.Name(), " and ID ", pr.ID())
 		if pr.doNotStore {
 			return nil
 		}
 		if pr.storedInfo.LastUpdated == nil {
 			pr.storedInfo.LastUpdated = protocompat.TimestampNow()
 		}
-		return store.AddAuthProvider(ctx, pr.storedInfo)
+		log.Info("storing provider with name ", pr.Name(), " and ID ", pr.ID())
+		err := store.AddAuthProvider(ctx, pr.storedInfo)
+		log.Info("status storing provider with name ", pr.Name(), " and ID ", pr.ID(), " error ", err.Error())
+		return err
 	}
 }
 

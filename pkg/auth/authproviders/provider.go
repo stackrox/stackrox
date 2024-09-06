@@ -54,6 +54,7 @@ func NewProvider(options ...ProviderOption) (Provider, error) {
 	provider := &providerImpl{
 		storedInfo: &storage.AuthProvider{},
 	}
+	log.Info("Creating new provider")
 	if err := applyOptions(provider, options...); err != nil {
 		return nil, err
 	}
