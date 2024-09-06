@@ -26,7 +26,12 @@ func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
 		}
 		log.Info("storing provider with name ", pr.Name(), " and ID ", pr.ID())
 		err := store.AddAuthProvider(ctx, pr.storedInfo)
-		log.Info("status storing provider with name ", pr.Name(), " and ID ", pr.ID(), " error ", err.Error())
+		if err == nil {
+
+			log.Info("status storing provider with name ", pr.Name(), " and ID ", pr.ID(), " no error")
+		} else {
+			log.Info("status storing provider with name ", pr.Name(), " and ID ", pr.ID(), " error ", err.Error())
+		}
 		return err
 	}
 }
