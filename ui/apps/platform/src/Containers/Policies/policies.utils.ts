@@ -3,7 +3,7 @@ import qs from 'qs';
 import cloneDeep from 'lodash/cloneDeep';
 
 import {
-    policyConfigurationDescriptor,
+    policyCriteriaDescriptors,
     auditLogDescriptor,
     imageSigningCriteriaName,
     Descriptor,
@@ -716,7 +716,7 @@ export function getPolicyDescriptors(
     lifecycleStages: LifecycleStage[]
 ) {
     const unfilteredDescriptors =
-        eventSource === 'AUDIT_LOG_EVENT' ? auditLogDescriptor : policyConfigurationDescriptor;
+        eventSource === 'AUDIT_LOG_EVENT' ? auditLogDescriptor : policyCriteriaDescriptors;
 
     const descriptors = unfilteredDescriptors.filter((unfilteredDescriptor) => {
         const { featureFlagDependency } = unfilteredDescriptor;
