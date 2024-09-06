@@ -2,7 +2,6 @@ package v4
 
 import (
 	"context"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,7 +31,7 @@ func createConfig(server string) *NodeIndexerConfig {
 	}
 }
 
-func createTestServer() *httptest.Server {
+func createTestServer(t *testing.T) *httptest.Server {
 	mappingData := `{"data":{"rhocp-4.16-for-rhel-9-x86_64-rpms":{"cpes":["cpe:/a:redhat:openshift:4.16::el9"]},"rhel-9-for-x86_64-baseos-eus-rpms__9_DOT_4":{"cpes":["cpe:/o:redhat:rhel_eus:9.4::baseos"]}}})`
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +40,8 @@ func createTestServer() *httptest.Server {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("last-modified", "Mon, 02 Jan 2006 15:04:05 MST")
-		w.Write([]byte(mappingData))
+		_, err := w.Write([]byte(mappingData))
+		assert.NoError(t, err)
 	}))
 	return s
 }
@@ -81,7 +82,7 @@ func (s *nodeIndexerSuite) TestConstructLayerIllegalDigest() {
 func (s *nodeIndexerSuite) TestRunRespositoryScanner() {
 	layer, err := createLayer("testdata")
 	s.NoError(err)
-	server := createTestServer()
+	server := createTestServer(s.T())
 	defer server.Close()
 	c := createConfig(server.URL)
 
@@ -95,7 +96,7 @@ func (s *nodeIndexerSuite) TestRunRespositoryScanner() {
 func (s *nodeIndexerSuite) TestRunRespositoryScannerAnyPath() {
 	layer, err := createLayer(s.T().TempDir())
 	s.NoError(err)
-	server := createTestServer()
+	server := createTestServer(s.T())
 	defer server.Close()
 	c := createConfig(server.URL)
 
@@ -135,7 +136,7 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 	s.NoError(err)
 	err = os.Setenv("ROX_NODE_INDEX_HOST_PATH", testdir)
 	s.NoError(err)
-	srv := createTestServer()
+	srv := createTestServer(s.T())
 	defer srv.Close()
 	ni := NewNodeIndexer(createConfig(srv.URL))
 
@@ -151,7 +152,7 @@ func (s *nodeIndexerSuite) TestIndexerE2E() {
 func (s *nodeIndexerSuite) TestIndexerE2ENoPath() {
 	err := os.Setenv("ROX_NODE_INDEX_HOST_PATH", "/notexisting")
 	s.NoError(err)
-	srv := createTestServer()
+	srv := createTestServer(s.T())
 	defer srv.Close()
 	ni := NewNodeIndexer(createConfig(srv.URL))
 
