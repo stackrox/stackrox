@@ -3,23 +3,13 @@
 package tests
 
 import (
-	"archive/tar"
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"os"
 	"regexp"
 	"strings"
 	"testing"
 	"time"
 
-	buildv1 "github.com/openshift/api/build/v1"
-	buildv1client "github.com/openshift/client-go/build/clientset/versioned/typed/build/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -27,9 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
-	pkgTar "github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stretchr/testify/assert"
@@ -56,6 +44,10 @@ const (
 
 	// desiredLogLevel is the desired value of Sensor's log level env var for executing these tests.
 	desiredLogLevel = "Debug"
+
+	// readOnlyAPITokenName is the name of the ready only stackrox API token that is created (and revoked)
+	// by this suite.
+	readOnlyAPITokenName = "dele-scan-test-read-only"
 )
 
 type DelegatedScanningSuite struct {
@@ -68,60 +60,77 @@ type DelegatedScanningSuite struct {
 	origSensorLogLevel string
 	remoteCluster      *storage.Cluster
 	namespace          string
-}
+	restCfg            *rest.Config
 
-func (ts *DelegatedScanningSuite) SetupSuite() {
-	ts.namespace = namespaces.StackRox
-	ts.KubernetesSuite.SetupSuite()
-	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(ts.T(), "TestDelegatedScanning", 15*time.Minute)
-
-	// Some tests rely on Sensor debug logs to accurately validate expected behaviors.
-	ts.origSensorLogLevel = ts.getDeploymentEnvVal(ts.ctx, ts.namespace, sensorDeployment, sensorContainer, logLevelEnvVar)
-	if ts.origSensorLogLevel != desiredLogLevel {
-		ts.mustSetDeploymentEnvVal(ts.ctx, ts.namespace, sensorDeployment, sensorContainer, logLevelEnvVar, desiredLogLevel)
-		ts.T().Logf("Log level env var changed from %q to %q on Sensor", ts.origSensorLogLevel, desiredLogLevel)
-	}
-
-	// The changes above may have triggered a Sensor restart, wait for it to be healthy.
-	ts.T().Log("Waiting for Sensor to be ready")
-	ts.waitUntilK8sDeploymentReady(ts.ctx, ts.namespace, sensorDeployment)
-	ts.T().Log("Waiting for Central/Sensor connection to be ready")
-	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
-
-	// Get the remote cluster to send delegated scans too, will use this to obtain the cluster name, Id, etc.
-	ts.remoteCluster = mustGetCluster(ts.T(), ts.ctx)
-}
-
-func (ts *DelegatedScanningSuite) TearDownSuite() {
-	// Collect logs if any test failed, do this first in case other tear down tasks clear logs via pod restarts.
-	if ts.T().Failed() {
-		ts.logf("Test failed. Collecting k8s artifacts before cleanup.")
-		// TODO: DAVE uncomment me before PR review
-		// collectLogs(ts.T(), ts.namespace, "delegated-scanning-failure")
-	}
-
-	// Reset the log level back to its original value so that other tests are not impacted by the additional logging.
-	if ts.origSensorLogLevel != desiredLogLevel {
-		if ts.origSensorLogLevel != "" {
-			ts.mustSetDeploymentEnvVal(ts.cleanupCtx, ts.namespace, sensorDeployment, sensorContainer, logLevelEnvVar, ts.origSensorLogLevel)
-			ts.T().Logf("Log level reverted back to %q on Sensor", ts.origSensorLogLevel)
-		} else {
-			ts.mustDeleteDeploymentEnvVar(ts.cleanupCtx, ts.namespace, sensorDeployment, logLevelEnvVar)
-			ts.T().Logf("Log level env var removed from Sensor")
-		}
-	}
-
-	// Ensure central/sensor are in a good state before moving to next test's to avoid flakes.
-	ts.T().Log("Waiting for Sensor to be ready (On Tear Down)")
-	ts.waitUntilK8sDeploymentReady(ts.ctx, ts.namespace, sensorDeployment)
-	ts.T().Log("Waiting for Central/Sensor connection to be ready (On Tear Down)")
-	waitUntilCentralSensorConnectionIs(ts.T(), ts.cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
-
-	ts.cancel()
+	readOnlyToken string
 }
 
 func TestDelegatedScanning(t *testing.T) {
 	suite.Run(t, new(DelegatedScanningSuite))
+}
+
+func (ts *DelegatedScanningSuite) SetupSuite() {
+	t := ts.T()
+	ts.KubernetesSuite.SetupSuite()
+	ts.namespace = namespaces.StackRox
+	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(t, "TestDelegatedScanning", 15*time.Minute)
+
+	ts.restCfg = getConfig(t)
+	ctx := ts.ctx
+
+	// Create a read only token (needed by some tests)
+	_, ts.readOnlyToken = ts.createAPIToken(t, ctx, readOnlyAPITokenName, []string{"Analyst"})
+
+	// Some tests rely on Sensor debug logs to accurately validate expected behaviors.
+	ts.origSensorLogLevel, _ = ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, logLevelEnvVar)
+	if ts.origSensorLogLevel != desiredLogLevel {
+		ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, logLevelEnvVar, desiredLogLevel)
+		t.Logf("Log level env var changed from %q to %q on Sensor", ts.origSensorLogLevel, desiredLogLevel)
+	}
+
+	// The changes above may have triggered a Sensor restart, wait for it to be healthy.
+	t.Log("Waiting for Sensor to be ready")
+	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
+	t.Log("Waiting for Central/Sensor connection to be ready")
+	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+
+	// Get the remote cluster to send delegated scans too, will use this to obtain the cluster name, Id, etc.
+	t.Log("Getting remote stackrox cluster details")
+	ts.remoteCluster = mustGetCluster(t, ctx)
+}
+
+func (ts *DelegatedScanningSuite) TearDownSuite() {
+	t := ts.T()
+	ctx := ts.cleanupCtx
+	ns := ts.namespace
+
+	// Collect logs if any test failed, do this first in case other tear down tasks clear logs via pod restarts.
+	if t.Failed() {
+		ts.logf("Test failed. Collecting k8s artifacts before cleanup.")
+		// TODO: DAVE uncomment me before PR review
+		// collectLogs(t, ts.namespace, "delegated-scanning-failure")
+	}
+
+	ts.revokeAPIToken(t, ctx, readOnlyAPITokenName)
+
+	// Reset the log level back to its original value so that other tests are not impacted by the additional logging.
+	if ts.origSensorLogLevel != desiredLogLevel {
+		if ts.origSensorLogLevel != "" {
+			ts.mustSetDeploymentEnvVal(ctx, ns, sensorDeployment, sensorContainer, logLevelEnvVar, ts.origSensorLogLevel)
+			t.Logf("Log level reverted back to %q on Sensor", ts.origSensorLogLevel)
+		} else {
+			ts.mustDeleteDeploymentEnvVar(ctx, ns, sensorDeployment, logLevelEnvVar)
+			t.Logf("Log level env var removed from Sensor")
+		}
+	}
+
+	// Ensure central/sensor are in a good state before moving to next test's to avoid flakes.
+	t.Log("Waiting for Sensor to be ready (On Tear Down)")
+	ts.waitUntilK8sDeploymentReady(ctx, ns, sensorDeployment)
+	t.Log("Waiting for Central/Sensor connection to be ready (On Tear Down)")
+	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+
+	ts.cancel()
 }
 
 // TestDelegatedScanning_Config verifies that changes made to the delegated registry config
@@ -209,7 +218,7 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_Config() {
 		_, err := service.UpdateConfig(ctx, cfg)
 		require.NoError(t, err)
 
-		ts.waitUntilLog(ctx, ts.namespace, sensorPodLabels, sensorContainer, "contain delegate registry config upsert",
+		ts.waitUntilLog(ctx, ts.namespace, sensorPodLabels, sensorContainer, "contain delegated registry config upsert",
 			containsLineMatching(regexp.MustCompile(fmt.Sprintf("Upserted delegated registry config.*%s", path))),
 		)
 	})
@@ -338,18 +347,25 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 	t := ts.T()
 	ctx := ts.ctx
 
-	cluster := mustGetCluster(t, ctx)
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewImageServiceClient(conn)
 
 	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
 	require.NoError(t, err)
 
-	// If delegated scanning has been enabled for all registries, scans in Sensor
+	// If delegated scanning has been enabled for 'All Registries', scans in Sensor
 	// may be rate limited, retry the scan when rate limited.
 	maxTries := 30
 	betweenAttemptsFunc := func(num int) {
 		t.Logf("Too many parallel scans, trying again, attempt %d/%d", num, maxTries)
+	}
+
+	scanImgReq := func(imgStr string) *v1.ScanImageRequest {
+		return &v1.ScanImageRequest{
+			ImageName: imgStr,
+			Force:     true,
+			Cluster:   ts.remoteCluster.GetName(),
+		}
 	}
 
 	t.Run("ad-hoc scan without auth", func(t *testing.T) {
@@ -361,11 +377,7 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 		imgStr := "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194"
 		var img *storage.Image
 		scanImageFunc := func() error {
-			img, err = service.ScanImage(ctx, &v1.ScanImageRequest{
-				ImageName: imgStr,
-				Force:     true,
-				Cluster:   cluster.GetName(),
-			})
+			img, err = service.ScanImage(ctx, scanImgReq(imgStr))
 
 			if err != nil && strings.Contains(err.Error(), scan.ErrTooManyParallelScans.Error()) {
 				err = retry.MakeRetryable(err)
@@ -382,8 +394,7 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 		)
 		require.NoError(t, err)
 		require.Equal(t, imgStr, img.GetName().GetFullName())
-		require.NotEmpty(t, img.GetScan().GetComponents())
-		require.True(t, img.GetIsClusterLocal())
+		ts.validateImageScan(t, img)
 
 		reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, imgStr)
 		ts.waitUntilLog(ctx, ts.namespace, sensorPodLabels, sensorContainer, "contain the image scan",
@@ -418,6 +429,32 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 			t.Skip("Skipping test - not an OCP cluster")
 		}
 
+		fromLine, err := ts.getNumLogLines(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
+		require.NoError(t, err)
+		ts.logf("Only matching sensor logs after line %d from pod %s", fromLine, sensorPod.GetName())
+
+		// Push an to the OCP internal registry.
+		ocpImgBuilder := deleScanOCPTestImageBuilder{
+			t:         t,
+			ctx:       ts.ctx,
+			namespace: ts.namespace,
+			restCfg:   ts.restCfg,
+		}
+		name := "test-01"
+		fromImage := "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1227"
+		imgStr := ocpImgBuilder.BuildOCPInternalImage(name, fromImage)
+
+		// Scan the image.
+		img, err := service.ScanImage(ctx, scanImgReq(imgStr))
+		require.NoError(t, err)
+		require.Equal(t, imgStr, img.GetName().GetFullName())
+		ts.validateImageScan(t, img)
+
+		// Verify the request made it to the cluster.
+		reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, imgStr)
+		ts.waitUntilLog(ctx, ts.namespace, sensorPodLabels, sensorContainer, "contain the image scan",
+			containsLineMatchingAfter(regexp.MustCompile(reStr), fromLine),
+		)
 	})
 
 	// Create role for just image scanning
@@ -427,6 +464,7 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 		if !isOpenshift() {
 			t.Skip("Skipping test - not an OCP cluster")
 		}
+
 		// Make API request using that user (perhaps NOT via GRPC)
 	})
 
@@ -479,128 +517,47 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_Mirrors() {
 	t.Run("Scan deployment from mirror defined by ImageTagMirrorSet", func(t *testing.T) {})
 }
 
-func (ts *DelegatedScanningSuite) TestDelegatedScanning_DAVE() {
-	t := ts.T()
-	ctx := ts.ctx
-
-	restClient := getConfig(t)
-	buildV1Client, err := buildv1client.NewForConfig(restClient)
-	require.NoError(t, err)
-
-	ns := ts.namespace
-	name := "dele-scan-01"
-
-	dir := "testdata/delegatedscanning/binary-build-01"
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-	require.NoError(t, pkgTar.FromPath(dir, tw))
-	utils.IgnoreError(tw.Close)
-
-	result := &buildv1.Build{}
-	c := buildV1Client.RESTClient()
-	t.Logf("Posting build")
-	err = c.Post().
-		Namespace(ns).
-		Resource("buildconfigs").
-		Name(name).
-		SubResource("instantiatebinary").
-		Body(buf).
-		Do(ctx).
-		Into(result)
-
-	require.NoError(t, err)
-
-	dataB, err := json.MarshalIndent(result, "", "  ")
-	require.NoError(t, err)
-	t.Logf("BuildResult: %v", string(dataB))
-
-	t.Logf("Streaming build logs for %q", result.GetName())
-	err = streamBuildLogs(ctx, c, result, ts.namespace)
-	require.NoError(t, err)
-
-	t.Logf("Waiting for build %q to complete", result.GetName())
-	err = waitForBuildComplete(ctx, buildV1Client.Builds(ns), result.GetName())
-	require.NoError(t, err)
+type DaveSuite struct {
+	KubernetesSuite
+	namespace string
+	restCfg   *rest.Config
+	ctx       context.Context
 }
 
-// streamBuildLogs inspired by https://github.com/openshift/oc/blob/67813c212f6625919fa42524a27c399be653a51f/pkg/cli/startbuild/startbuild.go#L507
-func streamBuildLogs(ctx context.Context, buildRestClient rest.Interface, build *buildv1.Build, namespace string) error {
-	opts := buildv1.BuildLogOptions{
-		Follow: true,
-		NoWait: false,
-	}
-	scheme := runtime.NewScheme()
-	buildv1.AddToScheme(scheme)
-	var err error
-	for {
-		rd, err := buildRestClient.Get().
-			Namespace(namespace).
-			Resource("builds").
-			Name(build.GetName()).
-			SubResource("log").
-			VersionedParams(&opts, runtime.NewParameterCodec(scheme)).Stream(ctx)
-		if err != nil {
-			fmt.Printf("unable to stream the build logs: %v\n", err)
-			time.Sleep(1 * time.Second)
-			continue
-		}
-		defer rd.Close()
-
-		if _, err := io.Copy(os.Stdout, rd); err != nil {
-			fmt.Printf("unable to stream the build logs: %v\n", err)
-		}
-		break
-	}
-	return err
+func TestDaveDeleScan(t *testing.T) {
+	suite.Run(t, new(DaveSuite))
 }
 
-// waitForBuildComplete inspred by https://github.com/openshift/oc/blob/67813c212f6625919fa42524a27c399be653a51f/pkg/cli/startbuild/startbuild.go#L1067
-func waitForBuildComplete(ctx context.Context, c buildv1client.BuildInterface, name string) error {
-	isOK := func(b *buildv1.Build) bool {
-		return b.Status.Phase == buildv1.BuildPhaseComplete
-	}
-	isFailed := func(b *buildv1.Build) bool {
-		return b.Status.Phase == buildv1.BuildPhaseFailed ||
-			b.Status.Phase == buildv1.BuildPhaseCancelled ||
-			b.Status.Phase == buildv1.BuildPhaseError
+func (ts *DaveSuite) SetupSuite() {
+	ts.KubernetesSuite.SetupSuite()
+	ts.namespace = namespaces.StackRox
+	ts.restCfg = getConfig(ts.T())
+	ts.ctx = context.Background()
+}
+
+func (ts *DaveSuite) TestDeleScan() {
+	ocpImgBuilder := deleScanOCPTestImageBuilder{
+		t:         ts.T(),
+		ctx:       ts.ctx,
+		namespace: ts.namespace,
+		restCfg:   ts.restCfg,
 	}
 
-	for {
-		list, err := c.List(ctx, metav1.ListOptions{FieldSelector: fields.Set{"metadata.name": name}.AsSelector().String()})
-		if err != nil {
-			return err
-		}
-		for i := range list.Items {
-			if name == list.Items[i].Name && isOK(&list.Items[i]) {
-				return nil
-			}
-			if name != list.Items[i].Name || isFailed(&list.Items[i]) {
-				return fmt.Errorf("the build %s/%s status is %q", list.Items[i].Namespace, list.Items[i].Name, list.Items[i].Status.Phase)
-			}
-		}
+	name := "dave"
+	fromImage := "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1227"
+	ref := ocpImgBuilder.BuildOCPInternalImage(name, fromImage)
 
-		rv := list.ResourceVersion
-		w, err := c.Watch(ctx, metav1.ListOptions{FieldSelector: fields.Set{"metadata.name": name}.AsSelector().String(), ResourceVersion: rv})
-		if err != nil {
-			return err
-		}
-		defer w.Stop()
+	ts.T().Logf("Image: %v", ref)
+}
 
-		for {
-			val, ok := <-w.ResultChan()
-			if !ok {
-				// reget and re-watch
-				break
-			}
-			if e, ok := val.Object.(*buildv1.Build); ok {
-				if name == e.Name && isOK(e) {
-					return nil
-				}
-				if name != e.Name || isFailed(e) {
-					return fmt.Errorf("the build %s/%s status is %q", e.Namespace, name, e.Status.Phase)
-				}
-			}
-		}
-	}
+// validateImageScan will fail the test if the image's scan was not completed
+// successfully.
+func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, img *storage.Image) {
+	require.NotNil(t, img.GetScan(), "image scan is nil, check logs for errors, image notes: %v", img.GetNotes())
+	require.NotEmpty(t, img.GetScan().GetComponents(), "image scan has no components, check central logs for errors, this can happen if indexing succeeds but matching fails, ROX-17472 will make this an error in the future")
+	require.True(t, img.GetIsClusterLocal())
+}
+
+func (ts *DelegatedScanningSuite) createReadOnlyToken(t *testing.T) {
 
 }

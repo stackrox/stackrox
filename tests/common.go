@@ -595,31 +595,18 @@ func (ks *KubernetesSuite) mustSetDeploymentEnvVal(ctx context.Context, namespac
 
 // mustGetDeploymentEnvVal retrieves the value of environment variable in a deployment, or fails the test.
 func (ks *KubernetesSuite) mustGetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) string {
-	d, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
-	ks.Require().NoError(err, "cannot retrieve deployment %q in namespace %q", deployment, namespace)
-	c, err := getContainer(d, container)
-	ks.Require().NoError(err, "cannot find container %q in deployment %q in namespace %q", container, deployment, namespace)
-	val, err := getEnvVal(c, envVar)
+	val, err := ks.getDeploymentEnvVal(ctx, namespace, deployment, container, envVar)
 	ks.Require().NoError(err, "cannot find envVar %q in container %q in deployment %q in namespace %q", envVar, container, deployment, namespace)
 	return val
 }
 
 // getDeploymentEnvVal returns the value of an environment variable or the empty string if not found.
-func (ks *KubernetesSuite) getDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) string {
+func (ks *KubernetesSuite) getDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) (string, error) {
 	d, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
-	if err != nil {
-		ks.logf("cannot retrieve deployment %q in namespace %q: %v", deployment, namespace, err)
-		return ""
-	}
-
+	ks.Require().NoError(err, "cannot retrieve deployment %q in namespace %q", deployment, namespace)
 	c, err := getContainer(d, container)
-	if err != nil {
-		ks.logf("cannot find container %q in deployment %q in namespace %q: %v", container, deployment, namespace, err)
-		return ""
-	}
-
-	val, _ := getEnvVal(c, envVar)
-	return val
+	ks.Require().NoError(err, "cannot find container %q in deployment %q in namespace %q", container, deployment, namespace)
+	return getEnvVal(c, envVar)
 }
 
 // mustDeleteDeploymentEnvVar deletes an env var from all containers of a deployment, if any errors
@@ -639,6 +626,54 @@ func (ks *KubernetesSuite) mustDeleteDeploymentEnvVar(ctx context.Context, names
 			}
 		}
 	}
+}
+
+// createAPIToken will create an API token with roles and return the id and name of the token.
+func (ks *KubernetesSuite) createAPIToken(t *testing.T, ctx context.Context, name string, roles []string) (string, string) {
+	require := require.New(t)
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewAPITokenServiceClient(conn)
+
+	toksResp, err := service.GetAPITokens(ctx, &v1.GetAPITokensRequest{
+		RevokedOneof: &v1.GetAPITokensRequest_Revoked{Revoked: false},
+	})
+	require.NoError(err)
+
+	for _, tok := range toksResp.Tokens {
+		if tok.Name == name {
+			_, err = service.RevokeToken(ctx, &v1.ResourceByID{Id: tok.GetId()})
+			require.NoError(err, "failed to revoke existing token %q", tok.Name)
+			break
+		}
+	}
+
+	tokResp, err := service.GenerateToken(ctx, &v1.GenerateTokenRequest{
+		Name:  name,
+		Roles: roles,
+	})
+	require.NoError(err)
+
+	t.Logf("Created API Token %q with roles: %v", name, roles)
+	return tokResp.GetMetadata().GetId(), tokResp.GetToken()
+}
+
+// revokeAPIToken will revoke an API token based.
+func (ts *KubernetesSuite) revokeAPIToken(t *testing.T, ctx context.Context, idOrName string) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewAPITokenServiceClient(conn)
+
+	toksResp, err := service.GetAPITokens(ctx, &v1.GetAPITokensRequest{RevokedOneof: &v1.GetAPITokensRequest_Revoked{Revoked: false}})
+
+	for _, tok := range toksResp.GetTokens() {
+		if tok.GetId() == idOrName || tok.GetName() == idOrName {
+			_, err = service.RevokeToken(ctx, &v1.ResourceByID{Id: tok.GetId()})
+			require.NoError(t, err)
+			t.Logf("API Token %q revoked", idOrName)
+			return
+		}
+	}
+
+	t.Logf("Token %q not found, nothing to revoke", idOrName)
 }
 
 // getEnvVal returns the value of envVar from a given container or returns a helpful error.
