@@ -367,8 +367,8 @@ _main() {
                 export POSTGRESQL_UPGRADE_INITDB_OPTIONS="--data-checksums"
                 export PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}"
                 # make a file
-                echo "localhost:*:*:postgres:$POSTGRES_PASSWORD" > $HOME/.pgpass
-                chmod 600 $HOME/.pgpass
+                echo "/var/lib/pgsql/data:*:*:postgres:$POSTGRES_PASSWORD" > $HOME/.pgpass
+                chmod 777 $HOME/.pgpass
                 export PGPASSFILE="$HOME/.pgpass"
 #                run_pgupgrade
                 echo 'Running copy of upgrade to see where it falls down'
