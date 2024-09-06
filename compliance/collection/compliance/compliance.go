@@ -94,7 +94,7 @@ func (c *Compliance) Start() {
 		}
 	}
 
-	if env.NodeScanningV4Enabled.BooleanSetting() {
+	if env.NodeIndexEnabled.BooleanSetting() {
 		log.Infof("Node Index v4 enabled")
 	}
 
@@ -148,7 +148,7 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 					c.cache = msg.CloneVT()
 					nodeInventoriesC <- msg
 				}
-				if env.NodeScanningV4Enabled.BooleanSetting() {
+				if env.NodeIndexEnabled.BooleanSetting() {
 					log.Infof("Creating v4 Node Index Report")
 					report, err := c.nodeIndexer.IndexNode(ctx)
 					if err != nil {
