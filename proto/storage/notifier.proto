@@ -151,6 +151,7 @@ message MicrosoftSentinel {
     bool enabled = 3;
   }
   DataCollectionRuleConfig alert_dcr_config = 5;
+  DataCollectionRuleConfig audit_log_dcr_config = 6;
 
   // TODO(ROX-25848): Add NetworkPolicyNotifier configuration
   // TODO(ROX-25546): Add Audit Log configuration
