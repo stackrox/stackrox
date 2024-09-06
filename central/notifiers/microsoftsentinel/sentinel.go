@@ -9,6 +9,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs"
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/administration/events/option"
@@ -19,12 +20,14 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
 	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
 	_ notifiers.AlertNotifier = (*sentinel)(nil)
+	_ notifiers.AuditNotifier = (*sentinel)(nil)
 )
 
 func init() {
@@ -39,6 +42,26 @@ func init() {
 type sentinel struct {
 	notifier     *storage.Notifier
 	azlogsClient azureLogsClient
+}
+
+func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
+	if !features.MicrosoftSentinelNotifier.Enabled() {
+		return nil
+	}
+
+	if !s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled() {
+		return nil
+	}
+
+	err := s.uploadLogs(ctx, msg)
+	if err != nil {
+		return errors.Wrap(err, "failed to upload audit log to Microsoft Sentinel")
+	}
+	return nil
+}
+
+func (s sentinel) AuditLoggingEnabled() bool {
+	return true
 }
 
 func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
@@ -110,12 +133,20 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return nil
 	}
 
-	bytesToSend, err := s.prepareLogsToSend(alert)
+	err := s.uploadLogs(ctx, alert)
+	if err != nil {
+		return errors.Wrap(err, "failed to upload alert notifications to Microsoft Sentinel")
+	}
+	return nil
+}
+
+func (s sentinel) uploadLogs(ctx context.Context, msg proto.Message) error {
+	bytesToSend, err := s.prepareLogsToSend(msg)
 	if err != nil {
 		return err
 	}
 
-	err = retry.WithRetry(func() error {
+	return retry.WithRetry(func() error {
 		// UploadResponse is unhandled because it currently is only a placeholder in the azure client library and does not
 		// contain any information to be processed.
 		_, err := s.azlogsClient.Upload(ctx, s.sentinel().GetAlertDcrConfig().GetDataCollectionRuleId(), s.sentinel().GetAlertDcrConfig().GetStreamName(), bytesToSend, &azlogs.UploadOptions{})
@@ -132,16 +163,11 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 			time.Sleep(wait * time.Millisecond)
 		}),
 	)
-
-	if err != nil {
-		return errors.Wrap(err, "failed to upload logs to azure")
-	}
-	return nil
 }
 
-func (s sentinel) prepareLogsToSend(alert *storage.Alert) ([]byte, error) {
+func (s sentinel) prepareLogsToSend(msg protocompat.Message) ([]byte, error) {
 	// convert object to an unstructured map to later wrap it as an array.
-	logToSendObj, err := protocompat.MarshalMap(alert)
+	logToSendObj, err := protocompat.MarshalMap(msg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to send alert to Microsoft Sentinel")
 	}

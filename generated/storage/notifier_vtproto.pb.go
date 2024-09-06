@@ -408,6 +408,7 @@ func (m *MicrosoftSentinel) CloneVT() *MicrosoftSentinel {
 	r.ApplicationClientId = m.ApplicationClientId
 	r.Secret = m.Secret
 	r.AlertDcrConfig = m.AlertDcrConfig.CloneVT()
+	r.AuditLogDcrConfig = m.AuditLogDcrConfig.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1192,6 +1193,9 @@ func (this *MicrosoftSentinel) EqualVT(that *MicrosoftSentinel) bool {
 		return false
 	}
 	if !this.AlertDcrConfig.EqualVT(that.AlertDcrConfig) {
+		return false
+	}
+	if !this.AuditLogDcrConfig.EqualVT(that.AuditLogDcrConfig) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2417,6 +2421,16 @@ func (m *MicrosoftSentinel) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.AuditLogDcrConfig != nil {
+		size, err := m.AuditLogDcrConfig.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x32
+	}
 	if m.AlertDcrConfig != nil {
 		size, err := m.AlertDcrConfig.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
@@ -3100,6 +3114,10 @@ func (m *MicrosoftSentinel) SizeVT() (n int) {
 	}
 	if m.AlertDcrConfig != nil {
 		l = m.AlertDcrConfig.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.AuditLogDcrConfig != nil {
+		l = m.AuditLogDcrConfig.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -6085,6 +6103,42 @@ func (m *MicrosoftSentinel) UnmarshalVT(dAtA []byte) error {
 				m.AlertDcrConfig = &MicrosoftSentinel_DataCollectionRuleConfig{}
 			}
 			if err := m.AlertDcrConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AuditLogDcrConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AuditLogDcrConfig == nil {
+				m.AuditLogDcrConfig = &MicrosoftSentinel_DataCollectionRuleConfig{}
+			}
+			if err := m.AuditLogDcrConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -9495,6 +9549,42 @@ func (m *MicrosoftSentinel) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.AlertDcrConfig = &MicrosoftSentinel_DataCollectionRuleConfig{}
 			}
 			if err := m.AlertDcrConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AuditLogDcrConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.AuditLogDcrConfig == nil {
+				m.AuditLogDcrConfig = &MicrosoftSentinel_DataCollectionRuleConfig{}
+			}
+			if err := m.AuditLogDcrConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
