@@ -556,7 +556,3 @@ func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, img *storage.I
 	require.NotEmpty(t, img.GetScan().GetComponents(), "image scan has no components, check central logs for errors, this can happen if indexing succeeds but matching fails, ROX-17472 will make this an error in the future")
 	require.True(t, img.GetIsClusterLocal())
 }
-
-func (ts *DelegatedScanningSuite) createReadOnlyToken(t *testing.T) {
-
-}
