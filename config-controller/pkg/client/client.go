@@ -186,10 +186,8 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 	}
 
 	if c.svc == nil {
-		var gc PolicyClient
 		err := retry.WithRetry(func() error {
-			var innerErr error
-			gc, innerErr = newGrpcClient(ctx)
+			gc, innerErr := newGrpcClient(ctx)
 			if innerErr != nil {
 				getLogger(ctx).Error(innerErr, "Failed to connect to Central")
 			}
