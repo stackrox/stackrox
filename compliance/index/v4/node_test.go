@@ -32,7 +32,7 @@ func createConfig(server string) *NodeIndexerConfig {
 }
 
 func createTestServer() *httptest.Server {
-	mappingData := strings.NewReader(`{"data":{"rhocp-4.16-for-rhel-9-x86_64-rpms":{"cpes":["cpe:/a:redhat:openshift:4.16::el9"]},"rhel-9-for-x86_64-baseos-eus-rpms__9_DOT_4":{"cpes":["cpe:/o:redhat:rhel_eus:9.4::baseos"]}}}`)
+	mappingData := `{"data":{"rhocp-4.16-for-rhel-9-x86_64-rpms":{"cpes":["cpe:/a:redhat:openshift:4.16::el9"]},"rhel-9-for-x86_64-baseos-eus-rpms__9_DOT_4":{"cpes":["cpe:/o:redhat:rhel_eus:9.4::baseos"]}}})`
 
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.URL.Path, "") {
@@ -40,12 +40,7 @@ func createTestServer() *httptest.Server {
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("last-modified", "Mon, 02 Jan 2006 15:04:05 MST")
-		if _, err := mappingData.Seek(0, io.SeekStart); err != nil {
-			log.Error(err)
-		}
-		if _, err := io.Copy(w, mappingData); err != nil {
-			log.Error(err)
-		}
+		w.Write([]byte(mappingData))
 	}))
 	return s
 }
