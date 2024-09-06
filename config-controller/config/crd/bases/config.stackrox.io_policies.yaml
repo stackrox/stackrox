@@ -39,7 +39,140 @@ spec:
           spec:
             description: PolicySpec defines the desired state of Policy
             properties:
-              policy:
+              categories:
+                items:
+                  type: string
+                type: array
+              description:
+                type: string
+              disabled:
+                type: boolean
+              enforcementActions:
+                enum:
+                - UNSET_ENFORCEMENT
+                - SCALE_TO_ZERO_ENFORCEMENT
+                - UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
+                - KILL_POD_ENFORCEMENT
+                - FAIL_BUILD_ENFORCEMENT
+                - FAIL_KUBE_REQUEST_ENFORCEMENT
+                - FAIL_DEPLOYMENT_CREATE_ENFORCEMENT
+                - FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
+                items:
+                  type: string
+                type: array
+              exclusions:
+                items:
+                  properties:
+                    deployment:
+                      properties:
+                        'name ':
+                          type: string
+                        scope:
+                          properties:
+                            'cluster ':
+                              type: string
+                            label:
+                              properties:
+                                key:
+                                  type: string
+                                value:
+                                  type: string
+                              type: object
+                            namespace:
+                              type: string
+                          type: object
+                      type: object
+                    image:
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                    name:
+                      type: string
+                  type: object
+                type: array
+              lifecycleStages:
+                enum:
+                - DEPLOY
+                - BUILD
+                - RUNTIME
+                items:
+                  type: string
+                type: array
+              mitreAttackVectors:
+                items:
+                  properties:
+                    tactic:
+                      type: string
+                    techniques:
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
+              name:
+                type: string
+              notifiers:
+                items:
+                  type: string
+                type: array
+              policySections:
+                items:
+                  properties:
+                    policyGroups:
+                      items:
+                        properties:
+                          booleanOperator:
+                            enum:
+                            - OR
+                            - AND `json:"//,omitempty"`
+                            type: string
+                          fieldName:
+                            type: string
+                          negate:
+                            type: boolean
+                          values:
+                            items:
+                              properties:
+                                value:
+                                  type: string
+                              type: object
+                            type: array
+                        type: object
+                      type: array
+                    'sectionName ':
+                      type: string
+                  type: object
+                type: array
+              policyVersion:
+                type: string
+              rationale:
+                type: string
+              remediation:
+                type: string
+              scope:
+                items:
+                  properties:
+                    'cluster ':
+                      type: string
+                    label:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      type: object
+                    namespace:
+                      type: string
+                  type: object
+                type: array
+              severity:
+                enum:
+                - UNSET_SEVERITY
+                - LOW_SEVERITY
+                - MEDIUM_SEVERITY
+                - HIGH_SEVERITY
+                - CRITICAL_SEVERITY
                 type: string
             type: object
           status:
