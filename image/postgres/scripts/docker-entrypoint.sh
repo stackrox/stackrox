@@ -365,13 +365,15 @@ _main() {
                 export POSTGRESQL_UPGRADE="copy"
                 export POSTGRESQL_LOG_DESTINATION="/dev/stderr"
                 export POSTGRESQL_UPGRADE_INITDB_OPTIONS="--data-checksums"
-                export PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}"
+#                export PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}"
                 # make a file
-                echo "/var/lib/pgsql/data:*:*:postgres:$POSTGRES_PASSWORD" > $HOME/.pgpass
+                echo "*:*:*:postgres:$POSTGRES_PASSWORD" > $HOME/.pgpass
+                cat $HOME/.pgpass
                 chmod 600 $HOME/.pgpass
                 whoami
                 ls -l $HOME/.pgpass
                 export PGPASSFILE="$HOME/.pgpass"
+                echo "$PGPASSFILE"
 #                run_pgupgrade
                 echo 'Running copy of upgrade to see where it falls down'
                 shrews_pgupgrade
