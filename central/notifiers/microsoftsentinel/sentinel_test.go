@@ -60,7 +60,7 @@ func (suite *SentinelTestSuite) TestAlertNotify() {
 	require.NotNil(suite.T(), notifier)
 
 	err = notifier.AlertNotify(context.Background(), alert)
-	require.NoError(suite.T(), err)
+	suite.Require().NoError(err)
 }
 
 func (suite *SentinelTestSuite) TestRetry() {
@@ -91,6 +91,7 @@ func (suite *SentinelTestSuite) TestValidate() {
 				DirectoryTenantId:    uuid.NewDummy().String(),
 				Secret:               "my secret value",
 				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
+					Enabled:              true,
 					DataCollectionRuleId: uuid.NewDummy().String(),
 					StreamName:           streamName,
 				},
@@ -99,7 +100,11 @@ func (suite *SentinelTestSuite) TestValidate() {
 			ValidateSecret:   true,
 		},
 		"Test invalid config": {
-			Config:           &storage.MicrosoftSentinel{},
+			Config: &storage.MicrosoftSentinel{
+				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
+					Enabled: true,
+				},
+			},
 			ExpectedErrorMsg: "Microsoft Sentinel validation errors: [Log Ingestion Endpoint must be specified, Data Collection Rule Id must be specified, Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified, Secret must be specified]",
 			ValidateSecret:   true,
 		},

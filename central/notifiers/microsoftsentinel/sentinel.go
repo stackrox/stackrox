@@ -106,6 +106,10 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return errors.New("Microsoft Sentinel notifier is disabled.")
 	}
 
+	if !s.notifier.GetMicrosoftSentinel().GetAlertDcrConfig().GetEnabled() {
+		return nil
+	}
+
 	bytesToSend, err := s.prepareLogsToSend(alert)
 	if err != nil {
 		return err
@@ -121,7 +125,6 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		}
 		return err
 	},
-		retry.OnlyRetryableErrors(),
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
 		retry.BetweenAttempts(func(previousAttempt int) {
@@ -167,12 +170,14 @@ func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
 		errorList.AddString("Log Ingestion Endpoint must be specified")
 	}
 
-	if sentinel.GetAlertDcrConfig().GetDataCollectionRuleId() == "" {
-		errorList.AddString("Data Collection Rule Id must be specified")
-	}
+	if sentinel.GetAlertDcrConfig().GetEnabled() {
+		if sentinel.GetAlertDcrConfig().GetDataCollectionRuleId() == "" {
+			errorList.AddString("Data Collection Rule Id must be specified")
+		}
 
-	if sentinel.GetAlertDcrConfig().GetStreamName() == "" {
-		errorList.AddString("Stream Name must be specified")
+		if sentinel.GetAlertDcrConfig().GetStreamName() == "" {
+			errorList.AddString("Stream Name must be specified")
+		}
 	}
 
 	if sentinel.GetDirectoryTenantId() == "" {
