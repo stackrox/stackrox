@@ -30,7 +30,7 @@ function AutoUpgradeToggle(): ReactElement {
     }
 
     if (!isAutoUpgradeSupported(autoUpgradeConfig)) {
-        return <>Automatic upgrades are disabled for Cloud Service</>;
+        return <>Automatic upgrades are disabled</>;
     }
 
     const toggleAutoUpgrade = () => {
