@@ -1,0 +1,199 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: securitypolicies.config.stackrox.io
+spec:
+  group: config.stackrox.io
+  names:
+    kind: SecurityPolicy
+    listKind: SecurityPolicyList
+    plural: securitypolicies
+    singular: securitypolicy
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              SORT_enforcement:
+                type: boolean
+              SORT_lifecycleStage:
+                type: string
+              SORT_name:
+                type: string
+              categories:
+                items:
+                  type: string
+                type: array
+              criteria_locked:
+                type: boolean
+              description:
+                type: string
+              disabled:
+                type: boolean
+              enforcement_actions:
+                items:
+                  format: int32
+                  type: integer
+                type: array
+              event_source:
+                format: int32
+                type: integer
+              exclusions:
+                items:
+                  properties:
+                    deployment:
+                      properties:
+                        name:
+                          type: string
+                        scope:
+                          properties:
+                            cluster:
+                              type: string
+                            label:
+                              properties:
+                                key:
+                                  type: string
+                                value:
+                                  type: string
+                              type: object
+                            namespace:
+                              type: string
+                          type: object
+                      type: object
+                    expiration:
+                      properties:
+                        nanos:
+                          format: int32
+                          type: integer
+                        seconds:
+                          format: int64
+                          type: integer
+                      type: object
+                    image:
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                    name:
+                      type: string
+                  type: object
+                type: array
+              id:
+                type: string
+              is_default:
+                type: boolean
+              last_updated:
+                properties:
+                  nanos:
+                    format: int32
+                    type: integer
+                  seconds:
+                    format: int64
+                    type: integer
+                type: object
+              lifecycle_stages:
+                items:
+                  format: int32
+                  type: integer
+                type: array
+              mitre_attack_vectors:
+                items:
+                  properties:
+                    tactic:
+                      type: string
+                    techniques:
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
+              mitre_vectors_locked:
+                type: boolean
+              name:
+                type: string
+              notifiers:
+                items:
+                  type: string
+                type: array
+              policy_sections:
+                items:
+                  properties:
+                    policy_groups:
+                      items:
+                        properties:
+                          boolean_operator:
+                            format: int32
+                            type: integer
+                          field_name:
+                            type: string
+                          negate:
+                            type: boolean
+                          values:
+                            items:
+                              properties:
+                                value:
+                                  type: string
+                              type: object
+                            type: array
+                        type: object
+                      type: array
+                    section_name:
+                      type: string
+                  type: object
+                type: array
+              policy_version:
+                type: string
+              rationale:
+                type: string
+              remediation:
+                type: string
+              scope:
+                items:
+                  properties:
+                    cluster:
+                      type: string
+                    label:
+                      properties:
+                        key:
+                          type: string
+                        value:
+                          type: string
+                      type: object
+                    namespace:
+                      type: string
+                  type: object
+                type: array
+              severity:
+                format: int32
+                type: integer
+              source:
+                format: int32
+                type: integer
+            type: object
+          status:
+            properties:
+              accepted:
+                type: boolean
+              message:
+                type: string
+            required:
+            - accepted
+            - message
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
