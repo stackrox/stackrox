@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"os"
@@ -40,6 +41,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/indexer/manifest"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/internal/version"
 )
@@ -117,8 +119,12 @@ type Indexer interface {
 type localIndexer struct {
 	libIndex        *libindex.Libindex
 	pool            *pgxpool.Pool
+	vscnrs          ccindexer.VersionedScanners
 	root            string
 	getLayerTimeout time.Duration
+
+	metadataStore postgres.IndexerMetadataStore
+	manifestGC    *manifest.GC
 }
 
 // NewIndexer creates a new indexer.
@@ -157,6 +163,13 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 	}()
 
+	metadataStore, err := postgres.InitPostgresIndexerMetadataStore(ctx, pool, true, postgres.IndexerMetadataStoreOpts{
+		IndexerStore: store,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("initializing postgres indexer metadata store: %w", err)
+	}
+
 	root, err := os.MkdirTemp("", "scanner-fetcharena-*")
 	if err != nil {
 		return nil, fmt.Errorf("creating indexer root directory: %w", err)
@@ -182,12 +195,32 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		return nil, err
 	}
 
+	manifestGC := manifest.NewGC(ctx, metadataStore, locker, indexer.DeleteManifests)
+
+	// Get all current versioned scanners.
+	pscnrs, dscnrs, rscnrs, fscnrs, err := ccindexer.EcosystemsToScanners(ctx, indexer.Ecosystems)
+	if err != nil {
+		return nil, fmt.Errorf("converting ecosystems to scanners: %w", err)
+	}
+	vscnrs := ccindexer.MergeVS(pscnrs, dscnrs, rscnrs, fscnrs)
+
+	// Start the manifest GC.
+	go func() {
+		if err := manifestGC.Start(); err != nil {
+			zlog.Error(ctx).Err(err).Msg("manifest GC failed")
+		}
+	}()
+
 	success = true
 	return &localIndexer{
 		libIndex:        indexer,
+		vscnrs:          vscnrs,
 		pool:            pool,
 		root:            root,
 		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
+
+		metadataStore: metadataStore,
+		manifestGC:    manifestGC,
 	}, nil
 }
 
@@ -244,7 +277,7 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *h
 // Close closes the indexer.
 func (i *localIndexer) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.Close")
-	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root))
+	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root), i.manifestGC.Stop())
 	i.pool.Close()
 	return err
 }
@@ -260,17 +293,14 @@ func (i *localIndexer) Ready(ctx context.Context) error {
 // image. The manifest is populated with layers from the image specified by a
 // URL. This method performs a partial content request on each layer to generate
 // the layer's URI and headers.
-func (i *localIndexer) IndexContainerImage(
-	ctx context.Context,
-	hashID string,
-	imageURL string,
-	opts ...Option,
-) (*claircore.IndexReport, error) {
+func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, imageURL string, opts ...Option) (*claircore.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.IndexContainerImage")
+
 	manifestDigest, err := createManifestDigest(hashID)
 	if err != nil {
 		return nil, err
 	}
+
 	o := makeOptions(opts...)
 	imgRef, err := parseContainerImageURL(imageURL)
 	if err != nil {
@@ -281,13 +311,14 @@ func (i *localIndexer) IndexContainerImage(
 		return nil, fmt.Errorf("listing image layers (reference %q): %w", imgRef.String(), err)
 	}
 	httpClient, err := getLayerHTTPClient(ctx, imgRef, o.auth, i.getLayerTimeout, o.insecureSkipTLSVerify)
-
 	if err != nil {
 		return nil, err
 	}
+
 	manifest := &claircore.Manifest{
 		Hash: manifestDigest,
 	}
+
 	zlog.Info(ctx).
 		Str("image_reference", imgRef.String()).
 		Int("layers_count", len(imgLayers)).
@@ -300,8 +331,7 @@ func (i *localIndexer) IndexContainerImage(
 		// TODO Check for non-retryable errors (permission denied, etc.) to report properly.
 		layerReq, err := getLayerRequest(ctx, httpClient, imgRef, layerDigest)
 		if err != nil {
-			return nil, fmt.Errorf("getting layer request URL and headers (digest: %q): %w",
-				layerDigest.String(), err)
+			return nil, fmt.Errorf("getting layer request URL and headers (digest: %q): %w", layerDigest.String(), err)
 		}
 		layerReq.Header.Del("User-Agent")
 		layerReq.Header.Del("Range")
@@ -311,7 +341,18 @@ func (i *localIndexer) IndexContainerImage(
 			Headers: layerReq.Header,
 		})
 	}
-	return i.libIndex.Index(ctx, manifest)
+
+	ir, err := i.libIndex.Index(ctx, manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	err = i.metadataStore.StoreManifest(ctx, manifestDigest.String(), randomExpiry())
+	if err != nil {
+		return nil, err
+	}
+
+	return ir, nil
 }
 
 func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.Authenticator, timeout time.Duration, insecure bool) (*http.Client, error) {
@@ -336,7 +377,7 @@ func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.A
 	return &httpClient, nil
 }
 
-// getLayerDigests returns the clairclore and containerregistry digests for the layer.
+// getLayerDigests returns the claircore and containerregistry digests for the layer.
 func getLayerDigests(layer v1.Layer) (ccd claircore.Digest, ld v1.Hash, err error) {
 	ld, err = layer.Digest()
 	if err != nil {
@@ -387,11 +428,20 @@ func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.R
 	return res.Request, nil
 }
 
-// GetIndexReport retrieves an IndexReport for the given hash ID, if it exists.
+// GetIndexReport retrieves an IndexReport for the given hash ID, if it exists and is up-to-date.
 func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
 	manifestDigest, err := createManifestDigest(hashID)
 	if err != nil {
 		return nil, false, err
+	}
+	ok, err := i.libIndex.Store.ManifestScanned(ctx, manifestDigest, i.vscnrs)
+	if err != nil {
+		return nil, false, fmt.Errorf("fetching manifest: %w", err)
+	}
+	if !ok {
+		// The IndexReport is obsolete, as there has been an update to
+		// the versioned scanners since this manifest was indexed.
+		return nil, false, nil
 	}
 	return i.libIndex.IndexReport(ctx, manifestDigest)
 }
@@ -491,4 +541,17 @@ func GetDigestFromReference(ref name.Reference, auth authn.Authenticator) (name.
 		return name.Digest{}, fmt.Errorf("internal error: %w", err)
 	}
 	return dRef, nil
+}
+
+// randomExpiry generates a random time.Time between seven and thirty days from now
+func randomExpiry() time.Time {
+	const day = 24 * time.Hour
+	now := time.Now()
+	// Seven days in seconds since epoch.
+	sevenDays := now.Add(7*day).Unix() - now.Unix()
+	// Twenty-three days in seconds since epoch.
+	twentyThreeDays := now.Add(23*day).Unix() - now.Unix()
+	// now + a random number of seconds between zero and twenty-three days + seven days
+	expirySec := now.Unix() + rand.Int64N(twentyThreeDays) + sevenDays
+	return time.Unix(expirySec, 0)
 }

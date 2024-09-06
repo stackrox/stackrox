@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	mockindexer "github.com/quay/claircore/test/mock/indexer"
@@ -117,4 +118,19 @@ func mockIndexerStore(t *testing.T) mockindexer.Store {
 	s := mockindexer.NewMockStore(ctrl)
 	s.EXPECT().RegisterScanners(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	return s
+}
+
+func TestRandomExpiry(t *testing.T) {
+	const iterations = 1000
+	//for i := range iterations {
+	//
+	//}
+	for i := 0; i < iterations; i++ {
+		now := time.Now()
+		sevenDays := now.Add(7 * 24 * time.Hour)
+		thirtyDays := now.Add(30 * 24 * time.Hour)
+		expiry := randomExpiry()
+		assert.True(t, expiry.After(sevenDays) || expiry.Equal(sevenDays))
+		assert.True(t, expiry.Before(thirtyDays))
+	}
 }
