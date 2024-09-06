@@ -628,7 +628,7 @@ func (ks *KubernetesSuite) mustDeleteDeploymentEnvVar(ctx context.Context, names
 	}
 }
 
-// createAPIToken will create an API token with roles and return the id and name of the token.
+// createAPIToken will create and return a stackrox API token id and value.
 func (ks *KubernetesSuite) createAPIToken(t *testing.T, ctx context.Context, name string, roles []string) (string, string) {
 	require := require.New(t)
 	conn := centralgrpc.GRPCConnectionToCentral(t)

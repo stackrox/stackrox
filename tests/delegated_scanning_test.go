@@ -46,7 +46,7 @@ const (
 
 	// readOnlyAPITokenName is the name of the ready only stackrox API token that is created (and revoked)
 	// by this suite.
-	readOnlyAPITokenName = "dele-scan-test-read-only"
+	readOnlyAPITokenName = "dele-scan-test-read-only" //nolint:gosec // G101
 )
 
 type DelegatedScanningSuite struct {
