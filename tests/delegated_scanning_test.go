@@ -10,8 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/client-go/rest"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -23,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"k8s.io/client-go/rest"
 )
 
 // Delegated Scanning tests that verify the expected behavior for scans executed in

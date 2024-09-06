@@ -111,6 +111,7 @@ func (d *deleScanOCPTestImageBuilder) buildAndPushImage(name, fromImage string) 
 		Body(buf).
 		Do(ctx).
 		Into(result)
+	require.NoError(t, err)
 
 	t.Logf("Streaming build logs for %q", result.GetName())
 	err = d.streamBuildLogs(client, result, ns)

@@ -663,6 +663,7 @@ func (ts *KubernetesSuite) revokeAPIToken(t *testing.T, ctx context.Context, idO
 	service := v1.NewAPITokenServiceClient(conn)
 
 	toksResp, err := service.GetAPITokens(ctx, &v1.GetAPITokensRequest{RevokedOneof: &v1.GetAPITokensRequest_Revoked{Revoked: false}})
+	require.NoError(t, err)
 
 	for _, tok := range toksResp.GetTokens() {
 		if tok.GetId() == idOrName || tok.GetName() == idOrName {
