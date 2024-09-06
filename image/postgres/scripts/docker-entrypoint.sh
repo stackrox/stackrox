@@ -368,7 +368,9 @@ _main() {
                 export PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}"
                 # make a file
                 echo "/var/lib/pgsql/data:*:*:postgres:$POSTGRES_PASSWORD" > $HOME/.pgpass
-                chmod 777 $HOME/.pgpass
+                chmod 600 $HOME/.pgpass
+                whoami
+                ls -l $HOME/.pgpass
                 export PGPASSFILE="$HOME/.pgpass"
 #                run_pgupgrade
                 echo 'Running copy of upgrade to see where it falls down'
