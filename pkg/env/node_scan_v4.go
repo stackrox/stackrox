@@ -1,10 +1,16 @@
 package env
 
 var (
-	// NodeScanningV4HostPath sets the path where the R/O host node filesystem is mounted to the container
-	// that should be scanned by Scanners NodeIndexer
-	NodeScanningV4HostPath = RegisterSetting("ROX_NODE_SCANNING_V4_HOST_PATH", WithDefault("/host"))
+	// NodeIndexEnabled defines whether Compliance will actually run indexing code
+	NodeIndexEnabled = RegisterBooleanSetting("ROX_NODE_INDEX_ENABLED", false)
 
-	// NodeScanningV4Enabled defines whether Compliance will actually run scanning code
-	NodeScanningV4Enabled = RegisterBooleanSetting("ROX_NODE_SCANNING_V4_ENABLED", false)
+	// NodeIndexHostPath sets the path where the R/O host node filesystem is mounted to the container
+	// that should be scanned by Scanners NodeIndexer
+	NodeIndexHostPath = RegisterSetting("ROX_NODE_INDEX_HOST_PATH", WithDefault("/host"))
+
+	// NodeIndexContainerAPI Defines the API endpoint for the RepositoryScanner to reach out to
+	NodeIndexContainerAPI = RegisterSetting("ROX_NODE_INDEX_CONTAINER_API", WithDefault("https://catalog.redhat.com/api/containers/"))
+
+	// NodeIndexMappingURL Defines the endpoint for the RepositoryScanner to download mapping information from
+	NodeIndexMappingURL = RegisterSetting("ROX_NODE_INDEX_MAPPING_URL", WithDefault("https://central.stackrox.svc/api/extensions/scannerdefinitions?file=repo2cpe"))
 )
