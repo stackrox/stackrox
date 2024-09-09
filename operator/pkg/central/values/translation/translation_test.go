@@ -1233,6 +1233,96 @@ func TestTranslatePartialMatch(t *testing.T) {
 				"network.enableNetworkPolicies": true,
 			},
 		},
+		"enabled external DB, unset connection pool": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							DB: &platform.CentralDBSpec{
+								ConnectionStringOverride: pointer.String("host=fake-central.stackrox:443"),
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central.db.external":                true,
+				"central.db.source.connectionString": "host=fake-central.stackrox:443",
+				"central.db.source.minConns":         nil,
+				"central.db.source.maxConns":         nil,
+			},
+		},
+		"enabled external DB, set connection pool": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							DB: &platform.CentralDBSpec{},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central.db.external": nil,
+				"central.db.source":   nil,
+			},
+		},
+		"disabled external DB, unset connection pool": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							DB: &platform.CentralDBSpec{
+								ConnectionPoolSize: &platform.DBConnectionPoolSize{
+									MinConnections: pointer.Int32(20),
+									MaxConnections: pointer.Int32(200),
+								},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central.db.external":                nil,
+				"central.db.source.connectionString": nil,
+				"central.db.source.minConns":         20,
+				"central.db.source.maxConns":         200,
+			},
+		},
+		"disabled external DB, set connection pool": {
+			args: args{
+				c: platform.Central{
+					ObjectMeta: v1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Spec: platform.CentralSpec{
+						Central: &platform.CentralComponentSpec{
+							DB: &platform.CentralDBSpec{
+								ConnectionPoolSize: &platform.DBConnectionPoolSize{
+									MinConnections: pointer.Int32(30),
+									MaxConnections: pointer.Int32(400),
+								},
+							},
+						},
+					},
+				},
+			},
+			want: chartutil.Values{
+				"central.db.external":                nil,
+				"central.db.source.connectionString": nil,
+				"central.db.source.minConns":         30,
+				"central.db.source.maxConns":         400,
+			},
+		},
 	}
 
 	for name, tt := range tests {
