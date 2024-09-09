@@ -828,6 +828,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("MicrosoftSentinel", []string{
 		"alertDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig",
 		"applicationClientId: String!",
+		"auditLogDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig",
 		"directoryTenantId: String!",
 		"logIngestionEndpoint: String!",
 		"secret: String!",
@@ -9673,6 +9674,11 @@ func (resolver *microsoftSentinelResolver) AlertDcrConfig(ctx context.Context) (
 func (resolver *microsoftSentinelResolver) ApplicationClientId(ctx context.Context) string {
 	value := resolver.data.GetApplicationClientId()
 	return value
+}
+
+func (resolver *microsoftSentinelResolver) AuditLogDcrConfig(ctx context.Context) (*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	value := resolver.data.GetAuditLogDcrConfig()
+	return resolver.root.wrapMicrosoftSentinel_DataCollectionRuleConfig(value, true, nil)
 }
 
 func (resolver *microsoftSentinelResolver) DirectoryTenantId(ctx context.Context) string {
