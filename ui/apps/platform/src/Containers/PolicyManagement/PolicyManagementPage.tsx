@@ -1,7 +1,12 @@
 import React from 'react';
 import { Redirect, Route, Switch } from 'react-router-dom';
 
-import { policiesPath, policyManagementBasePath, policyCategoriesPath } from 'routePaths';
+import {
+    policiesBasePath,
+    policiesPath,
+    policyManagementBasePath,
+    policyCategoriesPath,
+} from 'routePaths';
 import PoliciesPage from 'Containers/Policies/PoliciesPage';
 import PolicyCategoriesPage from 'Containers/PolicyCategories/PolicyCategoriesPage';
 
@@ -11,7 +16,7 @@ function PolicyManagementPage() {
             <Route
                 exact
                 path={policyManagementBasePath}
-                render={() => <Redirect to={policiesPath} />}
+                render={() => <Redirect to={policiesBasePath} />}
             />
             <Route path={policiesPath}>
                 <PoliciesPage />
