@@ -9,8 +9,6 @@ const allowListForItems = [
     'CPU',
     'CVE',
     'Dockerfile',
-    "doesn't",
-    "don't",
     'IPC',
     'Kubernetes',
     'MUST',
@@ -30,7 +28,7 @@ function isInitialUpperCase(item: string) {
 }
 
 function isLowerCase(item: string) {
-    return /^[a-z]+$/.test(item);
+    return item === item.toLowerCase();
 }
 
 function hasSentenceCase(otherName: string) {
