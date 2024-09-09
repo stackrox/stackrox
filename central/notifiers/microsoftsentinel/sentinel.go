@@ -53,7 +53,7 @@ func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) e
 		return nil
 	}
 
-	err := s.uploadLogs(ctx, msg)
+	err := s.uploadLogs(ctx, s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig(), msg)
 	if err != nil {
 		return errors.Wrap(err, "failed to upload audit log to Microsoft Sentinel")
 	}
@@ -105,7 +105,7 @@ func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
 	if s.sentinel().GetAuditLogDcrConfig().GetEnabled() {
 		err := s.SendAuditMessage(ctx, s.getTestAuditLogMessage())
 		if err != nil {
-			return notifiers.NewNotifierError("could not audit message to sentinel", err)
+			return notifiers.NewNotifierError("could not send audit message to sentinel", err)
 		}
 	} else {
 		log.Info("audit message are disabled, test audit message was not send to sentinel")
@@ -154,23 +154,24 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return nil
 	}
 
-	err := s.uploadLogs(ctx, alert)
+	err := s.uploadLogs(ctx, s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig(), alert)
 	if err != nil {
 		return errors.Wrap(err, "failed to upload alert notifications to Microsoft Sentinel")
 	}
 	return nil
 }
 
-func (s sentinel) uploadLogs(ctx context.Context, msg proto.Message) error {
+func (s sentinel) uploadLogs(ctx context.Context, dcrConfig *storage.MicrosoftSentinel_DataCollectionRuleConfig, msg proto.Message) error {
 	bytesToSend, err := s.prepareLogsToSend(msg)
 	if err != nil {
 		return err
 	}
 
+	log.Infof("bytes to send: %s", string(bytesToSend))
 	return retry.WithRetry(func() error {
 		// UploadResponse is unhandled because it currently is only a placeholder in the azure client library and does not
 		// contain any information to be processed.
-		_, err := s.azlogsClient.Upload(ctx, s.sentinel().GetAlertDcrConfig().GetDataCollectionRuleId(), s.sentinel().GetAlertDcrConfig().GetStreamName(), bytesToSend, &azlogs.UploadOptions{})
+		_, err := s.azlogsClient.Upload(ctx, dcrConfig.GetDataCollectionRuleId(), dcrConfig.GetStreamName(), bytesToSend, &azlogs.UploadOptions{})
 		azRespErr := azureErrors.IsResponseError(err)
 		if azRespErr != nil {
 			return notifiers.CreateError(s.notifier.GetName(), azRespErr.RawResponse, codes.MicrosoftSentinelGeneric)
