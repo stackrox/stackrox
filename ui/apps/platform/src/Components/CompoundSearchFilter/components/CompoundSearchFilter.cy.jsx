@@ -49,10 +49,10 @@ const clusterSearchFilterConfig = {
 
 const selectors = {
     entitySelectToggle: 'button[aria-label="compound search filter entity selector toggle"]',
-    entitySelectItems: 'div[aria-label="compound search filter entity selector menu"] ul li',
+    entitySelectItems: '[aria-label="compound search filter entity selector menu"] li',
     entitySelectItem: (text) => `${selectors.entitySelectItems} button:contains(${text})`,
     attributeSelectToggle: 'button[aria-label="compound search filter attribute selector toggle"]',
-    attributeSelectItems: 'div[aria-label="compound search filter attribute selector menu"] ul li',
+    attributeSelectItems: '[aria-label="compound search filter attribute selector menu"] li',
     attributeSelectItem: (text) => `${selectors.attributeSelectItems} button:contains(${text})`,
 };
 
@@ -321,7 +321,7 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[aria-label="Condition selector toggle"]').should('have.text', 'On');
 
         cy.get('button[aria-label="Condition selector toggle"]').click();
-        cy.get('div[aria-label="Condition selector menu"] li button:contains("After")')
+        cy.get('[aria-label="Condition selector menu"] li button:contains("After")')
             .filter((_, element) => {
                 // Get exact value
                 // @TODO: Could be a custom command
@@ -365,7 +365,7 @@ describe(Cypress.spec.relative, () => {
 
         // change condition and number value
         cy.get('button[aria-label="Condition selector toggle"]').click();
-        cy.get('div[aria-label="Condition selector menu"] li button:contains("Is less than")')
+        cy.get('[aria-label="Condition selector menu"] li button:contains("Is less than")')
             .filter((_, element) => {
                 // Get exact value
                 // @TODO: Could be a custom command
@@ -426,7 +426,7 @@ describe(Cypress.spec.relative, () => {
 
         const autocompleteMenuToggle =
             'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Menu toggle"]';
-        const autocompleteMenuItems = 'div[aria-label="Filter results select menu"] ul li';
+        const autocompleteMenuItems = '[aria-label="Filter results select menu"] li';
         const autocompleteInput = 'input[aria-label="Filter results by Image name"]';
         const autocompleteSearchButton = 'button[aria-label="Apply autocomplete input to search"]';
 
