@@ -154,7 +154,7 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return nil
 	}
 
-	err := s.uploadLogs(ctx, s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig(), alert)
+	err := s.uploadLogs(ctx, s.notifier.GetMicrosoftSentinel().GetAlertDcrConfig(), alert)
 	if err != nil {
 		return errors.Wrap(err, "failed to upload alert notifications to Microsoft Sentinel")
 	}
