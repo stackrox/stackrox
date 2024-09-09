@@ -5601,7 +5601,7 @@
               },
               {
                 "id": 11,
-                "name": "cvss_scores",
+                "name": "cvss_metrics",
                 "type": "CVSSScore",
                 "is_repeated": true
               }

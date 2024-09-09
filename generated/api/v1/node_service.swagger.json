@@ -262,7 +262,7 @@
             "type": "object",
             "$ref": "#/definitions/storageCVSSScore"
           },
-          "title": "cvss_scores stores list of cvss scores from different sources like nvd, Redhat etc"
+          "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
         }
       }
     },
