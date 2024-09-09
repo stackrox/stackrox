@@ -98,7 +98,7 @@ require (
 	github.com/owenrumney/go-sarif/v2 v2.3.1
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
-	github.com/planetscale/vtprotobuf v0.6.0
+	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 	github.com/prometheus/client_golang v1.20.2
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.57.0
@@ -143,7 +143,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.3.12
 	google.golang.org/api v0.194.0
 	google.golang.org/genproto v0.0.0-20240814211410-ddb44dafa142
-	google.golang.org/grpc v1.65.0
+	google.golang.org/grpc v1.66.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
