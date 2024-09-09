@@ -11636,6 +11636,11 @@
                 "id": 5,
                 "name": "alert_dcr_config",
                 "type": "DataCollectionRuleConfig"
+              },
+              {
+                "id": 6,
+                "name": "audit_log_dcr_config",
+                "type": "DataCollectionRuleConfig"
               }
             ],
             "messages": [
