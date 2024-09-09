@@ -1,0 +1,6 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+delete:
+- apiVersion: platform.stackrox.io/v1alpha1
+  kind: Central
+  name: stackrox-central-services

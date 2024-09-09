@@ -1,0 +1,7 @@
+# Verify the NO_PROXY env variable set on the Subscription CR propagates to this secret.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: central-stackrox-central-services-proxy-env
+data:
+  NO_PROXY: MTI3LjEuMi4zLzg= # 127.1.2.3/8

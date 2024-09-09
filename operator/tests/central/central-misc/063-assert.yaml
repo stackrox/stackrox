@@ -1,0 +1,32 @@
+# Assert only things specific to this step.
+# General sanity is asserted by the other assert file.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+spec:
+  template:
+    spec:
+      containers:
+      - name: central
+        ports:
+        - containerPort: 8443
+          name: api
+          protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner
+spec:
+  template:
+    spec:
+      containers:
+      - name: scanner
+        ports:
+        - containerPort: 8080
+          name: https
+          protocol: TCP
+        - containerPort: 8443
+          name: grpc
+          protocol: TCP

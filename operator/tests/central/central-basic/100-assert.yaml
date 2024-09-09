@@ -1,0 +1,72 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+spec:
+  template:
+    spec:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["central.com"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner
+spec:
+  template:
+    spec:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["scanner.com"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-db
+spec:
+  template:
+    spec:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["scanner-db.com"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-matcher
+spec:
+  template:
+    spec:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["scanner-v4-matcher.com"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-indexer
+spec:
+  template:
+    spec:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["scanner-v4-indexer.com"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-db
+spec:
+  template:
+    spec:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["scanner-v4-db.com"]

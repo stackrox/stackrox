@@ -1,0 +1,10 @@
+# TODO(ROX-7960): delete this step once the bug is fixed.
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+delete:
+- apiVersion: platform.stackrox.io/v1alpha1
+  kind: Central
+  name: stackrox-central-services
+- apiVersion: platform.stackrox.io/v1alpha1
+  kind: SecuredCluster
+  name: stackrox-secured-cluster-services

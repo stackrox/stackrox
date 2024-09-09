@@ -1,0 +1,39 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor
+spec:
+  template:
+    spec:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["sensor.com"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-control
+spec:
+  template:
+    spec:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["admission-control.com"]
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: collector
+spec:
+  template:
+    spec:
+      hostAliases:
+      - ip: "127.0.0.1"
+        hostnames: ["collector.com"]

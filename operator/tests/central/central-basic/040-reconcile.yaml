@@ -1,0 +1,9 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+spec:
+  customize:
+    annotations:
+      # Applying an annotation forces central pod re-creation and thus re-reading password.
+      test-step: "40"

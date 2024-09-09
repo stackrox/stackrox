@@ -1,0 +1,78 @@
+# Make kuttl ignore this file unless running against openshift.
+apiVersion: kuttl.dev/v1beta1
+kind: TestFile
+testRunSelector:
+  matchLabels:
+    openshift: "true"
+---
+# Assert only things specific to this step.
+# General sanity is asserted by the other assert file.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+spec:
+  template:
+    spec:
+      containers:
+      - name: central
+        ports:
+        - containerPort: 8443
+          name: api
+          protocol: TCP
+        - containerPort: 9090
+          name: monitoring
+          protocol: TCP
+        - containerPort: 9091
+          name: monitoring-tls
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: central-monitoring
+spec:
+  ingress:
+  - ports:
+    - port: 9090
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central
+  policyTypes:
+  - Ingress
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner
+spec:
+  template:
+    spec:
+      containers:
+      - name: scanner
+        ports:
+        - containerPort: 8080
+          name: https
+          protocol: TCP
+        - containerPort: 8443
+          name: grpc
+          protocol: TCP
+        - containerPort: 9090
+          name: monitoring
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: scanner-monitoring
+spec:
+  ingress:
+  - ports:
+    - port: 9090
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: scanner
+  policyTypes:
+  - Ingress

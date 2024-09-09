@@ -1,0 +1,16 @@
+# Make sure there are no Scanner V4 deployments
+# since they have to be enabled explicitly
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-db
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-indexer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-matcher

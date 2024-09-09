@@ -1,0 +1,4 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- command: retry-kubectl.sh auth can-i get /metrics --as=system:serviceaccount:$NAMESPACE:operator-metrics-privileged --quiet

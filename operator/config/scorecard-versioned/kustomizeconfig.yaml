@@ -1,0 +1,5 @@
+images:
+- group: scorecard.operatorframework.io
+  kind: Configuration
+  version: v1alpha3
+  path: stages/tests/image
