@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -197,16 +196,14 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 
 	var query string
 
-	if features.Flags["ROX_DEPLOYMENT_ENVVAR_SEARCH"].Enabled() {
-		for childIndex, child := range obj.GetConfig().GetEnv() {
-			if err := insertIntoDeploymentsContainersEnvs(batch, child, deploymentID, idx, childIndex); err != nil {
-				return err
-			}
+	for childIndex, child := range obj.GetConfig().GetEnv() {
+		if err := insertIntoDeploymentsContainersEnvs(batch, child, deploymentID, idx, childIndex); err != nil {
+			return err
 		}
-
-		query = "delete from deployments_containers_envs where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-		batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetConfig().GetEnv()))
 	}
+
+	query = "delete from deployments_containers_envs where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
+	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetConfig().GetEnv()))
 
 	for childIndex, child := range obj.GetVolumes() {
 		if err := insertIntoDeploymentsContainersVolumes(batch, child, deploymentID, idx, childIndex); err != nil {

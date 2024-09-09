@@ -46,9 +46,6 @@ var (
 	// SensorDeploymentBuildOptimization enables a performance improvement by skipping deployments processing when no dependency or spec changed
 	SensorDeploymentBuildOptimization = registerFeature("Enables a performance improvement by skipping deployments processing when no dependency or spec changed", "ROX_DEPLOYMENT_BUILD_OPTIMIZATION", enabled)
 
-	// DeploymentEnvvarSearch enables search on the environment variable fields of deployments
-	_ = registerFeature("Enables search on the environment variable fields of deployments", "ROX_DEPLOYMENT_ENVVAR_SEARCH", enabled)
-
 	// SensorCapturesIntermediateEvents enables sensor to capture intermediate events when it is disconnected from central
 	SensorCapturesIntermediateEvents = registerFeature("Enables sensor to capture intermediate events when it is disconnected from central", "ROX_CAPTURE_INTERMEDIATE_EVENTS", enabled)
 
