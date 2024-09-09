@@ -169,7 +169,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("CVEInfo", []string{
 		"createdAt: Time",
 		"cve: String!",
-		"cvssScores: [CVSSScore]!",
+		"cvssMetrics: [CVSSScore]!",
 		"cvssV2: CVSSV2",
 		"cvssV3: CVSSV3",
 		"lastModified: Time",
@@ -3020,8 +3020,8 @@ func (resolver *cVEInfoResolver) Cve(ctx context.Context) string {
 	return value
 }
 
-func (resolver *cVEInfoResolver) CvssScores(ctx context.Context) ([]*cVSSScoreResolver, error) {
-	value := resolver.data.GetCvssScores()
+func (resolver *cVEInfoResolver) CvssMetrics(ctx context.Context) ([]*cVSSScoreResolver, error) {
+	value := resolver.data.GetCvssMetrics()
 	return resolver.root.wrapCVSSScores(value, nil)
 }
 

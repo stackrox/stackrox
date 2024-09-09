@@ -59,7 +59,6 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.FirstImageOccurrence = foundImage.GetLastUpdated()
 		}
 	}
-
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	imageCount, err := store.Count(ctx, search.EmptyQuery())

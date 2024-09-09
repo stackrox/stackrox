@@ -125,7 +125,7 @@ message CVEInfo {
   repeated Reference references = 10;
 
   // cvss_scores stores list of cvss scores from different sources like nvd, Redhat etc
-  repeated CVSSScore cvss_scores = 11;
+  repeated CVSSScore cvss_metrics = 11;
 }
 
 message ImageCVE {

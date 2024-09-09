@@ -256,7 +256,7 @@
             "$ref": "#/definitions/storageCVEInfoReference"
           }
         },
-        "cvssScores": {
+        "cvssMetrics": {
           "type": "array",
           "items": {
             "type": "object",

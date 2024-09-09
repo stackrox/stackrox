@@ -161,12 +161,12 @@ func (m *CVEInfo) CloneVT() *CVEInfo {
 		}
 		r.References = tmpContainer
 	}
-	if rhs := m.CvssScores; rhs != nil {
+	if rhs := m.CvssMetrics; rhs != nil {
 		tmpContainer := make([]*CVSSScore, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
-		r.CvssScores = tmpContainer
+		r.CvssMetrics = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -606,11 +606,11 @@ func (this *CVEInfo) EqualVT(that *CVEInfo) bool {
 			}
 		}
 	}
-	if len(this.CvssScores) != len(that.CvssScores) {
+	if len(this.CvssMetrics) != len(that.CvssMetrics) {
 		return false
 	}
-	for i, vx := range this.CvssScores {
-		vy := that.CvssScores[i]
+	for i, vx := range this.CvssMetrics {
+		vy := that.CvssMetrics[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
 				p = &CVSSScore{}
@@ -1399,9 +1399,9 @@ func (m *CVEInfo) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.CvssScores) > 0 {
-		for iNdEx := len(m.CvssScores) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.CvssScores[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+	if len(m.CvssMetrics) > 0 {
+		for iNdEx := len(m.CvssMetrics) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.CvssMetrics[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -2346,8 +2346,8 @@ func (m *CVEInfo) SizeVT() (n int) {
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
-	if len(m.CvssScores) > 0 {
-		for _, e := range m.CvssScores {
+	if len(m.CvssMetrics) > 0 {
+		for _, e := range m.CvssMetrics {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
@@ -4127,7 +4127,7 @@ func (m *CVEInfo) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 11:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CvssScores", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CvssMetrics", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4154,8 +4154,8 @@ func (m *CVEInfo) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.CvssScores = append(m.CvssScores, &CVSSScore{})
-			if err := m.CvssScores[len(m.CvssScores)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			m.CvssMetrics = append(m.CvssMetrics, &CVSSScore{})
+			if err := m.CvssMetrics[len(m.CvssMetrics)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7377,7 +7377,7 @@ func (m *CVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 11:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CvssScores", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CvssMetrics", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7404,8 +7404,8 @@ func (m *CVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.CvssScores = append(m.CvssScores, &CVSSScore{})
-			if err := m.CvssScores[len(m.CvssScores)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			m.CvssMetrics = append(m.CvssMetrics, &CVSSScore{})
+			if err := m.CvssMetrics[len(m.CvssMetrics)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

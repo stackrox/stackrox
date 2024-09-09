@@ -19,7 +19,7 @@ func TestNodeVulnConv(t *testing.T) {
 	nodeVuln.SetFixedBy = &storage.NodeVulnerability_FixedBy{FixedBy: "a"}
 	// EmbeddedVulns do not have a reference field.
 	nodeVuln.CveBaseInfo.References = nil
-	nodeVuln.CveBaseInfo.CvssScores = nil
+	nodeVuln.CveBaseInfo.CvssMetrics = nil
 	embedvuln := EmbeddedVulnerabilityToNodeVulnerability(vuln)
 	protoassert.Equal(t, nodeVuln, embedvuln)
 }
