@@ -867,7 +867,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
+		testCase := testCase // TODO: delete for go 1.22.
 		s.T().Run(testCase.description, func(t *testing.T) {
 			s.mockAggregator.EXPECT().GetAndPrune(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 				func(_ func(string) bool, deploymentsSet set.StringSet) map[string][]*aggregatorPkg.ProcessUpdate {
