@@ -1,11 +1,14 @@
 package microsoftsentinel
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"net/http"
 	"testing"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers/microsoftsentinel/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -69,9 +72,18 @@ func (suite *SentinelTestSuite) TestRetry() {
 		notifier:     getNotifierConfig(),
 	}
 
+	body := bytes.NewBuffer([]byte("http error body"))
+	respErr := &azcore.ResponseError{
+		StatusCode: http.StatusServiceUnavailable,
+		RawResponse: &http.Response{
+			StatusCode: http.StatusServiceUnavailable,
+			Body:       io.NopCloser(body),
+		},
+	}
+
 	suite.mockAzureClient.EXPECT().
 		Upload(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(3).
-		Return(azlogs.UploadResponse{}, errors.New("test"))
+		Return(azlogs.UploadResponse{}, respErr)
 
 	err := notifier.AlertNotify(context.Background(), &storage.Alert{})
 	suite.Require().Error(err)
@@ -109,7 +121,11 @@ func (suite *SentinelTestSuite) TestValidate() {
 			ValidateSecret:   true,
 		},
 		"Test invalid config without secret": {
-			Config:                      &storage.MicrosoftSentinel{},
+			Config: &storage.MicrosoftSentinel{
+				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
+					Enabled: true,
+				},
+			},
 			ExpectedErrorMsg:            "Microsoft Sentinel validation errors: [Log Ingestion Endpoint must be specified, Data Collection Rule Id must be specified, Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified]",
 			ExpectedErrorMsgNotContains: "secret",
 			ValidateSecret:              false,
@@ -154,6 +170,7 @@ func getNotifierConfig() *storage.Notifier {
 				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
 					DataCollectionRuleId: uuid.NewDummy().String(),
 					StreamName:           streamName,
+					Enabled:              true,
 				},
 			},
 		},
