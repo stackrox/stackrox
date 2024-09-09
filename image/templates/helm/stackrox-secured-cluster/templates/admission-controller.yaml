@@ -215,6 +215,9 @@ webhooks:
           - deploymentconfigs
           {{- end }}
     namespaceSelector:
+      {{- if ._rox.admissionControl.namespaceSelector }}
+        {{- toYaml ._rox.admissionControl.namespaceSelector | nindent 6 }}
+      {{- else }}
       matchExpressions:
       - key: namespace.metadata.stackrox.io/name
         operator: NotIn
@@ -223,6 +226,7 @@ webhooks:
           - kube-system
           - kube-public
           - istio-system
+      {{- end }}
     failurePolicy: Ignore
     clientConfig:
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}
