@@ -106,6 +106,12 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "deploymentId",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [

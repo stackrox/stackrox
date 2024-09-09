@@ -65,6 +65,7 @@ message PatchNetworkEntityRequest {
 message GetExternalNetworkEntitiesRequest {
   string cluster_id = 1;
   string query = 2;
+  string deployment_id = 3;
 }
 
 message GetExternalNetworkEntitiesResponse {

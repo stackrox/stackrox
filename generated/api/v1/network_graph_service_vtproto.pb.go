@@ -220,6 +220,7 @@ func (m *GetExternalNetworkEntitiesRequest) CloneVT() *GetExternalNetworkEntitie
 	r := new(GetExternalNetworkEntitiesRequest)
 	r.ClusterId = m.ClusterId
 	r.Query = m.Query
+	r.DeploymentId = m.DeploymentId
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -556,6 +557,9 @@ func (this *GetExternalNetworkEntitiesRequest) EqualVT(that *GetExternalNetworkE
 		return false
 	}
 	if this.Query != that.Query {
+		return false
+	}
+	if this.DeploymentId != that.DeploymentId {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1170,6 +1174,13 @@ func (m *GetExternalNetworkEntitiesRequest) MarshalToSizedBufferVT(dAtA []byte) 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.DeploymentId) > 0 {
+		i -= len(m.DeploymentId)
+		copy(dAtA[i:], m.DeploymentId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.DeploymentId)))
+		i--
+		dAtA[i] = 0x1a
+	}
 	if len(m.Query) > 0 {
 		i -= len(m.Query)
 		copy(dAtA[i:], m.Query)
@@ -1504,6 +1515,10 @@ func (m *GetExternalNetworkEntitiesRequest) SizeVT() (n int) {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.Query)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.DeploymentId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -2869,6 +2884,42 @@ func (m *GetExternalNetworkEntitiesRequest) UnmarshalVTUnsafe(dAtA []byte) error
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.Query = stringValue
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeploymentId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.DeploymentId = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
