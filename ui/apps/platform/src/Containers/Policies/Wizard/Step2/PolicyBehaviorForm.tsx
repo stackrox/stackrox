@@ -46,7 +46,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     } | null>(null);
 
     function onChangeLifecycleStage(lifecycleStage: LifecycleStage, isChecked: boolean) {
-        if (values.id) {
+        if (values.policySections.length > 0 && values.policySections[0].policyGroups.length > 0) {
             // for existing policies, warn that changing lifecycles will clear all policy criteria
             setLifeCycleChange({ lifecycleStage, isChecked });
         } else {
@@ -145,8 +145,8 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                 onCancel={onCancelChangeLifecycle}
                 title="Reset policy criteria?"
             >
-                Editing the lifecycle stage will reset and clear any saved criteria for this policy.
-                You will be required to reselect policy criteria in the next step.
+                Editing the lifecycle stage will reset and clear any saved rules for this policy.
+                You will be required to reselect policy rules in the next step.
             </ConfirmationModal>
             <Flex
                 direction={{ default: 'column' }}
