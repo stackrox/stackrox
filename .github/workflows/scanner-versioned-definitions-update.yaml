@@ -166,8 +166,11 @@ jobs:
         echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
     - name: Run Updater (single bundle)
+      if: ${{ env.SCANNER_BUNDLE_VERSION != 'dev' }}
       run: |
-        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ env.SCANNER_BUNDLE_VERSION }}"
+        if [[ "${SCANNER_BUNDLE_VERSION//[^0-9.]/}" < "4.6.0" ]]; then
+          scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${SCANNER_BUNDLE_VERSION}"
+        fi
 
     - name: Run updater (multi bundle)
       run: |
@@ -298,6 +301,25 @@ jobs:
           fi
         done
         gsutil cp -r gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
+
+    - name: Copy v1 to pre-versioned bundles
+      run: |
+        # using v1 bundle for released versions listed in RELEASE_VERSION
+        single=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulns.json.zst
+        multi=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulnerabilities.zip
+        # Parse all supported pre-4.6 releases and copy the versioned bundle v1 to ensure
+        # these releases get updates.
+        grep -E "^[45]\.[0-9]+\.[0-9]+$" scanner/updater/version/RELEASE_VERSION | while read -r release; do
+          case "$release" in
+          4.4*)
+            gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            ;;
+          *)
+            gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            gsutil cp "$multi" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            ;;
+          esac
+        done
 
   send-notification:
     needs:
