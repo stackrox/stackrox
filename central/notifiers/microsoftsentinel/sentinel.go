@@ -102,13 +102,34 @@ func (s sentinel) ProtoNotifier() *storage.Notifier {
 }
 
 func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
-	alert := s.getTestAlert()
-
-	err := s.AlertNotify(ctx, alert)
-	if err != nil {
-		return notifiers.NewNotifierError("could not send event", err)
+	if s.sentinel().GetAuditLogDcrConfig().GetEnabled() {
+		err := s.SendAuditMessage(ctx, s.getTestAuditLogMessage())
+		if err != nil {
+			return notifiers.NewNotifierError("could not audit message to sentinel", err)
+		}
+	} else {
+		log.Info("audit message are disabled, test audit message was not send to sentinel")
 	}
+
+	if s.sentinel().GetAlertDcrConfig().GetEnabled() {
+		err := s.AlertNotify(ctx, s.getTestAlert())
+		if err != nil {
+			return notifiers.NewNotifierError("could not send alert notify to sentinel", err)
+		}
+	} else {
+		log.Info("alert notifier is disabled, test alert was not send to sentinel")
+	}
+
 	return nil
+}
+
+func (s sentinel) getTestAuditLogMessage() *v1.Audit_Message {
+	return &v1.Audit_Message{
+		Request: &v1.Audit_Message_Request{
+			Endpoint: "test-endpoint",
+			Method:   "GET",
+		},
+	}
 }
 
 func (s sentinel) getTestAlert() *storage.Alert {
