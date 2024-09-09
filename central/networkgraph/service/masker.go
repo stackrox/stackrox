@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
@@ -60,7 +59,7 @@ func (m *flowGraphMasker) MaskDeploymentsAndNamespaces() {
 		origDeployment := m.deploymentsToMask[deploymentID]
 		maskedDeploymentName := fmt.Sprintf("%s #%d", MaskedDeploymentName, ix+1)
 		maskedDeployment := &storage.ListDeployment{
-			Id:        uuid.NewV4().String(),
+			Id:        origDeployment.GetId(),
 			Name:      maskedDeploymentName,
 			Cluster:   origDeployment.GetCluster(),
 			ClusterId: origDeployment.GetClusterId(),
