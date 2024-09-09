@@ -36,6 +36,18 @@ func (b *backendImpl) GetAll(ctx context.Context) ([]*storage.InitBundleMeta, er
 	return allBundleMetas, nil
 }
 
+func (b *backendImpl) GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, error) {
+	if err := access.CheckAccess(ctx, storage.Access_READ_ACCESS); err != nil {
+		return nil, err
+	}
+
+	allBundleMetas, err := b.store.GetAllCRS(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving all CRSs")
+	}
+	return allBundleMetas, nil
+}
+
 func extractUserIdentity(ctx context.Context) *storage.User {
 	ctxIdentity := authn.IdentityFromContextOrNil(ctx)
 	if ctxIdentity == nil {
@@ -62,15 +74,22 @@ func extractUserIdentity(ctx context.Context) *storage.User {
 	}
 }
 
+func extractCertExpiryDate(cert *mtls.IssuedCert) (time.Time, error) {
+	if cert == nil {
+		return time.Time{}, errors.New("provided certificate is empty")
+	}
+	if cert.X509Cert == nil {
+		return time.Time{}, errors.New("no X509 certificate in init bundle sensor certificate")
+	}
+	return cert.X509Cert.NotAfter, nil
+}
+
 func extractExpiryDate(certBundle clusters.CertBundle) (time.Time, error) {
 	sensorCert := certBundle[storage.ServiceType_SENSOR_SERVICE]
 	if sensorCert == nil {
 		return time.Time{}, errors.New("no sensor certificate in init bundle")
 	}
-	if sensorCert.X509Cert == nil {
-		return time.Time{}, errors.New("no X509 certificate in init bundle sensor certificate")
-	}
-	return sensorCert.X509Cert.NotAfter, nil
+	return extractCertExpiryDate(sensorCert)
 }
 
 func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMeta, error) {
@@ -121,6 +140,60 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 		},
 		CertBundle: certBundle,
 		Meta:       meta,
+	}, nil
+}
+
+func (b *backendImpl) IssueCRS(ctx context.Context, name string) (*CRSWithMeta, error) {
+	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
+		return nil, err
+	}
+
+	if err := validateName(name); err != nil {
+		return nil, err
+	}
+
+	caCert, err := b.certProvider.GetCA()
+	if err != nil {
+		return nil, errors.Wrap(err, "retrieving CA certificate")
+	}
+
+	user := extractUserIdentity(ctx)
+	cert, id, err := b.certProvider.GetCRSCert()
+	if err != nil {
+		return nil, errors.Wrap(err, "generating CRS certificates")
+	}
+
+	expiryDate, err := extractCertExpiryDate(cert)
+	if err != nil {
+		return nil, errors.Wrap(err, "extracting expiry date of CRS certificate")
+	}
+
+	expiryTimestamp, err := protocompat.ConvertTimeToTimestampOrError(expiryDate)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting CRS expiry date to timestamp")
+	}
+
+	// On the storage side we are reusing the InitBundleMeta.
+	meta := &storage.InitBundleMeta{
+		Id:        id.String(),
+		Name:      name,
+		CreatedAt: protocompat.TimestampNow(),
+		CreatedBy: user,
+		ExpiresAt: expiryTimestamp,
+		Version:   storage.InitBundleMeta_CRS,
+	}
+
+	if err := b.store.Add(ctx, meta); err != nil {
+		return nil, errors.Wrap(err, "adding new CRS metadata to data store")
+	}
+
+	return &CRSWithMeta{
+		CRS: &CRS{
+			CAs:  []string{caCert},
+			Cert: string(cert.CertPEM),
+			Key:  string(cert.KeyPEM),
+		},
+		Meta: meta,
 	}, nil
 }
 
