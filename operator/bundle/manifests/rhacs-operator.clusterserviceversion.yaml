@@ -3,14 +3,14 @@ kind: ClusterServiceVersion
 metadata:
   annotations:
     alm-examples: "[\n  {\n    \"apiVersion\": \"platform.stackrox.io/v1alpha1\",\n\
-      \    \"kind\": \"Central\",\n    \"metadata\": {\n      \"labels\": {\n    \
-      \    \"app.kubernetes.io/managed-by\": \"kustomize\",\n        \"app.kubernetes.io/name\"\
-      : \"rhacs-operator\"\n      },\n      \"name\": \"central-sample\"\n    },\n\
-      \    \"spec\": null\n  },\n  {\n    \"apiVersion\": \"platform.stackrox.io/v1alpha1\"\
-      ,\n    \"kind\": \"SecuredCluster\",\n    \"metadata\": {\n      \"labels\"\
-      : {\n        \"app.kubernetes.io/managed-by\": \"kustomize\",\n        \"app.kubernetes.io/name\"\
-      : \"rhacs-operator\"\n      },\n      \"name\": \"securedcluster-sample\"\n\
-      \    },\n    \"spec\": null\n  }\n]"
+      \    \"kind\": \"Central\",\n    \"metadata\": {\n      \"name\": \"stackrox-central-services\"\
+      ,\n      \"namespace\": \"stackrox\"\n    },\n    \"spec\": {\n      \"central\"\
+      : {\n        \"exposure\": {\n          \"route\": {\n            \"enabled\"\
+      : true\n          }\n        }\n      }\n    }\n  },\n  {\n    \"apiVersion\"\
+      : \"platform.stackrox.io/v1alpha1\",\n    \"kind\": \"SecuredCluster\",\n  \
+      \  \"metadata\": {\n      \"name\": \"stackrox-secured-cluster-services\",\n\
+      \      \"namespace\": \"stackrox\"\n    },\n    \"spec\": {\n      \"clusterName\"\
+      : \"my-cluster\"\n    }\n  }\n]"
     capabilities: Seamless Upgrades
     categories: Security
     containerImage: quay.io/stackrox-io/stackrox-operator:0.0.1
@@ -1416,14 +1416,14 @@ spec:
         serviceAccountName: rhacs-operator-controller-manager
       deployments:
       - label:
-          app.kubernetes.io/managed-by: kustomize
-          app.kubernetes.io/name: rhacs-operator
+          app: rhacs-operator
           control-plane: controller-manager
         name: rhacs-operator-controller-manager
         spec:
           replicas: 1
           selector:
             matchLabels:
+              app: rhacs-operator
               control-plane: controller-manager
           strategy: {}
           template:
@@ -1431,13 +1431,32 @@ spec:
               annotations:
                 kubectl.kubernetes.io/default-container: manager
               labels:
+                app: rhacs-operator
                 control-plane: controller-manager
             spec:
               containers:
               - args:
+                - --health-probe-bind-address=:8081
+                - --metrics-bind-address=0.0.0.0:8443
                 - --leader-elect
-                command:
-                - /manager
+                env:
+                - name: RELATED_IMAGE_MAIN
+                - name: RELATED_IMAGE_SCANNER
+                - name: RELATED_IMAGE_SCANNER_SLIM
+                - name: RELATED_IMAGE_SCANNER_DB
+                - name: RELATED_IMAGE_SCANNER_DB_SLIM
+                - name: RELATED_IMAGE_COLLECTOR_SLIM
+                - name: RELATED_IMAGE_COLLECTOR_FULL
+                - name: RELATED_IMAGE_ROXCTL
+                - name: RELATED_IMAGE_CENTRAL_DB
+                - name: RELATED_IMAGE_SCANNER_V4_DB
+                - name: RELATED_IMAGE_SCANNER_V4
+                - name: MEMORY_LIMIT_BYTES
+                  valueFrom:
+                    resourceFieldRef:
+                      containerName: manager
+                      divisor: '0'
+                      resource: limits.memory
                 image: quay.io/stackrox-io/stackrox-operator:0.0.1
                 livenessProbe:
                   httpGet:
@@ -1446,6 +1465,10 @@ spec:
                   initialDelaySeconds: 15
                   periodSeconds: 20
                 name: manager
+                ports:
+                - containerPort: 8443
+                  name: https
+                  protocol: TCP
                 readinessProbe:
                   httpGet:
                     path: /readyz
@@ -1454,11 +1477,11 @@ spec:
                   periodSeconds: 10
                 resources:
                   limits:
-                    cpu: 500m
-                    memory: 128Mi
+                    cpu: 200m
+                    memory: 1Gi
                   requests:
-                    cpu: 10m
-                    memory: 64Mi
+                    cpu: 100m
+                    memory: 200Mi
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:
@@ -1541,6 +1564,9 @@ spec:
   minKubeVersion: 1.15.0
   provider:
     name: Red Hat
+  relatedImages:
+  - image: ''
+    name: ''
   skips:
   - rhacs-operator.v4.1.0
   version: 0.0.1

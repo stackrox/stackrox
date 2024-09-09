@@ -3,8 +3,7 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: rhacs-operator
+    app: rhacs-operator
     control-plane: controller-manager
   name: rhacs-operator-controller-manager-metrics-service
 spec:
@@ -14,6 +13,7 @@ spec:
     protocol: TCP
     targetPort: https
   selector:
+    app: rhacs-operator
     control-plane: controller-manager
 status:
   loadBalancer: {}

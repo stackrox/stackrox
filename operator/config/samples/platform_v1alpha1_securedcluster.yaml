@@ -1,9 +1,7 @@
 apiVersion: platform.stackrox.io/v1alpha1
 kind: SecuredCluster
 metadata:
-  labels:
-    app.kubernetes.io/name: rhacs-operator
-    app.kubernetes.io/managed-by: kustomize
-  name: securedcluster-sample
+  name: stackrox-secured-cluster-services
+  namespace: stackrox
 spec:
-  # TODO(user): Add fields here
+  clusterName: my-cluster
