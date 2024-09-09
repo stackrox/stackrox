@@ -196,13 +196,23 @@ func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
 		errorList.AddString("Log Ingestion Endpoint must be specified")
 	}
 
-	if sentinel.GetAlertDcrConfig().GetEnabled() {
+	if sentinel.GetAuditLogDcrConfig().GetEnabled() {
 		if sentinel.GetAlertDcrConfig().GetDataCollectionRuleId() == "" {
-			errorList.AddString("Data Collection Rule Id must be specified")
+			errorList.AddString("Audit Logging Data Collection Rule Id must be specified")
 		}
 
 		if sentinel.GetAlertDcrConfig().GetStreamName() == "" {
-			errorList.AddString("Stream Name must be specified")
+			errorList.AddString("Audit Logging Stream Name must be specified")
+		}
+	}
+
+	if sentinel.GetAlertDcrConfig().GetEnabled() {
+		if sentinel.GetAlertDcrConfig().GetDataCollectionRuleId() == "" {
+			errorList.AddString("Alert Data Collection Rule Id must be specified")
+		}
+
+		if sentinel.GetAlertDcrConfig().GetStreamName() == "" {
+			errorList.AddString("Alert Stream Name must be specified")
 		}
 	}
 

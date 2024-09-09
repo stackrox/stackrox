@@ -116,8 +116,11 @@ func (suite *SentinelTestSuite) TestValidate() {
 				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
 					Enabled: true,
 				},
+				AuditLogDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
+					Enabled: true,
+				},
 			},
-			ExpectedErrorMsg: "Microsoft Sentinel validation errors: [Log Ingestion Endpoint must be specified, Data Collection Rule Id must be specified, Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified, Secret must be specified]",
+			ExpectedErrorMsg: "Microsoft Sentinel validation errors: [Log Ingestion Endpoint must be specified, Audit Logging Data Collection Rule Id must be specified, Audit Logging Stream Name must be specified, Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified, Secret must be specified]",
 			ValidateSecret:   true,
 		},
 		"Test invalid config without secret": {
@@ -126,7 +129,7 @@ func (suite *SentinelTestSuite) TestValidate() {
 					Enabled: true,
 				},
 			},
-			ExpectedErrorMsg:            "Microsoft Sentinel validation errors: [Log Ingestion Endpoint must be specified, Data Collection Rule Id must be specified, Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified]",
+			ExpectedErrorMsg:            "Microsoft Sentinel validation errors: [Log Ingestion Endpoint must be specified, Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified]",
 			ExpectedErrorMsgNotContains: "secret",
 			ValidateSecret:              false,
 		},
@@ -139,7 +142,7 @@ func (suite *SentinelTestSuite) TestValidate() {
 				assert.NoError(t, err)
 			} else {
 				assert.NotContains(t, testCase.ExpectedErrorMsgNotContains, err.Error())
-				assert.Contains(t, testCase.ExpectedErrorMsg, err.Error())
+				assert.Equal(t, testCase.ExpectedErrorMsg, err.Error())
 			}
 		})
 	}
