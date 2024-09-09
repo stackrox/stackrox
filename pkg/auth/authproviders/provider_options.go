@@ -58,6 +58,7 @@ func WithRoleMapper(roleMapper permissions.RoleMapper) ProviderOption {
 // WithStorageView sets the values in the store auth provider from the input value.
 func WithStorageView(stored *storage.AuthProvider) ProviderOption {
 	return func(pr *providerImpl) error {
+		log.Info("providerOption WithStorageView")
 		pr.storedInfo = stored.CloneVT()
 		return nil
 	}
@@ -110,6 +111,7 @@ func WithEnabled(enabled bool) ProviderOption {
 // WithValidateCallback adds a callback to validate the auth provider.
 func WithValidateCallback(store Store) ProviderOption {
 	return func(pr *providerImpl) error {
+		log.Info("providerOption WithValidateCallback")
 		pr.validateCallback = func() error {
 			return pr.ApplyOptions(WithActive(true), UpdateStore(internalUpdateProviderCtx, store))
 		}
@@ -120,6 +122,7 @@ func WithValidateCallback(store Store) ProviderOption {
 // WithActive sets the active flag for the provider.
 func WithActive(active bool) ProviderOption {
 	return func(pr *providerImpl) error {
+		log.Info("providerOption WithActive ", active)
 		if pr.storedInfo == nil {
 			return errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
@@ -144,6 +147,7 @@ func WithConfig(config map[string]string) ProviderOption {
 // required attributes from the provided auth provider instance.
 func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
 	return func(pr *providerImpl) error {
+		log.Info("providerOption WithAttributeVerifier")
 		if stored.GetRequiredAttributes() == nil {
 			return nil
 		}

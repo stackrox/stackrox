@@ -56,11 +56,15 @@ func NewProvider(options ...ProviderOption) (Provider, error) {
 	}
 	log.Info("Creating new provider")
 	if err := applyOptions(provider, options...); err != nil {
+		log.Info("Error applying options: ", err.Error())
 		return nil, err
 	}
+	log.Info("NewProvider - applyOptions returned no error")
 	if err := validateProvider(provider); err != nil {
+		log.Info("Error validating provider: ", err.Error())
 		return nil, err
 	}
+	log.Info("NewProvider - success")
 	return provider, nil
 }
 
@@ -76,6 +80,7 @@ func applyOptions(provider *providerImpl, options ...ProviderOption) error {
 
 // Input provider must be locked when run.
 func validateProvider(provider *providerImpl) error {
+	log.Info("validate provider")
 	if provider.storedInfo.GetId() == "" {
 		return errors.New("auth providers must have an id")
 	}

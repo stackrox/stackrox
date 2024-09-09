@@ -176,8 +176,10 @@ func (r *registryImpl) CreateProvider(ctx context.Context, options ...ProviderOp
 	// Create provider and add to pool.
 	newProvider, err := NewProvider(options...)
 	if err != nil {
+		log.Info("Error creating provider: ", err.Error())
 		return nil, err
 	}
+	log.Info("CreateProvider no error at provider creation")
 	r.addProvider(newProvider)
 
 	return newProvider, nil
@@ -203,6 +205,7 @@ func (r *registryImpl) UpdateProvider(ctx context.Context, id string, options ..
 }
 
 func (r *registryImpl) DeleteProvider(ctx context.Context, providerID string, force bool, ignoreActive bool) error {
+	log.Info("Deleting provider ", providerID)
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -320,6 +323,7 @@ func (r *registryImpl) deletedNoLock(provider Provider) {
 	if backend == nil {
 		return
 	}
+	log.Info("Disabling provider ", provider.ID(), " (name: ", provider.Name(), " )")
 	backend.OnDisable(provider)
 }
 
