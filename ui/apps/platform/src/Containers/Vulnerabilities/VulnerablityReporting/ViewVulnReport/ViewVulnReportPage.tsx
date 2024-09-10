@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Link, useHistory, useParams, generatePath } from 'react-router-dom';
+import { useHistory, useParams, generatePath } from 'react-router-dom';
 import {
     Alert,
     AlertActionCloseButton,
@@ -17,9 +17,8 @@ import {
     Tabs,
     Tab,
     TabTitleText,
-    TabTitleIcon,
-    TabAction,
-    Popover,
+    Card,
+    CardBody,
 } from '@patternfly/react-core';
 import {
     Dropdown,
@@ -27,10 +26,10 @@ import {
     DropdownItem,
     DropdownSeparator,
 } from '@patternfly/react-core/deprecated';
-import { CaretDownIcon, ClipboardCheckIcon, HelpIcon, HomeIcon } from '@patternfly/react-icons';
+import { CaretDownIcon } from '@patternfly/react-icons';
 
 import { vulnerabilityReportPath } from 'Containers/Vulnerabilities/VulnerablityReporting/pathsForVulnerabilityReporting';
-import { systemConfigPath, vulnerabilityReportsPath } from 'routePaths';
+import { vulnerabilityReportsPath } from 'routePaths';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReport';
 import useDeleteModal, {
@@ -41,12 +40,14 @@ import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import PageTitle from 'Components/PageTitle';
-import PopoverBodyContent from 'Components/PopoverBodyContent';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 
+import ReportJobsHelpAction from 'Components/ReportJobsHelpAction';
+import { JobContextTab } from 'types/reportJob';
+import { ensureJobContextTab } from 'utils/reportJob';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
@@ -60,25 +61,14 @@ export type TabTitleProps = {
     children: string;
 };
 
-function TabTitle({ icon, children }: TabTitleProps): ReactElement {
-    return (
-        <Flex alignItems={{ default: 'alignItemsCenter' }}>
-            {icon && (
-                <FlexItem>
-                    <TabTitleIcon>{icon}</TabTitleIcon>
-                </FlexItem>
-            )}
-            <FlexItem>
-                <TabTitleText>{children}</TabTitleText>
-            </FlexItem>
-        </Flex>
-    );
-}
+const configDetailsTabId = 'VulnReportsConfigDetails';
+const allReportJobsTabId = 'VulnReportsConfigReportJobs';
 
 function ViewVulnReportPage() {
     const history = useHistory();
     const { reportId } = useParams();
     const [isActionsDropdownOpen, setIsActionsDropdownOpen] = useState(false);
+    const [selectedTab, setSelectedTab] = useState<JobContextTab>('CONFIGURATION_DETAILS');
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasWriteAccessForReport =
@@ -274,23 +264,31 @@ function ViewVulnReportPage() {
                     )}
                 </Flex>
             </PageSection>
-            <Divider component="div" />
-            <PageSection padding={{ default: 'noPadding' }} isCenterAligned>
+            <PageSection variant="light" className="pf-v5-u-py-0">
                 <Tabs
-                    className="pf-v5-u-background-color-100"
-                    defaultActiveKey={0}
+                    activeKey={selectedTab}
+                    onSelect={(_e, tab) => {
+                        setSelectedTab(ensureJobContextTab(tab));
+                    }}
                     aria-label="Report details tabs"
                 >
                     <Tab
-                        eventKey={0}
-                        title={<TabTitle icon={<HomeIcon />}>Configuration details</TabTitle>}
-                        aria-label="Configuration details tab"
-                    >
-                        <PageSection
-                            variant="light"
-                            padding={{ default: 'noPadding' }}
-                            className="pf-v5-u-py-lg pf-v5-u-px-lg"
-                        >
+                        tabContentId={configDetailsTabId}
+                        eventKey="CONFIGURATION_DETAILS"
+                        title={<TabTitleText>Configuration details</TabTitleText>}
+                    />
+                    <Tab
+                        tabContentId={allReportJobsTabId}
+                        eventKey="ALL_REPORT_JOBS"
+                        title={<TabTitleText>All report jobs</TabTitleText>}
+                        actions={<ReportJobsHelpAction reportType="Vulnerability" />}
+                    />
+                </Tabs>
+            </PageSection>
+            {selectedTab === 'CONFIGURATION_DETAILS' && (
+                <PageSection isCenterAligned id={configDetailsTabId}>
+                    <Card>
+                        <CardBody>
                             <ReportParametersDetails formValues={reportFormValues} />
                             <Divider component="div" className="pf-v5-u-py-md" />
                             <NotifierConfigurationView
@@ -315,56 +313,15 @@ function ViewVulnReportPage() {
                             />
                             <Divider component="div" className="pf-v5-u-py-md" />
                             <ScheduleDetails formValues={reportFormValues} />
-                        </PageSection>
-                    </Tab>
-                    <Tab
-                        eventKey={1}
-                        title={<TabTitle icon={<ClipboardCheckIcon />}>All report jobs</TabTitle>}
-                        aria-label="Report jobs tab"
-                        actions={
-                            <>
-                                <Popover
-                                    aria-label="All report jobs help text"
-                                    bodyContent={
-                                        <PopoverBodyContent
-                                            headerContent="All report jobs"
-                                            bodyContent={
-                                                <>
-                                                    This function displays the requested jobs from
-                                                    different users and includes their statuses
-                                                    accordingly. While the function provides the
-                                                    ability to monitor and audit your active and
-                                                    past requested jobs, we suggest configuring the{' '}
-                                                    <Link to={systemConfigPath}>
-                                                        Vulnerability report retention limit
-                                                    </Link>{' '}
-                                                    based on your needs in order to ensure optimal
-                                                    user experience. All the report jobs will be
-                                                    kept in your system until they exceed the limit
-                                                    set by you.
-                                                </>
-                                            }
-                                        />
-                                    }
-                                    enableFlip
-                                    position="top"
-                                >
-                                    <TabAction aria-label="Help for report jobs tab">
-                                        <HelpIcon />
-                                    </TabAction>
-                                </Popover>
-                            </>
-                        }
-                    >
-                        <PageSection
-                            padding={{ default: 'noPadding' }}
-                            className="pf-v5-u-py-lg pf-v5-u-px-lg"
-                        >
-                            <ReportJobs reportId={reportId} />
-                        </PageSection>
-                    </Tab>
-                </Tabs>
-            </PageSection>
+                        </CardBody>
+                    </Card>
+                </PageSection>
+            )}
+            {selectedTab === 'ALL_REPORT_JOBS' && (
+                <PageSection isCenterAligned id={allReportJobsTabId}>
+                    <ReportJobs reportId={reportId} />
+                </PageSection>
+            )}
             <DeleteModal
                 title="Permanently delete report?"
                 isOpen={isDeleteModalOpen}
