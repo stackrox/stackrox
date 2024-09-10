@@ -22,6 +22,13 @@ enum VulnerabilitySeverity {
   CRITICAL_VULNERABILITY_SEVERITY = 4;
 }
 
+enum Source {
+  SOURCE_UNKNOWN = 0;
+  SOURCE_RED_HAT = 1;
+  SOURCE_OSV = 2;
+  SOURCE_NVD = 3;
+}
+
 // ******************************
 // This proto is deprecated.
 // ******************************
@@ -97,6 +104,7 @@ message CVEInfo {
     string URI = 1;
     repeated string tags = 2;
   }
+  // ScoreVersion can be deprecated ROX-26066
   enum ScoreVersion {
     V2 = 0; // No unset for automatic backwards compatibility
     V3 = 1;
@@ -111,16 +119,20 @@ message CVEInfo {
   google.protobuf.Timestamp created_at = 5; // @gotags: search:"CVE Created Time"
   google.protobuf.Timestamp last_modified = 6;
   ScoreVersion score_version = 7;
+  // CVSSV2 CVSSV3 ScoreVersion can be deprecated ROX-26066
   CVSSV2 cvss_v2 = 8;
   CVSSV3 cvss_v3 = 9;
   repeated Reference references = 10;
+
+  // cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
+  repeated CVSSScore cvss_metrics = 11;
 }
 
 message ImageCVE {
   string id = 1; // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   CVEInfo cve_base_info = 2;
   string operating_system = 3; // @gotags: search:"Operating System"
-
+  // cvss stores ACS preferred cvss score
   float cvss = 4; // @gotags: search:"CVSS,store"
   VulnerabilitySeverity severity = 5; // @gotags: search:"Severity"
   float impact_score = 6; // @gotags: search:"Impact Score"
@@ -128,6 +140,10 @@ message ImageCVE {
   bool snoozed = 7 [deprecated = true]; // @gotags: search:"CVE Snoozed"
   google.protobuf.Timestamp snooze_start = 8 [deprecated = true];
   google.protobuf.Timestamp snooze_expiry = 9 [deprecated = true]; // @gotags: search:"CVE Snooze Expiry,hidden"
+  // nvdcvss stores cvss score for a cve from NVD
+  float nvdcvss = 10; // @gotags: search:"NVD CVSS",store"
+  // cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
+  repeated CVSSScore cvss_metrics = 11;
 }
 
 message NodeCVE {
@@ -159,6 +175,15 @@ message ClusterCVE {
   google.protobuf.Timestamp snooze_start = 7;
   google.protobuf.Timestamp snooze_expiry = 8; // @gotags: search:"CVE Snooze Expiry,hidden"
   CVE.CVEType type = 9; // @gotags: search:"CVE Type"
+}
+
+message CVSSScore {
+  Source source = 1;
+  string url = 2;
+  oneof cvss_score {
+    CVSSV2 cvssv2 = 3;
+    CVSSV3 cvssv3 = 4;
+  }
 }
 
 message CVSSV2 {

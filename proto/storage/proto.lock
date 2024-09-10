@@ -5105,6 +5105,26 @@
             ]
           },
           {
+            "name": "Source",
+            "enum_fields": [
+              {
+                "name": "SOURCE_UNKNOWN"
+              },
+              {
+                "name": "SOURCE_RED_HAT",
+                "integer": 1
+              },
+              {
+                "name": "SOURCE_OSV",
+                "integer": 2
+              },
+              {
+                "name": "SOURCE_NVD",
+                "integer": 3
+              }
+            ]
+          },
+          {
             "name": "CVE.CVEType",
             "enum_fields": [
               {
@@ -5578,6 +5598,12 @@
                 "name": "references",
                 "type": "Reference",
                 "is_repeated": true
+              },
+              {
+                "id": 11,
+                "name": "cvss_metrics",
+                "type": "CVSSScore",
+                "is_repeated": true
               }
             ],
             "messages": [
@@ -5664,6 +5690,17 @@
                     "value": "true"
                   }
                 ]
+              },
+              {
+                "id": 10,
+                "name": "nvdcvss",
+                "type": "float"
+              },
+              {
+                "id": 11,
+                "name": "cvss_metrics",
+                "type": "CVSSScore",
+                "is_repeated": true
               }
             ]
           },
@@ -5774,6 +5811,33 @@
                 "id": 9,
                 "name": "type",
                 "type": "CVE.CVEType"
+              }
+            ]
+          },
+          {
+            "name": "CVSSScore",
+            "fields": [
+              {
+                "id": 1,
+                "name": "source",
+                "type": "Source"
+              },
+              {
+                "id": 2,
+                "name": "url",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cvssv2",
+                "type": "CVSSV2",
+                "oneof_parent": "cvss_score"
+              },
+              {
+                "id": 4,
+                "name": "cvssv3",
+                "type": "CVSSV3",
+                "oneof_parent": "cvss_score"
               }
             ]
           },
@@ -17578,6 +17642,12 @@
                 "id": 20,
                 "name": "state",
                 "type": "VulnerabilityState"
+              },
+              {
+                "id": 21,
+                "name": "cvss_metrics",
+                "type": "CVSSScore",
+                "is_repeated": true
               }
             ],
             "reserved_ids": [

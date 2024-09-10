@@ -243,7 +243,8 @@
           "$ref": "#/definitions/storageCVEInfoScoreVersion"
         },
         "cvssV2": {
-          "$ref": "#/definitions/storageCVSSV2"
+          "$ref": "#/definitions/storageCVSSV2",
+          "title": "CVSSV2 CVSSV3 ScoreVersion can be deprecated ROX-26066"
         },
         "cvssV3": {
           "$ref": "#/definitions/storageCVSSV3"
@@ -254,6 +255,14 @@
             "type": "object",
             "$ref": "#/definitions/storageCVEInfoReference"
           }
+        },
+        "cvssMetrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageCVSSScore"
+          },
+          "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
         }
       }
     },
@@ -279,7 +288,25 @@
         "UNKNOWN"
       ],
       "default": "V2",
-      "title": "- V2: No unset for automatic backwards compatibility"
+      "description": "- V2: No unset for automatic backwards compatibility",
+      "title": "ScoreVersion can be deprecated ROX-26066"
+    },
+    "storageCVSSScore": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/storageSource"
+        },
+        "url": {
+          "type": "string"
+        },
+        "cvssv2": {
+          "$ref": "#/definitions/storageCVSSV2"
+        },
+        "cvssv3": {
+          "$ref": "#/definitions/storageCVSSV3"
+        }
+      }
     },
     "storageCVSSV2": {
       "type": "object",
@@ -516,7 +543,8 @@
           "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
         },
         "cvssV2": {
-          "$ref": "#/definitions/storageCVSSV2"
+          "$ref": "#/definitions/storageCVSSV2",
+          "title": "CVSSV2 CVSSV3 can be deprecated ROX-26066"
         },
         "cvssV3": {
           "$ref": "#/definitions/storageCVSSV3"
@@ -563,9 +591,17 @@
         },
         "state": {
           "$ref": "#/definitions/storageVulnerabilityState"
+        },
+        "cvssMetrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageCVSSScore"
+          },
+          "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
         }
       },
-      "title": "Next Tag: 21"
+      "title": "Next Tag: 22"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",
@@ -574,7 +610,8 @@
         "V3"
       ],
       "default": "V2",
-      "title": "- V2: No unset for automatic backwards compatibility"
+      "description": "- V2: No unset for automatic backwards compatibility",
+      "title": "ScoreVersion can be deprecated ROX-26066"
     },
     "storageNode": {
       "type": "object",
@@ -769,6 +806,16 @@
           "format": "date-time"
         }
       }
+    },
+    "storageSource": {
+      "type": "string",
+      "enum": [
+        "SOURCE_UNKNOWN",
+        "SOURCE_RED_HAT",
+        "SOURCE_OSV",
+        "SOURCE_NVD"
+      ],
+      "default": "SOURCE_UNKNOWN"
     },
     "storageTaint": {
       "type": "object",
