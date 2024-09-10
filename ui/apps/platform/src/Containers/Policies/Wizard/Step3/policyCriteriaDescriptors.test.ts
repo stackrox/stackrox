@@ -1,3 +1,5 @@
+import uniqBy from 'lodash/uniqBy';
+
 import { auditLogDescriptor, policyCriteriaDescriptors } from './policyCriteriaDescriptors';
 
 // Enforce consistency of whicheverName properties in policy criteria descriptors.
@@ -48,7 +50,7 @@ function hasSentenceCase(otherName: string) {
 
 describe('policyCriteriaDescriptors', () => {
     [...auditLogDescriptor, ...policyCriteriaDescriptors].forEach((descriptor) => {
-        const { longName, name, shortName } = descriptor;
+        const { longName, name, shortName, type } = descriptor;
 
         describe(`descriptor of "${name}"`, () => {
             if (typeof longName === 'string') {
@@ -80,6 +82,69 @@ describe('policyCriteriaDescriptors', () => {
             test(`shortName "${shortName}" should have sentence case`, () => {
                 expect(hasSentenceCase(shortName)).toEqual(true);
             });
+
+            switch (type) {
+                case 'group': {
+                    const { subComponents } = descriptor;
+
+                    subComponents.forEach((subComponent) => {
+                        if (subComponent.type === 'select') {
+                            const { options, subpath } = subComponent;
+
+                            test(`group select "${subpath}" should have unique label properties`, () => {
+                                const optionsUnique = uniqBy(options, ({ label }) => label);
+                                expect(optionsUnique.length).toEqual(options.length);
+                            });
+                            test(`group select "${subpath}"  should have unique value properties`, () => {
+                                const optionsUnique = uniqBy(options, ({ value }) => value);
+                                expect(optionsUnique.length).toEqual(options.length);
+                            });
+                        }
+                    });
+                    break;
+                }
+
+                case 'multiselect':
+                case 'select': {
+                    const { options } = descriptor;
+
+                    test(`${type} should have unique label properties`, () => {
+                        const optionsUnique = uniqBy(options, ({ label }) => label);
+                        expect(optionsUnique.length).toEqual(options.length);
+                    });
+                    test(`${type} should have unique value properties`, () => {
+                        const optionsUnique = uniqBy(options, ({ value }) => value);
+                        expect(optionsUnique.length).toEqual(options.length);
+                    });
+                    break;
+                }
+
+                case 'radioGroup': {
+                    const { radioButtons } = descriptor;
+
+                    test('radioGroup should have unique text properties', () => {
+                        const radioButtonsUnique = uniqBy(radioButtons, ({ text }) => text);
+                        expect(radioButtonsUnique.length).toEqual(radioButtons.length);
+                    });
+                    break;
+                }
+
+                case 'radioGroupString': {
+                    const { radioButtons } = descriptor;
+
+                    test('radioGroupString should have unique text properties', () => {
+                        const radioButtonsUnique = uniqBy(radioButtons, ({ text }) => text);
+                        expect(radioButtonsUnique.length).toEqual(radioButtons.length);
+                    });
+                    test('radioGroupString should have unique value properties', () => {
+                        const radioButtonsUnique = uniqBy(radioButtons, ({ value }) => value);
+                        expect(radioButtonsUnique.length).toEqual(radioButtons.length);
+                    });
+                    break;
+                }
+                default:
+                    break;
+            }
         });
     });
 });
