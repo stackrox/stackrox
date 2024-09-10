@@ -26,11 +26,11 @@ import (
 
 	"github.com/go-logr/zapr"
 	"github.com/pkg/errors"
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	centralReconciler "github.com/stackrox/rox/operator/pkg/central/reconciler"
-	commonLabels "github.com/stackrox/rox/operator/pkg/common/labels"
-	securedClusterReconciler "github.com/stackrox/rox/operator/pkg/securedcluster/reconciler"
-	"github.com/stackrox/rox/operator/pkg/utils"
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	centralReconciler "github.com/stackrox/rox/operator/internal/central/reconciler"
+	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
+	securedClusterReconciler "github.com/stackrox/rox/operator/internal/securedcluster/reconciler"
+	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/profiling"
@@ -53,6 +53,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	//+kubebuilder:scaffold:imports
 )
 
 const (
@@ -88,6 +89,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(platform.AddToScheme(scheme))
+	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
