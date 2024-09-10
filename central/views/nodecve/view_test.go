@@ -186,31 +186,8 @@ func (s *NodeCVEViewTestSuite) TestGetNodeCVECore() {
 }
 
 func (s *NodeCVEViewTestSuite) TestGetNodeCVECoreSAC() {
-	// Note: The new loop variable semantics introduced in go1.22 breaks these
-	// tests when using loop variables in closures such that the test code
-	// expects those loop variables to change on each iteration of the loop.
-	// The problem stems from what a closure captures, or "sees", loop
-	// variables on each iteration. Before go1.22, loop variables had per-loop
-	// scope, which is to say that any closure inside the loop using loop
-	// variables would have the reference of the loop variable updated on each
-	// iteration. In go1.22+, loop variables have per-iteration scope, which,
-	// for closures inside the loop, means that when a given closure first
-	// captures the variable, that value will always be used in that particular
-	// closure.
-	// To get around this, we define variables outside the loop and then set
-	// those variables to the loop variables on each iteration, then use the
-	// variables in the outer scope (relative to the loop) in the closure,
-	// effectively achieving per-loop scoped variables.
-	// References and further reading:
-	// - https://web.archive.org/web/20240905192132/https://go.dev/blog/go1.22
-	// - https://web.archive.org/web/20240905181916/https://go.dev/blog/loopvar-preview
-	// - https://web.archive.org/web/20240905191855/https://go.dev/wiki/LoopvarExperiment
-	// - https://web.archive.org/web/20240905192225/https://go.googlesource.com/proposal/+/master/design/60078-loopvar.md
-	// - https://web.archive.org/web/20240905191656/https://go101.org/blog/2024-03-01-for-loop-semantic-changes-in-go-1.22.html
-	var tc testCase
-	var sacTC sacTestCase
-	for _, tc = range s.testCases() {
-		for _, sacTC = range s.sacTestCases(tc.ctx) {
+	for _, tc := range s.testCases() {
+		for _, sacTC := range s.sacTestCases(tc.ctx) {
 			s.T().Run(fmt.Sprintf("SAC desc: %s; test desc: %s ", sacTC.desc, tc.desc), func(t *testing.T) {
 				actual, err := s.cveView.Get(sacTC.ctx, tc.q)
 				if tc.expectedErr != "" {
@@ -220,7 +197,7 @@ func (s *NodeCVEViewTestSuite) TestGetNodeCVECoreSAC() {
 				assert.NoError(t, err)
 
 				// Wrap cluster filter with sac filter.
-				matchFilter := tc.matchFilter
+				matchFilter := *tc.matchFilter
 				baseNodeMatchFilter := matchFilter.matchNode
 				matchFilter.withNodeFilter(func(node *storage.Node) bool {
 					if sacTC.visibleNodes.Contains(node.GetId()) {
@@ -229,7 +206,7 @@ func (s *NodeCVEViewTestSuite) TestGetNodeCVECoreSAC() {
 					return false
 				})
 
-				expected := s.compileExpectedCVECores(tc.matchFilter)
+				expected := s.compileExpectedCVECores(&matchFilter)
 				assert.Equal(t, len(expected), len(actual))
 				assert.ElementsMatch(t, expected, actual)
 			})
@@ -287,31 +264,8 @@ func (s *NodeCVEViewTestSuite) TestCountNodeCVECore() {
 }
 
 func (s *NodeCVEViewTestSuite) TestCountNodeCVECoreSAC() {
-	// Note: The new loop variable semantics introduced in go1.22 breaks these
-	// tests when using loop variables in closures such that the test code
-	// expects those loop variables to change on each iteration of the loop.
-	// The problem stems from what a closure captures, or "sees", loop
-	// variables on each iteration. Before go1.22, loop variables had per-loop
-	// scope, which is to say that any closure inside the loop using loop
-	// variables would have the reference of the loop variable updated on each
-	// iteration. In go1.22+, loop variables have per-iteration scope, which,
-	// for closures inside the loop, means that when a given closure first
-	// captures the variable, that value will always be used in that particular
-	// closure.
-	// To get around this, we define variables outside the loop and then set
-	// those variables to the loop variables on each iteration, then use the
-	// variables in the outer scope (relative to the loop) in the closure,
-	// effectively achieving per-loop scoped variables.
-	// References and further reading:
-	// - https://web.archive.org/web/20240905192132/https://go.dev/blog/go1.22
-	// - https://web.archive.org/web/20240905181916/https://go.dev/blog/loopvar-preview
-	// - https://web.archive.org/web/20240905191855/https://go.dev/wiki/LoopvarExperiment
-	// - https://web.archive.org/web/20240905192225/https://go.googlesource.com/proposal/+/master/design/60078-loopvar.md
-	// - https://web.archive.org/web/20240905191656/https://go101.org/blog/2024-03-01-for-loop-semantic-changes-in-go-1.22.html
-	var tc testCase
-	var sacTC sacTestCase
-	for _, tc = range s.testCases() {
-		for _, sacTC = range s.sacTestCases(tc.ctx) {
+	for _, tc := range s.testCases() {
+		for _, sacTC := range s.sacTestCases(tc.ctx) {
 			s.T().Run(fmt.Sprintf("SAC desc: %s; test desc: %s ", sacTC.desc, tc.desc), func(t *testing.T) {
 				actual, err := s.cveView.Count(sacTC.ctx, tc.q)
 				if tc.expectedErr != "" {
@@ -321,7 +275,7 @@ func (s *NodeCVEViewTestSuite) TestCountNodeCVECoreSAC() {
 				assert.NoError(t, err)
 
 				// Wrap cluster filter with sac filter.
-				matchFilter := tc.matchFilter
+				matchFilter := *tc.matchFilter
 				baseClusterMatchFilter := matchFilter.matchNode
 				matchFilter.withNodeFilter(func(node *storage.Node) bool {
 					if sacTC.visibleNodes.Contains(node.GetId()) {
@@ -330,7 +284,7 @@ func (s *NodeCVEViewTestSuite) TestCountNodeCVECoreSAC() {
 					return false
 				})
 
-				expected := s.compileExpectedCVECores(tc.matchFilter)
+				expected := s.compileExpectedCVECores(&matchFilter)
 				assert.Equal(t, len(expected), actual)
 			})
 		}
