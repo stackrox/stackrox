@@ -2500,6 +2500,20 @@
     {
       "protopath": "cluster_init.proto",
       "def": {
+        "enums": [
+          {
+            "name": "InitBundleMeta.InitBundleVersion",
+            "enum_fields": [
+              {
+                "name": "INIT_BUNDLE"
+              },
+              {
+                "name": "CRS",
+                "integer": 1
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "InitBundleMeta",
@@ -2533,6 +2547,11 @@
                 "id": 6,
                 "name": "expires_at",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "version",
+                "type": "InitBundleVersion"
               }
             ]
           }
@@ -15455,6 +15474,10 @@
               {
                 "name": "SCANNER_V4_SERVICE",
                 "integer": 16
+              },
+              {
+                "name": "REGISTRATOR_SERVICE",
+                "integer": 17
               }
             ]
           }
