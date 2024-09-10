@@ -1,3 +1,4 @@
 pip==21.3.1
 setuptools==59.6.0
 wheel==0.44.0
+flit_core==3.9.0
