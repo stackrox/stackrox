@@ -73,14 +73,19 @@ func UnauthenticatedGRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
 }
 
 // GRPCConnectionToCentral returns a GRPC connection to Central, which can be used in E2E tests.
-// It fatals the test if there's an error.
-func GRPCConnectionToCentral(t testutils.T) *grpc.ClientConn {
-	return grpcConnectionToCentral(t, func(opts *clientconn.Options) {
-		opts.ConfigureBasicAuth(RoxUsername(t), RoxPassword(t))
-	})
+// It fatals the test if there's an error. If no options provided assumes basic auth is
+// desired.
+func GRPCConnectionToCentral(t testutils.T, optsFuncs ...func(opts *clientconn.Options)) *grpc.ClientConn {
+	if len(optsFuncs) == 0 {
+		optsFuncs = append(optsFuncs, func(opts *clientconn.Options) {
+			opts.ConfigureBasicAuth(RoxUsername(t), RoxPassword(t))
+		})
+	}
+
+	return grpcConnectionToCentral(t, optsFuncs...)
 }
 
-func grpcConnectionToCentral(t testutils.T, optsModifyFunc func(options *clientconn.Options)) *grpc.ClientConn {
+func grpcConnectionToCentral(t testutils.T, optsFuncs ...func(options *clientconn.Options)) *grpc.ClientConn {
 	endpoint := RoxAPIEndpoint(t)
 	host, _, _, err := netutil.ParseEndpoint(endpoint)
 	require.NoError(t, err)
@@ -91,9 +96,11 @@ func grpcConnectionToCentral(t testutils.T, optsModifyFunc func(options *clientc
 			ServerName:         host,
 		},
 	}
-	if optsModifyFunc != nil {
-		optsModifyFunc(&opts)
+
+	for _, optsFunc := range optsFuncs {
+		optsFunc(&opts)
 	}
+
 	conn, err := clientconn.GRPCConnection(context.Background(), mtls.CentralSubject, endpoint, opts)
 	require.NoError(t, err)
 	return conn

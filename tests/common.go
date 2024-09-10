@@ -581,6 +581,10 @@ func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 		}
 		return fmt.Errorf("encountered cluster status %q", clusterStatus.String())
 	}
+	// TODO: It takes 30 seconds by default for sensor to send a status report to central,
+	// therefore, wait at minimum 30 seconds to allow enough time for a 'bad status' to propagate.
+	// time.Sleep(31 * time.Second)
+	// Perhaps optimize this by comparing current time to the last time a status update was received, and sleeping for that specific diff?
 	mustEventually(t, ctx, checkCentralSensorConnection, 10*time.Second, "Central-sensor connection not in desired state (yet)")
 }
 
@@ -628,24 +632,11 @@ func (ks *KubernetesSuite) mustDeleteDeploymentEnvVar(ctx context.Context, names
 	}
 }
 
-// createAPIToken will create and return a stackrox API token id and value.
-func (ks *KubernetesSuite) createAPIToken(t *testing.T, ctx context.Context, name string, roles []string) (string, string) {
+// mustCreateAPIToken will create a stackrox API token. Returns the token id and value.
+func mustCreateAPIToken(t *testing.T, ctx context.Context, name string, roles []string) (string, string) {
 	require := require.New(t)
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewAPITokenServiceClient(conn)
-
-	toksResp, err := service.GetAPITokens(ctx, &v1.GetAPITokensRequest{
-		RevokedOneof: &v1.GetAPITokensRequest_Revoked{Revoked: false},
-	})
-	require.NoError(err)
-
-	for _, tok := range toksResp.Tokens {
-		if tok.Name == name {
-			_, err = service.RevokeToken(ctx, &v1.ResourceByID{Id: tok.GetId()})
-			require.NoError(err, "failed to revoke existing token %q", tok.Name)
-			break
-		}
-	}
 
 	tokResp, err := service.GenerateToken(ctx, &v1.GenerateTokenRequest{
 		Name:  name,
@@ -653,28 +644,131 @@ func (ks *KubernetesSuite) createAPIToken(t *testing.T, ctx context.Context, nam
 	})
 	require.NoError(err)
 
-	t.Logf("Created API Token %q with roles: %v", name, roles)
+	t.Logf("Created API Token %q (%v): %v", name, tokResp.GetMetadata().GetId(), roles)
 	return tokResp.GetMetadata().GetId(), tokResp.GetToken()
 }
 
 // revokeAPIToken will revoke an API token based.
-func (ts *KubernetesSuite) revokeAPIToken(t *testing.T, ctx context.Context, idOrName string) {
+func revokeAPIToken(t *testing.T, ctx context.Context, idOrName string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewAPITokenServiceClient(conn)
 
-	toksResp, err := service.GetAPITokens(ctx, &v1.GetAPITokensRequest{RevokedOneof: &v1.GetAPITokensRequest_Revoked{Revoked: false}})
+	toksResp, err := service.GetAPITokens(ctx, &v1.GetAPITokensRequest{
+		RevokedOneof: &v1.GetAPITokensRequest_Revoked{Revoked: false},
+	})
 	require.NoError(t, err)
 
 	for _, tok := range toksResp.GetTokens() {
 		if tok.GetId() == idOrName || tok.GetName() == idOrName {
 			_, err = service.RevokeToken(ctx, &v1.ResourceByID{Id: tok.GetId()})
 			require.NoError(t, err)
-			t.Logf("API Token %q revoked", idOrName)
+			t.Logf("Revoked API token %q (%s)", tok.GetName(), tok.GetId())
 			return
 		}
 	}
+}
 
-	t.Logf("Token %q not found, nothing to revoke", idOrName)
+// mustCreatePermissionSet will create a permission set and return the associated ID. If the permission set already
+// exists it is deleted and then re-created.
+func mustCreatePermissionSet(t *testing.T, ctx context.Context, permissionSet *storage.PermissionSet) string {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewRoleServiceClient(conn)
+
+	ps, err := service.PostPermissionSet(ctx, permissionSet)
+	require.NoError(t, err)
+
+	t.Logf("Created permission set: %v", ps)
+	return ps.GetId()
+}
+
+// deletePermissionSet will delete the specified permission set.
+func deletePermissionSet(t *testing.T, ctx context.Context, idOrName string) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewRoleServiceClient(conn)
+
+	resp, err := service.ListPermissionSets(ctx, &v1.Empty{})
+
+	for _, ps := range resp.GetPermissionSets() {
+		if ps.GetId() == idOrName || ps.GetName() == idOrName {
+			_, err = service.DeletePermissionSet(ctx, &v1.ResourceByID{Id: ps.GetId()})
+			require.NoError(t, err)
+			t.Logf("Deleted permission set %q (%s)", ps.GetName(), ps.GetId())
+			return
+		}
+	}
+}
+
+// mustCreateRole ...
+func mustCreateRole(t *testing.T, ctx context.Context, role *storage.Role) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewRoleServiceClient(conn)
+
+	_, err := service.CreateRole(ctx, &v1.CreateRoleRequest{
+		Name: role.GetName(),
+		Role: role,
+	})
+	require.NoError(t, err)
+
+	t.Logf("Created role: %v", role)
+}
+
+// deleteRole will delete the specified role.
+func deleteRole(t *testing.T, ctx context.Context, name string) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewRoleServiceClient(conn)
+
+	resp, err := service.GetRoles(ctx, &v1.Empty{})
+	require.NoError(t, err)
+
+	for _, role := range resp.GetRoles() {
+		if role.GetName() == name {
+			_, err = service.DeleteRole(ctx, &v1.ResourceByID{Id: name})
+			require.NoError(t, err)
+			t.Logf("Deleted role %q", name)
+			return
+		}
+	}
+}
+
+// mustCreateAccessScope creates an access scope and returns the associated ID.
+func mustCreateAccessScope(t *testing.T, ctx context.Context, accessScope *storage.SimpleAccessScope) string {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewRoleServiceClient(conn)
+
+	scope, err := service.PostSimpleAccessScope(ctx, accessScope)
+	require.NoError(t, err)
+
+	t.Logf("Created access scope: %v", scope)
+	return scope.GetId()
+}
+
+// mustUpdateAccessScope ...
+func mustUpdateAccessScope(t *testing.T, ctx context.Context, accessScope *storage.SimpleAccessScope) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewRoleServiceClient(conn)
+
+	_, err := service.PutSimpleAccessScope(ctx, accessScope)
+	require.NoError(t, err)
+
+	t.Logf("Updated access scope: %v", accessScope)
+}
+
+// deleteAccessScope ...
+func deleteAccessScope(t *testing.T, ctx context.Context, idOrName string) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewRoleServiceClient(conn)
+
+	resp, err := service.ListSimpleAccessScopes(ctx, &v1.Empty{})
+	require.NoError(t, err)
+
+	for _, scope := range resp.GetAccessScopes() {
+		if scope.GetId() == idOrName || scope.GetName() == idOrName {
+			_, err = service.DeleteSimpleAccessScope(ctx, &v1.ResourceByID{Id: scope.GetId()})
+			require.NoError(t, err)
+			t.Logf("Deleted access scope %q (%s)", scope.GetName(), scope.GetId())
+			return
+		}
+	}
 }
 
 // getEnvVal returns the value of envVar from a given container or returns a helpful error.

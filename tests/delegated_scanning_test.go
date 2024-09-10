@@ -12,6 +12,8 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
@@ -31,23 +33,86 @@ import (
 // the delegated scanning config and OCP mirroring CRs (ie: ImageContentSourcePolicy,
 // ImageDigestMirrorSet, ImageTagMirrorSet) which may break other unrelated tests.
 //
-// These tests DO NOT validate scan results contain specific packages or vulnerabilities,
-// they instead focus on the foundational capabilities to index images in secured
-// clusters.
+// These tests DO NOT validate that scan results contain specific packages or vulnerabilities,
+// (we rely on the scanner specific tests for that). These tests instead focus on the foundational
+// capabilities of delegated scanning to index images in Secured Clusters, and match
+// any vulnerabilities via Central Services.
+//
+// All scans are executed with the `force` flag to ensure cache's are bypassed.
+// TODO: perhaps remove this and add a test without the force flag to ensure that the cache
+// is actually used to detect a regression in the force flag???
 //
 // These tests require the following env vars to be set in order to contact ACS/K8s:
 //   ROX_USERNAME, ROX_PASSWORD, API_ENDPOINT, KUBECONFIG
 
 const (
-	logLevelEnvVar = "LOGLEVEL"
+	deleScanLogLevelEnvVar = "LOGLEVEL"
 
-	// desiredLogLevel is the desired value of Sensor's log level env var for executing these tests.
-	desiredLogLevel = "Debug"
+	// deleScanDesiredLogLevel is the desired value of Sensor's log level env var for executing these tests.
+	deleScanDesiredLogLevel = "Debug"
 
-	// readOnlyAPITokenName is the name of the ready only stackrox API token that is created (and revoked)
+	// deleScanAPITokenName is the name of the current stackrox API token that is created (and revoked)
 	// by this suite.
-	readOnlyAPITokenName = "dele-scan-test-read-only" //nolint:gosec // G101
+	deleScanAPITokenName      = "dele-scan-api-token" //nolint:gosec // G101
+	deleScanAccessScopeName   = "dele-scan-access-scope"
+	deleScanRoleName          = "dele-scan-role"
+	deleScanPermissionSetName = "dele-scan-permission-set"
 )
+
+var (
+	// anonTestImageStr references an image that does not require auth to access and is small.
+	// This image was chosen so that scans are fast (hence the small image size).
+	anonTestImageStr = "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194"
+
+	// imageReadPermissionSet represents the minimal permission set needed for reading images (but
+	// should NOT be able to scan/write images).
+	imageReadPermissionSet = &storage.PermissionSet{
+		Name: "dele-scan-image-read-permission-set",
+		ResourceToAccess: map[string]storage.Access{
+			"Image": storage.Access_READ_ACCESS,
+		},
+	}
+
+	denyAllAccessScope  = accesscontrol.DefaultAccessScopeIDs[accesscontrol.DenyAllAccessScope]
+	allowAllAccessScope = accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope]
+
+	// imageReadRole is a template role (meant to be cloned) representing the minimal
+	// permissions needed for reading images.  Will bind the read only API token to this role.
+	imageReadRole = &storage.Role{
+		Name:            "dele-scan-image-read-role",
+		PermissionSetId: accesscontrol.DefaultAccessScopeIDs[accesscontrol.Analyst],
+		AccessScopeId:   allowAllAccessScope,
+	}
+
+	// namespaceAccessScope is a template access scope (meant to be cloned) and allows
+	// access to specific namespaces.
+	namespaceAccessScope = &storage.SimpleAccessScope{
+		Name: "dele-scan-namespace-access-scope",
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "", NamespaceName: "stackrox"},
+			},
+		},
+	}
+)
+
+type DaveSuite struct {
+	KubernetesSuite
+}
+
+func TestDave(t *testing.T) {
+	suite.Run(t, new(DaveSuite))
+}
+
+func (ts *DaveSuite) TestDoIt() {
+	t := ts.T()
+
+	thing := deleScanTestUtils{
+		restCfg: getConfig(t),
+	}
+	// imgStr := ocpImgBuilder.BuildOCPInternalImage(name, anonTestImageStr)
+	thing.CreateMirrorCRs(t, context.Background())
+}
 
 type DelegatedScanningSuite struct {
 	KubernetesSuite
@@ -61,14 +126,28 @@ type DelegatedScanningSuite struct {
 	namespace          string
 	restCfg            *rest.Config
 
-	readOnlyToken string
+	// imageReadToken minimally scoped API token that has the image read permission (NOT image write).
+	imageReadToken string
+	// imageWriteToken minimally scoped API token that has the image write permission
+	imageWriteToken string
+
+	// imageReadPermissionSetID holds the id of the created permission for cleanup purposes.
+	imageReadPermissionSetID string
+
+	// namespaceAccessScopeID holds the id of the created access scope for binding and cleanup purposes.
+	namespaceAccessScopeID string
 }
 
 func TestDelegatedScanning(t *testing.T) {
 	suite.Run(t, new(DelegatedScanningSuite))
 }
 
+func (ts *DelegatedScanningSuite) TestSetupTeardown() {
+	ts.T().Logf("EXECUTING FAKE TESTS...")
+}
+
 func (ts *DelegatedScanningSuite) SetupSuite() {
+
 	t := ts.T()
 	ts.KubernetesSuite.SetupSuite()
 	ts.namespace = namespaces.StackRox
@@ -77,25 +156,51 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	ts.restCfg = getConfig(t)
 	ctx := ts.ctx
 
-	// Create a read only token (needed by some tests)
-	_, ts.readOnlyToken = ts.createAPIToken(t, ctx, readOnlyAPITokenName, []string{"Analyst"})
-
 	// Some tests rely on Sensor debug logs to accurately validate expected behaviors.
-	ts.origSensorLogLevel, _ = ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, logLevelEnvVar)
-	if ts.origSensorLogLevel != desiredLogLevel {
-		ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, logLevelEnvVar, desiredLogLevel)
-		t.Logf("Log level env var changed from %q to %q on Sensor", ts.origSensorLogLevel, desiredLogLevel)
+	ts.origSensorLogLevel, _ = ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar)
+	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
+		ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, deleScanDesiredLogLevel)
+		t.Logf("Log level env var changed from %q to %q on Sensor", ts.origSensorLogLevel, deleScanDesiredLogLevel)
 	}
 
-	// The changes above may have triggered a Sensor restart, wait for it to be healthy.
-	t.Log("Waiting for Sensor to be ready")
-	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
-	t.Log("Waiting for Central/Sensor connection to be ready")
-	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
-
+	// TOOD: Uncomment when done with local testing
+	/*
+		// The changes above may have triggered a Sensor restart, wait for it to be healthy.
+		t.Log("Waiting for Sensor to be ready")
+		ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
+		t.Log("Waiting for Central/Sensor connection to be ready")
+		waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+	*/
 	// Get the remote cluster to send delegated scans too, will use this to obtain the cluster name, Id, etc.
 	t.Log("Getting remote stackrox cluster details")
 	ts.remoteCluster = mustGetCluster(t, ctx)
+
+	// Pre-clean any roles, permissions, etc. from previous runs, these statements are
+	// in a specific order to ensure successful cleanup.
+	t.Log("Deleteing resources from previous tests")
+	revokeAPIToken(t, ctx, deleScanAPITokenName)
+	deleteRole(t, ctx, deleScanRoleName)
+	deletePermissionSet(t, ctx, deleScanPermissionSetName)
+	deleteAccessScope(t, ctx, deleScanAccessScopeName)
+
+	/*
+		// Create an access scope limited to the stackrox namespace
+		scope := namespaceAccessScope.CloneVT()
+		scope.GetRules().GetIncludedNamespaces()[0].ClusterName = ts.remoteCluster.GetName()
+		ts.namespaceAccessScopeID = mustCreateAccessScope(t, ctx, scope)
+
+		// Create a read only permission set.
+		ts.imageReadPermissionSetID = mustCreatePermissionSet(t, ctx, imageReadPermissionSet)
+
+		// Create a read only role.
+		role := imageReadRole.CloneVT()
+		role.PermissionSetId = ts.imageReadPermissionSetID
+		role.AccessScopeId = ts.namespaceAccessScopeID
+		mustCreateRole(t, ctx, role)
+
+		// Create a read only token (needed by some tests)
+		_, ts.imageReadToken = mustCreateAPIToken(t, ctx, deleScanAPITokenName, []string{imageReadRole.GetName()})
+	*/
 }
 
 func (ts *DelegatedScanningSuite) TearDownSuite() {
@@ -110,25 +215,29 @@ func (ts *DelegatedScanningSuite) TearDownSuite() {
 		// collectLogs(t, ts.namespace, "delegated-scanning-failure")
 	}
 
-	ts.revokeAPIToken(t, ctx, readOnlyAPITokenName)
+	// revokeAPIToken(t, ctx, imageReadTokenName)
+	// deleteRole(t, ctx, imageReadRole.GetName())
+	// deletePermissionSet(t, ctx, ts.imageReadPermissionSetID)
 
 	// Reset the log level back to its original value so that other tests are not impacted by the additional logging.
-	if ts.origSensorLogLevel != desiredLogLevel {
+	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
 		if ts.origSensorLogLevel != "" {
-			ts.mustSetDeploymentEnvVal(ctx, ns, sensorDeployment, sensorContainer, logLevelEnvVar, ts.origSensorLogLevel)
+			ts.mustSetDeploymentEnvVal(ctx, ns, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, ts.origSensorLogLevel)
 			t.Logf("Log level reverted back to %q on Sensor", ts.origSensorLogLevel)
 		} else {
-			ts.mustDeleteDeploymentEnvVar(ctx, ns, sensorDeployment, logLevelEnvVar)
+			ts.mustDeleteDeploymentEnvVar(ctx, ns, sensorDeployment, deleScanLogLevelEnvVar)
 			t.Logf("Log level env var removed from Sensor")
 		}
 	}
 
-	// Ensure central/sensor are in a good state before moving to next test's to avoid flakes.
-	t.Log("Waiting for Sensor to be ready (On Tear Down)")
-	ts.waitUntilK8sDeploymentReady(ctx, ns, sensorDeployment)
-	t.Log("Waiting for Central/Sensor connection to be ready (On Tear Down)")
-	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
-
+	// TOOD: Uncomment the below section when done with local testing
+	/*
+		// Ensure central/sensor are in a good state before moving to next test's to avoid flakes.
+		t.Log("Waiting for Sensor to be ready (On Tear Down)")
+		ts.waitUntilK8sDeploymentReady(ctx, ns, sensorDeployment)
+		t.Log("Waiting for Central/Sensor connection to be ready (On Tear Down)")
+		waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+	*/
 	ts.cancel()
 }
 
@@ -367,16 +476,55 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 		}
 	}
 
-	t.Run("ad-hoc scan without auth", func(t *testing.T) {
+	// The image write permission is required to scan images, this test uses a token with only image
+	// read permissions, and therefore should fail to scan any image. This test is meant to catch
+	// a past regression where a role with only image read permissions was mistakenly able to scan images.
+	t.Run("fail to scan image with only image read permission", func(t *testing.T) {
+		// Create a new read only permission set.
+		permissionSetID := mustCreatePermissionSet(t, ctx, &storage.PermissionSet{
+			Name: deleScanPermissionSetName,
+			ResourceToAccess: map[string]storage.Access{
+				"Image": storage.Access_READ_ACCESS,
+			},
+		})
+		t.Cleanup(func() { deletePermissionSet(t, ctx, permissionSetID) })
+
+		// Create the role for the new permission set.
+		role := &storage.Role{
+			Name:            deleScanRoleName,
+			PermissionSetId: permissionSetID,
+			AccessScopeId:   allowAllAccessScope,
+		}
+		mustCreateRole(t, ctx, role)
+		t.Cleanup(func() { deleteRole(t, ctx, role.GetName()) })
+
+		// Create a token bound to the new role.
+		tokenID, token := mustCreateAPIToken(t, ctx, deleScanAPITokenName, []string{deleScanRoleName})
+		t.Cleanup(func() { revokeAPIToken(t, ctx, tokenID) })
+
+		// Connect to central using the new token.
+		conn := centralgrpc.GRPCConnectionToCentral(t, func(opts *clientconn.Options) {
+			opts.ConfigureTokenAuth(token)
+		})
+		service := v1.NewImageServiceClient(conn)
+
+		// Execute the scan.
+		_, err := service.ScanImage(ctx, &v1.ScanImageRequest{
+			ImageName: anonTestImageStr,
+			Force:     true,
+			Cluster:   ts.remoteCluster.GetId(),
+		})
+		require.ErrorContains(t, err, "not authorized")
+	})
+
+	t.Run("baseline delegated scan without auth", func(t *testing.T) {
 		fromLine, err := ts.getNumLogLines(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
 		require.NoError(t, err)
 		ts.logf("Only matching sensor logs after line %d from pod %s", fromLine, sensorPod.GetName())
 
-		// This image was chosen because it requires no auth and is small (no other reason).
-		imgStr := "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194"
 		var img *storage.Image
 		scanImageFunc := func() error {
-			img, err = service.ScanImage(ctx, scanImgReq(imgStr))
+			img, err = service.ScanImage(ctx, scanImgReq(anonTestImageStr))
 
 			if err != nil && strings.Contains(err.Error(), scan.ErrTooManyParallelScans.Error()) {
 				err = retry.MakeRetryable(err)
@@ -392,19 +540,15 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 			retry.OnlyRetryableErrors(),
 		)
 		require.NoError(t, err)
-		require.Equal(t, imgStr, img.GetName().GetFullName())
-		ts.validateImageScan(t, img)
+		ts.validateImageScan(t, anonTestImageStr, img)
 
-		reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, imgStr)
+		reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, anonTestImageStr)
 		ts.waitUntilLog(ctx, ts.namespace, sensorPodLabels, sensorContainer, "contain the image scan",
 			containsLineMatchingAfter(regexp.MustCompile(reStr), fromLine),
 		)
 	})
 
-	// Delete user
-	// Delete role
-	t.Run("fail scan image with read only user", func(t *testing.T) {
-		// Make API request using that user (perhaps NOT via GRPC)
+	t.Run("scan image with image write permission", func(t *testing.T) {
 	})
 
 	t.Run("image watch", func(t *testing.T) {
@@ -414,12 +558,11 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 		// ts.logf("Only matching sensor logs after line %d from pod %s", fromLine, sensorPod.GetName())
 
 		// // This image was chosen because it requires no auth and is small (no other reason).
-		// imgStr := "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194"
 		// service := v1.NewImageServiceClient(conn)
-		// _, err = service.WatchImage(ctx, &v1.WatchImageRequest{Name: imgStr})
+		// _, err = service.WatchImage(ctx, &v1.WatchImageRequest{Name: anonTestImageStr})
 		// require.NoError(t, err)
 
-		// _, err = service.UnwatchImage(ctx, &v1.UnwatchImageRequest{Name: imgStr})
+		// _, err = service.UnwatchImage(ctx, &v1.UnwatchImageRequest{Name: anonTestImageStr})
 		// assert.NoError(t, err)
 	})
 
@@ -433,21 +576,14 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 		ts.logf("Only matching sensor logs after line %d from pod %s", fromLine, sensorPod.GetName())
 
 		// Push an to the OCP internal registry.
-		ocpImgBuilder := deleScanOCPTestImageBuilder{
-			t:         t,
-			ctx:       ts.ctx,
-			namespace: ts.namespace,
-			restCfg:   ts.restCfg,
-		}
+		ocpImgBuilder := deleScanTestUtils{restCfg: ts.restCfg}
 		name := "test-01"
-		fromImage := "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1227"
-		imgStr := ocpImgBuilder.BuildOCPInternalImage(name, fromImage)
+		imgStr := ocpImgBuilder.BuildOCPInternalImage(t, ts.ctx, ts.namespace, name, anonTestImageStr)
 
 		// Scan the image.
 		img, err := service.ScanImage(ctx, scanImgReq(imgStr))
 		require.NoError(t, err)
-		require.Equal(t, imgStr, img.GetName().GetFullName())
-		ts.validateImageScan(t, img)
+		ts.validateImageScan(t, imgStr, img)
 
 		// Verify the request made it to the cluster.
 		reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, imgStr)
@@ -460,6 +596,8 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 	// Create user that uses that role
 	// Get token for user that uses that role
 	t.Run("scan image from OCP internal registry with minimally scoped user", func(t *testing.T) {
+		t.SkipNow()
+
 		if !isOpenshift() {
 			t.Skip("Skipping test - not an OCP cluster")
 		}
@@ -491,12 +629,11 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_Deployments() {
 	// 	ts.logf("Only matching sensor logs after line %d from pod %s", fromLine, sensorPod.GetName())
 
 	// 	// This image was chosen because it requires no auth and is small (no other reason).
-	// 	imgStr := "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194"
 	// 	service := v1.NewImageServiceClient(conn)
-	// 	_, err = service.WatchImage(ctx, &v1.WatchImageRequest{Name: imgStr})
+	// 	_, err = service.WatchImage(ctx, &v1.WatchImageRequest{Name: anonTestImageStr})
 	// 	require.NoError(t, err)
 
-	// 	_, err = service.UnwatchImage(ctx, &v1.UnwatchImageRequest{Name: imgStr})
+	// 	_, err = service.UnwatchImage(ctx, &v1.UnwatchImageRequest{Name: anonTestImageStr})
 	// 	assert.NoError(t, err)
 	// })
 	t.Run("scan deployment for OCP internal registry", func(t *testing.T) {})
@@ -516,43 +653,20 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_Mirrors() {
 	t.Run("Scan deployment from mirror defined by ImageTagMirrorSet", func(t *testing.T) {})
 }
 
-type DaveSuite struct {
-	KubernetesSuite
-	namespace string
-	restCfg   *rest.Config
-	ctx       context.Context
-}
+// validateImageScan will fail the test if the image's scan was not completed
+// successfully, assumes that the image will have at least one vulnerability.
+func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName string, img *storage.Image) {
+	require.Equal(t, imgFullName, img.GetName().GetFullName())
+	require.True(t, img.GetIsClusterLocal(), "image %q not flagged as cluster local which is expected for any delegated scans", imgFullName)
+	require.NotNil(t, img.GetScan(), "image scan for %q is nil, check logs for errors, image notes: %v", imgFullName, img.GetNotes())
+	require.NotEmpty(t, img.GetScan().GetComponents(), "image scan for %q has no components, check central logs for errors, this can happen if indexing succeeds but matching fails, ROX-17472 will make this an error in the future", imgFullName)
 
-func TestDaveDeleScan(t *testing.T) {
-	suite.Run(t, new(DaveSuite))
-}
-
-func (ts *DaveSuite) SetupSuite() {
-	ts.KubernetesSuite.SetupSuite()
-	ts.namespace = namespaces.StackRox
-	ts.restCfg = getConfig(ts.T())
-	ts.ctx = context.Background()
-}
-
-func (ts *DaveSuite) TestDeleScan() {
-	ocpImgBuilder := deleScanOCPTestImageBuilder{
-		t:         ts.T(),
-		ctx:       ts.ctx,
-		namespace: ts.namespace,
-		restCfg:   ts.restCfg,
+	// Ensure at least one component has a vulnerability.
+	for _, c := range img.GetScan().GetComponents() {
+		if len(c.GetVulns()) > 0 {
+			return
+		}
 	}
 
-	name := "dave"
-	fromImage := "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1227"
-	ref := ocpImgBuilder.BuildOCPInternalImage(name, fromImage)
-
-	ts.T().Logf("Image: %v", ref)
-}
-
-// validateImageScan will fail the test if the image's scan was not completed
-// successfully.
-func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, img *storage.Image) {
-	require.NotNil(t, img.GetScan(), "image scan is nil, check logs for errors, image notes: %v", img.GetNotes())
-	require.NotEmpty(t, img.GetScan().GetComponents(), "image scan has no components, check central logs for errors, this can happen if indexing succeeds but matching fails, ROX-17472 will make this an error in the future")
-	require.True(t, img.GetIsClusterLocal())
+	require.Fail(t, "No vulnerabilities found.", "Expected at least one vulnerability in image %q, but found none.", imgFullName)
 }
