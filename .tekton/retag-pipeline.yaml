@@ -358,7 +358,7 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
 
   - name: sast-snyk-check
     params:
