@@ -67,14 +67,7 @@ func (s *ImagesStoreSuite) TestStore() {
 		}
 	}
 	protoassert.Equal(s.T(), cloned, foundImage)
-	cvePgStore := cveStore.CreateTableAndNewStore(ctx, pool, gormDB)
-	cves, err := cvePgStore.GetIDs(ctx)
-	s.Require().NoError(err)
-	s.Require().NotEmpty(cves)
-	id := cves[0]
-	imageCves, _, err := cvePgStore.Get(ctx, id)
-	s.Require().NoError(err)
-	s.Require().NotEmpty(imageCves)
+
 	imageCount, err := store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)
 	s.Equal(imageCount, 1)
@@ -101,14 +94,12 @@ func (s *ImagesStoreSuite) TestStore() {
 
 func (s *ImagesStoreSuite) TestNVDCVSS() {
 	ctx := sac.WithAllAccess(context.Background())
-
 	source := pgtest.GetConnectionString(s.T())
 	config, err := postgres.ParseConfig(source)
 	s.Require().NoError(err)
 	pool, err := postgres.New(ctx, config)
 	s.NoError(err)
 	defer pool.Close()
-
 	Destroy(ctx, pool)
 
 	gormDB := pgtest.OpenGormDB(s.T(), source)
@@ -143,8 +134,10 @@ func (s *ImagesStoreSuite) TestNVDCVSS() {
 	s.Require().NoError(err)
 	s.Require().NotEmpty(cves)
 	id := cves[0]
-	imageCves, _, err := cvePgStore.Get(ctx, id)
+	imageCve, _, err := cvePgStore.Get(ctx, id)
 	s.Require().NoError(err)
-	s.Require().NotEmpty(imageCves)
-	s.Equal(float32(10), imageCves.GetNvdcvss())
+	s.Require().NotEmpty(imageCve)
+	s.Equal(float32(10), imageCve.GetNvdcvss())
+	s.Require().NotEmpty(imageCve.GetCvssMetrics())
+	protoassert.Equal(s.T(), nvdCvss, imageCve.GetCvssMetrics()[0])
 }
