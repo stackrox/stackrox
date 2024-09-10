@@ -192,6 +192,18 @@ func (suite *SentinelTestSuite) TestTestAuditLogMessage() {
 	suite.Require().Nil(notifierErr)
 }
 
+func (suite *SentinelTestSuite) TestAuditLogEnabled() {
+	notifier := &sentinel{
+		azlogsClient: suite.mockAzureClient,
+		notifier:     getNotifierConfig(),
+	}
+	suite.Assert().True(notifier.AuditLoggingEnabled())
+
+	notifier.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().Enabled = false
+	suite.Assert().False(notifier.AuditLoggingEnabled())
+
+}
+
 func getNotifierConfig() *storage.Notifier {
 	return &storage.Notifier{
 		Name: "microsoft-sentinel",
