@@ -61,7 +61,7 @@ func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) e
 }
 
 func (s sentinel) AuditLoggingEnabled() bool {
-	return true
+	return s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled()
 }
 
 func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
