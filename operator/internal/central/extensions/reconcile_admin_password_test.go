@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	"github.com/stackrox/rox/operator/pkg/types"
-	"github.com/stackrox/rox/operator/pkg/utils/testutils"
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/types"
+	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stretchr/testify/assert"

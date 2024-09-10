@@ -3,9 +3,9 @@ package extensions
 import (
 	"testing"
 
-	"github.com/stackrox/rox/operator/pkg/common/extensions"
-	"github.com/stackrox/rox/operator/pkg/types"
-	"github.com/stackrox/rox/operator/pkg/utils/testutils"
+	"github.com/stackrox/rox/operator/internal/common/extensions"
+	"github.com/stackrox/rox/operator/internal/types"
+	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

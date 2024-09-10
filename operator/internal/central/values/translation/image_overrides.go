@@ -1,6 +1,6 @@
 package translation
 
-import "github.com/stackrox/rox/operator/pkg/images"
+import "github.com/stackrox/rox/operator/internal/images"
 
 var (
 	imageOverrides = images.Overrides{

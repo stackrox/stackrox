@@ -3,7 +3,7 @@ package testutils
 import (
 	"testing"
 
-	platform "github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime"

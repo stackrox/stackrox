@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
-	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"helm.sh/helm/v3/pkg/chartutil"
 )

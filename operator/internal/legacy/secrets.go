@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stackrox/rox/operator/pkg/values/translation"
+	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"

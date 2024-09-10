@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	commonLabels "github.com/stackrox/rox/operator/pkg/common/labels"
-	"github.com/stackrox/rox/operator/pkg/types"
-	"github.com/stackrox/rox/operator/pkg/utils"
+	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
+	"github.com/stackrox/rox/operator/internal/types"
+	"github.com/stackrox/rox/operator/internal/utils"
 	coreV1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

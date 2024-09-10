@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
-	"github.com/stackrox/rox/operator/pkg/types"
-	"github.com/stackrox/rox/operator/pkg/utils/testutils"
+	"github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/types"
+	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

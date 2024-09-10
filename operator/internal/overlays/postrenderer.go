@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/k8s-overlay-patch/pkg/patch"
 	"github.com/stackrox/k8s-overlay-patch/pkg/types"
-	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/api/v1alpha1"
 	"helm.sh/helm/v3/pkg/postrender"
 	k8sTypes "k8s.io/apimachinery/pkg/types"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"

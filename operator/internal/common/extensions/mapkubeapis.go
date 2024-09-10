@@ -9,7 +9,7 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/operator/pkg/config/mapkubeapis"
+	"github.com/stackrox/rox/operator/internal/config/mapkubeapis"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ctrl "sigs.k8s.io/controller-runtime"

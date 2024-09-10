@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/operator/pkg/types"
+	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/renderer"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
