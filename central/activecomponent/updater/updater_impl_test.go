@@ -36,18 +36,6 @@ type indicatorModel struct {
 	ExePaths      []string
 }
 
-type testCase struct {
-	description string
-
-	updates     []*aggregatorPkg.ProcessUpdate
-	indicators  map[string]indicatorModel
-	existingAcs map[string]set.StringSet // componentID to container name map
-
-	acsToUpdate map[string]set.StringSet // expected Acs to be updated, componentID to container name map
-	acsToDelete []string
-	imageChange bool
-}
-
 var (
 	mockDeployments = []*storage.Deployment{
 		{
@@ -883,11 +871,11 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 			s.mockAggregator.EXPECT().GetAndPrune(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 				func(_ func(string) bool, deploymentsSet set.StringSet) map[string][]*aggregatorPkg.ProcessUpdate {
 					return map[string][]*aggregatorPkg.ProcessUpdate{
-						deployment.GetId(): tc.updates,
+						deployment.GetId(): testCase.updates,
 					}
 				})
 			var databaseFetchCount int
-			for _, update := range tc.updates {
+			for _, update := range testCase.updates {
 				if update.FromDatabase() {
 					databaseFetchCount++
 				}
@@ -928,14 +916,14 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 			s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).Times(testCase.searchRawActiveComponentsTimes).DoAndReturn(
 				func(ctx context.Context, query *v1.Query) ([]*storage.ActiveComponent, error) {
 					existingImageID := image.GetId()
-					if tc.imageChange {
+					if testCase.imageChange {
 						existingImageID = "something_else"
 					}
 					// Verify query
 					assert.Equal(t, search.DeploymentID.String(), query.GetBaseQuery().GetMatchFieldQuery().GetField())
 					assert.Equal(t, strconv.Quote(deployment.GetId()), query.GetBaseQuery().GetMatchFieldQuery().GetValue())
 					var ret []*storage.ActiveComponent
-					for componentID, containerNames := range tc.existingAcs {
+					for componentID, containerNames := range testCase.existingAcs {
 						acID := acConverter.ComposeID(deployment.GetId(), componentID)
 						ac := &storage.ActiveComponent{
 							Id:           acID,
@@ -952,12 +940,12 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 			s.mockActiveComponentDataStore.EXPECT().GetBatch(gomock.Any(), gomock.Any()).Times(testCase.getBatchTimes).DoAndReturn(
 				func(ctx context.Context, ids []string) ([]*storage.ActiveComponent, error) {
 					existingImageID := image.GetId()
-					if tc.imageChange {
+					if testCase.imageChange {
 						existingImageID = "something_else"
 					}
 					var ret []*storage.ActiveComponent
 					requestedIds := set.NewStringSet(ids...)
-					for componentID, containerNames := range tc.existingAcs {
+					for componentID, containerNames := range testCase.existingAcs {
 						acID := acConverter.ComposeID(deployment.GetId(), componentID)
 						if !requestedIds.Contains(acID) {
 							continue
@@ -979,11 +967,11 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				})
 
 			// Verify active components to be updated or deleted
-			if len(tc.acsToDelete) > 0 {
+			if len(testCase.acsToDelete) > 0 {
 				s.mockActiveComponentDataStore.EXPECT().DeleteBatch(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 					func(ctx context.Context, ids ...string) error {
 						expectedToDelete := set.NewStringSet()
-						for _, componentID := range tc.acsToDelete {
+						for _, componentID := range testCase.acsToDelete {
 							expectedToDelete.Add(acConverter.ComposeID(deployment.GetId(), componentID))
 						}
 						assert.Equal(t, expectedToDelete, set.NewStringSet(ids...))
