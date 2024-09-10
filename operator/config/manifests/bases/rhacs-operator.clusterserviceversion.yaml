@@ -387,6 +387,10 @@ spec:
         path: scannerV4.matcher.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
+      - description: Config map containing postgresql.conf and pg_hba.conf that will
+          be used if modifications need to be applied.
+        displayName: Config map that will override postgresql.conf and pg_hba.conf
+        path: central.db.configOverride
       - description: |-
           Configures monitoring endpoint for Central. The monitoring endpoint
           allows other services to collect metrics from Central, provided in
@@ -425,6 +429,9 @@ spec:
         path: scannerV4.matcher.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
+      - description: Configures the database connection pool size.
+        displayName: Database Connection Pool Size Settings
+        path: central.db.connectionPoolSize
       - description: |-
           Configures how Central should store its persistent data. You can choose between using a persistent
           volume claim (recommended default), and a host path.
@@ -674,15 +681,17 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Config map containing postgresql.conf and pg_hba.conf that will
-          be used if modifications need to be applied.
-        displayName: Config map that will override postgresql.conf and pg_hba.conf
-        path: central.db.configOverride
       - description: The name of the referenced config map.
         displayName: Name
         path: central.db.configOverride.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:ConfigMap
+      - description: Maximum number of connections in the connection pool.
+        displayName: Maximum Connections
+        path: central.db.connectionPoolSize.maxConnections
+      - description: Minimum number of connections in the connection pool.
+        displayName: Minimum Connections
+        path: central.db.connectionPoolSize.minConnections
       - description: |-
           Deprecated field. It is no longer necessary to specify it.
           This field will be removed in a future release.

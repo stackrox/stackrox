@@ -237,6 +237,13 @@ spec:
           volume claim (recommended default), and a host path.'
         displayName: Persistence
         path: central.db.persistence
+      - description: Config map containing postgresql.conf and pg_hba.conf that will
+          be used if modifications need to be applied.
+        displayName: Config map that will override postgresql.conf and pg_hba.conf
+        path: central.db.configOverride
+      - description: Configures the database connection pool size.
+        displayName: Database Connection Pool Size Settings
+        path: central.db.connectionPoolSize
       - description: 'Allows overriding the default resource settings for this component.
           Please consult the documentation
 
@@ -259,10 +266,6 @@ spec:
           in the pod's hosts file.
         displayName: Host Aliases
         path: central.db.hostAliases
-      - description: Config map containing postgresql.conf and pg_hba.conf that will
-          be used if modifications need to be applied.
-        displayName: Config map that will override postgresql.conf and pg_hba.conf
-        path: central.db.configOverride
       - description: 'Deprecated field. It is no longer necessary to specify it.
 
           This field will be removed in a future release.
@@ -277,6 +280,12 @@ spec:
         path: central.db.configOverride.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:ConfigMap
+      - description: Maximum number of connections in the connection pool.
+        displayName: Maximum Connections
+        path: central.db.connectionPoolSize.maxConnections
+      - description: Minimum number of connections in the connection pool.
+        displayName: Minimum Connections
+        path: central.db.connectionPoolSize.minConnections
       - description: The name of the referenced secret.
         displayName: Name
         path: central.db.passwordSecret.name
