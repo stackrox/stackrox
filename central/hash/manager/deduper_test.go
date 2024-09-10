@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -272,7 +273,7 @@ func TestReconciliation(t *testing.T) {
 	deduper.MarkSuccessful(d1)
 	deduper.ShouldProcess(d2)
 	deduper.MarkSuccessful(d2)
-	deduper.ProcessSync()
+	deduper.ProcessSync(set.NewStringSet())
 	assert.Len(t, deduper.successfullyProcessed, 2)
 	assert.Contains(t, deduper.successfullyProcessed, eventPkg.GetKeyFromMessage(d1))
 	assert.Contains(t, deduper.successfullyProcessed, eventPkg.GetKeyFromMessage(d2))
@@ -286,14 +287,14 @@ func TestReconciliation(t *testing.T) {
 	deduper.ShouldProcess(d5)
 	deduper.MarkSuccessful(d4)
 	deduper.MarkSuccessful(d5)
-	deduper.ProcessSync()
+	deduper.ProcessSync(set.NewStringSet())
 	assert.Len(t, deduper.successfullyProcessed, 2)
 	assert.Contains(t, deduper.successfullyProcessed, eventPkg.GetKeyFromMessage(d4))
 	assert.Contains(t, deduper.successfullyProcessed, eventPkg.GetKeyFromMessage(d5))
 
 	// Should clear out successfully processed
 	deduper.StartSync()
-	deduper.ProcessSync()
+	deduper.ProcessSync(set.NewStringSet())
 	assert.Len(t, deduper.successfullyProcessed, 0)
 
 	// Add d1 to successfully processed map, call start sync again, and only put d1 in the received map
@@ -303,12 +304,12 @@ func TestReconciliation(t *testing.T) {
 	deduper.MarkSuccessful(d1)
 	deduper.StartSync()
 	deduper.ShouldProcess(d1)
-	deduper.ProcessSync()
+	deduper.ProcessSync(set.NewStringSet())
 	assert.Len(t, deduper.successfullyProcessed, 1)
 	assert.Contains(t, deduper.successfullyProcessed, eventPkg.GetKeyFromMessage(d1))
 
 	deduper.StartSync()
-	deduper.ProcessSync()
+	deduper.ProcessSync(set.NewStringSet())
 	assert.Len(t, deduper.successfullyProcessed, 0)
 
 	// Ensure alert is removed when reconcile occurs
@@ -319,7 +320,7 @@ func TestReconciliation(t *testing.T) {
 	deduper.MarkSuccessful(d1Alert)
 	assert.Len(t, deduper.successfullyProcessed, 2)
 	deduper.StartSync()
-	deduper.ProcessSync()
+	deduper.ProcessSync(set.NewStringSet())
 	assert.Len(t, deduper.successfullyProcessed, 0)
 }
 
@@ -340,7 +341,7 @@ func TestReconciliationOnDisconnection(t *testing.T) {
 				syncEventSuccessfully(d1),
 				syncEventSuccessfully(d2),
 				// Sync event
-				syncEvent,
+				syncEvent(nil),
 				// Assert d1 and d2
 				assertEvents([]*central.MsgFromSensor{d1, d2}),
 			},
@@ -353,7 +354,7 @@ func TestReconciliationOnDisconnection(t *testing.T) {
 				syncEventShouldNotProcess(d1),
 				syncEventShouldNotProcess(d2),
 				// Sync event
-				syncEvent,
+				syncEvent(nil),
 				// Assert d1 and d2
 				assertEvents([]*central.MsgFromSensor{d1, d2}),
 			},
@@ -365,9 +366,9 @@ func TestReconciliationOnDisconnection(t *testing.T) {
 				// Sensor does not send the sync resources d1 d2 as it can handle the deduper state
 				syncEventSuccessfully(d3),
 				// Sync event
-				syncEvent,
+				syncEvent([]*central.MsgFromSensor{d1, d2}),
 				// Assert d1, d2, and d3
-				assertEvents([]*central.MsgFromSensor{ /* d1, d2, */ d3}),
+				assertEvents([]*central.MsgFromSensor{d1, d2, d3}),
 			},
 		},
 		"reconnection (sensor cannot handle the deduper state)": {
@@ -378,7 +379,7 @@ func TestReconciliationOnDisconnection(t *testing.T) {
 				syncEventSuccessfully(d1),
 				syncEventSuccessfully(d2),
 				// Sync event
-				syncEvent,
+				syncEvent(nil),
 				// Assert d1 and d2
 				assertEvents([]*central.MsgFromSensor{d1, d2}),
 				// Simulated reconnection
@@ -388,7 +389,7 @@ func TestReconciliationOnDisconnection(t *testing.T) {
 				syncEventShouldNotProcess(d1),
 				syncEventShouldNotProcess(d2),
 				// Sync event
-				syncEvent,
+				syncEvent(nil),
 				// Assert d1 and d2
 				assertEvents([]*central.MsgFromSensor{d1, d2}),
 			},
@@ -408,7 +409,7 @@ func TestReconciliationOnDisconnection(t *testing.T) {
 				// d2 should be processed
 				syncEventSuccessfully(d2),
 				// Sync event
-				syncEvent,
+				syncEvent(nil),
 				// Assert d1 and d2
 				assertEvents([]*central.MsgFromSensor{d1, d2}),
 			},
@@ -421,7 +422,7 @@ func TestReconciliationOnDisconnection(t *testing.T) {
 				syncEventSuccessfully(d1),
 				syncEventSuccessfully(d2),
 				// Sync event
-				syncEvent,
+				syncEvent(nil),
 				// Assert d1 and d2
 				assertEvents([]*central.MsgFromSensor{d1, d2}),
 				// Simulated reconnection
@@ -429,9 +430,9 @@ func TestReconciliationOnDisconnection(t *testing.T) {
 				// Sensor does not send the sync resources d1 d2 as it can handle the deduper state
 				syncEventSuccessfully(d3),
 				// Sync event
-				syncEvent,
+				syncEvent([]*central.MsgFromSensor{d1, d2}),
 				// Assert d1, d2, and d3
-				assertEvents([]*central.MsgFromSensor{ /* d1, d2, */ d3}),
+				assertEvents([]*central.MsgFromSensor{d1, d2, d3}),
 			},
 		},
 		"reconnection with unsuccessful events (sensor can handle the deduper state)": {
@@ -447,9 +448,9 @@ func TestReconciliationOnDisconnection(t *testing.T) {
 				syncEventSuccessfully(d2),
 				syncEventSuccessfully(d3),
 				// Sync event
-				syncEvent,
+				syncEvent([]*central.MsgFromSensor{d1}),
 				// Assert d1, d2, and d3
-				assertEvents([]*central.MsgFromSensor{ /* d1, */ d2, d3}),
+				assertEvents([]*central.MsgFromSensor{d1, d2, d3}),
 			},
 		},
 	}
@@ -491,8 +492,14 @@ func syncEventUnsuccessfully(event *central.MsgFromSensor) testEvents {
 	}
 }
 
-func syncEvent(_ *testing.T, deduper **deduperImpl) {
-	(*deduper).ProcessSync()
+func syncEvent(events []*central.MsgFromSensor) testEvents {
+	return func(_ *testing.T, deduper **deduperImpl) {
+		keys := set.NewStringSet()
+		for _, event := range events {
+			keys.Add(eventPkg.GetKeyFromMessage(event))
+		}
+		(*deduper).ProcessSync(keys)
+	}
 }
 
 func assertEvents(events []*central.MsgFromSensor) testEvents {

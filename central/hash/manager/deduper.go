@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/hash"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -29,7 +30,7 @@ type Deduper interface {
 	// StartSync is called once a new Sensor connection is initialized
 	StartSync()
 	// ProcessSync processes the Sensor sync message and reconciles the successfully processed and received maps
-	ProcessSync()
+	ProcessSync(set.StringSet)
 }
 
 var (
@@ -191,7 +192,7 @@ func (d *deduperImpl) getValueNoLock(key string) (uint64, bool) {
 }
 
 // ProcessSync is triggered by the sync message sent from Sensor
-func (d *deduperImpl) ProcessSync() {
+func (d *deduperImpl) ProcessSync(successfulHashes set.StringSet) {
 	// Reconcile successfully processed map with received map. Any keys that exist in successfully processed
 	// but do not exist in received, can be dropped from successfully processed
 	d.hashLock.Lock()
@@ -204,6 +205,9 @@ func (d *deduperImpl) ProcessSync() {
 		}
 		if !v.processed {
 			if val, ok := d.received[k]; ok && val.processed {
+				continue
+			}
+			if _, ok := successfulHashes[k]; ok {
 				continue
 			}
 			delete(d.successfullyProcessed, k)

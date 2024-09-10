@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
 	"github.com/stackrox/rox/pkg/reflectutils"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -93,7 +94,9 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 		log.Info("Receiving reconciliation event")
 
 		unchangedIDs := event.GetSynced().GetUnchangedIds()
+		unchangedKeys := set.NewStringSet()
 		if unchangedIDs != nil {
+			unchangedKeys = set.NewStringSet(unchangedIDs...)
 			parsedKeys, err := deduperkey.ParseKeySlice(unchangedIDs)
 			if err != nil {
 				// Show warning for failed keys
@@ -108,7 +111,7 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 			log.Errorf("error reconciling state: %v", err)
 		}
 		s.initSyncMgr.Remove(s.cluster.GetId())
-		s.deduper.ProcessSync()
+		s.deduper.ProcessSync(unchangedKeys)
 		s.reconciliationMap.Close()
 		return
 	case *central.SensorEvent_ReprocessDeployment:
