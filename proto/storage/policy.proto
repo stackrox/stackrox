@@ -109,6 +109,7 @@ message ListPolicy {
   google.protobuf.Timestamp last_updated = 8;
   EventSource event_source = 9;
   bool is_default = 10;
+  PolicySource source = 11;
 }
 
 // Please ensure any changes to the following are reflected in comment of top-level policy field `enforcement_actions`.

@@ -12254,6 +12254,11 @@
                 "id": 10,
                 "name": "is_default",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "source",
+                "type": "PolicySource"
               }
             ]
           },
