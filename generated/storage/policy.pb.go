@@ -394,7 +394,7 @@ type Policy struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id              string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Policy ID,store,hidden" sql:"pk"`                   // @gotags: search:"Policy ID,store,hidden" sql:"pk"
+	Id              string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Policy ID,store,hidden" sql:"pk,index=btree"`                   // @gotags: search:"Policy ID,store,hidden" sql:"pk,index=btree"
 	Name            string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Policy,store" sql:"unique"`               // @gotags: search:"Policy,store" sql:"unique"
 	Description     string           `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty" search:"Description"` // @gotags: search:"Description"
 	Rationale       string           `protobuf:"bytes,4,opt,name=rationale,proto3" json:"rationale,omitempty"`
