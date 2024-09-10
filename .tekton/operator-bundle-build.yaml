@@ -45,7 +45,7 @@ spec:
         { "type": "gomod", "path": "operator/tools/envtest" },
         { "type": "gomod", "path": "operator/tools/kustomize" },
         { "type": "gomod", "path": "operator/tools/kuttl" },
-        { "type": "gomod", "path": "operator/tools/operator-sdk },
+        { "type": "gomod", "path": "operator/tools/operator-sdk" },
         { "type": "gomod", "path": "operator/tools/yq" },
         { "type": "pip", "path": "operator/bundle_helpers/requirements.txt" }
       ]
