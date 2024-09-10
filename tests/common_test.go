@@ -4,7 +4,6 @@ package tests
 
 import (
 	"bytes"
-	"fmt"
 	"regexp"
 	"testing"
 
@@ -56,7 +55,7 @@ func TestLogMatcher(t *testing.T) {
 			actual, actualErr := test.matcher.Match(r)
 			test.expectedResult(t, actual)
 			test.expectedError(t, actualErr)
-			assert.Equal(t, test.expectedString, fmt.Sprintf("%s", test.matcher))
+			assert.Equal(t, test.expectedString, test.matcher.String())
 		})
 	}
 }

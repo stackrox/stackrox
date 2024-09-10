@@ -66,36 +66,8 @@ var (
 	// This image was chosen so that scans are fast (hence the small image size).
 	anonTestImageStr = "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194"
 
-	// imageReadPermissionSet represents the minimal permission set needed for reading images (but
-	// should NOT be able to scan/write images).
-	imageReadPermissionSet = &storage.PermissionSet{
-		Name: "dele-scan-image-read-permission-set",
-		ResourceToAccess: map[string]storage.Access{
-			"Image": storage.Access_READ_ACCESS,
-		},
-	}
-
 	denyAllAccessScope  = accesscontrol.DefaultAccessScopeIDs[accesscontrol.DenyAllAccessScope]
 	allowAllAccessScope = accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope]
-
-	// imageReadRole is a template role (meant to be cloned) representing the minimal
-	// permissions needed for reading images.  Will bind the read only API token to this role.
-	imageReadRole = &storage.Role{
-		Name:            "dele-scan-image-read-role",
-		PermissionSetId: accesscontrol.DefaultAccessScopeIDs[accesscontrol.Analyst],
-		AccessScopeId:   allowAllAccessScope,
-	}
-
-	// namespaceAccessScope is a template access scope (meant to be cloned) and allows
-	// access to specific namespaces.
-	namespaceAccessScope = &storage.SimpleAccessScope{
-		Name: "dele-scan-namespace-access-scope",
-		Rules: &storage.SimpleAccessScope_Rules{
-			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
-				{ClusterName: "", NamespaceName: "stackrox"},
-			},
-		},
-	}
 )
 
 type DaveSuite struct {
@@ -127,17 +99,6 @@ type DelegatedScanningSuite struct {
 	remoteCluster      *storage.Cluster
 	namespace          string
 	restCfg            *rest.Config
-
-	// imageReadToken minimally scoped API token that has the image read permission (NOT image write).
-	imageReadToken string
-	// imageWriteToken minimally scoped API token that has the image write permission
-	imageWriteToken string
-
-	// imageReadPermissionSetID holds the id of the created permission for cleanup purposes.
-	imageReadPermissionSetID string
-
-	// namespaceAccessScopeID holds the id of the created access scope for binding and cleanup purposes.
-	namespaceAccessScopeID string
 
 	quayROUsername string
 	quayROPassword string
@@ -191,25 +152,6 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	deleteRole(t, ctx, deleScanRoleName)
 	deletePermissionSet(t, ctx, deleScanPermissionSetName)
 	deleteAccessScope(t, ctx, deleScanAccessScopeName)
-
-	/*
-		// Create an access scope limited to the stackrox namespace
-		scope := namespaceAccessScope.CloneVT()
-		scope.GetRules().GetIncludedNamespaces()[0].ClusterName = ts.remoteCluster.GetName()
-		ts.namespaceAccessScopeID = mustCreateAccessScope(t, ctx, scope)
-
-		// Create a read only permission set.
-		ts.imageReadPermissionSetID = mustCreatePermissionSet(t, ctx, imageReadPermissionSet)
-
-		// Create a read only role.
-		role := imageReadRole.CloneVT()
-		role.PermissionSetId = ts.imageReadPermissionSetID
-		role.AccessScopeId = ts.namespaceAccessScopeID
-		mustCreateRole(t, ctx, role)
-
-		// Create a read only token (needed by some tests)
-		_, ts.imageReadToken = mustCreateAPIToken(t, ctx, deleScanAPITokenName, []string{imageReadRole.GetName()})
-	*/
 }
 
 func (ts *DelegatedScanningSuite) TearDownSuite() {
@@ -666,7 +608,7 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_Mirrors() {
 	}
 	rii, err := iiService.PostImageIntegration(ctx, ii)
 	require.NoError(t, err)
-	t.Cleanup(func() { iiService.DeleteImageIntegration(ctx, &v1.ResourceByID{Id: rii.GetId()}) })
+	t.Cleanup(func() { _, _ = iiService.DeleteImageIntegration(ctx, &v1.ResourceByID{Id: rii.GetId()}) })
 
 	deleService := v1.NewDelegatedRegistryConfigServiceClient(conn)
 

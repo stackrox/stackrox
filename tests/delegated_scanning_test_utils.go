@@ -34,6 +34,7 @@ import (
 	k8sTypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/rest"
+	//TODO: Cleanup these imports so using camel case
 )
 
 // This file contains utility functions to aid the execution of the delegated scanning tests.
@@ -51,6 +52,19 @@ const (
 // the other e2e tests.
 type deleScanTestUtils struct {
 	restCfg *rest.Config
+}
+
+func (d *deleScanTestUtils) AddCredsToOCPGlobalPull(t *testing.T, ctx context.Context) {
+	// k8s := createK8sClient(t)
+	// sec, err := k8s.CoreV1().
+	// 	Secrets("openshift-config").
+	// 	Get(ctx, "pull-secret", v1.GetOptions{})
+	// require.NoError(t, err)
+	// sec.Data["quay.io"]
+	// TODO: Can we append to the global pull secret
+	// BEFORE continuing further, try this outside of this interface
+	// can I add a second quay.io credential to the OCP global pull secret?
+
 }
 
 // CreateMirrorCRs creates ImageContentSourcePolicy, ImageDigestMirrorSet, and ImageTagMirrorSet CRs for
