@@ -128,4 +128,7 @@ var (
 
 	// PlatformComponents introduces the concept of platform collections and filtered views across the app.
 	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS", enabled)
+
+	// Display NVD CVSS score in UI.
+	NvdCvssUI = registerFeature("Display NVD CVSS score in UI", "ROX_NVD_CVSS_UI")
 )
