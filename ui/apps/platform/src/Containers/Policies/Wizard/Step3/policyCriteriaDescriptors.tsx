@@ -1,5 +1,3 @@
-import startCase from 'lodash/startCase';
-
 import {
     portExposureLabels,
     envVarSrcLabels,
@@ -27,29 +25,20 @@ const equalityOptions: DescriptorOption[] = [
     { label: 'Is less than', value: '<' },
 ];
 
-const cpuResource = (label: string): GroupDescriptor => ({
-    label,
-    name: startCase(label),
-    shortName: label,
-    category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
-    type: 'group',
-    subComponents: [
-        {
-            type: 'select',
-            options: equalityOptions,
-            subpath: 'key',
-        },
-        {
-            type: 'number',
-            placeholder: '# of cores',
-            min: 0,
-            step: 0.1,
-            subpath: 'value',
-        },
-    ],
-    canBooleanLogic: true,
-    lifecycleStages: ['DEPLOY', 'RUNTIME'],
-});
+const subComponentsForContainerCPU: SubComponent[] = [
+    {
+        type: 'select',
+        options: equalityOptions,
+        subpath: 'key',
+    },
+    {
+        type: 'number',
+        placeholder: '# of cores',
+        min: 0,
+        step: 0.1,
+        subpath: 'value',
+    },
+];
 
 const dropCapabilities: DescriptorOption[] = [
     'ALL',
@@ -139,28 +128,19 @@ const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDAT
     value: verb,
 }));
 
-const memoryResource = (label: string): GroupDescriptor => ({
-    label,
-    name: startCase(label),
-    shortName: label,
-    category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
-    type: 'group',
-    subComponents: [
-        {
-            type: 'select',
-            options: equalityOptions,
-            subpath: 'key',
-        },
-        {
-            type: 'number',
-            placeholder: '# MB',
-            min: 0,
-            subpath: 'value',
-        },
-    ],
-    canBooleanLogic: true,
-    lifecycleStages: ['DEPLOY', 'RUNTIME'],
-});
+const subComponentsForContainerMemory: SubComponent[] = [
+    {
+        type: 'select',
+        options: equalityOptions,
+        subpath: 'key',
+    },
+    {
+        type: 'number',
+        placeholder: '# MB',
+        min: 0,
+        subpath: 'value',
+    },
+];
 
 // TODO Delete after signaturePolicyCriteria type encapsulates its behavior.
 export const imageSigningCriteriaName = 'Image Signature Verified By';
@@ -181,14 +161,20 @@ export const mountPropagationCriteriaName = 'Mount Propagation';
     },
 
     label: for legacy policy alert labels
-    name: the string used to display UI and send to backend
-    negatedName: string used to display UI when negated
+    name: corresponds to backend field names for id or key props but not for visible text
+          https://github.com/stackrox/stackrox/blob/master/pkg/booleanpolicy/fieldnames/list.go
+
+    Add allowed items if unit tests fail for new rules that follow the rules (pardon pun).
+    Sentence case for these names, which cannot be equal to each other:
+    shortName: required string for title of rule criterion in group of form and tree of modal
+    longName: optional string for subtitle of rule criterion in group of form and tree of modal
+    negatedName: optional string used to display UI when negated
         (if this does not exist, the UI assumes that the field cannot be negated)
-    longName: string displayed in the UI in the Policy Field Card (not in draggable key)
+
     category: the category grouping for the policy criteria (collapsible group in keys)
     type: the type of form field to render when dragged to the Policy Field Card
     subComponents: subfields the field renders when dragged to Policy Field Card if 'group' type
-    radioButtons: button options if 'radio' type
+    radioButtons: button options if 'radioGroup' or 'radioGroupString' type
     options: options if 'select' or 'multiselect' or 'multiselect-creatable' type
     placeholder: string to display as placeholder if applicable
     canBooleanLogic: indicates whether the field supports the AND/OR boolean operator
@@ -204,29 +190,52 @@ export type DescriptorOption = {
     value: string;
 };
 
-export type SubComponent = {
-    type: 'number' | 'select' | 'text'; // add more if needed
-    options?: DescriptorOption[];
+export type SubComponent = TextSubComponent | NumberSubComponent | SelectSubComponent;
+
+export type BaseSubComponent = {
     subpath: string;
-    placeholder?: string;
     label?: string;
-    min?: number;
-    max?: number;
-    step?: number;
+    placeholder?: string;
 };
 
-export type BaseDescriptor = {
+export type TextSubComponent = {
+    type: 'text';
+} & BaseSubComponent;
+
+export type NumberSubComponent = {
+    type: 'number';
+    min: number;
+    max?: number;
+    step?: number;
+} & BaseSubComponent;
+
+export type SelectSubComponent = {
+    type: 'select';
+    options: DescriptorOption[];
+} & BaseSubComponent;
+
+type BaseDescriptor = {
     label?: string;
     name: string;
+    shortName: string;
     longName?: string;
-    shortName?: string;
-    negatedName?: string;
     category: string;
     type: DescriptorType;
-    canBooleanLogic?: boolean;
     disabled?: boolean;
     featureFlagDependency?: FeatureFlagEnvVar[];
     lifecycleStages: LifecycleStage[];
+};
+
+type DescriptorCanBoolean = {
+    canBooleanLogic: boolean;
+};
+
+type DescriptorCanNotBoolean = {
+    canBooleanLogic: false;
+};
+
+type DescriptorCanNegate = {
+    negatedName?: string;
 };
 
 export type DescriptorType =
@@ -243,6 +252,7 @@ export type Descriptor =
     | GroupDescriptor
     | NumberDescriptor
     | RadioGroupDescriptor
+    | RadioGroupStringDescriptor
     | SelectDescriptor
     | TextDescriptor
     | TableModalDescriptor;
@@ -251,39 +261,60 @@ export type TableModalDescriptor = {
     type: 'tableModal';
     component: typeof ImageSigningTableModal;
     tableType: string;
-} & BaseDescriptor;
+} & BaseDescriptor &
+    DescriptorCanBoolean;
 
 export type GroupDescriptor = {
     type: 'group';
     subComponents: SubComponent[];
     default?: boolean;
-} & BaseDescriptor;
+} & BaseDescriptor &
+    DescriptorCanBoolean;
 
 export type NumberDescriptor = {
     type: 'number';
     placeholder?: string;
-} & BaseDescriptor;
+} & BaseDescriptor &
+    DescriptorCanBoolean &
+    DescriptorCanNegate;
+
+type RadioButtonFalse = { text: string; value: false };
+type RadioButtonTrue = { text: string; value: true };
 
 export type RadioGroupDescriptor = {
-    type: 'radioGroup' | 'radioGroupString';
-    radioButtons: { text: string; value: string | boolean }[];
-    defaultValue?: string | boolean;
-    reverse?: boolean;
-} & BaseDescriptor;
+    type: 'radioGroup';
+    // radioButtons: { text: string; value: boolean }[];
+    radioButtons: [RadioButtonFalse, RadioButtonTrue] | [RadioButtonTrue, RadioButtonFalse];
+    defaultValue?: boolean; // TODO missing only in 'Is Impersonated User'
+    reverse?: boolean; // TODO what are pro and con to require it?
+} & BaseDescriptor &
+    DescriptorCanNotBoolean;
+
+export type RadioGroupStringDescriptor = {
+    type: 'radioGroupString';
+    radioButtons: { text: string; value: string }[];
+    // defaultValue?: string;
+} & BaseDescriptor &
+    DescriptorCanNotBoolean &
+    DescriptorCanNegate;
 
 export type SelectDescriptor = {
     type: 'multiselect' | 'select';
     options: DescriptorOption[];
     placeholder?: string;
     reverse?: boolean;
-} & BaseDescriptor;
+} & BaseDescriptor &
+    DescriptorCanBoolean &
+    DescriptorCanNegate;
 
 export type TextDescriptor = {
     type: 'text';
     placeholder?: string;
-} & BaseDescriptor;
+} & BaseDescriptor &
+    DescriptorCanBoolean &
+    DescriptorCanNegate;
 
-export const policyConfigurationDescriptor: Descriptor[] = [
+export const policyCriteriaDescriptors: Descriptor[] = [
     {
         label: 'Image registry',
         name: 'Image Registry',
@@ -428,6 +459,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'CVSS',
         name: 'CVSS',
+        shortName: 'CVSS',
         longName: 'Common Vulnerability Scoring System (CVSS) score',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'group',
@@ -523,8 +555,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Days Since CVE Was First Discovered In Image',
         name: 'Days Since CVE Was First Discovered In Image',
-        shortName: 'Days Since CVE Was First Discovered In Image',
-        longName: 'Days Since CVE Was First Discovered In Image',
+        shortName: 'Days since CVE was first discovered in image',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'number',
         placeholder: '0',
@@ -534,8 +565,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Days Since CVE Was First Discovered In System',
         name: 'Days Since CVE Was First Discovered In System',
-        shortName: 'Days Since CVE Was First Discovered In System',
-        longName: 'Days Since CVE Was First Discovered In System',
+        shortName: 'Days since CVE was first discovered in system',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'number',
         placeholder: '0',
@@ -845,8 +875,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Ingress Network Policy',
         name: 'Has Ingress Network Policy',
-        shortName: 'Ingress Network Policy',
-        longName: 'Ingress Network Policy',
+        shortName: 'Ingress network policy',
         category: policyCriteriaCategories.NETWORKING,
         type: 'radioGroup',
         radioButtons: [
@@ -866,8 +895,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Egress Network Policy',
         name: 'Has Egress Network Policy',
-        shortName: 'Egress Network Policy',
-        longName: 'Egress Network Policy',
+        shortName: 'Egress network policy',
         category: policyCriteriaCategories.NETWORKING,
         type: 'radioGroup',
         radioButtons: [
@@ -884,10 +912,46 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: false,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
-    cpuResource('Container CPU request'),
-    cpuResource('Container CPU limit'),
-    memoryResource('Container memory request'),
-    memoryResource('Container memory limit'),
+    {
+        label: 'Container CPU request',
+        name: 'Container CPU Request',
+        shortName: 'Container CPU request',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'group',
+        subComponents: subComponentsForContainerCPU,
+        canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
+    },
+    {
+        label: 'Container CPU limit',
+        name: 'Container CPU Limit"',
+        shortName: 'Container CPU limit',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'group',
+        subComponents: subComponentsForContainerCPU,
+        canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
+    },
+    {
+        label: 'Container memory request',
+        name: 'Container Memory Request',
+        shortName: 'Container memory request',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'group',
+        subComponents: subComponentsForContainerMemory,
+        canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
+    },
+    {
+        label: 'Container memory limit',
+        name: 'Container Memory Limit',
+        shortName: 'Container memory limit',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'group',
+        subComponents: subComponentsForContainerMemory,
+        canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
+    },
     {
         label: 'Privileged',
         name: 'Privileged Container',
@@ -994,7 +1058,8 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Share host PID namespace',
         name: 'Host PID',
-        longName: 'Share host PID Namespace',
+        shortName: 'Host PID',
+        longName: 'Share host PID namespace',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'radioGroup',
         radioButtons: [
@@ -1015,6 +1080,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Share host IPC namespace',
         name: 'Host IPC',
+        shortName: 'Host IPC',
         longName: 'Share host IPC namespace',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'radioGroup',
@@ -1151,7 +1217,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Automount service account token',
         name: 'Automount Service Account Token',
         shortName: 'Automount service account token',
-        longName: 'Automount service account token',
         category: policyCriteriaCategories.KUBERNETES_ACCESS,
         type: 'radioGroup',
         radioButtons: [
@@ -1268,7 +1333,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Kubernetes action',
         name: 'Kubernetes Resource',
-        longName: 'Kubernetes action',
         shortName: 'Kubernetes action',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'select',
@@ -1308,7 +1372,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Replicas',
         name: 'Replicas',
         shortName: 'Replicas',
-        longName: 'Replicas',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'group',
         subComponents: [

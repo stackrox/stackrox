@@ -68,7 +68,9 @@ function PolicyGroupCard({
         ]);
     }
 
-    const headerLongText = group.negate ? descriptor.negatedName : descriptor.longName;
+    const hasNegation = !readOnly && 'negatedName' in descriptor && descriptor.negatedName;
+    const headerLongText =
+        group.negate && 'negatedName' in descriptor ? descriptor.negatedName : descriptor.longName;
 
     return (
         <>
@@ -77,7 +79,7 @@ function PolicyGroupCard({
                     actions={{
                         actions: (
                             <>
-                                {descriptor.negatedName && !readOnly && (
+                                {hasNegation && (
                                     <>
                                         <Divider
                                             component="div"
