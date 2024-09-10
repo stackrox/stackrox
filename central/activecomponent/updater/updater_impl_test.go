@@ -421,7 +421,21 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 	s.mockDeploymentDatastore.EXPECT().GetDeploymentIDs(gomock.Any()).AnyTimes().Return([]string{deployment.GetId()}, nil)
 
 	// Test active components with designated image and deployment
-	var testCases = []testCase{
+	var testCases = []struct {
+		description string
+
+		updates     []*aggregatorPkg.ProcessUpdate
+		indicators  map[string]indicatorModel
+		existingAcs map[string]set.StringSet // componentID to container name map
+
+		acsToUpdate map[string]set.StringSet // expected Acs to be updated, componentID to container name map
+		acsToDelete []string
+		imageChange bool
+
+		getBatchTimes                  int
+		searchRawActiveComponentsTimes int
+		upsertBatchTimes               int
+	}{
 		{
 			description: "First populate from database",
 			updates: []*aggregatorPkg.ProcessUpdate{
@@ -451,6 +465,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName()),
 				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
 			},
+			upsertBatchTimes:               1,
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Restart and populate from database no updates",
@@ -481,6 +497,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName()),
 				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
 			},
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Restart and populate from database with updates",
@@ -515,6 +532,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName()),
 				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
 			},
+			upsertBatchTimes:               1,
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Restart and populate from database with removal",
@@ -549,6 +568,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
 			},
 			acsToDelete: []string{componentsIDs[0]},
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 		{
 			description: "Restart and populate from database with removal request",
@@ -580,6 +602,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName()),
 			},
 			acsToDelete: []string{componentsIDs[1]},
+
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Image change populate from database with updates",
@@ -615,6 +639,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
 			},
 			imageChange: true,
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 		{
 			description: "Image change populate from database with updates",
@@ -650,6 +677,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
 			},
 			imageChange: true,
+
+			upsertBatchTimes:               1,
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Image change populate from database with removal",
@@ -685,6 +715,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 			},
 			acsToDelete: []string{componentsIDs[0]},
 			imageChange: true,
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 		{
 			description: "Image change populate from database with removal request",
@@ -720,6 +753,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 			},
 			acsToDelete: []string{componentsIDs[1]},
 			imageChange: true,
+
+			upsertBatchTimes:               1,
+			searchRawActiveComponentsTimes: 1,
 		},
 		{
 			description: "Update from cache adding new active contexts",
@@ -735,6 +771,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
 				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
 			},
+
+			getBatchTimes:    1,
+			upsertBatchTimes: 1,
 		},
 		{
 			description: "update from cache no new change and no updates",
@@ -747,6 +786,8 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
 			},
 			acsToUpdate: map[string]set.StringSet{},
+
+			getBatchTimes: 1,
 		},
 		{
 			description: "update from cache with removal request",
@@ -782,6 +823,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
 			},
 			acsToDelete: []string{componentsIDs[1]},
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 		{
 			description: "First populate from database multiple component",
@@ -811,6 +855,9 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[0]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
 				componentsIDs[1]: set.NewStringSet(deployment.Containers[0].GetName(), deployment.Containers[1].GetName()),
 			},
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 		{
 			description: "update from cache with removal request with multiple components",
@@ -825,33 +872,15 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 				componentsIDs[0]: set.NewStringSet(deployment.Containers[1].GetName()),
 				componentsIDs[1]: set.NewStringSet(deployment.Containers[1].GetName()),
 			},
+
+			searchRawActiveComponentsTimes: 1,
+			upsertBatchTimes:               1,
 		},
 	}
 
-	// Note: The new loop variable semantics introduced in go1.22 breaks these
-	// tests when using loop variables in closures such that the test code
-	// expects those loop variables to change on each iteration of the loop.
-	// The problem stems from what a closure captures, or "sees", loop
-	// variables on each iteration. Before go1.22, loop variables had per-loop
-	// scope, which is to say that any closure inside the loop using loop
-	// variables would have the reference of the loop variable updated on each
-	// iteration. In go1.22+, loop variables have per-iteration scope, which,
-	// for closures inside the loop, means that when a given closure first
-	// captures the variable, that value will always be used in that particular
-	// closure.
-	// To get around this, we define variables outside the loop and then set
-	// those variables to the loop variables on each iteration, then use the
-	// variables in the outer scope (relative to the loop) in the closure,
-	// effectively achieving per-loop scoped variables.
-	// References and further reading:
-	// - https://web.archive.org/web/20240905192132/https://go.dev/blog/go1.22
-	// - https://web.archive.org/web/20240905181916/https://go.dev/blog/loopvar-preview
-	// - https://web.archive.org/web/20240905191855/https://go.dev/wiki/LoopvarExperiment
-	// - https://web.archive.org/web/20240905192225/https://go.googlesource.com/proposal/+/master/design/60078-loopvar.md
-	// - https://web.archive.org/web/20240905191656/https://go101.org/blog/2024-03-01-for-loop-semantic-changes-in-go-1.22.html
-	var tc testCase
-	for _, tc = range testCases {
-		s.T().Run(tc.description, func(t *testing.T) {
+	for _, testCase := range testCases {
+		testCase := testCase // TODO: delete for go 1.22.
+		s.T().Run(testCase.description, func(t *testing.T) {
 			s.mockAggregator.EXPECT().GetAndPrune(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 				func(_ func(string) bool, deploymentsSet set.StringSet) map[string][]*aggregatorPkg.ProcessUpdate {
 					return map[string][]*aggregatorPkg.ProcessUpdate{
@@ -864,40 +893,40 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					databaseFetchCount++
 				}
 			}
-			if databaseFetchCount > 0 {
-				s.mockProcessIndicatorDataStore.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Times(databaseFetchCount).DoAndReturn(
-					func(ctx context.Context, query *v1.Query) ([]*storage.ProcessIndicator, error) {
-						queries := query.GetConjunction().Queries
-						s.Assert().Len(queries, 2)
-						var containerName string
-						for _, q := range queries {
-							mf := q.GetBaseQuery().GetMatchFieldQuery()
 
-							switch mf.GetField() {
-							case search.DeploymentID.String():
-								assert.Equal(t, strconv.Quote(deployment.GetId()), mf.GetValue())
-							case search.ContainerName.String():
-								containerName = stripQuotes(mf.GetValue())
-							default:
-								s.Assert().Fail("unexpected query")
-							}
+			s.mockProcessIndicatorDataStore.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Times(databaseFetchCount).DoAndReturn(
+				func(ctx context.Context, query *v1.Query) ([]*storage.ProcessIndicator, error) {
+					queries := query.GetConjunction().Queries
+					s.Assert().Len(queries, 2)
+					var containerName string
+					for _, q := range queries {
+						mf := q.GetBaseQuery().GetMatchFieldQuery()
+
+						switch mf.GetField() {
+						case search.DeploymentID.String():
+							assert.Equal(t, strconv.Quote(deployment.GetId()), mf.GetValue())
+						case search.ContainerName.String():
+							containerName = stripQuotes(mf.GetValue())
+						default:
+							s.Assert().Fail("unexpected query")
 						}
+					}
 
-						var ret []*storage.ProcessIndicator
+					var ret []*storage.ProcessIndicator
 
-						for _, exec := range tc.indicators[containerName].ExePaths {
-							ret = append(ret, &storage.ProcessIndicator{
-								Id:            uuid.NewV4().String(),
-								ImageId:       tc.indicators[containerName].ImageID,
-								DeploymentId:  deployment.GetId(),
-								ContainerName: containerName,
-								Signal:        &storage.ProcessSignal{ExecFilePath: exec}},
-							)
-						}
-						return ret, nil
-					})
-			}
-			s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
+					for _, exec := range testCase.indicators[containerName].ExePaths {
+						ret = append(ret, &storage.ProcessIndicator{
+							Id:            uuid.NewV4().String(),
+							ImageId:       testCase.indicators[containerName].ImageID,
+							DeploymentId:  deployment.GetId(),
+							ContainerName: containerName,
+							Signal:        &storage.ProcessSignal{ExecFilePath: exec}},
+						)
+					}
+					return ret, nil
+				})
+
+			s.mockActiveComponentDataStore.EXPECT().SearchRawActiveComponents(gomock.Any(), gomock.Any()).Times(testCase.searchRawActiveComponentsTimes).DoAndReturn(
 				func(ctx context.Context, query *v1.Query) ([]*storage.ActiveComponent, error) {
 					existingImageID := image.GetId()
 					if tc.imageChange {
@@ -921,7 +950,7 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 					}
 					return ret, nil
 				})
-			s.mockActiveComponentDataStore.EXPECT().GetBatch(gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(
+			s.mockActiveComponentDataStore.EXPECT().GetBatch(gomock.Any(), gomock.Any()).Times(testCase.getBatchTimes).DoAndReturn(
 				func(ctx context.Context, ids []string) ([]*storage.ActiveComponent, error) {
 					existingImageID := image.GetId()
 					if tc.imageChange {
@@ -962,31 +991,29 @@ func (s *acUpdaterTestSuite) TestUpdater_Update() {
 						return nil
 					})
 			}
-			if len(tc.acsToUpdate) > 0 {
-				s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).Times(1).Return(nil).Do(func(_ context.Context, acs []*storage.ActiveComponent) {
-					// Verify active components
-					assert.Equal(t, len(tc.acsToUpdate), len(acs))
-					actualAcs := make(map[string]*storage.ActiveComponent, len(acs))
-					for _, ac := range acs {
-						_, _, err := acConverter.DecomposeID(ac.GetId())
-						assert.NoError(t, err)
-						actualAcs[ac.GetId()] = ac
-					}
+			s.mockActiveComponentDataStore.EXPECT().UpsertBatch(gomock.Any(), gomock.Any()).Times(testCase.upsertBatchTimes).Return(nil).Do(func(_ context.Context, acs []*storage.ActiveComponent) {
+				// Verify active components
+				assert.Equal(t, len(testCase.acsToUpdate), len(acs))
+				actualAcs := make(map[string]*storage.ActiveComponent, len(acs))
+				for _, ac := range acs {
+					_, _, err := acConverter.DecomposeID(ac.GetId())
+					assert.NoError(t, err)
+					actualAcs[ac.GetId()] = ac
+				}
 
-					for componentID, expectedContexts := range tc.acsToUpdate {
-						acID := acConverter.ComposeID(deployment.GetId(), componentID)
-						assert.Contains(t, actualAcs, acID)
-						assert.Equal(t, deployment.GetId(), actualAcs[acID].GetDeploymentId())
-						assert.Equal(t, componentID, actualAcs[acID].GetComponentId())
-						assert.Equal(t, acID, actualAcs[acID].GetId())
-						assert.Equal(t, len(expectedContexts), len(actualAcs[acID].ActiveContextsSlice))
-						for _, activeContext := range actualAcs[acID].ActiveContextsSlice {
-							assert.Contains(t, expectedContexts, activeContext.GetContainerName())
-							assert.Equal(t, image.GetId(), activeContext.GetImageId())
-						}
+				for componentID, expectedContexts := range testCase.acsToUpdate {
+					acID := acConverter.ComposeID(deployment.GetId(), componentID)
+					assert.Contains(t, actualAcs, acID)
+					assert.Equal(t, deployment.GetId(), actualAcs[acID].GetDeploymentId())
+					assert.Equal(t, componentID, actualAcs[acID].GetComponentId())
+					assert.Equal(t, acID, actualAcs[acID].GetId())
+					assert.Equal(t, len(expectedContexts), len(actualAcs[acID].ActiveContextsSlice))
+					for _, activeContext := range actualAcs[acID].ActiveContextsSlice {
+						assert.Contains(t, expectedContexts, activeContext.GetContainerName())
+						assert.Equal(t, image.GetId(), activeContext.GetImageId())
 					}
-				})
-			}
+				}
+			})
 			updater.Update()
 		})
 	}
