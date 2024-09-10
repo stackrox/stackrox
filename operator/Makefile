@@ -446,6 +446,9 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 		$${unreleased_opt} \
 		--no-related-images \
 		--add-supported-arch amd64 \
+		--add-supported-arch arm64 \
+		--add-supported-arch ppc64le \
+		--add-supported-arch s390x \
 		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
 		> build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 # Check that the resulting bundle still passes validations.
