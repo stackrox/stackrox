@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/protobuf/proto"
 )
@@ -28,6 +29,14 @@ var (
 
 	_ notifiers.AlertNotifier = (*sentinel)(nil)
 	_ notifiers.AuditNotifier = (*sentinel)(nil)
+)
+
+const (
+	// Azure log ingestion API limits: https://learn.microsoft.com/en-us/azure/azure-monitor/service-limits#logs-ingestion-api
+	azureFieldSizeLimit = 64 * size.KB
+
+	// logOverheadSize is used to calculate the size of the `msg` field. The logOverheadSize could include for example the array wrap, additional records and field names.
+	logOverheadSize = 178
 )
 
 func init() {
@@ -40,28 +49,9 @@ func init() {
 }
 
 type sentinel struct {
-	notifier     *storage.Notifier
-	azlogsClient azureLogsClient
-}
-
-func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
-	if !features.MicrosoftSentinelNotifier.Enabled() {
-		return nil
-	}
-
-	if !s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled() {
-		return nil
-	}
-
-	err := s.uploadLogs(ctx, s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig(), msg)
-	if err != nil {
-		return errors.Wrap(err, "failed to upload audit log to Microsoft Sentinel")
-	}
-	return nil
-}
-
-func (s sentinel) AuditLoggingEnabled() bool {
-	return s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled()
+	notifier             *storage.Notifier
+	azlogsClient         azureLogsClient
+	azureMaxLogFieldSize int
 }
 
 func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
@@ -84,9 +74,30 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	}
 
 	return &sentinel{
-		notifier:     notifier,
-		azlogsClient: &azureLogsClientImpl{client: client},
+		notifier:             notifier,
+		azlogsClient:         &azureLogsClientImpl{client: client},
+		azureMaxLogFieldSize: azureFieldSizeLimit,
 	}, nil
+}
+
+func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
+	if !features.MicrosoftSentinelNotifier.Enabled() {
+		return nil
+	}
+
+	if !s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled() {
+		return nil
+	}
+
+	err := s.uploadLogs(ctx, s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig(), msg)
+	if err != nil {
+		return errors.Wrap(err, "failed to upload audit log to Microsoft Sentinel")
+	}
+	return nil
+}
+
+func (s sentinel) AuditLoggingEnabled() bool {
+	return s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled()
 }
 
 func (s sentinel) sentinel() *storage.MicrosoftSentinel {
@@ -167,7 +178,6 @@ func (s sentinel) uploadLogs(ctx context.Context, dcrConfig *storage.MicrosoftSe
 		return err
 	}
 
-	log.Infof("bytes to send: %s", string(bytesToSend))
 	return retry.WithRetry(func() error {
 		// UploadResponse is unhandled because it currently is only a placeholder in the azure client library and does not
 		// contain any information to be processed.
@@ -202,6 +212,11 @@ func (s sentinel) prepareLogsToSend(msg protocompat.Message) ([]byte, error) {
 	bytesToSend, err := json.Marshal(logsToSend)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to wrap alert for Microsoft Sentinel to a slice")
+	}
+
+	fieldSize := len(bytesToSend) - logOverheadSize
+	if fieldSize > s.azureMaxLogFieldSize {
+		return nil, errors.Errorf("Could not upload log to sentinel, message exceeds %d bytes, got %d bytes.", s.azureMaxLogFieldSize, fieldSize)
 	}
 
 	return bytesToSend, nil
