@@ -169,6 +169,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("CVEInfo", []string{
 		"createdAt: Time",
 		"cve: String!",
+		"cvssMetrics: [CVSSScore]!",
 		"cvssV2: CVSSV2",
 		"cvssV3: CVSSV3",
 		"lastModified: Time",
@@ -189,6 +190,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"uRI: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVE_ScoreVersion(0)))
+	utils.Must(builder.AddType("CVSSScore", []string{
+		"cvssv2: CVSSV2",
+		"cvssv3: CVSSV3",
+		"source: Source!",
+		"url: String!",
+		"cvssScore: CVSSScoreCvssScore",
+	}))
+	utils.Must(builder.AddUnionType("CVSSScoreCvssScore", []string{
+		"CVSSV2",
+		"CVSSV3",
+	}))
 	utils.Must(builder.AddType("CVSSV2", []string{
 		"accessComplexity: CVSSV2_AccessComplexity!",
 		"attackVector: CVSSV2_AttackVector!",
@@ -671,8 +683,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("ImageCVE", []string{
 		"cveBaseInfo: CVEInfo",
 		"cvss: Float!",
+		"cvssMetrics: [CVSSScore]!",
 		"id: ID!",
 		"impactScore: Float!",
+		"nvdcvss: Float!",
 		"operatingSystem: String!",
 		"severity: VulnerabilitySeverity!",
 		"snoozeExpiry: Time",
@@ -1326,6 +1340,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"field: String",
 		"reversed: Boolean",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Source(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SourceType(0)))
 	utils.Must(builder.AddType("Splunk", []string{
 		"auditLoggingEnabled: Boolean!",
@@ -3005,6 +3020,11 @@ func (resolver *cVEInfoResolver) Cve(ctx context.Context) string {
 	return value
 }
 
+func (resolver *cVEInfoResolver) CvssMetrics(ctx context.Context) ([]*cVSSScoreResolver, error) {
+	value := resolver.data.GetCvssMetrics()
+	return resolver.root.wrapCVSSScores(value, nil)
+}
+
 func (resolver *cVEInfoResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
 	value := resolver.data.GetCvssV2()
 	return resolver.root.wrapCVSSV2(value, true, nil)
@@ -3201,6 +3221,96 @@ func toCVE_ScoreVersions(values *[]string) []storage.CVE_ScoreVersion {
 		output[i] = toCVE_ScoreVersion(&v)
 	}
 	return output
+}
+
+type cVSSScoreResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CVSSScore
+}
+
+func (resolver *Resolver) wrapCVSSScore(value *storage.CVSSScore, ok bool, err error) (*cVSSScoreResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVSSScoreResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCVSSScores(values []*storage.CVSSScore, err error) ([]*cVSSScoreResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVSSScoreResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVSSScoreResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapCVSSScoreWithContext(ctx context.Context, value *storage.CVSSScore, ok bool, err error) (*cVSSScoreResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &cVSSScoreResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCVSSScoresWithContext(ctx context.Context, values []*storage.CVSSScore, err error) ([]*cVSSScoreResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*cVSSScoreResolver, len(values))
+	for i, v := range values {
+		output[i] = &cVSSScoreResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *cVSSScoreResolver) Cvssv2(ctx context.Context) (*cVSSV2Resolver, error) {
+	value := resolver.data.GetCvssv2()
+	return resolver.root.wrapCVSSV2(value, true, nil)
+}
+
+func (resolver *cVSSScoreResolver) Cvssv3(ctx context.Context) (*cVSSV3Resolver, error) {
+	value := resolver.data.GetCvssv3()
+	return resolver.root.wrapCVSSV3(value, true, nil)
+}
+
+func (resolver *cVSSScoreResolver) Source(ctx context.Context) string {
+	value := resolver.data.GetSource()
+	return value.String()
+}
+
+func (resolver *cVSSScoreResolver) Url(ctx context.Context) string {
+	value := resolver.data.GetUrl()
+	return value
+}
+
+type cVSSScoreCvssScoreResolver struct {
+	resolver interface{}
+}
+
+func (resolver *cVSSScoreResolver) CvssScore() *cVSSScoreCvssScoreResolver {
+	if val := resolver.data.GetCvssv2(); val != nil {
+		return &cVSSScoreCvssScoreResolver{
+			resolver: &cVSSV2Resolver{root: resolver.root, data: val},
+		}
+	}
+	if val := resolver.data.GetCvssv3(); val != nil {
+		return &cVSSScoreCvssScoreResolver{
+			resolver: &cVSSV3Resolver{root: resolver.root, data: val},
+		}
+	}
+	return nil
+}
+
+func (resolver *cVSSScoreCvssScoreResolver) ToCVSSV2() (*cVSSV2Resolver, bool) {
+	res, ok := resolver.resolver.(*cVSSV2Resolver)
+	return res, ok
+}
+
+func (resolver *cVSSScoreCvssScoreResolver) ToCVSSV3() (*cVSSV3Resolver, bool) {
+	res, ok := resolver.resolver.(*cVSSV3Resolver)
+	return res, ok
 }
 
 type cVSSV2Resolver struct {
@@ -8050,6 +8160,11 @@ func (resolver *imageCVEResolver) Cvss(ctx context.Context) float64 {
 	return float64(value)
 }
 
+func (resolver *imageCVEResolver) CvssMetrics(ctx context.Context) ([]*cVSSScoreResolver, error) {
+	value := resolver.data.GetCvssMetrics()
+	return resolver.root.wrapCVSSScores(value, nil)
+}
+
 func (resolver *imageCVEResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
@@ -8057,6 +8172,11 @@ func (resolver *imageCVEResolver) Id(ctx context.Context) graphql.ID {
 
 func (resolver *imageCVEResolver) ImpactScore(ctx context.Context) float64 {
 	value := resolver.data.GetImpactScore()
+	return float64(value)
+}
+
+func (resolver *imageCVEResolver) Nvdcvss(ctx context.Context) float64 {
+	value := resolver.data.GetNvdcvss()
 	return float64(value)
 }
 
@@ -14354,6 +14474,24 @@ func (resolver *slimUserResolver) Id(ctx context.Context) graphql.ID {
 func (resolver *slimUserResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func toSource(value *string) storage.Source {
+	if value != nil {
+		return storage.Source(storage.Source_value[*value])
+	}
+	return storage.Source(0)
+}
+
+func toSources(values *[]string) []storage.Source {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Source, len(*values))
+	for i, v := range *values {
+		output[i] = toSource(&v)
+	}
+	return output
 }
 
 func toSourceType(value *string) storage.SourceType {

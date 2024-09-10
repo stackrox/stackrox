@@ -104,10 +104,11 @@ func insertIntoImageCves(batch *pgx.Batch, obj *storage.ImageCVE) error {
 		obj.GetImpactScore(),
 		obj.GetSnoozed(),
 		protocompat.NilOrTime(obj.GetSnoozeExpiry()),
+		obj.GetNvdcvss(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_cves (Id, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, OperatingSystem, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_cves (Id, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, OperatingSystem, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, Nvdcvss, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, OperatingSystem = EXCLUDED.OperatingSystem, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, Nvdcvss = EXCLUDED.Nvdcvss, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -135,6 +136,7 @@ func copyFromImageCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 		"impactscore",
 		"snoozed",
 		"snoozeexpiry",
+		"nvdcvss",
 		"serialized",
 	}
 
@@ -160,6 +162,7 @@ func copyFromImageCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx,
 			obj.GetImpactScore(),
 			obj.GetSnoozed(),
 			protocompat.NilOrTime(obj.GetSnoozeExpiry()),
+			obj.GetNvdcvss(),
 			serialized,
 		})
 
