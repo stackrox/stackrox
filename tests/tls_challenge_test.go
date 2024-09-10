@@ -84,10 +84,12 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 	ts.logf("Sensor will now attempt connecting via the nginx proxy.")
 
 	ts.waitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection",
-		containsLineMatching(regexp.MustCompile("Info: Add central CA cert with CommonName: 'Custom Root'")),
-		containsLineMatching(regexp.MustCompile("Info: Connecting to Central server "+proxyEndpoint)),
-		containsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
-		containsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
+		matchesAll(
+			containsLineMatching(regexp.MustCompile("Info: Add central CA cert with CommonName: 'Custom Root'")),
+			containsLineMatching(regexp.MustCompile("Info: Connecting to Central server "+proxyEndpoint)),
+			containsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
+			containsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
+		),
 	)
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 }

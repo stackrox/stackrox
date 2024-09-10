@@ -23,6 +23,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"k8s.io/client-go/rest"
 )
 
@@ -136,6 +138,9 @@ type DelegatedScanningSuite struct {
 
 	// namespaceAccessScopeID holds the id of the created access scope for binding and cleanup purposes.
 	namespaceAccessScopeID string
+
+	quayROUsername string
+	quayROPassword string
 }
 
 func TestDelegatedScanning(t *testing.T) {
@@ -147,16 +152,20 @@ func (ts *DelegatedScanningSuite) TestSetupTeardown() {
 }
 
 func (ts *DelegatedScanningSuite) SetupSuite() {
-
-	t := ts.T()
 	ts.KubernetesSuite.SetupSuite()
 	ts.namespace = namespaces.StackRox
-	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(t, "TestDelegatedScanning", 15*time.Minute)
 
+	t := ts.T()
+	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(t, "TestDelegatedScanning", 30*time.Minute)
 	ts.restCfg = getConfig(t)
+
 	ctx := ts.ctx
 
-	// Some tests rely on Sensor debug logs to accurately validate expected behaviors.
+	// Ensure rhacs-eng repo user/pass is avail.
+	ts.quayROUsername = mustGetEnv(t, "QUAY_RHACS_ENG_RO_USERNAME")
+	ts.quayROPassword = mustGetEnv(t, "QUAY_RHACS_ENG_RO_PASSWORD")
+
+	// Enable Sensor debug logs which some tests rely on Sensor to accurately validate expected behaviors.
 	ts.origSensorLogLevel, _ = ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar)
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
 		ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, deleScanDesiredLogLevel)
@@ -255,8 +264,7 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_Config() {
 	origCfg, err := service.GetConfig(ctx, nil)
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		// Be a good 'cluster' citizen and return the config back to
-		// its original value when tests finish.
+		// Be a good citizen and return the config back to its original value.
 		_, _ = service.UpdateConfig(ctx, origCfg)
 	})
 
@@ -410,7 +418,7 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_ImageIntegrations() {
 		)
 
 		// Delete the image integration.
-		_, err = service.DeleteImageIntegration(ctx, &v1.ResourceByID{Id: rii.GetId()})
+		_, err = service.DeleteImageIntegration(ctx, &v1.ResourceByID{Id: id})
 		require.NoError(t, err)
 
 		ts.waitUntilLog(ctx, ts.namespace, sensorPodLabels, sensorContainer, "contain the deleted integration",
@@ -461,18 +469,11 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
 	require.NoError(t, err)
 
-	// If delegated scanning has been enabled for 'All Registries', scans in Sensor
-	// may be rate limited, retry the scan when rate limited.
-	maxTries := 30
-	betweenAttemptsFunc := func(num int) {
-		t.Logf("Too many parallel scans, trying again, attempt %d/%d", num, maxTries)
-	}
-
 	scanImgReq := func(imgStr string) *v1.ScanImageRequest {
 		return &v1.ScanImageRequest{
 			ImageName: imgStr,
 			Force:     true,
-			Cluster:   ts.remoteCluster.GetName(),
+			Cluster:   ts.remoteCluster.GetId(),
 		}
 	}
 
@@ -522,23 +523,7 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_AdHocRequests() {
 		require.NoError(t, err)
 		ts.logf("Only matching sensor logs after line %d from pod %s", fromLine, sensorPod.GetName())
 
-		var img *storage.Image
-		scanImageFunc := func() error {
-			img, err = service.ScanImage(ctx, scanImgReq(anonTestImageStr))
-
-			if err != nil && strings.Contains(err.Error(), scan.ErrTooManyParallelScans.Error()) {
-				err = retry.MakeRetryable(err)
-			}
-
-			return err
-		}
-
-		err = retry.WithRetry(scanImageFunc,
-			retry.BetweenAttempts(betweenAttemptsFunc),
-			retry.Tries(maxTries),
-			retry.WithExponentialBackoff(),
-			retry.OnlyRetryableErrors(),
-		)
+		img, err := ts.scanWithRetries(t, ctx, service, scanImgReq(anonTestImageStr))
 		require.NoError(t, err)
 		ts.validateImageScan(t, anonTestImageStr, img)
 
@@ -646,11 +631,181 @@ func (ts *DelegatedScanningSuite) TestDelegatedScanning_Deployments() {
 // mirroring CRs (ie: ImageContentSourcePolicy, ImageDigestMirrorSet, ImageTagMirrorSet)
 func (ts *DelegatedScanningSuite) TestDelegatedScanning_Mirrors() {
 	t := ts.T()
+	ctx := ts.ctx
 
-	t.Run("Scan deployment from mirror defined by ImageContentSourcePolicy", func(t *testing.T) {})
-	t.Run("Scan ad-hoc from mirror defined by ImageContentSourcePolicy", func(t *testing.T) {})
-	t.Run("Scan deployment from mirror defined by ImageDigestMirrorSet", func(t *testing.T) {})
-	t.Run("Scan deployment from mirror defined by ImageTagMirrorSet", func(t *testing.T) {})
+	deleScanUtils := deleScanTestUtils{restCfg: getConfig(t)}
+	deleScanUtils.CreateMirrorCRs(t, ctx)
+
+	// The changes above may have triggered Central and/or Sensor restarts, wait for both to be healthy.
+	t.Log("Waiting for Sensor to be ready")
+	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
+	t.Log("Waiting for Central/Sensor connection to be ready")
+	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+
+	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
+	require.NoError(t, err)
+
+	// The mirroring CRs map to quay.io, these tests will attempt to scan images from quay.io/rhacs-eng,
+	// in ensure authenticate succeeds we create an image integration.
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	iiService := v1.NewImageIntegrationServiceClient(conn)
+	ii := &storage.ImageIntegration{
+		Name: fmt.Sprintf("dele-scan-test-%s", uuid.NewV4().String()),
+		Type: types.DockerType,
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
+				Endpoint: "quay.io",
+				Username: ts.quayROUsername,
+				Password: ts.quayROPassword,
+			},
+		},
+		SkipTestIntegration: true,
+		Categories: []storage.ImageIntegrationCategory{
+			storage.ImageIntegrationCategory_REGISTRY,
+		},
+	}
+	rii, err := iiService.PostImageIntegration(ctx, ii)
+	require.NoError(t, err)
+	t.Cleanup(func() { iiService.DeleteImageIntegration(ctx, &v1.ResourceByID{Id: rii.GetId()}) })
+
+	deleService := v1.NewDelegatedRegistryConfigServiceClient(conn)
+
+	// Get the current config so that we can undo any changes when
+	// tests are finished.
+	origCfg, err := deleService.GetConfig(ctx, nil)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		// Be a good citizen and return the config back to its original value.
+		t.Logf("Resetting DELE config")
+		_, _ = deleService.UpdateConfig(ctx, origCfg)
+	})
+
+	t.Logf("Enable delegated scanning for the mirror sources")
+	_, err = deleService.UpdateConfig(ctx, &v1.DelegatedRegistryConfig{
+		EnabledFor: v1.DelegatedRegistryConfig_SPECIFIC,
+		Registries: []*v1.DelegatedRegistryConfig_DelegatedRegistry{
+			{Path: "icsp.invalid"},
+			{Path: "idms.invalid"},
+			{Path: "itms.invalid"},
+		},
+	})
+	require.NoError(t, err)
+
+	// TODO: add read only creds to the OCP global secret so that deployments are actually created for all scans.
+
+	adhocTCs := []struct {
+		desc   string
+		imgStr string
+	}{
+		{
+			"Scan ad-hoc image from mirror defined by ImageContentSourcePolicy",
+			// Mirrors to: quay.io/rhacs-eng/qa:dele-scan-nginx
+			"icsp.invalid/rhacs-eng/qa@sha256:596c783ac62b9a43c60edb876fe807376cd5022a4e25e89b9a9ae06c374299d4",
+		},
+		{
+			"Scan ad-hoc image from mirror defined by ImageDigestMirrorSet",
+			// Mirrors to: quay.io/rhacs-eng/qa:dele-scan-httpd
+			"idms.invalid/rhacs-eng/qa@sha256:9a1f89a470bc5ec4c5dc9e1aa13bd20898d59b71890cf27098507fc39750d988",
+		},
+		{
+			"Scan ad-hoc image from mirror defined by ImageTagMirrorSet",
+			"itms.invalid/rhacs-eng/qa:dele-scan-memcached",
+		},
+	}
+	for _, tc := range adhocTCs {
+		t.Run(tc.desc, func(t *testing.T) {
+			t.SkipNow()
+			fromLine, err := ts.getNumLogLines(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
+			require.NoError(t, err)
+
+			req := &v1.ScanImageRequest{
+				ImageName: tc.imgStr,
+				Force:     true,
+				Cluster:   ts.remoteCluster.GetId(),
+			}
+
+			service := v1.NewImageServiceClient(conn)
+			img, err := ts.scanWithRetries(t, ctx, service, req)
+			require.NoError(t, err)
+			ts.validateImageScan(t, tc.imgStr, img)
+			t.Logf("%s: Metadata: %v, Scan: %v", img.GetName().GetFullName(), img.GetMetadata().GetDataSource(), img.GetScan().GetDataSource())
+
+			// Verify the request made it to the cluster.
+			reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, tc.imgStr)
+			ts.waitUntilLog(ctx, ts.namespace, sensorPodLabels, sensorContainer, "contain the image scan",
+				containsLineMatchingAfter(regexp.MustCompile(reStr), fromLine),
+			)
+		})
+	}
+
+	deployTCs := []struct {
+		desc       string
+		deployName string
+		imgID      string
+		imgStr     string
+	}{
+		{
+			"Scan deployment image from mirror defined by ImageContentSourcePolicy",
+			"dele-scan-icsp",
+			"sha256:596c783ac62b9a43c60edb876fe807376cd5022a4e25e89b9a9ae06c374299d4",
+			// Mirrors to: quay.io/rhacs-eng/qa:dele-scan-nginx
+			"icsp.invalid/rhacs-eng/qa@sha256:596c783ac62b9a43c60edb876fe807376cd5022a4e25e89b9a9ae06c374299d4",
+		},
+		{
+			"Scan deployment image from mirror defined by ImageDigestMirrorSet",
+			"dele-scan-idms",
+			"sha256:9a1f89a470bc5ec4c5dc9e1aa13bd20898d59b71890cf27098507fc39750d988",
+			// Mirrors to: quay.io/rhacs-eng/qa:dele-scan-httpd
+			"idms.invalid/rhacs-eng/qa@sha256:9a1f89a470bc5ec4c5dc9e1aa13bd20898d59b71890cf27098507fc39750d988",
+		},
+		{
+			"Scan deployment image from mirror defined by ImageTagMirrorSet",
+			"dele-scan-itms",
+			"sha256:98f8ec75657d21b924fe4f69b6b9bff2f6550ea48838af479d8894a852000e40",
+			// To validate the scan for a tagged image was successful, we need a deployment's pods in a
+			// Running state in order to extract the image ID (from the .status.containerStatuses.imageID field). This
+			// image ID is required to save scan results to Central DB and subsequently for examining scan results.
+			//
+			// Mirroed images that require auth enter imagePullBackoff unless creds are added to the OCP global pull secret
+			// OR we use an image that does not require auth. Here we are using an image that does not require auth.
+			"itms.invalid/library/nginx:1.27.0",
+		},
+	}
+
+	for _, tc := range deployTCs {
+		t.Run(tc.desc, func(t *testing.T) {
+			fromLine, err := ts.getNumLogLines(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
+			require.NoError(t, err)
+
+			// Do an initial teardown in case a deployment is lingering from a previous test.
+			teardownDeployment(t, tc.deployName)
+
+			// Because we cannot 'force' a scan for deployments, we explicitly delete the image
+			// so that it is removed from sensors scan cache.
+			imageService := v1.NewImageServiceClient(conn)
+			query := fmt.Sprintf("Image Sha:%s", tc.imgID)
+			delResp, err := imageService.DeleteImages(ctx, &v1.DeleteImagesRequest{Query: &v1.RawQuery{Query: query}, Confirm: true})
+			require.NoError(t, err)
+			t.Logf("Num images deleted from query %q: %d", query, delResp.NumDeleted)
+
+			t.Logf("Setting up deployment %q with image: %q", tc.deployName, tc.imgStr)
+			setupDeploymentNoWait(t, tc.imgStr, tc.deployName, 1)
+			t.Cleanup(func() {
+				t.Logf("Tearing down deployment %q", tc.deployName)
+				teardownDeployment(t, tc.deployName)
+			})
+
+			img, err := ts.getImageWithRetires(t, ctx, imageService, &v1.GetImageRequest{Id: tc.imgID})
+			require.NoError(t, err)
+			ts.validateImageScan(t, tc.imgStr, img)
+
+			ts.waitUntilLog(ctx, ts.namespace, sensorPodLabels, sensorContainer, "contain the image scan",
+				matchesAny(
+					containsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, tc.imgStr)), fromLine),
+				),
+			)
+		})
+	}
 }
 
 // validateImageScan will fail the test if the image's scan was not completed
@@ -669,4 +824,66 @@ func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName st
 	}
 
 	require.Fail(t, "No vulnerabilities found.", "Expected at least one vulnerability in image %q, but found none.", imgFullName)
+}
+
+// getImageWithRetires will retry attempts to get an image.
+func (ts *DelegatedScanningSuite) getImageWithRetires(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.GetImageRequest) (*storage.Image, error) {
+	var err error
+	var img *storage.Image
+
+	retryFunc := func() error {
+		img, err = service.GetImage(ctx, req)
+		if err != nil {
+			s, ok := status.FromError(err)
+			if ok && s.Code() == codes.NotFound {
+				return retry.MakeRetryable(err)
+			}
+		}
+
+		return err
+	}
+
+	maxTries := 30
+	betweenAttemptsFunc := func(num int) {
+		t.Logf("Image not found, trying again, attempt %d/%d", num, maxTries)
+		time.Sleep(5 * time.Second)
+	}
+
+	err = retry.WithRetry(retryFunc,
+		retry.BetweenAttempts(betweenAttemptsFunc),
+		retry.Tries(maxTries),
+		retry.OnlyRetryableErrors(),
+	)
+
+	return img, err
+}
+
+// scanWithRetries will retry attempts scan an image when rate limited.
+func (ts *DelegatedScanningSuite) scanWithRetries(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.ScanImageRequest) (*storage.Image, error) {
+	var err error
+	var img *storage.Image
+
+	retryFunc := func() error {
+		img, err = service.ScanImage(ctx, req)
+
+		if err != nil && strings.Contains(err.Error(), scan.ErrTooManyParallelScans.Error()) {
+			err = retry.MakeRetryable(err)
+		}
+
+		return err
+	}
+
+	maxTries := 30
+	betweenAttemptsFunc := func(num int) {
+		t.Logf("Too many parallel scans, trying again, attempt %d/%d", num, maxTries)
+	}
+
+	err = retry.WithRetry(retryFunc,
+		retry.BetweenAttempts(betweenAttemptsFunc),
+		retry.Tries(maxTries),
+		retry.WithExponentialBackoff(),
+		retry.OnlyRetryableErrors(),
+	)
+
+	return img, err
 }

@@ -143,19 +143,19 @@ func (d *deleScanTestUtils) CreateMirrorCRs(t *testing.T, ctx context.Context) {
 // all nodes returned to a ready state.
 func (d *deleScanTestUtils) waitForNodesToProcessConfigUpdates(t *testing.T, ctx context.Context, machineCfgClient *machineconfigurationv1client.MachineconfigurationV1Client, origPools map[string]machineconfigurationv1.MachineConfigPool) {
 	ticker := time.NewTicker(5 * time.Second)
+	t.Logf("Waiting for all the updated configuration to be propagated to all nodes")
 	for {
 		select {
 		case <-ctx.Done():
 			require.NoError(t, ctx.Err())
 		case <-ticker.C:
-			t.Logf("Checking if all nodes have processed updated configuration")
 			poolList, err := machineCfgClient.MachineConfigPools().List(ctx, v1.ListOptions{})
 			require.NoError(t, err)
 
 			d.logMachineConfigPoolsState(t, poolList, origPools)
 
 			// Wait if at least one pool has not yet recognized the updated configuration,
-			if !d.machineConfigPoolsReady(t, poolList, origPools) {
+			if !d.machineConfigPoolsReady(poolList, origPools) {
 				continue
 			}
 
@@ -170,20 +170,20 @@ func (d *deleScanTestUtils) logMachineConfigPoolsState(t *testing.T, poolList *m
 	w := new(tabwriter.Writer)
 
 	sb := &strings.Builder{}
-	w.Init(sb, 0, 0, 2, ' ', tabwriter.AlignRight)
-	fmt.Fprintln(w, "name\torigGen\tnewGen\tstatusGen\tTot\tRdy\t")
+	w.Init(sb, 0, 0, 1, ' ', tabwriter.AlignRight)
+	fmt.Fprintln(w, "name\torigGen\tnewGen\tstatusGen\ttotNodes\trdyNodes\t")
 	for _, pool := range poolList.Items {
 		name := pool.GetName()
 		fmt.Fprintf(w, "%s\t%d\t%d\t%d\t%d\t%d\t\n", name, origPools[name].Generation, pool.GetGeneration(), pool.Status.ObservedGeneration, pool.Status.MachineCount, pool.Status.ReadyMachineCount)
 	}
-	w.Flush()
+	utils.IgnoreError(w.Flush)
 
-	t.Logf("Pool Status: \n%s", sb.String())
+	t.Logf("Machine Config Pools Status: \n%s", sb.String())
 }
 
 // machineConfigPoolsReady verifies that each machine config pool has fully processed
 // the updated configurations.
-func (d *deleScanTestUtils) machineConfigPoolsReady(t *testing.T, poolList *machineconfigurationv1.MachineConfigPoolList, origPools map[string]machineconfigurationv1.MachineConfigPool) bool {
+func (d *deleScanTestUtils) machineConfigPoolsReady(poolList *machineconfigurationv1.MachineConfigPoolList, origPools map[string]machineconfigurationv1.MachineConfigPool) bool {
 	for _, pool := range poolList.Items {
 		if pool.Generation <= origPools[pool.GetName()].Generation {
 			// This pool has not yet started processing the updated configuration.

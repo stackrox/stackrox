@@ -19,44 +19,44 @@ Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deseru
 
 func TestLogMatcher(t *testing.T) {
 	tests := map[string]struct {
-		funcs          []logMatcher
+		matcher        logMatcher
 		expectedResult assert.BoolAssertionFunc
 		expectedError  assert.ErrorAssertionFunc
 		expectedString string
 	}{
 		"one match": {
-			funcs: []logMatcher{
+			matcher: matchesAll(
 				containsLineMatching(regexp.MustCompile("sunt in culpa qui officia deserunt")),
-			},
+			),
 			expectedResult: assert.True,
 			expectedError:  assert.NoError,
-			expectedString: `[contains line matching "sunt in culpa qui officia deserunt"]`,
+			expectedString: `matches all of [contains 1 lines matching "sunt in culpa qui officia deserunt"]`,
 		},
 		"two matches": {
-			funcs: []logMatcher{
+			matcher: matchesAll(
 				containsLineMatching(regexp.MustCompile("Lorem ipsum dolor")),
 				containsLineMatching(regexp.MustCompile("Duis aute irure")),
-			},
+			),
 			expectedResult: assert.True,
 			expectedError:  assert.NoError,
-			expectedString: `[contains line matching "Lorem ipsum dolor" contains line matching "Duis aute irure"]`,
+			expectedString: `matches all of [contains 1 lines matching "Lorem ipsum dolor", contains 1 lines matching "Duis aute irure"]`,
 		},
 		"text divided with newline": {
-			funcs: []logMatcher{
+			matcher: matchesAll(
 				containsLineMatching(regexp.MustCompile("labore et dolore.*magna aliqua")),
-			},
+			),
 			expectedResult: assert.False,
 			expectedError:  assert.NoError,
-			expectedString: `[contains line matching "labore et dolore.*magna aliqua"]`,
+			expectedString: `matches all of [contains 1 lines matching "labore et dolore.*magna aliqua"]`,
 		},
 	}
 	r := bytes.NewReader(text)
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			actual, actualErr := allMatch(r, test.funcs...)
+			actual, actualErr := test.matcher.Match(r)
 			test.expectedResult(t, actual)
 			test.expectedError(t, actualErr)
-			assert.Equal(t, test.expectedString, fmt.Sprintf("%s", test.funcs))
+			assert.Equal(t, test.expectedString, fmt.Sprintf("%s", test.matcher))
 		})
 	}
 }

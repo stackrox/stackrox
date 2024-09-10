@@ -241,11 +241,14 @@ func setupDeployment(t *testing.T, image, deploymentName string) {
 }
 
 func setupDeploymentWithReplicas(t *testing.T, image, deploymentName string, replicas int) {
+	setupDeploymentNoWait(t, image, deploymentName, replicas)
+	waitForDeployment(t, deploymentName)
+}
+
+func setupDeploymentNoWait(t *testing.T, image, deploymentName string, replicas int) {
 	cmd := exec.Command(`kubectl`, `create`, `deployment`, deploymentName, fmt.Sprintf("--image=%s", image), fmt.Sprintf("--replicas=%d", replicas))
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
-
-	waitForDeployment(t, deploymentName)
 }
 
 func setImage(t *testing.T, deploymentName string, deploymentID string, containerName string, image string) {
@@ -357,36 +360,32 @@ func (ks *KubernetesSuite) logf(format string, args ...any) {
 	logf(ks.T(), format, args...)
 }
 
-type logMatcher interface {
-	Match(reader io.Reader) (bool, error)
-	fmt.Stringer
-}
-
 // waitUntilLog waits until ctx expires or logs of container in all pods matching podLabels satisfy all logMatchers.
-func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
+func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatcher logMatcher) {
 	ls := labels.SelectorFromSet(podLabels).String()
-	checkLogs := ks.checkLogsClosure(ctx, namespace, ls, container, logMatchers...)
-	ks.logf("Waiting until %q pods logs "+description+": %s", ls, logMatchers)
+	checkLogs := ks.checkLogsClosure(ctx, namespace, ls, container, logMatcher)
+	ks.logf("Waiting until %q pods logs "+description+": %s", ls, logMatcher)
 	mustEventually(ks.T(), ctx, checkLogs, 10*time.Second, fmt.Sprintf("Not all %q pods logs "+description, ls))
 }
 
 // checkLogsMatch will check if the logs of container in all pods matching pod labels satisfy all log matchers.
-func (ks *KubernetesSuite) checkLogsMatch(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
+func (ks *KubernetesSuite) checkLogsMatch(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatcher logMatcher) {
 	ls := labels.SelectorFromSet(podLabels).String()
-	ks.logf("Checking %q pods logs "+description+": %s", ls, logMatchers)
-	err := ks.checkLogsClosure(ctx, namespace, ls, container, logMatchers...)()
+	ks.logf("Checking %q pods logs "+description+": %s", ls, logMatcher)
+	err := ks.checkLogsClosure(ctx, namespace, ls, container, logMatcher)()
 	require.NoError(ks.T(), err, fmt.Sprintf("%q was untrue", description))
 }
 
 // checkLogsClosure returns a function that checks if the logs of container in all pods matching pod labels satisfy all the log matchers.
-func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labelSelector, container string, logMatchers ...logMatcher) func() error {
+func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labelSelector, container string, logMatcher logMatcher) func() error {
 	return func() error {
 		podList, err := ks.k8s.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{LabelSelector: labelSelector})
 		if err != nil {
 			return fmt.Errorf("could not list pods matching %q in namespace %q: %w", labelSelector, namespace, err)
 		}
 		if len(podList.Items) == 0 {
-			if ok, err := allMatch(strings.NewReader(""), logMatchers...); ok {
+
+			if ok, err := logMatcher.Match(strings.NewReader("")); ok {
 				return nil
 			} else if err != nil {
 				return fmt.Errorf("empty list of pods caused failure: %w", err)
@@ -399,7 +398,7 @@ func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labe
 			if err != nil {
 				return fmt.Errorf("retrieving logs of pod %q in namespace %q failed: %w", pod.GetName(), namespace, err)
 			}
-			if ok, err := allMatch(bytes.NewReader(log), logMatchers...); ok {
+			if ok, err := logMatcher.Match(bytes.NewReader(log)); ok {
 				continue
 			} else if err != nil {
 				return fmt.Errorf("log of pod %q in namespace %q caused failure: %w", pod.GetName(), namespace, err)
@@ -687,6 +686,7 @@ func deletePermissionSet(t *testing.T, ctx context.Context, idOrName string) {
 	service := v1.NewRoleServiceClient(conn)
 
 	resp, err := service.ListPermissionSets(ctx, &v1.Empty{})
+	require.NoError(t, err)
 
 	for _, ps := range resp.GetPermissionSets() {
 		if ps.GetId() == idOrName || ps.GetName() == idOrName {

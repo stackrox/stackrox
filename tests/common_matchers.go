@@ -8,23 +8,12 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"strings"
 )
 
-func allMatch(reader io.ReadSeeker, matchers ...logMatcher) (ok bool, err error) {
-	for i, matcher := range matchers {
-		_, err := reader.Seek(0, io.SeekStart)
-		if err != nil {
-			return false, fmt.Errorf("could not rewind the reader: %w", err)
-		}
-		ok, err := matcher.Match(reader)
-		if err != nil {
-			return false, fmt.Errorf("matcher %d returned an error: %w", i, err)
-		}
-		if !ok {
-			return false, nil
-		}
-	}
-	return true, nil
+type logMatcher interface {
+	Match(reader io.ReadSeeker) (bool, error)
+	fmt.Stringer
 }
 
 // multiLineMatcher matches when the desired number of lines are found.
@@ -57,7 +46,7 @@ func (lm *multiLineMatcher) String() string {
 	return fmt.Sprintf("contains %d lines matching %q", lm.desiredLines, lm.re)
 }
 
-func (lm *multiLineMatcher) Match(reader io.Reader) (ok bool, err error) {
+func (lm *multiLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 	br := bufio.NewReader(reader)
 	var lineCount int
 	var lineMatchCount int
@@ -98,7 +87,7 @@ func (lm *notFoundLineMatcher) String() string {
 	return fmt.Sprintf("contains NO lines matching %q", lm.re)
 }
 
-func (lm *notFoundLineMatcher) Match(reader io.Reader) (ok bool, err error) {
+func (lm *notFoundLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 	br := bufio.NewReader(reader)
 	for {
 		// We do not care about partial reads, as the things we look for should fit in default buf size.
@@ -113,4 +102,98 @@ func (lm *notFoundLineMatcher) Match(reader io.Reader) (ok bool, err error) {
 			return false, nil
 		}
 	}
+}
+
+// anyMatcher is a composite matcher to go with waitUntilLog
+// that will return true when any sub matcher matches.
+type anyMatcher struct {
+	matchers []logMatcher
+}
+
+func matchesAny(logMatchers ...logMatcher) *anyMatcher {
+	return &anyMatcher{
+		matchers: logMatchers,
+	}
+}
+
+func (lm *anyMatcher) String() string {
+	sb := strings.Builder{}
+	sb.WriteString("[")
+	for _, m := range lm.matchers {
+		if sb.Len() > 1 {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(m.String())
+	}
+	sb.WriteString("]")
+
+	return fmt.Sprintf("matches any of %s", sb.String())
+}
+
+func (lm *anyMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
+	errs := []error{}
+	for _, m := range lm.matchers {
+		_, err := reader.Seek(0, io.SeekStart)
+		if err != nil {
+			return false, fmt.Errorf("could not rewind the reader: %w", err)
+		}
+
+		ok, err := m.Match(reader)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+
+		if ok {
+			return true, nil
+		}
+	}
+
+	return false, errors.Join(errs...)
+}
+
+// allMatcher is a composite matcher to go with waitUntilLog
+// that will return true when all matchers match.
+type allMatcher struct {
+	matchers []logMatcher
+}
+
+func matchesAll(logMatchers ...logMatcher) *allMatcher {
+	return &allMatcher{
+		matchers: logMatchers,
+	}
+}
+
+func (lm *allMatcher) String() string {
+	sb := strings.Builder{}
+	sb.WriteString("[")
+	for _, m := range lm.matchers {
+		if sb.Len() > 1 {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(m.String())
+	}
+	sb.WriteString("]")
+
+	return fmt.Sprintf("matches all of %s", sb.String())
+}
+
+func (lm *allMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
+	for i, m := range lm.matchers {
+		_, err := reader.Seek(0, io.SeekStart)
+		if err != nil {
+			return false, fmt.Errorf("could not rewind the reader: %w", err)
+		}
+
+		ok, err := m.Match(reader)
+		if err != nil {
+			return false, fmt.Errorf("matcher %d returned an error: %w", i, err)
+		}
+
+		if !ok {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
