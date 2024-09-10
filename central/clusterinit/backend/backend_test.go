@@ -342,6 +342,7 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 
 	// Verify the newly generated CRS is not listed as an init bundle.
 	initBundles, err := s.backend.GetAll(ctx)
+	s.Require().NoError(err)
 	for _, initBundle := range initBundles {
 		s.Require().NotEqual(crsName, initBundle.GetName(), "unexpected init-bundle in listing")
 	}

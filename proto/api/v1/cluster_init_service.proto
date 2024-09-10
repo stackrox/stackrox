@@ -135,7 +135,7 @@ service ClusterInitService {
 
   rpc GenerateCRS(CRSGenRequest) returns (CRSGenResponse) {
     option (google.api.http) = {
-      post: "/v1/cluster-init/crs",
+      post: "/v1/cluster-init/crs"
       body: "*"
     };
   }
