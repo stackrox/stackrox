@@ -1,5 +1,0 @@
-ARG BASE_IMAGE
-
-FROM $BASE_IMAGE
-
-LABEL foo=bar

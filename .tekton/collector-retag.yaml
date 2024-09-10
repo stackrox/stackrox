@@ -22,8 +22,6 @@ metadata:
 spec:
 
   params:
-  - name: dockerfile
-    value: .konflux/konflux.retag.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
