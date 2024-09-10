@@ -6,7 +6,7 @@ import { DryRunAlert, checkDryRun, startDryRun } from 'services/PoliciesService'
 import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import { getServerPolicy, postFormatExclusionField } from '../../policies.utils';
+import { getServerPolicy } from '../../policies.utils';
 import PolicyDetailContent from '../../Detail/PolicyDetailContent';
 import PreviewViolations from './PreviewViolations';
 
@@ -138,7 +138,7 @@ function ReviewPolicyForm({
                 </Flex>
                 <Divider component="div" />
                 <FlexItem className="pf-v5-u-p-lg">
-                    <PolicyDetailContent policy={postFormatExclusionField(values)} isReview />
+                    <PolicyDetailContent policy={values} isReview />
                 </FlexItem>
             </Flex>
             {showPolicyResults && (

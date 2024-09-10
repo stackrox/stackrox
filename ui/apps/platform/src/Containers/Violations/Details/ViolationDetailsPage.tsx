@@ -13,12 +13,10 @@ import {
 } from '@patternfly/react-core';
 
 import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent';
-import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
 import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
-import { Policy } from 'types/policy.proto';
 
 import DeploymentTabWithReadAccessForDeployment from './Deployment/DeploymentTabWithReadAccessForDeployment';
 import DeploymentTabWithoutReadAccessForDeployment from './Deployment/DeploymentTabWithoutReadAccessForDeployment';
@@ -136,9 +134,7 @@ function ViolationDetailsPage(): ReactElement {
                                     Policy overview
                                 </Title>
                                 <Divider component="div" className="pf-v5-u-pb-md" />
-                                <PolicyDetailContent
-                                    policy={getClientWizardPolicy(policy) as unknown as Policy}
-                                />
+                                <PolicyDetailContent policy={policy} />
                             </PageSection>
                         </Tab>
                     )}

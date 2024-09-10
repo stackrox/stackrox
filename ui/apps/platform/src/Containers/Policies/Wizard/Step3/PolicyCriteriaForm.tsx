@@ -4,7 +4,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useFormikContext } from 'formik';
 
-import { Policy } from 'types/policy.proto';
+import { ClientPolicy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getPolicyDescriptors } from 'Containers/Policies/policies.utils';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
@@ -19,7 +19,7 @@ type PolicyBehaviorFormProps = {
 };
 
 function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
-    const { values, setFieldValue } = useFormikContext<Policy>();
+    const { values, setFieldValue } = useFormikContext<ClientPolicy>();
     const { criteriaLocked } = values;
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
