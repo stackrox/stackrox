@@ -161,7 +161,7 @@ export function getExcludedDeployments(exclusions: PolicyExclusion[]): PolicyExc
     exclusions
         .filter((e): e is PolicyDeploymentExclusion => !!e.deployment)
         .forEach(({ deployment }) => {
-            if (deployment?.name || deployment?.scope) {
+            if (deployment.name || deployment.scope) {
                 excludedDeploymentScopes.push(deployment);
             }
         });
@@ -175,7 +175,7 @@ export function getExcludedImageNames(exclusions: PolicyExclusion[]): string[] {
     exclusions
         .filter((e): e is PolicyImageExclusion => !!e.image)
         .forEach(({ image }) => {
-            if (image?.name) {
+            if (image.name) {
                 excludedImageNames.push(image.name);
             }
         });
