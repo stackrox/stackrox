@@ -187,7 +187,10 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECore() {
 
 func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 	for _, tc := range s.testCases() {
+		tc := tc
 		for key, sacTC := range s.sacTestCases() {
+			key := key
+			sacTC := sacTC
 			s.T().Run(fmt.Sprintf("Image %s %s", key, tc.desc), func(t *testing.T) {
 				testCtxs := testutils.GetNamespaceScopedTestContexts(tc.ctx, s.T(), resources.Image)
 				ctx := testCtxs[key]
@@ -200,7 +203,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 				assert.NoError(t, err)
 
 				// Wrap image filter with sac filter.
-				matchFilter := tc.matchFilter
+				matchFilter := *tc.matchFilter
 				baseImageMatchFilter := matchFilter.matchImage
 				matchFilter.withImageFilter(func(image *storage.Image) bool {
 					if sacTC[image.GetId()] {
@@ -209,7 +212,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 					return false
 				})
 
-				expected := compileExpected(s.testImages, matchFilter, tc.readOptions, tc.less)
+				expected := compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
 				assert.Equal(t, len(expected), len(actual))
 				assert.ElementsMatch(t, expected, actual)
 			})
