@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/protobuf/proto"
 )
@@ -28,6 +29,14 @@ var (
 
 	_ notifiers.AlertNotifier = (*sentinel)(nil)
 	_ notifiers.AuditNotifier = (*sentinel)(nil)
+)
+
+const (
+	// Azure log ingestion API limits: https://learn.microsoft.com/en-us/azure/azure-monitor/service-limits#logs-ingestion-api
+	azureFieldSizeLimit = 64 * size.KB
+
+	// logOverheadSize is used to calculate the size of the `msg` field. The logOverheadSize could include for example the array wrap, additional records and field names.
+	logOverheadSize = 178
 )
 
 func init() {
@@ -40,8 +49,9 @@ func init() {
 }
 
 type sentinel struct {
-	notifier     *storage.Notifier
-	azlogsClient azureLogsClient
+	notifier             *storage.Notifier
+	azlogsClient         azureLogsClient
+	azureMaxLogFieldSize int
 }
 
 func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
@@ -84,9 +94,14 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	}
 
 	return &sentinel{
-		notifier:     notifier,
-		azlogsClient: &azureLogsClientImpl{client: client},
+		notifier:             notifier,
+		azlogsClient:         &azureLogsClientImpl{client: client},
+		azureMaxLogFieldSize: azureFieldSizeLimit,
 	}, nil
+}
+
+func (s sentinel) sentinel() *storage.MicrosoftSentinel {
+	return s.notifier.GetMicrosoftSentinel()
 }
 
 func (s sentinel) Close(_ context.Context) error {
@@ -198,6 +213,11 @@ func (s sentinel) prepareLogsToSend(msg protocompat.Message) ([]byte, error) {
 	bytesToSend, err := json.Marshal(logsToSend)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to wrap alert for Microsoft Sentinel to a slice")
+	}
+
+	fieldSize := len(bytesToSend) - logOverheadSize
+	if fieldSize > s.azureMaxLogFieldSize {
+		return nil, errors.Errorf("Could not upload log to sentinel, message exceeds %d bytes, got %d bytes.", s.azureMaxLogFieldSize, fieldSize)
 	}
 
 	return bytesToSend, nil
