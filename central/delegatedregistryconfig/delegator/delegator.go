@@ -113,7 +113,7 @@ func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.
 
 	image, err := w.Wait(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error delegating scan to cluster %q for %q", clusterID, image.GetName().GetFullName())
+		return nil, errors.Wrapf(err, "error delegating scan to cluster %q for image %q", clusterID, imgName.GetFullName())
 	}
 
 	log.Debugf("Scan response received for %q and image %q", w.ID(), imgName.GetFullName())
