@@ -65,7 +65,7 @@ func (suite *SentinelTestSuite) TestAlertNotify() {
 	suite.Require().NoError(err)
 
 	// Assert call to library and marshalling is correct.
-	suite.mockAzureClient.EXPECT().Upload(gomock.Any(), uuid.NewDummy().String(), alertStreamName, logsToSend, gomock.Any()).Times(2)
+	suite.mockAzureClient.EXPECT().Upload(gomock.Any(), uuid.NewDummy().String(), alertStreamName, logsToSend, gomock.Any()).Times(1)
 	require.NotNil(suite.T(), notifier)
 
 	err = notifier.AlertNotify(context.Background(), alert)
