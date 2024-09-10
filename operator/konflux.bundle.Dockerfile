@@ -1,5 +1,4 @@
-FROM registry.access.redhat.com/ubi9:latest as builder-runner
-RUN dnf install -y --nodocs --noplugins --refresh --best make git golang findutils python3 jq
+FROM quay.io/tommartensen/hermetic-experiment:latest as builder-runner
 
 # Use a new stage to enable caching of the package installations for local development
 FROM builder-runner as builder
