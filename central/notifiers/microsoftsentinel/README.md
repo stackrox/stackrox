@@ -3,6 +3,14 @@
 In the `./data/` directory, there is a file named `example-alert.json` that contains an example of an alert sent
 to Microsoft Sentinel.
 
+| **Component**                     | **Description**                                                                                                                                                                                                  | **Link**                                                                                                          |
+|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| Custom Data ingestion in Sentinel | An overview of how the Log Analytics Workspace and Sentinel work together.                                                                                                                                       | [link](https://learn.microsoft.com/en-us/azure/sentinel/data-transformation)                                      |
+| Logs ingestion API overview       | This API is used to ingest logs into Azure which are later consumed by Sentinel. This is the client StackRox is using to send alerts.                                                                            | [link](https://learn.microsoft.com/en-us/azure/azure-monitor/logs/logs-ingestion-api-overview)                    |
+| Service Principals                | Service Principals are used to authenticate against Azure. A user needs to create one with either Secret or Certificate authentication.                                                                          | [link](https://learn.microsoft.com/en-us/entra/identity-platform/app-objects-and-service-principals?tabs=browser) |
+| Data Collection Transformations   | Details about the Data Transformation. The logs hit the Data Collection Endpoint, are forwarded to Data Collection Rule which holds the transformation logic, and at last pushed to the Log Analytics Workspace. | [link](https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/data-collection-transformations)          |
+| Data Collection Rule Ovierview    | Overview of Data Collection Rules.                                                                                                                                                                               | [link](https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/data-collection-rule-overview)            |
+
 ## How It Works
 
 The integration with Microsoft Sentinel sends logs to an Azure Log Analytics workspace, which is responsible for
