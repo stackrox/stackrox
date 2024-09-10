@@ -142,6 +142,7 @@ describe('policyCriteriaDescriptors', () => {
                     });
                     break;
                 }
+
                 default:
                     break;
             }
