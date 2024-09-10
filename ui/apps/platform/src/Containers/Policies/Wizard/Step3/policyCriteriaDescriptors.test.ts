@@ -1,4 +1,4 @@
-import { policyCriteriaDescriptors } from './policyCriteriaDescriptors';
+import { auditLogDescriptor, policyCriteriaDescriptors } from './policyCriteriaDescriptors';
 
 // Enforce consistency of whicheverName properties in policy criteria descriptors.
 
@@ -6,9 +6,11 @@ import { policyCriteriaDescriptors } from './policyCriteriaDescriptors';
 
 // Items that are allowed independent of context.
 const allowListForItems = [
+    'API',
     'CPU',
     'CVE',
     'Dockerfile',
+    'IP',
     'IPC',
     'Kubernetes',
     'MUST',
@@ -45,7 +47,7 @@ function hasSentenceCase(otherName: string) {
 }
 
 describe('policyCriteriaDescriptors', () => {
-    policyCriteriaDescriptors.forEach((descriptor) => {
+    [...auditLogDescriptor, ...policyCriteriaDescriptors].forEach((descriptor) => {
         const { longName, name, shortName } = descriptor;
 
         describe(`descriptor of "${name}"`, () => {
