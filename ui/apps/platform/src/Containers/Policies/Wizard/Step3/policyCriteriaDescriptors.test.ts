@@ -77,7 +77,7 @@ describe('policyCriteriaDescriptors', () => {
                 });
             }
 
-            test(` shortName "${shortName}" should have sentence case`, () => {
+            test(`shortName "${shortName}" should have sentence case`, () => {
                 expect(hasSentenceCase(shortName)).toEqual(true);
             });
         });
