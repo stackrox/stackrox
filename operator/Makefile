@@ -273,7 +273,7 @@ check-ci-setup: ## Make sure this target is not started in CI environment.
 
 .PHONY: run
 run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
-	../scripts/go-run.sh ./main.go
+	../scripts/go-run.sh ./cmd/main.go
 
 .PHONY: ensure-rox-main-image-exists
 ensure-rox-main-image-exists:
@@ -289,7 +289,7 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 
 .PHONY: build
 build: manifests generate fmt vet ## Build operator local binary.
-	../scripts/go-build-file.sh ./main.go bin/manager
+	../scripts/go-build-file.sh ./cmd/main.go bin/manager
 
 .PHONY: smuggled-status-sh
 smuggled-status-sh:
