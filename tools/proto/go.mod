@@ -1,6 +1,6 @@
 module github.com/stackrox/stackrox/tools/proto
 
-go 1.20
+go 1.22
 
 require (
 	github.com/bufbuild/buf v1.34.0

@@ -195,7 +195,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 				assert.NoError(t, err)
 
 				// Wrap image filter with sac filter.
-				matchFilter := tc.matchFilter
+				matchFilter := *tc.matchFilter
 				baseImageMatchFilter := matchFilter.matchImage
 				matchFilter.withImageFilter(func(image *storage.Image) bool {
 					if sacTC[image.GetId()] {
@@ -204,7 +204,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageCVECoreSAC() {
 					return false
 				})
 
-				expected := compileExpected(s.testImages, matchFilter, tc.readOptions, tc.less)
+				expected := compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
 				assert.Equal(t, len(expected), len(actual))
 				assert.ElementsMatch(t, expected, actual)
 			})
@@ -264,7 +264,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageIDsSAC() {
 				assert.NoError(t, err)
 
 				// Wrap image filter with sac filter.
-				matchFilter := tc.matchFilter
+				matchFilter := *tc.matchFilter
 				baseImageMatchFilter := matchFilter.matchImage
 				matchFilter.withImageFilter(func(image *storage.Image) bool {
 					if sacTC[image.GetId()] {
@@ -273,7 +273,7 @@ func (s *ImageCVEViewTestSuite) TestGetImageIDsSAC() {
 					return false
 				})
 
-				expectedAffectedImages := compileExpectedAffectedImageIDs(s.testImages, tc.matchFilter)
+				expectedAffectedImages := compileExpectedAffectedImageIDs(s.testImages, &matchFilter)
 				assert.ElementsMatch(t, expectedAffectedImages, actualAffectedImageIDs)
 			})
 		}
@@ -351,7 +351,7 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECoreSAC() {
 				assert.NoError(t, err)
 
 				// Wrap image filter with sac filter.
-				matchFilter := tc.matchFilter
+				matchFilter := *tc.matchFilter
 				baseImageMatchFilter := matchFilter.matchImage
 				matchFilter.withImageFilter(func(image *storage.Image) bool {
 					if sacTC[image.GetId()] {
@@ -360,7 +360,7 @@ func (s *ImageCVEViewTestSuite) TestCountImageCVECoreSAC() {
 					return false
 				})
 
-				expected := compileExpected(s.testImages, matchFilter, tc.readOptions, tc.less)
+				expected := compileExpected(s.testImages, &matchFilter, tc.readOptions, tc.less)
 				assert.Equal(t, len(expected), actual)
 			})
 		}
