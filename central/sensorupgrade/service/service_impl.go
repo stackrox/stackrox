@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"google.golang.org/grpc"
@@ -34,6 +35,7 @@ var (
 			"/v1.SensorUpgradeService/TriggerSensorCertRotation",
 		},
 	})
+	log = logging.LoggerForModule()
 )
 
 type service struct {
@@ -113,25 +115,27 @@ func (s *service) AutoUpgradeSetting() *concurrency.Flag {
 }
 
 func getAutoUpgradeFeatureStatus() v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus {
-	if env.ManagedCentral.BooleanSetting() {
-		return v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED
+	if env.SensorUpgraderEnabled.BooleanSetting() {
+		return v1.GetSensorUpgradeConfigResponse_SUPPORTED
 	}
-	return v1.GetSensorUpgradeConfigResponse_SUPPORTED
+	return v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED
 }
 
 func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateSensorUpgradeConfigRequest) (*v1.Empty, error) {
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "need to specify a config")
 	}
+	log.Infof("Auto-upgrader toggled in the UI: %+v", req.GetConfig().String())
 
 	if req.GetConfig().GetEnableAutoUpgrade() && getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED {
-		return nil, errors.Wrap(errox.InvalidArgs, "auto-upgrade not supported on managed ACS")
+		return nil, errors.Wrap(errox.InvalidArgs, "secured cluster auto-upgrade is not supported")
 	}
 
 	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
 	}
 	s.autoTriggerFlag.Set(req.GetConfig().EnableAutoUpgrade)
+
 	return &v1.Empty{}, nil
 }
 

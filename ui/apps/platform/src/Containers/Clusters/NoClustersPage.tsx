@@ -31,6 +31,8 @@ import { clustersBasePath, clustersInitBundlesPath } from 'routePaths';
 
 import SecureClusterModal from './InitBundles/SecureClusterModal';
 
+const headingLevel = 'h1'; // Replace with h2 if refactoring restores h1 element with Clusters
+
 /*
  * Comments about data flow:
  *
@@ -115,7 +117,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                         <EmptyStateHeader
                             titleText="Secure clusters with a reusable init bundle"
                             icon={<EmptyStateIcon icon={CloudSecurityIcon} />}
-                            headingLevel="h2"
+                            headingLevel={headingLevel}
                         />
                         <EmptyStateBody>
                             <Flex

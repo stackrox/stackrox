@@ -9,7 +9,7 @@ import "storage/traits.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next Tag: 19
+// Next Tag: 21
 message Notifier {
   string id = 1; // @gotags: sql:"pk"
   string name = 2; // @gotags: sql:"unique"
@@ -27,6 +27,7 @@ message Notifier {
     SumoLogic sumologic = 16;
     AWSSecurityHub aws_security_hub = 17;
     Syslog syslog = 18;
+    MicrosoftSentinel microsoft_sentinel = 20;
   }
   string notifier_secret = 19; // @gotags: scrub:"always"
 
@@ -127,6 +128,31 @@ message Generic {
 message SumoLogic {
   string http_source_address = 1; // @gotags: validate:"nolocalendpoint"
   bool skipTLSVerify = 2;
+}
+
+message MicrosoftSentinel {
+  // log_ingestion_endpoint is the log ingestion endpoint.
+  string log_ingestion_endpoint = 1;
+
+  // directory_tenant_id contains the ID of the Microsoft Directory ID of the selected tenant.
+  string directory_tenant_id = 2;
+
+  // application_client_id contains the ID of the application ID of the service principal.
+  string application_client_id = 3;
+
+  // secret contains the client secret.
+  string secret = 4; // @gotags: scrub:"always"
+  // TODO(ROX-25739): Add client certificate
+
+  // DataCollectionRuleConfig contains information about the data collection rule which is a config per notifier type.
+  message DataCollectionRuleConfig {
+    string stream_name = 1;
+    string data_collection_rule_id = 2;
+  }
+  DataCollectionRuleConfig alert_dcr_config = 5;
+
+  // TODO(ROX-25848): Add NetworkPolicyNotifier configuration
+  // TODO(ROX-25546): Add Audit Log configuration
 }
 
 message Syslog {

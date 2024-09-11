@@ -43,7 +43,7 @@ spec:
   - name: prefetch-input
     value: |
       [
-        { "type": "npm", "path": ".konflux/bootstrap-yarn" },
+        { "type": "npm", "path": "ui/apps/platform" },
         { "type": "gomod", "path": "." }
       ]
   - name: build-source-image

@@ -1,8 +1,10 @@
 package protocompat
 
 import (
-	"errors"
+	"encoding/json"
 
+	"github.com/pkg/errors"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 )
@@ -43,9 +45,25 @@ func MarshalTextString(m proto.Message) string {
 	return prototext.MarshalOptions{Multiline: true}.Format(m)
 }
 
+// MarshalMap marshals a proto message to a map[string]interface{} type.
+func MarshalMap(m proto.Message) (map[string]interface{}, error) {
+	marshalledProto, err := protojson.Marshal(m)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert proto msg to json")
+	}
+
+	dest := map[string]interface{}{}
+	err = json.Unmarshal(marshalledProto, &dest)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to convert to an unstructured map")
+	}
+
+	return dest, nil
+}
+
 // Unmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler.
 type Unmarshaler[T any] interface {
-	UnmarshalVTUnsafe(dAtA []byte) error
+	UnmarshalVT(dAtA []byte) error
 	*T
 }
 

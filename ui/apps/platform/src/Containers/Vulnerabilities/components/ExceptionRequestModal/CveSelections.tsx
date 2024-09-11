@@ -50,6 +50,7 @@ function CveSelections({ cves, selectedCVEIds, onAdd, onRemove }: CveSelectionsP
                                     <ExternalLink>
                                         <Link
                                             target="_blank"
+                                            rel="noopener noreferrer"
                                             to={generatePath(vulnerabilitiesWorkloadCveSinglePath, {
                                                 cve,
                                             })}

@@ -3,7 +3,6 @@ import {
     PageSection,
     Bullseye,
     Alert,
-    Divider,
     Title,
     Tabs,
     Tab,
@@ -12,7 +11,6 @@ import {
 } from '@patternfly/react-core';
 
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
-import { getSearchOptionsForCategory } from 'services/SearchService';
 import { CancelledPromiseError } from 'services/cancellationUtils';
 
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
@@ -23,7 +21,6 @@ import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useURLSort from 'hooks/useURLSort';
 import { SortOption } from 'types/table';
@@ -31,21 +28,15 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import SearchFilterInput from 'Components/SearchFilterInput';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
 import { violationStateTabs } from './types';
 
 import './ViolationsTablePage.css';
 
-const searchCategory = 'ALERTS';
+const tabContentId = 'ViolationsTable';
 
 function ViolationsTablePage(): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_POLICY_VIOLATIONS_ADVANCED_FILTERS');
-
-    // Handle changes to applied search options.
-    const [searchOptions, setSearchOptions] = useState<string[]>([]);
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const [activeViolationStateTab, setActiveViolationStateTab] = useURLStringUnion(
@@ -168,15 +159,6 @@ function ViolationsTablePage(): ReactElement {
         activeViolationStateTab,
     ]);
 
-    useEffect(() => {
-        const { request, cancel } = getSearchOptionsForCategory(searchCategory);
-        request.then(setSearchOptions).catch(() => {
-            // A request error will disable the search filter.
-        });
-
-        return cancel;
-    }, [setSearchOptions]);
-
     // We need to be able to identify which alerts are runtime or attempted, and which are not by id.
     const resolvableAlerts: Set<string> = new Set(
         currentPageAlerts
@@ -197,19 +179,6 @@ function ViolationsTablePage(): ReactElement {
         <>
             <PageSection variant="light" id="violations-table">
                 <Title headingLevel="h1">Violations</Title>
-                {!isAdvancedFiltersEnabled && (
-                    <>
-                        <Divider className="pf-v5-u-py-md" />
-                        <SearchFilterInput
-                            className="theme-light pf-search-shim"
-                            handleChangeSearchFilter={setSearchFilter}
-                            placeholder="Filter violations"
-                            searchCategory={searchCategory}
-                            searchFilter={searchFilter}
-                            searchOptions={searchOptions}
-                        />
-                    </>
-                )}
             </PageSection>
             <PageSection variant="light" className="pf-v5-u-py-0">
                 <Tabs
@@ -219,13 +188,20 @@ function ViolationsTablePage(): ReactElement {
                         setSearchFilter({});
                         setActiveViolationStateTab(tab);
                     }}
-                    component="nav"
                 >
-                    <Tab eventKey="ACTIVE" title={<TabTitleText>Active</TabTitleText>} />
-                    <Tab eventKey="RESOLVED" title={<TabTitleText>Resolved</TabTitleText>} />
+                    <Tab
+                        eventKey="ACTIVE"
+                        tabContentId={tabContentId}
+                        title={<TabTitleText>Active</TabTitleText>}
+                    />
+                    <Tab
+                        eventKey="RESOLVED"
+                        tabContentId={tabContentId}
+                        title={<TabTitleText>Resolved</TabTitleText>}
+                    />
                 </Tabs>
             </PageSection>
-            <PageSection variant="default">
+            <PageSection variant="default" id={tabContentId}>
                 {isLoadingAlerts && (
                     <Bullseye>
                         <Spinner size="xl" />
@@ -253,7 +229,6 @@ function ViolationsTablePage(): ReactElement {
                             setPerPage={setPerPage}
                             getSortParams={getSortParams}
                             columns={columns}
-                            isAdvancedFiltersEnabled={isAdvancedFiltersEnabled}
                             searchFilter={searchFilter}
                             onSearch={onSearch}
                         />

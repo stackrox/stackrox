@@ -35,8 +35,9 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-# Ensure there will be no unintended -dirty suffix. package-lock is restored because it's touched by Cachi2.
-RUN git restore .konflux/bootstrap-yarn/package-lock.json && \
+# Ensure there will be no unintended -dirty suffix. package and package-lock are restored
+# because they are touched by Cachi2.
+RUN git restore ui/apps/platform/package.json ui/apps/platform/package-lock.json && \
     .konflux/scripts/fail-build-if-git-is-dirty.sh
 
 ARG VERSIONS_SUFFIX
@@ -65,18 +66,19 @@ WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY --chown=default . .
 
-# This installs yarn from Cachi2 and makes `yarn` executable available.
-# Not using `npm install --global` because it won't get us `yarn` globally.
-RUN cd .konflux/bootstrap-yarn && \
-    npm ci --no-audit --no-fund
-ENV PATH="$PATH:/go/src/github.com/stackrox/rox/app/.konflux/bootstrap-yarn/node_modules/.bin/"
-
 # This sets branding during UI build time. This is to make sure UI is branded as commercial RHACS (not StackRox).
 # ROX_PRODUCT_BRANDING is also set in the resulting image so that Central Go code knows its RHACS.
 ENV ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 
-# UI build is not hermetic because Cachi2 does not support pulling packages according to V1 of yarn.lock.
-# TODO(ROX-20723): enable yarn package prefetch and make UI builds hermetic.
+# Default execution of the `npm ci` command causes postinstall scripts to run and spawn a new child process
+# for each script. When building in konflux for s390x and ppc64le architectures, spawing
+# these child processes causes excessive memory usage and ENOMEM errors, resulting
+# in build failures. Currently the only postinstall scripts that run for the UI dependencies are:
+#   `core-js` prints a banner with links for donations
+#   `cypress` downloads the Cypress binary from the internet
+# In the case of building the `rhacs-main-container`, all of these install scripts can be safely ignored.
+ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
+
 RUN make -C ui build
 
 
@@ -135,6 +137,8 @@ COPY .konflux/stackrox-data/external-networks/external-networks.zip /stackrox/st
 
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
 COPY --from=go-builder /go/src/github.com/stackrox/rox/app/image/rhel/docs/api/v2/swagger.json /stackrox/static-data/docs/api/v2/swagger.json
+
+COPY LICENSE /licenses/LICENSE
 
 # The following paths are written to in Central.
 RUN chown -R 4000:4000 /etc/pki/ca-trust /etc/ssl && save-dir-contents /etc/pki/ca-trust /etc/ssl && \

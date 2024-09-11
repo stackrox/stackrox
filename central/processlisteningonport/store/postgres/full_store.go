@@ -182,13 +182,13 @@ func (s *fullStoreImpl) readRows(
 		}
 
 		var msg storage.ProcessListeningOnPortStorage
-		if err := msg.UnmarshalVT(serialized); err != nil {
+		if err := msg.UnmarshalVTUnsafe(serialized); err != nil {
 			return nil, err
 		}
 
 		var procMsg storage.ProcessIndicator
 		if procSerialized != nil {
-			if err := procMsg.UnmarshalVT(procSerialized); err != nil {
+			if err := procMsg.UnmarshalVTUnsafe(procSerialized); err != nil {
 				return nil, err
 			}
 		}

@@ -65,5 +65,6 @@ type ImageCves struct {
 	ImpactScore            float32                       `gorm:"column:impactscore;type:numeric"`
 	Snoozed                bool                          `gorm:"column:snoozed;type:bool"`
 	SnoozeExpiry           *time.Time                    `gorm:"column:snoozeexpiry;type:timestamp"`
+	Nvdcvss                float32                       `gorm:"column:nvdcvss;type:numeric"`
 	Serialized             []byte                        `gorm:"column:serialized;type:bytea"`
 }

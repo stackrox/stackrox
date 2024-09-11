@@ -281,7 +281,6 @@ function DeploymentPageVulnerabilities({
                             <CvesByStatusSummaryCard
                                 cveStatusCounts={data.imageCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
-                                isBusy={summaryRequest.loading}
                             />
                         )}
                     />

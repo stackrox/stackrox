@@ -11,7 +11,7 @@ option java_package = "io.stackrox.proto.storage";
 
 //Next tag: 28
 message Policy {
-  string id = 1; // @gotags: search:"Policy ID,store,hidden" sql:"pk"
+  string id = 1; // @gotags: search:"Policy ID,store,hidden" sql:"pk,index=btree"
   string name = 2; // @gotags: search:"Policy,store" sql:"unique"
   string description = 3; // @gotags: search:"Description"
   string rationale = 4;

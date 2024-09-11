@@ -1,10 +1,9 @@
 import React, { ReactElement } from 'react';
-import { ExternalLink } from 'react-feather';
 import { differenceInDays } from 'date-fns';
 import { Tooltip } from '@patternfly/react-core';
 
 import { getTime, getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
-
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
 import HealthStatus from './HealthStatus';
@@ -84,22 +83,20 @@ function CredentialExpiration({
                 <div>
                     {expirationElement}
                     {version && (
-                        <div className="flex flex-row items-end leading-tight text-tertiary-700">
-                            <a
-                                href={getVersionedDocs(
-                                    version,
-                                    'configuration/reissue-internal-certificates.html#reissue-internal-certificates-secured-clusters'
-                                )}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline"
-                                data-testid="reissueCertificatesLink"
-                            >
-                                Re-issue internal certificates
-                            </a>
-                            <span className="flex-shrink-0 ml-2">
-                                <ExternalLink className="h-4 w-4" />
-                            </span>
+                        <div className="flex flex-row items-end leading-tight">
+                            <ExternalLink>
+                                <a
+                                    href={getVersionedDocs(
+                                        version,
+                                        'configuration/reissue-internal-certificates.html#reissue-internal-certificates-secured-clusters'
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    data-testid="reissueCertificatesLink"
+                                >
+                                    Re-issue internal certificates
+                                </a>
+                            </ExternalLink>
                         </div>
                     )}
                 </div>

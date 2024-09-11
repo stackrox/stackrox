@@ -33,13 +33,13 @@ export const selectors = {
     searchEntityDropdown:
         '.pf-v5-c-toolbar button[aria-label="compound search filter entity selector toggle"]',
     searchEntityMenuItem:
-        '.pf-v5-c-toolbar div[aria-label="compound search filter entity selector menu"] button',
+        '.pf-v5-c-toolbar [aria-label="compound search filter entity selector menu"] button',
     searchAttributeDropdown:
         '.pf-v5-c-toolbar button[aria-label="compound search filter attribute selector toggle"]',
     searchAttributeMenuItem:
-        '.pf-v5-c-toolbar div[aria-label="compound search filter attribute selector menu"] button',
+        '.pf-v5-c-toolbar [aria-label="compound search filter attribute selector menu"] button',
     searchValueTypeahead: '.pf-v5-c-toolbar input[aria-label^="Filter results by"]',
-    searchValueMenuItem: '.pf-v5-c-toolbar div[aria-label="Filter results select menu"] button',
+    searchValueMenuItem: '.pf-v5-c-toolbar [aria-label="Filter results select menu"] button',
     searchValueApplyButton:
         '.pf-v5-c-toolbar button[aria-label="Apply autocomplete input to search"]',
 

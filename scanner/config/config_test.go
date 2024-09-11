@@ -7,8 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/buildinfo"
-	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -161,14 +159,11 @@ func Test_MatcherConfig_validate(t *testing.T) {
 		assert.False(t, c.RemoteIndexerEnabled)
 	})
 	t.Run("when URL is replaceable, replace it", func(t *testing.T) {
-		c := MatcherConfig{Enable: true, Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VERSION"}
+		c := MatcherConfig{Enable: true, Database: Database{ConnString: "host=foobar"}, VulnerabilitiesURL: "https://central.stackrox.svc/api/extensions/scannerdefinitions?rox_version=ROX_VERSION&vuln_version=ROX_VULNERABILITY_VERSION"}
 		err := c.validate()
 		assert.NoError(t, err)
-		v := "dev"
-		if buildinfo.ReleaseBuild {
-			v = version.Version
-		}
-		expectedURL := fmt.Sprintf("https://central.stackrox.svc/api/extensions/scannerdefinitions?version=%s", v)
+		roxVer, vulnVer := c.resolveVersions()
+		expectedURL := fmt.Sprintf("https://central.stackrox.svc/api/extensions/scannerdefinitions?rox_version=%s&vuln_version=%s", roxVer, vulnVer)
 		assert.Equal(t, expectedURL, c.VulnerabilitiesURL)
 	})
 	t.Run("when URL is static, do not replace it", func(t *testing.T) {

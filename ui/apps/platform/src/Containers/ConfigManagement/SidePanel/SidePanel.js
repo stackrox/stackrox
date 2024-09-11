@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter, Link } from 'react-router-dom';
 import onClickOutside from 'react-onclickoutside';
-import { ExternalLink } from 'react-feather';
+import { ExternalLinkAltIcon } from '@patternfly/react-icons';
 
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
@@ -75,13 +75,13 @@ const SidePanel = ({
         .query(getSearchParams())
         .url();
     const externalLink = (
-        <div className="flex items-center h-full hover:bg-base-300">
+        <div className="flex items-center h-full">
             <Link
                 to={externalURL}
-                aria-label="External link"
+                aria-label="link"
                 className="border-base-400 border-l h-full p-4"
             >
-                <ExternalLink className="h-6 w-6 text-base-600" />
+                <ExternalLinkAltIcon />
             </Link>
         </div>
     );

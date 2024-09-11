@@ -13,7 +13,7 @@ import {
 import DescriptionListItem from 'Components/DescriptionListItem';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import { NotifierIntegration } from 'types/notifier.proto';
-import { Policy } from 'types/policy.proto';
+import { BasePolicy } from 'types/policy.proto';
 import MitreAttackVectorsViewContainer from 'Containers/MitreAttackVectors/MitreAttackVectorsViewContainer';
 
 import { formatCategories, formatType } from '../policies.utils';
@@ -21,7 +21,7 @@ import Notifier from './Notifier';
 
 type PolicyOverviewProps = {
     notifiers: NotifierIntegration[];
-    policy: Policy;
+    policy: BasePolicy;
     isReview?: boolean;
 };
 

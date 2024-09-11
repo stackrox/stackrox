@@ -12,6 +12,7 @@ import {
     PageSection,
     Spinner,
     Tab,
+    TabContent,
     TabTitleText,
     Tabs,
     Title,
@@ -75,6 +76,8 @@ export function getCVEsForUpdatedRequest(exception: VulnerabilityException): str
     }
     return exception.cves;
 }
+
+const tabContentId = 'ExceptionRequestDetails';
 
 function ExceptionRequestDetailsPage() {
     const { requestId } = useParams();
@@ -237,31 +240,36 @@ function ExceptionRequestDetailsPage() {
                     <Tabs
                         activeKey={selectedContext}
                         onSelect={handleTabClick}
-                        component="nav"
                         className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
                     >
                         <Tab
                             eventKey="PENDING_UPDATE"
+                            tabContentId={tabContentId}
                             title={<TabTitleText>Requested update</TabTitleText>}
                         />
                         <Tab
                             eventKey="CURRENT"
+                            tabContentId={tabContentId}
                             title={<TabTitleText>Latest approved</TabTitleText>}
                         />
                     </Tabs>
                 )}
-
-                <PageSection>
-                    <RequestOverview exception={vulnerabilityException} context={selectedContext} />
-                </PageSection>
-                <PageSection>
-                    <RequestCVEsTable
-                        cves={relevantCVEs}
-                        scope={scope}
-                        expandedRowSet={expandedRowSet}
-                        vulnerabilityState={vulnerabilityState}
-                    />
-                </PageSection>
+                <TabContent id={tabContentId}>
+                    <PageSection>
+                        <RequestOverview
+                            exception={vulnerabilityException}
+                            context={selectedContext}
+                        />
+                    </PageSection>
+                    <PageSection>
+                        <RequestCVEsTable
+                            cves={relevantCVEs}
+                            scope={scope}
+                            expandedRowSet={expandedRowSet}
+                            vulnerabilityState={vulnerabilityState}
+                        />
+                    </PageSection>
+                </TabContent>
             </PageSection>
         </>
     );

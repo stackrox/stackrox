@@ -68,7 +68,9 @@ function PolicyGroupCard({
         ]);
     }
 
-    const headerLongText = group.negate ? descriptor.negatedName : descriptor.longName;
+    const hasNegation = !readOnly && 'negatedName' in descriptor && descriptor.negatedName;
+    const headerLongText =
+        group.negate && 'negatedName' in descriptor ? descriptor.negatedName : descriptor.longName;
 
     return (
         <>
@@ -77,7 +79,7 @@ function PolicyGroupCard({
                     actions={{
                         actions: (
                             <>
-                                {descriptor.negatedName && !readOnly && (
+                                {hasNegation && (
                                     <>
                                         <Divider
                                             component="div"
@@ -103,7 +105,7 @@ function PolicyGroupCard({
                                             variant="plain"
                                             className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
                                             onClick={onDeleteGroup}
-                                            data-testid="delete-policy-criteria-btn"
+                                            title="Delete policy field"
                                         >
                                             <TrashIcon />
                                         </Button>
@@ -176,7 +178,7 @@ function PolicyGroupCard({
                                 <Button
                                     onClick={handleAddValue}
                                     variant="plain"
-                                    data-testid="add-policy-criteria-value-btn"
+                                    title="Add value of policy field"
                                 >
                                     <PlusIcon />
                                 </Button>

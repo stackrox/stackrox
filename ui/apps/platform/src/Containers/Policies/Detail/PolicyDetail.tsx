@@ -27,7 +27,7 @@ import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { policiesBasePath } from 'routePaths';
 import { deletePolicy, exportPolicies } from 'services/PoliciesService';
-import { Policy } from 'types/policy.proto';
+import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import PolicyDetailContent from './PolicyDetailContent';
@@ -39,7 +39,7 @@ function formatUpdateDisabledStateAction(disabled: boolean) {
 type PolicyDetailProps = {
     handleUpdateDisabledState: (id: string, disabled: boolean) => Promise<void>;
     hasWriteAccessForPolicy: boolean;
-    policy: Policy;
+    policy: ClientPolicy;
 };
 
 function PolicyDetail({

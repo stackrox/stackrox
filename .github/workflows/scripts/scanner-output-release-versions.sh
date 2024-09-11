@@ -11,7 +11,6 @@ tags=$(mktemp)
 git tag > "$tags"
 
 # tag prints the tag associated with a vulnerability updater version.
-#
 tag() {
     local ver=${1:?"missing required argument: version"}
     if grep -qx "$ver" "$tags"; then

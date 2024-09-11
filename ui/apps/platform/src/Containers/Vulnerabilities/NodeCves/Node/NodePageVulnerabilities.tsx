@@ -117,7 +117,6 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                             <CvesByStatusSummaryCard
                                 cveStatusCounts={data.node.nodeCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
-                                isBusy={summaryRequest.loading}
                             />
                         )}
                     />
