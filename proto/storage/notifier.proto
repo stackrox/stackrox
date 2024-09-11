@@ -148,6 +148,7 @@ message MicrosoftSentinel {
   message DataCollectionRuleConfig {
     string stream_name = 1;
     string data_collection_rule_id = 2;
+    bool enabled = 3;
   }
   DataCollectionRuleConfig alert_dcr_config = 5;
 

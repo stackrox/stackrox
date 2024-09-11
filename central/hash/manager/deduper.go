@@ -175,9 +175,14 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 }
 
 func (d *deduperImpl) getValueNoLock(key string) (uint64, bool) {
-	if prevValue, ok := d.received[key]; ok {
+	// Only return here if `processed` is true. If `processed` is false, it means
+	// the value is dirty (was received in a previous connection but not processed).
+	// if the value is dirty, it needs to be processed.
+	if prevValue, ok := d.received[key]; ok && prevValue.processed {
 		return prevValue.val, ok
 	}
+	// We do not check the `processed` field here because if it was successfully
+	// processed at any time, we can skip the processing.
 	prevValue, ok := d.successfullyProcessed[key]
 	if !ok {
 		return 0, false

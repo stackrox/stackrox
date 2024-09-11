@@ -308,6 +308,9 @@
         },
         "dataCollectionRuleId": {
           "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
         }
       },
       "description": "DataCollectionRuleConfig contains information about the data collection rule which is a config per notifier type."
