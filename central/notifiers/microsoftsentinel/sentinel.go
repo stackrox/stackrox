@@ -72,10 +72,19 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 		return nil, errors.Wrap(err, "could not create sentinel notifier, validation failed")
 	}
 
-	// TODO(ROX-25739): Support certificate authentication
-	azureCredentials, err := azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), config.GetSecret(), &azidentity.ClientSecretCredentialOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "could not create azure credentials")
+	var azureCredentials *azidentity.ClientSecretCredential
+	if config.GetSecret() != "" {
+		azureCredentials, err = azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), config.GetSecret(), &azidentity.ClientSecretCredentialOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "could not create azure credentials with secret")
+		}
+	} else if config.GetClientCert() != "" {
+		azureCredentials, err = azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), config.GetClientCert(), &azidentity.ClientSecretCredentialOptions{})
+		if err != nil {
+			return nil, errors.Wrap(err, "could not create azure credentials with client cert")
+		}
+	} else {
+		return nil, errors.New("no client secret or certificate is required")
 	}
 
 	client, err := azlogs.NewClient(config.GetLogIngestionEndpoint(), azureCredentials, &azlogs.ClientOptions{})
@@ -242,8 +251,8 @@ func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
 		errorList.AddString("Application Client Id must be specified")
 	}
 
-	if sentinel.GetSecret() == "" && validateSecret {
-		errorList.AddString("Secret must be specified")
+	if (sentinel.GetSecret() == "" && sentinel.GetClientCert() == "") && validateSecret {
+		errorList.AddString("Secret or Client Certificate must be specified")
 	}
 
 	if !errorList.Empty() {

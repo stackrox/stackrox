@@ -714,6 +714,10 @@
         },
         "auditLogDcrConfig": {
           "$ref": "#/definitions/MicrosoftSentinelDataCollectionRuleConfig"
+        },
+        "clientCert": {
+          "type": "string",
+          "title": "client certificate which is used for authentication"
         }
       }
     },
