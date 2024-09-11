@@ -901,7 +901,6 @@ func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
 	}
 
 	if values.Get("database-only") == "true" {
-		log.Info("SHREWS -- database-only is set to true")
 		opts.logs = localLogs
 		opts.telemetryMode = noTelemetry
 		opts.withCPUProfile = false
