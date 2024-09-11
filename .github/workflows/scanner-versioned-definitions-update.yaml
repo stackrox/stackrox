@@ -1,4 +1,5 @@
-name: Scanner versioned vulnerability bundles update
+name: Scanner versioned vulnerabilities update
+
 on:
   schedule:
   - cron: "30 */4 * * *"
@@ -20,6 +21,7 @@ on:
 
 jobs:
   parse-versions:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     runs-on: ubuntu-latest
     outputs:
       versions: ${{ steps.set-versions.outputs.versions }}
@@ -37,6 +39,7 @@ jobs:
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
   prepare-environment:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     runs-on: ubuntu-latest
     outputs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
@@ -157,15 +160,14 @@ jobs:
         chmod +x scanner/bin/updater
         mkdir vulns
 
-    - name: Create Folder
+    - name: Create bundle output directory
       run: mkdir -p definitions/${{ env.SCANNER_BUNDLE_VERSION }}
 
     - name: Run Updater (single bundle)
       env:
         STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
-        scanner/bin/updater export vulns --manual-url "${{ needs.prepare-environment.outputs.manual_url }}"
-        mv vulns/* definitions/${{ env.SCANNER_BUNDLE_VERSION }}/
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ env.SCANNER_BUNDLE_VERSION }}"
 
     - name: Run updater (multi bundle)
       env:
@@ -181,7 +183,7 @@ jobs:
         path: definitions
 
   build-upload-pr-vulnerabilities:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     needs:
     - prepare-environment
     runs-on: ubuntu-latest
@@ -214,6 +216,15 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+    - name: Authenticate with test GCS bucket
+      if: github.event_name == 'pull_request'
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
     - name: Build updater
       run: |
         echo "Building updater for pull request ${{ env.PR_NAME }}..."
@@ -231,23 +242,14 @@ jobs:
         chmod +x scanner/bin/updater
         mkdir vulns
 
-    - name: Create Folder
+    - name: Create bundle output directory
       run: mkdir -p definitions/${{ github.event.pull_request.number }}
-
-    - name: Authenticate with test GCS bucket
-      if: github.event_name == 'pull_request'
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
-
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
 
     - name: Run Updater (single bundle)
       env:
         STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
-        scanner/bin/updater export vulns --manual-url "${{ needs.prepare-environment.outputs.manual_url }}"
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ github.event.pull_request.number }}"
         mv vulns/* definitions/${{ github.event.pull_request.number }}/
 
     - name: Run updater (multi bundle)
@@ -275,11 +277,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    # TODO: What is this?
     - name: Download definitions artifacts
       uses: actions/download-artifact@v4
       with:
         path: downloaded_artifacts
 
+    # TODO: What is this?
     - name: Move files artifacts
       run: rsync -av downloaded_artifacts/*/ definitions_files/
 
