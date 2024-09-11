@@ -26,7 +26,7 @@ func ConvertClusterFromProto(obj *storage.Cluster) (*Clusters, error) {
 // ConvertClusterToProto converts Gorm model `Clusters` to its protobuf type object
 func ConvertClusterToProto(m *Clusters) (*storage.Cluster, error) {
 	var msg storage.Cluster
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

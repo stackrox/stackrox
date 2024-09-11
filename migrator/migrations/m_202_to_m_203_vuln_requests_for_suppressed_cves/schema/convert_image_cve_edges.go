@@ -26,7 +26,7 @@ func ConvertImageCVEEdgeFromProto(obj *storage.ImageCVEEdge) (*ImageCveEdges, er
 // ConvertImageCVEEdgeToProto converts Gorm model `ImageCveEdges` to its protobuf type object
 func ConvertImageCVEEdgeToProto(m *ImageCveEdges) (*storage.ImageCVEEdge, error) {
 	var msg storage.ImageCVEEdge
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil
