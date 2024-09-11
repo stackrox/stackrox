@@ -182,6 +182,7 @@ func (s sentinel) uploadLogs(ctx context.Context, dcrConfig *storage.MicrosoftSe
 	)
 }
 
+// prepareLogsToSend converts a proto message, wraps it into an array and converts it to JSON which is expected by Sentinel.
 func (s sentinel) prepareLogsToSend(msg protocompat.Message) ([]byte, error) {
 	// convert object to an unstructured map to later wrap it as an array.
 	logToSendObj, err := protocompat.MarshalMap(msg)
