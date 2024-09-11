@@ -11632,6 +11632,11 @@
                     "id": 2,
                     "name": "data_collection_rule_id",
                     "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "enabled",
+                    "type": "bool"
                   }
                 ]
               }

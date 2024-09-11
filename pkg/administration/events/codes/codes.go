@@ -31,4 +31,6 @@ const (
 	SyslogGeneric = "syslog-generic"
 
 	TeamsGeneric = "teams-generic"
+
+	MicrosoftSentinelGeneric = "microsoft-sentinel-generic"
 )
