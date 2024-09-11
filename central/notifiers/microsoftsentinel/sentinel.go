@@ -89,10 +89,6 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	}, nil
 }
 
-func (s sentinel) sentinel() *storage.MicrosoftSentinel {
-	return s.notifier.GetMicrosoftSentinel()
-}
-
 func (s sentinel) Close(_ context.Context) error {
 	return nil
 }
@@ -102,7 +98,7 @@ func (s sentinel) ProtoNotifier() *storage.Notifier {
 }
 
 func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
-	if s.sentinel().GetAuditLogDcrConfig().GetEnabled() {
+	if s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled() {
 		err := s.SendAuditMessage(ctx, s.getTestAuditLogMessage())
 		if err != nil {
 			return notifiers.NewNotifierError("could not send audit message to sentinel", err)
@@ -111,7 +107,7 @@ func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
 		log.Info("audit message are disabled, test audit message was not send to sentinel")
 	}
 
-	if s.sentinel().GetAlertDcrConfig().GetEnabled() {
+	if s.notifier.GetMicrosoftSentinel().GetAlertDcrConfig().GetEnabled() {
 		err := s.AlertNotify(ctx, s.getTestAlert())
 		if err != nil {
 			return notifiers.NewNotifierError("could not send alert notify to sentinel", err)
@@ -167,7 +163,6 @@ func (s sentinel) uploadLogs(ctx context.Context, dcrConfig *storage.MicrosoftSe
 		return err
 	}
 
-	log.Infof("bytes to send: %s", string(bytesToSend))
 	return retry.WithRetry(func() error {
 		// UploadResponse is unhandled because it currently is only a placeholder in the azure client library and does not
 		// contain any information to be processed.
