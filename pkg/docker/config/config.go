@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -81,6 +82,26 @@ func (d *DockerConfigEntry) UnmarshalJSON(data []byte) error {
 
 	d.Username, d.Password, err = decodeDockerConfigFieldAuth(tmp.Auth)
 	return err
+}
+
+func encodeAuthField(d DockerConfigEntry) string {
+	if d.Username == "" || d.Password == "" {
+		return ""
+	}
+
+	basicAuth := fmt.Sprintf("%s:%s", d.Username, d.Password)
+	return base64.StdEncoding.EncodeToString([]byte(basicAuth))
+}
+
+// MarshalJSON marshals the entry with the necessary auth field.
+func (d DockerConfigEntry) MarshalJSON() ([]byte, error) {
+	var tmp DockerConfigEntryWithAuth
+	tmp.Username = d.Username
+	tmp.Password = d.Password
+	tmp.Email = d.Email
+	tmp.Auth = encodeAuthField(d)
+
+	return json.Marshal(tmp)
 }
 
 // CreateFromAuthString decodes the given docker auth string into a DockerConfigEntry.

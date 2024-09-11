@@ -3,12 +3,9 @@
 package tests
 
 import (
-	"bufio"
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"math"
 	"os"
 	"os/exec"
@@ -361,23 +358,23 @@ func (ks *KubernetesSuite) logf(format string, args ...any) {
 }
 
 // waitUntilLog waits until ctx expires or logs of container in all pods matching podLabels satisfy all logMatchers.
-func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatcher logMatcher) {
+func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
 	ls := labels.SelectorFromSet(podLabels).String()
-	checkLogs := ks.checkLogsClosure(ctx, namespace, ls, container, logMatcher)
-	ks.logf("Waiting until %q pods logs "+description+": %s", ls, logMatcher)
+	checkLogs := ks.checkLogsClosure(ctx, namespace, ls, container, logMatchers...)
+	ks.logf("Waiting until %q pods logs "+description+": %s", ls, logMatchers)
 	mustEventually(ks.T(), ctx, checkLogs, 10*time.Second, fmt.Sprintf("Not all %q pods logs "+description, ls))
 }
 
 // checkLogsMatch will check if the logs of container in all pods matching pod labels satisfy all log matchers.
-func (ks *KubernetesSuite) checkLogsMatch(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatcher logMatcher) {
+func (ks *KubernetesSuite) checkLogsMatch(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
 	ls := labels.SelectorFromSet(podLabels).String()
-	ks.logf("Checking %q pods logs "+description+": %s", ls, logMatcher)
-	err := ks.checkLogsClosure(ctx, namespace, ls, container, logMatcher)()
+	ks.logf("Checking %q pods logs "+description+": %s", ls, logMatchers)
+	err := ks.checkLogsClosure(ctx, namespace, ls, container, logMatchers...)()
 	require.NoError(ks.T(), err, fmt.Sprintf("%q was untrue", description))
 }
 
 // checkLogsClosure returns a function that checks if the logs of container in all pods matching pod labels satisfy all the log matchers.
-func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labelSelector, container string, logMatcher logMatcher) func() error {
+func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labelSelector, container string, logMatchers ...logMatcher) func() error {
 	return func() error {
 		podList, err := ks.k8s.CoreV1().Pods(namespace).List(ctx, metaV1.ListOptions{LabelSelector: labelSelector})
 		if err != nil {
@@ -385,7 +382,7 @@ func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labe
 		}
 		if len(podList.Items) == 0 {
 
-			if ok, err := logMatcher.Match(strings.NewReader("")); ok {
+			if ok, err := allMatch(strings.NewReader(""), logMatchers...); ok {
 				return nil
 			} else if err != nil {
 				return fmt.Errorf("empty list of pods caused failure: %w", err)
@@ -398,7 +395,7 @@ func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labe
 			if err != nil {
 				return fmt.Errorf("retrieving logs of pod %q in namespace %q failed: %w", pod.GetName(), namespace, err)
 			}
-			if ok, err := logMatcher.Match(bytes.NewReader(log)); ok {
+			if ok, err := allMatch(bytes.NewReader(log), logMatchers...); ok {
 				continue
 			} else if err != nil {
 				return fmt.Errorf("log of pod %q in namespace %q caused failure: %w", pod.GetName(), namespace, err)
@@ -409,27 +406,17 @@ func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labe
 	}
 }
 
-// getNumLogLines will return the number of the last log entry for a particular pod.  This is intended to be used with
-// <matcher> to ensure a log didn't occur from a previous test.
-func (ks *KubernetesSuite) getNumLogLines(ctx context.Context, namespace, pod, container string) (int, error) {
+// getLastLogBytePos will return the position of the last log byte for a particular pod.  This is intended to be used with
+// the log matchers to ensure a log from previous tests isn't matched against.
+func (ks *KubernetesSuite) getLastLogBytePos(ctx context.Context, namespace, pod, container string) (int64, error) {
 	resp := ks.k8s.CoreV1().Pods(namespace).GetLogs(pod, &coreV1.PodLogOptions{Container: container}).Do(ctx)
+
 	logB, err := resp.Raw()
 	if err != nil {
 		return 0, fmt.Errorf("retrieving logs of pod %q in namespace %q failed: %w", pod, namespace, err)
 	}
 
-	var count int
-	br := bufio.NewReader(bytes.NewReader(logB))
-	for {
-		_, _, err := br.ReadLine()
-		if errors.Is(err, io.EOF) {
-			return count, nil
-		}
-		if err != nil {
-			return 0, err
-		}
-		count++
-	}
+	return int64(len(logB)), nil
 }
 
 // getSensorPod is a convenience method to get details of the Sensor pod.
@@ -450,14 +437,14 @@ func (ks *KubernetesSuite) getSensorPod(ctx context.Context, namespace string) (
 }
 
 // waitUntilK8sDeploymentReady waits until k8s reports all pods for a deployment are consistently ready or context done.
+// It waits for multiple consecutive ready states to ensure k8s has enough time to schedule any recently made updates
+// to the deployment.
 func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, namespace string, deploymentName string) {
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
-	// TODO: Can this be adjusted to use the 'wait for condition' method in this file?
+	timer := time.NewTimer(waitTimeout)
 
-	// Wait for multiple consecutive ready states, so we don't return too soon
-	// before k8s has a chance to process/schedule a previous API request.
 	maxSuccessCount := 3
 	var successCount int
 	for successCount < maxSuccessCount {
@@ -475,6 +462,9 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 			}
 			successCount++
 			ks.logf("deployment %q in namespace %q READY (%d/%d ready replicas) [%d/%d]", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas, successCount, maxSuccessCount)
+
+		case <-timer.C:
+			ks.T().Fatalf("Timed out waiting for deployment %s", deploymentName)
 		}
 	}
 }

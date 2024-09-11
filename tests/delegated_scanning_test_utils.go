@@ -6,6 +6,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -24,9 +25,11 @@ import (
 	imagev1client "github.com/openshift/client-go/image/clientset/versioned/typed/image/v1"
 	machineconfigurationv1client "github.com/openshift/client-go/machineconfiguration/clientset/versioned/typed/machineconfiguration/v1"
 	operatorv1alpha1client "github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1alpha1"
+	"github.com/stackrox/rox/pkg/docker/config"
 	pkgTar "github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -54,27 +57,15 @@ type deleScanTestUtils struct {
 	restCfg *rest.Config
 }
 
-func (d *deleScanTestUtils) AddCredsToOCPGlobalPull(t *testing.T, ctx context.Context) {
-	// k8s := createK8sClient(t)
-	// sec, err := k8s.CoreV1().
-	// 	Secrets("openshift-config").
-	// 	Get(ctx, "pull-secret", v1.GetOptions{})
-	// require.NoError(t, err)
-	// sec.Data["quay.io"]
-	// TODO: Can we append to the global pull secret
-	// BEFORE continuing further, try this outside of this interface
-	// can I add a second quay.io credential to the OCP global pull secret?
-
-}
-
-// CreateMirrorCRs creates ImageContentSourcePolicy, ImageDigestMirrorSet, and ImageTagMirrorSet CRs for
-// testing and waits for all nodes to be drained and ready to process mirror requests.
+// SetupMirrors will add creds to the Global Pull Secret, and create the mirroring CRs
+// (ImageContentSourcePolicy, ImageDigestMirrorSet, and ImageTagMirrorSet). If changes
+// were made will wait for changes to be propagated to all nodes.
 // During testing on a 3 master + 2 worker node OCP cluster the average time it took
 // to propagate these changes was between 5-10 minutes.
-func (d *deleScanTestUtils) CreateMirrorCRs(t *testing.T, ctx context.Context) {
+func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg string, dce config.DockerConfigEntry) {
 	start := time.Now()
 	defer func() {
-		t.Logf("Creating mirror CRs took: %v", time.Since(start))
+		t.Logf("Setting up mirrors took:: %v", time.Since(start))
 	}()
 
 	// Instantiate various API clients.
@@ -88,7 +79,7 @@ func (d *deleScanTestUtils) CreateMirrorCRs(t *testing.T, ctx context.Context) {
 	require.NoError(t, err)
 
 	// Get current status of current machine config pools, this will be used to detect
-	// when changes have been fully processed.
+	// when changes have been fully propagated.
 	poolList, err := machineCfgClient.MachineConfigPools().List(ctx, v1.ListOptions{})
 	require.NoError(t, err)
 	origPools := map[string]machineconfigurationv1.MachineConfigPool{}
@@ -96,15 +87,15 @@ func (d *deleScanTestUtils) CreateMirrorCRs(t *testing.T, ctx context.Context) {
 		origPools[pool.GetName()] = pool
 	}
 
-	// resourcesUpdated will be set to true if any resources have changed, indicating tests will need to wait
+	// updated will be set to true if any resources have changed, indicating tests will need to wait
 	// for the cluster nodes to be updated.
-	var resourcesUpdated bool
+	var updated bool
 
-	icspName := "icsp-invalid-to-quay"
-	idmsName := "idms-invalid-to-quay"
-	itmsName := "itms-invalid-to-quay"
+	// Update the OCP global pull secret which k8s needs in order to pull images from authenticated mirrors.
+	updated = d.addCredToOCPGlobalPullSecret(t, ctx, reg, dce)
 
 	// Create an ImageContentSourcePolicy
+	icspName := "icsp-invalid"
 	t.Logf("Applying ImageContentSourcePolicy %q", icspName)
 	origIcsp, _ := opClient.ImageContentSourcePolicies().Get(ctx, icspName, v1.GetOptions{})
 
@@ -114,10 +105,11 @@ func (d *deleScanTestUtils) CreateMirrorCRs(t *testing.T, ctx context.Context) {
 
 	if icsp.ResourceVersion != origIcsp.ResourceVersion {
 		t.Logf("ImageContentSourcePolicy %q updated", icspName)
-		resourcesUpdated = true
+		updated = true
 	}
 
 	// Create an ImageDigestMirrorSet
+	idmsName := "idms-invalid"
 	t.Logf("Applying ImageDigestMirrorSet %q", idmsName)
 	origIdms, _ := cfgClient.ImageDigestMirrorSets().Get(ctx, idmsName, v1.GetOptions{})
 
@@ -127,10 +119,11 @@ func (d *deleScanTestUtils) CreateMirrorCRs(t *testing.T, ctx context.Context) {
 
 	if idms.ResourceVersion != origIdms.ResourceVersion {
 		t.Logf("ImageDigestMirrorSet %q updated", idmsName)
-		resourcesUpdated = true
+		updated = true
 	}
 
 	// Create an ImageTagMirrorSet
+	itmsName := "itms-invalid"
 	t.Logf("Applying ImageTagMirrorSet %q", itmsName)
 	origItms, _ := cfgClient.ImageTagMirrorSets().Get(ctx, itmsName, v1.GetOptions{})
 
@@ -140,10 +133,11 @@ func (d *deleScanTestUtils) CreateMirrorCRs(t *testing.T, ctx context.Context) {
 
 	if itms.ResourceVersion != origItms.ResourceVersion {
 		t.Logf("ImageTagMirrorSet %q updated", itmsName)
-		resourcesUpdated = true
+		updated = true
 	}
 
-	if !resourcesUpdated {
+	// If no resources were updated exit early.
+	if !updated {
 		t.Logf("Mirroring resources unchanged")
 		return
 	}
@@ -152,12 +146,53 @@ func (d *deleScanTestUtils) CreateMirrorCRs(t *testing.T, ctx context.Context) {
 	d.waitForNodesToProcessConfigUpdates(t, ctx, machineCfgClient, origPools)
 }
 
+// addCredToOCPGlobalPullSecret will append an entry to the OCP global pull secret,
+// if no change needed returns false, true otherwise.
+// Changes to the OCP global pull secret must be propagated to each node before
+// usage. This method DOES NOT wait for the propagation to complete.
+func (d *deleScanTestUtils) addCredToOCPGlobalPullSecret(t *testing.T, ctx context.Context, newReg string, newDce config.DockerConfigEntry) bool {
+	k8s := createK8sClient(t)
+	ns := "openshift-config"
+	name := "pull-secret"
+
+	secret, err := k8s.CoreV1().Secrets(ns).Get(ctx, name, v1.GetOptions{})
+	require.NoError(t, err)
+
+	key := corev1.DockerConfigJsonKey
+	dataB, ok := secret.Data[key]
+	require.True(t, ok, "expected secret %s to contain key %q", name, key)
+
+	var dockerConfigJSON config.DockerConfigJSON
+	require.NoError(t, json.Unmarshal(dataB, &dockerConfigJSON))
+
+	for reg, dce := range dockerConfigJSON.Auths {
+		if reg == newReg &&
+			dce.Username == newDce.Username &&
+			dce.Password == newDce.Password &&
+			dce.Email == newDce.Email {
+			// No update needed.
+			t.Logf("No change needed to secret %q in namespace %q", name, ns)
+			return false
+		}
+	}
+
+	dockerConfigJSON.Auths[newReg] = newDce
+	dataB, err = json.Marshal(dockerConfigJSON)
+	require.NoError(t, err)
+
+	secret.Data[key] = dataB
+	_, err = k8s.CoreV1().Secrets(ns).Update(ctx, secret, v1.UpdateOptions{FieldManager: ignoreFieldManager})
+	require.NoError(t, err)
+	t.Logf("Updated secret %q in namespace %q", name, ns)
+	return true
+}
+
 // waitForNodesToProcessConfigUpdates polls the status of the cluster machine config pools
 // checking for evidence that the latest configuration changes have been processed and
 // all nodes returned to a ready state.
 func (d *deleScanTestUtils) waitForNodesToProcessConfigUpdates(t *testing.T, ctx context.Context, machineCfgClient *machineconfigurationv1client.MachineconfigurationV1Client, origPools map[string]machineconfigurationv1.MachineConfigPool) {
-	ticker := time.NewTicker(5 * time.Second)
-	t.Logf("Waiting for all the updated configuration to be propagated to all nodes")
+	ticker := time.NewTicker(15 * time.Second)
+	t.Logf("Waiting for changes to be propagated")
 	for {
 		select {
 		case <-ctx.Done():
@@ -167,13 +202,11 @@ func (d *deleScanTestUtils) waitForNodesToProcessConfigUpdates(t *testing.T, ctx
 			require.NoError(t, err)
 
 			d.logMachineConfigPoolsState(t, poolList, origPools)
-
-			// Wait if at least one pool has not yet recognized the updated configuration,
 			if !d.machineConfigPoolsReady(poolList, origPools) {
 				continue
 			}
 
-			t.Logf("All nodes updated with the new mirroring configuration")
+			t.Logf("All nodes are now updated")
 			return
 		}
 	}
@@ -185,10 +218,19 @@ func (d *deleScanTestUtils) logMachineConfigPoolsState(t *testing.T, poolList *m
 
 	sb := &strings.Builder{}
 	w.Init(sb, 0, 0, 1, ' ', tabwriter.AlignRight)
-	fmt.Fprintln(w, "name\torigGen\tnewGen\tstatusGen\ttotNodes\trdyNodes\t")
+	fmt.Fprintln(w, "name\torigGen\tnewGen\tstatusGen\ttotal\tready\tupdated\tdegraded\t")
 	for _, pool := range poolList.Items {
 		name := pool.GetName()
-		fmt.Fprintf(w, "%s\t%d\t%d\t%d\t%d\t%d\t\n", name, origPools[name].Generation, pool.GetGeneration(), pool.Status.ObservedGeneration, pool.Status.MachineCount, pool.Status.ReadyMachineCount)
+		fmt.Fprintf(w, "%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t\n",
+			name,
+			origPools[name].Generation,
+			pool.GetGeneration(),
+			pool.Status.ObservedGeneration,
+			pool.Status.MachineCount,
+			pool.Status.ReadyMachineCount,
+			pool.Status.UpdatedMachineCount,
+			pool.Status.DegradedMachineCount,
+		)
 	}
 	utils.IgnoreError(w.Flush)
 

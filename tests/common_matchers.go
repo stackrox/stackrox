@@ -11,6 +11,27 @@ import (
 	"strings"
 )
 
+// This file contains utilities for finding/detecting specific log lines to help
+// validate expected behaviors that cannot be validated elsewhere, such
+// as StackRox API responses.
+
+func allMatch(reader io.ReadSeeker, matchers ...logMatcher) (ok bool, err error) {
+	for i, matcher := range matchers {
+		_, err := reader.Seek(0, io.SeekStart)
+		if err != nil {
+			return false, fmt.Errorf("could not rewind the reader: %w", err)
+		}
+		ok, err := matcher.Match(reader)
+		if err != nil {
+			return false, fmt.Errorf("matcher %d returned an error: %w", i, err)
+		}
+		if !ok {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
 type logMatcher interface {
 	Match(reader io.ReadSeeker) (bool, error)
 	fmt.Stringer
@@ -20,8 +41,7 @@ type logMatcher interface {
 type multiLineMatcher struct {
 	re           *regexp.Regexp
 	desiredLines int
-	// fromLine represents the line after which to start considering matches
-	fromLine int
+	fromByte     int64
 }
 
 // containsLineMatching returns a simple line-based regex matcher to go with waitUntilLog.
@@ -30,10 +50,10 @@ func containsLineMatching(re *regexp.Regexp) *multiLineMatcher {
 	return &multiLineMatcher{re: re, desiredLines: 1}
 }
 
-// containsLineMatchingAfter mimics containsLineMatching but will only attempt to match
-// after the from line.
-func containsLineMatchingAfter(re *regexp.Regexp, fromLine int) *multiLineMatcher {
-	return &multiLineMatcher{re: re, desiredLines: 1, fromLine: fromLine}
+// containsLineMatchingAfterByte mimics containsLineMatching but will only attempt to match
+// lines that appear after fromByte.
+func containsLineMatchingAfterByte(re *regexp.Regexp, fromByte int64) *multiLineMatcher {
+	return &multiLineMatcher{re: re, desiredLines: 1, fromByte: fromByte}
 }
 
 // containsMultipleLinesMatching is a line-based regex matcher to go with waitUntilLog
@@ -48,8 +68,14 @@ func (lm *multiLineMatcher) String() string {
 
 func (lm *multiLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 	br := bufio.NewReader(reader)
-	var lineCount int
-	var lineMatchCount int
+
+	if lm.fromByte != 0 {
+		_, err = reader.Seek(lm.fromByte, io.SeekStart)
+		if err != nil {
+			return false, err
+		}
+	}
+
 	for {
 		// We do not care about partial reads, as the things we look for should fit in default buf size.
 		line, _, err := br.ReadLine()
@@ -59,15 +85,8 @@ func (lm *multiLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 		if err != nil {
 			return false, err
 		}
-		lineCount++
-		if lineCount < lm.fromLine {
-			continue
-		}
 		if lm.re.Match(line) {
-			lineMatchCount++
-			if lineMatchCount >= lm.desiredLines {
-				return true, nil
-			}
+			return true, nil
 		}
 	}
 }
@@ -104,19 +123,19 @@ func (lm *notFoundLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) 
 	}
 }
 
-// anyMatcher is a composite matcher to go with waitUntilLog
+// orMatcher is a composite matcher to go with waitUntilLog
 // that will return true when any sub matcher matches.
-type anyMatcher struct {
+type orMatcher struct {
 	matchers []logMatcher
 }
 
-func matchesAny(logMatchers ...logMatcher) *anyMatcher {
-	return &anyMatcher{
+func matchesAny(logMatchers ...logMatcher) *orMatcher {
+	return &orMatcher{
 		matchers: logMatchers,
 	}
 }
 
-func (lm *anyMatcher) String() string {
+func (lm *orMatcher) String() string {
 	sb := strings.Builder{}
 	sb.WriteString("[")
 	for _, m := range lm.matchers {
@@ -130,8 +149,8 @@ func (lm *anyMatcher) String() string {
 	return fmt.Sprintf("matches any of %s", sb.String())
 }
 
-func (lm *anyMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
-	errs := []error{}
+func (lm *orMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
+	var errs []error
 	for _, m := range lm.matchers {
 		_, err := reader.Seek(0, io.SeekStart)
 		if err != nil {
@@ -150,50 +169,4 @@ func (lm *anyMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 	}
 
 	return false, errors.Join(errs...)
-}
-
-// allMatcher is a composite matcher to go with waitUntilLog
-// that will return true when all matchers match.
-type allMatcher struct {
-	matchers []logMatcher
-}
-
-func matchesAll(logMatchers ...logMatcher) *allMatcher {
-	return &allMatcher{
-		matchers: logMatchers,
-	}
-}
-
-func (lm *allMatcher) String() string {
-	sb := strings.Builder{}
-	sb.WriteString("[")
-	for _, m := range lm.matchers {
-		if sb.Len() > 1 {
-			sb.WriteString(", ")
-		}
-		sb.WriteString(m.String())
-	}
-	sb.WriteString("]")
-
-	return fmt.Sprintf("matches all of %s", sb.String())
-}
-
-func (lm *allMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
-	for i, m := range lm.matchers {
-		_, err := reader.Seek(0, io.SeekStart)
-		if err != nil {
-			return false, fmt.Errorf("could not rewind the reader: %w", err)
-		}
-
-		ok, err := m.Match(reader)
-		if err != nil {
-			return false, fmt.Errorf("matcher %d returned an error: %w", i, err)
-		}
-
-		if !ok {
-			return false, nil
-		}
-	}
-
-	return true, nil
 }

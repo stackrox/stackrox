@@ -1,4 +1,3 @@
-# ARG FROM_IMAGE=registry.access.redhat.com/ubi9/ubi-minimal:9.4-1227
 FROM {{index . "image"}}
 
 COPY --chmod=755 ./sleepforever.sh /sleepforever.sh
