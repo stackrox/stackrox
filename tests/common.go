@@ -787,10 +787,12 @@ func getContainer(deployment *appsV1.Deployment, container string) (*coreV1.Cont
 
 // collectLogs collects service logs from a given namespace into a subdirectory that will be gathered by the CI scripts.
 func collectLogs(t *testing.T, ns string, dir string) {
+	start := time.Now()
 	err := exec.Command("../scripts/ci/collect-service-logs.sh", ns, "/tmp/e2e-test-logs/"+dir).Run()
 	if err != nil {
 		t.Logf("Collecting %q logs returned error %s", ns, err)
 	}
+	t.Logf("Log collection took: %s", time.Since(start))
 }
 
 // isOpenshift returns true when the test env is a flavor of OCP, false otherwise.
