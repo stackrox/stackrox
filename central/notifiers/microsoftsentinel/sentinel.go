@@ -49,7 +49,7 @@ func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) e
 		return nil
 	}
 
-	if !s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled() {
+	if !s.AuditLoggingEnabled() {
 		return nil
 	}
 
