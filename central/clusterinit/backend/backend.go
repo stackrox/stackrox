@@ -23,7 +23,7 @@ type InitBundleWithMeta struct {
 	Meta       *storage.InitBundleMeta
 }
 
-// CRS
+// CRS contains a Cluster Registration Secret.
 type CRS struct {
 	CAs  []string `json:"CAs"`
 	Cert string   `json:"cert"`
