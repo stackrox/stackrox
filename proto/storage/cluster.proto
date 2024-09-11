@@ -95,26 +95,17 @@ message AdmissionControllerConfig {
   bool enforce_on_updates = 5;
 }
 
-enum CollectorClusterLevelRuntimeFeature {
-  PROCESSES = 0;
-  NETWORK_ENDPOINTS = 2;
-}
-
-enum CollectorNamespaceLevelRuntimeFeature {
-  NETWORK_CONNECTIONS = 0;
-}
-
 message ProcessStatus {
-  bool enabled = 1;
+  bool process_enabled = 1;
 }
 
 message NetworkConnectionStatus {
-  bool enabled = 1;
+  bool network_connection_enabled = 1;
   bool aggregate_external = 2;
 }
 
 message NetworkEndpointStatus {
-  bool enabled = 1;
+  bool network_endpoint_enabled = 1;
   bool processes_listening_on_port = 2;
 }
 
@@ -126,34 +117,19 @@ message CollectorFeatureStatus {
   }
 }
 
-message CollectorClusterLevelConfig {
-  ProcessStatus process_status = 1;
-  NetworkEndpointStatus network_endpoint_status = 2;
-}
-
 message NamespaceRule {
   string namespace = 1;
   storage.MatchType match_type = 2;
 }
 
-message CollectorNamespaceLevelFeatureConfig {
+message CollectorConfig {
   message RuntimeRule {
     repeated NamespaceRule namespace_selection = 1;
     CollectorFeatureStatus status = 2;
   }
 
-  CollectorNamespaceLevelRuntimeFeature feature = 1;
-  CollectorFeatureStatus default_status = 2;
-  repeated RuntimeRule rules = 3;
-}
-
-message CollectorNamespaceLevelConfig {
-  repeated CollectorNamespaceLevelFeatureConfig feature_config = 1;
-}
-
-message CollectorConfig {
-  CollectorClusterLevelConfig collector_cluster_level_config = 1;
-  CollectorNamespaceLevelConfig collector_namespace_level_config = 2;
+  repeated CollectorFeatureStatus cluster_level_statuses = 1;
+  repeated RuntimeRule rules = 2;
 }
 
 message TolerationsConfig {

@@ -350,7 +350,7 @@
         }
       }
     },
-    "CollectorNamespaceLevelFeatureConfigRuntimeRule": {
+    "CollectorConfigRuntimeRule": {
       "type": "object",
       "properties": {
         "namespaceSelection": {
@@ -727,25 +727,22 @@
       ],
       "default": "UNSET_COLLECTION"
     },
-    "storageCollectorClusterLevelConfig": {
-      "type": "object",
-      "properties": {
-        "processStatus": {
-          "$ref": "#/definitions/storageProcessStatus"
-        },
-        "networkEndpointStatus": {
-          "$ref": "#/definitions/storageNetworkEndpointStatus"
-        }
-      }
-    },
     "storageCollectorConfig": {
       "type": "object",
       "properties": {
-        "collectorClusterLevelConfig": {
-          "$ref": "#/definitions/storageCollectorClusterLevelConfig"
+        "clusterLevelStatuses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageCollectorFeatureStatus"
+          }
         },
-        "collectorNamespaceLevelConfig": {
-          "$ref": "#/definitions/storageCollectorNamespaceLevelConfig"
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/CollectorConfigRuntimeRule"
+          }
         }
       }
     },
@@ -791,43 +788,6 @@
         }
       },
       "description": "CollectorHealthInfo carries data about collector deployment but does not include collector health status derived from this data.\nAggregated collector health status is not included because it is derived in central and not in the component that\nfirst reports CollectorHealthInfo (sensor)."
-    },
-    "storageCollectorNamespaceLevelConfig": {
-      "type": "object",
-      "properties": {
-        "featureConfig": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageCollectorNamespaceLevelFeatureConfig"
-          }
-        }
-      }
-    },
-    "storageCollectorNamespaceLevelFeatureConfig": {
-      "type": "object",
-      "properties": {
-        "feature": {
-          "$ref": "#/definitions/storageCollectorNamespaceLevelRuntimeFeature"
-        },
-        "defaultStatus": {
-          "$ref": "#/definitions/storageCollectorFeatureStatus"
-        },
-        "rules": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/CollectorNamespaceLevelFeatureConfigRuntimeRule"
-          }
-        }
-      }
-    },
-    "storageCollectorNamespaceLevelRuntimeFeature": {
-      "type": "string",
-      "enum": [
-        "NETWORK_CONNECTIONS"
-      ],
-      "default": "NETWORK_CONNECTIONS"
     },
     "storageCompleteClusterConfig": {
       "type": "object",
@@ -912,7 +872,7 @@
     "storageNetworkConnectionStatus": {
       "type": "object",
       "properties": {
-        "enabled": {
+        "networkConnectionEnabled": {
           "type": "boolean"
         },
         "aggregateExternal": {
@@ -923,7 +883,7 @@
     "storageNetworkEndpointStatus": {
       "type": "object",
       "properties": {
-        "enabled": {
+        "networkEndpointEnabled": {
           "type": "boolean"
         },
         "processesListeningOnPort": {
@@ -955,7 +915,7 @@
     "storageProcessStatus": {
       "type": "object",
       "properties": {
-        "enabled": {
+        "processEnabled": {
           "type": "boolean"
         }
       }
