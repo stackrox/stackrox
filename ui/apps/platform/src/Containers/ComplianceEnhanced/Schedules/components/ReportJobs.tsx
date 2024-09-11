@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardBody } from '@patternfly/react-core';
+import { Card, CardBody, Divider } from '@patternfly/react-core';
 
 import {
     ComplianceScanConfigurationStatus,
@@ -58,15 +58,16 @@ function ReportJobs({ scanConfig }: ReportJobsProps) {
             renderExpandableRowContent={(snapshot: ComplianceScanSnapshot) => {
                 return (
                     <>
-                        <Card>
+                        <Card isFlat>
                             <CardBody>
                                 <JobDetails
                                     reportStatus={snapshot.reportStatus}
                                     isDownloadAvailable={snapshot.isDownloadAvailable}
                                 />
+                                <Divider component="div" className="pf-v5-u-my-md" />
+                                <ConfigDetails scanConfig={snapshot.scanConfig} />
                             </CardBody>
                         </Card>
-                        <ConfigDetails scanConfig={snapshot.scanConfig} />
                     </>
                 );
             }}

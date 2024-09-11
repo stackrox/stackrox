@@ -23,7 +23,7 @@ function JobDetails({ reportStatus, isDownloadAvailable }: JobDetailsProps): Rea
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem>
-                <Title headingLevel="h3">Job details</Title>
+                <Title headingLevel="h2">Job details</Title>
             </FlexItem>
             <FlexItem flex={{ default: 'flexNone' }}>
                 <DescriptionList

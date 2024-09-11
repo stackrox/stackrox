@@ -2,8 +2,6 @@ import React from 'react';
 import {
     Alert,
     Bullseye,
-    Card,
-    CardBody,
     DescriptionListDescription,
     DescriptionListGroup,
     DescriptionListTerm,
@@ -54,56 +52,47 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
 
     if (scanConfig) {
         return (
-            <Card>
-                <CardBody>
-                    <Flex
-                        direction={{ default: 'column' }}
-                        spaceItems={{ default: 'spaceItemsLg' }}
-                    >
-                        <ScanConfigParametersView
-                            headingLevel={headingLevel}
-                            scanName={scanConfig.scanName}
-                            description={scanConfig.scanConfig.description}
-                            scanSchedule={scanConfig.scanConfig.scanSchedule}
-                        >
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Last run</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {scanConfig.lastExecutedTime
-                                        ? getTimeWithHourMinuteFromISO8601(
-                                              scanConfig.lastExecutedTime
-                                          )
-                                        : 'Scan is in progress'}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                            <DescriptionListGroup>
-                                <DescriptionListTerm>Last updated</DescriptionListTerm>
-                                <DescriptionListDescription>
-                                    {getTimeWithHourMinuteFromISO8601(scanConfig.lastUpdatedTime)}
-                                </DescriptionListDescription>
-                            </DescriptionListGroup>
-                        </ScanConfigParametersView>
-                        <ScanConfigClustersTable
-                            headingLevel={headingLevel}
-                            clusterScanStatuses={scanConfig.clusterStatus}
-                        />
-                        <ScanConfigProfilesView
-                            headingLevel={headingLevel}
-                            profiles={scanConfig.scanConfig.profiles}
-                        />
-                        {isComplianceReportingEnabled && (
-                            <NotifierConfigurationView
-                                customBodyDefault={getBodyDefault(scanConfig.scanConfig.profiles)}
-                                customSubjectDefault={getSubjectDefault(
-                                    scanConfig.scanName,
-                                    scanConfig.scanConfig.profiles
-                                )}
-                                notifierConfigurations={scanConfig.scanConfig.notifiers}
-                            />
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+                <ScanConfigParametersView
+                    headingLevel={headingLevel}
+                    scanName={scanConfig.scanName}
+                    description={scanConfig.scanConfig.description}
+                    scanSchedule={scanConfig.scanConfig.scanSchedule}
+                >
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Last run</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            {scanConfig.lastExecutedTime
+                                ? getTimeWithHourMinuteFromISO8601(scanConfig.lastExecutedTime)
+                                : 'Scan is in progress'}
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Last updated</DescriptionListTerm>
+                        <DescriptionListDescription>
+                            {getTimeWithHourMinuteFromISO8601(scanConfig.lastUpdatedTime)}
+                        </DescriptionListDescription>
+                    </DescriptionListGroup>
+                </ScanConfigParametersView>
+                <ScanConfigClustersTable
+                    headingLevel={headingLevel}
+                    clusterScanStatuses={scanConfig.clusterStatus}
+                />
+                <ScanConfigProfilesView
+                    headingLevel={headingLevel}
+                    profiles={scanConfig.scanConfig.profiles}
+                />
+                {isComplianceReportingEnabled && (
+                    <NotifierConfigurationView
+                        customBodyDefault={getBodyDefault(scanConfig.scanConfig.profiles)}
+                        customSubjectDefault={getSubjectDefault(
+                            scanConfig.scanName,
+                            scanConfig.scanConfig.profiles
                         )}
-                    </Flex>
-                </CardBody>
-            </Card>
+                        notifierConfigurations={scanConfig.scanConfig.notifiers}
+                    />
+                )}
+            </Flex>
         );
     }
 }

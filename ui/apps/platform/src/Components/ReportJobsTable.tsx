@@ -39,6 +39,7 @@ const onDownload = (snapshot: Snapshot, jobId: string, configName: string) => ()
     const sanitizedFilename = filename.replaceAll(filenameSanitizerRegex, '_');
     return saveFile({
         method: 'get',
+        // @TODO: We may need to allow passing specific endpoints depending on backend
         url: `/api/reports/jobs/download?id=${jobId}`,
         data: null,
         timeout: 300000,
