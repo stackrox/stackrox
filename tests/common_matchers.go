@@ -63,7 +63,7 @@ func containsMultipleLinesMatching(re *regexp.Regexp, desiredLineCount int) *mul
 }
 
 func (lm *multiLineMatcher) String() string {
-	return fmt.Sprintf("contains %d lines matching %q", lm.desiredLines, lm.re)
+	return fmt.Sprintf("contains line(s) matching %q", lm.re)
 }
 
 func (lm *multiLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {

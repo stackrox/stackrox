@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/docker/config"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
@@ -47,7 +48,12 @@ import (
 // is actually used to detect a regression in the force flag???
 //
 // These tests require the following env vars to be set in order to contact ACS/K8s:
-//   ROX_USERNAME, ROX_PASSWORD, API_ENDPOINT, KUBECONFIG
+// - ROX_USERNAME
+// - ROX_PASSWORD
+// - API_ENDPOINT
+// - KUBECONFIG
+// - QUAY_RHACS_ENG_RO_USERNAME
+// - QUAY_RHACS_ENG_RO_PASSWORD
 
 const (
 	deleScanLogLevelEnvVar = "LOGLEVEL"
@@ -103,7 +109,7 @@ type DelegatedScanningSuite struct {
 
 	// origSensorLogLevel is the value of Sensor's log level env var prior to any changes / this suite executing.
 	origSensorLogLevel string
-	remoteCluster      *storage.Cluster
+	remoteCluster      *v1.DelegatedRegistryCluster
 	namespace          string
 	restCfg            *rest.Config
 
@@ -125,6 +131,28 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 
 	ctx := ts.ctx
 
+	// Get a reference to the secured cluster to send delegated scans too, will use this reference throughout the tests.
+	// We check this first because if a valid remote cluster is NOT available all tests in this suite will fail.
+	t.Log("Getting remote stackrox cluster details")
+	envVal, err := ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, env.LocalImageScanningEnabled.EnvVar())
+	require.NoError(t, err)
+
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
+	clustersResp, err := service.GetClusters(ctx, &v1.Empty{})
+	require.NoError(t, err)
+	require.Len(t, clustersResp.GetClusters(), 1, "Expected a single valid cluster for executing delegated scans")
+	cluster := clustersResp.GetClusters()[0]
+	require.True(t, cluster.GetIsValid(),
+		"Local scanning is not enabled in the connected secured cluster (%q is %q on Sensor, cluster id: %q, name: %q, is valid: %t)",
+		env.LocalImageScanningEnabled.EnvVar(),
+		envVal,
+		cluster.GetId(),
+		cluster.GetName(),
+		cluster.GetIsValid(),
+	)
+	ts.remoteCluster = cluster
+
 	// Ensure rhacs-eng repo user/pass is avail.
 	ts.quayROUsername = mustGetEnv(t, "QUAY_RHACS_ENG_RO_USERNAME")
 	ts.quayROPassword = mustGetEnv(t, "QUAY_RHACS_ENG_RO_PASSWORD")
@@ -141,11 +169,6 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
 	t.Log("Waiting for Central/Sensor connection to be ready")
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
-
-	// Get the remote cluster to send delegated scans too, will use this to obtain the cluster name, Id, etc.
-	// Assumes a single cluster test environment.
-	t.Log("Getting remote stackrox cluster details")
-	ts.remoteCluster = mustGetCluster(t, ctx)
 
 	// Pre-clean any roles, permissions, etc. from previous runs, these statements are
 	// in a specific order to ensure successful cleanup.
