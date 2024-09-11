@@ -34,7 +34,7 @@ func ConvertResourceCollection_EmbeddedResourceCollectionFromProto(obj *storage.
 // ConvertResourceCollectionToProto converts Gorm model `Collections` to its protobuf type object
 func ConvertResourceCollectionToProto(m *Collections) (*storage.ResourceCollection, error) {
 	var msg storage.ResourceCollection
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil
