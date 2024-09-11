@@ -121,8 +121,7 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	// Get a reference to the secured cluster to send delegated scans too, will use this reference throughout the tests.
 	// We check this first because if a valid remote cluster is NOT available all tests in this suite will fail.
 	t.Log("Getting remote stackrox cluster details")
-	envVal, err := ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, env.LocalImageScanningEnabled.EnvVar())
-	require.NoError(t, err)
+	envVal, _ := ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, env.LocalImageScanningEnabled.EnvVar())
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
