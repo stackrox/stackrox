@@ -254,8 +254,9 @@ func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData 
 		if customSubject != "" {
 			emailSubject = customSubject
 		}
+		reportName := req.ReportSnapshot.Name
 		err = retryableSendReportResults(reportNotifier, repNotifier.GetEmailConfig().GetMailingLists(),
-			zipData, emailSubject, body)
+			zipData, emailSubject, body, reportName)
 		if err != nil {
 			errorList.AddError(errors.Errorf("Error sending compliance report email for notifier %s: %s",
 				repNotifier.GetEmailConfig().GetNotifierId(), err))
@@ -284,9 +285,9 @@ func formatEmailBodywithDetails(subject string, data *formatBody) (string, error
 }
 
 func retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
-	zippedCSVData *bytes.Buffer, emailSubject, emailBody string) error {
+	zippedCSVData *bytes.Buffer, emailSubject, emailBody, reportName string) error {
 	return retry.WithRetry(func() error {
-		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody)
+		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody, reportName)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),

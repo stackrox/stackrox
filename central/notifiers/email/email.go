@@ -310,9 +310,9 @@ func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	return e.sendEmail(ctx, recipient, subject, body)
 }
 
-// ReportNotify takes in reporting data, a list of intended recipients, email subject and an email message to send out a report.
+// ReportNotify takes in reporting data, a list of intended recipients, email subject, an email message, and the report name to send out a report.
 // Set subject to empty string for v1 report configs.
-func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText string) error {
+func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText, reportName string) error {
 	var from string
 	if e.config.GetFrom() != "" {
 		from = fmt.Sprintf("%s <%s>", e.config.GetFrom(), e.config.GetSender())
@@ -320,7 +320,7 @@ func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer
 		from = e.config.GetSender()
 	}
 
-	msg := BuildReportMessage(recipients, from, subject, messageText, zippedReportData)
+	msg := BuildReportMessage(recipients, from, subject, messageText, zippedReportData, reportName)
 
 	return e.send(ctx, &msg)
 }
@@ -592,9 +592,9 @@ func PlainTextAlert(alert *storage.Alert, uiEndpoint string, mitreStore mitreDS.
 	return notifiers.FormatAlert(alert, alertLink, funcMap, mitreStore)
 }
 
-func BuildReportMessage(recipients []string, from, subject, messageText string, zippedReportData *bytes.Buffer) Message {
+func BuildReportMessage(recipients []string, from, subject, messageText string, zippedReportData *bytes.Buffer, reportName string) Message {
 	if subject == "" {
-		subject = fmt.Sprintf("%s Image Vulnerability Report for %s", branding.GetProductNameShort(), time.Now().Format("02-January-2006"))
+		subject = fmt.Sprintf("%s %s for %s", branding.GetProductNameShort(), reportName, time.Now().Format("02-January-2006"))
 	}
 
 	msg := Message{
@@ -605,9 +605,10 @@ func BuildReportMessage(recipients []string, from, subject, messageText string, 
 		EmbedLogo: true,
 	}
 
+	baseFilename := strings.ReplaceAll(reportName, " ", "_")
 	if zippedReportData != nil {
 		msg.Attachments = map[string][]byte{
-			fmt.Sprintf("%s_Vulnerability_Report_%s.zip", branding.GetProductNameShort(), time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
+			fmt.Sprintf("%s_%s_%s.zip", branding.GetProductNameShort(), baseFilename, time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
 		}
 	}
 
