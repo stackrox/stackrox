@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/central/notifiers/microsoftsentinel/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/random"
+	"github.com/stackrox/rox/pkg/size"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -159,8 +161,9 @@ func (suite *SentinelTestSuite) TestAuditTestAlert() {
 	config.GetMicrosoftSentinel().AuditLogDcrConfig.Enabled = false
 
 	notifier := &sentinel{
-		azlogsClient: suite.mockAzureClient,
-		notifier:     config,
+		azlogsClient:         suite.mockAzureClient,
+		notifier:             config,
+		azureMaxLogFieldSize: azureFieldSizeLimit,
 	}
 
 	testAlert := notifier.getTestAlert()
@@ -169,7 +172,7 @@ func (suite *SentinelTestSuite) TestAuditTestAlert() {
 
 	suite.mockAzureClient.EXPECT().Upload(gomock.Any(), alertDcrID, alertStreamName, bytesToSend, gomock.Any()).Times(1)
 
-	notifierErr := notifier.Test(context.TODO())
+	notifierErr := notifier.Test(context.Background())
 	suite.Require().Nil(notifierErr)
 }
 
@@ -188,7 +191,7 @@ func (suite *SentinelTestSuite) TestTestAuditLogMessage() {
 
 	suite.mockAzureClient.EXPECT().Upload(gomock.Any(), auditDcrID, auditStreamName, bytesToSend, gomock.Any()).Times(1)
 
-	notifierErr := notifier.Test(context.TODO())
+	notifierErr := notifier.Test(context.Background())
 	suite.Require().Nil(notifierErr)
 }
 
@@ -201,7 +204,27 @@ func (suite *SentinelTestSuite) TestAuditLogEnabled() {
 
 	notifier.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().Enabled = false
 	suite.Assert().False(notifier.AuditLoggingEnabled())
+}
 
+func (suite *SentinelTestSuite) TestFieldSizeLimitReturnsAnError() {
+	notifier := &sentinel{
+		azlogsClient:         suite.mockAzureClient,
+		notifier:             getNotifierConfig(),
+		azureMaxLogFieldSize: azureFieldSizeLimit,
+	}
+
+	// Generate a random string and add it to the alert struct to exceed to configured size limit
+	randString, err := random.GenerateString(65*size.KB, random.AlphanumericCharacters)
+	if err != nil {
+		suite.Require().NoError(err)
+	}
+
+	testAlert := notifier.getTestAlert()
+	testAlert.Namespace = randString
+
+	err = notifier.AlertNotify(context.Background(), testAlert)
+	suite.Require().Error(err)
+	suite.Assert().ErrorContains(err, "message exceeds 65536 bytes, got 66560 bytes.")
 }
 
 func getNotifierConfig() *storage.Notifier {
