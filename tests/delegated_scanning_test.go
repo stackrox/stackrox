@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -115,6 +116,8 @@ type DelegatedScanningSuite struct {
 
 	quayROUsername string
 	quayROPassword string
+
+	failureHandled atomic.Bool
 }
 
 func TestDelegatedScanning(t *testing.T) {
@@ -122,6 +125,9 @@ func TestDelegatedScanning(t *testing.T) {
 }
 
 func (ts *DelegatedScanningSuite) SetupSuite() {
+	// Ensure final failure is handled
+	ts.T().Cleanup(ts.handleFailure)
+
 	ts.KubernetesSuite.SetupSuite()
 	ts.namespace = namespaces.StackRox
 
@@ -184,13 +190,6 @@ func (ts *DelegatedScanningSuite) TearDownSuite() {
 	ctx := ts.cleanupCtx
 	ns := ts.namespace
 
-	// Collect logs if any test failed, do this first in case other tear down tasks clear logs via pod restarts.
-	if t.Failed() {
-		ts.logf("Test failed. Collecting k8s artifacts before cleanup.")
-		// TODO: DAVE uncomment me before PR review
-		// collectLogs(t, ts.namespace, "delegated-scanning-failure")
-	}
-
 	revokeAPIToken(t, ctx, deleScanAPITokenName)
 	deleteRole(t, ctx, deleScanRoleName)
 	deletePermissionSet(t, ctx, deleScanPermissionSetName)
@@ -208,6 +207,27 @@ func (ts *DelegatedScanningSuite) TearDownSuite() {
 	}
 
 	ts.cancel()
+}
+
+// handleFailure is a catch all for handling test suite failures, invoked via t.Cleanup in SetupSuite AND
+// as part of TearDownSuite. We cannot do this cleanup solely in TearDownSuite because a failure in SetupSuite
+// prevents TearDownSuite from executing. Subsequent invocations after the first will be no-ops.
+//
+// Initial use case for this is to ensure that logs are captured on any suite failures.
+//
+// TODO: is it better to handle log captures after each individual test, since each test may
+// trigger pod restarts / make changes that may wipe logs.
+func (ts *DelegatedScanningSuite) handleFailure() {
+	if ts.failureHandled.Swap(true) {
+		ts.T().Log("Failure already handled")
+		return
+	}
+
+	t := ts.T()
+	if t.Failed() {
+		ts.logf("Test failed. Collecting k8s artifacts before cleanup.")
+		collectLogs(t, ts.namespace, "delegated-scanning-failure")
+	}
 }
 
 // TestDelegatedScanning_Config verifies that changes made to the delegated registry config
