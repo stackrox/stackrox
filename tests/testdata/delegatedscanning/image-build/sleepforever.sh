@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# This testing script runs forever and terminates gracefully when SIGINT recieved.
+# This testing script runs forever and terminates gracefully.
 
 die_func() {
     echo
     echo
-    echo "SIGINT caught, exiting"
+    echo "SIG caught, exiting"
     exit 1
 }
 
-trap die_func SIGINT
+trap die_func TERM INT
 
 echo "Sleeping forever... (SIGINT or Ctrl-C to exit)"
 
-sleep inf
+sleep inf && wait
