@@ -161,8 +161,9 @@ func (suite *SentinelTestSuite) TestAuditTestAlert() {
 	config.GetMicrosoftSentinel().AuditLogDcrConfig.Enabled = false
 
 	notifier := &sentinel{
-		azlogsClient: suite.mockAzureClient,
-		notifier:     config,
+		azlogsClient:         suite.mockAzureClient,
+		notifier:             config,
+		azureMaxLogFieldSize: azureFieldSizeLimit,
 	}
 
 	testAlert := notifier.getTestAlert()
@@ -209,7 +210,7 @@ func (suite *SentinelTestSuite) TestFieldSizeLimitReturnsAnError() {
 	notifier := &sentinel{
 		azlogsClient:         suite.mockAzureClient,
 		notifier:             getNotifierConfig(),
-		azureMaxLogFieldSize: 64 * size.KB,
+		azureMaxLogFieldSize: azureFieldSizeLimit,
 	}
 
 	// Generate a random string and add it to the alert struct to exceed to configured size limit
