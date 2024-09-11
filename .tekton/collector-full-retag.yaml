@@ -25,8 +25,7 @@ spec:
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
-    # TODO(ROX-24530): return expiration for non-released images to 13w
-    value: '52w'
+    value: '13w'
   - name: output-image-repo
     value: quay.io/rhacs-eng/collector
   - name: base-image-tag-makefile-target
@@ -37,9 +36,8 @@ spec:
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-24468): Enable hermetic builds for retagging
-  # - name: hermetic
-  #   value: 'true'
+  - name: hermetic
+    value: 'true'
   # No language dependencies are required for retagging builds.
   - name: prefetch-input
     value: ''
@@ -61,8 +59,8 @@ spec:
   taskRunSpecs:
 
   timeouts:
-    # The tasks regularly takes 1h to finish.
-    tasks: 1h
+    # Retagging pipeline should be quick-ish.
+    tasks: 30m
     # Reserve time for final tasks to run.
     finally: 10m
-    pipeline: 1h10m
+    pipeline: 40m
