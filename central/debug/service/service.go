@@ -901,16 +901,15 @@ func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
 	}
 
 	if values.Get("database-only") == "true" {
-		opts = &debugDumpOptions{
-			logs:              localLogs,
-			telemetryMode:     noTelemetry,
-			withCPUProfile:    false,
-			withLogImbue:      false,
-			withAccessControl: false,
-			withCentral:       false,
-			withNotifiers:     false,
-			withDBOnly:        true,
-		}
+		log.Info("SHREWS -- database-only is set to true")
+		opts.logs = localLogs
+		opts.telemetryMode = noTelemetry
+		opts.withCPUProfile = false
+		opts.withLogImbue = false
+		opts.withAccessControl = false
+		opts.withCentral = false
+		opts.withNotifiers = false
+		opts.withDBOnly = true
 	}
 
 	return nil
