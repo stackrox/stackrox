@@ -54,9 +54,10 @@ func (i *indexerMetadataStore) Init(ctx context.Context) ([]string, error) {
 func (i *indexerMetadataStore) StoreManifest(ctx context.Context, manifestID string, expiration time.Time) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.StoreManifest")
 
-	const insertManifest = `INSERT INTO manifest_metadata (manifest_id, expiration) VALUES 
-								($1, $2)
-								ON CONFLICT (manifest_id) DO UPDATE SET expiration = $2`
+	const insertManifest = `
+		INSERT INTO manifest_metadata (manifest_id, expiration) VALUES 
+			($1, $2)
+		ON CONFLICT (manifest_id) DO UPDATE SET expiration = $2`
 
 	_, err := i.pool.Exec(ctx, insertManifest, manifestID, expiration.UTC())
 	if err != nil {
