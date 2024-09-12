@@ -40,6 +40,7 @@ func init() {
 				"exceptionCount(requestStatus: [String]): Int!",
 				"images(pagination: Pagination): [Image!]!",
 				"topCVSS: Float!",
+				"cvePublishedDate: Time",
 			}),
 		schema.AddQuery("imageCVECount(query: String): Int!"),
 		schema.AddQuery("imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!"),
@@ -187,6 +188,16 @@ func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]Image
 
 func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context) *graphql.Time {
 	ts := resolver.data.GetFirstDiscoveredInSystem()
+	if ts == nil {
+		return nil
+	}
+	return &graphql.Time{
+		Time: *ts,
+	}
+}
+
+func (resolver *imageCVECoreResolver) CVEPublishedDate(_ context.Context) *graphql.Time {
+	ts := resolver.data.GetPublishDate()
 	if ts == nil {
 		return nil
 	}
