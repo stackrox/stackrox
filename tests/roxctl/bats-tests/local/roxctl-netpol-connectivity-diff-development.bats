@@ -261,7 +261,7 @@ diff-type: added, source: {ingress-controller}, destination: zeroday/zeroday[Dep
     # partial is used to filter WARN and INFO messages
     assert_line --regexp "INFO:.*Found connections diffs"
     assert_output --partial 'digraph {'
-    assert_output --partial '"backend/checkout[Deployment]" -> "backend/notification[Deployment]" [label="TCP 8080" color="grey" fontcolor="grey"]'
+    assert_output --partial '"backend/checkout[Deployment]" -> "backend/notification[Deployment]" [label="TCP 8080" color="grey" fontcolor="grey" weight=0.5]'
 }
 
 @test "roxctl-development netpol connectivity diff generates conns diff report between resources from two directories csv output" {
