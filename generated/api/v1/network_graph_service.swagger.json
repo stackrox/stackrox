@@ -112,6 +112,12 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "egressOnly",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -148,6 +154,54 @@
             "schema": {
               "$ref": "#/definitions/NetworkGraphServiceCreateExternalNetworkEntityBody"
             }
+          }
+        ],
+        "tags": [
+          "NetworkGraphService"
+        ]
+      }
+    },
+    "/v1/networkgraph/cluster/{clusterId}/externalentities/{deploymentId}": {
+      "get": {
+        "operationId": "NetworkGraphService_GetExternalNetworkEntities2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetExternalNetworkEntitiesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "deploymentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "egressOnly",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [

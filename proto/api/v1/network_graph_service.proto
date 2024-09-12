@@ -66,6 +66,7 @@ message GetExternalNetworkEntitiesRequest {
   string cluster_id = 1;
   string query = 2;
   string deployment_id = 3;
+  bool egress_only = 4;
 }
 
 message GetExternalNetworkEntitiesResponse {
@@ -81,8 +82,15 @@ service NetworkGraphService {
     option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}"};
   }
 
-  rpc GetExternalNetworkEntities(GetExternalNetworkEntitiesRequest) returns (GetExternalNetworkEntitiesResponse) {
-    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities"};
+  rpc GetExternalNetworkEntities(GetExternalNetworkEntitiesRequest)
+      returns (GetExternalNetworkEntitiesResponse) {
+    option (google.api.http) = {
+      get : "/v1/networkgraph/cluster/{cluster_id}/externalentities"
+      additional_bindings {
+        get : "/v1/networkgraph/cluster/{cluster_id}/externalentities/"
+              "{deployment_id}"
+      }
+    };
   }
 
   rpc CreateExternalNetworkEntity(CreateNetworkEntityRequest) returns (storage.NetworkEntity) {

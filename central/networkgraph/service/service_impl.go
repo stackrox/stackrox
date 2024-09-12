@@ -95,10 +95,72 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v1.GetExternalNetworkEntitiesRequest) (*v1.GetExternalNetworkEntitiesResponse, error) {
+	if request.GetDeploymentId() != "" {
+		return s.getExternalEntitiesByDeployment(ctx, request)
+	}
+	return s.getExternalEntities(ctx, request)
+}
+
+func (s *serviceImpl) getExternalEntitiesByDeployment(ctx context.Context, request *v1.GetExternalNetworkEntitiesRequest) (*v1.GetExternalNetworkEntitiesResponse, error) {
+	// Temporarily elevate permissions to obtain all network flows in cluster.
+	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph),
+			sac.ClusterScopeKeys(request.GetClusterId())))
+
+	flowStore, err := s.getFlowStore(networkGraphGenElevatedCtx, request.GetClusterId())
+	if err != nil {
+		return nil, err
+	}
+
+	flows, err := flowStore.GetFlowsForDeployment(ctx, request.GetDeploymentId(), false)
+	if err != nil {
+		return nil, err
+	}
+
+	entities := make([]*storage.NetworkEntity, 0, len(flows))
+	for _, flow := range flows {
+		props := flow.GetProps()
+		if request.GetEgressOnly() {
+			if props.GetSrcEntity().GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
+				continue
+			}
+		}
+
+		entity := &storage.NetworkEntity{}
+		src, dest := props.GetSrcEntity(), props.GetDstEntity()
+		var to_send *storage.NetworkEntityInfo
+
+		if src.GetType() == storage.NetworkEntityInfo_DEPLOYMENT {
+			to_send = dest
+		} else {
+			to_send = src
+		}
+
+		if to_send.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			entity, _, err = s.entities.GetEntity(ctx, to_send.GetId())
+
+			if err != nil {
+				return nil, err
+			}
+
+			entities = append(entities, entity)
+		}
+	}
+
+	return &v1.GetExternalNetworkEntitiesResponse{
+		Entities: entities,
+	}, nil
+}
+
+func (s *serviceImpl) getExternalEntities(ctx context.Context, request *v1.GetExternalNetworkEntitiesRequest) (*v1.GetExternalNetworkEntitiesResponse, error) {
 	query, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+
+	log.Info("Deployment: ", request.GetDeploymentId())
 
 	query, _ = search.FilterQueryWithMap(query, schema.NetworkEntitiesSchema.OptionsMap)
 	pred, err := netEntityPredFactory.GeneratePredicate(query)
