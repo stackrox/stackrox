@@ -17,22 +17,25 @@ import (
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/docker/config"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/ternary"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
 
-// Delegated Scanning tests that verify the expected behavior for scans executed in
+// Delegated Scanning tests verify the expected behavior for scans executed in
 // the secured cluster(s).
 //
 // These tests should NOT be run in parallel with other tests.  Changes are made to
@@ -41,20 +44,15 @@ import (
 //
 // These tests DO NOT validate that scan results contain specific packages or vulnerabilities,
 // (we rely on the scanner specific tests for that). These tests instead focus on the foundational
-// capabilities of delegated scanning to index images in Secured Clusters, and match
-// any vulnerabilities via Central Services.
-//
-// All scans are executed with the `force` flag to ensure cache's are bypassed.
-// TODO: perhaps remove this and add a test without the force flag to ensure that the cache
-// is actually used to detect a regression in the force flag???
+// capabilities of delegating scans to Secured Clusters.
 //
 // These tests require the following env vars to be set in order to contact ACS/K8s:
-// - ROX_USERNAME
-// - ROX_PASSWORD
-// - API_ENDPOINT
-// - KUBECONFIG
-// - QUAY_RHACS_ENG_RO_USERNAME
-// - QUAY_RHACS_ENG_RO_PASSWORD
+// - API_ENDPOINT               - location of the stackrox API.
+// - ROX_USERNAME               - for admin access to the stackrox API.
+// - ROX_PASSWORD               - for admin access to the stackrox API.
+// - KUBECONFIG                 - for inspecting logs, creating deploys, etc.
+// - QUAY_RHACS_ENG_RO_USERNAME - for reading quay.io/rhacs-eng images.
+// - QUAY_RHACS_ENG_RO_PASSWORD - for reading quay.io/rhacs-eng images.
 
 const (
 	deleScanLogLevelEnvVar = "LOGLEVEL"
@@ -75,9 +73,8 @@ const (
 )
 
 var (
-	// anonTestImageStr references an image that does not require auth to access and is small.
-	// This image was chosen so that scans are fast (hence the small image size).
-	anonTestImageStr = "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194"
+	// deleScanTestImageStr references an image that is small (scans fast) and does not require auth.
+	deleScanTestImageStr = "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194"
 
 	denyAllAccessScope  = accesscontrol.DefaultAccessScopeIDs[accesscontrol.DenyAllAccessScope]
 	allowAllAccessScope = accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope]
@@ -99,6 +96,9 @@ type DelegatedScanningSuite struct {
 	quayROPassword string
 
 	failureHandled atomic.Bool
+
+	// ocpInternalImageStr is the name of the image that was created in the OCP internal registry during setup.
+	ocpInternalImageStr string
 }
 
 func TestDelegatedScanning(t *testing.T) {
@@ -159,29 +159,29 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	// Pre-clean any roles, permissions, etc. from previous runs, these statements are
 	// in a specific order to ensure successful cleanup.
 	t.Log("Deleteing resources from previous tests")
-	revokeAPIToken(t, ctx, deleScanAPITokenName)
-	deleteRole(t, ctx, deleScanRoleName)
-	deletePermissionSet(t, ctx, deleScanPermissionSetName)
-	deleteAccessScope(t, ctx, deleScanAccessScopeName)
+	ts.resetAccess(ctx)
+
+	t.Log("Resetting delegated scanning config to default")
+	ts.resetConfig(ctx)
+
+	if isOpenshift() {
+		t.Log("Building and pushing an image to the OCP internal registry")
+		ocpImgBuilder := deleScanTestUtils{restCfg: ts.restCfg}
+		ts.ocpInternalImageStr = ocpImgBuilder.BuildOCPInternalImage(t, ts.ctx, ts.namespace, "dele-scan-test-01", deleScanTestImageStr)
+	}
 }
 
 func (ts *DelegatedScanningSuite) TearDownSuite() {
 	t := ts.T()
 	ctx := ts.cleanupCtx
-	ns := ts.namespace
-
-	revokeAPIToken(t, ctx, deleScanAPITokenName)
-	deleteRole(t, ctx, deleScanRoleName)
-	deletePermissionSet(t, ctx, deleScanPermissionSetName)
-	deleteAccessScope(t, ctx, deleScanAccessScopeName)
 
 	// Reset the log level back to its original value so that other tests are not impacted by the additional logging.
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
 		if ts.origSensorLogLevel != "" {
-			ts.mustSetDeploymentEnvVal(ctx, ns, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, ts.origSensorLogLevel)
+			ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, ts.origSensorLogLevel)
 			t.Logf("Log level reverted back to %q on Sensor", ts.origSensorLogLevel)
 		} else {
-			ts.mustDeleteDeploymentEnvVar(ctx, ns, sensorDeployment, deleScanLogLevelEnvVar)
+			ts.mustDeleteDeploymentEnvVar(ctx, ts.namespace, sensorDeployment, deleScanLogLevelEnvVar)
 			t.Logf("Log level env var removed from Sensor")
 		}
 	}
@@ -195,7 +195,7 @@ func (ts *DelegatedScanningSuite) TearDownSuite() {
 //
 // Initial use case for this is to ensure that logs are captured on any suite failures.
 //
-// TODO: is it better to handle log captures after each individual test, since each test may
+// TODO: is it better to handle log captures after each individual test? since each test may
 // trigger pod restarts / make changes that may wipe logs.
 func (ts *DelegatedScanningSuite) handleFailure() {
 	if ts.failureHandled.Swap(true) {
@@ -428,97 +428,112 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 	})
 }
 
-// TestAdHocScanRequests test delegating image scans via the API using the
-// cluster parameter. The API is used by ad-hoc scanning mechanisms, such as roxctl and
-// Jenkins, and the cluster parameter will take precedence over the delegated scanning config.
-func (ts *DelegatedScanningSuite) TestAdHocScanRequests() {
-	t := ts.T()
+// TestAdHocScans test delegating image scans via the API. The API is
+// used by ad-hoc scanning mechanisms, such as roxctl and Jenkins.
+func (ts *DelegatedScanningSuite) TestAdHocScans() {
 	ctx := ts.ctx
 
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	service := v1.NewImageServiceClient(conn)
+	// For readability.
+	withClusterFlag := true
 
-	scanImgReq := func(imgStr string) *v1.ScanImageRequest {
+	scanImgReq := func(imgStr string, withClusterFlag bool) *v1.ScanImageRequest {
+		cluster := ternary.String(withClusterFlag, ts.remoteCluster.GetId(), "")
 		return &v1.ScanImageRequest{
 			ImageName: imgStr,
 			Force:     true,
-			Cluster:   ts.remoteCluster.GetId(),
+			Cluster:   cluster,
 		}
 	}
+
+	// Verifies under normal conditions can successfully delegate a scan.
+	ts.Run("delegate scan via cluster flag", func() {
+		t := ts.T()
+
+		ts.resetConfig(ctx)
+
+		conn := centralgrpc.GRPCConnectionToCentral(t)
+		ts.executeAndValidateScan(ctx, conn, scanImgReq(deleScanTestImageStr, withClusterFlag))
+	})
+
+	// Verifies under normal conditions can successfully delegate a scan.
+	ts.Run("delegate scan via config", func() {
+		t := ts.T()
+
+		ts.setConfig(ctx, deleScanTestImageStr)
+		t.Cleanup(func() { ts.resetConfig(ctx) })
+
+		conn := centralgrpc.GRPCConnectionToCentral(t)
+		ts.executeAndValidateScan(ctx, conn, scanImgReq(deleScanTestImageStr, !withClusterFlag))
+	})
 
 	// The image write permission is required to scan images, this test uses a token with only image
 	// read permissions, and therefore should fail to scan any image. This test is meant to catch
 	// a past regression where a role with only image read permissions was mistakenly able to scan images.
 	ts.Run("fail to scan image with only image read permission", func() {
 		t := ts.T()
-		// Create a new read only permission set.
-		permissionSetID := mustCreatePermissionSet(t, ctx, &storage.PermissionSet{
+
+		ps := &storage.PermissionSet{
 			Name: deleScanPermissionSetName,
 			ResourceToAccess: map[string]storage.Access{
 				"Image": storage.Access_READ_ACCESS,
 			},
-		})
-		t.Cleanup(func() { deletePermissionSet(t, ctx, permissionSetID) })
-
-		// Create the role for the new permission set.
-		role := &storage.Role{
-			Name:            deleScanRoleName,
-			PermissionSetId: permissionSetID,
-			AccessScopeId:   allowAllAccessScope,
 		}
-		mustCreateRole(t, ctx, role)
-		t.Cleanup(func() { deleteRole(t, ctx, role.GetName()) })
 
-		// Create a token bound to the new role.
-		tokenID, token := mustCreateAPIToken(t, ctx, deleScanAPITokenName, []string{deleScanRoleName})
-		t.Cleanup(func() { revokeAPIToken(t, ctx, tokenID) })
-
-		// Connect to central using the new token.
-		conn := centralgrpc.GRPCConnectionToCentral(t, func(opts *clientconn.Options) {
-			opts.ConfigureTokenAuth(token)
-		})
-		service := v1.NewImageServiceClient(conn)
+		role := &storage.Role{
+			Name:          deleScanRoleName,
+			AccessScopeId: allowAllAccessScope,
+		}
 
 		// Execute the scan.
-		_, err := service.ScanImage(ctx, &v1.ScanImageRequest{
-			ImageName: anonTestImageStr,
-			Force:     true,
-			Cluster:   ts.remoteCluster.GetId(),
-		})
+		conn := ts.getLimitedCentralConn(ctx, ps, role)
+		service := v1.NewImageServiceClient(conn)
+		_, err := service.ScanImage(ctx, scanImgReq(deleScanTestImageStr, withClusterFlag))
 		require.ErrorContains(t, err, "not authorized")
 	})
 
-	ts.Run("baseline delegated scan without auth", func() {
+	ts.Run("scan image with minimal permissions", func() {
+		ps := &storage.PermissionSet{
+			Name: deleScanPermissionSetName,
+			ResourceToAccess: map[string]storage.Access{
+				"Image": storage.Access_READ_WRITE_ACCESS,
+			},
+		}
+
+		role := &storage.Role{
+			Name:          deleScanRoleName,
+			AccessScopeId: allowAllAccessScope,
+		}
+
+		conn := ts.getLimitedCentralConn(ctx, ps, role)
+		ts.executeAndValidateScan(ctx, conn, scanImgReq(deleScanTestImageStr, withClusterFlag))
+	})
+
+	ts.Run("delegate scan image via image watch", func() {
 		t := ts.T()
+
+		// Set the delegated scanning config to delegate scans for the test image.
+		ts.setConfig(ctx, deleScanTestImageStr)
+
+		conn := centralgrpc.GRPCConnectionToCentral(t)
+		service := v1.NewImageServiceClient(conn)
+
+		// Since we cannot 'force' a scan via an image watch, we first delete
+		// the image from Central to help ensure a fresh scan is executed.
+		query := fmt.Sprintf("Image:%s", deleScanTestImageStr)
+		delResp, err := service.DeleteImages(ctx, &v1.DeleteImagesRequest{Query: &v1.RawQuery{Query: query}, Confirm: true})
+		require.NoError(t, err)
+		t.Logf("Num images deleted from query %q: %d", query, delResp.NumDeleted)
+
 		fromByte := ts.getSensorLastLogBytePos(ctx)
 
-		img, err := ts.scanWithRetries(t, ctx, service, scanImgReq(anonTestImageStr))
+		// Setup the image watch
+		resp, err := service.WatchImage(ctx, &v1.WatchImageRequest{Name: deleScanTestImageStr})
 		require.NoError(t, err)
-		ts.validateImageScan(t, anonTestImageStr, img)
+		require.Zero(t, resp.GetErrorType(), "expected no error")
+		require.Equal(t, deleScanTestImageStr, resp.GetNormalizedName())
+		t.Cleanup(func() { _, _ = service.UnwatchImage(ctx, &v1.UnwatchImageRequest{Name: deleScanTestImageStr}) })
 
-		reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, anonTestImageStr)
-		ts.waitUntilLog(ctx, "contain the image scan",
-			containsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
-		)
-	})
-
-	ts.Run("scan image with image write permission", func() {
-	})
-
-	ts.Run("image watch", func() {
-		// t := ts.T()
-		// set config and do image watch
-		// fromLine, err := ts.getNumLogLines(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
-		// require.NoError(t, err)
-		// ts.logf("Only matching sensor logs after line %d from pod %s", fromLine, sensorPod.GetName())
-
-		// // This image was chosen because it requires no auth and is small (no other reason).
-		// service := v1.NewImageServiceClient(conn)
-		// _, err = service.WatchImage(ctx, &v1.WatchImageRequest{Name: anonTestImageStr})
-		// require.NoError(t, err)
-
-		// _, err = service.UnwatchImage(ctx, &v1.UnwatchImageRequest{Name: anonTestImageStr})
-		// assert.NoError(t, err)
+		ts.waitUntilSensorLogsScan(ctx, deleScanTestImageStr, fromByte)
 	})
 
 	ts.Run("scan image from OCP internal registry", func() {
@@ -527,68 +542,78 @@ func (ts *DelegatedScanningSuite) TestAdHocScanRequests() {
 			t.Skip("Skipping test - not an OCP cluster")
 		}
 
-		fromByte := ts.getSensorLastLogBytePos(ctx)
-
-		// Push an to the OCP internal registry.
-		ocpImgBuilder := deleScanTestUtils{restCfg: ts.restCfg}
-		name := "test-01"
-		imgStr := ocpImgBuilder.BuildOCPInternalImage(t, ts.ctx, ts.namespace, name, anonTestImageStr)
-
-		// Scan the image.
-		img, err := service.ScanImage(ctx, scanImgReq(imgStr))
-		require.NoError(t, err)
-		ts.validateImageScan(t, imgStr, img)
-
-		// Verify the request made it to the cluster.
-		reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, imgStr)
-		ts.waitUntilLog(ctx, "contain the image scan",
-			containsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
-		)
+		conn := centralgrpc.GRPCConnectionToCentral(t)
+		ts.executeAndValidateScan(ctx, conn, scanImgReq(ts.ocpInternalImageStr, withClusterFlag))
 	})
 
-	// Create role for just image scanning
-	// Create user that uses that role
-	// Get token for user that uses that role
-	ts.Run("scan image from OCP internal registry with minimally scoped user", func() {
+	// A user delegating a scan to a secured cluster must have access to the namespace
+	// in order to pull the namespace specific secrets needed to scan an image from
+	// the internal OCP image registry.
+	ts.Run("fail to scan image from OCP internal registry if user has no namespace access", func() {
+		t := ts.T()
+		if !isOpenshift() {
+			t.Skip("Skipping test - not an OCP cluster")
+		}
+
+		ps := &storage.PermissionSet{
+			Name: deleScanPermissionSetName,
+			ResourceToAccess: map[string]storage.Access{
+				"Image": storage.Access_READ_WRITE_ACCESS,
+			},
+		}
+
+		role := &storage.Role{
+			Name:          deleScanRoleName,
+			AccessScopeId: denyAllAccessScope,
+		}
+
+		// Execute the scan.
+		conn := ts.getLimitedCentralConn(ctx, ps, role)
+		service := v1.NewImageServiceClient(conn)
+		_, err := ts.scanWithRetries(t, ctx, service, scanImgReq(ts.ocpInternalImageStr, withClusterFlag))
+		require.Error(t, err, "scan should fail when user has no namespace access")
+	})
+
+	// A past regression occurred where only admins were able to delegate scans for images from
+	// the OCP internal registry.
+	ts.Run("scan image from OCP internal registry with minimally scoped access", func() {
 		t := ts.T()
 		if !isOpenshift() {
 			t.Skip("Skipping test - not an OCP cluster")
 		}
 
 		// Make API request using that user (perhaps NOT via GRPC)
-	})
+		ps := &storage.PermissionSet{
+			Name: deleScanPermissionSetName,
+			ResourceToAccess: map[string]storage.Access{
+				"Image": storage.Access_READ_WRITE_ACCESS,
+			},
+		}
 
+		role := &storage.Role{
+			Name:          deleScanRoleName,
+			AccessScopeId: allowAllAccessScope,
+		}
+
+		conn := ts.getLimitedCentralConn(ctx, ps, role)
+		ts.executeAndValidateScan(ctx, conn, scanImgReq(ts.ocpInternalImageStr, withClusterFlag))
+	})
 }
 
 // TestDeploymentScans ...
 func (ts *DelegatedScanningSuite) TestDeploymentScans() {
-	// t := ts.T()
-
-	// setup
-	// set the delegated scanning config to scan images from specific registries/repos
-	// delete any test deployments
-	// delete any images that exist for the test deployments (to reduce flakes)
-
-	// teardown
-	// revert the delegated scanning config, perhaps via defer
-
-	// ts.Run("image watch without auth", func() {
-	//  t := ts.T()
-	// 	fromLine, err := ts.getNumLogLines(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
-	// 	require.NoError(t, err)
-	// 	ts.logf("Only matching sensor logs after line %d from pod %s", fromLine, sensorPod.GetName())
-
-	// 	// This image was chosen because it requires no auth and is small (no other reason).
-	// 	service := v1.NewImageServiceClient(conn)
-	// 	_, err = service.WatchImage(ctx, &v1.WatchImageRequest{Name: anonTestImageStr})
-	// 	require.NoError(t, err)
-
-	// 	_, err = service.UnwatchImage(ctx, &v1.UnwatchImageRequest{Name: anonTestImageStr})
-	// 	assert.NoError(t, err)
-	// })
-	ts.Run("scan deployment for OCP internal registry", func() {})
-	ts.Run("scan deployment all registries", func() {})
-	ts.Run("scan deployment specific registries", func() {})
+	ts.Run("scan deployment for OCP internal registry", func() {
+		t := ts.T()
+		t.SkipNow()
+	})
+	ts.Run("scan deployment all registries", func() {
+		t := ts.T()
+		t.SkipNow()
+	})
+	ts.Run("scan deployment specific registries", func() {
+		t := ts.T()
+		t.SkipNow()
+	})
 }
 
 // TestMirrorScans will setup mirroring on a cluster and validate
@@ -694,25 +719,13 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	}
 	for _, tc := range adhocTCs {
 		ts.Run(tc.desc, func() {
-			t := ts.T()
-			fromByte := ts.getSensorLastLogBytePos(ctx)
-
 			req := &v1.ScanImageRequest{
 				ImageName: tc.imgStr,
 				Force:     true,
 				Cluster:   ts.remoteCluster.GetId(),
 			}
 
-			service := v1.NewImageServiceClient(conn)
-			img, err := ts.scanWithRetries(t, ctx, service, req)
-			require.NoError(t, err)
-			ts.validateImageScan(t, tc.imgStr, img)
-
-			// Verify the request made it to the cluster.
-			reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, tc.imgStr)
-			ts.waitUntilLog(ctx, "contain the image scan",
-				containsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
-			)
+			ts.executeAndValidateScan(ctx, conn, req)
 		})
 	}
 
@@ -767,9 +780,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			require.NoError(t, err)
 			ts.validateImageScan(t, tc.imgStr, img)
 
-			ts.waitUntilLog(ctx, "contain the image scan",
-				containsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, tc.imgStr)), fromByte),
-			)
+			ts.waitUntilSensorLogsScan(ctx, tc.imgStr, fromByte)
 
 			// Only perform teardown on success so that logs can be captured on failure.
 			t.Logf("Tearing down deployment %q", tc.deployName)
@@ -867,12 +878,14 @@ func (ts *DelegatedScanningSuite) waitUntilLog(ctx context.Context, description 
 	ts.KubernetesSuite.waitUntilLog(ctx, ts.namespace, sensorPodLabels, sensorContainer, description, logMatchers...)
 }
 
-// waitUntilLog is a custom wrapper for the delegated scanning tests around the common checkLogsMatch method.
+// checkLogsMatch is a custom wrapper for the delegated scanning tests around the common checkLogsMatch method.
 // This assumes sensor is the log being read.
 func (ts *DelegatedScanningSuite) checkLogsMatch(ctx context.Context, description string, logMatchers ...logMatcher) {
 	ts.KubernetesSuite.checkLogsMatch(ctx, ts.namespace, sensorPodLabels, sensorContainer, description, logMatchers...)
 }
 
+// getSensorLastLogBytePos gets the last byte from the Sensor logs to assist in only searching logs for only 'new'
+// matching lines.
 func (ts *DelegatedScanningSuite) getSensorLastLogBytePos(ctx context.Context) int64 {
 	t := ts.T()
 	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
@@ -884,25 +897,105 @@ func (ts *DelegatedScanningSuite) getSensorLastLogBytePos(ctx context.Context) i
 	return fromByte
 }
 
-// type DaveSuite struct {
-// 	KubernetesSuite
-// }
+// resetConfig resets the delegated scanning config to default value.
+func (ts *DelegatedScanningSuite) resetConfig(ctx context.Context) {
+	t := ts.T()
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 
-// func TestDave(t *testing.T) {
-// 	suite.Run(t, new(DaveSuite))
-// }
+	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
+	_, err := service.UpdateConfig(ctx, &v1.DelegatedRegistryConfig{})
+	require.NoError(t, err)
+}
 
-// func (ts *DaveSuite) TestDoIt() {
-// 	t := ts.T()
-// 	ctx := context.Background()
+// setConfig sets the delegated scanning config to delegate scans to
+// the registry/remote of the provided image.
+func (ts *DelegatedScanningSuite) setConfig(ctx context.Context, imageStr string) {
+	t := ts.T()
 
-// 	thing := deleScanTestUtils{restCfg: getConfig(t)}
-// 	user := mustGetEnv(t, "QUAY_RHACS_ENG_RO_USERNAME")
-// 	pass := mustGetEnv(t, "QUAY_RHACS_ENG_RO_PASSWORD")
-// 	thing.addCredToOCPGlobalPullSecret(t, ctx, "quay.io/rhacs-eng/", config.DockerConfigEntry{
-// 		Username: user,
-// 		Password: pass,
-// 		Email:    "dele-scan-test@example.com",
-// 	})
+	cImage, err := utils.GenerateImageFromString(imageStr)
+	require.NoError(t, err)
 
-// }
+	path := fmt.Sprintf("%s/%s", cImage.GetName().GetRegistry(), cImage.GetName().GetRemote())
+
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
+
+	cfg := &v1.DelegatedRegistryConfig{
+		EnabledFor:       v1.DelegatedRegistryConfig_SPECIFIC,
+		DefaultClusterId: ts.remoteCluster.GetId(),
+		Registries: []*v1.DelegatedRegistryConfig_DelegatedRegistry{
+			{Path: path},
+		},
+	}
+	_, err = service.UpdateConfig(ctx, cfg)
+	require.NoError(t, err)
+}
+
+// resetAccess will revoke any API token and delete roles, permissions sets
+// and access scopes that were created as part of this test suite.
+func (ts *DelegatedScanningSuite) resetAccess(ctx context.Context) {
+	t := ts.T()
+
+	revokeAPIToken(t, ctx, deleScanAPITokenName)
+	deleteRole(t, ctx, deleScanRoleName)
+	deletePermissionSet(t, ctx, deleScanPermissionSetName)
+	deleteAccessScope(t, ctx, deleScanAccessScopeName)
+}
+
+// waitUntilSensorLogsScan will wait until Sensor logs show a successful scan has been completed.
+func (ts *DelegatedScanningSuite) waitUntilSensorLogsScan(ctx context.Context, imageStr string, fromByte int64) {
+	reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, imageStr)
+	regexp.MustCompile(reStr)
+
+	ts.waitUntilLog(ctx, "contain the image scan",
+		containsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
+	)
+}
+
+// getLimitedCentralConn will return a connection to central using a token defined by the provided
+// permission set, role, and access scope. The role.permissionSetId provided will be overridden
+// on execution.
+func (ts *DelegatedScanningSuite) getLimitedCentralConn(ctx context.Context, permissionSet *storage.PermissionSet, role *storage.Role) *grpc.ClientConn {
+	t := ts.T()
+
+	ts.resetAccess(ctx)
+
+	// Create a new permission set.
+	permissionSetID := mustCreatePermissionSet(t, ctx, permissionSet)
+
+	// Create the role for the new permission set.
+	role.PermissionSetId = permissionSetID
+	mustCreateRole(t, ctx, role)
+
+	// Create a token bound to the new role.
+	_, token := mustCreateAPIToken(t, ctx, deleScanAPITokenName, []string{deleScanRoleName})
+
+	// Connect to central using the new token.
+	conn := centralgrpc.GRPCConnectionToCentral(t, func(opts *clientconn.Options) {
+		opts.ConfigureTokenAuth(token)
+	})
+
+	return conn
+}
+
+func (ts *DelegatedScanningSuite) executeAndValidateScan(ctx context.Context, conn *grpc.ClientConn, req *v1.ScanImageRequest) {
+	t := ts.T()
+
+	// Get the last byte in the Sensor log, so that we only search for the
+	// logs AFTER that byte after we execute the scan.  This allows us to
+	// re-use the same image in various tests and should also speed up
+	// the search.
+	fromByte := ts.getSensorLastLogBytePos(ctx)
+
+	// Scan the image via the image service, retrying as needed.
+	service := v1.NewImageServiceClient(conn)
+	img, err := ts.scanWithRetries(t, ctx, service, req)
+	require.NoError(t, err)
+
+	// Validate that the image scan looks 'OK'
+	imgStr := req.GetImageName()
+	ts.validateImageScan(t, imgStr, img)
+
+	// Search the sensor logs for a record of the scan that was just completed
+	ts.waitUntilSensorLogsScan(ctx, imgStr, fromByte)
+}
