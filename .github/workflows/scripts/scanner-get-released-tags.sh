@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Print a JSON containing all scanner vulnerability bundle streams, as directed
-# by the `VULNERABILITY_BUNDLE_VERSION` file.
+# Print a JSON containing all Scanner V4 vulnerability bundle streams,
+# as directed by `scanner/updater/version/VULNERABILITY_BUNDLE_VERSION`.
 
 set -euo pipefail
 
@@ -14,7 +14,7 @@ while read -r ver tag _; do
     version_map[$ver]="$tag"
 done < <(./.github/workflows/scripts/scanner-output-release-versions.sh | jq -r '.versions[] | "\(.version) \(.tag)"')
 
-# Read the versions and their corresponding tags from the VULNERABILITY_BUNDLE_VERSION file.
+# Read the versions and their corresponding tags from `scanner/updater/version/VULNERABILITY_BUNDLE_VERSION`.
 while read -r line; do
     # Skip lines that are comments or empty
     echo "$line" | grep -qE '^\s*(#.*|$)' && continue
@@ -49,4 +49,4 @@ json_output=$(printf "%s," "${json_array[@]}" | sed 's/,$//')
 json_output="[$json_output]"
 
 # Print the final JSON output
-echo "$json_output"
+echo "$json_output" | jq
