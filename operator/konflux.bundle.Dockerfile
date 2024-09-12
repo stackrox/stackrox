@@ -1,8 +1,14 @@
-FROM registry.access.redhat.com/ubi9:latest as builder-runner
-RUN dnf install -y --nodocs --noplugins --refresh --best make git golang findutils python3 jq
+FROM registry.access.redhat.com/ubi9:latest AS ubi-repo-donor
+
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.22 AS builder-runner
+
+# For some reason, openshift-golang-builder 9 comes without any RPM repos in /etc/yum.repos.d/
+# We, however, need to install some packages and so we need to configure RPM repos. The ones for UBI are sufficient.
+COPY --from=ubi-repo-donor /etc/yum.repos.d/ubi.repo /etc/yum.repos.d/ubi.repo
+RUN dnf -y upgrade --nobest && dnf -y install --nodocs --noplugins jq
 
 # Use a new stage to enable caching of the package installations for local development
-FROM builder-runner as builder
+FROM builder-runner AS builder
 
 COPY . /stackrox
 WORKDIR /stackrox/operator
