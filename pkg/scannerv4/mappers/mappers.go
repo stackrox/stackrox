@@ -858,7 +858,7 @@ OUTER:
 // in one particular image. The two versions of the CVE are exactly the same
 // except for the repository name (cpe:/a:redhat:enterprise_linux:8::appstream vs cpe:/o:redhat:enterprise_linux:8::baseos).
 // The entry for this vulnerability as it matched this package in this image may be found in
-// https://access.redhat.com/security/data/oval/v2/RHEL8/rhel-8-including-unpatched.oval.xml.bz2.
+// https://security.access.redhat.com/data/oval/v2/RHEL8/rhel-8-including-unpatched.oval.xml.bz2.
 // After reading the entry in this file, it is clear Claircore matched this vulnerability to this stream's
 // CVE-2019-12900 entry twice (once per matching repository).
 //
