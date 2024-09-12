@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/go-logr/logr"
 	mapkubeapisCommon "github.com/helm/helm-mapkubeapis/pkg/common"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -114,12 +113,12 @@ var _ = Describe("MapKubeAPIsExtension", func() {
 
 				actionConfigGetter, err := helmClient.NewActionConfigGetter(mgr.GetConfig(), mgr.GetRESTMapper())
 				Expect(err).NotTo(HaveOccurred())
-				acfg, err := actionConfigGetter.ActionConfigFor(obj)
+				acfg, err := actionConfigGetter.ActionConfigFor(ctx, obj)
 				Expect(err).NotTo(HaveOccurred())
 				store = acfg.Releases
 				actionClientGetter, err := helmClient.NewActionClientGetter(actionConfigGetter)
 				Expect(err).NotTo(HaveOccurred())
-				ac, err = actionClientGetter.ActionClientFor(obj)
+				ac, err = actionClientGetter.ActionClientFor(ctx, obj)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
