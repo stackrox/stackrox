@@ -106,7 +106,7 @@ message NetworkConnectionStatus {
 
 message NetworkEndpointStatus {
   bool network_endpoint_enabled = 1;
-  bool processes_listening_on_port = 2;
+  bool include_listening_endpoint_processes = 2;
 }
 
 message CollectorFeatureStatus {
@@ -123,7 +123,7 @@ message NamespaceRule {
 }
 
 message CollectorConfig {
-  message RuntimeRule {
+  message CollectorNamespaceConfig {
     repeated NamespaceRule namespace_selection = 1;
     CollectorFeatureStatus status = 2;
   }
