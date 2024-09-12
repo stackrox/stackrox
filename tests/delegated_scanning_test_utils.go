@@ -55,6 +55,49 @@ const (
 // the other e2e tests.
 type deleScanTestUtils struct {
 	restCfg *rest.Config
+
+	apiResourceList []*metav1.APIResourceList
+}
+
+func NewDeleScanTestUtils(t *testing.T, restCfg *rest.Config, apiResourceList []*metav1.APIResourceList) *deleScanTestUtils {
+	utils := &deleScanTestUtils{
+		restCfg:         restCfg,
+		apiResourceList: apiResourceList,
+	}
+
+	return utils
+}
+
+// availMirroringCRs will return true for CRs that are avail per the k8s api resource list.
+func (d *deleScanTestUtils) availMirroringCRs() (icspAvail bool, idmsAvail bool, itmsAvail bool) {
+	icspKey := "operator.openshift.io/v1alpha|imagecontentsourcepolicies"
+	idmsKey := "config.openshift.io/v1|imagedigestmirrorsets"
+	itmsKey := "config.openshift.io/v1|imagetagmirrorsets"
+
+	for _, list := range d.apiResourceList {
+		group := list.GroupVersion
+		for _, resource := range list.APIResources {
+			name := resource.Name
+			key := fmt.Sprintf("%s|%s", group, name)
+
+			if key == icspKey {
+				icspAvail = true
+				continue
+			}
+
+			if key == idmsKey {
+				idmsAvail = true
+				continue
+			}
+
+			if key == itmsKey {
+				itmsAvail = true
+				continue
+			}
+		}
+	}
+
+	return icspAvail, idmsAvail, itmsAvail
 }
 
 // SetupMirrors will add creds to the Global Pull Secret, and create the mirroring CRs
@@ -62,20 +105,29 @@ type deleScanTestUtils struct {
 // were made will wait for changes to be propagated to all nodes.
 // During testing on a 3 master + 2 worker node OCP cluster the average time it took
 // to propagate these changes was between 5-10 minutes.
-func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg string, dce config.DockerConfigEntry) {
+//
+// Will return 3 bools which indicate if the associated mirroring CR was avail via the API
+// and created.
+// 1. ImageContentSourcePolicy
+// 2. ImageDigestMirrorSet
+// 3. ImageTagMirrorSet
+func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg string, dce config.DockerConfigEntry) (icspAvail bool, idmsAvail bool, itmsAvail bool) {
 	start := time.Now()
 	defer func() {
 		t.Logf("Setting up mirrors took:: %v", time.Since(start))
 	}()
 
+	// Identify which mirroring CRs are available for creation.
+	icspAvail, idmsAvail, itmsAvail = d.availMirroringCRs()
+
 	// Instantiate various API clients.
+	machineCfgClient, err := machineconfigurationv1client.NewForConfig(d.restCfg)
+	require.NoError(t, err)
+
 	opClient, err := operatorv1alpha1client.NewForConfig(d.restCfg)
 	require.NoError(t, err)
 
 	cfgClient, err := configv1client.NewForConfig(d.restCfg)
-	require.NoError(t, err)
-
-	machineCfgClient, err := machineconfigurationv1client.NewForConfig(d.restCfg)
 	require.NoError(t, err)
 
 	// Get current status of current machine config pools, this will be used to detect
@@ -87,53 +139,56 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 		origPools[pool.GetName()] = pool
 	}
 
-	// updated will be set to true if any resources have changed, indicating tests will need to wait
-	// for the cluster nodes to be updated.
-	var updated bool
-
 	// Update the OCP global pull secret which k8s needs in order to pull images from authenticated mirrors.
-	updated = d.addCredToOCPGlobalPullSecret(t, ctx, reg, dce)
+	updated := d.addCredToOCPGlobalPullSecret(t, ctx, reg, dce)
 
-	// Create an ImageContentSourcePolicy
-	icspName := "icsp-invalid"
-	t.Logf("Applying ImageContentSourcePolicy %q", icspName)
-	origIcsp, _ := opClient.ImageContentSourcePolicies().Get(ctx, icspName, v1.GetOptions{})
+	if icspAvail {
+		// Create an ImageContentSourcePolicy
+		icspName := "icsp-invalid"
+		t.Logf("Applying ImageContentSourcePolicy %q", icspName)
+		origIcsp, _ := opClient.ImageContentSourcePolicies().Get(ctx, icspName, v1.GetOptions{})
 
-	yamlB := d.renderTemplate(t, "testdata/delegatedscanning/mirrors/icsp.yaml.tmpl", map[string]string{"name": icspName})
-	icsp := new(operatorv1alpha1.ImageContentSourcePolicy)
-	d.applyK8sYamlOrJson(t, ctx, opClient.RESTClient(), "", "imagecontentsourcepolicies", yamlB, icsp)
+		yamlB := d.renderTemplate(t, "testdata/delegatedscanning/mirrors/icsp.yaml.tmpl", map[string]string{"name": icspName})
+		icsp := new(operatorv1alpha1.ImageContentSourcePolicy)
+		d.applyK8sYamlOrJson(t, ctx, opClient.RESTClient(), "", "imagecontentsourcepolicies", yamlB, icsp)
 
-	if icsp.ResourceVersion != origIcsp.ResourceVersion {
-		t.Logf("ImageContentSourcePolicy %q updated", icspName)
-		updated = true
+		if icsp.ResourceVersion != origIcsp.ResourceVersion {
+			t.Logf("ImageContentSourcePolicy %q updated", icspName)
+			updated = true
+		}
 	}
 
-	// Create an ImageDigestMirrorSet
-	idmsName := "idms-invalid"
-	t.Logf("Applying ImageDigestMirrorSet %q", idmsName)
-	origIdms, _ := cfgClient.ImageDigestMirrorSets().Get(ctx, idmsName, v1.GetOptions{})
+	if idmsAvail {
+		// Create an ImageDigestMirrorSet
+		idmsName := "idms-invalid"
+		t.Logf("Applying ImageDigestMirrorSet %q", idmsName)
+		origIdms, _ := cfgClient.ImageDigestMirrorSets().Get(ctx, idmsName, v1.GetOptions{})
 
-	yamlB = d.renderTemplate(t, "testdata/delegatedscanning/mirrors/idms.yaml.tmpl", map[string]string{"name": idmsName})
-	idms := new(configv1.ImageDigestMirrorSet)
-	d.applyK8sYamlOrJson(t, ctx, cfgClient.RESTClient(), "", "imagedigestmirrorsets", yamlB, idms)
+		yamlB := d.renderTemplate(t, "testdata/delegatedscanning/mirrors/idms.yaml.tmpl", map[string]string{"name": idmsName})
+		idms := new(configv1.ImageDigestMirrorSet)
+		d.applyK8sYamlOrJson(t, ctx, cfgClient.RESTClient(), "", "imagedigestmirrorsets", yamlB, idms)
 
-	if idms.ResourceVersion != origIdms.ResourceVersion {
-		t.Logf("ImageDigestMirrorSet %q updated", idmsName)
-		updated = true
+		if idms.ResourceVersion != origIdms.ResourceVersion {
+			t.Logf("ImageDigestMirrorSet %q updated", idmsName)
+			updated = true
+		}
 	}
 
-	// Create an ImageTagMirrorSet
-	itmsName := "itms-invalid"
-	t.Logf("Applying ImageTagMirrorSet %q", itmsName)
-	origItms, _ := cfgClient.ImageTagMirrorSets().Get(ctx, itmsName, v1.GetOptions{})
+	if itmsAvail {
+		// Create an ImageTagMirrorSet
+		itmsName := "itms-invalid"
+		t.Logf("Applying ImageTagMirrorSet %q", itmsName)
+		origItms, _ := cfgClient.ImageTagMirrorSets().Get(ctx, itmsName, v1.GetOptions{})
 
-	yamlB = d.renderTemplate(t, "testdata/delegatedscanning/mirrors/itms.yaml.tmpl", map[string]string{"name": itmsName})
-	itms := new(configv1.ImageTagMirrorSet)
-	d.applyK8sYamlOrJson(t, ctx, cfgClient.RESTClient(), "", "imagetagmirrorsets", yamlB, itms)
+		yamlB := d.renderTemplate(t, "testdata/delegatedscanning/mirrors/itms.yaml.tmpl", map[string]string{"name": itmsName})
+		itms := new(configv1.ImageTagMirrorSet)
+		d.applyK8sYamlOrJson(t, ctx, cfgClient.RESTClient(), "", "imagetagmirrorsets", yamlB, itms)
 
-	if itms.ResourceVersion != origItms.ResourceVersion {
-		t.Logf("ImageTagMirrorSet %q updated", itmsName)
-		updated = true
+		if itms.ResourceVersion != origItms.ResourceVersion {
+			t.Logf("ImageTagMirrorSet %q updated", itmsName)
+			updated = true
+		}
+
 	}
 
 	// If no resources were updated exit early.
@@ -144,6 +199,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 
 	t.Logf("Mirroring resources changed, waiting for cluster nodes to be updated")
 	d.waitForNodesToProcessConfigUpdates(t, ctx, machineCfgClient, origPools)
+	return
 }
 
 // addCredToOCPGlobalPullSecret will append an entry to the OCP global pull secret,

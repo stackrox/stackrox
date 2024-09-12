@@ -621,6 +621,16 @@ func (ks *KubernetesSuite) mustDeleteDeploymentEnvVar(ctx context.Context, names
 	}
 }
 
+// listK8sAPIResources will return a list of all the custom resources that the k8s or OCP API supports.
+func (ks *KubernetesSuite) listK8sAPIResources() []*metaV1.APIResourceList {
+	t := ks.T()
+
+	apiResourceList, err := ks.k8s.Discovery().ServerPreferredResources()
+	require.NoError(t, err)
+
+	return apiResourceList
+}
+
 // mustCreateAPIToken will create a stackrox API token. Returns the token id and value.
 func mustCreateAPIToken(t *testing.T, ctx context.Context, name string, roles []string) (string, string) {
 	require := require.New(t)

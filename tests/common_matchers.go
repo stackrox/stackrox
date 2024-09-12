@@ -58,6 +58,8 @@ func containsLineMatchingAfter(re *regexp.Regexp, fromByte int64) *multiLineMatc
 
 // containsMultipleLinesMatching is a line-based regex matcher to go with waitUntilLog
 // that will return true when the desired number of lines are found matching the reg exp.
+//
+//lint:ignore U1000 unused - utility function that may help future e2e test writers
 func containsMultipleLinesMatching(re *regexp.Regexp, numLines int) *multiLineMatcher {
 	return &multiLineMatcher{re: re, numLines: numLines}
 }
@@ -109,6 +111,8 @@ type notFoundLineMatcher struct {
 }
 
 // containsMultiLinesMatching is a convenience method for creating a not found line matcher.
+//
+//lint:ignore U1000 unused - utility function that may help future e2e test writers
 func containsNoLinesMatching(re *regexp.Regexp) *notFoundLineMatcher {
 	return &notFoundLineMatcher{re: re}
 }
@@ -150,16 +154,20 @@ func (lm *notFoundLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) 
 
 // orMatcher is a composite matcher to go with waitUntilLog
 // that will return true when any sub matcher matches.
+//
+//lint:ignore U1000 unused - utility function that may help future e2e test writers
 type orMatcher struct {
 	matchers []logMatcher
 }
 
+//lint:ignore U1000 unused - utility function that may help future e2e test writers
 func matchesAny(logMatchers ...logMatcher) *orMatcher {
 	return &orMatcher{
 		matchers: logMatchers,
 	}
 }
 
+//lint:ignore U1000 unused - utility function that may help future e2e test writers
 func (lm *orMatcher) String() string {
 	sb := strings.Builder{}
 	sb.WriteString("[")
@@ -174,6 +182,7 @@ func (lm *orMatcher) String() string {
 	return fmt.Sprintf("matches any of %s", sb.String())
 }
 
+//lint:ignore U1000 unused - utility function that may help future e2e test writers
 func (lm *orMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 	var errs []error
 	for _, m := range lm.matchers {
