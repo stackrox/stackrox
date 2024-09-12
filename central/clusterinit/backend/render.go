@@ -38,7 +38,7 @@ const (
 
 	// TODO/IDEA: Depending on Branding use ACS or StackRox?
 	crsHeader = `# This is a StackRox Cluster Registration Secret (CRS).
-# This bundle can be used for setting StackRox secured clusters.
+# It is used for setting up StackRox secured clusters.
 # NOTE: This file contains secret data and needs to be handled and stored accordingly.
 `
 )
