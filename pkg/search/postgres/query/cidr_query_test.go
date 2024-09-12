@@ -9,7 +9,7 @@ import (
 )
 
 type PredicatePair struct {
-	value             string
+	value             interface{}
 	expectedSelection bool
 }
 
@@ -43,6 +43,14 @@ func TestCIDRQuery(t *testing.T) {
 				{
 					value:             "230.127.112.128/25",
 					expectedSelection: true,
+				},
+				{
+					value:             true, // unexpected type
+					expectedSelection: false,
+				},
+				{
+					value:             "invalid",
+					expectedSelection: false,
 				},
 			},
 		},
@@ -78,4 +86,6 @@ func TestCIDRQuery(t *testing.T) {
 			}
 		})
 	}
+
+	assert.False(t, IPNetContainsSubnet(nil, ""))
 }
