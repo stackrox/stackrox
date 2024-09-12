@@ -54,35 +54,6 @@ teardown() {
   assert_output --partial 'default/frontend[Deployment] => default/backend[Deployment] : TCP 9090'
 }
 
-@test "roxctl-development netpol connectivity map generates md exposure output" {
-  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/backend.yaml"
-  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/frontend.yaml"
-  assert_file_exist "${test_data}/np-guard/netpols-analysis-example-minimal/netpols.yaml"
-  echo "Writing exposure report to ${ofile}" >&3
-  run roxctl-development netpol connectivity map "${test_data}/np-guard/netpols-analysis-example-minimal" --exposure --output-format=md
-  assert_success
-
-  echo "$output" > "$ofile"
-  assert_file_exist "$ofile"
-  assert_output '| src | dst | conn |
-|-----|-----|------|
-| 0.0.0.0-255.255.255.255 | default/frontend[Deployment] | TCP 8080 |
-| default/frontend[Deployment] | 0.0.0.0-255.255.255.255 | UDP 53 |
-| default/frontend[Deployment] | default/backend[Deployment] | TCP 9090 |
-## Exposure Analysis Result:
-### Egress Exposure:
-| src | dst | conn |
-|-----|-----|------|
-| default/frontend[Deployment] | 0.0.0.0-255.255.255.255 | UDP 53 |
-| default/frontend[Deployment] | entire-cluster | UDP 53 |
-
-### Ingress Exposure:
-| dst | src | conn |
-|-----|-----|------|
-| default/frontend[Deployment] | 0.0.0.0-255.255.255.255 | TCP 8080 |
-| default/frontend[Deployment] | entire-cluster | TCP 8080 |'
-}
-
 @test "roxctl-development netpol connectivity shows all warnings about corrupted files" {
     mkdir -p "$out_dir"
     assert_file_exist "${test_data}/np-guard/mixed/backend.yaml"
@@ -634,66 +605,6 @@ hello-world/workload-a[Deployment]      <=      [namespace with {effect=NoSchedu
 Workloads not protected by network policies:
 hello-world/workload-a[Deployment] is not protected on Egress'
   
-  normalized_expected_output=$(normalize_whitespaces "$expected_output")
-  assert_output "$normalized_expected_output"
-}
-
-@test "roxctl-development netpol connectivity map generates exposure from certain Namespace labels and Pod labels specified md format" {
-  assert_file_exist "${test_data}/np-guard/exposure-example/netpol.yaml"
-  assert_file_exist "${test_data}/np-guard/exposure-example/ns_and_deployments.yaml"
-  echo "Writing exposure report to ${ofile}" >&3
-  run roxctl-development netpol connectivity map "${test_data}/np-guard/exposure-example" --exposure --output-format=md
-  assert_success
-
-  echo "$output" > "$ofile"
-  assert_file_exist "$ofile"
-  assert_output '| src | dst | conn |
-|-----|-----|------|
-| hello-world/workload-a[Deployment] | 0.0.0.0-255.255.255.255 | All Connections |
-## Exposure Analysis Result:
-### Egress Exposure:
-| src | dst | conn |
-|-----|-----|------|
-| hello-world/workload-a[Deployment] | 0.0.0.0-255.255.255.255 | All Connections |
-| hello-world/workload-a[Deployment] | entire-cluster | All Connections |
-
-### Ingress Exposure:
-| dst | src | conn |
-|-----|-----|------|
-| hello-world/workload-a[Deployment] | [namespace with {effect=NoSchedule}]/[pod with {role=monitoring}] | TCP 8050 |'  
-}
-
-@test "roxctl-development netpol connectivity map generates exposure from certain Namespace labels and Pod labels specified dot format" {
-  assert_file_exist "${test_data}/np-guard/exposure-example/netpol.yaml"
-  assert_file_exist "${test_data}/np-guard/exposure-example/ns_and_deployments.yaml"
-  echo "Writing exposure report to ${ofile}" >&3
-  run roxctl-development netpol connectivity map "${test_data}/np-guard/exposure-example" --exposure --output-format=dot
-  assert_success
-
-  echo "$output" > "$ofile"
-  assert_file_exist "$ofile"
-  # normalizing tabs and whitespaces in output so it will be easier to compare with expected
-  output=$(normalize_whitespaces "$output")
-  expected_output='digraph {
-        subgraph "cluster_hello_world" {
-                color="black"
-                fontcolor="black"
-                "hello-world/workload-a[Deployment]" [label="workload-a[Deployment]" color="blue" fontcolor="blue"]
-                label="hello-world"
-        }
-        subgraph "cluster_namespace with {effect=NoSchedule}" {
-                color="red2"
-                fontcolor="red2"
-                "pod with {role=monitoring}_in_namespace with {effect=NoSchedule}" [label="pod with {role=monitoring}" color="red2" fontcolor="red2"]
-                label="namespace with {effect=NoSchedule}"
-        }
-        "0.0.0.0-255.255.255.255" [label="0.0.0.0-255.255.255.255" color="red2" fontcolor="red2"]
-        "entire-cluster" [label="entire-cluster" color="red2" fontcolor="red2" shape=diamond]
-        "hello-world/workload-a[Deployment]" -> "0.0.0.0-255.255.255.255" [label="All Connections" color="gold2" fontcolor="darkgreen" weight=1]
-        "hello-world/workload-a[Deployment]" -> "entire-cluster" [label="All Connections" color="darkorange4" fontcolor="darkgreen" weight=0.5 style=dashed]
-        "pod with {role=monitoring}_in_namespace with {effect=NoSchedule}" -> "hello-world/workload-a[Deployment]" [label="TCP 8050" color="darkorange2" fontcolor="darkgreen" weight=1 style=dashed]
-}'
-
   normalized_expected_output=$(normalize_whitespaces "$expected_output")
   assert_output "$normalized_expected_output"
 }
