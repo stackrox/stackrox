@@ -160,10 +160,14 @@ jobs:
       run: mkdir -p definitions/${{ env.SCANNER_BUNDLE_VERSION }}
 
     - name: Run Updater (single bundle)
+      env:
+        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ env.SCANNER_BUNDLE_VERSION }}"
 
     - name: Run updater (multi bundle)
+      env:
+        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
@@ -235,10 +239,14 @@ jobs:
       run: mkdir -p definitions/${{ github.event.pull_request.number }}
 
     - name: Run Updater (single bundle)
+      env:
+        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ github.event.pull_request.number }}"
 
     - name: Run updater (multi bundle)
+      env:
+        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
