@@ -478,6 +478,7 @@ func getCentralDBData(ctx context.Context, zipWriter *zipWriter) error {
 	if err := addJSONToZip(zipWriter, "central-db.json", dbDiagnosticData); err != nil {
 		return err
 	}
+
 	statements := stats.GetPGStatStatements(ctx, db, pgStatStatementsMax)
 	if statements.Error != "" {
 		log.Errorw("error retrieving pg_stat_statements", logging.Err(errors.New(statements.Error)))
@@ -632,6 +633,7 @@ type debugDumpOptions struct {
 	clusters               []string
 	since                  time.Time
 	withComplianceOperator bool
+	withDBOnly             bool
 }
 
 func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseWriter, filename string,
@@ -670,6 +672,24 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 		})
 		diagBundleTasks.Go(func(ctx context.Context) error {
 			return getMutex(zipWriter)
+		})
+		diagBundleTasks.Go(func(ctx context.Context) error {
+			return getCentralDBData(ctx, zipWriter)
+		})
+		if opts.withCPUProfile {
+			diagBundleTasks.Go(func(ctx context.Context) error {
+				return getCPU(ctx, zipWriter, cpuProfileDuration)
+			})
+			diagBundleTasks.Go(func(ctx context.Context) error {
+				return zipPrometheusMetrics(ctx, zipWriter, "metrics-2")
+			})
+		}
+	}
+
+	if opts.withDBOnly && !opts.withCentral {
+		diagBundleTasks.Go(func(ctx context.Context) error {
+			return zipPrometheusMetrics(ctx, zipWriter,
+				"metrics-1")
 		})
 		diagBundleTasks.Go(func(ctx context.Context) error {
 			return getCentralDBData(ctx, zipWriter)
@@ -754,7 +774,7 @@ func (s *serviceImpl) writeZippedDebugDump(ctx context.Context, w http.ResponseW
 	log.Info("Finished writing data to the diagnostic bundle")
 
 	// Get logs last to also catch logs made during creation of diag bundle.
-	if opts.withCentral && (opts.logs == localLogs || failureDuringDiagnostics) {
+	if (opts.withCentral || opts.withDBOnly) && (opts.logs == localLogs || failureDuringDiagnostics) {
 		if err := getLogs(zipWriter); err != nil {
 			log.Error(err)
 		}
@@ -878,6 +898,17 @@ func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
 
 	if values.Get("compliance-operator") == "true" {
 		opts.withComplianceOperator = true
+	}
+
+	if values.Get("database-only") == "true" {
+		opts.logs = localLogs
+		opts.telemetryMode = noTelemetry
+		opts.withCPUProfile = false
+		opts.withLogImbue = false
+		opts.withAccessControl = false
+		opts.withCentral = false
+		opts.withNotifiers = false
+		opts.withDBOnly = true
 	}
 
 	return nil
