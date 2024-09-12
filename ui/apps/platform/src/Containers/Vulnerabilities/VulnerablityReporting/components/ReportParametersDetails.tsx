@@ -53,7 +53,7 @@ function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): 
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem>
-                <Title headingLevel="h3">Report parameters</Title>
+                <Title headingLevel="h2">Report parameters</Title>
             </FlexItem>
             <FlexItem flex={{ default: 'flexNone' }}>
                 <DescriptionList

@@ -30,7 +30,7 @@ function NotifierConfigurationView({
         <>
             <Flex direction={{ default: 'column' }}>
                 <FlexItem>
-                    <Title headingLevel="h3">Delivery destinations</Title>
+                    <Title headingLevel="h2">Delivery destinations</Title>
                 </FlexItem>
                 <FlexItem flex={{ default: 'flexNone' }}>
                     {notifierConfigurations.length === 0 ? (
