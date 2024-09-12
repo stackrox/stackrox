@@ -121,7 +121,6 @@ jobs:
     env:
       SCANNER_BUNDLE_VERSION: ${{ matrix.version }}
       ROX_GIT_REF: ${{ matrix.ref }}
-      STACKROX_NVD_ZIP_PATH: nvd.zip
     steps:
     - name: Free up disk space
       shell: bash
@@ -148,7 +147,7 @@ jobs:
       uses: ./.github/actions/download-artifact-with-retry
       with:
         name: nvd
-        path: nvd.zip
+        path: .
 
     - name: Build updater
       run: |
@@ -159,16 +158,24 @@ jobs:
     - name: Create bundle output directory
       run: mkdir -p definitions/${{ env.SCANNER_BUNDLE_VERSION }}
 
-    - name: Run Updater (single bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
+    - name: Sanity check NVD zip
       run: |
+        if [ ! -f ./nvd.zip ]; then
+          echo "nvd.zip not found!"
+          exit 1
+        fi
+
+    - name: Run Updater (single bundle)
+      run: |
+        # Use fully qualified path to refer to the NVD bundle
+        STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
+        export STACKROX_NVD_ZIP_PATH
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ env.SCANNER_BUNDLE_VERSION }}"
 
     - name: Run updater (multi bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
+        STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
+        export STACKROX_NVD_ZIP_PATH
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
 
@@ -190,8 +197,6 @@ jobs:
       - /tmp:/tmp
       - /usr:/mnt/usr
       - /opt:/mnt/opt
-    env:
-      STACKROX_NVD_ZIP_PATH: nvd.zip
     steps:
     - name: Free up disk space
       shell: bash
@@ -227,7 +232,7 @@ jobs:
       uses: ./.github/actions/download-artifact-with-retry
       with:
         name: nvd
-        path: nvd.zip
+        path: .
 
     - name: Build updater
       run: |
@@ -235,19 +240,27 @@ jobs:
         make tag
         make -C scanner bin/updater
 
+    - name: Sanity check NVD zip
+      run: |
+        if [ ! -f ./nvd.zip ]; then
+          echo "nvd.zip not found!"
+          exit 1
+        fi
+
     - name: Create bundle output directory
       run: mkdir -p definitions/${{ github.event.pull_request.number }}
 
     - name: Run Updater (single bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
+        # Use fully qualified path to refer to the NVD bundle
+        STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
+        export STACKROX_NVD_ZIP_PATH
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ github.event.pull_request.number }}"
 
     - name: Run updater (multi bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
+        STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
+        export STACKROX_NVD_ZIP_PATH
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
 
