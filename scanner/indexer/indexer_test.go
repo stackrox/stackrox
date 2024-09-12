@@ -122,10 +122,7 @@ func mockIndexerStore(t *testing.T) mockindexer.Store {
 
 func TestRandomExpiry(t *testing.T) {
 	const iterations = 1000
-	//for i := range iterations {
-	//
-	//}
-	for i := 0; i < iterations; i++ {
+	for range iterations {
 		now := time.Now()
 		sevenDays := now.Add(7 * 24 * time.Hour)
 		thirtyDays := now.Add(30 * 24 * time.Hour)
