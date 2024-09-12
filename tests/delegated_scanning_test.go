@@ -84,10 +84,6 @@ const (
 )
 
 var (
-	// deleScanTestImageStr references an image that is small (scans fast), does not require auth, and
-	// has at least one vulnerability.  This image is used by majority of the scanning tests.
-	deleScanTestImageStr = "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194"
-
 	denyAllAccessScope  = accesscontrol.DefaultAccessScopeIDs[accesscontrol.DenyAllAccessScope]
 	allowAllAccessScope = accesscontrol.DefaultAccessScopeIDs[accesscontrol.UnrestrictedAccessScope]
 )
@@ -124,11 +120,30 @@ type DelegatedScanningSuite struct {
 	// deleScanUtils is a reference to a utility library used to setup variuos aspects of these tests, such as
 	// creating images in the OCP image registry or creating mirroring CRs.
 	deleScanUtils *deleScanTestUtils
+
+	// Images used by tests in this suite in various ways.
+	ubi9Image      deleScanTestImage
+	nginxImage     deleScanTestImage
+	httpdImage     deleScanTestImage
+	memcachedImage deleScanTestImage
 }
 
-// TestDelegatedScanning the entrypoint for all delegated scanning tests.
+// TestDelegatedScanning is the entrypoint for all delegated scanning tests.
 func TestDelegatedScanning(t *testing.T) {
-	suite.Run(t, new(DelegatedScanningSuite))
+	s := new(DelegatedScanningSuite)
+
+	// ubi9Image references an image that is small (scans fast), does not require auth, and
+	// has at least one vulnerability. This image is used by majority of the scanning tests.
+	s.ubi9Image = NewDeleScanTestImage(t, "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194@sha256:73f7dcacb460dad137a58f24668470a5a2e47378838a0190eef0ab532c6e8998")
+
+	// Dockerfiles for these are located at qa-tests-backend/test-images/delegated-scanning/*.
+	// These images were chosen at random.
+	s.nginxImage = NewDeleScanTestImage(t, "quay.io/rhacs-eng/qa:dele-scan-nginx@sha256:68b418b74715000e41a894428bd787442945592486a08d4cbea89a9b4fa03302")
+	s.httpdImage = NewDeleScanTestImage(t, "quay.io/rhacs-eng/qa:dele-scan-httpd@sha256:489576ec07d6d8d64690bedb4cf1eeb366a8f03f8530367c3eee0c71579b5f5e")
+	s.memcachedImage = NewDeleScanTestImage(t, "itms.invalid/rhacs-eng/qa:dele-scan-memcached@sha256:1cf25340014838bef90aa9d19eaef725a0b4986af3c8e8a6be3203c2cef8cb61")
+
+	// Run the test suite.
+	suite.Run(t, s)
 }
 
 func (ts *DelegatedScanningSuite) SetupSuite() {
@@ -192,7 +207,7 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	ts.deleScanUtils = NewDeleScanTestUtils(t, ts.restCfg, ts.listK8sAPIResources())
 	if isOpenshift() {
 		t.Log("Building and pushing an image to the OCP internal registry")
-		ts.ocpInternalImageStr = ts.deleScanUtils.BuildOCPInternalImage(t, ts.ctx, ts.namespace, "dele-scan-test-01", deleScanTestImageStr)
+		ts.ocpInternalImageStr = ts.deleScanUtils.BuildOCPInternalImage(t, ts.ctx, ts.namespace, "dele-scan-test-01", ts.ubi9Image.TagRef())
 	}
 }
 
@@ -223,15 +238,17 @@ func (ts *DelegatedScanningSuite) TearDownSuite() {
 // as part of TearDownSuite. We cannot handle failures solely in TearDownSuite because a failure in SetupSuite
 // prevents TearDownSuite from executing. Subsequent invocations of this method after the first will be no-ops.
 //
-// TODO: move log captures to after individual test, since each test may
+// TODO: move log captures to after each individual test, since each test may
 // make changes that result in logs lost (such as pod restarts).
 func (ts *DelegatedScanningSuite) handleFailure() {
 	if ts.failureHandled.Swap(true) {
-		ts.T().Log("Failure already handled")
 		return
 	}
 
 	t := ts.T()
+
+	ts.T().Log("Handling failures (if any)")
+
 	if t.Failed() {
 		ts.logf("Test failed. Collecting logs before final cleanup.")
 		collectLogs(t, ts.namespace, "delegated-scanning-failure")
@@ -441,7 +458,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 		rii, err := service.PostImageIntegration(ctx, ii)
 		require.NoError(t, err)
 		id := rii.GetId()
-		t.Cleanup(func() { service.DeleteImageIntegration(ctx, &v1.ResourceByID{Id: id}) })
+		t.Cleanup(func() { _, _ = service.DeleteImageIntegration(ctx, &v1.ResourceByID{Id: id}) })
 
 		ts.checkLogsMatch(ctx, "contain the upserted integration",
 			// Requires debug logging.
@@ -459,10 +476,10 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 	// For readability.
 	withClusterFlag := true
 
-	scanImgReq := func(imgStr string, withClusterFlag bool) *v1.ScanImageRequest {
+	scanImgReq := func(imageStr string, withClusterFlag bool) *v1.ScanImageRequest {
 		cluster := ternary.String(withClusterFlag, ts.remoteCluster.GetId(), "")
 		return &v1.ScanImageRequest{
-			ImageName: imgStr,
+			ImageName: imageStr,
 			Force:     true,
 			Cluster:   cluster,
 		}
@@ -475,15 +492,15 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 	ts.Run("delegate scan via cluster flag", func() {
 		ts.resetConfig(ctx)
 
-		ts.executeAndValidateScan(ctx, conn, scanImgReq(deleScanTestImageStr, withClusterFlag))
+		ts.executeAndValidateScan(ctx, conn, scanImgReq(ts.ubi9Image.TagRef(), withClusterFlag))
 	})
 
 	// Verifies under normal conditions can successfully delegate a scan when
 	// the scan destination is set via the delegated scanning config.
 	ts.Run("delegate scan via config", func() {
-		ts.setConfig(ctx, deleScanTestImageStr)
+		ts.setConfig(ctx, ts.ubi9Image.TagRef())
 
-		ts.executeAndValidateScan(ctx, conn, scanImgReq(deleScanTestImageStr, !withClusterFlag))
+		ts.executeAndValidateScan(ctx, conn, scanImgReq(ts.ubi9Image.TagRef(), !withClusterFlag))
 	})
 
 	// Image write permission is required to scan images, this test uses a token with only image
@@ -509,7 +526,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 		// Execute the scan.
 		limitedConn := ts.getLimitedCentralConn(ctx, ps, role)
 		service := v1.NewImageServiceClient(limitedConn)
-		_, err := service.ScanImage(ctx, scanImgReq(deleScanTestImageStr, withClusterFlag))
+		_, err := service.ScanImage(ctx, scanImgReq(ts.ubi9Image.TagRef(), withClusterFlag))
 		require.ErrorContains(t, err, "not authorized")
 	})
 
@@ -530,7 +547,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 		}
 
 		limitedConn := ts.getLimitedCentralConn(ctx, ps, role)
-		ts.executeAndValidateScan(ctx, limitedConn, scanImgReq(deleScanTestImageStr, withClusterFlag))
+		ts.executeAndValidateScan(ctx, limitedConn, scanImgReq(ts.ubi9Image.TagRef(), withClusterFlag))
 	})
 
 	// Create an image watch that results in Secured Cluster initiating the scan.
@@ -538,13 +555,13 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 		t := ts.T()
 
 		// Set the delegated scanning config to delegate scans for the test image.
-		ts.setConfig(ctx, deleScanTestImageStr)
+		ts.setConfig(ctx, ts.ubi9Image.TagRef())
 
 		service := v1.NewImageServiceClient(conn)
 
 		// Since we cannot 'force' a scan via an image watch, we first delete
 		// the image from Central to help ensure a fresh scan is executed.
-		query := fmt.Sprintf("Image:%s", deleScanTestImageStr)
+		query := fmt.Sprintf("Image:%s", ts.ubi9Image.TagRef())
 		delResp, err := service.DeleteImages(ctx, &v1.DeleteImagesRequest{Query: &v1.RawQuery{Query: query}, Confirm: true})
 		require.NoError(t, err)
 		t.Logf("Num images deleted from query %q: %d", query, delResp.NumDeleted)
@@ -552,13 +569,13 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 		fromByte := ts.getSensorLastLogBytePos(ctx)
 
 		// Setup the image watch
-		resp, err := service.WatchImage(ctx, &v1.WatchImageRequest{Name: deleScanTestImageStr})
+		resp, err := service.WatchImage(ctx, &v1.WatchImageRequest{Name: ts.ubi9Image.TagRef()})
 		require.NoError(t, err)
 		require.Zero(t, resp.GetErrorType(), "expected no error")
-		require.Equal(t, deleScanTestImageStr, resp.GetNormalizedName())
-		t.Cleanup(func() { _, _ = service.UnwatchImage(ctx, &v1.UnwatchImageRequest{Name: deleScanTestImageStr}) })
+		require.Equal(t, ts.ubi9Image.TagRef(), resp.GetNormalizedName())
+		t.Cleanup(func() { _, _ = service.UnwatchImage(ctx, &v1.UnwatchImageRequest{Name: ts.ubi9Image.TagRef()}) })
 
-		ts.waitUntilSensorLogsScan(ctx, deleScanTestImageStr, fromByte)
+		ts.waitUntilSensorLogsScan(ctx, ts.ubi9Image.TagRef(), fromByte)
 	})
 
 	// Scan an image from the OCP internal registry
@@ -718,29 +735,20 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	})
 	require.NoError(t, err)
 
+	icspImage := ts.nginxImage.WithReg("icsp.invalid")
+	idmsImage := ts.httpdImage.WithReg("idms.invalid")
+	itmsImage := ts.memcachedImage.WithReg("itms.invalid")
+
 	adhocTCs := []struct {
-		desc   string
-		imgStr string
-		skip   bool
+		desc     string
+		imageStr string
+		skip     bool
 	}{
-		{
-			"Scan ad-hoc image from mirror defined by ImageContentSourcePolicy",
-			// Mirrors to: quay.io/rhacs-eng/qa:dele-scan-nginx
-			"icsp.invalid/rhacs-eng/qa@sha256:68b418b74715000e41a894428bd787442945592486a08d4cbea89a9b4fa03302",
-			!icspAvail,
-		},
-		{
-			"Scan ad-hoc image from mirror defined by ImageDigestMirrorSet",
-			// Mirrors to: quay.io/rhacs-eng/qa:dele-scan-httpd
-			"idms.invalid/rhacs-eng/qa@sha256:489576ec07d6d8d64690bedb4cf1eeb366a8f03f8530367c3eee0c71579b5f5e",
-			!idmsAvail,
-		},
-		{
-			"Scan ad-hoc image from mirror defined by ImageTagMirrorSet",
-			"itms.invalid/rhacs-eng/qa:dele-scan-memcached",
-			!itmsAvail,
-		},
+		{"Scan ad-hoc image from mirror via ImageContentSourcePolicy", icspImage.IDRef(), !icspAvail},
+		{"Scan ad-hoc image from mirror via ImageDigestMirrorSet", idmsImage.IDRef(), !idmsAvail},
+		{"Scan ad-hoc image from mirror via ImageTagMirrorSet", itmsImage.TagRef(), !itmsAvail},
 	}
+
 	for _, tc := range adhocTCs {
 		ts.Run(tc.desc, func() {
 			t := ts.T()
@@ -750,7 +758,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			}
 
 			req := &v1.ScanImageRequest{
-				ImageName: tc.imgStr,
+				ImageName: tc.imageStr,
 				Force:     true,
 				Cluster:   ts.remoteCluster.GetId(),
 			}
@@ -763,32 +771,12 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 		desc       string
 		deployName string
 		imgID      string
-		imgStr     string
+		imageStr   string
 		skip       bool
 	}{
-		{
-			"Scan deployment image from mirror defined by ImageContentSourcePolicy",
-			"dele-scan-icsp",
-			// Mirrors to: quay.io/rhacs-eng/qa:dele-scan-nginx
-			"sha256:68b418b74715000e41a894428bd787442945592486a08d4cbea89a9b4fa03302",
-			"icsp.invalid/rhacs-eng/qa@sha256:68b418b74715000e41a894428bd787442945592486a08d4cbea89a9b4fa03302",
-			!icspAvail,
-		},
-		{
-			"Scan deployment image from mirror defined by ImageDigestMirrorSet",
-			"dele-scan-idms",
-			// Mirrors to: quay.io/rhacs-eng/qa:dele-scan-httpd
-			"sha256:489576ec07d6d8d64690bedb4cf1eeb366a8f03f8530367c3eee0c71579b5f5e",
-			"idms.invalid/rhacs-eng/qa@sha256:489576ec07d6d8d64690bedb4cf1eeb366a8f03f8530367c3eee0c71579b5f5e",
-			!idmsAvail,
-		},
-		{
-			"Scan deployment image from mirror defined by ImageTagMirrorSet",
-			"dele-scan-itms",
-			"sha256:1cf25340014838bef90aa9d19eaef725a0b4986af3c8e8a6be3203c2cef8cb61",
-			"itms.invalid/rhacs-eng/qa:dele-scan-memcached",
-			!itmsAvail,
-		},
+		{"Scan deploy image from mirror via ImageContentSourcePolicy", "dele-scan-icsp", icspImage.ID(), icspImage.IDRef(), !icspAvail},
+		{"Scan deploy image from mirror via ImageDigestMirrorSet", "dele-scan-idms", idmsImage.ID(), idmsImage.IDRef(), !idmsAvail},
+		{"Scan deploy image from mirror via ImageTagMirrorSet", "dele-scan-itms", itmsImage.ID(), itmsImage.TagRef(), !itmsAvail},
 	}
 
 	for _, tc := range deployTCs {
@@ -813,14 +801,14 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			t.Logf("Num images deleted from query %q: %d", query, delResp.NumDeleted)
 
 			// Create deployment.
-			t.Logf("Creating deployment %q with image: %q", tc.deployName, tc.imgStr)
-			setupDeploymentNoWait(t, tc.imgStr, tc.deployName, 1)
+			t.Logf("Creating deployment %q with image: %q", tc.deployName, tc.imageStr)
+			setupDeploymentNoWait(t, tc.imageStr, tc.deployName, 1)
 
 			img, err := ts.getImageWithRetires(t, ctx, imageService, &v1.GetImageRequest{Id: tc.imgID})
 			require.NoError(t, err)
-			ts.validateImageScan(t, tc.imgStr, img)
+			ts.validateImageScan(t, tc.imageStr, img)
 
-			ts.waitUntilSensorLogsScan(ctx, tc.imgStr, fromByte)
+			ts.waitUntilSensorLogsScan(ctx, tc.imageStr, fromByte)
 
 			// Only perform teardown on success so that logs can be captured on failure.
 			t.Logf("Tearing down deployment %q", tc.deployName)
@@ -1032,9 +1020,9 @@ func (ts *DelegatedScanningSuite) executeAndValidateScan(ctx context.Context, co
 	require.NoError(t, err)
 
 	// Validate that the image scan looks 'OK'
-	imgStr := req.GetImageName()
-	ts.validateImageScan(t, imgStr, img)
+	imageStr := req.GetImageName()
+	ts.validateImageScan(t, imageStr, img)
 
 	// Search the Sensor logs for a record of the scan that was just completed
-	ts.waitUntilSensorLogsScan(ctx, imgStr, fromByte)
+	ts.waitUntilSensorLogsScan(ctx, imageStr, fromByte)
 }

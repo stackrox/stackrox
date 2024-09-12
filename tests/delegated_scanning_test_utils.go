@@ -25,7 +25,9 @@ import (
 	imagev1client "github.com/openshift/client-go/image/clientset/versioned/typed/image/v1"
 	machineconfigurationv1client "github.com/openshift/client-go/machineconfiguration/clientset/versioned/typed/machineconfiguration/v1"
 	operatorv1alpha1client "github.com/openshift/client-go/operator/clientset/versioned/typed/operator/v1alpha1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker/config"
+	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	pkgTar "github.com/stackrox/rox/pkg/tar"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/require"
@@ -37,10 +39,9 @@ import (
 	k8sTypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/rest"
-	//TODO: Cleanup these imports so using camel case
 )
 
-// This file contains utility functions to aid the execution of the delegated scanning tests.
+// This file contains utilities to aid the execution of the delegated scanning tests.
 // The current implementation is specific to the needs of delegated scanning.
 
 const (
@@ -49,6 +50,45 @@ const (
 	// making changes via the server side apply mechanism.
 	ignoreFieldManager = "Ignore"
 )
+
+// deleScanTestImage holds a full reference to an image and provides
+// methods for obtaining the string representation of the image in various
+// formats (syntax sugar).
+type deleScanTestImage struct {
+	cImage *storage.ContainerImage
+}
+
+func NewDeleScanTestImage(t *testing.T, imageStr string) deleScanTestImage {
+	cImage, err := imgUtils.GenerateImageFromString(imageStr)
+	require.NoError(t, err)
+
+	return deleScanTestImage{cImage: cImage}
+}
+
+// ID returns the digest of the image if found.
+func (d deleScanTestImage) ID() string {
+	return d.cImage.GetId()
+}
+
+// ByID returns the full image reference by ID.
+func (d deleScanTestImage) IDRef() string {
+	name := d.cImage.GetName()
+	return fmt.Sprintf("%s/%s@%s", name.GetRegistry(), name.GetRemote(), d.cImage.GetId())
+}
+
+// ByID returns the full image reference by Tag.
+func (d deleScanTestImage) TagRef() string {
+	name := d.cImage.GetName()
+	return fmt.Sprintf("%s/%s:%s", name.GetRegistry(), name.GetRemote(), name.GetTag())
+}
+
+// WithReg creates a new instance with only the registry changed.
+func (d deleScanTestImage) WithReg(reg string) deleScanTestImage {
+	cImage := d.cImage.CloneVT()
+	cImage.GetName().Registry = reg
+
+	return deleScanTestImage{cImage: cImage}
+}
 
 // deleScanTestUtils contains helper functions to assist delegated scanning tests.
 // These functions were added to the struct to avoid naming conflicts amongst all
@@ -68,9 +108,10 @@ func NewDeleScanTestUtils(t *testing.T, restCfg *rest.Config, apiResourceList []
 	return utils
 }
 
-// availMirroringCRs will return true for CRs that are avail per the k8s api resource list.
+// availMirroringCRs determines what mirroring CRs are available based on the provided
+// resource list from the k8s API.
 func (d *deleScanTestUtils) availMirroringCRs() (icspAvail bool, idmsAvail bool, itmsAvail bool) {
-	icspKey := "operator.openshift.io/v1alpha|imagecontentsourcepolicies"
+	icspKey := "operator.openshift.io/v1alpha1|imagecontentsourcepolicies"
 	idmsKey := "config.openshift.io/v1|imagedigestmirrorsets"
 	itmsKey := "config.openshift.io/v1|imagetagmirrorsets"
 
@@ -117,9 +158,6 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 		t.Logf("Setting up mirrors took:: %v", time.Since(start))
 	}()
 
-	// Identify which mirroring CRs are available for creation.
-	icspAvail, idmsAvail, itmsAvail = d.availMirroringCRs()
-
 	// Instantiate various API clients.
 	machineCfgClient, err := machineconfigurationv1client.NewForConfig(d.restCfg)
 	require.NoError(t, err)
@@ -142,8 +180,11 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 	// Update the OCP global pull secret which k8s needs in order to pull images from authenticated mirrors.
 	updated := d.addCredToOCPGlobalPullSecret(t, ctx, reg, dce)
 
+	// Identify which mirroring CRs are available for creation.
+	icspAvail, idmsAvail, itmsAvail = d.availMirroringCRs()
+
 	if icspAvail {
-		// Create an ImageContentSourcePolicy
+		// Create an ImageContentSourcePolicy.
 		icspName := "icsp-invalid"
 		t.Logf("Applying ImageContentSourcePolicy %q", icspName)
 		origIcsp, _ := opClient.ImageContentSourcePolicies().Get(ctx, icspName, v1.GetOptions{})
@@ -159,7 +200,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 	}
 
 	if idmsAvail {
-		// Create an ImageDigestMirrorSet
+		// Create an ImageDigestMirrorSet.
 		idmsName := "idms-invalid"
 		t.Logf("Applying ImageDigestMirrorSet %q", idmsName)
 		origIdms, _ := cfgClient.ImageDigestMirrorSets().Get(ctx, idmsName, v1.GetOptions{})
@@ -175,7 +216,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 	}
 
 	if itmsAvail {
-		// Create an ImageTagMirrorSet
+		// Create an ImageTagMirrorSet.
 		itmsName := "itms-invalid"
 		t.Logf("Applying ImageTagMirrorSet %q", itmsName)
 		origItms, _ := cfgClient.ImageTagMirrorSets().Get(ctx, itmsName, v1.GetOptions{})
@@ -204,6 +245,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 
 // addCredToOCPGlobalPullSecret will append an entry to the OCP global pull secret,
 // if no change needed returns false, true otherwise.
+//
 // Changes to the OCP global pull secret must be propagated to each node before
 // usage. This method DOES NOT wait for the propagation to complete.
 func (d *deleScanTestUtils) addCredToOCPGlobalPullSecret(t *testing.T, ctx context.Context, newReg string, newDce config.DockerConfigEntry) bool {
