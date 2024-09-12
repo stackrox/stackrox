@@ -294,11 +294,13 @@ func (ts *DelegatedScanningSuite) TestConfig() {
 			},
 		}
 
+		fromByte := ts.getSensorLastLogBytePos(ctx)
+
 		_, err := service.UpdateConfig(ctx, cfg)
 		require.NoError(t, err)
 
 		ts.waitUntilLog(ctx, "contain delegated registry config upsert",
-			containsLineMatching(regexp.MustCompile(fmt.Sprintf("Upserted delegated registry config.*%s", path))),
+			containsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted delegated registry config.*%s", path)), fromByte),
 		)
 	})
 }
@@ -362,6 +364,8 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 			},
 		}
 
+		fromByte := ts.getSensorLastLogBytePos(ctx)
+
 		// Create image integration.
 		rii, err := service.PostImageIntegration(ctx, ii)
 		require.NoError(t, err)
@@ -369,7 +373,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 
 		ts.waitUntilLog(ctx, "contain the upserted integration",
 			// Requires debug logging.
-			containsLineMatching(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", id))),
+			containsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", id)), fromByte),
 		)
 
 		// Update image integration.
@@ -379,7 +383,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 
 		ts.waitUntilLog(ctx, "contain the upserted integration",
 			// Requires debug logging.
-			containsMultipleLinesMatching(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", id)), 2),
+			containsMultipleLinesMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", id)), 2, fromByte),
 		)
 
 		// Delete the image integration.
@@ -388,7 +392,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 
 		ts.waitUntilLog(ctx, "contain the deleted integration",
 			// Requires debug logging.
-			containsLineMatching(regexp.MustCompile(fmt.Sprintf("Deleted registry integration.*%s", id))),
+			containsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf("Deleted registry integration.*%s", id)), fromByte),
 		)
 	})
 
@@ -410,14 +414,16 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 			},
 		}
 
+		fromByte := ts.getSensorLastLogBytePos(ctx)
+
 		// Create image integration.
 		rii, err := service.PostImageIntegration(ctx, ii)
 		require.NoError(t, err)
 		id := rii.GetId()
 
-		ts.checkLogsMatch(ctx, ts.namespace, sensorPodLabels, sensorContainer, "contain the upserted integration",
+		ts.checkLogsMatch(ctx, "contain the upserted integration",
 			// Requires debug logging.
-			containsNoLinesMatching(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", id))),
+			containsNoLinesMatchingAfter(regexp.MustCompile(fmt.Sprintf("Upserted registry integration.*%s", id)), fromByte),
 		)
 	})
 }
@@ -431,9 +437,6 @@ func (ts *DelegatedScanningSuite) TestAdHocScanRequests() {
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewImageServiceClient(conn)
-
-	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
-	require.NoError(t, err)
 
 	scanImgReq := func(imgStr string) *v1.ScanImageRequest {
 		return &v1.ScanImageRequest{
@@ -487,8 +490,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScanRequests() {
 
 	ts.Run("baseline delegated scan without auth", func() {
 		t := ts.T()
-		fromByte, err := ts.getLastLogBytePos(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
-		require.NoError(t, err)
+		fromByte := ts.getSensorLastLogBytePos(ctx)
 
 		img, err := ts.scanWithRetries(t, ctx, service, scanImgReq(anonTestImageStr))
 		require.NoError(t, err)
@@ -496,7 +498,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScanRequests() {
 
 		reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, anonTestImageStr)
 		ts.waitUntilLog(ctx, "contain the image scan",
-			containsLineMatchingAfterByte(regexp.MustCompile(reStr), fromByte),
+			containsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
 		)
 	})
 
@@ -525,8 +527,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScanRequests() {
 			t.Skip("Skipping test - not an OCP cluster")
 		}
 
-		fromByte, err := ts.getLastLogBytePos(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
-		require.NoError(t, err)
+		fromByte := ts.getSensorLastLogBytePos(ctx)
 
 		// Push an to the OCP internal registry.
 		ocpImgBuilder := deleScanTestUtils{restCfg: ts.restCfg}
@@ -541,7 +542,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScanRequests() {
 		// Verify the request made it to the cluster.
 		reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, imgStr)
 		ts.waitUntilLog(ctx, "contain the image scan",
-			containsLineMatchingAfterByte(regexp.MustCompile(reStr), fromByte),
+			containsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
 		)
 	})
 
@@ -625,11 +626,6 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	t.Log("Waiting for Central/Sensor connection to be ready")
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
 
-	// Get a reference to the sensorPod so that can track where the log ends to
-	// ensure log matching only considers the data 'after' the test was ran.
-	sensorPod, err = ts.getSensorPod(ctx, ts.namespace)
-	require.NoError(t, err)
-
 	// The mirroring CRs map to quay.io, these tests will attempt to scan images from quay.io/rhacs-eng,
 	// to ensure authenticate succeeds we create an image integration. Creating this integration
 	// will not be necessary in the future if/when ROX-25709 is implemented, which would cause
@@ -699,8 +695,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	for _, tc := range adhocTCs {
 		ts.Run(tc.desc, func() {
 			t := ts.T()
-			fromByte, err := ts.getLastLogBytePos(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
-			require.NoError(t, err)
+			fromByte := ts.getSensorLastLogBytePos(ctx)
 
 			req := &v1.ScanImageRequest{
 				ImageName: tc.imgStr,
@@ -716,7 +711,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			// Verify the request made it to the cluster.
 			reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, tc.imgStr)
 			ts.waitUntilLog(ctx, "contain the image scan",
-				containsLineMatchingAfterByte(regexp.MustCompile(reStr), fromByte),
+				containsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
 			)
 		})
 	}
@@ -752,8 +747,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	for _, tc := range deployTCs {
 		ts.Run(tc.desc, func() {
 			t := ts.T()
-			fromByte, err := ts.getLastLogBytePos(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
-			require.NoError(t, err)
+			fromByte := ts.getSensorLastLogBytePos(ctx)
 
 			// Do an initial teardown in case a deployment is lingering from a previous test.
 			teardownDeployment(t, tc.deployName)
@@ -774,11 +768,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			ts.validateImageScan(t, tc.imgStr, img)
 
 			ts.waitUntilLog(ctx, "contain the image scan",
-				matchesAny(
-					containsLineMatchingAfterByte(regexp.MustCompile(fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, tc.imgStr)), fromByte),
-					// containsLineMatchingAfterByte(regexp.MustCompile(fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, tc.imgStr)), fromByte),
-					// TODO: In the event that the time this out quicker and check for image being pulled from cache
-				),
+				containsLineMatchingAfter(regexp.MustCompile(fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, tc.imgStr)), fromByte),
 			)
 
 			// Only perform teardown on success so that logs can be captured on failure.
@@ -868,8 +858,8 @@ func (ts *DelegatedScanningSuite) scanWithRetries(t *testing.T, ctx context.Cont
 	return img, err
 }
 
-// waitUntilLog is a custom wrapper for the delegated scanning tests around the common waitUntilLog method
-// that assumes sensor is the log being read. A timeout is applied to the wait to be a good citizen
+// waitUntilLog is a custom wrapper for the delegated scanning tests around the common waitUntilLog method.
+// This assumes sensor is the log being read. A timeout is applied to the wait to be a good citizen
 // for other e2e tests (by not consuming the full go test timeout).
 func (ts *DelegatedScanningSuite) waitUntilLog(ctx context.Context, description string, logMatchers ...logMatcher) {
 	ctx, cancel := context.WithTimeout(ctx, deleScanDefaultLogWaitTimeout)
@@ -877,25 +867,42 @@ func (ts *DelegatedScanningSuite) waitUntilLog(ctx context.Context, description 
 	ts.KubernetesSuite.waitUntilLog(ctx, ts.namespace, sensorPodLabels, sensorContainer, description, logMatchers...)
 }
 
-type DaveSuite struct {
-	KubernetesSuite
+// waitUntilLog is a custom wrapper for the delegated scanning tests around the common checkLogsMatch method.
+// This assumes sensor is the log being read.
+func (ts *DelegatedScanningSuite) checkLogsMatch(ctx context.Context, description string, logMatchers ...logMatcher) {
+	ts.KubernetesSuite.checkLogsMatch(ctx, ts.namespace, sensorPodLabels, sensorContainer, description, logMatchers...)
 }
 
-func TestDave(t *testing.T) {
-	suite.Run(t, new(DaveSuite))
-}
-
-func (ts *DaveSuite) TestDoIt() {
+func (ts *DelegatedScanningSuite) getSensorLastLogBytePos(ctx context.Context) int64 {
 	t := ts.T()
-	ctx := context.Background()
+	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
+	require.NoError(t, err)
 
-	thing := deleScanTestUtils{restCfg: getConfig(t)}
-	user := mustGetEnv(t, "QUAY_RHACS_ENG_RO_USERNAME")
-	pass := mustGetEnv(t, "QUAY_RHACS_ENG_RO_PASSWORD")
-	thing.addCredToOCPGlobalPullSecret(t, ctx, "quay.io/rhacs-eng/", config.DockerConfigEntry{
-		Username: user,
-		Password: pass,
-		Email:    "dele-scan-test@example.com",
-	})
+	fromByte, err := ts.getLastLogBytePos(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
+	require.NoError(t, err)
 
+	return fromByte
 }
+
+// type DaveSuite struct {
+// 	KubernetesSuite
+// }
+
+// func TestDave(t *testing.T) {
+// 	suite.Run(t, new(DaveSuite))
+// }
+
+// func (ts *DaveSuite) TestDoIt() {
+// 	t := ts.T()
+// 	ctx := context.Background()
+
+// 	thing := deleScanTestUtils{restCfg: getConfig(t)}
+// 	user := mustGetEnv(t, "QUAY_RHACS_ENG_RO_USERNAME")
+// 	pass := mustGetEnv(t, "QUAY_RHACS_ENG_RO_PASSWORD")
+// 	thing.addCredToOCPGlobalPullSecret(t, ctx, "quay.io/rhacs-eng/", config.DockerConfigEntry{
+// 		Username: user,
+// 		Password: pass,
+// 		Email:    "dele-scan-test@example.com",
+// 	})
+
+// }

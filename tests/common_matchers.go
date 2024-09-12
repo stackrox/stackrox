@@ -39,27 +39,33 @@ type logMatcher interface {
 
 // multiLineMatcher matches when the desired number of lines are found.
 type multiLineMatcher struct {
-	re           *regexp.Regexp
-	desiredLines int
-	fromByte     int64
+	re       *regexp.Regexp
+	numLines int
+	fromByte int64
 }
 
 // containsLineMatching returns a simple line-based regex matcher to go with waitUntilLog.
 // Note: currently limited by bufio.Reader default buffer size (4KB) for simplicity.
 func containsLineMatching(re *regexp.Regexp) *multiLineMatcher {
-	return &multiLineMatcher{re: re, desiredLines: 1}
+	return &multiLineMatcher{re: re, numLines: 1}
 }
 
-// containsLineMatchingAfterByte mimics containsLineMatching but will only attempt to match
+// containsLineMatchingAfter mimics containsLineMatching but will only attempt to match
 // lines that appear after fromByte.
-func containsLineMatchingAfterByte(re *regexp.Regexp, fromByte int64) *multiLineMatcher {
-	return &multiLineMatcher{re: re, desiredLines: 1, fromByte: fromByte}
+func containsLineMatchingAfter(re *regexp.Regexp, fromByte int64) *multiLineMatcher {
+	return &multiLineMatcher{re: re, numLines: 1, fromByte: fromByte}
 }
 
 // containsMultipleLinesMatching is a line-based regex matcher to go with waitUntilLog
 // that will return true when the desired number of lines are found matching the reg exp.
-func containsMultipleLinesMatching(re *regexp.Regexp, desiredLineCount int) *multiLineMatcher {
-	return &multiLineMatcher{re: re, desiredLines: desiredLineCount}
+func containsMultipleLinesMatching(re *regexp.Regexp, numLines int) *multiLineMatcher {
+	return &multiLineMatcher{re: re, numLines: numLines}
+}
+
+// containsMultipleLinesMatchingAfter mimics containsMultipleLinesMatching but will only attempt to match
+// lines that appear after fromByte.
+func containsMultipleLinesMatchingAfter(re *regexp.Regexp, numLines int, fromByte int64) *multiLineMatcher {
+	return &multiLineMatcher{re: re, numLines: numLines, fromByte: fromByte}
 }
 
 func (lm *multiLineMatcher) String() string {
@@ -76,6 +82,7 @@ func (lm *multiLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 		}
 	}
 
+	var lineMatchCount int
 	for {
 		// We do not care about partial reads, as the things we look for should fit in default buf size.
 		line, _, err := br.ReadLine()
@@ -86,7 +93,10 @@ func (lm *multiLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 			return false, err
 		}
 		if lm.re.Match(line) {
-			return true, nil
+			lineMatchCount++
+			if lineMatchCount >= lm.numLines {
+				return true, nil
+			}
 		}
 	}
 }
@@ -94,12 +104,19 @@ func (lm *multiLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 // notFoundLineMatcher is a line-based regex matcher to go with waitUntilLog
 // that will return true when NO lines are found that match the reg exp.
 type notFoundLineMatcher struct {
-	re *regexp.Regexp
+	re       *regexp.Regexp
+	fromByte int64
 }
 
 // containsMultiLinesMatching is a convenience method for creating a not found line matcher.
 func containsNoLinesMatching(re *regexp.Regexp) *notFoundLineMatcher {
 	return &notFoundLineMatcher{re: re}
+}
+
+// containsNoLinesMatchingAfter mimics containsMultiLinesMatching but will only attempt to match
+// lines that appear after fromByte.
+func containsNoLinesMatchingAfter(re *regexp.Regexp, fromByte int64) *notFoundLineMatcher {
+	return &notFoundLineMatcher{re: re, fromByte: fromByte}
 }
 
 func (lm *notFoundLineMatcher) String() string {
@@ -108,6 +125,14 @@ func (lm *notFoundLineMatcher) String() string {
 
 func (lm *notFoundLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 	br := bufio.NewReader(reader)
+
+	if lm.fromByte != 0 {
+		_, err = reader.Seek(lm.fromByte, io.SeekStart)
+		if err != nil {
+			return false, err
+		}
+	}
+
 	for {
 		// We do not care about partial reads, as the things we look for should fit in default buf size.
 		line, _, err := br.ReadLine()
