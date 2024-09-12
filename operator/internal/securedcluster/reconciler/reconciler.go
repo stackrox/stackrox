@@ -23,13 +23,13 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithExtraWatch(
-			source.Kind(
+			source.Kind[*platform.Central](
 				mgr.GetCache(),
 				&platform.Central{},
-				reconciler.HandleSiblings(platform.SecuredClusterGVK, mgr),
+				reconciler.HandleSiblings[*platform.Central](platform.SecuredClusterGVK, mgr),
 				// Only appearance and disappearance of a Central resource can influence whether
 				// a local scanner should be deployed by the SecuredCluster controller.
-				utils.CreateAndDeleteOnlyPredicate{})),
+				utils.CreateAndDeleteOnlyPredicate[*platform.Central]{})),
 		pkgReconciler.WithPreExtension(extensions.CheckClusterNameExtension()),
 		pkgReconciler.WithPreExtension(proxy.ReconcileProxySecretExtension(mgr.GetClient(), mgr.GetAPIReader(), proxyEnv)),
 		pkgReconciler.WithPreExtension(commonExtensions.CheckForbiddenNamespacesExtension(commonExtensions.IsSystemNamespace)),
