@@ -10,8 +10,6 @@ import (
 )
 
 func newCIDRQuery(ctx *queryAndFieldContext) (*QueryEntry, error) {
-	err := fmt.Errorf("=== newCIDRQuery ! ===")
-	utils.Should(err)
 	whereClause, err := newCIDRQueryWhereClause(ctx.qualifiedColumnName, ctx.value, ctx.queryModifiers...)
 	if err != nil {
 		return nil, err
