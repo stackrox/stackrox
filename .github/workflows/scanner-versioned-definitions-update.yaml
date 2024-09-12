@@ -271,7 +271,6 @@ jobs:
         pattern: "artifact_*"
         path: downloaded_artifacts
 
-    # Why bother with this?
     - name: Move files artifacts
       run: rsync -av downloaded_artifacts/*/ definitions_files/
 
