@@ -192,10 +192,10 @@ func (b *CRSWithMeta) RenderAsK8sSecret() ([]byte, error) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "cluster-registration-secret",
 			Annotations: map[string]string{
-				"crs.stackrox.io/name":       b.Meta.GetName(),
-				"crs.stackrox.io/created-at": b.Meta.GetCreatedAt().AsTime().Format(time.RFC3339Nano),
-				"crs.stackrox.io/expires-at": b.Meta.GetExpiresAt().AsTime().Format(time.RFC3339Nano),
-				"crs.stackrox.io/id":         b.Meta.GetId(),
+				"crs.platform.stackrox.io/name":       b.Meta.GetName(),
+				"crs.platform.stackrox.io/created-at": b.Meta.GetCreatedAt().AsTime().Format(time.RFC3339Nano),
+				"crs.platform.stackrox.io/expires-at": b.Meta.GetExpiresAt().AsTime().Format(time.RFC3339Nano),
+				"crs.platform.stackrox.io/id":         b.Meta.GetId(),
 			},
 		},
 		StringData: map[string]string{
