@@ -35,7 +35,7 @@ enum ServiceType {
   SCANNER_V4_DB_SERVICE = 15;
   // This is used when Scanner V4 is run in combo-mode.
   SCANNER_V4_SERVICE = 16;
-  REGISTRATOR_SERVICE = 17;
+  REGISTRANT_SERVICE = 17;
 }
 
 message ServiceCertificate {

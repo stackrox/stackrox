@@ -76,7 +76,7 @@ func IssueSecuredClusterInitCertificates() (CertBundle, uuid.UUID, error) {
 func IssueSecuredClusterCRSCertificates() (*mtls.IssuedCert, uuid.UUID, error) {
 	initID := centralsensor.RegisteredInitCertClusterID
 	crsID := uuid.NewV4()
-	cert, err := mtls.IssueNewCert(mtls.NewInitSubject(initID, storage.ServiceType_REGISTRATOR_SERVICE, crsID))
+	cert, err := mtls.IssueNewCert(mtls.NewInitSubject(initID, storage.ServiceType_REGISTRANT_SERVICE, crsID))
 	if err != nil {
 		return nil, uuid.Nil, err
 	}

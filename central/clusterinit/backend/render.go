@@ -180,7 +180,7 @@ func (b *CRSWithMeta) RenderAsK8sSecret() ([]byte, error) {
 		return nil, errors.Wrap(err, "serializing CRS")
 	}
 
-	svcType := storage.ServiceType_REGISTRATOR_SERVICE
+	svcType := storage.ServiceType_REGISTRANT_SERVICE
 	serviceTypeStr := strings.ToLower(
 		strings.ReplaceAll(strings.TrimSuffix(svcType.String(), "_SERVICE"), "_", "-"))
 	secret := &v1.Secret{

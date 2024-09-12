@@ -15476,7 +15476,7 @@
                 "integer": 16
               },
               {
-                "name": "REGISTRATOR_SERVICE",
+                "name": "REGISTRANT_SERVICE",
                 "integer": 17
               }
             ]
