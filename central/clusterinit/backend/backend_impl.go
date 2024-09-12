@@ -79,7 +79,7 @@ func extractCertExpiryDate(cert *mtls.IssuedCert) (time.Time, error) {
 		return time.Time{}, errors.New("provided certificate is empty")
 	}
 	if cert.X509Cert == nil {
-		return time.Time{}, errors.New("no X509 certificate in init bundle sensor certificate")
+		return time.Time{}, errors.New("issued certificate is missing X509 material")
 	}
 	return cert.X509Cert.NotAfter, nil
 }
@@ -89,7 +89,11 @@ func extractExpiryDate(certBundle clusters.CertBundle) (time.Time, error) {
 	if sensorCert == nil {
 		return time.Time{}, errors.New("no sensor certificate in init bundle")
 	}
-	return extractCertExpiryDate(sensorCert)
+	expiryDate, err := extractCertExpiryDate(sensorCert)
+	if err != nil {
+		return time.Time{}, errors.Wrap(err, "failed to extract expiry date from sensor client certificate")
+	}
+	return expiryDate, nil
 }
 
 func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMeta, error) {
@@ -114,7 +118,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 
 	expiryDate, err := extractExpiryDate(certBundle)
 	if err != nil {
-		return nil, errors.Wrap(err, "extracting expiry date of certificate bundle")
+		return nil, errors.Wrap(err, "extracting expiry date of newly generated init bundle")
 	}
 
 	expiryTimestamp, err := protocompat.ConvertTimeToTimestampOrError(expiryDate)
