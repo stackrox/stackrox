@@ -361,7 +361,7 @@ undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s clust
 deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) 4.4.0-1028-g4b9620d62c
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) quay.io/kcrane/stackrox-operator 4.4.0-1028-g4b9620d62c
 
 .PHONY: deploy-via-olm-midstream
 deploy-via-olm-midstream: ## Deploy operator image to the cluster using OLM and midstream index images.
