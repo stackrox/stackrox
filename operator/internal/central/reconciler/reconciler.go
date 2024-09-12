@@ -22,12 +22,13 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	opts := []pkgReconciler.Option{
 		pkgReconciler.WithExtraWatch(
-			source.Kind(mgr.GetCache(), &platform.SecuredCluster{}),
-			reconciler.HandleSiblings(platform.CentralGVK, mgr),
-			// Only appearance and disappearance of a SecuredCluster resource can influence whether
-			// an init bundle should be created by the Central controller.
-			utils.CreateAndDeleteOnlyPredicate{},
-		),
+			source.Kind(
+				mgr.GetCache(),
+				&platform.SecuredCluster{},
+				reconciler.HandleSiblings(platform.CentralGVK, mgr),
+				// Only appearance and disappearance of a SecuredCluster resource can influence whether
+				// an init bundle should be created by the Central controller.
+				utils.CreateAndDeleteOnlyPredicate{})),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
