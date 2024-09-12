@@ -367,7 +367,7 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	err = s.backend.Revoke(ctx, id)
 	s.Require().NoErrorf(err, "revoking newly generated CRS %q", id)
 	err = s.backend.CheckRevoked(ctx, id)
-	s.Require().Errorf(err, "CRS %q is not revoked", id)
+	s.Require().Errorf(err, "CRS %q is not revoked, but should be", id)
 	crss, err = s.backend.GetAllCRS(ctx)
 	s.Require().NoError(err)
 	for _, m := range crss {
