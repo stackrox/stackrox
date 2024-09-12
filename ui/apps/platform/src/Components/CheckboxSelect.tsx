@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Select, SelectOption, MenuToggle, MenuToggleElement, Badge } from '@patternfly/react-core';
-import { ensureString } from '../utils/utils';
+
+import { ensureString } from 'utils/ensure';
 
 type CheckboxSelectProps = {
     selection: string[];
@@ -9,6 +10,7 @@ type CheckboxSelectProps = {
     isDisabled?: boolean;
     ariaLabelMenu?: string;
     toggleLabel?: string;
+    toggleIcon?: React.ReactNode;
 };
 
 function CheckboxSelect({
@@ -18,6 +20,7 @@ function CheckboxSelect({
     isDisabled = false,
     ariaLabelMenu,
     toggleLabel,
+    toggleIcon,
 }: CheckboxSelectProps) {
     const [isOpen, setIsOpen] = React.useState(false);
 
@@ -42,9 +45,14 @@ function CheckboxSelect({
             onClick={onToggleClick}
             isExpanded={isOpen}
             isDisabled={isDisabled}
+            icon={toggleIcon}
         >
             {toggleLabel}
-            {selection && selection.length > 0 && <Badge isRead>{selection.length}</Badge>}
+            {selection && selection.length > 0 && (
+                <Badge isRead className="pf-v5-u-ml-sm">
+                    {selection.length}
+                </Badge>
+            )}
         </MenuToggle>
     );
 

@@ -21,7 +21,7 @@ import SEARCH_AUTOCOMPLETE_QUERY, {
 } from 'queries/searchAutocomplete';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
-import { ensureString } from '../utils/utils';
+import { ensureString } from 'utils/ensure';
 
 type SearchFilterAutocompleteProps = {
     searchCategory: string;
