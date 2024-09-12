@@ -69,17 +69,17 @@ func (s *serviceImpl) GetInitBundles(ctx context.Context, _ *v1.Empty) (*v1.Init
 }
 
 func (s *serviceImpl) GetCRSs(ctx context.Context, _ *v1.Empty) (*v1.CRSMetasResponse, error) {
-	initBundleMetas, err := s.backend.GetAllCRS(ctx)
+	crsMetas, err := s.backend.GetAllCRS(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving meta data for all CRSs")
 	}
-	bundlesIDs := set.NewStringSet()
-	for _, b := range initBundleMetas {
-		bundlesIDs.Add(b.GetId())
+	crsIDs := set.NewStringSet()
+	for _, b := range crsMetas {
+		crsIDs.Add(b.GetId())
 	}
 
-	v1CRSMetas := make([]*v1.CRSMeta, 0, len(initBundleMetas))
-	for _, crsMeta := range initBundleMetas {
+	v1CRSMetas := make([]*v1.CRSMeta, 0, len(crsMetas))
+	for _, crsMeta := range crsMetas {
 		v1CRSMetas = append(v1CRSMetas, crsMetaStorageToV1(crsMeta))
 	}
 
