@@ -17,8 +17,7 @@ ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" S
 # GOTAGS="release"
 ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 
-RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh operator && \
-    cp bin/linux_$(go env GOARCH)/operator image/bin/operator
+RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator
 
 
 # TODO(ROX-20312): pin image tags when there's a process that updates them automatically.
