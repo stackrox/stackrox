@@ -45,6 +45,10 @@ func TestCIDRQuery(t *testing.T) {
 					expectedSelection: true,
 				},
 				{
+					value:             "230.127.112.0/23",
+					expectedSelection: false,
+				},
+				{
 					value:             true, // unexpected type
 					expectedSelection: false,
 				},
