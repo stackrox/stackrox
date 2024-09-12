@@ -13,6 +13,7 @@ import {
 } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
@@ -99,8 +100,11 @@ function ImageVulnerabilitiesTable({
     const expandedRowSet = useSet<string>();
     const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+
     const colSpan =
-        6 +
+        (isNvdCvssEnabled ? 7 : 6) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0);
@@ -118,6 +122,7 @@ function ImageVulnerabilitiesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th sort={getSortParams('CVSS')}>CVSS</Th>
+                    {isNvdCvssEnabled && <Th /* sort={getSortParams('TODO')} */>NVD CVSS</Th>}
                     <Th>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
@@ -205,6 +210,11 @@ function ImageVulnerabilitiesTable({
                                     <Td modifier="nowrap" dataLabel="CVSS">
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
+                                    {isNvdCvssEnabled && (
+                                        <Td modifier="nowrap" dataLabel="NVD CVSS">
+                                            <CvssFormatted cvss={0.0} scoreVersion="V3" />
+                                        </Td>
+                                    )}
                                     <Td dataLabel="Affected components">
                                         {imageComponents.length === 1
                                             ? imageComponents[0].name

@@ -2,6 +2,7 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import { ExpandableRowContent, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
@@ -94,6 +95,9 @@ function AffectedImagesTable({
 }: AffectedImagesTableProps) {
     const expandedRowSet = useSet<string>();
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+
     return (
         <Table variant="compact">
             <Thead noWrap>
@@ -101,11 +105,12 @@ function AffectedImagesTable({
                     <ExpandRowTh />
                     <Th sort={getSortParams('Image')}>Image</Th>
                     <Th sort={getSortParams('Severity')}>CVE severity</Th>
-                    <Th>CVSS</Th>
                     <Th>
                         CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
+                    <Th>CVSS</Th>
+                    {isNvdCvssEnabled && <Th>NVD CVSS</Th>}
                     <Th sort={getSortParams('Operating System')}>Operating system</Th>
                     <Th>
                         Affected components
@@ -162,14 +167,19 @@ function AffectedImagesTable({
                                     <Td dataLabel="CVE severity" modifier="nowrap">
                                         <VulnerabilitySeverityIconText severity={topSeverity} />
                                     </Td>
-                                    <Td dataLabel="CVSS" modifier="nowrap">
-                                        <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
-                                    </Td>
                                     <Td dataLabel="CVE status" modifier="nowrap">
                                         <VulnerabilityFixableIconText
                                             isFixable={isFixableInImage}
                                         />
                                     </Td>
+                                    <Td dataLabel="CVSS" modifier="nowrap">
+                                        <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
+                                    </Td>
+                                    {isNvdCvssEnabled && (
+                                        <Td dataLabel="NVD CVSS" modifier="nowrap">
+                                            <CvssFormatted cvss={0.0} scoreVersion="V3" />
+                                        </Td>
+                                    )}
                                     <Td dataLabel="Operating system">{operatingSystem}</Td>
                                     <Td dataLabel="Affected components">
                                         {imageComponents.length === 1

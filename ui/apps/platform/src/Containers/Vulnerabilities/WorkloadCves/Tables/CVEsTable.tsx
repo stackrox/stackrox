@@ -14,6 +14,7 @@ import {
 } from '@patternfly/react-table';
 import { Text } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
@@ -143,8 +144,11 @@ function CVEsTable({
     const expandedRowSet = useSet<string>();
     const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+
     const colSpan =
-        6 +
+        (isNvdCvssEnabled ? 7 : 6) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0);
@@ -172,6 +176,14 @@ function CVEsTable({
                     >
                         Top CVSS
                     </TooltipTh>
+                    {isNvdCvssEnabled && (
+                        <TooltipTh
+                            // sort={getSortParams('TODO', aggregateByTODO)}
+                            tooltip="Highest CVSS score (from National Vulnerability Database) of this CVE across images"
+                        >
+                            Top NVD CVSS
+                        </TooltipTh>
+                    )}
                     <TooltipTh
                         sort={getSortParams('Image Sha', aggregateByDistinctCount)}
                         tooltip="Ratio of total images affected by this CVE"
@@ -291,6 +303,19 @@ function CVEsTable({
                                                 }
                                             />
                                         </Td>
+                                        {isNvdCvssEnabled && (
+                                            <Td dataLabel="Top NVD CVSS">
+                                                <CvssFormatted
+                                                    cvss={0.0}
+                                                    // scoreVersion={
+                                                    //     scoreVersions.length > 0
+                                                    //         ? scoreVersions.join('/')
+                                                    //         : undefined
+                                                    // }
+                                                    scoreVersion="V3"
+                                                />
+                                            </Td>
+                                        )}
                                         <Td dataLabel="Affected images">
                                             {affectedImageCount}/{unfilteredImageCount} affected
                                             images

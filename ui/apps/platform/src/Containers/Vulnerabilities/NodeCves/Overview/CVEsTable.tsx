@@ -13,6 +13,7 @@ import {
     Tr,
 } from '@patternfly/react-table';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
 import { getTableUIState } from 'utils/getTableUIState';
@@ -107,7 +108,11 @@ function CVEsTable({
     });
 
     const expandedRowSet = useSet<string>();
-    const colSpan = canSelectRows ? 8 : 6;
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+
+    const colSpan = (isNvdCvssEnabled ? 7 : 6) + (canSelectRows ? 2 : 0);
 
     const filteredSeverities = querySearchFilter.SEVERITY?.map(
         (s) => vulnerabilitySeverityLabels[s]
@@ -132,6 +137,7 @@ function CVEsTable({
                     <Th sort={getSortParams(NODE_TOP_CVSS_SORT_FIELD, aggregateByCVSS)}>
                         Top CVSS
                     </Th>
+                    {isNvdCvssEnabled && <Th>Top NVD CVSS</Th>}
                     <TooltipTh
                         tooltip="Ratio of the number of nodes affected by this CVE to the total number of nodes"
                         sort={getSortParams('Node ID', aggregateByDistinctCount)}
@@ -211,6 +217,19 @@ function CVEsTable({
                                             }
                                         />
                                     </Td>
+                                    {isNvdCvssEnabled && (
+                                        <Td dataLabel="Top NVD CVSS">
+                                            <CvssFormatted
+                                                cvss={0.0}
+                                                // scoreVersion={
+                                                //     scoreVersions.length > 0
+                                                //         ? scoreVersions.join('/')
+                                                //         : undefined
+                                                // }
+                                                scoreVersion="V3"
+                                            />
+                                        </Td>
+                                    )}
                                     <Td dataLabel="Affected nodes">
                                         {affectedNodeCount} / {totalNodeCount} affected nodes
                                     </Td>
