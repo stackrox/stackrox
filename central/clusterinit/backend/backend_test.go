@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -327,11 +328,13 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	s.Equal(crsWithMeta.Meta.GetCreatedAt().AsTime().Format(time.RFC3339Nano), obj.GetAnnotations()["crs.platform.stackrox.io/created-at"])
 	s.Equal(crsWithMeta.Meta.GetExpiresAt().AsTime().Format(time.RFC3339Nano), obj.GetAnnotations()["crs.platform.stackrox.io/expires-at"])
 
-	serializedCrs, ok, err := unstructured.NestedString(obj.UnstructuredContent(), "stringData", "crs")
+	serializedCrsB64Encoded, ok, err := unstructured.NestedString(obj.UnstructuredContent(), "data", "crs")
 	s.Require().NoError(err)
 	s.Require().True(ok)
+	serializedCrs, err := base64.StdEncoding.DecodeString(serializedCrsB64Encoded)
+	s.Require().NoError(err)
 
-	deserializedCrs, err := deserializeSecret(serializedCrs)
+	deserializedCrs, err := deserializeSecret(string(serializedCrs))
 	s.Require().NoError(err)
 
 	s.Require().Len(deserializedCrs.CAs, 1, "deserialized CRS does not contain exactly 1 CA")

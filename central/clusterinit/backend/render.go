@@ -198,8 +198,8 @@ func (b *CRSWithMeta) RenderAsK8sSecret() ([]byte, error) {
 				"crs.platform.stackrox.io/id":         b.Meta.GetId(),
 			},
 		},
-		StringData: map[string]string{
-			"crs": crs,
+		Data: map[string][]byte{
+			"crs": []byte(crs),
 		},
 	}
 
