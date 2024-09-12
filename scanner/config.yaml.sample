@@ -6,14 +6,14 @@ indexer:
     conn_string: "host=/var/run/postgresql"
     password_file: ""
   get_layer_timeout: 1m
-  repository_to_cpe_url: https://access.redhat.com/security/data/metrics/repository-to-cpe.json
-  name_to_repos_url: https://access.redhat.com/security/data/metrics/container-name-repos-map.json
+  repository_to_cpe_url: https://security.access.redhat.com/data/metrics/repository-to-cpe.json
+  name_to_repos_url: https://security.access.redhat.com/data/metrics/container-name-repos-map.json
 matcher:
   enable: true
   database:
     conn_string: "host=/var/run/postgresql"
     password_file: ""
-  vulnerabilities_url: https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulns.json.zst
+  vulnerabilities_url: https://definitions.stackrox.io/v4/vulnerability-bundles/dev/vulnerabilities.zip
 mtls:
   certs_dir: certs/scanner-v4
 log_level: info
