@@ -208,6 +208,7 @@ func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVu
 		SuppressActivation:    vuln.GetSnoozeStart(),
 		SuppressExpiry:        vuln.GetSnoozeExpiry(),
 		Severity:              vuln.GetSeverity(),
+		CvssMetrics:           vuln.GetCvssMetrics(),
 	}
 	if vuln.GetCveBaseInfo().GetCvssV3() != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
