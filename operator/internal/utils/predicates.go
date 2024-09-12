@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -9,9 +9,9 @@ import (
 // CreateAndDeleteOnlyPredicate is a Predicate which triggers reconciliations only on creation and deletion events.
 // We define our own type to avoid the default-true behaviour of the Funcs predicate in case
 // new methods are added to the Predicate interface in the future.
-type CreateAndDeleteOnlyPredicate[T client.Object] struct{}
+type CreateAndDeleteOnlyPredicate[T ctrlClient.Object] struct{}
 
-var _ predicate.Predicate = CreateAndDeleteOnlyPredicate[client.Object]{}
+var _ predicate.Predicate = CreateAndDeleteOnlyPredicate[ctrlClient.Object]{}
 
 // Create returns true.
 func (c CreateAndDeleteOnlyPredicate[T]) Create(_ event.TypedCreateEvent[T]) bool {
