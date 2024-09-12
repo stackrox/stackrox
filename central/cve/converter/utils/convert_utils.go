@@ -208,6 +208,7 @@ func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVu
 		SuppressActivation:    vuln.GetSnoozeStart(),
 		SuppressExpiry:        vuln.GetSnoozeExpiry(),
 		Severity:              vuln.GetSeverity(),
+		CvssMetrics:           vuln.GetCvssMetrics(),
 	}
 	if vuln.GetCveBaseInfo().GetCvssV3() != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
@@ -263,6 +264,17 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 
 // EmbeddedVulnerabilityToImageCVE converts *storage.EmbeddedVulnerability object to *storage.ImageCVE object
 func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerability) *storage.ImageCVE {
+	var nvdCvss float32
+	nvdCvss = 0
+	for _, score := range from.GetCvssMetrics() {
+		if score.Source == storage.Source_SOURCE_NVD {
+			if score.GetCvssv3() != nil {
+				nvdCvss = score.GetCvssv3().GetScore()
+			} else if score.GetCvssv2() != nil {
+				nvdCvss = score.GetCvssv2().GetScore()
+			}
+		}
+	}
 	ret := &storage.ImageCVE{
 		Id:              cve.ID(from.GetCve(), os),
 		OperatingSystem: os,
@@ -277,10 +289,12 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 			CvssV3:       from.GetCvssV3(),
 		},
 		Cvss:         from.GetCvss(),
+		Nvdcvss:      nvdCvss,
 		Severity:     from.GetSeverity(),
 		Snoozed:      from.GetSuppressed(),
 		SnoozeStart:  from.GetSuppressActivation(),
 		SnoozeExpiry: from.GetSuppressExpiry(),
+		CvssMetrics:  from.GetCvssMetrics(),
 	}
 	if ret.GetCveBaseInfo().GetCvssV3() != nil {
 		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3

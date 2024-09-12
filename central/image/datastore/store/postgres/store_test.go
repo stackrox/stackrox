@@ -6,6 +6,8 @@ import (
 	"context"
 	"testing"
 
+	cveStore "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -59,11 +61,7 @@ func (s *ImagesStoreSuite) TestStore() {
 			vuln.FirstImageOccurrence = foundImage.GetLastUpdated()
 		}
 	}
-	for _, component := range cloned.Scan.Components {
-		for _, vuln := range component.Vulns {
-			vuln.CvssMetrics = nil
-		}
-	}
+
 	protoassert.Equal(s.T(), cloned, foundImage)
 
 	imageCount, err := store.Count(ctx, search.EmptyQuery())
@@ -88,4 +86,54 @@ func (s *ImagesStoreSuite) TestStore() {
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(foundImage)
+}
+
+func (s *ImagesStoreSuite) TestNVDCVSS() {
+	ctx := sac.WithAllAccess(context.Background())
+	source := pgtest.GetConnectionString(s.T())
+	config, err := postgres.ParseConfig(source)
+	s.Require().NoError(err)
+	pool, err := postgres.New(ctx, config)
+	s.NoError(err)
+	defer pool.Close()
+	Destroy(ctx, pool)
+
+	gormDB := pgtest.OpenGormDB(s.T(), source)
+	defer pgtest.CloseGormDB(s.T(), gormDB)
+	store := CreateTableAndNewStore(ctx, pool, gormDB, false)
+
+	image := fixtures.GetImage()
+	s.NoError(testutils.FullInit(image, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
+	nvdCvss := &storage.CVSSScore{
+		Source: storage.Source_SOURCE_NVD,
+		CvssScore: &storage.CVSSScore_Cvssv3{
+			Cvssv3: &storage.CVSSV3{
+				Score: 10,
+			},
+		},
+	}
+	for _, component := range image.GetScan().GetComponents() {
+		for _, vuln := range component.GetVulns() {
+			vuln.CvssMetrics = []*storage.CVSSScore{nvdCvss}
+		}
+
+	}
+
+	s.NoError(store.Upsert(ctx, image))
+	foundImage, exists, err := store.Get(ctx, image.GetId())
+	s.NoError(err)
+	s.True(exists)
+	s.NotEmpty(foundImage)
+
+	cvePgStore := cveStore.CreateTableAndNewStore(ctx, pool, gormDB)
+	cves, err := cvePgStore.GetIDs(ctx)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(cves)
+	id := cves[0]
+	imageCve, _, err := cvePgStore.Get(ctx, id)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(imageCve)
+	s.Equal(float32(10), imageCve.GetNvdcvss())
+	s.Require().NotEmpty(imageCve.GetCvssMetrics())
+	protoassert.Equal(s.T(), nvdCvss, imageCve.GetCvssMetrics()[0])
 }
