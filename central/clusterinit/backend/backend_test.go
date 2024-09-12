@@ -322,10 +322,10 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	s.Require().NoError(err)
 
 	s.Equal("cluster-registration-secret", obj.GetName())
-	s.Equal(crsWithMeta.Meta.GetName(), obj.GetAnnotations()["crs.stackrox.io/name"])
-	s.Equal(crsWithMeta.Meta.GetId(), obj.GetAnnotations()["crs.stackrox.io/id"])
-	s.Equal(crsWithMeta.Meta.GetCreatedAt().AsTime().Format(time.RFC3339Nano), obj.GetAnnotations()["crs.stackrox.io/created-at"])
-	s.Equal(crsWithMeta.Meta.GetExpiresAt().AsTime().Format(time.RFC3339Nano), obj.GetAnnotations()["crs.stackrox.io/expires-at"])
+	s.Equal(crsWithMeta.Meta.GetName(), obj.GetAnnotations()["crs.platform.stackrox.io/name"])
+	s.Equal(crsWithMeta.Meta.GetId(), obj.GetAnnotations()["crs.platform.stackrox.io/id"])
+	s.Equal(crsWithMeta.Meta.GetCreatedAt().AsTime().Format(time.RFC3339Nano), obj.GetAnnotations()["crs.platform.stackrox.io/created-at"])
+	s.Equal(crsWithMeta.Meta.GetExpiresAt().AsTime().Format(time.RFC3339Nano), obj.GetAnnotations()["crs.platform.stackrox.io/expires-at"])
 
 	serializedCrs, ok, err := unstructured.NestedString(obj.UnstructuredContent(), "stringData", "crs")
 	s.Require().NoError(err)
