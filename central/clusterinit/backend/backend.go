@@ -33,7 +33,7 @@ type CRS struct {
 // CRSWithMeta contains a CRS alongside its meta data.
 type CRSWithMeta struct {
 	CRS  *CRS
-	Meta *storage.InitBundleMeta // TODO: Shall we keep this?
+	Meta *storage.InitBundleMeta
 }
 
 var (
