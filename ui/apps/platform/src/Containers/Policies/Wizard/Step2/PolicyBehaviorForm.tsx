@@ -46,7 +46,10 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     } | null>(null);
 
     function onChangeLifecycleStage(lifecycleStage: LifecycleStage, isChecked: boolean) {
-        if (values.policySections.length > 0 && values.policySections[0].policyGroups.length > 0) {
+        const hasNonEmptyPolicyGroup = values.policySections.some(
+            (section) => section.policyGroups.length > 0
+        );
+        if (hasNonEmptyPolicyGroup) {
             // for existing policies, warn that changing lifecycles will clear all policy criteria
             setLifeCycleChange({ lifecycleStage, isChecked });
         } else {
