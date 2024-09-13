@@ -2,6 +2,8 @@ package backend
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -12,7 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	k8sJson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 )
 
 const (
@@ -32,6 +34,13 @@ const (
 #   expiresAt: %v
 #   id:        %s
 #
+`
+
+	// TODO/IDEA: Depending on Branding use ACS or StackRox?
+	crsHeader = `# This is a StackRox Cluster Registration Secret (CRS).
+# It is used for setting up StackRox secured clusters.
+# NOTE: This file contains secret data that allows connecting new secured clusters to central,
+# and needs to be handled and stored accordingly.
 `
 )
 
@@ -107,8 +116,8 @@ func (b *InitBundleWithMeta) RenderAsYAML() ([]byte, error) {
 
 // RenderAsK8sSecrets renders the given init bundle as a list of Kubernetes secrets.
 func (b *InitBundleWithMeta) RenderAsK8sSecrets() ([]byte, error) {
-	yamlSerializer := json.NewSerializerWithOptions(
-		json.DefaultMetaFactory, nil, nil, json.SerializerOptions{Yaml: true})
+	yamlSerializer := k8sJson.NewSerializerWithOptions(
+		k8sJson.DefaultMetaFactory, nil, nil, k8sJson.SerializerOptions{Yaml: true})
 
 	var buf bytes.Buffer
 	_, _ = fmt.Fprint(&buf, initBundleHeader)
@@ -157,4 +166,68 @@ func (b *InitBundleWithMeta) RenderAsK8sSecrets() ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+// RenderAsK8sSecret renders the given CRS as a Kubernetes secret.
+func (b *CRSWithMeta) RenderAsK8sSecret() ([]byte, error) {
+	yamlSerializer := k8sJson.NewSerializerWithOptions(
+		k8sJson.DefaultMetaFactory, nil, nil, k8sJson.SerializerOptions{Yaml: true})
+
+	var buf bytes.Buffer
+	_, _ = fmt.Fprint(&buf, crsHeader)
+
+	crs, err := serializeSecret(b.CRS)
+	if err != nil {
+		return nil, errors.Wrap(err, "serializing CRS")
+	}
+
+	svcType := storage.ServiceType_REGISTRANT_SERVICE
+	serviceTypeStr := strings.ToLower(
+		strings.ReplaceAll(strings.TrimSuffix(svcType.String(), "_SERVICE"), "_", "-"))
+	secret := &v1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "cluster-registration-secret",
+			Annotations: map[string]string{
+				"crs.platform.stackrox.io/name":       b.Meta.GetName(),
+				"crs.platform.stackrox.io/created-at": b.Meta.GetCreatedAt().AsTime().Format(time.RFC3339Nano),
+				"crs.platform.stackrox.io/expires-at": b.Meta.GetExpiresAt().AsTime().Format(time.RFC3339Nano),
+				"crs.platform.stackrox.io/id":         b.Meta.GetId(),
+			},
+		},
+		Data: map[string][]byte{
+			"crs": []byte(crs),
+		},
+	}
+
+	if err := yamlSerializer.Encode(secret, &buf); err != nil {
+		return nil, errors.Wrapf(err, "encoding secret for service %s", serviceTypeStr)
+	}
+
+	return buf.Bytes(), nil
+}
+
+func serializeSecret(crs *CRS) (string, error) {
+	jsonSerialized, err := json.Marshal(crs)
+	if err != nil {
+		return "", errors.Wrap(err, "JSON marshalling CRS")
+	}
+	base64Encoded := base64.StdEncoding.EncodeToString(jsonSerialized)
+	return base64Encoded, nil
+}
+
+func deserializeSecret(serializedCrs string) (*CRS, error) {
+	var deserializedCrs CRS
+	base64Decoded, err := base64.StdEncoding.DecodeString(serializedCrs)
+	if err != nil {
+		return nil, errors.Wrap(err, "base64 decoding CRS")
+	}
+	err = json.Unmarshal(base64Decoded, &deserializedCrs)
+	if err != nil {
+		return nil, errors.Wrap(err, "JSON unmarshalling CRS")
+	}
+	return &deserializedCrs, nil
 }

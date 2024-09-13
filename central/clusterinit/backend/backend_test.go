@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -92,6 +93,10 @@ func (s *clusterInitBackendTestSuite) initMockData() error {
 	if err != nil {
 		return err
 	}
+	crsIssuedCert, err := readCertAndKey("crs")
+	if err != nil {
+		return err
+	}
 
 	s.certBundle = map[storage.ServiceType]*mtls.IssuedCert{
 		storage.ServiceType_SENSOR_SERVICE:            sensorIssuedCert,
@@ -99,6 +104,7 @@ func (s *clusterInitBackendTestSuite) initMockData() error {
 		storage.ServiceType_ADMISSION_CONTROL_SERVICE: admissionControlIssuedCert,
 	}
 	s.caCert = string(caCertPEM)
+	s.crsCert = crsIssuedCert
 
 	return nil
 }
@@ -117,6 +123,7 @@ type clusterInitBackendTestSuite struct {
 	mockCtrl     *gomock.Controller
 	certBundle   clusters.CertBundle
 	caCert       string
+	crsCert      *mtls.IssuedCert
 }
 
 func (s *clusterInitBackendTestSuite) SetupTest() {
@@ -280,6 +287,96 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 	}
 	s.Require().Nilf(initBundleMeta, "revoked init bundle %q contained in listing", id)
 
+}
+
+func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
+	ctx := s.ctx
+	crsName := "test1"
+
+	s.certProvider.EXPECT().GetCRSCert().Return(s.crsCert, uuid.NewV4(), nil).AnyTimes()
+
+	// Issue new CRS.
+	crsWithMeta, err := s.backend.IssueCRS(ctx, crsName)
+	s.Require().NoError(err)
+	id := crsWithMeta.Meta.Id
+
+	err = s.backend.CheckRevoked(ctx, id)
+	s.Require().NoErrorf(err, "newly generated CRS %q is revoked", id)
+
+	caCert, err := s.certProvider.GetCA()
+	s.Require().NoError(err)
+
+	cert, _, err := s.certProvider.GetCRSCert()
+	s.Require().NoError(err)
+
+	s.Require().Len(crsWithMeta.CRS.CAs, 1, "CRS does not contain exactly 1 CA")
+	s.Require().Equal(crsWithMeta.CRS.CAs[0], caCert)
+	s.Require().Equal(crsWithMeta.CRS.Cert, string(cert.CertPEM))
+	s.Require().Equal(crsWithMeta.CRS.Cert, string(cert.CertPEM))
+
+	// Verify properties about the generated Kubernetes secret
+	yamlBytes, err := crsWithMeta.RenderAsK8sSecret()
+	s.Require().NoError(err)
+	_ = yamlBytes
+
+	obj, err := k8sutil.UnstructuredFromYAML(string(yamlBytes))
+	s.Require().NoError(err)
+
+	s.Equal("cluster-registration-secret", obj.GetName())
+	s.Equal(crsWithMeta.Meta.GetName(), obj.GetAnnotations()["crs.platform.stackrox.io/name"])
+	s.Equal(crsWithMeta.Meta.GetId(), obj.GetAnnotations()["crs.platform.stackrox.io/id"])
+	s.Equal(crsWithMeta.Meta.GetCreatedAt().AsTime().Format(time.RFC3339Nano), obj.GetAnnotations()["crs.platform.stackrox.io/created-at"])
+	s.Equal(crsWithMeta.Meta.GetExpiresAt().AsTime().Format(time.RFC3339Nano), obj.GetAnnotations()["crs.platform.stackrox.io/expires-at"])
+
+	serializedCrsB64Encoded, ok, err := unstructured.NestedString(obj.UnstructuredContent(), "data", "crs")
+	s.Require().NoError(err)
+	s.Require().True(ok)
+	serializedCrs, err := base64.StdEncoding.DecodeString(serializedCrsB64Encoded)
+	s.Require().NoError(err)
+
+	deserializedCrs, err := deserializeSecret(string(serializedCrs))
+	s.Require().NoError(err)
+
+	s.Require().Len(deserializedCrs.CAs, 1, "deserialized CRS does not contain exactly 1 CA")
+	s.Equal(caCert, deserializedCrs.CAs[0])
+
+	s.Equal(string(cert.CertPEM), string(deserializedCrs.Cert))
+	s.Equal(string(cert.KeyPEM), string(deserializedCrs.Key))
+
+	// Verify the newly generated CRS is not listed as an init bundle.
+	initBundles, err := s.backend.GetAll(ctx)
+	s.Require().NoError(err)
+	for _, initBundle := range initBundles {
+		s.Require().NotEqual(crsName, initBundle.GetName(), "unexpected init-bundle in listing")
+	}
+
+	// Verify the newly generated CRS is listed as a CRS.
+	crss, err := s.backend.GetAllCRS(ctx)
+	s.Require().NoError(err)
+	var crsMeta *storage.InitBundleMeta
+	for _, m := range crss {
+		if m.GetName() == crsName {
+			crsMeta = m
+			break
+		}
+	}
+	s.Require().NotNilf(crsMeta, "failed to find newly generated CRS named %q", crsName)
+	protoassert.Equal(s.T(), crsWithMeta.Meta, crsMeta, "CRS meta data changed between generation and listing")
+
+	// Verify it is not revoked.
+	s.Require().False(crsMeta.IsRevoked, "newly generated CRS is revoked")
+
+	// Verify it can be revoked.
+	err = s.backend.Revoke(ctx, id)
+	s.Require().NoErrorf(err, "revoking newly generated CRS %q", id)
+	err = s.backend.CheckRevoked(ctx, id)
+	s.Require().Errorf(err, "CRS %q is not revoked, but should be", id)
+	crss, err = s.backend.GetAllCRS(ctx)
+	s.Require().NoError(err)
+	for _, m := range crss {
+		s.Require().NotEqual(crsName, m.GetName(), "unexpected CRS found in listing after revoke")
+		s.Require().NotEqual(id, m.GetId(), "unexpected CRS found in listing after revoke")
+	}
 }
 
 // Tests if attempt to issue two init bundles with the same name fails as expected.
