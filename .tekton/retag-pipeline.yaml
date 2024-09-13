@@ -83,10 +83,6 @@ spec:
     description: Execute the build with network isolation
     name: hermetic
     type: string
-  - default: ""
-    description: Build dependencies to be prefetched by Cachi2
-    name: prefetch-input
-    type: string
   - default: "false"
     description: Java build
     name: java
@@ -199,26 +195,6 @@ spec:
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
       name: determine-image-tag
-
-  - name: prefetch-dependencies
-    params:
-    - name: input
-      value: $(params.prefetch-input)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: ociStorage
-      value: $(params.output-image-repo):konflux-$(params.revision).prefetch
-    - name: ociArtifactExpiresAfter
-      value: $(params.oci-artifact-expires-after)
-    taskRef:
-      params:
-      - name: name
-        value: prefetch-dependencies-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:e94e26372125c35ae4c88bcccf7036624bd71f4dce7a7d710cdaae635063a2a6
-      - name: kind
-        value: task
-      resolver: bundles
 
   - name: build-image-manifest
     params:

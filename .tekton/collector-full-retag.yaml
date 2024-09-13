@@ -40,9 +40,6 @@ spec:
     value: 'true'
   - name: hermetic
     value: 'true'
-  # No language dependencies are required for retagging builds.
-  - name: prefetch-input
-    value: ''
   - name: build-source-image
     value: 'true'
   - name: clone-depth
