@@ -46,9 +46,9 @@ import (
 // capabilities of delegating scans to Secured Clusters.
 //
 // These tests require the following env vars to be set:
-// - API_ENDPOINT               - location of the stackrox API.
-// - ROX_USERNAME               - for admin access to the stackrox API.
-// - ROX_PASSWORD               - for admin access to the stackrox API.
+// - API_ENDPOINT               - location of the StackRox API.
+// - ROX_USERNAME               - for admin access to the StackRox API.
+// - ROX_PASSWORD               - for admin access to the StackRox API.
 // - KUBECONFIG                 - for inspecting logs, creating deploys, etc.
 // - QUAY_RHACS_ENG_RO_USERNAME - for reading quay.io/rhacs-eng images.
 // - QUAY_RHACS_ENG_RO_PASSWORD - for reading quay.io/rhacs-eng images.
@@ -65,11 +65,11 @@ const (
 	// a log entry to be found.
 	deleScanDefaultLogWaitTimeout = 30 * time.Second
 
-	// deleScanDefaultMaxRetries the number of times to retry pulling images from the stackrox API or executing
+	// deleScanDefaultMaxRetries the number of times to retry pulling images from the StackRox API or executing
 	// scans that are rate limited.
 	deleScanDefaultMaxRetries = 30
 
-	// deleScanDefaultRetryDelay the amount of time to wait between retries interacting with the stackrox API.
+	// deleScanDefaultRetryDelay the amount of time to wait between retries interacting with the StackRox API.
 	deleScanDefaultRetryDelay = 5 * time.Second
 )
 
@@ -80,7 +80,6 @@ const (
 	deleScanAccessScopeName   = "dele-scan-access-scope"
 	deleScanRoleName          = "dele-scan-role"
 	deleScanPermissionSetName = "dele-scan-permission-set"
-	deleScanDeployName        = "dele-scan-deploy"
 )
 
 var (
@@ -146,13 +145,12 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	ts.restCfg = getConfig(t)
 	ctx := ts.ctx
 
-	// ubi9Image references an image that is small (scans fast), does not require auth, and
-	// has at least one vulnerability. This image is used by majority of the scanning tests.
+	// ubi9Image* references images that are small (scans fast), do not require auth, and
+	// have at least one vulnerability.
+	//
+	// A unique image for each deployment test is ideal, otherwise there is a chance a scan
+	// was triggered from a previous deployemnt (as opposed to the current one).
 	ts.ubi9Image = NewDeleScanTestImage(t, "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194@sha256:73f7dcacb460dad137a58f24668470a5a2e47378838a0190eef0ab532c6e8998")
-
-	// Setup a few additional images for deployment scanning tests. A unique image is ideal
-	// for each deployment test, otherwise there is a chance if a deployment is not deleted
-	// that the current 'scan' was triggered from a previous deployemnt.
 	ts.ubi9ImageB = NewDeleScanTestImage(t, "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1227@sha256:35a12657ce1bcb2b7667f4e6e0147186c1e0172cc43ece5452ab85afd6532791")
 
 	// Dockerfiles for these are located at qa-tests-backend/test-images/delegated-scanning/*.
@@ -165,8 +163,12 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 
 	// Get a reference to the Secured Cluster to send delegated scans too, will use this reference throughout the tests.
 	// If a valid remote cluster is NOT available all tests in this suite will fail.
-	t.Log("Getting remote stackrox cluster details")
+	t.Log("Getting remote StackRox cluster details")
 	envVal, _ := ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, env.LocalImageScanningEnabled.EnvVar())
+
+	// Verify the StackRox installation supports delegated scanning, for this check
+	// to succeed Central and Sensor must have an active connection.
+	ts.waitForHealthyCentralSensorConn()
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
@@ -193,19 +195,15 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
 		ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, deleScanDesiredLogLevel)
 		t.Logf("Log level env var changed from %q to %q on Sensor", ts.origSensorLogLevel, deleScanDesiredLogLevel)
-	}
 
-	// Wait for critical components to be healthy.
-	t.Log("Waiting for Sensor to be ready")
-	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
-	t.Log("Waiting for Central/Sensor connection to be ready")
-	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+		ts.waitForHealthyCentralSensorConn()
+	}
 
 	// Pre-clean any roles, permissions, etc. from previous runs.
 	t.Log("Deleteing resources from previous tests")
 	ts.resetAccess(ctx)
 
-	t.Log("Resetting delegated scanning config")
+	// Reset the delegated scanning config to default value.
 	ts.resetConfig(ctx)
 
 	ts.deleScanUtils = NewDeleScanTestUtils(t, ts.restCfg, ts.listK8sAPIResources())
@@ -283,10 +281,10 @@ func (ts *DelegatedScanningSuite) TestConfig() {
 	// is set to it's default values.
 	ts.Run("config has expected default values", func() {
 		t := ts.T()
-		_, err = service.UpdateConfig(ctx, nil)
+		_, err = service.UpdateConfig(ctx, &v1.DelegatedRegistryConfig{})
 		require.NoError(t, err)
 
-		cfg, err := service.GetConfig(ctx, nil)
+		cfg, err := service.GetConfig(ctx, &v1.Empty{})
 		require.NoError(t, err)
 		assert.Equal(t, "", cfg.DefaultClusterId, "default cluster id should be empty")
 		assert.Equal(t, v1.DelegatedRegistryConfig_NONE, cfg.EnabledFor)
@@ -314,7 +312,7 @@ func (ts *DelegatedScanningSuite) TestConfig() {
 			t.Logf("\n got: %v\nwant: %v", got, want)
 		}
 
-		got, err = service.GetConfig(ctx, nil)
+		got, err = service.GetConfig(ctx, &v1.Empty{})
 		require.NoError(t, err)
 		if !assert.True(t, got.EqualVT(want)) {
 			t.Logf("\n got: %v\nwant: %v", got, want)
@@ -363,7 +361,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 	// (ex: regression ROX-25526).
 	//
 	// Scan failures are not used to detect this regression because our test environment
-	// consists of a single cluster/namespace Stackrox installation (as opposed to multi-cluster).
+	// consists of a single cluster/namespace StackRox installation (as opposed to multi-cluster).
 	// In a single cluster installation scanning images from the OCP internal registry may,
 	// by luck, succeed if an autogenerated integration with appropriate access
 	// exists at the time of scan.
@@ -372,7 +370,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 
 		ts.skipIfNotOpenShift()
 
-		iis, err := service.GetImageIntegrations(ctx, nil)
+		iis, err := service.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
 		require.NoError(t, err)
 
 		ocpRegistryHostname := "image-registry.openshift-image-registry.svc"
@@ -618,9 +616,11 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
 
-	deployAndVerify := func(image deleScanTestImage) {
-		// Do an initial teardown in case the deployment is lingering from previous runs/tests.
-		teardownDeployment(t, deleScanDeployName)
+	deployAndVerify := func(deployName string, image deleScanTestImage) {
+		t := ts.T()
+
+		// Do an initial teardown in case a deployment is lingering from a previous test.
+		teardownDeployment(t, deployName)
 
 		// Since we cannot 'force' a scan when deploying an image, we first delete
 		// the image to help ensure a fresh scan is executed. Otherwise Sensor
@@ -630,7 +630,7 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 		fromByte := ts.getSensorLastLogBytePos(ctx)
 
 		// Create a deployment that will sleep forever.
-		ts.deleScanUtils.DeploySleeperImage(t, ctx, ts.namespace, deleScanDeployName, image.IDRef())
+		ts.deleScanUtils.DeploySleeperImage(t, ctx, ts.namespace, deployName, image.IDRef())
 
 		// Pull the image scan from the API and validate it.
 		imageService := v1.NewImageServiceClient(conn)
@@ -642,11 +642,11 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 		ts.waitUntilSensorLogsScan(ctx, image.IDRef(), fromByte)
 
 		// Only perform teardown on success so that logs can be captured on failure.
-		t.Logf("Tearing down deployment %q", deleScanDeployName)
-		teardownDeployment(t, deleScanDeployName)
+		t.Logf("Tearing down deployment %q", deployName)
+		teardownDeploymentWithoutCheck(deployName)
 	}
 
-	ts.Run("scan deployed image in secured cluster", func() {
+	ts.Run("scan deployed image", func() {
 		t := ts.T()
 
 		// Update the delegated scanning config to delegate scans for all images.
@@ -655,13 +655,12 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 		})
 		require.NoError(t, err)
 
-		deployAndVerify(ts.ubi9ImageB)
+		deployAndVerify("dele-scan-norm", ts.ubi9ImageB)
 	})
 
 	// The test verifies that with delegated scanning disabled images from the OCP internal
 	// registry are still scanned.
 	ts.Run("scan deployed image from OCP internal registry", func() {
-		// t := ts.T()
 		ctx := ts.ctx
 
 		ts.skipIfNotOpenShift()
@@ -669,7 +668,7 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 		// Disable delegated scanning.
 		ts.resetConfig(ctx)
 
-		deployAndVerify(ts.ocpInternalImage)
+		deployAndVerify("dele-scan-ocp-int", ts.ocpInternalImage)
 	})
 
 }
@@ -829,6 +828,7 @@ func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName st
 	// Ensure at least one component has a vulnerability.
 	for _, c := range img.GetScan().GetComponents() {
 		if len(c.GetVulns()) > 0 {
+			t.Logf("Found successful scan of %q", imgFullName)
 			return
 		}
 	}
@@ -836,7 +836,7 @@ func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName st
 	require.Fail(t, "No vulnerabilities found.", "Expected at least one vulnerability in image %q, but found none.", imgFullName)
 }
 
-// getImageWithRetires will retry attempts to get an image from the stackrox API, and retry if not found.
+// getImageWithRetires will retry attempts to get an image from the StackRox API, and retry if not found.
 func (ts *DelegatedScanningSuite) getImageWithRetires(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.GetImageRequest) (*storage.Image, error) {
 	var err error
 	var img *storage.Image
@@ -867,7 +867,7 @@ func (ts *DelegatedScanningSuite) getImageWithRetires(t *testing.T, ctx context.
 	return img, err
 }
 
-// scanWithRetries will retry attempts scan an image using the stackrox API, and retry when rate limited.
+// scanWithRetries will retry attempts scan an image using the StackRox API, and retry when rate limited.
 func (ts *DelegatedScanningSuite) scanWithRetries(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.ScanImageRequest) (*storage.Image, error) {
 	var err error
 	var img *storage.Image
@@ -1022,6 +1022,8 @@ func (ts *DelegatedScanningSuite) executeAndValidateScan(ctx context.Context, co
 
 	// Search the Sensor logs for a record of the scan that was just completed
 	ts.waitUntilSensorLogsScan(ctx, imageStr, fromByte)
+
+	t.Logf("Found Sensor log entries indiciating successful scan of %q", imageStr)
 }
 
 // skipIfNotOpenShift will skip the current test if the cluster under test
@@ -1062,6 +1064,8 @@ func (ts *DelegatedScanningSuite) createImageIntegration(dockerConfig *storage.D
 	return rii
 }
 
+// deleteImageByID will delete an image via StackRox API. If a deployment exists
+// that still references the image, the image will be immediatley re-scanned.
 func (ts *DelegatedScanningSuite) deleteImageByID(id string) {
 	t := ts.T()
 	ctx := ts.ctx
@@ -1075,4 +1079,18 @@ func (ts *DelegatedScanningSuite) deleteImageByID(id string) {
 	require.NoError(t, err)
 
 	t.Logf("Num images deleted from query %q: %d", query, delResp.NumDeleted)
+}
+
+// waitForHealthyCentralSensorConn will wait for the Sensor deployment to be ready
+// and for Central to report a healthy connection to Sensor.
+func (ts *DelegatedScanningSuite) waitForHealthyCentralSensorConn() {
+	t := ts.T()
+	ctx := ts.ctx
+
+	// Wait for critical components to be healthy.
+	t.Log("Waiting for Sensor to be ready")
+	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
+
+	t.Log("Waiting for Central/Sensor connection to be ready")
+	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
 }
