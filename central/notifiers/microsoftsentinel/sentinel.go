@@ -9,6 +9,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs"
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/administration/events/option"
@@ -19,12 +20,14 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
 	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
 	_ notifiers.AlertNotifier = (*sentinel)(nil)
+	_ notifiers.AuditNotifier = (*sentinel)(nil)
 )
 
 func init() {
@@ -39,6 +42,26 @@ func init() {
 type sentinel struct {
 	notifier     *storage.Notifier
 	azlogsClient azureLogsClient
+}
+
+func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
+	if !features.MicrosoftSentinelNotifier.Enabled() {
+		return nil
+	}
+
+	if !s.AuditLoggingEnabled() {
+		return nil
+	}
+
+	err := s.uploadLogs(ctx, s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig(), msg)
+	if err != nil {
+		return errors.Wrap(err, "failed to upload audit log to Microsoft Sentinel")
+	}
+	return nil
+}
+
+func (s sentinel) AuditLoggingEnabled() bool {
+	return s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled()
 }
 
 func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
@@ -66,10 +89,6 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	}, nil
 }
 
-func (s sentinel) sentinel() *storage.MicrosoftSentinel {
-	return s.notifier.GetMicrosoftSentinel()
-}
-
 func (s sentinel) Close(_ context.Context) error {
 	return nil
 }
@@ -79,13 +98,34 @@ func (s sentinel) ProtoNotifier() *storage.Notifier {
 }
 
 func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
-	alert := s.getTestAlert()
-
-	err := s.AlertNotify(ctx, alert)
-	if err != nil {
-		return notifiers.NewNotifierError("could not send event", err)
+	if s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled() {
+		err := s.SendAuditMessage(ctx, s.getTestAuditLogMessage())
+		if err != nil {
+			return notifiers.NewNotifierError("could not send audit message to sentinel", err)
+		}
+	} else {
+		log.Info("audit message are disabled, test audit message was not send to sentinel")
 	}
+
+	if s.notifier.GetMicrosoftSentinel().GetAlertDcrConfig().GetEnabled() {
+		err := s.AlertNotify(ctx, s.getTestAlert())
+		if err != nil {
+			return notifiers.NewNotifierError("could not send alert notify to sentinel", err)
+		}
+	} else {
+		log.Info("alert notifier is disabled, test alert was not send to sentinel")
+	}
+
 	return nil
+}
+
+func (s sentinel) getTestAuditLogMessage() *v1.Audit_Message {
+	return &v1.Audit_Message{
+		Request: &v1.Audit_Message_Request{
+			Endpoint: "test-endpoint",
+			Method:   "GET",
+		},
+	}
 }
 
 func (s sentinel) getTestAlert() *storage.Alert {
@@ -110,15 +150,23 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return nil
 	}
 
-	bytesToSend, err := s.prepareLogsToSend(alert)
+	err := s.uploadLogs(ctx, s.notifier.GetMicrosoftSentinel().GetAlertDcrConfig(), alert)
+	if err != nil {
+		return errors.Wrap(err, "failed to upload alert notifications to Microsoft Sentinel")
+	}
+	return nil
+}
+
+func (s sentinel) uploadLogs(ctx context.Context, dcrConfig *storage.MicrosoftSentinel_DataCollectionRuleConfig, msg proto.Message) error {
+	bytesToSend, err := s.prepareLogsToSend(msg)
 	if err != nil {
 		return err
 	}
 
-	err = retry.WithRetry(func() error {
+	return retry.WithRetry(func() error {
 		// UploadResponse is unhandled because it currently is only a placeholder in the azure client library and does not
 		// contain any information to be processed.
-		_, err := s.azlogsClient.Upload(ctx, s.sentinel().GetAlertDcrConfig().GetDataCollectionRuleId(), s.sentinel().GetAlertDcrConfig().GetStreamName(), bytesToSend, &azlogs.UploadOptions{})
+		_, err := s.azlogsClient.Upload(ctx, dcrConfig.GetDataCollectionRuleId(), dcrConfig.GetStreamName(), bytesToSend, &azlogs.UploadOptions{})
 		azRespErr := azureErrors.IsResponseError(err)
 		if azRespErr != nil {
 			return notifiers.CreateError(s.notifier.GetName(), azRespErr.RawResponse, codes.MicrosoftSentinelGeneric)
@@ -132,16 +180,12 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 			time.Sleep(wait * time.Millisecond)
 		}),
 	)
-
-	if err != nil {
-		return errors.Wrap(err, "failed to upload logs to azure")
-	}
-	return nil
 }
 
-func (s sentinel) prepareLogsToSend(alert *storage.Alert) ([]byte, error) {
+// prepareLogsToSend converts a proto message, wraps it into an array and converts it to JSON which is expected by Sentinel.
+func (s sentinel) prepareLogsToSend(msg protocompat.Message) ([]byte, error) {
 	// convert object to an unstructured map to later wrap it as an array.
-	logToSendObj, err := protocompat.MarshalMap(alert)
+	logToSendObj, err := protocompat.MarshalMap(msg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to send alert to Microsoft Sentinel")
 	}
@@ -170,13 +214,23 @@ func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
 		errorList.AddString("Log Ingestion Endpoint must be specified")
 	}
 
+	if sentinel.GetAuditLogDcrConfig().GetEnabled() {
+		if sentinel.GetAuditLogDcrConfig().GetDataCollectionRuleId() == "" {
+			errorList.AddString("Audit Logging Data Collection Rule Id must be specified")
+		}
+
+		if sentinel.GetAuditLogDcrConfig().GetStreamName() == "" {
+			errorList.AddString("Audit Logging Stream Name must be specified")
+		}
+	}
+
 	if sentinel.GetAlertDcrConfig().GetEnabled() {
 		if sentinel.GetAlertDcrConfig().GetDataCollectionRuleId() == "" {
-			errorList.AddString("Data Collection Rule Id must be specified")
+			errorList.AddString("Alert Data Collection Rule Id must be specified")
 		}
 
 		if sentinel.GetAlertDcrConfig().GetStreamName() == "" {
-			errorList.AddString("Stream Name must be specified")
+			errorList.AddString("Alert Stream Name must be specified")
 		}
 	}
 
