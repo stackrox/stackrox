@@ -143,7 +143,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.PolicyReconciler{
+	if err = (&controller.SecurityPolicyReconciler{
 		K8sClient:    mgr.GetClient(),
 		Scheme:       mgr.GetScheme(),
 		PolicyClient: policyClient,

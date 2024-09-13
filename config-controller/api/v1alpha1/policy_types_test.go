@@ -21,11 +21,11 @@ func TestMarshalJSON(t *testing.T) {
 
 	assert.NoError(t, err, "Failed to read policy file")
 
-	policyCRSpec := PolicySpec{}
+	policyCRSpec := SecurityPolicySpec{}
 
 	assert.NoError(t, json.Unmarshal(bytes, &policyCRSpec), "Failed to unmarshal policy spec CR JSON")
 
-	expected := PolicySpec{
+	expected := SecurityPolicySpec{
 		Name:            "Test policy",
 		Description:     "This is a test description",
 		Rationale:       "This is a test rationale",

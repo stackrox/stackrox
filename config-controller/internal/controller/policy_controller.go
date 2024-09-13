@@ -18,14 +18,13 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/config-controller/pkg/client"
-	storage "github.com/stackrox/rox/generated/storage"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/protoadapt"
+	"github.com/stackrox/rox/generated/storage"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -33,8 +32,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// PolicyReconciler reconciles a Policy object
-type PolicyReconciler struct {
+// SecurityPolicyReconciler reconciles a SecurityPolicy object
+type SecurityPolicyReconciler struct {
 	K8sClient    ctrlClient.Client
 	Scheme       *runtime.Scheme
 	PolicyClient client.CachedPolicyClient
@@ -44,7 +43,7 @@ type PolicyReconciler struct {
 //+kubebuilder:rbac:groups=config.stackrox.io,resources=policies/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=config.stackrox.io,resources=policies/finalizers,verbs=update
 
-func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	rlog := log.FromContext(ctx)
 	rlog.Info("Reconciling", "namespace", req.Namespace, "name", req.Name)
 
@@ -53,7 +52,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Get the policy CR
-	policyCR := &configstackroxiov1alpha1.Policy{}
+	policyCR := &configstackroxiov1alpha1.SecurityPolicy{}
 	if err := r.K8sClient.Get(ctx, req.NamespacedName, policyCR); err != nil {
 		if k8serr.IsNotFound(err) {
 			// Must have been deleted
@@ -63,21 +62,24 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	desiredState := &storage.Policy{}
-	if err := protojson.Unmarshal([]byte(policyCR.Spec.Policy), protoadapt.MessageV2Of(desiredState)); err != nil {
-		rlog.Error(err, "Failed to parse policy JSON")
-		return ctrl.Result{}, nil
+	// Get the desired state from the policy CR spec and fill it into policy
+	specBytes, err := json.Marshal(policyCR.Spec)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "Failed to marshal policy spec")
+	}
+	if err := json.Unmarshal(specBytes, desiredState); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "Failed to unmarshal policy")
 	}
 
-	policy, exists, err := r.PolicyClient.GetPolicy(ctx, req.Name)
-
+	existingPolicy, exists, err := r.PolicyClient.GetPolicy(ctx, req.Name)
 	if err != nil {
 		return ctrl.Result{}, errors.Wrap(err, "Failed to fetch policy")
 	}
 
 	var retErr error
 	if exists {
-		desiredState.Id = policy.Id
 		if err = r.PolicyClient.UpdatePolicy(ctx, desiredState); err != nil {
+			desiredState.Id = existingPolicy.Id
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy %s", req.Name))
 			policyCR.Status.Accepted = false
 			policyCR.Status.Message = retErr.Error()
@@ -111,9 +113,9 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *SecurityPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	err := ctrl.NewControllerManagedBy(mgr).
-		For(&configstackroxiov1alpha1.Policy{}).
+		For(&configstackroxiov1alpha1.SecurityPolicy{}).
 		Complete(r)
 
 	if err != nil {

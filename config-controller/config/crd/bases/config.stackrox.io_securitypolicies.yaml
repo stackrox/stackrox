@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-  name: policies.config.stackrox.io
+  name: securitypolicies.config.stackrox.io
 spec:
   group: config.stackrox.io
   names:
-    kind: Policy
-    listKind: PolicyList
-    plural: policies
-    singular: policy
+    kind: SecurityPolicy
+    listKind: SecurityPolicyList
+    plural: securitypolicies
+    singular: securitypolicy
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Policy is the Schema for the policies API
+        description: SecurityPolicy is the Schema for the policies API
         properties:
           apiVersion:
             description: |-
@@ -37,12 +37,14 @@ spec:
           metadata:
             type: object
           spec:
-            description: PolicySpec defines the desired state of Policy
+            description: SecurityPolicySpec defines the desired state of SecurityPolicy
             properties:
               categories:
                 items:
                   type: string
                 type: array
+              criteriaLocked:
+                type: boolean
               description:
                 type: string
               disabled:
@@ -65,11 +67,11 @@ spec:
                   properties:
                     deployment:
                       properties:
-                        'name ':
+                        name:
                           type: string
                         scope:
                           properties:
-                            'cluster ':
+                            cluster:
                               type: string
                             label:
                               properties:
@@ -91,6 +93,8 @@ spec:
                       type: string
                   type: object
                 type: array
+              isDefault:
+                type: boolean
               lifecycleStages:
                 enum:
                 - DEPLOY
@@ -110,6 +114,8 @@ spec:
                       type: array
                   type: object
                 type: array
+              mitreVectorsLocked:
+                type: boolean
               name:
                 type: string
               notifiers:
@@ -140,7 +146,7 @@ spec:
                             type: array
                         type: object
                       type: array
-                    'sectionName ':
+                    sectionName:
                       type: string
                   type: object
                 type: array
@@ -153,7 +159,7 @@ spec:
               scope:
                 items:
                   properties:
-                    'cluster ':
+                    cluster:
                       type: string
                     label:
                       properties:
@@ -176,7 +182,7 @@ spec:
                 type: string
             type: object
           status:
-            description: PolicyStatus defines the observed state of Policy
+            description: SecurityPolicyStatus defines the observed state of SecurityPolicy
             properties:
               accepted:
                 type: boolean

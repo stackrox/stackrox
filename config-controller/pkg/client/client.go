@@ -170,7 +170,7 @@ func (gc *grpcClient) TokenExchange(ctx context.Context) error {
 
 type client struct {
 	svc         PolicyClient
-	cache       map[string]*storage.Policy
+	cache       map[string]*storage.Policy //TODO: The cached client only needs to be a name to ID cache.
 	lastUpdated time.Time
 }
 

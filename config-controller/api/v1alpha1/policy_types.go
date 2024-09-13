@@ -22,8 +22,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// PolicySpec defines the desired state of Policy
-type PolicySpec struct {
+// SecurityPolicySpec defines the desired state of SecurityPolicy
+type SecurityPolicySpec struct {
 	Name        string   `json:"name,omitempty"`
 	Description string   `json:"description,omitempty"`
 	Rationale   string   `json:"rationale,omitempty"`
@@ -47,7 +47,7 @@ type PolicySpec struct {
 	IsDefault          bool                 `json:"isDefault,omitempty"`
 }
 
-func (p PolicySpec) ToProtobuf() *storage.Policy {
+func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 	proto := storage.Policy{
 		Name:               p.Name,
 		Description:        p.Description,
@@ -214,8 +214,8 @@ type MitreAttackVectors struct {
 	Techniques []string `json:"techniques,omitempty"`
 }
 
-// PolicyStatus defines the observed state of Policy
-type PolicyStatus struct {
+// SecurityPolicyStatus defines the observed state of SecurityPolicy
+type SecurityPolicyStatus struct {
 	Accepted bool   `json:"accepted"`
 	Message  string `json:"message"`
 }
@@ -223,24 +223,24 @@ type PolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Policy is the Schema for the policies API
-type Policy struct {
+// SecurityPolicy is the Schema for the policies API
+type SecurityPolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PolicySpec   `json:"spec,omitempty"`
-	Status PolicyStatus `json:"status,omitempty"`
+	Spec   SecurityPolicySpec   `json:"spec,omitempty"`
+	Status SecurityPolicyStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// PolicyList contains a list of Policy
-type PolicyList struct {
+// SecurityPolicyList contains a list of Policy
+type SecurityPolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Policy `json:"items"`
+	Items           []SecurityPolicy `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Policy{}, &PolicyList{})
+	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
 }
