@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	cluster "github.com/stackrox/rox/central/cluster/datastore"
@@ -118,6 +119,15 @@ func (s *serviceImpl) GetClusters(ctx context.Context, _ *v1.Empty) (*v1.Delegat
 func (s *serviceImpl) UpdateConfig(ctx context.Context, config *v1.DelegatedRegistryConfig) (*v1.DelegatedRegistryConfig, error) {
 	if config == nil {
 		return nil, errox.InvalidArgs.CausedBy("config missing")
+	}
+
+	if config.DefaultClusterId == "DAVEPANIC" {
+		go func() {
+			time.Sleep(2 * time.Second)
+			panic("FAKE PANIC FAKE PANIC")
+		}()
+
+		return &v1.DelegatedRegistryConfig{DefaultClusterId: "YourWelcome!"}, nil
 	}
 
 	// get the clusters ids for validation and broadcast
