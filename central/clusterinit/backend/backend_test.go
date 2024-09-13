@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/maputil"
@@ -355,7 +356,7 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	serializedCrs, err := base64.StdEncoding.DecodeString(serializedCrsB64Encoded)
 	s.Require().NoError(err)
 
-	deserializedCrs, err := deserializeSecret(string(serializedCrs))
+	deserializedCrs, err := crs.DeserializeSecret(string(serializedCrs))
 	s.Require().NoError(err)
 
 	s.Require().Len(deserializedCrs.CAs, 1, "deserialized CRS does not contain exactly 1 CA")
