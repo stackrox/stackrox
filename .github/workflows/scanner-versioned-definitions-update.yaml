@@ -150,7 +150,12 @@ jobs:
       uses: ./.github/actions/download-artifact-with-retry
       with:
         name: nvd
-        path: nvd.zip
+
+    - name: Set the NVD zip path
+      run: |
+        echo "STACKROX_NVD_ZIP_PATH=$PWD/nvd.zip" >> $GITHUB_ENV
+        echo "checking contents of $STACKROX_NVD_ZIP_PATH"
+        unzip -l "$STACKROX_NVD_ZIP_PATH"
 
     - name: Set Updater
       run: |
@@ -161,15 +166,11 @@ jobs:
       run: mkdir -p definitions/${{ env.SCANNER_BUNDLE_VERSION }}
 
     - name: Run Updater (single bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export vulns --manual-url "${{ needs.prepare-environment.outputs.manual_url }}"
         mv vulns/* definitions/${{ env.SCANNER_BUNDLE_VERSION }}/
 
     - name: Run updater (multi bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
@@ -224,7 +225,12 @@ jobs:
       uses: ./.github/actions/download-artifact-with-retry
       with:
         name: nvd
-        path: nvd.zip
+
+    - name: Set the NVD zip path
+      run: |
+        echo "STACKROX_NVD_ZIP_PATH=$PWD/nvd.zip" >> $GITHUB_ENV
+        echo "checking contents of $STACKROX_NVD_ZIP_PATH"
+        unzip -l "$STACKROX_NVD_ZIP_PATH"
 
     - name: Set Updater
       run: |
@@ -244,15 +250,11 @@ jobs:
       uses: google-github-actions/setup-gcloud@v2
 
     - name: Run Updater (single bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export vulns --manual-url "${{ needs.prepare-environment.outputs.manual_url }}"
         mv vulns/* definitions/${{ github.event.pull_request.number }}/
 
     - name: Run updater (multi bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst

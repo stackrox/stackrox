@@ -132,17 +132,18 @@ jobs:
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: nvd
-        path: .
+
+    - name: Set the NVD zip path
+      run: |
+        echo "STACKROX_NVD_ZIP_PATH=$PWD/nvd.zip" >> $GITHUB_ENV
+        echo "checking contents of $STACKROX_NVD_ZIP_PATH"
+        unzip -l "$STACKROX_NVD_ZIP_PATH"
 
     - name: Update vulnerabilities
       env:
         STACKROX_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         STACKROX_NVD_API_CALL_INTERVAL: 6s
       run: |
-        # Use fully qualified path to refer to the NVD bundle
-        STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
-        export STACKROX_NVD_ZIP_PATH
-
         DOWNLOAD_URL="https://github.com/stackrox/stackrox/archive/refs/tags/${{ env.ROX_PRODUCT_TAG }}.zip"
         FILE_NAME=$(basename "$DOWNLOAD_URL")
         if ! wget "$DOWNLOAD_URL" -O "$FILE_NAME"; then
