@@ -61,7 +61,7 @@ jobs:
             nvd-feeds)
                 nvd_file=nvd-feeds.zip
                 ;;
-            ,*)
+            *)
                 echo >&2 "error: invalid NVD bundle type '$NVD_BUNDLE_TYPE'"
                 exit 1
         esac
@@ -160,22 +160,17 @@ jobs:
 
     - name: Sanity check NVD zip
       run: |
-        if [ ! -f ./nvd.zip ]; then
-          echo >&2 "nvd.zip not found!"
-          exit 1
-        fi
+        path="$PWD/nvd.zip"
+        echo "checking contents of $path"
+        unzip -l "$path"
+        echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
     - name: Run Updater (single bundle)
       run: |
-        # Use fully qualified path to refer to the NVD bundle
-        STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
-        export STACKROX_NVD_ZIP_PATH
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ env.SCANNER_BUNDLE_VERSION }}"
 
     - name: Run updater (multi bundle)
       run: |
-        STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
-        export STACKROX_NVD_ZIP_PATH
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
 
@@ -242,24 +237,20 @@ jobs:
 
     - name: Sanity check NVD zip
       run: |
-        if [ ! -f ./nvd.zip ]; then
-          echo >&2  "nvd.zip not found!"
-          exit 1
-        fi
+        path="$PWD/nvd.zip"
+        echo "checking contents of $path"
+        unzip -l "$path"
+        echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
     - name: Create bundle output directory
       run: mkdir -p definitions/${{ github.event.pull_request.number }}
 
     - name: Run Updater (single bundle)
       run: |
-        # Use fully qualified path to refer to the NVD bundle
-        export STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ github.event.pull_request.number }}"
 
     - name: Run updater (multi bundle)
       run: |
-        STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
-        export STACKROX_NVD_ZIP_PATH
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
 
