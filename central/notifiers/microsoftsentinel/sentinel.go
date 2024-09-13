@@ -215,11 +215,11 @@ func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
 	}
 
 	if sentinel.GetAuditLogDcrConfig().GetEnabled() {
-		if sentinel.GetAlertDcrConfig().GetDataCollectionRuleId() == "" {
+		if sentinel.GetAuditLogDcrConfig().GetDataCollectionRuleId() == "" {
 			errorList.AddString("Audit Logging Data Collection Rule Id must be specified")
 		}
 
-		if sentinel.GetAlertDcrConfig().GetStreamName() == "" {
+		if sentinel.GetAuditLogDcrConfig().GetStreamName() == "" {
 			errorList.AddString("Audit Logging Stream Name must be specified")
 		}
 	}
