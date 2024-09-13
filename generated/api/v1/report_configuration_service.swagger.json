@@ -299,7 +299,8 @@
     "ReportConfigurationReportType": {
       "type": "string",
       "enum": [
-        "VULNERABILITY"
+        "VULNERABILITY",
+        "COMPLIANCE"
       ],
       "default": "VULNERABILITY"
     },
@@ -560,6 +561,9 @@
       "type": "object",
       "properties": {
         "collectionId": {
+          "type": "string"
+        },
+        "scanConfigId": {
           "type": "string"
         }
       }

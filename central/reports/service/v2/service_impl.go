@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
+	complianceScanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
@@ -71,6 +72,7 @@ type serviceImpl struct {
 	reportConfigStore   reportConfigDS.DataStore
 	snapshotDatastore   snapshotDS.DataStore
 	collectionDatastore collectionDS.DataStore
+	complianceDatastore complianceScanConfigDS.DataStore
 	notifierDatastore   notifierDS.DataStore
 	scheduler           schedulerV2.Scheduler
 	blobStore           blobDS.Datastore

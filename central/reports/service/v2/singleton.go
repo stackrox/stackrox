@@ -2,6 +2,7 @@ package v2
 
 import (
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
+	complianceConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	schedulerV2 "github.com/stackrox/rox/central/reports/scheduler/v2"
@@ -23,7 +24,7 @@ func initialize() {
 	// blocking main routine
 	go scheduler.Start()
 	collectionDatastore, _ := collectionDS.Singleton()
-	svc = New(reportConfigDS.Singleton(), snapshotDS.Singleton(), collectionDatastore, notifierDS.Singleton(), scheduler,
+	svc = New(reportConfigDS.Singleton(), snapshotDS.Singleton(), collectionDatastore, complianceConfigDS.Singleton(), notifierDS.Singleton(), scheduler,
 		blobDS.Singleton(), validation.Singleton())
 }
 

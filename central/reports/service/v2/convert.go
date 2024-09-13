@@ -121,6 +121,10 @@ func (s *serviceImpl) convertV2ResourceScopeToProto(scope *apiV2.ResourceScope) 
 	if scope.GetCollectionScope() != nil {
 		ret.ScopeReference = &storage.ResourceScope_CollectionId{CollectionId: scope.GetCollectionScope().GetCollectionId()}
 	}
+	if scope.GetComplianceScanScheduleScope() != nil {
+		ret.ScopeReference = &storage.ResourceScope_ScanConfigId{ScanConfigId: scope.GetComplianceScanScheduleScope().GetId()}
+	}
+
 	return ret
 }
 
@@ -257,21 +261,40 @@ func (s *serviceImpl) convertProtoResourceScopeToV2(scope *storage.ResourceScope
 
 	ret := &apiV2.ResourceScope{}
 	if scope.GetScopeReference() != nil {
-		var collectionName string
-		collection, found, err := s.collectionDatastore.Get(allAccessCtx, scope.GetCollectionId())
-		if err != nil {
-			return nil, err
-		}
-		if !found {
-			return nil, errors.Errorf("Collection with ID %s no longer exists", scope.GetCollectionId())
-		}
-		collectionName = collection.GetName()
+		if scope.GetCollectionId() != "" {
+			var collectionName string
+			collection, found, err := s.collectionDatastore.Get(allAccessCtx, scope.GetCollectionId())
+			if err != nil {
+				return nil, err
+			}
+			if !found {
+				return nil, errors.Errorf("Collection with ID %s no longer exists", scope.GetCollectionId())
+			}
+			collectionName = collection.GetName()
 
-		ret.ScopeReference = &apiV2.ResourceScope_CollectionScope{
-			CollectionScope: &apiV2.CollectionReference{
-				CollectionId:   scope.GetCollectionId(),
-				CollectionName: collectionName,
-			},
+			ret.ScopeReference = &apiV2.ResourceScope_CollectionScope{
+				CollectionScope: &apiV2.CollectionReference{
+					CollectionId:   scope.GetCollectionId(),
+					CollectionName: collectionName,
+				},
+			}
+		}
+		if scope.GetScanConfigId() != "" {
+			var scanConfigName string
+			scanConfig, found, err := s.complianceDatastore.GetScanConfiguration(allAccessCtx, scope.GetScanConfigId())
+			if err != nil {
+				return nil, err
+			}
+			if !found {
+				return nil, errors.Errorf("Scan Configuration with ID %s no longer exists", scope.GetScanConfigId())
+			}
+			scanConfigName = scanConfig.GetScanConfigName()
+			ret.ScopeReference = &apiV2.ResourceScope_ComplianceScanScheduleScope{
+				ComplianceScanScheduleScope: &apiV2.ComplianceScanConfigReference{
+					Id:             scanConfig.GetId(),
+					ScanConfigName: scanConfigName,
+				},
+			}
 		}
 	}
 	return ret, nil
