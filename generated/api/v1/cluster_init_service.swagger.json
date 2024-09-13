@@ -38,6 +38,91 @@
         ]
       }
     },
+    "/v1/cluster-init/crs": {
+      "get": {
+        "operationId": "ClusterInitService_GetCRSs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CRSMetasResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "ClusterInitService"
+        ]
+      },
+      "post": {
+        "operationId": "ClusterInitService_GenerateCRS",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CRSGenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CRSGenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ClusterInitService"
+        ]
+      }
+    },
+    "/v1/cluster-init/crs/revoke": {
+      "patch": {
+        "summary": "RevokeCRSBundle deletes cluster registration secrets.",
+        "operationId": "ClusterInitService_RevokeCRS",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CRSRevokeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CRSRevokeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ClusterInitService"
+        ]
+      }
+    },
     "/v1/cluster-init/init-bundles": {
       "get": {
         "operationId": "ClusterInitService_GetInitBundles",
@@ -125,6 +210,17 @@
     }
   },
   "definitions": {
+    "CRSRevokeResponseCRSRevocationError": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        }
+      }
+    },
     "InitBundleMetaImpactedCluster": {
       "type": "object",
       "properties": {
@@ -214,6 +310,89 @@
         },
         "value": {
           "type": "string"
+        }
+      }
+    },
+    "v1CRSGenRequest": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v1CRSGenResponse": {
+      "type": "object",
+      "properties": {
+        "meta": {
+          "$ref": "#/definitions/v1CRSMeta"
+        },
+        "crs": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
+    },
+    "v1CRSMeta": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdBy": {
+          "$ref": "#/definitions/storageUser"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1CRSMetasResponse": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1CRSMeta"
+          }
+        }
+      }
+    },
+    "v1CRSRevokeRequest": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1CRSRevokeResponse": {
+      "type": "object",
+      "properties": {
+        "crsRevocationErrors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/CRSRevokeResponseCRSRevocationError"
+          }
+        },
+        "revokedIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

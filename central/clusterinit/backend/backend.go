@@ -23,9 +23,24 @@ type InitBundleWithMeta struct {
 	Meta       *storage.InitBundleMeta
 }
 
+// CRS contains a Cluster Registration Secret.
+type CRS struct {
+	CAs  []string `json:"CAs"`
+	Cert string   `json:"cert"`
+	Key  string   `json:"key"`
+}
+
+// CRSWithMeta contains a CRS alongside its meta data.
+type CRSWithMeta struct {
+	CRS  *CRS
+	Meta *storage.InitBundleMeta
+}
+
 var (
 	// ErrInitBundleIsRevoked signals that an init bundle has been revoked.
 	ErrInitBundleIsRevoked = errors.New("init bundle is revoked")
+	// ErrCRSIsRevoked signals that a CRS has been revoked.
+	ErrCRSIsRevoked = errors.New("CRS is revoked")
 )
 
 // Backend is the backend for the cluster-init component.
@@ -33,8 +48,10 @@ var (
 //go:generate mockgen-wrapper
 type Backend interface {
 	GetAll(ctx context.Context) ([]*storage.InitBundleMeta, error)
+	GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, error)
 	GetCAConfig(ctx context.Context) (*CAConfig, error)
 	Issue(ctx context.Context, name string) (*InitBundleWithMeta, error)
+	IssueCRS(ctx context.Context, name string) (*CRSWithMeta, error)
 	Revoke(ctx context.Context, id string) error
 	CheckRevoked(ctx context.Context, id string) error
 	authn.ValidateCertChain
