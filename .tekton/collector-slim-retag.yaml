@@ -40,8 +40,6 @@ spec:
     value: 'true'
   - name: hermetic
     value: 'true'
-  - name: build-source-image
-    value: 'true'
   - name: clone-depth
     value: '0'
   - name: clone-fetch-tags
