@@ -36,8 +36,6 @@ spec:
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  - name: hermetic
-    value: 'true'
   - name: clone-depth
     value: '0'
   - name: clone-fetch-tags

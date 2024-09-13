@@ -70,10 +70,6 @@ spec:
     name: skip-checks
     type: string
   - default: "false"
-    description: Execute the build with network isolation
-    name: hermetic
-    type: string
-  - default: "false"
     description: Java build
     name: java
     type: string
