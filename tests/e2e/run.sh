@@ -274,7 +274,8 @@ run_proxy_tests() {
             central_cert="$(mktemp -d)/central_cert.pem"
             info "Fetching central certificate for ${name}..."
             roxctl "${extra_args[@]}" -e "$endpoint" -p "$ROX_PASSWORD" \
-                central cert --insecure-skip-tls-verify 1>"$central_cert"
+                central cert --insecure-skip-tls-verify 1>"$central_cert" || \
+                failures+=("$p,fetch-CA")
             extra_args+=(--ca "$central_cert")
         fi
 
@@ -283,7 +284,7 @@ run_proxy_tests() {
             failures+=("$p")
         if (( direct )); then
             info "Direct gRPC to ${endpoint_tgt} with ${extra_args[*]}"
-            roxctl "${extra_args[@]}" -e "${endpoint_tgt}" central debug log >/dev/null && \
+            roxctl "${extra_args[@]}" -e "${endpoint_tgt}" central debug log >/dev/null || \
             failures+=("${p},direct-grpc")
         else
             info "Force HTTP1 to ${endpoint_tgt} with ${extra_args[*]} and --plaintext=${plaintext}"
