@@ -253,8 +253,7 @@ jobs:
     - name: Run Updater (single bundle)
       run: |
         # Use fully qualified path to refer to the NVD bundle
-        STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
-        export STACKROX_NVD_ZIP_PATH
+        export STACKROX_NVD_ZIP_PATH="$(pwd)/nvd.zip"
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ github.event.pull_request.number }}"
 
     - name: Run updater (multi bundle)
