@@ -711,6 +711,9 @@
         },
         "alertDcrConfig": {
           "$ref": "#/definitions/MicrosoftSentinelDataCollectionRuleConfig"
+        },
+        "auditLogDcrConfig": {
+          "$ref": "#/definitions/MicrosoftSentinelDataCollectionRuleConfig"
         }
       }
     },

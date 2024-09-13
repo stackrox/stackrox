@@ -3,6 +3,7 @@ package microsoftsentinel
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -19,7 +20,13 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-const streamName = "Custom-stackrox_notifier_CL"
+const (
+	alertStreamName = "Custom-stackrox_notifier_CL"
+	alertDcrID      = "aaaaaaaa-bbbb-4011-0000-111111111111"
+
+	auditStreamName = "Custom-stackrox_audit_CL"
+	auditDcrID      = "aaaaaaaa-bbbb-4022-0000-222222222222"
+)
 
 func TestSentinelNotifier(t *testing.T) {
 	suite.Run(t, new(SentinelTestSuite))
@@ -59,7 +66,7 @@ func (suite *SentinelTestSuite) TestAlertNotify() {
 	suite.Require().NoError(err)
 
 	// Assert call to library and marshalling is correct.
-	suite.mockAzureClient.EXPECT().Upload(gomock.Any(), uuid.NewDummy().String(), streamName, logsToSend, gomock.Any()).Times(1)
+	suite.mockAzureClient.EXPECT().Upload(gomock.Any(), uuid.NewDummy().String(), alertStreamName, logsToSend, gomock.Any()).Times(1)
 	require.NotNil(suite.T(), notifier)
 
 	err = notifier.AlertNotify(context.Background(), alert)
@@ -104,8 +111,13 @@ func (suite *SentinelTestSuite) TestValidate() {
 				Secret:               "my secret value",
 				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
 					Enabled:              true,
-					DataCollectionRuleId: uuid.NewDummy().String(),
-					StreamName:           streamName,
+					DataCollectionRuleId: alertDcrID,
+					StreamName:           alertStreamName,
+				},
+				AuditLogDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
+					Enabled:              true,
+					DataCollectionRuleId: auditDcrID,
+					StreamName:           auditStreamName,
 				},
 			},
 			ExpectedErrorMsg: "",
@@ -116,8 +128,11 @@ func (suite *SentinelTestSuite) TestValidate() {
 				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
 					Enabled: true,
 				},
+				AuditLogDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
+					Enabled: true,
+				},
 			},
-			ExpectedErrorMsg: "Microsoft Sentinel validation errors: [Log Ingestion Endpoint must be specified, Data Collection Rule Id must be specified, Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified, Secret must be specified]",
+			ExpectedErrorMsg: "[Log Ingestion Endpoint must be specified, Audit Logging Data Collection Rule Id must be specified, Audit Logging Stream Name must be specified, Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified, Secret must be specified]",
 			ValidateSecret:   true,
 		},
 		"Test invalid config without secret": {
@@ -126,9 +141,31 @@ func (suite *SentinelTestSuite) TestValidate() {
 					Enabled: true,
 				},
 			},
-			ExpectedErrorMsg:            "Microsoft Sentinel validation errors: [Log Ingestion Endpoint must be specified, Data Collection Rule Id must be specified, Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified]",
+			ExpectedErrorMsg:            "[Log Ingestion Endpoint must be specified, Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified, Directory Tenant Id must be specified, Application Client Id must be specified]",
 			ExpectedErrorMsgNotContains: "secret",
 			ValidateSecret:              false,
+		},
+		"Test only alert notifier is invalid": {
+			Config: &storage.MicrosoftSentinel{
+				ApplicationClientId:  uuid.NewDummy().String(),
+				DirectoryTenantId:    uuid.NewDummy().String(),
+				LogIngestionEndpoint: "example.com",
+				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
+					Enabled: true,
+				},
+			},
+			ExpectedErrorMsg: "[Alert Data Collection Rule Id must be specified, Alert Stream Name must be specified]",
+		},
+		"Test only audit log notifier is invalid": {
+			Config: &storage.MicrosoftSentinel{
+				ApplicationClientId:  uuid.NewDummy().String(),
+				DirectoryTenantId:    uuid.NewDummy().String(),
+				LogIngestionEndpoint: "example.com",
+				AuditLogDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
+					Enabled: true,
+				},
+			},
+			ExpectedErrorMsg: "[Audit Logging Data Collection Rule Id must be specified, Audit Logging Stream Name must be specified]",
 		},
 	}
 
@@ -139,26 +176,62 @@ func (suite *SentinelTestSuite) TestValidate() {
 				assert.NoError(t, err)
 			} else {
 				assert.NotContains(t, testCase.ExpectedErrorMsgNotContains, err.Error())
-				assert.Contains(t, testCase.ExpectedErrorMsg, err.Error())
+				if testCase.ExpectedErrorMsg != "" {
+					assert.Equal(t, fmt.Sprintf("Microsoft Sentinel validation errors: %s", testCase.ExpectedErrorMsg), err.Error())
+				}
 			}
 		})
 	}
 }
 
-func (suite *SentinelTestSuite) TestTestAlert() {
+func (suite *SentinelTestSuite) TestAuditTestAlert() {
+	config := getNotifierConfig()
+	config.GetMicrosoftSentinel().AuditLogDcrConfig.Enabled = false
+
 	notifier := &sentinel{
 		azlogsClient: suite.mockAzureClient,
-		notifier:     getNotifierConfig(),
+		notifier:     config,
 	}
 
 	testAlert := notifier.getTestAlert()
 	bytesToSend, err := notifier.prepareLogsToSend(testAlert)
 	suite.Require().NoError(err)
 
-	suite.mockAzureClient.EXPECT().Upload(gomock.Any(), uuid.NewDummy().String(), streamName, bytesToSend, gomock.Any()).Times(1)
+	suite.mockAzureClient.EXPECT().Upload(gomock.Any(), alertDcrID, alertStreamName, bytesToSend, gomock.Any()).Times(1)
 
 	notifierErr := notifier.Test(context.TODO())
 	suite.Require().Nil(notifierErr)
+}
+
+func (suite *SentinelTestSuite) TestTestAuditLogMessage() {
+	config := getNotifierConfig()
+	config.GetMicrosoftSentinel().AlertDcrConfig.Enabled = false
+
+	notifier := &sentinel{
+		azlogsClient: suite.mockAzureClient,
+		notifier:     config,
+	}
+
+	testAuditMessage := notifier.getTestAuditLogMessage()
+	bytesToSend, err := notifier.prepareLogsToSend(testAuditMessage)
+	suite.Require().NoError(err)
+
+	suite.mockAzureClient.EXPECT().Upload(gomock.Any(), auditDcrID, auditStreamName, bytesToSend, gomock.Any()).Times(1)
+
+	notifierErr := notifier.Test(context.TODO())
+	suite.Require().Nil(notifierErr)
+}
+
+func (suite *SentinelTestSuite) TestAuditLogEnabled() {
+	notifier := &sentinel{
+		azlogsClient: suite.mockAzureClient,
+		notifier:     getNotifierConfig(),
+	}
+	suite.Assert().True(notifier.AuditLoggingEnabled())
+
+	notifier.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().Enabled = false
+	suite.Assert().False(notifier.AuditLoggingEnabled())
+
 }
 
 func getNotifierConfig() *storage.Notifier {
@@ -168,8 +241,13 @@ func getNotifierConfig() *storage.Notifier {
 			MicrosoftSentinel: &storage.MicrosoftSentinel{
 				LogIngestionEndpoint: "portal.azure.com",
 				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
-					DataCollectionRuleId: uuid.NewDummy().String(),
-					StreamName:           streamName,
+					DataCollectionRuleId: alertDcrID,
+					StreamName:           alertStreamName,
+					Enabled:              true,
+				},
+				AuditLogDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
+					DataCollectionRuleId: auditDcrID,
+					StreamName:           auditStreamName,
 					Enabled:              true,
 				},
 			},
