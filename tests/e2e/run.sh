@@ -282,25 +282,30 @@ run_proxy_tests() {
         roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" central debug log >/dev/null || \
             failures+=("$p")
         if (( direct )); then
+            info "Direct gRPC to ${endpoint_tgt} with ${extra_args[*]}"
             roxctl "${extra_args[@]}" -e "${endpoint_tgt}" central debug log >/dev/null && \
             failures+=("${p},direct-grpc")
         else
+            info "Force HTTP1 to ${endpoint_tgt} with ${extra_args[*]} and --plaintext=${plaintext}"
             roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" central debug log >/dev/null || \
             failures+=("${p},force-http1")
         fi
 
         if [[ "$endpoint_tgt" = *://* ]]; then
-            # Auto-sense plaintext or TLS when specifying a scheme
+            info "Auto-sense plaintext or TLS when specifying a scheme (${endpoint_tgt})"
             roxctl "${extra_args[@]}" -e "${endpoint_tgt}" central debug log >/dev/null || \
             failures+=("${p},tls-autosense")
 
-            # Incompatible plaintext configuration should fail
+            info "Incompatible plaintext configuration should fail with --plaintext=${plaintext_neg}"
             roxctl "${extra_args[@]}" --plaintext="$plaintext_neg" -e "${endpoint_tgt}" central debug log &>/dev/null && \
             failures+=("${p},incompatible-tls")
         fi
+        echo "Failures: ${#failures[@]}"
 
         done
-        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${server_name}:${port}" sensor generate k8s --name remote --continue-if-exists || \
+        info "Test sensor generate k8s with ${server_name}:${port}, ${extra_args[*]} and --plaintext=${plaintext}"
+        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${server_name}:${port}" \
+            sensor generate k8s --name remote --continue-if-exists 1>/dev/null || \
         failures+=("${p},sensor-generate")
         echo "Done."
         rm -rf "/tmp/proxy-test-${port}"
