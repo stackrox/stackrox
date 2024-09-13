@@ -44,7 +44,7 @@ import (
 const (
 	deploymentsPaginationLimit = 50
 
-	reportQueryPostgres = `query getVulnReportData($scopequery: String, 
+	reportQueryPostgres = `query getVulnReportData($scopequery: String,
 							$cvequery: String, $pagination: Pagination) {
 							deployments: deployments(query: $scopequery, pagination: $pagination) {
 								clusterName
@@ -266,6 +266,7 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	rc := req.ReportConfig
 
+	reportName := rc.Name
 	notifier := s.notificationProcessor.GetNotifier(req.Ctx, rc.GetEmailConfig().GetNotifierId())
 	reportNotifier, ok := notifier.(notifiers.ReportNotifier)
 	if !ok {
@@ -299,7 +300,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 	if err = retry.WithRetry(func() error {
 		return reportNotifier.ReportNotify(req.Ctx, zippedCSVData,
-			rc.GetEmailConfig().GetMailingLists(), "", messageText)
+			rc.GetEmailConfig().GetMailingLists(), "", messageText, reportName)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
