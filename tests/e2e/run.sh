@@ -235,7 +235,7 @@ run_proxy_tests() {
         "HTTP/2 proxy with TLS backends:14443"
         "HTTP/2 proxy with plain backends:15443"
     )
-    
+
     export ROX_CA_CERT_FILE=""
     export ROX_SERVER_NAME=""
     local failures=()
