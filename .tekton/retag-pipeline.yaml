@@ -96,10 +96,6 @@ spec:
       1h, 2d, 3w for hours, days, and weeks, respectively.
     name: image-expires-after
     type: string
-  - default: "true"
-    description: Build a source image.
-    name: build-source-image
-    type: string
   - default: "0"
     description: Depth of the git clone in number of commits. Use "1" for shallow clone. Use "0" for deep clone, i.e. to fetch all commits.
     name: clone-depth
@@ -280,31 +276,6 @@ spec:
       operator: in
       values: [ "true" ]
 
-  - name: build-source-image
-    params:
-    - name: BINARY_IMAGE
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    taskRef:
-      params:
-      - name: name
-        value: source-build-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.1@sha256:639995e4221da90f5a9fc14dacd0dba384e2a37e3a2c7aa5dafec3c2ab3f5f74
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values: [ "true" ]
-    - input: $(params.build-source-image)
-      operator: in
-      values: [ "true" ]
-
   - name: deprecated-base-image-check
     params:
     - name: IMAGE_URL
@@ -355,28 +326,6 @@ spec:
         value: ecosystem-cert-preflight-checks
       - name: bundle
         value: quay.io/konflux-ci/tekton-catalog/task-ecosystem-cert-preflight-checks:0.1@sha256:5131cce0f93d0b728c7bcc0d6cee4c61d4c9f67c6d619c627e41e3c9775b497d
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(params.skip-checks)
-      operator: in
-      values: [ "false" ]
-
-  - name: sast-snyk-check
-    params:
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: image-digest
-      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
-    - name: image-url
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
-    taskRef:
-      params:
-      - name: name
-        value: sast-snyk-check-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.2@sha256:c2f5eb19cfe6e48595368cc50907be74a7c8a375866ad16e7663df540825af6b
       - name: kind
         value: task
       resolver: bundles
