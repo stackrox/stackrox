@@ -55,11 +55,12 @@ function hotload_binary {
   echo "**********"
   echo
 
-  binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux_amd64/${local_name}")
+  goarch=$(go env GOARCH)
+  binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux_${goarch}/${local_name}")
   # set custom source path, e.g. when StackRox source is mounted into kind.
   if [[ -n "$ROX_LOCAL_SOURCE_PATH" ]]; then
       echo "ROX_LOCAL_SOURCE_PATH is set to $ROX_LOCAL_SOURCE_PATH."
-      binary_path="$ROX_LOCAL_SOURCE_PATH/bin/linux_amd64/${local_name}"
+      binary_path="$ROX_LOCAL_SOURCE_PATH/bin/linux_${goarch}/${local_name}"
   fi
 
   kubectl -n "${namespace}" patch "deploy/${deployment}" --patch-file <(cat <<EOF
