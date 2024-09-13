@@ -16,6 +16,12 @@ WORKDIR /stackrox/operator
 ARG MAIN_IMAGE_TAG
 ENV VERSION=$MAIN_IMAGE_TAG
 ENV ROX_PRODUCT_BRANDING=RHACS_BRANDING
+
+# Reset GOFLAGS='-mod=vendor' value which comes by default in openshift-golang-builder and causes build errors like
+#  go: inconsistent vendoring in /stackrox/operator/tools/operator-sdk:
+#      github.com/operator-framework/operator-lifecycle-manager@v0.27.0: is explicitly required in go.mod, but not marked as explicit in vendor/modules.txt
+ENV GOFLAGS=''
+
 RUN make bundle-post-process
 
 FROM scratch
