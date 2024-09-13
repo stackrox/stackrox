@@ -32,8 +32,6 @@ spec:
     value: quay.io/rhacs-eng/collector
   - name: base-image-tag-makefile-target
     value: collector-tag
-  - name: path-context
-    value: .
   - name: revision
     value: '{{revision}}'
   - name: rebuild
