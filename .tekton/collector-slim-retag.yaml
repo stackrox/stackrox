@@ -16,7 +16,7 @@ metadata:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: collector
     pipelines.appstudio.openshift.io/type: build
-  name: collector-full-retag
+  name: collector-slim-retag
   namespace: rh-acs-tenant
 
 spec:
@@ -27,7 +27,7 @@ spec:
   - name: image-expires-after
     value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/collector
+    value: quay.io/rhacs-eng/collector-slim
   - name: base-image-repo
     value: quay.io/rhacs-eng/collector
   - name: base-image-tag-makefile-target

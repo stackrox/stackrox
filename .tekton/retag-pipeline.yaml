@@ -55,7 +55,10 @@ spec:
     description: Suffix that will be appended to the output image tag.
     name: output-tag-suffix
     type: string
-  - description: Makefile target to execute in order to determine base image tag.
+  - description: Base (input) Image Repository
+    name: base-image-repo
+    type: string
+  - description: Makefile target to execute in order to determine base (input) image tag.
     name: base-image-tag-makefile-target
     type: string
   - default: .
@@ -181,7 +184,7 @@ spec:
     - name: basic-auth
       workspace: git-auth
 
-  - name: determine-image-tag
+  - name: determine-output-image-tag
     params:
     - name: TAG_SUFFIX
       value: $(params.output-tag-suffix)
@@ -224,15 +227,15 @@ spec:
   - name: build-image-manifest
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+      value: $(params.output-image-repo):$(tasks.determine-output-image-tag.results.IMAGE_TAG)
     - name: COMMIT_SHA
       value: $(tasks.clone-repository.results.commit)
     - name: IMAGES
       value:
-      - $(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-amd64
-      - $(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-s390x
-      - $(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-ppc64le
-      - $(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-arm64
+      - $(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-amd64
+      - $(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-s390x
+      - $(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-ppc64le
+      - $(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-arm64
     - name: IMAGE_EXPIRES_AFTER
       value: $(params.image-expires-after)
     taskRef:
@@ -257,10 +260,10 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: IMAGES
       value:
-      - $(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-amd64
-      - $(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-s390x
-      - $(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-ppc64le
-      - $(params.output-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-arm64
+      - $(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-amd64
+      - $(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-s390x
+      - $(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-ppc64le
+      - $(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-arm64
     - name: IMAGE_EXPIRES_AFTER
       value: $(params.image-expires-after)
     taskRef:
