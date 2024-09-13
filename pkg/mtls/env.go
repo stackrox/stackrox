@@ -11,6 +11,8 @@ const (
 	CertFilePathEnvName = "ROX_MTLS_CERT_FILE"
 	// KeyFileEnvName is the env variable name for the key file which signed the cert
 	KeyFileEnvName = "ROX_MTLS_KEY_FILE"
+	// CrsFilePathEnvName is the env variable name for the CRS file.
+	CrsFilePathEnvName = "ROX_MTLS_CRS_FILE"
 )
 
 var (
@@ -18,6 +20,7 @@ var (
 	caKeyFilePathSetting = env.RegisterSetting(CAKeyFileEnvName, env.WithDefault(defaultCAKeyFilePath))
 	certFilePathSetting  = env.RegisterSetting(CertFilePathEnvName, env.WithDefault(defaultCertFilePath))
 	keyFilePathSetting   = env.RegisterSetting(KeyFileEnvName, env.WithDefault(defaultKeyFilePath))
+	crsFilePathSetting   = env.RegisterSetting(CrsFilePathEnvName, env.WithDefault(defaultCrsFilePath))
 )
 
 // CAFilePath returns the path where the CA certificate is stored.
@@ -33,4 +36,9 @@ func CertFilePath() string {
 // KeyFilePath returns the path where the key is stored.
 func KeyFilePath() string {
 	return keyFilePathSetting.Setting()
+}
+
+// CrsFilePath returns the path where the CRS certificate is stored.
+func CrsFilePath() string {
+	return crsFilePathSetting.Setting()
 }

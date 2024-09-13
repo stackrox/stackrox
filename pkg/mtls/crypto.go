@@ -40,6 +40,7 @@ const (
 
 	// CertsPrefix is the filesystem prefix under which service certificates and keys are stored.
 	CertsPrefix = "/run/secrets/stackrox.io/certs/"
+
 	// defaultCACertFilePath is where the certificate is stored.
 	defaultCACertFilePath = CertsPrefix + CACertFileName
 	// defaultCAKeyFilePath is where the key is stored.
@@ -49,6 +50,8 @@ const (
 	defaultCertFilePath = CertsPrefix + ServiceCertFileName
 	// defaultKeyFilePath is where the key is stored.
 	defaultKeyFilePath = CertsPrefix + ServiceKeyFileName
+	// defaultCrsFilePath is where the CRS is stored.
+	defaultCrsFilePath = "/run/secrets/stackrox.io/crs"
 
 	// To account for clock skew, set certificates to be valid some time in the past.
 	beforeGracePeriod = 1 * time.Hour
