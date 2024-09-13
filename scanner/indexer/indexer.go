@@ -46,6 +46,15 @@ import (
 	"github.com/stackrox/rox/scanner/internal/version"
 )
 
+const (
+	// sevenDays represents seven days (in seconds).
+	// 7 days * 24 hours/day * 60 minutes/hour * 60 seconds/minute = 604,800 seconds
+	sevenDays = 604800
+	// twentyThreeDays represents twenty-three days (in seconds).
+	// 23 days * 24 hours/day * 60 minutes/hour * 60 seconds/minute = 1,987,200 seconds
+	twentyThreeDays = 1987200
+)
+
 // ecosystems specifies the package ecosystems to use for indexing.
 func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
 	es := []*ccindexer.Ecosystem{
@@ -195,15 +204,12 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		return nil, err
 	}
 
-	manifestGC := manifest.NewGC(ctx, metadataStore, locker, indexer.DeleteManifests)
-
-	// Get all current versioned scanners.
-	pscnrs, dscnrs, rscnrs, fscnrs, err := ccindexer.EcosystemsToScanners(ctx, indexer.Ecosystems)
+	vscnrs, err := versionedScanners(ctx, indexer.Ecosystems)
 	if err != nil {
-		return nil, fmt.Errorf("converting ecosystems to scanners: %w", err)
+		return nil, err
 	}
-	vscnrs := ccindexer.MergeVS(pscnrs, dscnrs, rscnrs, fscnrs)
 
+	manifestGC := manifest.NewGC(ctx, metadataStore, locker, indexer.DeleteManifests)
 	// Start the manifest GC.
 	go func() {
 		if err := manifestGC.Start(); err != nil {
@@ -222,6 +228,18 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		metadataStore: metadataStore,
 		manifestGC:    manifestGC,
 	}, nil
+}
+
+// versionedScanners returns the versioned scanners derived from the given ecosystems.
+//
+// This is based on https://github.com/quay/claircore/blob/v1.5.30/libindex/libindex.go#L127.
+func versionedScanners(ctx context.Context, ecosystems []*ccindexer.Ecosystem) (ccindexer.VersionedScanners, error) {
+	// Get all current versioned scanners.
+	pscnrs, dscnrs, rscnrs, fscnrs, err := ccindexer.EcosystemsToScanners(ctx, ecosystems)
+	if err != nil {
+		return nil, fmt.Errorf("converting ecosystems to scanners: %w", err)
+	}
+	return ccindexer.MergeVS(pscnrs, dscnrs, rscnrs, fscnrs), nil
 }
 
 func castToConfig[T any](f func(cfg T)) func(o any) error {
@@ -347,7 +365,7 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 		return nil, err
 	}
 
-	err = i.metadataStore.StoreManifest(ctx, manifestDigest.String(), randomExpiry())
+	err = i.metadataStore.StoreManifest(ctx, manifestDigest.String(), randomExpiry(time.Now()))
 	if err != nil {
 		return nil, err
 	}
@@ -544,13 +562,7 @@ func GetDigestFromReference(ref name.Reference, auth authn.Authenticator) (name.
 }
 
 // randomExpiry generates a random time.Time between seven and thirty days from now
-func randomExpiry() time.Time {
-	const day = 24 * time.Hour
-	now := time.Now()
-	// Seven days in seconds since epoch.
-	sevenDays := now.Add(7*day).Unix() - now.Unix()
-	// Twenty-three days in seconds since epoch.
-	twentyThreeDays := now.Add(23*day).Unix() - now.Unix()
+func randomExpiry(now time.Time) time.Time {
 	// now + a random number of seconds between zero and twenty-three days + seven days
 	expirySec := now.Unix() + rand.Int64N(twentyThreeDays) + sevenDays
 	return time.Unix(expirySec, 0)
