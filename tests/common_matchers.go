@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"strings"
 )
 
 // This file contains utilities for finding/detecting specific log lines to help
@@ -38,7 +37,7 @@ type logMatcher interface {
 }
 
 // multiLineMatcher matches when the desired number of lines are found.
-type multiLineMatcher struct {
+type multiLineLogMatcher struct {
 	re       *regexp.Regexp
 	numLines int
 	fromByte int64
@@ -46,35 +45,35 @@ type multiLineMatcher struct {
 
 // containsLineMatching returns a simple line-based regex matcher to go with waitUntilLog.
 // Note: currently limited by bufio.Reader default buffer size (4KB) for simplicity.
-func containsLineMatching(re *regexp.Regexp) *multiLineMatcher {
-	return &multiLineMatcher{re: re, numLines: 1}
+func containsLineMatching(re *regexp.Regexp) *multiLineLogMatcher {
+	return &multiLineLogMatcher{re: re, numLines: 1}
 }
 
 // containsLineMatchingAfter mimics containsLineMatching but will only attempt to match
 // lines that appear after fromByte.
-func containsLineMatchingAfter(re *regexp.Regexp, fromByte int64) *multiLineMatcher {
-	return &multiLineMatcher{re: re, numLines: 1, fromByte: fromByte}
+func containsLineMatchingAfter(re *regexp.Regexp, fromByte int64) *multiLineLogMatcher {
+	return &multiLineLogMatcher{re: re, numLines: 1, fromByte: fromByte}
 }
 
 // containsMultipleLinesMatching is a line-based regex matcher to go with waitUntilLog
 // that will return true when the desired number of lines are found matching the reg exp.
 //
 //lint:ignore U1000 unused - utility function that may help future e2e test writers
-func containsMultipleLinesMatching(re *regexp.Regexp, numLines int) *multiLineMatcher {
-	return &multiLineMatcher{re: re, numLines: numLines}
+func containsMultipleLinesMatching(re *regexp.Regexp, numLines int) *multiLineLogMatcher {
+	return &multiLineLogMatcher{re: re, numLines: numLines}
 }
 
 // containsMultipleLinesMatchingAfter mimics containsMultipleLinesMatching but will only attempt to match
 // lines that appear after fromByte.
-func containsMultipleLinesMatchingAfter(re *regexp.Regexp, numLines int, fromByte int64) *multiLineMatcher {
-	return &multiLineMatcher{re: re, numLines: numLines, fromByte: fromByte}
+func containsMultipleLinesMatchingAfter(re *regexp.Regexp, numLines int, fromByte int64) *multiLineLogMatcher {
+	return &multiLineLogMatcher{re: re, numLines: numLines, fromByte: fromByte}
 }
 
-func (lm *multiLineMatcher) String() string {
+func (lm *multiLineLogMatcher) String() string {
 	return fmt.Sprintf("contains line(s) matching %q", lm.re)
 }
 
-func (lm *multiLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
+func (lm *multiLineLogMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
 	br := bufio.NewReader(reader)
 
 	if lm.fromByte != 0 {
@@ -150,57 +149,4 @@ func (lm *notFoundLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) 
 			return false, nil
 		}
 	}
-}
-
-// orMatcher is a composite matcher to go with waitUntilLog
-// that will return true when any sub matcher matches.
-//
-//lint:ignore U1000 unused - utility function that may help future e2e test writers
-type orMatcher struct {
-	matchers []logMatcher
-}
-
-//lint:ignore U1000 unused - utility function that may help future e2e test writers
-func matchesAny(logMatchers ...logMatcher) *orMatcher {
-	return &orMatcher{
-		matchers: logMatchers,
-	}
-}
-
-//lint:ignore U1000 unused - utility function that may help future e2e test writers
-func (lm *orMatcher) String() string {
-	sb := strings.Builder{}
-	sb.WriteString("[")
-	for _, m := range lm.matchers {
-		if sb.Len() > 1 {
-			sb.WriteString(", ")
-		}
-		sb.WriteString(m.String())
-	}
-	sb.WriteString("]")
-
-	return fmt.Sprintf("matches any of %s", sb.String())
-}
-
-//lint:ignore U1000 unused - utility function that may help future e2e test writers
-func (lm *orMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
-	var errs []error
-	for _, m := range lm.matchers {
-		_, err := reader.Seek(0, io.SeekStart)
-		if err != nil {
-			return false, fmt.Errorf("could not rewind the reader: %w", err)
-		}
-
-		ok, err := m.Match(reader)
-		if err != nil {
-			errs = append(errs, err)
-			continue
-		}
-
-		if ok {
-			return true, nil
-		}
-	}
-
-	return false, errors.Join(errs...)
 }

@@ -383,7 +383,6 @@ func (ks *KubernetesSuite) checkLogsClosure(ctx context.Context, namespace, labe
 			return fmt.Errorf("could not list pods matching %q in namespace %q: %w", labelSelector, namespace, err)
 		}
 		if len(podList.Items) == 0 {
-
 			if ok, err := allMatch(strings.NewReader(""), logMatchers...); ok {
 				return nil
 			} else if err != nil {
@@ -572,10 +571,7 @@ func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 		}
 		return fmt.Errorf("encountered cluster status %q", clusterStatus.String())
 	}
-	// TODO: It takes 30 seconds by default for sensor to send a status report to central,
-	// therefore, wait at minimum 30 seconds to allow enough time for a 'bad status' to propagate.
-	// time.Sleep(31 * time.Second)
-	// Perhaps optimize this by comparing current time to the last time a status update was received, and sleeping for that specific diff?
+	// TODO: Sensor reports status every 30 seconds, consider sleeping here to ensure we have the most up to date status.
 	mustEventually(t, ctx, checkCentralSensorConnection, 10*time.Second, "Central-sensor connection not in desired state (yet)")
 }
 
@@ -610,20 +606,26 @@ func (ks *KubernetesSuite) mustDeleteDeploymentEnvVar(ctx context.Context, names
 	d, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
 	ks.Require().NoError(err, "cannot retrieve deployment %q in namespace %q", deployment, namespace)
 
+	sb := strings.Builder{}
 	for i, c := range d.Spec.Template.Spec.Containers {
 		for j, e := range c.Env {
 			if e.Name == envVar {
-				p := fmt.Sprintf(`[{"op":"remove", "path":"/spec/template/spec/containers/%d/env/%d"}]`, i, j)
-				_, err := ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.JSONPatchType, []byte(p), metaV1.PatchOptions{})
-				ks.Require().NoError(err, "failed to remove env var %q in container %q deployment %q namespace %q", envVar, c.Name, deployment, namespace)
-				ks.logf("Removed env variable %q in container %q deployment %q  namespace %q", envVar, c.Name, deployment, namespace)
+				if sb.Len() > 0 {
+					sb.WriteString(",")
+				}
+				sb.WriteString(fmt.Sprintf(`{"op":"remove", "path":"/spec/template/spec/containers/%d/env/%d"}`, i, j))
 				break
 			}
 		}
 	}
+
+	patch := fmt.Sprintf("[%s]", sb.String())
+	_, err = ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.JSONPatchType, []byte(patch), metaV1.PatchOptions{})
+	ks.Require().NoError(err, "failed to remove env var %q from deployment %q namespace %q", envVar, deployment, namespace)
+	ks.logf("Removed env variable %q from deployment %q namespace %q", envVar, deployment, namespace)
 }
 
-// listK8sAPIResources will return a list of all the custom resources that the k8s or OCP API supports.
+// listK8sAPIResources will return a list of all custom resources the k8s (or OCP) API supports.
 func (ks *KubernetesSuite) listK8sAPIResources() []*metaV1.APIResourceList {
 	t := ks.T()
 
@@ -633,7 +635,7 @@ func (ks *KubernetesSuite) listK8sAPIResources() []*metaV1.APIResourceList {
 	return apiResourceList
 }
 
-// mustCreateAPIToken will create a stackrox API token. Returns the token id and value.
+// mustCreateAPIToken will create an API token. Returns the token ID and value.
 func mustCreateAPIToken(t *testing.T, ctx context.Context, name string, roles []string) (string, string) {
 	require := require.New(t)
 	conn := centralgrpc.GRPCConnectionToCentral(t)
@@ -669,8 +671,7 @@ func revokeAPIToken(t *testing.T, ctx context.Context, idOrName string) {
 	}
 }
 
-// mustCreatePermissionSet will create a permission set and return the associated ID. If the permission set already
-// exists it is deleted and then re-created.
+// mustCreatePermissionSet will create a permission set and return the associated ID.
 func mustCreatePermissionSet(t *testing.T, ctx context.Context, permissionSet *storage.PermissionSet) string {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewRoleServiceClient(conn)
@@ -700,7 +701,7 @@ func deletePermissionSet(t *testing.T, ctx context.Context, idOrName string) {
 	}
 }
 
-// mustCreateRole ...
+// mustCreateRole will create a role.
 func mustCreateRole(t *testing.T, ctx context.Context, role *storage.Role) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewRoleServiceClient(conn)
@@ -727,47 +728,6 @@ func deleteRole(t *testing.T, ctx context.Context, name string) {
 			_, err = service.DeleteRole(ctx, &v1.ResourceByID{Id: name})
 			require.NoError(t, err)
 			t.Logf("Deleted role %q", name)
-			return
-		}
-	}
-}
-
-// mustCreateAccessScope creates an access scope and returns the associated ID.
-func mustCreateAccessScope(t *testing.T, ctx context.Context, accessScope *storage.SimpleAccessScope) string {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	service := v1.NewRoleServiceClient(conn)
-
-	scope, err := service.PostSimpleAccessScope(ctx, accessScope)
-	require.NoError(t, err)
-
-	t.Logf("Created access scope: %v", scope)
-	return scope.GetId()
-}
-
-// mustUpdateAccessScope ...
-func mustUpdateAccessScope(t *testing.T, ctx context.Context, accessScope *storage.SimpleAccessScope) {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	service := v1.NewRoleServiceClient(conn)
-
-	_, err := service.PutSimpleAccessScope(ctx, accessScope)
-	require.NoError(t, err)
-
-	t.Logf("Updated access scope: %v", accessScope)
-}
-
-// deleteAccessScope ...
-func deleteAccessScope(t *testing.T, ctx context.Context, idOrName string) {
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	service := v1.NewRoleServiceClient(conn)
-
-	resp, err := service.ListSimpleAccessScopes(ctx, &v1.Empty{})
-	require.NoError(t, err)
-
-	for _, scope := range resp.GetAccessScopes() {
-		if scope.GetId() == idOrName || scope.GetName() == idOrName {
-			_, err = service.DeleteSimpleAccessScope(ctx, &v1.ResourceByID{Id: scope.GetId()})
-			require.NoError(t, err)
-			t.Logf("Deleted access scope %q (%s)", scope.GetName(), scope.GetId())
 			return
 		}
 	}
@@ -812,6 +772,7 @@ func isOpenshift() bool {
 	return os.Getenv("ORCHESTRATOR_FLAVOR") == "openshift"
 }
 
+// mustGetCluster returns the details of the one and only known secured cluster.
 func mustGetCluster(t *testing.T, ctx context.Context) *storage.Cluster {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	clustersSvc := v1.NewClustersServiceClient(conn)

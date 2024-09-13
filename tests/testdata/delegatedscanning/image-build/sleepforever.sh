@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# This testing script runs forever and terminates gracefully.
+# Runs forever and terminates gracefully.
 
 die_func() {
     echo

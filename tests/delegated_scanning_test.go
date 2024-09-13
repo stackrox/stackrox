@@ -5,6 +5,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync/atomic"
@@ -55,29 +56,31 @@ import (
 // - ORCHESTRATOR_FLAVOR        - to determine if running on OCP or not.
 
 const (
-	// deleScanLogLevelEnvVar is the name of Sensor's env var that controls the logging level.
+	// deleScanLogLevelEnvVar the name of Sensor's env var that controls the logging level.
 	deleScanLogLevelEnvVar = "LOGLEVEL"
 
-	// deleScanDesiredLogLevel is the desired value of Sensor's log level env var for executing these tests.
+	// deleScanDesiredLogLevel the desired value of Sensor's log level env var for executing these tests.
 	deleScanDesiredLogLevel = "Debug"
 
-	// deleScanDefaultLogWaitTimeout is the amount of time that the various delegated scanning tests will wait for
+	// deleScanDefaultLogWaitTimeout the amount of time that the various delegated scanning tests will wait for
 	// a log entry to be found.
 	deleScanDefaultLogWaitTimeout = 30 * time.Second
 
-	// deleScanDefaultMaxRetries the number of times to retry pulling images from the StackRox API or executing
-	// scans that are rate limited.
+	// deleScanDefaultMaxRetries the number of retries when pulling images from the StackRox API or executing
+	// scans.
 	deleScanDefaultMaxRetries = 30
 
-	// deleScanDefaultRetryDelay the amount of time to wait between retries interacting with the StackRox API.
+	// deleScanDefaultRetryDelay the time to wait between retries.
 	deleScanDefaultRetryDelay = 5 * time.Second
+
+	// deleScanArtifactsDir the base directory to store test artifacts on failure.
+	deleScanArtifactsDir = "dele-scan"
 )
 
 // This block contains names for resources created during testing, consistent names
 // make cleanup easier.
 const (
 	deleScanAPITokenName      = "dele-scan-api-token" //nolint:gosec // G101
-	deleScanAccessScopeName   = "dele-scan-access-scope"
 	deleScanRoleName          = "dele-scan-role"
 	deleScanPermissionSetName = "dele-scan-permission-set"
 )
@@ -92,8 +95,9 @@ type DelegatedScanningSuite struct {
 	ctx        context.Context
 	cleanupCtx context.Context
 	cancel     func()
+	restCfg    *rest.Config
 
-	// origSensorLogLevel is the value of Sensor's log level env var prior to any changes from this suite.
+	// origSensorLogLevel the value of Sensor's log level env var prior to any changes.
 	origSensorLogLevel string
 
 	// remoteCluster represents the Secured Cluster that scans will be delegated to.
@@ -103,24 +107,21 @@ type DelegatedScanningSuite struct {
 	// for testing will be created.
 	namespace string
 
-	// restCfg is used by various client-go methods and is setup to point to the k8s cluster under test.
-	restCfg *rest.Config
-
-	// These hold the credentials for accessing images from quay.io/rhacs-eng
+	// Credentials for accessing images from quay.io/rhacs-eng
 	quayROUsername string
 	quayROPassword string
 
-	// failureHandled is used to ensure the cleanup activities are not executed multiple times by the suite.
+	// failureHandled is used to ensure cleanup activities are not executed multiple times by the suite.
 	failureHandled atomic.Bool
 
-	// deleScanUtils is a reference to a utility library used to setup variuos aspects of these tests, such as
+	// deleScanUtils a utility used to setup various aspects of these tests, such as
 	// creating images in the OCP image registry or creating mirroring CRs.
 	deleScanUtils *deleScanTestUtils
 
-	// ocpInternalImage is a refernce to the image that was created in the OCP internal registry during setup.
+	// ocpInternalImage the image that was created in the OCP internal registry during setup.
 	ocpInternalImage deleScanTestImage
 
-	// Images used by tests in this suite in various ways, it is ideal to use a unique image for each test
+	// Images used by various tests, it is ideal to use a unique image for each test
 	// scanning images from deployments.
 	ubi9Image      deleScanTestImage
 	ubi9ImageB     deleScanTestImage
@@ -129,27 +130,28 @@ type DelegatedScanningSuite struct {
 	memcachedImage deleScanTestImage
 }
 
-// TestDelegatedScanning is the entrypoint for all delegated scanning tests.
+// TestDelegatedScanning the entrypoint for all delegated scanning tests.
 func TestDelegatedScanning(t *testing.T) {
 	suite.Run(t, new(DelegatedScanningSuite))
 }
 
 func (ts *DelegatedScanningSuite) SetupSuite() {
-	// Ensure failures during setup are handled.
-	ts.T().Cleanup(ts.handleFailure)
-
 	ts.KubernetesSuite.SetupSuite()
-
 	t := ts.T()
+
+	// Ensure failures during setup are handled.
+	t.Cleanup(ts.handleFailure)
+
 	ts.ctx, ts.cleanupCtx, ts.cancel = testContexts(t, "TestDelegatedScanning", 30*time.Minute)
-	ts.restCfg = getConfig(t)
 	ctx := ts.ctx
+	ts.restCfg = getConfig(t)
+	ts.namespace = namespaces.StackRox
 
 	// ubi9Image* references images that are small (scans fast), do not require auth, and
 	// have at least one vulnerability.
 	//
 	// A unique image for each deployment test is ideal, otherwise there is a chance a scan
-	// was triggered from a previous deployemnt (as opposed to the current one).
+	// triggered from a previous deployment is considered 'new'.
 	ts.ubi9Image = NewDeleScanTestImage(t, "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1194@sha256:73f7dcacb460dad137a58f24668470a5a2e47378838a0190eef0ab532c6e8998")
 	ts.ubi9ImageB = NewDeleScanTestImage(t, "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1227@sha256:35a12657ce1bcb2b7667f4e6e0147186c1e0172cc43ece5452ab85afd6532791")
 
@@ -159,15 +161,17 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	ts.httpdImage = NewDeleScanTestImage(t, "quay.io/rhacs-eng/qa:dele-scan-httpd@sha256:489576ec07d6d8d64690bedb4cf1eeb366a8f03f8530367c3eee0c71579b5f5e")
 	ts.memcachedImage = NewDeleScanTestImage(t, "itms.invalid/rhacs-eng/qa:dele-scan-memcached@sha256:1cf25340014838bef90aa9d19eaef725a0b4986af3c8e8a6be3203c2cef8cb61")
 
-	ts.namespace = namespaces.StackRox
+	// Ensure rhacs-eng repo user/pass is avail for accessing private images.
+	ts.quayROUsername = mustGetEnv(t, "QUAY_RHACS_ENG_RO_USERNAME")
+	ts.quayROPassword = mustGetEnv(t, "QUAY_RHACS_ENG_RO_PASSWORD")
 
-	// Get a reference to the Secured Cluster to send delegated scans too, will use this reference throughout the tests.
+	// Get a reference to the Secured Cluster to send delegated scans too.
 	// If a valid remote cluster is NOT available all tests in this suite will fail.
 	t.Log("Getting remote StackRox cluster details")
 	envVal, _ := ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, env.LocalImageScanningEnabled.EnvVar())
 
-	// Verify the StackRox installation supports delegated scanning, for this check
-	// to succeed Central and Sensor must have an active connection.
+	// Verify the StackRox installation supports delegated scanning, Central and Sensor
+	// must have an active connection for this check to succeed, so wait for that connection.
 	ts.waitForHealthyCentralSensorConn()
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
@@ -186,10 +190,6 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	)
 	ts.remoteCluster = cluster
 
-	// Ensure rhacs-eng repo user/pass is avail.
-	ts.quayROUsername = mustGetEnv(t, "QUAY_RHACS_ENG_RO_USERNAME")
-	ts.quayROPassword = mustGetEnv(t, "QUAY_RHACS_ENG_RO_PASSWORD")
-
 	// Enable Sensor debug logs, some tests need this to accurately validate expected behaviors.
 	ts.origSensorLogLevel, _ = ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar)
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
@@ -206,7 +206,9 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	// Reset the delegated scanning config to default value.
 	ts.resetConfig(ctx)
 
+	// Initialize the delegated scanning utility.
 	ts.deleScanUtils = NewDeleScanTestUtils(t, ts.restCfg, ts.listK8sAPIResources())
+
 	if isOpenshift() {
 		t.Log("Building and pushing an image to the OCP internal registry")
 		ts.ocpInternalImage = ts.deleScanUtils.BuildOCPInternalImage(t, ts.ctx, ts.namespace, "dele-scan-test-01", ts.ubi9Image.TagRef())
@@ -218,7 +220,7 @@ func (ts *DelegatedScanningSuite) TearDownSuite() {
 	t := ts.T()
 	ctx := ts.cleanupCtx
 
-	// Handle data colletcion on test failures prior to resetting the log level.
+	// Handle data collection on test failures prior to resetting the log level.
 	// Changing the log level may result in pod restarts and logs lost.
 	ts.handleFailure()
 
@@ -237,24 +239,33 @@ func (ts *DelegatedScanningSuite) TearDownSuite() {
 	ts.cancel()
 }
 
+func (ts *DelegatedScanningSuite) AfterTest(suiteName string, testName string) {
+	t := ts.T()
+
+	if t.Failed() {
+		// Collect artifacts after each failed test so that we don't lose logs
+		// when subsequent tests trigger pod restarts.
+		dir := filepath.Join(deleScanArtifactsDir, testName)
+		t.Logf("Test failed, collecting artifacts into %q", dir)
+		collectLogs(t, ts.namespace, dir)
+	}
+}
+
 // handleFailure is a catch all for handling test suite failures, invoked via t.Cleanup in SetupSuite AND
 // as part of TearDownSuite. We cannot handle failures solely in TearDownSuite because a failure in SetupSuite
 // prevents TearDownSuite from executing. Subsequent invocations of this method after the first will be no-ops.
-//
-// TODO: move log captures to after each individual test, since each test may
-// make changes that result in logs lost (such as pod restarts).
 func (ts *DelegatedScanningSuite) handleFailure() {
 	if ts.failureHandled.Swap(true) {
 		return
 	}
 
 	t := ts.T()
-
-	ts.T().Log("Handling failures (if any)")
+	t.Log("Handling failures (if any)")
 
 	if t.Failed() {
-		ts.logf("Test failed. Collecting logs before final cleanup.")
-		collectLogs(t, ts.namespace, "delegated-scanning-failure")
+		dir := filepath.Join(deleScanArtifactsDir, "Final")
+		ts.logf("Test(s) failed, collecting artifacts before final cleanup into %q", dir)
+		collectLogs(t, ts.namespace, dir)
 	}
 }
 
@@ -267,26 +278,17 @@ func (ts *DelegatedScanningSuite) TestConfig() {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
 
-	// Ensure that at least one valid Secured Cluster exists, which is required for
-	// delegating scans, otherwise fail.
-	getClustersResp, err := service.GetClusters(ctx, nil)
-	require.NoError(t, err)
-	require.Greater(t, len(getClustersResp.Clusters), 0)
-
-	cluster := getClustersResp.Clusters[0]
-	require.NotEmpty(t, cluster.GetId())
-	require.NotEmpty(t, cluster.GetName())
-
 	// Verify the API returns the expected values when the config
-	// is set to it's default values.
+	// is set to it's default value.
 	ts.Run("config has expected default values", func() {
 		t := ts.T()
-		_, err = service.UpdateConfig(ctx, &v1.DelegatedRegistryConfig{})
+
+		_, err := service.UpdateConfig(ctx, &v1.DelegatedRegistryConfig{})
 		require.NoError(t, err)
 
 		cfg, err := service.GetConfig(ctx, &v1.Empty{})
 		require.NoError(t, err)
-		assert.Equal(t, "", cfg.DefaultClusterId, "default cluster id should be empty")
+		assert.Equal(t, "", cfg.DefaultClusterId)
 		assert.Equal(t, v1.DelegatedRegistryConfig_NONE, cfg.EnabledFor)
 		assert.Len(t, cfg.Registries, 0)
 	})
@@ -300,7 +302,7 @@ func (ts *DelegatedScanningSuite) TestConfig() {
 
 		want := &v1.DelegatedRegistryConfig{
 			EnabledFor:       v1.DelegatedRegistryConfig_ALL,
-			DefaultClusterId: cluster.GetId(),
+			DefaultClusterId: ts.remoteCluster.GetId(),
 			Registries: []*v1.DelegatedRegistryConfig_DelegatedRegistry{
 				{Path: "quay.io/rhacs-eng/qa:dele-scan", ClusterId: ""},
 			},
@@ -323,12 +325,13 @@ func (ts *DelegatedScanningSuite) TestConfig() {
 	// that the change is propagated to the Secured Cluster.
 	ts.Run("config propagated to secured cluster", func() {
 		t := ts.T()
+
 		// Create a unique random path within the config that will later
 		// be sought within Sensor logs.
 		path := fmt.Sprintf("example.com/%s", uuid.NewV4().String())
 		cfg := &v1.DelegatedRegistryConfig{
 			EnabledFor:       v1.DelegatedRegistryConfig_ALL,
-			DefaultClusterId: cluster.GetId(),
+			DefaultClusterId: ts.remoteCluster.GetId(),
 			Registries: []*v1.DelegatedRegistryConfig_DelegatedRegistry{
 				{Path: path, ClusterId: ""},
 			},
@@ -346,7 +349,7 @@ func (ts *DelegatedScanningSuite) TestConfig() {
 }
 
 // TestImageIntegrations tests various aspects of image integrations
-// (such as syncing) related to delegated scanning.
+// (such as syncing).
 func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 	t := ts.T()
 	ctx := ts.ctx
@@ -356,8 +359,8 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 
 	// This test verifies there are no autogenerated image integrations created for the
 	// OCP internal registry. This doesn't directly test delegated scanning, however
-	// the presence of these integrations is a symptom that indicates the detection of
-	// OCP internal registry secrets is broken and will result in delegated scanning failures
+	// the presence of these integrations is a symptom indicating the detection of
+	// OCP internal registry secrets is broken, which will result in delegated scanning failures
 	// (ex: regression ROX-25526).
 	//
 	// Scan failures are not used to detect this regression because our test environment
@@ -374,7 +377,6 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 		require.NoError(t, err)
 
 		ocpRegistryHostname := "image-registry.openshift-image-registry.svc"
-
 		for _, ii := range iis.GetIntegrations() {
 			if !ii.GetAutogenerated() {
 				continue
@@ -476,8 +478,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 	})
 
 	// Image write permission is required to scan images, this test uses a token with only image
-	// read permissions, and therefore should fail to scan any image. This test is meant to catch
-	// a past regression where a role with only image read permissions was mistakenly able to scan images.
+	// read permissions, and therefore should fail to scan any image.
 	ts.Run("fail to scan image with only image read permission", func() {
 		t := ts.T()
 
@@ -495,14 +496,13 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 			AccessScopeId: allowAllAccessScope,
 		}
 
-		// Execute the scan.
 		limitedConn := ts.getLimitedCentralConn(ctx, ps, role)
 		service := v1.NewImageServiceClient(limitedConn)
 		_, err := service.ScanImage(ctx, scanImgReq(ts.ubi9Image.TagRef(), withClusterFlag))
 		require.ErrorContains(t, err, "not authorized")
 	})
 
-	// Test scanning an image using a token with minimal permissions (ie: Image write).
+	// Test scanning an image using a token with minimal Image write permission.
 	ts.Run("scan image with minimal permissions", func() {
 		ts.resetConfig(ctx)
 
@@ -522,7 +522,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 		ts.executeAndValidateScan(ctx, limitedConn, scanImgReq(ts.ubi9Image.TagRef(), withClusterFlag))
 	})
 
-	// Create an image watch that results in Secured Cluster initiating the scan.
+	// Delegate a scan for an image watch.
 	ts.Run("delegate scan image via image watch", func() {
 		t := ts.T()
 
@@ -540,7 +540,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 
 		fromByte := ts.getSensorLastLogBytePos(ctx)
 
-		// Setup the image watch
+		// Setup the image watch.
 		resp, err := service.WatchImage(ctx, &v1.WatchImageRequest{Name: ts.ubi9Image.TagRef()})
 		require.NoError(t, err)
 		require.Zero(t, resp.GetErrorType(), "expected no error")
@@ -562,7 +562,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 	// A user delegating a scan to a Secured Cluster must have access to the namespace
 	// in order to pull the namespace specific secrets needed to scan an image from
 	// the internal OCP image registry. This test ensures that scans fail when the user
-	// does not have namespace access (defined via the access scope).
+	// does not have namespace access (per the access scope).
 	ts.Run("fail to scan image from OCP internal registry if user has no namespace access", func() {
 		t := ts.T()
 
@@ -586,7 +586,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 		require.Error(t, err, "scan should fail when user has no namespace access")
 	})
 
-	// Ensure user with minimally scoped permission are able to delegate scans
+	// Ensure user with minimally scoped permission is able to delegate scans
 	// for images from the OCP internal registry.
 	ts.Run("scan image from OCP internal registry with minimally scoped access", func() {
 		ts.skipIfNotOpenShift()
@@ -608,7 +608,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 	})
 }
 
-// TestDeploymentScans ...
+// TestDeploymentScans tests delegating image scans via observed k8s deployments.
 func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 	t := ts.T()
 	ctx := ts.ctx
@@ -616,6 +616,8 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
 
+	// deployAndVerify is a utility function used by the subsequent tests
+	// that creates a deployment and validates a scan was successfully completed.
 	deployAndVerify := func(deployName string, image deleScanTestImage) {
 		t := ts.T()
 
@@ -695,25 +697,22 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	}
 
 	// Sensor connects to Central quicker on fresh start vs. waiting for automatic reconnect.
-	// Since Sensor may have started first after the node drain triggered above,
-	// we restart Sensor so that testing will be able to proceed quicker.
-	t.Log("Deleteing Sensor to speed up ready state")
+	// Since Sensor may have started first after the prior node drain, we restart Sensor
+	// so that testing will be able to proceed quicker.
+	t.Log("Deleting Sensor to speed up ready state")
 	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
 	require.NoError(t, err)
 	err = ts.k8s.CoreV1().Pods(ts.namespace).Delete(ctx, sensorPod.GetName(), metaV1.DeleteOptions{})
 	require.NoError(t, err)
 
 	// Wait for Central/Sensor to be healthy.
-	t.Log("Waiting for Sensor to be ready")
-	ts.waitUntilK8sDeploymentReady(ctx, ts.namespace, sensorDeployment)
-	t.Log("Waiting for Central/Sensor connection to be ready")
-	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+	ts.waitForHealthyCentralSensorConn()
 
 	// The mirroring CRs map to quay.io, these tests will attempt to scan images from quay.io/rhacs-eng.
 	// To ensure authenticate succeeds we create an image integration. Creating this integration
 	// will not be necessary in the future if/when ROX-25709 is implemented, which would cause
 	// Sensor to match secrets based on path in addition to registry host. The global pull secret
-	// changes above use the /rhacs-eng path which is currently truncated by Sensor, as a result
+	// was changed to use the /rhacs-eng path which is currently truncated by Sensor, as a result
 	// it is indeterminate if the quay.io or quay.io/rhacs-eng secret will be stored by Sensor.
 	ts.createImageIntegration(&storage.DockerConfig{
 		Endpoint: "quay.io",
@@ -787,8 +786,6 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 				t.Skip("CR not avail, skipping test.")
 			}
 
-			fromByte := ts.getSensorLastLogBytePos(ctx)
-
 			// Do an initial teardown in case a deployment is lingering from a previous test.
 			teardownDeployment(t, tc.deployName)
 
@@ -799,6 +796,8 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			delResp, err := imageService.DeleteImages(ctx, &v1.DeleteImagesRequest{Query: &v1.RawQuery{Query: query}, Confirm: true})
 			require.NoError(t, err)
 			t.Logf("Num images deleted from query %q: %d", query, delResp.NumDeleted)
+
+			fromByte := ts.getSensorLastLogBytePos(ctx)
 
 			// Create deployment.
 			t.Logf("Creating deployment %q with image: %q", tc.deployName, tc.imageStr)
@@ -818,10 +817,10 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 }
 
 // validateImageScan will fail the test if the image's scan was not completed
-// successfully, assumes that the image haa at least one vulnerability.
+// successfully, assumes that the image has at least one vulnerability.
 func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName string, img *storage.Image) {
 	require.Equal(t, imgFullName, img.GetName().GetFullName())
-	require.True(t, img.GetIsClusterLocal(), "image %q not flagged as cluster local which is expected for any delegated scans", imgFullName)
+	require.True(t, img.GetIsClusterLocal(), "image %q not flagged as cluster local which is expected for any delegated scans, most likely the scan was NOT delegated, check Central/Sensor logs to confirm", imgFullName)
 	require.NotNil(t, img.GetScan(), "image scan for %q is nil, check logs for errors, image notes: %v", imgFullName, img.GetNotes())
 	require.NotEmpty(t, img.GetScan().GetComponents(), "image scan for %q has no components, check central logs for errors, this can happen if indexing succeeds but matching fails, ROX-17472 will make this an error in the future", imgFullName)
 
@@ -836,7 +835,7 @@ func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName st
 	require.Fail(t, "No vulnerabilities found.", "Expected at least one vulnerability in image %q, but found none.", imgFullName)
 }
 
-// getImageWithRetires will retry attempts to get an image from the StackRox API, and retry if not found.
+// getImageWithRetires will get an image from the StackRox API, retrying when not found.
 func (ts *DelegatedScanningSuite) getImageWithRetires(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.GetImageRequest) (*storage.Image, error) {
 	var err error
 	var img *storage.Image
@@ -854,7 +853,7 @@ func (ts *DelegatedScanningSuite) getImageWithRetires(t *testing.T, ctx context.
 	}
 
 	betweenAttemptsFunc := func(num int) {
-		t.Logf("Image not found, trying again %s, attempt %d/%d", deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
+		t.Logf("Image not found, trying again in %s, attempt %d/%d", deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
 		time.Sleep(deleScanDefaultRetryDelay)
 	}
 
@@ -867,7 +866,7 @@ func (ts *DelegatedScanningSuite) getImageWithRetires(t *testing.T, ctx context.
 	return img, err
 }
 
-// scanWithRetries will retry attempts scan an image using the StackRox API, and retry when rate limited.
+// scanWithRetries will scan an image using the StackRox API, retrying when rate limited.
 func (ts *DelegatedScanningSuite) scanWithRetries(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.ScanImageRequest) (*storage.Image, error) {
 	var err error
 	var img *storage.Image
@@ -912,8 +911,8 @@ func (ts *DelegatedScanningSuite) checkLogsMatch(ctx context.Context, descriptio
 	ts.KubernetesSuite.checkLogsMatch(ctx, ts.namespace, sensorPodLabels, sensorContainer, description, logMatchers...)
 }
 
-// getSensorLastLogBytePos gets the last byte from the Sensor logs to assist in only searching logs for only 'new'
-// matching lines.
+// getSensorLastLogBytePos gets the last byte from the Sensor logs.  Used when search logs so that only 'new' lines
+// are matched.
 func (ts *DelegatedScanningSuite) getSensorLastLogBytePos(ctx context.Context) int64 {
 	t := ts.T()
 	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
@@ -936,7 +935,7 @@ func (ts *DelegatedScanningSuite) resetConfig(ctx context.Context) {
 	require.NoError(t, err)
 }
 
-// setConfig sets the delegated scanning config to delegate scans to
+// setConfig sets the delegated scanning config to delegate scans for
 // the registry/remote of the provided image.
 func (ts *DelegatedScanningSuite) setConfig(ctx context.Context, image deleScanTestImage) {
 	t := ts.T()
@@ -955,30 +954,34 @@ func (ts *DelegatedScanningSuite) setConfig(ctx context.Context, image deleScanT
 	require.NoError(t, err)
 }
 
-// resetAccess will revoke any API token and delete roles, permissions sets
-// and access scopes that were created as part of this test suite.
+// resetAccess will revoke API tokens, delete roles, and delete permissions sets
+// that have been created by this suite.
 func (ts *DelegatedScanningSuite) resetAccess(ctx context.Context) {
 	t := ts.T()
 
 	revokeAPIToken(t, ctx, deleScanAPITokenName)
 	deleteRole(t, ctx, deleScanRoleName)
 	deletePermissionSet(t, ctx, deleScanPermissionSetName)
-	deleteAccessScope(t, ctx, deleScanAccessScopeName)
 }
 
-// waitUntilSensorLogsScan will wait until Sensor logs show a successful scan has been completed.
+// waitUntilSensorLogsScan will wait until Sensor logs show a successful scan has been completed for the
+// provided image.
 func (ts *DelegatedScanningSuite) waitUntilSensorLogsScan(ctx context.Context, imageStr string, fromByte int64) {
+	t := ts.T()
+
 	reStr := fmt.Sprintf(`Image "%s".* enriched with metadata using pull source`, imageStr)
 	regexp.MustCompile(reStr)
 
 	ts.waitUntilLog(ctx, "contain the image scan",
 		containsLineMatchingAfter(regexp.MustCompile(reStr), fromByte),
 	)
+
+	t.Logf("Found Sensor log entries indiciating successful scan of %q after byte %d", imageStr, fromByte)
 }
 
 // getLimitedCentralConn will return a connection to central using a token defined by the provided
 // permission set, role, and access scope. The role.permissionSetId provided will be overridden
-// on execution.
+// with the ID of the permission set provided by the StackRox API.
 func (ts *DelegatedScanningSuite) getLimitedCentralConn(ctx context.Context, permissionSet *storage.PermissionSet, role *storage.Role) *grpc.ClientConn {
 	t := ts.T()
 
@@ -1002,6 +1005,8 @@ func (ts *DelegatedScanningSuite) getLimitedCentralConn(ctx context.Context, per
 	return conn
 }
 
+// executeAndValidateScan will trigger a scan via the StackRox API, validate the scan was successful,
+// and confirm the scan was executed in the Secured Cluster.
 func (ts *DelegatedScanningSuite) executeAndValidateScan(ctx context.Context, conn *grpc.ClientConn, req *v1.ScanImageRequest) {
 	t := ts.T()
 
@@ -1022,8 +1027,6 @@ func (ts *DelegatedScanningSuite) executeAndValidateScan(ctx context.Context, co
 
 	// Search the Sensor logs for a record of the scan that was just completed
 	ts.waitUntilSensorLogsScan(ctx, imageStr, fromByte)
-
-	t.Logf("Found Sensor log entries indiciating successful scan of %q", imageStr)
 }
 
 // skipIfNotOpenShift will skip the current test if the cluster under test
@@ -1064,8 +1067,9 @@ func (ts *DelegatedScanningSuite) createImageIntegration(dockerConfig *storage.D
 	return rii
 }
 
-// deleteImageByID will delete an image via StackRox API. If a deployment exists
-// that still references the image, the image will be immediatley re-scanned.
+// deleteImageByID will delete an image via the StackRox API. Note that if a deployment exists
+// that references the image, the image will be immediately re-scanned upon delete.  To avoid
+// this ensure there are no deployments referencing the image under test.
 func (ts *DelegatedScanningSuite) deleteImageByID(id string) {
 	t := ts.T()
 	ctx := ts.ctx

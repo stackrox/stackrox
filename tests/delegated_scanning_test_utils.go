@@ -48,12 +48,12 @@ import (
 const (
 	// ignoreFieldManager is the name of the field manager to pass the k8s API.
 	// The k8s API uses the name of a field manager to detect conflicts when
-	// making changes via the server side apply mechanism.
+	// making changes via server side apply.
 	ignoreFieldManager = "Ignore"
 )
 
 // deleScanTestImage holds a full reference to an image and provides
-// methods for obtaining the string representation of the image in various
+// methods for obtaining the string representation in various
 // formats (syntax sugar).
 type deleScanTestImage struct {
 	cImage *storage.ContainerImage
@@ -66,18 +66,18 @@ func NewDeleScanTestImage(t *testing.T, imageStr string) deleScanTestImage {
 	return deleScanTestImage{cImage: cImage}
 }
 
-// ID returns the digest of the image if found.
+// ID returns the digest of the image.
 func (d deleScanTestImage) ID() string {
 	return d.cImage.GetId()
 }
 
-// ByID returns the full image reference by ID.
+// ByID returns the image referenced by ID.
 func (d deleScanTestImage) IDRef() string {
 	name := d.cImage.GetName()
 	return fmt.Sprintf("%s/%s@%s", name.GetRegistry(), name.GetRemote(), d.cImage.GetId())
 }
 
-// ByID returns the full image reference by Tag.
+// ByID returns the image referenced by Tag.
 func (d deleScanTestImage) TagRef() string {
 	name := d.cImage.GetName()
 	return fmt.Sprintf("%s/%s:%s", name.GetRegistry(), name.GetRemote(), name.GetTag())
@@ -97,8 +97,6 @@ func (d deleScanTestImage) WithReg(reg string) deleScanTestImage {
 }
 
 // deleScanTestUtils contains helper functions to assist delegated scanning tests.
-// These functions were added to the struct to avoid naming conflicts amongst all
-// the other e2e tests.
 type deleScanTestUtils struct {
 	restCfg *rest.Config
 
@@ -115,7 +113,7 @@ func NewDeleScanTestUtils(t *testing.T, restCfg *rest.Config, apiResourceList []
 }
 
 // availMirroringCRs determines what mirroring CRs are available based on the provided
-// resource list from the k8s API.
+// resource list.
 func (d *deleScanTestUtils) availMirroringCRs() (icspAvail bool, idmsAvail bool, itmsAvail bool) {
 	icspKey := "operator.openshift.io/v1alpha1|imagecontentsourcepolicies"
 	idmsKey := "config.openshift.io/v1|imagedigestmirrorsets"
@@ -149,12 +147,11 @@ func (d *deleScanTestUtils) availMirroringCRs() (icspAvail bool, idmsAvail bool,
 
 // SetupMirrors will add creds to the Global Pull Secret, and create the mirroring CRs
 // (ImageContentSourcePolicy, ImageDigestMirrorSet, and ImageTagMirrorSet). If changes
-// were made will wait for changes to be propagated to all nodes.
-// During testing on a 3 master + 2 worker node OCP cluster the average time it took
-// to propagate these changes was between 5-10 minutes.
+// were made will wait for changes to be propagated to all nodes. During testing on an
+// OCP cluster with 3 master + 2 worker nodes the average time to propagate these
+// changes was between 5-10 minutes.
 //
-// Will return 3 bools which indicate if the associated mirroring CR was avail via the API
-// and created.
+// Will return 3 bools which indicate if the associated mirroring CR is avail.
 // 1. ImageContentSourcePolicy
 // 2. ImageDigestMirrorSet
 // 3. ImageTagMirrorSet
@@ -174,7 +171,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 	cfgClient, err := configv1client.NewForConfig(d.restCfg)
 	require.NoError(t, err)
 
-	// Get current status of current machine config pools, this will be used to detect
+	// Get current status of the machine config pools, this will be used to detect
 	// when changes have been fully propagated.
 	poolList, err := machineCfgClient.MachineConfigPools().List(ctx, v1.ListOptions{})
 	require.NoError(t, err)
@@ -183,7 +180,7 @@ func (d *deleScanTestUtils) SetupMirrors(t *testing.T, ctx context.Context, reg 
 		origPools[pool.GetName()] = pool
 	}
 
-	// Update the OCP global pull secret which k8s needs in order to pull images from authenticated mirrors.
+	// Update the OCP global pull secret, which k8s needs in order to pull images from authenticated mirrors.
 	updated := d.addCredToOCPGlobalPullSecret(t, ctx, reg, dce)
 
 	// Identify which mirroring CRs are available for creation.
@@ -274,7 +271,7 @@ func (d *deleScanTestUtils) addCredToOCPGlobalPullSecret(t *testing.T, ctx conte
 			dce.Username == newDce.Username &&
 			dce.Password == newDce.Password &&
 			dce.Email == newDce.Email {
-			// No update needed.
+
 			t.Logf("No change needed to secret %q in namespace %q", name, ns)
 			return false
 		}
@@ -316,7 +313,7 @@ func (d *deleScanTestUtils) waitForNodesToProcessConfigUpdates(t *testing.T, ctx
 	}
 }
 
-// logMachineConfigPoolsState will log the status of all machine config pools for troubleshooting purposes.
+// logMachineConfigPoolsState logs the status of all machine config pools.
 func (d *deleScanTestUtils) logMachineConfigPoolsState(t *testing.T, poolList *machineconfigurationv1.MachineConfigPoolList, origPools map[string]machineconfigurationv1.MachineConfigPool) {
 	w := new(tabwriter.Writer)
 
@@ -381,10 +378,10 @@ func (d *deleScanTestUtils) DeploySleeperImage(t *testing.T, ctx context.Context
 }
 
 // BuildOCPInternalImage builds an image, pushes it to the OCP internal registry, and
-// returns the image reference. Name is used as the k8s object name for the
+// returns the image reference. Name is used as the k8s metadata.name for the
 // associated build configs, image streams, and final image. FromImage is used
 // as the 'FROM' instruction when building the new image, which allows for differnet
-// images to be created in the internal OCP image registry.
+// images to be created in the OCP internal registry.
 func (d *deleScanTestUtils) BuildOCPInternalImage(t *testing.T, ctx context.Context, namespace, name, fromImage string) deleScanTestImage {
 	d.applyBuildConfig(t, ctx, namespace, name)
 	d.applyImageStream(t, ctx, namespace, name)
@@ -395,6 +392,7 @@ func (d *deleScanTestUtils) BuildOCPInternalImage(t *testing.T, ctx context.Cont
 	return NewDeleScanTestImage(t, fmt.Sprintf("%s@%s", imgStrWithTag, digest))
 }
 
+// applyBuildConfig creates a build config.
 func (d *deleScanTestUtils) applyBuildConfig(t *testing.T, ctx context.Context, namespace, name string) {
 	restCfg := d.restCfg
 
@@ -406,6 +404,7 @@ func (d *deleScanTestUtils) applyBuildConfig(t *testing.T, ctx context.Context, 
 	d.applyK8sYamlOrJson(t, ctx, buildV1Client.RESTClient(), namespace, "buildconfigs", yamlB, nil)
 }
 
+// applyBuildConfig creates an image stream.
 func (d *deleScanTestUtils) applyImageStream(t *testing.T, ctx context.Context, namespace, name string) {
 	restCfg := d.restCfg
 
@@ -417,6 +416,7 @@ func (d *deleScanTestUtils) applyImageStream(t *testing.T, ctx context.Context, 
 	d.applyK8sYamlOrJson(t, ctx, imageV1Client.RESTClient(), namespace, "imagestreams", yamlB, nil)
 }
 
+// getDigestFromImageStreamTag extracts an image's digest from an image stream tag.
 func (d *deleScanTestUtils) getDigestFromImageStreamTag(t *testing.T, ctx context.Context, namespace, name, tag string) string {
 	restCfg := d.restCfg
 
@@ -430,11 +430,13 @@ func (d *deleScanTestUtils) getDigestFromImageStreamTag(t *testing.T, ctx contex
 	require.NoError(t, err)
 
 	digest := isTag.Image.GetObjectMeta().GetName()
+	require.NotEmpty(t, digest)
 	t.Logf("Digest found: %s", digest)
 
 	return digest
 }
 
+// buildAndPushImage will build an image, wait for it to complete, and push it to the OCP internal registry.
 func (d *deleScanTestUtils) buildAndPushImage(t *testing.T, ctx context.Context, namespace, name, fromImage string) string {
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
@@ -484,7 +486,7 @@ func (d *deleScanTestUtils) buildAndPushImage(t *testing.T, ctx context.Context,
 }
 
 // applyK8sYamlOrJson performs a server side apply using the provided client along with the
-// YAML or JSON. The updated object is returned.
+// YAML or JSON. Result is populated with the updated object.
 func (d *deleScanTestUtils) applyK8sYamlOrJson(t *testing.T, ctx context.Context, client rest.Interface, namespace, resource string, yamlOrJson []byte, result runtime.Object) {
 	partialObj := &v1.PartialObjectMetadata{}
 	reader := bytes.NewReader(yamlOrJson)
@@ -505,6 +507,7 @@ func (d *deleScanTestUtils) applyK8sYamlOrJson(t *testing.T, ctx context.Context
 	require.NoError(t, err)
 }
 
+// renderTemplate renders a go template using the data provided.
 func (d *deleScanTestUtils) renderTemplate(t *testing.T, templateFile string, data map[string]string) []byte {
 	tmpl, err := template.ParseFiles(templateFile)
 	require.NoError(t, err)
