@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useRouteMatch, useLocation } from 'react-router-dom';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
@@ -11,6 +11,7 @@ import configMgmtPaginationContext, {
 import searchContext from 'Containers/searchContext';
 import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
+import useClickOutside from 'hooks/useClickOutside';
 import parseURL from 'utils/URLParser';
 import URLService from 'utils/URLService';
 import { WorkflowState } from 'utils/WorkflowState';
@@ -20,9 +21,11 @@ import SidePanel from '../SidePanel/SidePanel';
 import Entity from '../Entity';
 
 const EntityPage = () => {
+    const sidePanelRef = useRef(null);
     const [isExporting, setIsExporting] = useState(false);
     const { isDarkMode } = useTheme();
     const location = useLocation();
+    const history = useHistory();
     const match = useRouteMatch();
     const workflowState = parseURL(location);
     const { useCase, search, sort, paging } = workflowState;
@@ -50,6 +53,12 @@ const EntityPage = () => {
     const [fadeIn, setFadeIn] = useState(false);
 
     useEffect(() => setFadeIn(false), [pageEntityId]);
+
+    const closeSidePanel = useCallback(() => {
+        history.push(URLService.getURL(match, location).clearSidePanelParams().url());
+    }, [history, match, location]);
+
+    useClickOutside(sidePanelRef, closeSidePanel, !!entityId1);
 
     // manually adding the styles to fade back in
     if (!fadeIn) {
@@ -96,17 +105,19 @@ const EntityPage = () => {
                     <searchContext.Provider value={searchParams.sidePanel}>
                         <configMgmtPaginationContext.Provider value={SIDEPANEL_PAGINATION_PARAMS}>
                             <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!entityId1}>
-                                <SidePanel
-                                    contextEntityId={pageEntityId}
-                                    contextEntityType={pageEntityType}
-                                    entityListType1={entityListType1}
-                                    entityType1={entityType1}
-                                    entityId1={entityId1}
-                                    entityType2={entityType2}
-                                    entityListType2={entityListType2}
-                                    entityId2={entityId2}
-                                    query={query}
-                                />
+                                <div ref={sidePanelRef}>
+                                    <SidePanel
+                                        contextEntityId={pageEntityId}
+                                        contextEntityType={pageEntityType}
+                                        entityListType1={entityListType1}
+                                        entityType1={entityType1}
+                                        entityId1={entityId1}
+                                        entityType2={entityType2}
+                                        entityListType2={entityListType2}
+                                        entityId2={entityId2}
+                                        query={query}
+                                    />
+                                </div>
                             </SidePanelAnimatedArea>
                         </configMgmtPaginationContext.Provider>
                     </searchContext.Provider>
