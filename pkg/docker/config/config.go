@@ -89,9 +89,11 @@ func encodeAuthField(d DockerConfigEntry) string {
 	return base64.StdEncoding.EncodeToString([]byte(basicAuth))
 }
 
-// MarshalJSON marshals the entry with the necessary auth field.
+// MarshalJSON marshals the entry with the basic auth field derived
+// from the username and password.
 func (d DockerConfigEntry) MarshalJSON() ([]byte, error) {
 	var tmp DockerConfigEntryWithAuth
+
 	tmp.Username = d.Username
 	tmp.Password = d.Password
 	tmp.Email = d.Email

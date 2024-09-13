@@ -38,6 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	k8sTypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
@@ -80,6 +81,11 @@ func (d deleScanTestImage) IDRef() string {
 func (d deleScanTestImage) TagRef() string {
 	name := d.cImage.GetName()
 	return fmt.Sprintf("%s/%s:%s", name.GetRegistry(), name.GetRemote(), name.GetTag())
+}
+
+// Base returns the registry + repo only, it will NOT include the ID or tag.
+func (d deleScanTestImage) Base() string {
+	return fmt.Sprintf("%s/%s", d.cImage.GetName().GetRegistry(), d.cImage.GetName().GetRemote())
 }
 
 // WithReg creates a new instance with only the registry changed.
@@ -359,15 +365,34 @@ func (d *deleScanTestUtils) machineConfigPoolsReady(poolList *machineconfigurati
 	return true
 }
 
+// DeploySleeperImage creates a deployment using imageStr that will sleep forever.
+func (d *deleScanTestUtils) DeploySleeperImage(t *testing.T, ctx context.Context, namespace, name, imageStr string) {
+	yamlB := d.renderTemplate(t, "testdata/delegatedscanning/deploys/generic.yaml.tmpl", map[string]string{
+		"name":      name,
+		"namespace": namespace,
+		"image":     imageStr,
+	})
+
+	clientset, err := kubernetes.NewForConfig(d.restCfg)
+	require.NoError(t, err)
+
+	d.applyK8sYamlOrJson(t, ctx, clientset.AppsV1().RESTClient(), namespace, "deployments", yamlB, nil)
+	t.Logf("Deployed image: %q", imageStr)
+}
+
 // BuildOCPInternalImage builds an image, pushes it to the OCP internal registry, and
 // returns the image reference. Name is used as the k8s object name for the
 // associated build configs, image streams, and final image. FromImage is used
 // as the 'FROM' instruction when building the new image, which allows for differnet
 // images to be created in the internal OCP image registry.
-func (d *deleScanTestUtils) BuildOCPInternalImage(t *testing.T, ctx context.Context, namespace, name, fromImage string) string {
+func (d *deleScanTestUtils) BuildOCPInternalImage(t *testing.T, ctx context.Context, namespace, name, fromImage string) deleScanTestImage {
 	d.applyBuildConfig(t, ctx, namespace, name)
 	d.applyImageStream(t, ctx, namespace, name)
-	return d.buildAndPushImage(t, ctx, namespace, name, fromImage)
+
+	imgStrWithTag := d.buildAndPushImage(t, ctx, namespace, name, fromImage)
+	digest := d.getDigestFromImageStreamTag(t, ctx, namespace, name, "latest")
+
+	return NewDeleScanTestImage(t, fmt.Sprintf("%s@%s", imgStrWithTag, digest))
 }
 
 func (d *deleScanTestUtils) applyBuildConfig(t *testing.T, ctx context.Context, namespace, name string) {
@@ -390,6 +415,24 @@ func (d *deleScanTestUtils) applyImageStream(t *testing.T, ctx context.Context, 
 
 	yamlB := d.renderTemplate(t, "testdata/delegatedscanning/image-stream.yaml.tmpl", map[string]string{"name": name, "namespace": namespace})
 	d.applyK8sYamlOrJson(t, ctx, imageV1Client.RESTClient(), namespace, "imagestreams", yamlB, nil)
+}
+
+func (d *deleScanTestUtils) getDigestFromImageStreamTag(t *testing.T, ctx context.Context, namespace, name, tag string) string {
+	restCfg := d.restCfg
+
+	nameTag := fmt.Sprintf("%s:%s", name, tag)
+
+	t.Logf("Getting image digest from image stream tag: %v", nameTag)
+	imageV1Client, err := imagev1client.NewForConfig(restCfg)
+	require.NoError(t, err)
+
+	isTag, err := imageV1Client.ImageStreamTags(namespace).Get(ctx, nameTag, v1.GetOptions{})
+	require.NoError(t, err)
+
+	digest := isTag.Image.GetObjectMeta().GetName()
+	t.Logf("Digest found: %s", digest)
+
+	return digest
 }
 
 func (d *deleScanTestUtils) buildAndPushImage(t *testing.T, ctx context.Context, namespace, name, fromImage string) string {
