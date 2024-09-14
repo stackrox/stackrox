@@ -345,16 +345,16 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectionMethod(0)))
 	utils.Must(builder.AddType("CollectorConfig", []string{
-		"clusterLevelConfigs: [CollectorFeatureConfig]!",
-		"rules: [RuntimeRule]!",
+		"clusterScopeConfig: [CollectorFeature]!",
+		"namespaceScopeConfig: [CollectorNamespaceConfig]!",
 	}))
-	utils.Must(builder.AddType("CollectorFeatureConfig", []string{
-		"networkConnectionConfig: NetworkConnectionConfig",
-		"networkEndpointConfig: NetworkEndpointConfig",
-		"processConfig: ProcessConfig",
-		"config: CollectorFeatureConfigConfig",
+	utils.Must(builder.AddType("CollectorFeature", []string{
+		"networkConnections: NetworkConnectionConfig",
+		"networkEndpoints: NetworkEndpointConfig",
+		"processes: ProcessConfig",
+		"feature: CollectorFeatureFeature",
 	}))
-	utils.Must(builder.AddUnionType("CollectorFeatureConfigConfig", []string{
+	utils.Must(builder.AddUnionType("CollectorFeatureFeature", []string{
 		"ProcessConfig",
 		"NetworkConnectionConfig",
 		"NetworkEndpointConfig",
@@ -362,6 +362,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("CollectorHealthInfo", []string{
 		"statusErrors: [String!]!",
 		"version: String!",
+	}))
+	utils.Must(builder.AddType("CollectorNamespaceConfig", []string{
+		"feature: CollectorFeature",
+		"namespaceSelection: [CollectorNamespaceConfig_NamespaceRule]!",
+	}))
+	utils.Must(builder.AddType("CollectorNamespaceConfig_NamespaceRule", []string{
+		"matchType: MatchType!",
+		"namespace: String!",
 	}))
 	utils.Must(builder.AddType("CompleteClusterConfig", []string{
 		"clusterLabels: [Label!]!",
@@ -885,10 +893,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"priority: Int!",
 	}))
-	utils.Must(builder.AddType("NamespaceRule", []string{
-		"matchType: MatchType!",
-		"namespace: String!",
-	}))
 	utils.Must(builder.AddType("NetworkConnectionConfig", []string{
 		"aggregateExternal: Boolean!",
 		"enabled: Boolean!",
@@ -1231,10 +1235,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"permissionSetId: String!",
 		"traits: Traits",
-	}))
-	utils.Must(builder.AddType("RuntimeRule", []string{
-		"collectorFeatureConfig: CollectorFeatureConfig",
-		"namespaceRule: NamespaceRule",
 	}))
 	utils.Must(builder.AddType("ScannerHealthInfo", []string{
 		"statusErrors: [String!]!",
@@ -4726,107 +4726,107 @@ func (resolver *Resolver) wrapCollectorConfigsWithContext(ctx context.Context, v
 	return output, nil
 }
 
-func (resolver *collectorConfigResolver) ClusterLevelConfigs(ctx context.Context) ([]*collectorFeatureConfigResolver, error) {
-	value := resolver.data.GetClusterLevelConfigs()
-	return resolver.root.wrapCollectorFeatureConfigs(value, nil)
+func (resolver *collectorConfigResolver) ClusterScopeConfig(ctx context.Context) ([]*collectorFeatureResolver, error) {
+	value := resolver.data.GetClusterScopeConfig()
+	return resolver.root.wrapCollectorFeatures(value, nil)
 }
 
-func (resolver *collectorConfigResolver) Rules(ctx context.Context) ([]*runtimeRuleResolver, error) {
-	value := resolver.data.GetRules()
-	return resolver.root.wrapRuntimeRules(value, nil)
+func (resolver *collectorConfigResolver) NamespaceScopeConfig(ctx context.Context) ([]*collectorNamespaceConfigResolver, error) {
+	value := resolver.data.GetNamespaceScopeConfig()
+	return resolver.root.wrapCollectorNamespaceConfigs(value, nil)
 }
 
-type collectorFeatureConfigResolver struct {
+type collectorFeatureResolver struct {
 	ctx  context.Context
 	root *Resolver
-	data *storage.CollectorFeatureConfig
+	data *storage.CollectorFeature
 }
 
-func (resolver *Resolver) wrapCollectorFeatureConfig(value *storage.CollectorFeatureConfig, ok bool, err error) (*collectorFeatureConfigResolver, error) {
+func (resolver *Resolver) wrapCollectorFeature(value *storage.CollectorFeature, ok bool, err error) (*collectorFeatureResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &collectorFeatureConfigResolver{root: resolver, data: value}, nil
+	return &collectorFeatureResolver{root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapCollectorFeatureConfigs(values []*storage.CollectorFeatureConfig, err error) ([]*collectorFeatureConfigResolver, error) {
+func (resolver *Resolver) wrapCollectorFeatures(values []*storage.CollectorFeature, err error) ([]*collectorFeatureResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
-	output := make([]*collectorFeatureConfigResolver, len(values))
+	output := make([]*collectorFeatureResolver, len(values))
 	for i, v := range values {
-		output[i] = &collectorFeatureConfigResolver{root: resolver, data: v}
+		output[i] = &collectorFeatureResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
 
-func (resolver *Resolver) wrapCollectorFeatureConfigWithContext(ctx context.Context, value *storage.CollectorFeatureConfig, ok bool, err error) (*collectorFeatureConfigResolver, error) {
+func (resolver *Resolver) wrapCollectorFeatureWithContext(ctx context.Context, value *storage.CollectorFeature, ok bool, err error) (*collectorFeatureResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &collectorFeatureConfigResolver{ctx: ctx, root: resolver, data: value}, nil
+	return &collectorFeatureResolver{ctx: ctx, root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapCollectorFeatureConfigsWithContext(ctx context.Context, values []*storage.CollectorFeatureConfig, err error) ([]*collectorFeatureConfigResolver, error) {
+func (resolver *Resolver) wrapCollectorFeaturesWithContext(ctx context.Context, values []*storage.CollectorFeature, err error) ([]*collectorFeatureResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
-	output := make([]*collectorFeatureConfigResolver, len(values))
+	output := make([]*collectorFeatureResolver, len(values))
 	for i, v := range values {
-		output[i] = &collectorFeatureConfigResolver{ctx: ctx, root: resolver, data: v}
+		output[i] = &collectorFeatureResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
 }
 
-func (resolver *collectorFeatureConfigResolver) NetworkConnectionConfig(ctx context.Context) (*networkConnectionConfigResolver, error) {
-	value := resolver.data.GetNetworkConnectionConfig()
+func (resolver *collectorFeatureResolver) NetworkConnections(ctx context.Context) (*networkConnectionConfigResolver, error) {
+	value := resolver.data.GetNetworkConnections()
 	return resolver.root.wrapNetworkConnectionConfig(value, true, nil)
 }
 
-func (resolver *collectorFeatureConfigResolver) NetworkEndpointConfig(ctx context.Context) (*networkEndpointConfigResolver, error) {
-	value := resolver.data.GetNetworkEndpointConfig()
+func (resolver *collectorFeatureResolver) NetworkEndpoints(ctx context.Context) (*networkEndpointConfigResolver, error) {
+	value := resolver.data.GetNetworkEndpoints()
 	return resolver.root.wrapNetworkEndpointConfig(value, true, nil)
 }
 
-func (resolver *collectorFeatureConfigResolver) ProcessConfig(ctx context.Context) (*processConfigResolver, error) {
-	value := resolver.data.GetProcessConfig()
+func (resolver *collectorFeatureResolver) Processes(ctx context.Context) (*processConfigResolver, error) {
+	value := resolver.data.GetProcesses()
 	return resolver.root.wrapProcessConfig(value, true, nil)
 }
 
-type collectorFeatureConfigConfigResolver struct {
+type collectorFeatureFeatureResolver struct {
 	resolver interface{}
 }
 
-func (resolver *collectorFeatureConfigResolver) Config() *collectorFeatureConfigConfigResolver {
-	if val := resolver.data.GetProcessConfig(); val != nil {
-		return &collectorFeatureConfigConfigResolver{
+func (resolver *collectorFeatureResolver) Feature() *collectorFeatureFeatureResolver {
+	if val := resolver.data.GetProcesses(); val != nil {
+		return &collectorFeatureFeatureResolver{
 			resolver: &processConfigResolver{root: resolver.root, data: val},
 		}
 	}
-	if val := resolver.data.GetNetworkConnectionConfig(); val != nil {
-		return &collectorFeatureConfigConfigResolver{
+	if val := resolver.data.GetNetworkConnections(); val != nil {
+		return &collectorFeatureFeatureResolver{
 			resolver: &networkConnectionConfigResolver{root: resolver.root, data: val},
 		}
 	}
-	if val := resolver.data.GetNetworkEndpointConfig(); val != nil {
-		return &collectorFeatureConfigConfigResolver{
+	if val := resolver.data.GetNetworkEndpoints(); val != nil {
+		return &collectorFeatureFeatureResolver{
 			resolver: &networkEndpointConfigResolver{root: resolver.root, data: val},
 		}
 	}
 	return nil
 }
 
-func (resolver *collectorFeatureConfigConfigResolver) ToProcessConfig() (*processConfigResolver, bool) {
+func (resolver *collectorFeatureFeatureResolver) ToProcessConfig() (*processConfigResolver, bool) {
 	res, ok := resolver.resolver.(*processConfigResolver)
 	return res, ok
 }
 
-func (resolver *collectorFeatureConfigConfigResolver) ToNetworkConnectionConfig() (*networkConnectionConfigResolver, bool) {
+func (resolver *collectorFeatureFeatureResolver) ToNetworkConnectionConfig() (*networkConnectionConfigResolver, bool) {
 	res, ok := resolver.resolver.(*networkConnectionConfigResolver)
 	return res, ok
 }
 
-func (resolver *collectorFeatureConfigConfigResolver) ToNetworkEndpointConfig() (*networkEndpointConfigResolver, bool) {
+func (resolver *collectorFeatureFeatureResolver) ToNetworkEndpointConfig() (*networkEndpointConfigResolver, bool) {
 	res, ok := resolver.resolver.(*networkEndpointConfigResolver)
 	return res, ok
 }
@@ -4880,6 +4880,110 @@ func (resolver *collectorHealthInfoResolver) StatusErrors(ctx context.Context) [
 
 func (resolver *collectorHealthInfoResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
+	return value
+}
+
+type collectorNamespaceConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CollectorNamespaceConfig
+}
+
+func (resolver *Resolver) wrapCollectorNamespaceConfig(value *storage.CollectorNamespaceConfig, ok bool, err error) (*collectorNamespaceConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &collectorNamespaceConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCollectorNamespaceConfigs(values []*storage.CollectorNamespaceConfig, err error) ([]*collectorNamespaceConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*collectorNamespaceConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &collectorNamespaceConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapCollectorNamespaceConfigWithContext(ctx context.Context, value *storage.CollectorNamespaceConfig, ok bool, err error) (*collectorNamespaceConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &collectorNamespaceConfigResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCollectorNamespaceConfigsWithContext(ctx context.Context, values []*storage.CollectorNamespaceConfig, err error) ([]*collectorNamespaceConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*collectorNamespaceConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &collectorNamespaceConfigResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *collectorNamespaceConfigResolver) Feature(ctx context.Context) (*collectorFeatureResolver, error) {
+	value := resolver.data.GetFeature()
+	return resolver.root.wrapCollectorFeature(value, true, nil)
+}
+
+func (resolver *collectorNamespaceConfigResolver) NamespaceSelection(ctx context.Context) ([]*collectorNamespaceConfig_NamespaceRuleResolver, error) {
+	value := resolver.data.GetNamespaceSelection()
+	return resolver.root.wrapCollectorNamespaceConfig_NamespaceRules(value, nil)
+}
+
+type collectorNamespaceConfig_NamespaceRuleResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.CollectorNamespaceConfig_NamespaceRule
+}
+
+func (resolver *Resolver) wrapCollectorNamespaceConfig_NamespaceRule(value *storage.CollectorNamespaceConfig_NamespaceRule, ok bool, err error) (*collectorNamespaceConfig_NamespaceRuleResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &collectorNamespaceConfig_NamespaceRuleResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCollectorNamespaceConfig_NamespaceRules(values []*storage.CollectorNamespaceConfig_NamespaceRule, err error) ([]*collectorNamespaceConfig_NamespaceRuleResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*collectorNamespaceConfig_NamespaceRuleResolver, len(values))
+	for i, v := range values {
+		output[i] = &collectorNamespaceConfig_NamespaceRuleResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapCollectorNamespaceConfig_NamespaceRuleWithContext(ctx context.Context, value *storage.CollectorNamespaceConfig_NamespaceRule, ok bool, err error) (*collectorNamespaceConfig_NamespaceRuleResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &collectorNamespaceConfig_NamespaceRuleResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapCollectorNamespaceConfig_NamespaceRulesWithContext(ctx context.Context, values []*storage.CollectorNamespaceConfig_NamespaceRule, err error) ([]*collectorNamespaceConfig_NamespaceRuleResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*collectorNamespaceConfig_NamespaceRuleResolver, len(values))
+	for i, v := range values {
+		output[i] = &collectorNamespaceConfig_NamespaceRuleResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *collectorNamespaceConfig_NamespaceRuleResolver) MatchType(ctx context.Context) string {
+	value := resolver.data.GetMatchType()
+	return value.String()
+}
+
+func (resolver *collectorNamespaceConfig_NamespaceRuleResolver) Namespace(ctx context.Context) string {
+	value := resolver.data.GetNamespace()
 	return value
 }
 
@@ -10269,58 +10373,6 @@ func (resolver *namespaceMetadataResolver) Priority(ctx context.Context) int32 {
 	return int32(value)
 }
 
-type namespaceRuleResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.NamespaceRule
-}
-
-func (resolver *Resolver) wrapNamespaceRule(value *storage.NamespaceRule, ok bool, err error) (*namespaceRuleResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &namespaceRuleResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapNamespaceRules(values []*storage.NamespaceRule, err error) ([]*namespaceRuleResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*namespaceRuleResolver, len(values))
-	for i, v := range values {
-		output[i] = &namespaceRuleResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapNamespaceRuleWithContext(ctx context.Context, value *storage.NamespaceRule, ok bool, err error) (*namespaceRuleResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &namespaceRuleResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapNamespaceRulesWithContext(ctx context.Context, values []*storage.NamespaceRule, err error) ([]*namespaceRuleResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*namespaceRuleResolver, len(values))
-	for i, v := range values {
-		output[i] = &namespaceRuleResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *namespaceRuleResolver) MatchType(ctx context.Context) string {
-	value := resolver.data.GetMatchType()
-	return value.String()
-}
-
-func (resolver *namespaceRuleResolver) Namespace(ctx context.Context) string {
-	value := resolver.data.GetNamespace()
-	return value
-}
-
 type networkConnectionConfigResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -13431,58 +13483,6 @@ func (resolver *roleResolver) PermissionSetId(ctx context.Context) string {
 func (resolver *roleResolver) Traits(ctx context.Context) (*traitsResolver, error) {
 	value := resolver.data.GetTraits()
 	return resolver.root.wrapTraits(value, true, nil)
-}
-
-type runtimeRuleResolver struct {
-	ctx  context.Context
-	root *Resolver
-	data *storage.RuntimeRule
-}
-
-func (resolver *Resolver) wrapRuntimeRule(value *storage.RuntimeRule, ok bool, err error) (*runtimeRuleResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &runtimeRuleResolver{root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapRuntimeRules(values []*storage.RuntimeRule, err error) ([]*runtimeRuleResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*runtimeRuleResolver, len(values))
-	for i, v := range values {
-		output[i] = &runtimeRuleResolver{root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *Resolver) wrapRuntimeRuleWithContext(ctx context.Context, value *storage.RuntimeRule, ok bool, err error) (*runtimeRuleResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &runtimeRuleResolver{ctx: ctx, root: resolver, data: value}, nil
-}
-
-func (resolver *Resolver) wrapRuntimeRulesWithContext(ctx context.Context, values []*storage.RuntimeRule, err error) ([]*runtimeRuleResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*runtimeRuleResolver, len(values))
-	for i, v := range values {
-		output[i] = &runtimeRuleResolver{ctx: ctx, root: resolver, data: v}
-	}
-	return output, nil
-}
-
-func (resolver *runtimeRuleResolver) CollectorFeatureConfig(ctx context.Context) (*collectorFeatureConfigResolver, error) {
-	value := resolver.data.GetCollectorFeatureConfig()
-	return resolver.root.wrapCollectorFeatureConfig(value, true, nil)
-}
-
-func (resolver *runtimeRuleResolver) NamespaceRule(ctx context.Context) (*namespaceRuleResolver, error) {
-	value := resolver.data.GetNamespaceRule()
-	return resolver.root.wrapNamespaceRule(value, true, nil)
 }
 
 type scannerHealthInfoResolver struct {

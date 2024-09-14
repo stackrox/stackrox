@@ -350,6 +350,17 @@
         }
       }
     },
+    "CollectorNamespaceConfigNamespaceRule": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "matchType": {
+          "$ref": "#/definitions/storageMatchType"
+        }
+      }
+    },
     "UpgradeProcessStatusUpgradeProcessType": {
       "type": "string",
       "enum": [
@@ -715,32 +726,32 @@
     "storageCollectorConfig": {
       "type": "object",
       "properties": {
-        "clusterLevelConfigs": {
+        "clusterScopeConfig": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageCollectorFeatureConfig"
+            "$ref": "#/definitions/storageCollectorFeature"
           }
         },
-        "rules": {
+        "namespaceScopeConfig": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageRuntimeRule"
+            "$ref": "#/definitions/storageCollectorNamespaceConfig"
           }
         }
       }
     },
-    "storageCollectorFeatureConfig": {
+    "storageCollectorFeature": {
       "type": "object",
       "properties": {
-        "processConfig": {
+        "processes": {
           "$ref": "#/definitions/storageProcessConfig"
         },
-        "networkConnectionConfig": {
+        "networkConnections": {
           "$ref": "#/definitions/storageNetworkConnectionConfig"
         },
-        "networkEndpointConfig": {
+        "networkEndpoints": {
           "$ref": "#/definitions/storageNetworkEndpointConfig"
         }
       }
@@ -773,6 +784,21 @@
         }
       },
       "description": "CollectorHealthInfo carries data about collector deployment but does not include collector health status derived from this data.\nAggregated collector health status is not included because it is derived in central and not in the component that\nfirst reports CollectorHealthInfo (sensor)."
+    },
+    "storageCollectorNamespaceConfig": {
+      "type": "object",
+      "properties": {
+        "feature": {
+          "$ref": "#/definitions/storageCollectorFeature"
+        },
+        "namespaceSelection": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/CollectorNamespaceConfigNamespaceRule"
+          }
+        }
+      }
     },
     "storageCompleteClusterConfig": {
       "type": "object",
@@ -842,17 +868,6 @@
         "REGEX"
       ],
       "default": "EXACT"
-    },
-    "storageNamespaceRule": {
-      "type": "object",
-      "properties": {
-        "namespace": {
-          "type": "string"
-        },
-        "matchType": {
-          "$ref": "#/definitions/storageMatchType"
-        }
-      }
     },
     "storageNetworkConnectionConfig": {
       "type": "object",
@@ -928,17 +943,6 @@
         },
         "cluster": {
           "$ref": "#/definitions/storageClusterMetadata"
-        }
-      }
-    },
-    "storageRuntimeRule": {
-      "type": "object",
-      "properties": {
-        "collectorFeatureConfig": {
-          "$ref": "#/definitions/storageCollectorFeatureConfig"
-        },
-        "namespaceRule": {
-          "$ref": "#/definitions/storageNamespaceRule"
         }
       }
     },

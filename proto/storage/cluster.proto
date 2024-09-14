@@ -109,32 +109,27 @@ message NetworkEndpointConfig {
   bool include_listening_endpoint_processes = 2;
 }
 
-message CollectorFeatureConfig {
-  oneof config {
-    ProcessConfig process_config = 1;
-    NetworkConnectionConfig network_connection_config = 2;
-    NetworkEndpointConfig network_endpoint_config = 3;
+message CollectorFeature {
+  oneof feature {
+    ProcessConfig processes = 1;
+    NetworkConnectionConfig network_connections = 2;
+    NetworkEndpointConfig network_endpoints = 3;
   }
 }
 
-message NamespaceRule {
-  string namespace = 1;
-  storage.MatchType match_type = 2;
-}
+message CollectorNamespaceConfig {
+  message NamespaceRule {
+    string namespace = 1;
+    storage.MatchType match_type = 2;
+  }
 
-message RuntimeRule {
-  CollectorFeatureConfig collector_feature_config = 1;
-  NamespaceRule namespace_rule = 2;
+  CollectorFeature feature = 1;
+  repeated NamespaceRule namespace_selection = 2;
 }
 
 message CollectorConfig {
-  message CollectorNamespaceConfig {
-    repeated NamespaceRule namespace_selection = 1;
-    CollectorFeatureConfig config = 2;
-  }
-
-  repeated CollectorFeatureConfig cluster_level_configs = 1;
-  repeated RuntimeRule rules = 2;
+  repeated CollectorFeature cluster_scope_config = 1;
+  repeated CollectorNamespaceConfig namespace_scope_config = 2;
 }
 
 message TolerationsConfig {
