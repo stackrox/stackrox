@@ -61,7 +61,7 @@ jobs:
             nvd-feeds)
                 nvd_file=nvd-feeds.zip
                 ;;
-            ,*)
+            *)
                 echo >&2 "error: invalid NVD bundle type '$NVD_BUNDLE_TYPE'"
                 exit 1
         esac
@@ -121,7 +121,6 @@ jobs:
     env:
       SCANNER_BUNDLE_VERSION: ${{ matrix.version }}
       ROX_GIT_REF: ${{ matrix.ref }}
-      STACKROX_NVD_ZIP_PATH: nvd.zip
     steps:
     - name: Free up disk space
       shell: bash
@@ -148,7 +147,7 @@ jobs:
       uses: ./.github/actions/download-artifact-with-retry
       with:
         name: nvd
-        path: nvd.zip
+        path: .
 
     - name: Build updater
       run: |
@@ -158,6 +157,13 @@ jobs:
 
     - name: Create bundle output directory
       run: mkdir -p definitions/${{ env.SCANNER_BUNDLE_VERSION }}
+
+    - name: Sanity check NVD zip
+      run: |
+        path="$PWD/nvd.zip"
+        echo "checking contents of $path"
+        unzip -l "$path"
+        echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
     - name: Run Updater (single bundle)
       run: |
@@ -186,8 +192,6 @@ jobs:
       - /tmp:/tmp
       - /usr:/mnt/usr
       - /opt:/mnt/opt
-    env:
-      STACKROX_NVD_ZIP_PATH: nvd.zip
     steps:
     - name: Free up disk space
       shell: bash
@@ -223,13 +227,20 @@ jobs:
       uses: ./.github/actions/download-artifact-with-retry
       with:
         name: nvd
-        path: nvd.zip
+        path: .
 
     - name: Build updater
       run: |
         echo "Building updater for pull request ${{ env.PR_NAME }}..."
         make tag
         make -C scanner bin/updater
+
+    - name: Sanity check NVD zip
+      run: |
+        path="$PWD/nvd.zip"
+        echo "checking contents of $path"
+        unzip -l "$path"
+        echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
     - name: Create bundle output directory
       run: mkdir -p definitions/${{ github.event.pull_request.number }}
