@@ -55,7 +55,7 @@ func (i *indexerMetadataStore) StoreManifest(ctx context.Context, manifestID str
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.StoreManifest")
 
 	const insertManifest = `
-		INSERT INTO manifest_metadata (manifest_id, expiration) VALUES 
+		INSERT INTO manifest_metadata (manifest_id, expiration) VALUES
 			($1, $2)
 		ON CONFLICT (manifest_id) DO UPDATE SET expiration = $2`
 
