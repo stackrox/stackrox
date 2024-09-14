@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	saAnnotations = []string{
+	ocpSAAnnotations = []string{
 		"kubernetes.io/service-account.name",
 		"openshift.io/internal-registry-auth-token.service-account",
 	}
@@ -249,15 +249,15 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 	sensorEvents := make([]*central.SensorEvent, 0, len(dockerConfig)+1)
 	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
 
-	var saName string
-	for _, saAnnotation := range saAnnotations {
-		if name, ok := secret.GetAnnotations()[saAnnotation]; ok {
-			saName = name
+	var ocpServiceAccountName string
+	for _, annotation := range ocpSAAnnotations {
+		if name, ok := secret.GetAnnotations()[annotation]; ok {
+			ocpServiceAccountName = name
 			break
 		}
 	}
 
-	s.processSecretForLocalScanning(secret, action, dockerConfig, saName)
+	s.processSecretForLocalScanning(secret, action, dockerConfig, ocpServiceAccountName)
 
 	newIntegrationSet := set.NewStringSet()
 	for registryAddress, dce := range dockerConfig {
@@ -276,7 +276,7 @@ func (s *secretDispatcher) processDockerConfigEvent(secret, oldSecret *v1.Secret
 		// This will ignore the secrets generated for the OCP default, builder, deployer, etc. service accounts.
 		// These pull secrets are used only for accessing the OCP internal registry, which is only accessible
 		// from within the Secured Cluster. Central will be unable to use these credentials.
-		if saName != "" {
+		if ocpServiceAccountName != "" {
 			continue
 		}
 

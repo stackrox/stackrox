@@ -405,14 +405,19 @@ func (rs *Store) UpsertSecret(namespace, secretName string, dockerConfig config.
 
 func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig config.DockerConfig, serviceAcctName string) {
 	isGlobalPullSecret := namespace == openshiftConfigNamespace && secretName == openshiftConfigPullSecret
+
+	// In Kubernetes, the `default` service account always exists in each namespace (it is recreated upon deletion).
+	// The default service account always contains an API token.
+	// In OpenShift, the default service account also contains credentials for the
+	// OpenShift Container Registry, which is an internal image registry.
 	fromDefaultSA := serviceAcctName == defaultSA
 
 	for registryAddress, dce := range dockerConfig {
 		registryAddr := strings.TrimSpace(registryAddress)
 
 		if fromDefaultSA {
-			// We assume that registries found in the dockercfg secret managed by OCP for the default
-			// service account only references hostnames for the OCP internal registry.
+			// Registries found in the `dockercfg` secret associated with the `default`
+			// service account are assumed to reference the OCP internal registry.
 			rs.addClusterLocalRegistryHost(registryAddr)
 			if err := rs.upsertRegistry(namespace, registryAddr, dce); err != nil {
 				log.Errorf("Unable to upsert registry %q into store: %v", registryAddr, err)
@@ -446,6 +451,10 @@ func (rs *Store) upsertSecretByHost(namespace, secretName string, dockerConfig c
 
 func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig config.DockerConfig, serviceAcctName string) {
 	isGlobalPullSecret := namespace == openshiftConfigNamespace && secretName == openshiftConfigPullSecret
+
+	// hasBoundServiceAccount indicates that this secret is bound to a service account,
+	// which means the secret is managed by OCP and its lifecycle is tied to that of
+	// the associated service account (ie: if the service account is deleted so is the secret).
 	hasBoundServiceAccount := serviceAcctName != ""
 
 	// To avoid partial upserts - hold the lock until the entire secret upserted.
@@ -456,8 +465,8 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 		registryAddr := strings.TrimSpace(registryAddress)
 
 		if hasBoundServiceAccount {
-			// We assume that registries found in dockercfg secrets managed by OCP only
-			// reference hostnames for the OCP internal registry.
+			// Registries found in any `dockercfg` secret bound a service account
+			// are assumed to reference the OCP internal registry.
 			rs.upsertPullSecretByNameNoLock(namespace, secretName, registryAddr, dce)
 			rs.addClusterLocalRegistryHost(registryAddr)
 			continue
@@ -475,6 +484,8 @@ func (rs *Store) upsertSecretByName(namespace, secretName string, dockerConfig c
 			}
 		}
 
+		// Regardless if this secret is the global pull secret, we still store it
+		// in case there is a workload that directly references it by name.
 		rs.upsertPullSecretByNameNoLock(namespace, secretName, registryAddr, dce)
 	}
 
@@ -593,11 +604,12 @@ func (rs *Store) getAllPullSecretRegistriesNoLock(secretNameToHost secretNameToH
 	var regs []types.ImageRegistry
 	registryHostname := image.GetRegistry()
 
-	// To make the output deterministic we sort the secret names.
 	secretNames := make([]string, 0, len(secretNameToHost))
 	for secretName := range secretNameToHost {
 		secretNames = append(secretNames, secretName)
 	}
+
+	// To make the output deterministic sort the secret names.
 	slices.Sort(secretNames)
 
 	for _, secretName := range secretNames {
