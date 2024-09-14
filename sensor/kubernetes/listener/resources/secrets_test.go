@@ -232,7 +232,7 @@ func TestForceLocalScanning(t *testing.T) {
 	d = newSecretDispatcher(regStore)
 
 	// secrets with an k8s service-account.name other than default should not be stored
-	dockerConfigSecret.Annotations = map[string]string{saAnnotations[0]: "something"}
+	dockerConfigSecret.Annotations = map[string]string{ocpSAAnnotations[0]: "something"}
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
 	assert.False(t, regStore.IsLocal(fakeImage))
@@ -240,7 +240,7 @@ func TestForceLocalScanning(t *testing.T) {
 	assert.Error(t, err)
 
 	// secrets with an OCP internal-registry-auth-token.service-account other than default should not be stored
-	dockerConfigSecret.Annotations = map[string]string{saAnnotations[1]: "something"}
+	dockerConfigSecret.Annotations = map[string]string{ocpSAAnnotations[1]: "something"}
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
 	assert.False(t, regStore.IsLocal(fakeImage))
@@ -248,7 +248,7 @@ func TestForceLocalScanning(t *testing.T) {
 	assert.Error(t, err)
 
 	// secrets with an saAnnotation of `default` should still be stored
-	dockerConfigSecret.Annotations = map[string]string{saAnnotations[0]: "default"}
+	dockerConfigSecret.Annotations = map[string]string{ocpSAAnnotations[0]: "default"}
 	regStore.Cleanup()
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
@@ -256,7 +256,7 @@ func TestForceLocalScanning(t *testing.T) {
 	assert.NotNil(t, regs)
 	assert.NoError(t, err)
 
-	dockerConfigSecret.Annotations = map[string]string{saAnnotations[1]: "default"}
+	dockerConfigSecret.Annotations = map[string]string{ocpSAAnnotations[1]: "default"}
 	regStore.Cleanup()
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
@@ -326,33 +326,33 @@ func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
 
 	// a secret w/ the `default` k8s sa annotation should trigger no imageintegration events
 	secret := openshift4xDockerConfigSecret.DeepCopy()
-	secret.Annotations[saAnnotations[0]] = defaultSA
+	secret.Annotations[ocpSAAnnotations[0]] = defaultSA
 	events := d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents := getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 0)
 
 	// a secret w/ the `default` OCP sa annotation should trigger no imageintegration events
-	delete(secret.Annotations, saAnnotations[0])
-	secret.Annotations[saAnnotations[1]] = defaultSA
+	delete(secret.Annotations, ocpSAAnnotations[0])
+	secret.Annotations[ocpSAAnnotations[1]] = defaultSA
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 0)
-	delete(secret.Annotations, saAnnotations[1])
+	delete(secret.Annotations, ocpSAAnnotations[1])
 
 	// a secret w/ any sa annotation should trigger no imageintegration events
-	secret.Annotations[saAnnotations[0]] = "blah"
+	secret.Annotations[ocpSAAnnotations[0]] = "blah"
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 0)
 
 	// a secret w/ an empty sa annotation should trigger an imageintegration event
-	secret.Annotations[saAnnotations[0]] = ""
+	secret.Annotations[ocpSAAnnotations[0]] = ""
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 1)
 
 	// a secret w/ no sa annotation should trigger an imageintegration event
-	delete(secret.Annotations, saAnnotations[0])
+	delete(secret.Annotations, ocpSAAnnotations[0])
 	events = d.ProcessEvent(secret, nil, central.ResourceAction_SYNC_RESOURCE)
 	iiEvents = getImageIntegrationEvents(events)
 	assert.Len(t, iiEvents, 1)
