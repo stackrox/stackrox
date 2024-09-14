@@ -203,12 +203,12 @@ func (m *AdmissionControllerConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ProcessStatus) CloneVT() *ProcessStatus {
+func (m *ProcessConfig) CloneVT() *ProcessConfig {
 	if m == nil {
-		return (*ProcessStatus)(nil)
+		return (*ProcessConfig)(nil)
 	}
-	r := new(ProcessStatus)
-	r.ProcessEnabled = m.ProcessEnabled
+	r := new(ProcessConfig)
+	r.Enabled = m.Enabled
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -216,16 +216,16 @@ func (m *ProcessStatus) CloneVT() *ProcessStatus {
 	return r
 }
 
-func (m *ProcessStatus) CloneMessageVT() proto.Message {
+func (m *ProcessConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *NetworkConnectionStatus) CloneVT() *NetworkConnectionStatus {
+func (m *NetworkConnectionConfig) CloneVT() *NetworkConnectionConfig {
 	if m == nil {
-		return (*NetworkConnectionStatus)(nil)
+		return (*NetworkConnectionConfig)(nil)
 	}
-	r := new(NetworkConnectionStatus)
-	r.NetworkConnectionEnabled = m.NetworkConnectionEnabled
+	r := new(NetworkConnectionConfig)
+	r.Enabled = m.Enabled
 	r.AggregateExternal = m.AggregateExternal
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -234,17 +234,17 @@ func (m *NetworkConnectionStatus) CloneVT() *NetworkConnectionStatus {
 	return r
 }
 
-func (m *NetworkConnectionStatus) CloneMessageVT() proto.Message {
+func (m *NetworkConnectionConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *NetworkEndpointStatus) CloneVT() *NetworkEndpointStatus {
+func (m *NetworkEndpointConfig) CloneVT() *NetworkEndpointConfig {
 	if m == nil {
-		return (*NetworkEndpointStatus)(nil)
+		return (*NetworkEndpointConfig)(nil)
 	}
-	r := new(NetworkEndpointStatus)
-	r.NetworkEndpointEnabled = m.NetworkEndpointEnabled
-	r.ProcessesListeningOnPort = m.ProcessesListeningOnPort
+	r := new(NetworkEndpointConfig)
+	r.Enabled = m.Enabled
+	r.IncludeListeningEndpointProcesses = m.IncludeListeningEndpointProcesses
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -252,18 +252,18 @@ func (m *NetworkEndpointStatus) CloneVT() *NetworkEndpointStatus {
 	return r
 }
 
-func (m *NetworkEndpointStatus) CloneMessageVT() proto.Message {
+func (m *NetworkEndpointConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *CollectorFeatureStatus) CloneVT() *CollectorFeatureStatus {
+func (m *CollectorFeatureConfig) CloneVT() *CollectorFeatureConfig {
 	if m == nil {
-		return (*CollectorFeatureStatus)(nil)
+		return (*CollectorFeatureConfig)(nil)
 	}
-	r := new(CollectorFeatureStatus)
-	if m.Status != nil {
-		r.Status = m.Status.(interface {
-			CloneVT() isCollectorFeatureStatus_Status
+	r := new(CollectorFeatureConfig)
+	if m.Config != nil {
+		r.Config = m.Config.(interface {
+			CloneVT() isCollectorFeatureConfig_Config
 		}).CloneVT()
 	}
 	if len(m.unknownFields) > 0 {
@@ -273,34 +273,34 @@ func (m *CollectorFeatureStatus) CloneVT() *CollectorFeatureStatus {
 	return r
 }
 
-func (m *CollectorFeatureStatus) CloneMessageVT() proto.Message {
+func (m *CollectorFeatureConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *CollectorFeatureStatus_ProcessStatus) CloneVT() isCollectorFeatureStatus_Status {
+func (m *CollectorFeatureConfig_ProcessConfig) CloneVT() isCollectorFeatureConfig_Config {
 	if m == nil {
-		return (*CollectorFeatureStatus_ProcessStatus)(nil)
+		return (*CollectorFeatureConfig_ProcessConfig)(nil)
 	}
-	r := new(CollectorFeatureStatus_ProcessStatus)
-	r.ProcessStatus = m.ProcessStatus.CloneVT()
+	r := new(CollectorFeatureConfig_ProcessConfig)
+	r.ProcessConfig = m.ProcessConfig.CloneVT()
 	return r
 }
 
-func (m *CollectorFeatureStatus_NetworkConnectionStatus) CloneVT() isCollectorFeatureStatus_Status {
+func (m *CollectorFeatureConfig_NetworkConnectionConfig) CloneVT() isCollectorFeatureConfig_Config {
 	if m == nil {
-		return (*CollectorFeatureStatus_NetworkConnectionStatus)(nil)
+		return (*CollectorFeatureConfig_NetworkConnectionConfig)(nil)
 	}
-	r := new(CollectorFeatureStatus_NetworkConnectionStatus)
-	r.NetworkConnectionStatus = m.NetworkConnectionStatus.CloneVT()
+	r := new(CollectorFeatureConfig_NetworkConnectionConfig)
+	r.NetworkConnectionConfig = m.NetworkConnectionConfig.CloneVT()
 	return r
 }
 
-func (m *CollectorFeatureStatus_NetworkEndpointStatus) CloneVT() isCollectorFeatureStatus_Status {
+func (m *CollectorFeatureConfig_NetworkEndpointConfig) CloneVT() isCollectorFeatureConfig_Config {
 	if m == nil {
-		return (*CollectorFeatureStatus_NetworkEndpointStatus)(nil)
+		return (*CollectorFeatureConfig_NetworkEndpointConfig)(nil)
 	}
-	r := new(CollectorFeatureStatus_NetworkEndpointStatus)
-	r.NetworkEndpointStatus = m.NetworkEndpointStatus.CloneVT()
+	r := new(CollectorFeatureConfig_NetworkEndpointConfig)
+	r.NetworkEndpointConfig = m.NetworkEndpointConfig.CloneVT()
 	return r
 }
 
@@ -322,12 +322,30 @@ func (m *NamespaceRule) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *CollectorConfig_RuntimeRule) CloneVT() *CollectorConfig_RuntimeRule {
+func (m *RuntimeRule) CloneVT() *RuntimeRule {
 	if m == nil {
-		return (*CollectorConfig_RuntimeRule)(nil)
+		return (*RuntimeRule)(nil)
 	}
-	r := new(CollectorConfig_RuntimeRule)
-	r.Status = m.Status.CloneVT()
+	r := new(RuntimeRule)
+	r.CollectorFeatureConfig = m.CollectorFeatureConfig.CloneVT()
+	r.NamespaceRule = m.NamespaceRule.CloneVT()
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *RuntimeRule) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *CollectorConfig_CollectorNamespaceConfig) CloneVT() *CollectorConfig_CollectorNamespaceConfig {
+	if m == nil {
+		return (*CollectorConfig_CollectorNamespaceConfig)(nil)
+	}
+	r := new(CollectorConfig_CollectorNamespaceConfig)
+	r.Config = m.Config.CloneVT()
 	if rhs := m.NamespaceSelection; rhs != nil {
 		tmpContainer := make([]*NamespaceRule, len(rhs))
 		for k, v := range rhs {
@@ -342,7 +360,7 @@ func (m *CollectorConfig_RuntimeRule) CloneVT() *CollectorConfig_RuntimeRule {
 	return r
 }
 
-func (m *CollectorConfig_RuntimeRule) CloneMessageVT() proto.Message {
+func (m *CollectorConfig_CollectorNamespaceConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -351,15 +369,15 @@ func (m *CollectorConfig) CloneVT() *CollectorConfig {
 		return (*CollectorConfig)(nil)
 	}
 	r := new(CollectorConfig)
-	if rhs := m.ClusterLevelStatuses; rhs != nil {
-		tmpContainer := make([]*CollectorFeatureStatus, len(rhs))
+	if rhs := m.ClusterLevelConfigs; rhs != nil {
+		tmpContainer := make([]*CollectorFeatureConfig, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
-		r.ClusterLevelStatuses = tmpContainer
+		r.ClusterLevelConfigs = tmpContainer
 	}
 	if rhs := m.Rules; rhs != nil {
-		tmpContainer := make([]*CollectorConfig_RuntimeRule, len(rhs))
+		tmpContainer := make([]*RuntimeRule, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
@@ -1165,32 +1183,32 @@ func (this *AdmissionControllerConfig) EqualMessageVT(thatMsg proto.Message) boo
 	}
 	return this.EqualVT(that)
 }
-func (this *ProcessStatus) EqualVT(that *ProcessStatus) bool {
+func (this *ProcessConfig) EqualVT(that *ProcessConfig) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.ProcessEnabled != that.ProcessEnabled {
+	if this.Enabled != that.Enabled {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ProcessStatus) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ProcessStatus)
+func (this *ProcessConfig) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ProcessConfig)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *NetworkConnectionStatus) EqualVT(that *NetworkConnectionStatus) bool {
+func (this *NetworkConnectionConfig) EqualVT(that *NetworkConnectionConfig) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.NetworkConnectionEnabled != that.NetworkConnectionEnabled {
+	if this.Enabled != that.Enabled {
 		return false
 	}
 	if this.AggregateExternal != that.AggregateExternal {
@@ -1199,65 +1217,65 @@ func (this *NetworkConnectionStatus) EqualVT(that *NetworkConnectionStatus) bool
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *NetworkConnectionStatus) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*NetworkConnectionStatus)
+func (this *NetworkConnectionConfig) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*NetworkConnectionConfig)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *NetworkEndpointStatus) EqualVT(that *NetworkEndpointStatus) bool {
+func (this *NetworkEndpointConfig) EqualVT(that *NetworkEndpointConfig) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.NetworkEndpointEnabled != that.NetworkEndpointEnabled {
+	if this.Enabled != that.Enabled {
 		return false
 	}
-	if this.ProcessesListeningOnPort != that.ProcessesListeningOnPort {
+	if this.IncludeListeningEndpointProcesses != that.IncludeListeningEndpointProcesses {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *NetworkEndpointStatus) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*NetworkEndpointStatus)
+func (this *NetworkEndpointConfig) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*NetworkEndpointConfig)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *CollectorFeatureStatus) EqualVT(that *CollectorFeatureStatus) bool {
+func (this *CollectorFeatureConfig) EqualVT(that *CollectorFeatureConfig) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Status == nil && that.Status != nil {
+	if this.Config == nil && that.Config != nil {
 		return false
-	} else if this.Status != nil {
-		if that.Status == nil {
+	} else if this.Config != nil {
+		if that.Config == nil {
 			return false
 		}
-		if !this.Status.(interface {
-			EqualVT(isCollectorFeatureStatus_Status) bool
-		}).EqualVT(that.Status) {
+		if !this.Config.(interface {
+			EqualVT(isCollectorFeatureConfig_Config) bool
+		}).EqualVT(that.Config) {
 			return false
 		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *CollectorFeatureStatus) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*CollectorFeatureStatus)
+func (this *CollectorFeatureConfig) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*CollectorFeatureConfig)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *CollectorFeatureStatus_ProcessStatus) EqualVT(thatIface isCollectorFeatureStatus_Status) bool {
-	that, ok := thatIface.(*CollectorFeatureStatus_ProcessStatus)
+func (this *CollectorFeatureConfig_ProcessConfig) EqualVT(thatIface isCollectorFeatureConfig_Config) bool {
+	that, ok := thatIface.(*CollectorFeatureConfig_ProcessConfig)
 	if !ok {
 		return false
 	}
@@ -1267,12 +1285,12 @@ func (this *CollectorFeatureStatus_ProcessStatus) EqualVT(thatIface isCollectorF
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.ProcessStatus, that.ProcessStatus; p != q {
+	if p, q := this.ProcessConfig, that.ProcessConfig; p != q {
 		if p == nil {
-			p = &ProcessStatus{}
+			p = &ProcessConfig{}
 		}
 		if q == nil {
-			q = &ProcessStatus{}
+			q = &ProcessConfig{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1281,8 +1299,8 @@ func (this *CollectorFeatureStatus_ProcessStatus) EqualVT(thatIface isCollectorF
 	return true
 }
 
-func (this *CollectorFeatureStatus_NetworkConnectionStatus) EqualVT(thatIface isCollectorFeatureStatus_Status) bool {
-	that, ok := thatIface.(*CollectorFeatureStatus_NetworkConnectionStatus)
+func (this *CollectorFeatureConfig_NetworkConnectionConfig) EqualVT(thatIface isCollectorFeatureConfig_Config) bool {
+	that, ok := thatIface.(*CollectorFeatureConfig_NetworkConnectionConfig)
 	if !ok {
 		return false
 	}
@@ -1292,12 +1310,12 @@ func (this *CollectorFeatureStatus_NetworkConnectionStatus) EqualVT(thatIface is
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.NetworkConnectionStatus, that.NetworkConnectionStatus; p != q {
+	if p, q := this.NetworkConnectionConfig, that.NetworkConnectionConfig; p != q {
 		if p == nil {
-			p = &NetworkConnectionStatus{}
+			p = &NetworkConnectionConfig{}
 		}
 		if q == nil {
-			q = &NetworkConnectionStatus{}
+			q = &NetworkConnectionConfig{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1306,8 +1324,8 @@ func (this *CollectorFeatureStatus_NetworkConnectionStatus) EqualVT(thatIface is
 	return true
 }
 
-func (this *CollectorFeatureStatus_NetworkEndpointStatus) EqualVT(thatIface isCollectorFeatureStatus_Status) bool {
-	that, ok := thatIface.(*CollectorFeatureStatus_NetworkEndpointStatus)
+func (this *CollectorFeatureConfig_NetworkEndpointConfig) EqualVT(thatIface isCollectorFeatureConfig_Config) bool {
+	that, ok := thatIface.(*CollectorFeatureConfig_NetworkEndpointConfig)
 	if !ok {
 		return false
 	}
@@ -1317,12 +1335,12 @@ func (this *CollectorFeatureStatus_NetworkEndpointStatus) EqualVT(thatIface isCo
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.NetworkEndpointStatus, that.NetworkEndpointStatus; p != q {
+	if p, q := this.NetworkEndpointConfig, that.NetworkEndpointConfig; p != q {
 		if p == nil {
-			p = &NetworkEndpointStatus{}
+			p = &NetworkEndpointConfig{}
 		}
 		if q == nil {
-			q = &NetworkEndpointStatus{}
+			q = &NetworkEndpointConfig{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1353,7 +1371,29 @@ func (this *NamespaceRule) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *CollectorConfig_RuntimeRule) EqualVT(that *CollectorConfig_RuntimeRule) bool {
+func (this *RuntimeRule) EqualVT(that *RuntimeRule) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if !this.CollectorFeatureConfig.EqualVT(that.CollectorFeatureConfig) {
+		return false
+	}
+	if !this.NamespaceRule.EqualVT(that.NamespaceRule) {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *RuntimeRule) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*RuntimeRule)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *CollectorConfig_CollectorNamespaceConfig) EqualVT(that *CollectorConfig_CollectorNamespaceConfig) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -1376,14 +1416,14 @@ func (this *CollectorConfig_RuntimeRule) EqualVT(that *CollectorConfig_RuntimeRu
 			}
 		}
 	}
-	if !this.Status.EqualVT(that.Status) {
+	if !this.Config.EqualVT(that.Config) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *CollectorConfig_RuntimeRule) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*CollectorConfig_RuntimeRule)
+func (this *CollectorConfig_CollectorNamespaceConfig) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*CollectorConfig_CollectorNamespaceConfig)
 	if !ok {
 		return false
 	}
@@ -1395,17 +1435,17 @@ func (this *CollectorConfig) EqualVT(that *CollectorConfig) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if len(this.ClusterLevelStatuses) != len(that.ClusterLevelStatuses) {
+	if len(this.ClusterLevelConfigs) != len(that.ClusterLevelConfigs) {
 		return false
 	}
-	for i, vx := range this.ClusterLevelStatuses {
-		vy := that.ClusterLevelStatuses[i]
+	for i, vx := range this.ClusterLevelConfigs {
+		vy := that.ClusterLevelConfigs[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &CollectorFeatureStatus{}
+				p = &CollectorFeatureConfig{}
 			}
 			if q == nil {
-				q = &CollectorFeatureStatus{}
+				q = &CollectorFeatureConfig{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -1419,10 +1459,10 @@ func (this *CollectorConfig) EqualVT(that *CollectorConfig) bool {
 		vy := that.Rules[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &CollectorConfig_RuntimeRule{}
+				p = &RuntimeRule{}
 			}
 			if q == nil {
-				q = &CollectorConfig_RuntimeRule{}
+				q = &RuntimeRule{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -2741,7 +2781,7 @@ func (m *AdmissionControllerConfig) MarshalToSizedBufferVT(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *ProcessStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *ProcessConfig) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2754,12 +2794,12 @@ func (m *ProcessStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ProcessStatus) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ProcessConfig) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ProcessStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ProcessConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2771,9 +2811,9 @@ func (m *ProcessStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.ProcessEnabled {
+	if m.Enabled {
 		i--
-		if m.ProcessEnabled {
+		if m.Enabled {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -2784,7 +2824,7 @@ func (m *ProcessStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkConnectionStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *NetworkConnectionConfig) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2797,12 +2837,12 @@ func (m *NetworkConnectionStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkConnectionStatus) MarshalToVT(dAtA []byte) (int, error) {
+func (m *NetworkConnectionConfig) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *NetworkConnectionStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *NetworkConnectionConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2824,9 +2864,9 @@ func (m *NetworkConnectionStatus) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.NetworkConnectionEnabled {
+	if m.Enabled {
 		i--
-		if m.NetworkConnectionEnabled {
+		if m.Enabled {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -2837,7 +2877,7 @@ func (m *NetworkConnectionStatus) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 	return len(dAtA) - i, nil
 }
 
-func (m *NetworkEndpointStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *NetworkEndpointConfig) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2850,12 +2890,12 @@ func (m *NetworkEndpointStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *NetworkEndpointStatus) MarshalToVT(dAtA []byte) (int, error) {
+func (m *NetworkEndpointConfig) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *NetworkEndpointStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *NetworkEndpointConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2867,9 +2907,9 @@ func (m *NetworkEndpointStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.ProcessesListeningOnPort {
+	if m.IncludeListeningEndpointProcesses {
 		i--
-		if m.ProcessesListeningOnPort {
+		if m.IncludeListeningEndpointProcesses {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -2877,9 +2917,9 @@ func (m *NetworkEndpointStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 		i--
 		dAtA[i] = 0x10
 	}
-	if m.NetworkEndpointEnabled {
+	if m.Enabled {
 		i--
-		if m.NetworkEndpointEnabled {
+		if m.Enabled {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -2890,7 +2930,7 @@ func (m *NetworkEndpointStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *CollectorFeatureStatus) MarshalVT() (dAtA []byte, err error) {
+func (m *CollectorFeatureConfig) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2903,12 +2943,12 @@ func (m *CollectorFeatureStatus) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CollectorFeatureStatus) MarshalToVT(dAtA []byte) (int, error) {
+func (m *CollectorFeatureConfig) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *CollectorFeatureStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *CollectorFeatureConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2920,7 +2960,7 @@ func (m *CollectorFeatureStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if vtmsg, ok := m.Status.(interface {
+	if vtmsg, ok := m.Config.(interface {
 		MarshalToSizedBufferVT([]byte) (int, error)
 	}); ok {
 		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
@@ -2932,15 +2972,15 @@ func (m *CollectorFeatureStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error
 	return len(dAtA) - i, nil
 }
 
-func (m *CollectorFeatureStatus_ProcessStatus) MarshalToVT(dAtA []byte) (int, error) {
+func (m *CollectorFeatureConfig_ProcessConfig) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *CollectorFeatureStatus_ProcessStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *CollectorFeatureConfig_ProcessConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.ProcessStatus != nil {
-		size, err := m.ProcessStatus.MarshalToSizedBufferVT(dAtA[:i])
+	if m.ProcessConfig != nil {
+		size, err := m.ProcessConfig.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2951,15 +2991,15 @@ func (m *CollectorFeatureStatus_ProcessStatus) MarshalToSizedBufferVT(dAtA []byt
 	}
 	return len(dAtA) - i, nil
 }
-func (m *CollectorFeatureStatus_NetworkConnectionStatus) MarshalToVT(dAtA []byte) (int, error) {
+func (m *CollectorFeatureConfig_NetworkConnectionConfig) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *CollectorFeatureStatus_NetworkConnectionStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *CollectorFeatureConfig_NetworkConnectionConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.NetworkConnectionStatus != nil {
-		size, err := m.NetworkConnectionStatus.MarshalToSizedBufferVT(dAtA[:i])
+	if m.NetworkConnectionConfig != nil {
+		size, err := m.NetworkConnectionConfig.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2970,15 +3010,15 @@ func (m *CollectorFeatureStatus_NetworkConnectionStatus) MarshalToSizedBufferVT(
 	}
 	return len(dAtA) - i, nil
 }
-func (m *CollectorFeatureStatus_NetworkEndpointStatus) MarshalToVT(dAtA []byte) (int, error) {
+func (m *CollectorFeatureConfig_NetworkEndpointConfig) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *CollectorFeatureStatus_NetworkEndpointStatus) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *CollectorFeatureConfig_NetworkEndpointConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.NetworkEndpointStatus != nil {
-		size, err := m.NetworkEndpointStatus.MarshalToSizedBufferVT(dAtA[:i])
+	if m.NetworkEndpointConfig != nil {
+		size, err := m.NetworkEndpointConfig.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3034,7 +3074,7 @@ func (m *NamespaceRule) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CollectorConfig_RuntimeRule) MarshalVT() (dAtA []byte, err error) {
+func (m *RuntimeRule) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -3047,12 +3087,12 @@ func (m *CollectorConfig_RuntimeRule) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CollectorConfig_RuntimeRule) MarshalToVT(dAtA []byte) (int, error) {
+func (m *RuntimeRule) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *CollectorConfig_RuntimeRule) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *RuntimeRule) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -3064,8 +3104,61 @@ func (m *CollectorConfig_RuntimeRule) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Status != nil {
-		size, err := m.Status.MarshalToSizedBufferVT(dAtA[:i])
+	if m.NamespaceRule != nil {
+		size, err := m.NamespaceRule.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.CollectorFeatureConfig != nil {
+		size, err := m.CollectorFeatureConfig.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *CollectorConfig_CollectorNamespaceConfig) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CollectorConfig_CollectorNamespaceConfig) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *CollectorConfig_CollectorNamespaceConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.Config != nil {
+		size, err := m.Config.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3131,9 +3224,9 @@ func (m *CollectorConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0x12
 		}
 	}
-	if len(m.ClusterLevelStatuses) > 0 {
-		for iNdEx := len(m.ClusterLevelStatuses) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ClusterLevelStatuses[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+	if len(m.ClusterLevelConfigs) > 0 {
+		for iNdEx := len(m.ClusterLevelConfigs) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.ClusterLevelConfigs[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -4825,26 +4918,26 @@ func (m *AdmissionControllerConfig) SizeVT() (n int) {
 	return n
 }
 
-func (m *ProcessStatus) SizeVT() (n int) {
+func (m *ProcessConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ProcessEnabled {
+	if m.Enabled {
 		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
 }
 
-func (m *NetworkConnectionStatus) SizeVT() (n int) {
+func (m *NetworkConnectionConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.NetworkConnectionEnabled {
+	if m.Enabled {
 		n += 2
 	}
 	if m.AggregateExternal {
@@ -4854,67 +4947,67 @@ func (m *NetworkConnectionStatus) SizeVT() (n int) {
 	return n
 }
 
-func (m *NetworkEndpointStatus) SizeVT() (n int) {
+func (m *NetworkEndpointConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.NetworkEndpointEnabled {
+	if m.Enabled {
 		n += 2
 	}
-	if m.ProcessesListeningOnPort {
+	if m.IncludeListeningEndpointProcesses {
 		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
 }
 
-func (m *CollectorFeatureStatus) SizeVT() (n int) {
+func (m *CollectorFeatureConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if vtmsg, ok := m.Status.(interface{ SizeVT() int }); ok {
+	if vtmsg, ok := m.Config.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
 	}
 	n += len(m.unknownFields)
 	return n
 }
 
-func (m *CollectorFeatureStatus_ProcessStatus) SizeVT() (n int) {
+func (m *CollectorFeatureConfig_ProcessConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.ProcessStatus != nil {
-		l = m.ProcessStatus.SizeVT()
+	if m.ProcessConfig != nil {
+		l = m.ProcessConfig.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
 }
-func (m *CollectorFeatureStatus_NetworkConnectionStatus) SizeVT() (n int) {
+func (m *CollectorFeatureConfig_NetworkConnectionConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.NetworkConnectionStatus != nil {
-		l = m.NetworkConnectionStatus.SizeVT()
+	if m.NetworkConnectionConfig != nil {
+		l = m.NetworkConnectionConfig.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
 }
-func (m *CollectorFeatureStatus_NetworkEndpointStatus) SizeVT() (n int) {
+func (m *CollectorFeatureConfig_NetworkEndpointConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.NetworkEndpointStatus != nil {
-		l = m.NetworkEndpointStatus.SizeVT()
+	if m.NetworkEndpointConfig != nil {
+		l = m.NetworkEndpointConfig.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -4936,7 +5029,25 @@ func (m *NamespaceRule) SizeVT() (n int) {
 	return n
 }
 
-func (m *CollectorConfig_RuntimeRule) SizeVT() (n int) {
+func (m *RuntimeRule) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.CollectorFeatureConfig != nil {
+		l = m.CollectorFeatureConfig.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.NamespaceRule != nil {
+		l = m.NamespaceRule.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *CollectorConfig_CollectorNamespaceConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4948,8 +5059,8 @@ func (m *CollectorConfig_RuntimeRule) SizeVT() (n int) {
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
 	}
-	if m.Status != nil {
-		l = m.Status.SizeVT()
+	if m.Config != nil {
+		l = m.Config.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -4962,8 +5073,8 @@ func (m *CollectorConfig) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.ClusterLevelStatuses) > 0 {
-		for _, e := range m.ClusterLevelStatuses {
+	if len(m.ClusterLevelConfigs) > 0 {
+		for _, e := range m.ClusterLevelConfigs {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
@@ -6628,7 +6739,7 @@ func (m *AdmissionControllerConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ProcessStatus) UnmarshalVT(dAtA []byte) error {
+func (m *ProcessConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6651,15 +6762,15 @@ func (m *ProcessStatus) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ProcessStatus: wiretype end group for non-group")
+			return fmt.Errorf("proto: ProcessConfig: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ProcessStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ProcessConfig: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProcessEnabled", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -6676,7 +6787,7 @@ func (m *ProcessStatus) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.ProcessEnabled = bool(v != 0)
+			m.Enabled = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6699,7 +6810,7 @@ func (m *ProcessStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkConnectionStatus) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkConnectionConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6722,15 +6833,15 @@ func (m *NetworkConnectionStatus) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: NetworkConnectionStatus: wiretype end group for non-group")
+			return fmt.Errorf("proto: NetworkConnectionConfig: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: NetworkConnectionStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: NetworkConnectionConfig: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetworkConnectionEnabled", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -6747,7 +6858,7 @@ func (m *NetworkConnectionStatus) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.NetworkConnectionEnabled = bool(v != 0)
+			m.Enabled = bool(v != 0)
 		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AggregateExternal", wireType)
@@ -6790,7 +6901,7 @@ func (m *NetworkConnectionStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *NetworkEndpointStatus) UnmarshalVT(dAtA []byte) error {
+func (m *NetworkEndpointConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6813,15 +6924,15 @@ func (m *NetworkEndpointStatus) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: NetworkEndpointStatus: wiretype end group for non-group")
+			return fmt.Errorf("proto: NetworkEndpointConfig: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: NetworkEndpointStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: NetworkEndpointConfig: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpointEnabled", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -6838,10 +6949,10 @@ func (m *NetworkEndpointStatus) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.NetworkEndpointEnabled = bool(v != 0)
+			m.Enabled = bool(v != 0)
 		case 2:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProcessesListeningOnPort", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeListeningEndpointProcesses", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -6858,7 +6969,7 @@ func (m *NetworkEndpointStatus) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.ProcessesListeningOnPort = bool(v != 0)
+			m.IncludeListeningEndpointProcesses = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6881,7 +6992,7 @@ func (m *NetworkEndpointStatus) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CollectorFeatureStatus) UnmarshalVT(dAtA []byte) error {
+func (m *CollectorFeatureConfig) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6904,15 +7015,15 @@ func (m *CollectorFeatureStatus) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CollectorFeatureStatus: wiretype end group for non-group")
+			return fmt.Errorf("proto: CollectorFeatureConfig: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CollectorFeatureStatus: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: CollectorFeatureConfig: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ProcessStatus", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ProcessConfig", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6939,21 +7050,21 @@ func (m *CollectorFeatureStatus) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Status.(*CollectorFeatureStatus_ProcessStatus); ok {
-				if err := oneof.ProcessStatus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Config.(*CollectorFeatureConfig_ProcessConfig); ok {
+				if err := oneof.ProcessConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &ProcessStatus{}
+				v := &ProcessConfig{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Status = &CollectorFeatureStatus_ProcessStatus{ProcessStatus: v}
+				m.Config = &CollectorFeatureConfig_ProcessConfig{ProcessConfig: v}
 			}
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetworkConnectionStatus", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NetworkConnectionConfig", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6980,21 +7091,21 @@ func (m *CollectorFeatureStatus) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Status.(*CollectorFeatureStatus_NetworkConnectionStatus); ok {
-				if err := oneof.NetworkConnectionStatus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Config.(*CollectorFeatureConfig_NetworkConnectionConfig); ok {
+				if err := oneof.NetworkConnectionConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &NetworkConnectionStatus{}
+				v := &NetworkConnectionConfig{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Status = &CollectorFeatureStatus_NetworkConnectionStatus{NetworkConnectionStatus: v}
+				m.Config = &CollectorFeatureConfig_NetworkConnectionConfig{NetworkConnectionConfig: v}
 			}
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpointStatus", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpointConfig", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7021,16 +7132,16 @@ func (m *CollectorFeatureStatus) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Status.(*CollectorFeatureStatus_NetworkEndpointStatus); ok {
-				if err := oneof.NetworkEndpointStatus.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Config.(*CollectorFeatureConfig_NetworkEndpointConfig); ok {
+				if err := oneof.NetworkEndpointConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &NetworkEndpointStatus{}
+				v := &NetworkEndpointConfig{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Status = &CollectorFeatureStatus_NetworkEndpointStatus{NetworkEndpointStatus: v}
+				m.Config = &CollectorFeatureConfig_NetworkEndpointConfig{NetworkEndpointConfig: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -7157,7 +7268,7 @@ func (m *NamespaceRule) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CollectorConfig_RuntimeRule) UnmarshalVT(dAtA []byte) error {
+func (m *RuntimeRule) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7180,10 +7291,133 @@ func (m *CollectorConfig_RuntimeRule) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CollectorConfig_RuntimeRule: wiretype end group for non-group")
+			return fmt.Errorf("proto: RuntimeRule: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CollectorConfig_RuntimeRule: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: RuntimeRule: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectorFeatureConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CollectorFeatureConfig == nil {
+				m.CollectorFeatureConfig = &CollectorFeatureConfig{}
+			}
+			if err := m.CollectorFeatureConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NamespaceRule", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.NamespaceRule == nil {
+				m.NamespaceRule = &NamespaceRule{}
+			}
+			if err := m.NamespaceRule.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CollectorConfig_CollectorNamespaceConfig) UnmarshalVT(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CollectorConfig_CollectorNamespaceConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CollectorConfig_CollectorNamespaceConfig: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -7222,7 +7456,7 @@ func (m *CollectorConfig_RuntimeRule) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Status", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Config", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7249,10 +7483,10 @@ func (m *CollectorConfig_RuntimeRule) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Status == nil {
-				m.Status = &CollectorFeatureStatus{}
+			if m.Config == nil {
+				m.Config = &CollectorFeatureConfig{}
 			}
-			if err := m.Status.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Config.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7309,7 +7543,7 @@ func (m *CollectorConfig) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterLevelStatuses", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterLevelConfigs", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7336,8 +7570,8 @@ func (m *CollectorConfig) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ClusterLevelStatuses = append(m.ClusterLevelStatuses, &CollectorFeatureStatus{})
-			if err := m.ClusterLevelStatuses[len(m.ClusterLevelStatuses)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			m.ClusterLevelConfigs = append(m.ClusterLevelConfigs, &CollectorFeatureConfig{})
+			if err := m.ClusterLevelConfigs[len(m.ClusterLevelConfigs)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -7370,7 +7604,7 @@ func (m *CollectorConfig) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Rules = append(m.Rules, &CollectorConfig_RuntimeRule{})
+			m.Rules = append(m.Rules, &RuntimeRule{})
 			if err := m.Rules[len(m.Rules)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}

@@ -350,21 +350,6 @@
         }
       }
     },
-    "CollectorConfigRuntimeRule": {
-      "type": "object",
-      "properties": {
-        "namespaceSelection": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageNamespaceRule"
-          }
-        },
-        "status": {
-          "$ref": "#/definitions/storageCollectorFeatureStatus"
-        }
-      }
-    },
     "UpgradeProcessStatusUpgradeProcessType": {
       "type": "string",
       "enum": [
@@ -730,33 +715,33 @@
     "storageCollectorConfig": {
       "type": "object",
       "properties": {
-        "clusterLevelStatuses": {
+        "clusterLevelConfigs": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/storageCollectorFeatureStatus"
+            "$ref": "#/definitions/storageCollectorFeatureConfig"
           }
         },
         "rules": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/CollectorConfigRuntimeRule"
+            "$ref": "#/definitions/storageRuntimeRule"
           }
         }
       }
     },
-    "storageCollectorFeatureStatus": {
+    "storageCollectorFeatureConfig": {
       "type": "object",
       "properties": {
-        "processStatus": {
-          "$ref": "#/definitions/storageProcessStatus"
+        "processConfig": {
+          "$ref": "#/definitions/storageProcessConfig"
         },
-        "networkConnectionStatus": {
-          "$ref": "#/definitions/storageNetworkConnectionStatus"
+        "networkConnectionConfig": {
+          "$ref": "#/definitions/storageNetworkConnectionConfig"
         },
-        "networkEndpointStatus": {
-          "$ref": "#/definitions/storageNetworkEndpointStatus"
+        "networkEndpointConfig": {
+          "$ref": "#/definitions/storageNetworkEndpointConfig"
         }
       }
     },
@@ -869,10 +854,10 @@
         }
       }
     },
-    "storageNetworkConnectionStatus": {
+    "storageNetworkConnectionConfig": {
       "type": "object",
       "properties": {
-        "networkConnectionEnabled": {
+        "enabled": {
           "type": "boolean"
         },
         "aggregateExternal": {
@@ -880,13 +865,13 @@
         }
       }
     },
-    "storageNetworkEndpointStatus": {
+    "storageNetworkEndpointConfig": {
       "type": "object",
       "properties": {
-        "networkEndpointEnabled": {
+        "enabled": {
           "type": "boolean"
         },
-        "processesListeningOnPort": {
+        "includeListeningEndpointProcesses": {
           "type": "boolean"
         }
       }
@@ -912,10 +897,10 @@
         }
       }
     },
-    "storageProcessStatus": {
+    "storageProcessConfig": {
       "type": "object",
       "properties": {
-        "processEnabled": {
+        "enabled": {
           "type": "boolean"
         }
       }
@@ -943,6 +928,17 @@
         },
         "cluster": {
           "$ref": "#/definitions/storageClusterMetadata"
+        }
+      }
+    },
+    "storageRuntimeRule": {
+      "type": "object",
+      "properties": {
+        "collectorFeatureConfig": {
+          "$ref": "#/definitions/storageCollectorFeatureConfig"
+        },
+        "namespaceRule": {
+          "$ref": "#/definitions/storageNamespaceRule"
         }
       }
     },

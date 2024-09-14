@@ -95,25 +95,25 @@ message AdmissionControllerConfig {
   bool enforce_on_updates = 5;
 }
 
-message ProcessStatus {
-  bool process_enabled = 1;
+message ProcessConfig {
+  bool enabled = 1;
 }
 
-message NetworkConnectionStatus {
-  bool network_connection_enabled = 1;
+message NetworkConnectionConfig {
+  bool enabled = 1;
   bool aggregate_external = 2;
 }
 
-message NetworkEndpointStatus {
-  bool network_endpoint_enabled = 1;
+message NetworkEndpointConfig {
+  bool enabled = 1;
   bool include_listening_endpoint_processes = 2;
 }
 
-message CollectorFeatureStatus {
-  oneof status {
-    ProcessStatus process_status = 1;
-    NetworkConnectionStatus network_connection_status = 2;
-    NetworkEndpointStatus network_endpoint_status = 3;
+message CollectorFeatureConfig {
+  oneof config {
+    ProcessConfig process_config = 1;
+    NetworkConnectionConfig network_connection_config = 2;
+    NetworkEndpointConfig network_endpoint_config = 3;
   }
 }
 
@@ -122,13 +122,18 @@ message NamespaceRule {
   storage.MatchType match_type = 2;
 }
 
+message RuntimeRule {
+  CollectorFeatureConfig collector_feature_config = 1;
+  NamespaceRule namespace_rule = 2;
+}
+
 message CollectorConfig {
   message CollectorNamespaceConfig {
     repeated NamespaceRule namespace_selection = 1;
-    CollectorFeatureStatus status = 2;
+    CollectorFeatureConfig config = 2;
   }
 
-  repeated CollectorFeatureStatus cluster_level_statuses = 1;
+  repeated CollectorFeatureConfig cluster_level_configs = 1;
   repeated RuntimeRule rules = 2;
 }
 
