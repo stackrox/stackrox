@@ -1586,26 +1586,6 @@
             ]
           },
           {
-            "name": "CollectorClusterLevelRuntimeFeature",
-            "enum_fields": [
-              {
-                "name": "PROCESSES"
-              },
-              {
-                "name": "NETWORK_ENDPOINTS",
-                "integer": 2
-              }
-            ]
-          },
-          {
-            "name": "CollectorNamespaceLevelRuntimeFeature",
-            "enum_fields": [
-              {
-                "name": "NETWORK_CONNECTIONS"
-              }
-            ]
-          },
-          {
             "name": "ManagerType",
             "enum_fields": [
               {
@@ -1905,7 +1885,7 @@
             ]
           },
           {
-            "name": "ProcessStatus",
+            "name": "ProcessConfig",
             "fields": [
               {
                 "id": 1,
@@ -1915,7 +1895,7 @@
             ]
           },
           {
-            "name": "NetworkConnectionStatus",
+            "name": "NetworkConnectionConfig",
             "fields": [
               {
                 "id": 1,
@@ -1930,7 +1910,7 @@
             ]
           },
           {
-            "name": "NetworkEndpointStatus",
+            "name": "NetworkEndpointConfig",
             "fields": [
               {
                 "id": 1,
@@ -1939,111 +1919,64 @@
               },
               {
                 "id": 2,
-                "name": "processes_listening_on_port",
+                "name": "include_listening_endpoint_processes",
                 "type": "bool"
               }
             ]
           },
           {
-            "name": "CollectorFeatureStatus",
+            "name": "CollectorFeature",
             "fields": [
               {
                 "id": 1,
-                "name": "process_status",
-                "type": "ProcessStatus",
-                "oneof_parent": "status"
+                "name": "processes",
+                "type": "ProcessConfig",
+                "oneof_parent": "feature"
               },
               {
                 "id": 2,
-                "name": "network_connection_status",
-                "type": "NetworkConnectionStatus",
-                "oneof_parent": "status"
+                "name": "network_connections",
+                "type": "NetworkConnectionConfig",
+                "oneof_parent": "feature"
               },
               {
                 "id": 3,
-                "name": "network_endpoint_status",
-                "type": "NetworkEndpointStatus",
-                "oneof_parent": "status"
+                "name": "network_endpoints",
+                "type": "NetworkEndpointConfig",
+                "oneof_parent": "feature"
               }
             ]
           },
           {
-            "name": "CollectorClusterLevelConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "process_status",
-                "type": "ProcessStatus"
-              },
-              {
-                "id": 2,
-                "name": "network_endpoint_status",
-                "type": "NetworkEndpointStatus"
-              }
-            ]
-          },
-          {
-            "name": "NamespaceRule",
-            "fields": [
-              {
-                "id": 1,
-                "name": "namespace",
-                "type": "string"
-              },
-              {
-                "id": 2,
-                "name": "match_type",
-                "type": "storage.MatchType"
-              }
-            ]
-          },
-          {
-            "name": "CollectorNamespaceLevelFeatureConfig",
+            "name": "CollectorNamespaceConfig",
             "fields": [
               {
                 "id": 1,
                 "name": "feature",
-                "type": "CollectorNamespaceLevelRuntimeFeature"
+                "type": "CollectorFeature"
               },
               {
                 "id": 2,
-                "name": "default_status",
-                "type": "CollectorFeatureStatus"
-              },
-              {
-                "id": 3,
-                "name": "rules",
-                "type": "RuntimeRule",
+                "name": "namespace_selection",
+                "type": "NamespaceRule",
                 "is_repeated": true
               }
             ],
             "messages": [
               {
-                "name": "RuntimeRule",
+                "name": "NamespaceRule",
                 "fields": [
                   {
                     "id": 1,
-                    "name": "namespace_selection",
-                    "type": "NamespaceRule",
-                    "is_repeated": true
+                    "name": "namespace",
+                    "type": "string"
                   },
                   {
                     "id": 2,
-                    "name": "status",
-                    "type": "CollectorFeatureStatus"
+                    "name": "match_type",
+                    "type": "storage.MatchType"
                   }
                 ]
-              }
-            ]
-          },
-          {
-            "name": "CollectorNamespaceLevelConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "feature_config",
-                "type": "CollectorNamespaceLevelFeatureConfig",
-                "is_repeated": true
               }
             ]
           },
@@ -2052,13 +1985,15 @@
             "fields": [
               {
                 "id": 1,
-                "name": "collector_cluster_level_config",
-                "type": "CollectorClusterLevelConfig"
+                "name": "cluster_scope_config",
+                "type": "CollectorFeature",
+                "is_repeated": true
               },
               {
                 "id": 2,
-                "name": "collector_namespace_level_config",
-                "type": "CollectorNamespaceLevelConfig"
+                "name": "namespace_scope_config",
+                "type": "CollectorNamespaceConfig",
+                "is_repeated": true
               }
             ]
           },
