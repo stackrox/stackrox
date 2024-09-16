@@ -21,9 +21,9 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
-	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/grpc"
 	appsV1 "k8s.io/api/apps/v1"
 	coreV1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -302,11 +302,13 @@ func teardownDeployment(t *testing.T, deploymentName string) {
 	waitForTermination(t, deploymentName)
 }
 
-func teardownDeploymentWithoutCheck(deploymentName string) {
+func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string) {
 	// In cases where deployment will not impact other tests,
 	// we can trigger deletion and assume that it will be deleted eventually.
 	cmd := exec.Command(`kubectl`, `delete`, `deployment`, deploymentName, `--ignore-not-found=true`, `--grace-period=1`)
-	utils.IgnoreError(cmd.Run)
+	if err := cmd.Run(); err != nil {
+		t.Logf("Deleting deployment %q failed: %v", deploymentName, err)
+	}
 }
 
 func getConfig(t *testing.T) *rest.Config {
@@ -437,18 +439,14 @@ func (ks *KubernetesSuite) getSensorPod(ctx context.Context, namespace string) (
 	return &podList.Items[0], nil
 }
 
-// waitUntilK8sDeploymentReady waits until k8s reports all pods for a deployment are consistently ready or context done.
-// It waits for multiple consecutive ready states to ensure k8s has enough time to schedule any recently made updates
-// to the deployment.
+// waitUntilK8sDeploymentReady waits until k8s reports all pods for a deployment are ready or context done.
 func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, namespace string, deploymentName string) {
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
 	timer := time.NewTimer(waitTimeout)
 
-	maxSuccessCount := 3
-	var successCount int
-	for successCount < maxSuccessCount {
+	for {
 		select {
 		case <-ctx.Done():
 			require.NoError(ks.T(), ctx.Err())
@@ -456,14 +454,18 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 		case <-ticker.C:
 			deploy, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
 			require.NoError(ks.T(), err, "getting deployment %q from namespace %q", deploymentName, namespace)
-			if deploy.Status.Replicas == 0 || deploy.Status.Replicas != deploy.Status.ReadyReplicas {
-				ks.logf("deployment %q in namespace %q NOT ready (%d/%d ready replicas)", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
-				successCount = 0
+
+			if deploy.GetGeneration() != deploy.Status.ObservedGeneration {
+				ks.logf("deployment %q in namespace %q NOT ready, generation %d, observed generation", deploymentName, namespace, deploy.GetGeneration(), deploy.Status.ObservedGeneration)
 				continue
 			}
-			successCount++
-			ks.logf("deployment %q in namespace %q READY (%d/%d ready replicas) [%d/%d]", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas, successCount, maxSuccessCount)
 
+			if deploy.Status.Replicas == 0 || deploy.Status.Replicas != deploy.Status.ReadyReplicas {
+				ks.logf("deployment %q in namespace %q NOT ready (%d/%d ready replicas)", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
+				continue
+			}
+			ks.logf("deployment %q in namespace %q READY (%d/%d ready replicas)", deploymentName, namespace, deploy.Status.ReadyReplicas, deploy.Status.Replicas)
+			return
 		case <-timer.C:
 			ks.T().Fatalf("Timed out waiting for deployment %s", deploymentName)
 		}
@@ -550,19 +552,12 @@ func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 	logf(t, "Waiting until central-sensor connection is in state(s) %s...", statuses)
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	checkCentralSensorConnection := func() error {
-		clustersSvc := v1.NewClustersServiceClient(conn)
-		clusters, err := clustersSvc.GetClusters(ctx, &v1.GetClustersRequest{})
+		cluster, err := getCluster(ctx, conn)
 		if err != nil {
-			return fmt.Errorf("failed to retrieve clusters from central: %w", err)
+			return err
 		}
-		if len(clusters.Clusters) != 1 {
-			var clusterNames []string
-			for _, cluster := range clusters.Clusters {
-				clusterNames = append(clusterNames, cluster.Name)
-			}
-			return fmt.Errorf("expected one cluster, found %d: %+v", len(clusters.Clusters), clusterNames)
-		}
-		clusterStatus := clusters.Clusters[0].GetHealthStatus().GetSensorHealthStatus()
+
+		clusterStatus := cluster.GetHealthStatus().GetSensorHealthStatus()
 		for _, status := range statuses {
 			if clusterStatus == status {
 				logf(t, "Central-sensor connection now in state %q.", clusterStatus)
@@ -651,7 +646,7 @@ func mustCreateAPIToken(t *testing.T, ctx context.Context, name string, roles []
 	return tokResp.GetMetadata().GetId(), tokResp.GetToken()
 }
 
-// revokeAPIToken will revoke an API token based.
+// revokeAPIToken will revoke an API token.
 func revokeAPIToken(t *testing.T, ctx context.Context, idOrName string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewAPITokenServiceClient(conn)
@@ -775,11 +770,29 @@ func isOpenshift() bool {
 // mustGetCluster returns the details of the one and only known secured cluster.
 func mustGetCluster(t *testing.T, ctx context.Context) *storage.Cluster {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
+
+	cluster, err := getCluster(ctx, conn)
+	require.NoError(t, err)
+
+	return cluster
+}
+
+// getCluster returns the details of the one and only known secured cluster.
+func getCluster(ctx context.Context, conn *grpc.ClientConn) (*storage.Cluster, error) {
 	clustersSvc := v1.NewClustersServiceClient(conn)
 
 	clusters, err := clustersSvc.GetClusters(ctx, &v1.GetClustersRequest{})
-	require.NoError(t, err)
-	require.Len(t, clusters.Clusters, 1)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve clusters from central: %w", err)
+	}
 
-	return clusters.Clusters[0]
+	if len(clusters.Clusters) != 1 {
+		var clusterNames []string
+		for _, cluster := range clusters.Clusters {
+			clusterNames = append(clusterNames, cluster.Name)
+		}
+		return nil, fmt.Errorf("expected one cluster, found %d: %+v", len(clusters.Clusters), clusterNames)
+	}
+
+	return clusters.Clusters[0], nil
 }

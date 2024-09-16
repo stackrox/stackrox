@@ -645,7 +645,7 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 
 		// Only perform teardown on success so that logs can be captured on failure.
 		t.Logf("Tearing down deployment %q", deployName)
-		teardownDeploymentWithoutCheck(deployName)
+		teardownDeploymentWithoutCheck(t, deployName)
 	}
 
 	ts.Run("scan deployed image", func() {
@@ -998,7 +998,7 @@ func (ts *DelegatedScanningSuite) getLimitedCentralConn(ctx context.Context, per
 	_, token := mustCreateAPIToken(t, ctx, deleScanAPITokenName, []string{deleScanRoleName})
 
 	// Connect to central using the new token.
-	conn := centralgrpc.GRPCConnectionToCentral(t, func(opts *clientconn.Options) {
+	conn := centralgrpc.GRPCConnectionToCentralWithOpts(t, func(opts *clientconn.Options) {
 		opts.ConfigureTokenAuth(token)
 	})
 
