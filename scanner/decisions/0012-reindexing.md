@@ -42,7 +42,7 @@ We believe it is in our best interest to account for each of the re-indexing rea
 ### Reuse ClairCore's 'checkManifest' Step
 
 The first step of indexing is the [`checkManifest`](https://github.com/quay/claircore/blob/v1.5.29/indexer/controller/checkmanifest.go#L25) step.
-This step checks if the image has already been indexed and with which "versioned scanners", so it can determine if there is a need to re-index.
+This step checks if the image (identified by the passed in `*claircore.Manifest`) has already been indexed and with which "versioned scanners", so it can determine if there is a need to re-index.
 This is all done requiring only the `*claircore.Manifest.Hash` field, which is rather easy to obtain. We copy the relevant parts of this (since it is private)
 into our Indexer logic.
 
@@ -72,6 +72,7 @@ func Example() {
     }
     vscnrs := indexer.MergeVS(pscnrs, dscnrs, rscnrs, fscnrs)
 
+	// Check if the manifest was indexed with the latest versioned scanners.
     ok, err := i.Store.ManifestScanned(context.Background(), digest, vscnrs)
     if err != nil {
         log.Fatal(err)
@@ -119,7 +120,8 @@ Something like creating our own "versioned scanner" to track other types of chan
 * Updating the version of the custom "versioned scanner" will only affect that scanner, and not the others which would all be skipped upon re-indexing
 * It is not feasible to track every single change in ClairCore which may affect Index Reports
 
-Instead, we will randomly delete Index Reports from the ClairCore database.
+Instead, we will randomly delete manifests from the ClairCore database. Deleting a manifest from ClairCore
+deletes all data related to it, including the Index Report.
 Doing this solves both the remaining aspects of the re-indexing problem and the database ever-growing problem,
 as unneeded Index Reports are permanently deleted and needed reports may just be regenerated.
 
@@ -137,11 +139,11 @@ which balances speed and resource consumption.
 
 This will all be tracked in a new table (see [Manifest Metadata Table](#manifest-metadata-table) below).
 
-The table will be queried periodically for passed timestamps. These rows will be deleted and the related Index Reports will be deleted from ClairCore's tables.
+The table will be queried periodically for passed timestamps. These rows will be deleted and the related manifests/Index Reports will be deleted from ClairCore's tables.
 
 #### Alternative - Client Delete Requests
 
-Scanner V4 clients (Central and Sensor) may inform the Indexer of an image deletion and request the Index Report deleted
+Scanner V4 clients (Central and Sensor) may inform the Indexer of an image deletion and request the Index Report deleted.
 
 However:
 
@@ -157,8 +159,8 @@ The new Manifest Metadata table will look like the following:
 | sha512:abc... | 2024-09-26 23:52:39.190285-07 |
 | sha512:def... | 2024-09-12 05:48:46.361476-07 |
 
-The `manifest_id` will be all that is needed to identify and delete an Index Report. Note this ID is the same as the
-Index Report's ID which is the same as the related `*claircore.Manifest.Hash` (hence `manifest_id`).
+The `manifest_id` will be all that is needed to identify and delete a manifest and Index Report.
+Note this ID is the same as the Index Report's ID which is the same as the related `*claircore.Manifest.Hash` (hence `manifest_id`).
 
 ### Handling preexisting Index Reports
 
@@ -183,4 +185,7 @@ sometime in the future. # TODO CREATE TICKET FOR THIS
   * Plus the purpose of this space is for deletions, so this added space helps us sae space in the long-run.
   * Each row is on the order of tens of bytes in size, which is not a big deal.
 * Scanner V4 will no longer track index reports for inactive images, which saves storage space, as the report will eventually be deleted.
+* Re-indexing images indexed by older "versioned scanners" will not require re-downloading the entire image; however, re-indexing after random deletion will.
+  * This puts more pressure on Scanner V4 Indexer's resources as well as the image registry.
+  * This is meant to be alleviated by having a three-week timeframe to choose from when selecting a random expiration time.
 * Scanner V4 clients do not need to change anything to support this new behavior, as all deletion and re-indexing decisions would be handled by Scanner V4 Indexer.
