@@ -15,6 +15,7 @@ export type ScanConfigActionsColumnProps = {
     handleDeleteScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleRunScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleSendReport: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
+    handleGenerateDownload: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     scanConfigResponse: ComplianceScanConfigurationStatus;
 };
 
@@ -22,6 +23,7 @@ function ScanConfigActionsColumn({
     handleDeleteScanConfig,
     handleRunScanConfig,
     handleSendReport,
+    handleGenerateDownload,
     scanConfigResponse,
 }: ScanConfigActionsColumnProps): ReactElement {
     const history = useHistory();
@@ -76,6 +78,13 @@ function ScanConfigActionsColumn({
             },
         },
         /* eslint-enable no-nested-ternary */
+        {
+            title: 'Generate download',
+            onClick: (event) => {
+                event.preventDefault();
+                handleGenerateDownload(scanConfigResponse);
+            },
+        },
         {
             isSeparator: true,
         },

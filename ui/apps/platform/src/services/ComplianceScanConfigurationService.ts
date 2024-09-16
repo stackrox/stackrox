@@ -198,11 +198,16 @@ export type ComplianceRunReportResponse = {
 /*
  * Run an on demand compliance report for the scan configuration ID.
  */
-export function runComplianceReport(scanConfigId: string): Promise<ComplianceRunReportResponse> {
+export function runComplianceReport(
+    scanConfigId: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    scanNotificationMethod: 'EMAIL' | 'DOWNLOAD'
+): Promise<ComplianceRunReportResponse> {
+    const body = { scanConfigId };
+    // @TODO: Add the scanNotificationMethod to the PUT Body when the API can handle it
+    // const body = { scanConfigId, scanNotificationMethod };
     return axios
-        .put<ComplianceRunReportResponse>(`${complianceScanConfigBaseUrl}/reports/run`, {
-            scanConfigId,
-        })
+        .put<ComplianceRunReportResponse>(`${complianceScanConfigBaseUrl}/reports/run`, body)
         .then((response) => {
             return response.data;
         });
