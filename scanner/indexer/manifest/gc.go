@@ -87,7 +87,7 @@ func (g *GC) initGC() error {
 		return nil
 	}
 
-	ms, err := g.metadataStore.Init(g.ctx)
+	ms, err := g.metadataStore.MigrateManifests(g.ctx)
 	if err != nil {
 		return err
 	}
