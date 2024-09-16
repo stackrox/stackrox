@@ -568,6 +568,7 @@ func (resolver *deploymentResolver) ImageCVECountBySeverity(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("SHREWS -- in deployments.ImageCVECountBySeverity %+v", query)
 	val, err := resolver.root.ImageCVEView.CountBySeverity(resolver.withDeploymentScopeContext(ctx), query)
 	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, val, err)
 }
