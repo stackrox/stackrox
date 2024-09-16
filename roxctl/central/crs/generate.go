@@ -94,7 +94,7 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]
 			if outputFile == "" {
-				return common.ErrInvalidCommandOption.New("No output files specified with --output (for stdout, specify '-')")
+				return common.ErrInvalidCommandOption.New("No output file specified with --output (for stdout, specify '-')")
 			}
 			if outputFile == "-" {
 				outputFile = ""
