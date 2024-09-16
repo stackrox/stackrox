@@ -16,15 +16,15 @@ import (
 
 // IndexerMetadataStore represents an indexer metadata datastore.
 type IndexerMetadataStore interface {
-	// Init initializes the IndexerMetadataStore with manifests in ClairCore's manifest table
+	// MigrateManifests populates the IndexerMetadataStore with manifests in ClairCore's manifest table
 	// which do not yet exist in the manifest_metadata table.
-	Init(ctx context.Context) ([]string, error)
+	MigrateManifests(ctx context.Context) ([]string, error)
 	// StoreManifest stores the given manifest ID into the manifest_metadata table to be deleted by
-	// GCManifests after deleteAfter.
+	// GCManifests after expiration passes.
 	//
-	// If not already, the deleteAfter time will be converted to UTC timezone.
+	// If not already, the expiration time will be converted to UTC timezone.
 	StoreManifest(ctx context.Context, manifestID string, expiration time.Time) error
-	// GCManifests deletes manifests from the manifest_metadata table with timestamps older than t (in UTC timezone)
+	// GCManifests deletes manifests from the manifest_metadata table with timestamps older than t (converted to UTC)
 	// and returns their respective IDs.
 	GCManifests(ctx context.Context, t time.Time) ([]string, error)
 }

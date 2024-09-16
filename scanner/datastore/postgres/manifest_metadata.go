@@ -10,13 +10,16 @@ import (
 	"github.com/quay/zlog"
 )
 
-func (i *indexerMetadataStore) Init(ctx context.Context) ([]string, error) {
+func (i *indexerMetadataStore) MigrateManifests(ctx context.Context) ([]string, error) {
 	if i.store == nil {
 		return nil, errors.New("indexer store not defined")
 	}
 
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.Init")
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.MigrateManifests")
 
+	// insertMissingManifests inserts missing manifests from the manifest table into manifest_metadata,
+	// and it sets the expiration time to some random time in the future between seven days from now
+	// and thirty days from now.
 	const insertMissingManifests = `
 		INSERT INTO manifest_metadata (manifest_id, expiration)
 		SELECT m.hash, now() + (make_interval(days => 23) * random()) + make_interval(days => 7)
@@ -54,6 +57,7 @@ func (i *indexerMetadataStore) Init(ctx context.Context) ([]string, error) {
 func (i *indexerMetadataStore) StoreManifest(ctx context.Context, manifestID string, expiration time.Time) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.StoreManifest")
 
+	// insertManifest inserts the metadata into manifest_metadata, overwriting the previous expiration, if it exists.
 	const insertManifest = `
 		INSERT INTO manifest_metadata (manifest_id, expiration) VALUES
 			($1, $2)
@@ -75,6 +79,7 @@ func (i *indexerMetadataStore) GCManifests(ctx context.Context, t time.Time) ([]
 		WHERE expiration < $1
 		RETURNING manifest_id`
 
+	// Make this a transaction, as failure to delete the manifest should stop the deletion of its metadata.
 	tx, err := i.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("beginning GCManifests transaction: %w", err)
