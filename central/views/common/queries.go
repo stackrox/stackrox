@@ -3,8 +3,13 @@ package common
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // WithCountQuery returns a query to count the number of distinct values of the given field
