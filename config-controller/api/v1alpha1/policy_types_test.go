@@ -30,7 +30,7 @@ func TestMarshalJSON(t *testing.T) {
 		Rationale:       "This is a test rationale",
 		Remediation:     "This is a test remediation",
 		Categories:      []string{"Security Best Practices"},
-		LifecycleStages: []string{"BUILD", "DEPLOY"},
+		LifecycleStages: []LifecycleStage{"BUILD", "DEPLOY"},
 		Exclusions: []Exclusion{{
 			Name: "Don't alert on deployment collector in namespace stackrox",
 			Deployment: Deployment{
