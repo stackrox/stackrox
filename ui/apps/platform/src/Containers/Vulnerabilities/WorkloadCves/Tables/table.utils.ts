@@ -268,7 +268,7 @@ export function formatVulnerabilityData(
         const uniqueComponents = new Set(allVulnerableComponents.map((c) => c.name));
         const affectedComponentsText =
             uniqueComponents.size === 1
-                ? uniqueComponents.values().next().value
+                ? (uniqueComponents.values().next().value as string)
                 : `${uniqueComponents.size} components`;
 
         const vulnerabilityImages = images
