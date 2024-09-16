@@ -58,20 +58,13 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	crs := resp.GetCrs()
 	meta := resp.GetMeta()
 
-	cliEnvironment.Logger().InfofLn(`Successfully generated new CRS.
-
-  Name:       %s
-  Created at: %s
-  Expires at: %s
-  Created By: %s
-  ID:         %s
-
-`,
-		meta.GetName(),
-		meta.GetCreatedAt().AsTime().Format(time.RFC3339),
-		meta.GetExpiresAt().AsTime().Format(time.RFC3339),
-		getPrettyUser(meta.GetCreatedBy()),
-		meta.GetId())
+	cliEnvironment.Logger().InfofLn("Successfully generated new CRS")
+	cliEnvironment.Logger().InfofLn("")
+	cliEnvironment.Logger().InfofLn("  Name:       %s", meta.GetName())
+	cliEnvironment.Logger().InfofLn("  Created at: %s", meta.GetCreatedAt().AsTime().Format(time.RFC3339))
+	cliEnvironment.Logger().InfofLn("  Expires at: %s", meta.GetExpiresAt().AsTime().Format(time.RFC3339))
+	cliEnvironment.Logger().InfofLn("  Created By: %s", getPrettyUser(meta.GetCreatedBy()))
+	cliEnvironment.Logger().InfofLn("  ID:         %s", meta.GetId())
 
 	_, err = outWriter.Write(crs)
 	if err != nil {
