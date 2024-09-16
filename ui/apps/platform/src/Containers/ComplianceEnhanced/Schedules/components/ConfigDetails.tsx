@@ -84,6 +84,7 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
                 />
                 {isComplianceReportingEnabled && (
                     <NotifierConfigurationView
+                        headingLevel={headingLevel}
                         customBodyDefault={getBodyDefault(scanConfig.scanConfig.profiles)}
                         customSubjectDefault={getSubjectDefault(
                             scanConfig.scanName,

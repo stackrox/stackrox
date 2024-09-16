@@ -9,10 +9,6 @@ import JobDetails from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVul
 import ReportJobsTable from 'Components/ReportJobsTable';
 import ConfigDetails from './ConfigDetails';
 
-type ReportJobsProps = {
-    scanConfig: ComplianceScanConfigurationStatus | undefined;
-};
-
 function createMockData(scanConfig: ComplianceScanConfigurationStatus) {
     const snapshots: ComplianceScanSnapshot[] = [
         {
@@ -43,6 +39,10 @@ function getJobId(snapshot: ComplianceScanSnapshot) {
 function getConfigName(snapshot: ComplianceScanSnapshot) {
     return snapshot.scanConfig.scanName;
 }
+
+type ReportJobsProps = {
+    scanConfig: ComplianceScanConfigurationStatus | undefined;
+};
 
 function ReportJobs({ scanConfig }: ReportJobsProps) {
     // @TODO: We will eventually make an API request using the scan config id to get the job history

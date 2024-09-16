@@ -67,6 +67,8 @@ const sortOptions = {
 
 const filenameSanitizerRegex = new RegExp('(:)|(/)|(\\s)', 'gi');
 
+const headingLevel = 'h2';
+
 function ReportJobs({ reportId }: RunHistoryProps) {
     const { currentUser } = useAuthStatus();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
@@ -339,6 +341,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                     />
                                                     <FlexItem>
                                                         <ReportParametersDetails
+                                                            headingLevel={headingLevel}
                                                             formValues={formValues}
                                                         />
                                                     </FlexItem>
@@ -348,6 +351,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                     />
                                                     <FlexItem>
                                                         <NotifierConfigurationView
+                                                            headingLevel={headingLevel}
                                                             customBodyDefault={defaultEmailBody}
                                                             customSubjectDefault={getDefaultEmailSubject(
                                                                 formValues.reportParameters
