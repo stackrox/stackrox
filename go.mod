@@ -54,6 +54,7 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.0
+	github.com/golang/protobuf v1.5.4
 	github.com/google/certificate-transparency-go v1.2.1
 	github.com/google/gnostic-models v0.6.9-0.20230804172637-c7be7c783f49
 	github.com/google/go-cmp v0.6.0
@@ -84,8 +85,8 @@ require (
 	github.com/mailru/easyjson v0.7.7
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/np-guard/cluster-topology-analyzer/v2 v2.2.1
-	github.com/np-guard/netpol-analyzer v1.1.0
+	github.com/np-guard/cluster-topology-analyzer/v2 v2.3.0
+	github.com/np-guard/netpol-analyzer v1.2.0
 	github.com/nxadm/tail v1.4.11
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.20.0
@@ -307,7 +308,6 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/glog v1.2.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/cel-go v0.17.7 // indirect
@@ -388,6 +388,7 @@ require (
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 // indirect
+	github.com/np-guard/models v0.3.4 // indirect
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/runtime-spec v1.2.0 // indirect
