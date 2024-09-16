@@ -39,22 +39,23 @@ func applyRevokeCRSs(ctx context.Context, cliEnvironment environment.Environment
 	if err != nil {
 		return errors.Wrap(err, "revoking CRSs")
 	}
-	printResponseResult(cliEnvironment.Logger(), revokeResp)
+	printResponseResult(cliEnvironment.Logger(), revokeIds, revokeResp)
 
-	if len(revokeResp.GetCrsRevocationErrors()) == 0 {
-		cliEnvironment.Logger().InfofLn("Revoked %d CRS(s)", len(revokeIds))
-	} else {
-		cliEnvironment.Logger().ErrfLn("Failed. Revoked %d of %d CRS(s)", len(revokeResp.GetRevokedIds()), len(revokeIds))
-	}
 	return nil
 }
 
-func printResponseResult(logger logger.Logger, resp *v1.CRSRevokeResponse) {
+func printResponseResult(logger logger.Logger, revokeIds []string, resp *v1.CRSRevokeResponse) {
 	for _, id := range resp.GetRevokedIds() {
 		logger.InfofLn("Revoked %q", id)
 	}
 	for _, revokeErr := range resp.GetCrsRevocationErrors() {
 		logger.ErrfLn("Error revoking %q: %s", revokeErr.Id, revokeErr.Error)
+	}
+
+	if len(resp.GetCrsRevocationErrors()) == 0 {
+		logger.InfofLn("Revoked %d CRS(s)", len(revokeIds))
+	} else {
+		logger.ErrfLn("Failed. Revoked %d of %d CRS(s)", len(resp.GetRevokedIds()), len(revokeIds))
 	}
 }
 
@@ -72,10 +73,7 @@ func revokeCRSs(cliEnvironment environment.Environment, idsOrNames []string,
 	svc := v1.NewClusterInitServiceClient(conn)
 
 	idsOrNamesSet := set.NewStringSet(idsOrNames...)
-	if err = applyRevokeCRSs(ctx, cliEnvironment, svc, idsOrNamesSet); err != nil {
-		return err
-	}
-	return nil
+	return applyRevokeCRSs(ctx, cliEnvironment, svc, idsOrNamesSet)
 }
 
 // revokeCommand implements the command for revoking CRSs.
