@@ -249,7 +249,7 @@ func (in *SecurityPolicySpec) DeepCopyInto(out *SecurityPolicySpec) {
 	}
 	if in.LifecycleStages != nil {
 		in, out := &in.LifecycleStages, &out.LifecycleStages
-		*out = make([]string, len(*in))
+		*out = make([]LifecycleStage, len(*in))
 		copy(*out, *in)
 	}
 	if in.Exclusions != nil {

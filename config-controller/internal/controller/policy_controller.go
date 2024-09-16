@@ -68,6 +68,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	var retErr error
 	if exists {
+		desiredState.Id = existingPolicy.Id
 		if err = r.PolicyClient.UpdatePolicy(ctx, desiredState); err != nil {
 			desiredState.Id = existingPolicy.Id
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy %s", req.Name))

@@ -22,6 +22,9 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+// +kubebuilder:validation:Enum=DEPLOY;BUILD;RUNTIME
+type LifecycleStage string
+
 // SecurityPolicySpec defines the desired state of SecurityPolicy
 type SecurityPolicySpec struct {
 	Name        string   `json:"name,omitempty"`
@@ -30,10 +33,10 @@ type SecurityPolicySpec struct {
 	Remediation string   `json:"remediation,omitempty"`
 	Disabled    bool     `json:"disabled,omitempty"`
 	Categories  []string `json:"categories,omitempty"`
-	// +kubebuilder:validation:Enum=DEPLOY;BUILD;RUNTIME
-	LifecycleStages []string    `json:"lifecycleStages,omitempty"`
-	Exclusions      []Exclusion `json:"exclusions,omitempty"`
-	Scope           []Scope     `json:"scope,omitempty"`
+	// +kubebuilder:validation:MinItems=1
+	LifecycleStages []LifecycleStage `json:"lifecycleStages,omitempty"`
+	Exclusions      []Exclusion      `json:"exclusions,omitempty"`
+	Scope           []Scope          `json:"scope,omitempty"`
 	// +kubebuilder:validation:Enum=UNSET_SEVERITY;LOW_SEVERITY;MEDIUM_SEVERITY;HIGH_SEVERITY;CRITICAL_SEVERITY
 	Severity string `json:"severity,omitempty"`
 	// +kubebuilder:validation:Enum=UNSET_ENFORCEMENT;SCALE_TO_ZERO_ENFORCEMENT;UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT;KILL_POD_ENFORCEMENT;FAIL_BUILD_ENFORCEMENT;FAIL_KUBE_REQUEST_ENFORCEMENT;FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
@@ -63,7 +66,7 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 	}
 
 	for _, ls := range p.LifecycleStages {
-		val, found := storage.LifecycleStage_value[ls]
+		val, found := storage.LifecycleStage_value[string(ls)]
 		if found {
 			proto.LifecycleStages = append(proto.LifecycleStages, storage.LifecycleStage(val))
 		}

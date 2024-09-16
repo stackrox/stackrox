@@ -20,5 +20,5 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the Project itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
-- policy_editor_role.yaml
-- policy_viewer_role.yaml
+- securitypolicy_editor_role.yaml
+- securitypolicy_viewer_role.yaml

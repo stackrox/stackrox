@@ -96,12 +96,13 @@ spec:
               isDefault:
                 type: boolean
               lifecycleStages:
-                enum:
-                - DEPLOY
-                - BUILD
-                - RUNTIME
                 items:
+                  enum:
+                  - DEPLOY
+                  - BUILD
+                  - RUNTIME
                   type: string
+                minItems: 1
                 type: array
               mitreAttackVectors:
                 items:
