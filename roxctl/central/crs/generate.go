@@ -16,6 +16,8 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
+// generateCRS generates a new CRS using Central's API and writes the newly generated CRS into the
+// file specified by `outFilename` (if it is non-empty) or to stdout (if `outFilename` is empty).
 func generateCRS(cliEnvironment environment.Environment, name string,
 	outFilename string, timeout time.Duration, retryTimeout time.Duration,
 ) error {
@@ -32,23 +34,19 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
 
-	defer func() {
-		if err == nil {
-			return
-		}
-		if outFile == nil {
-			return
-		}
-		name := outFile.Name()
-		_ = outFile.Close()
-		utils.Should(os.Remove(name))
-	}()
-
+	outWriter := cliEnvironment.InputOutput().Out()
 	if outFilename != "" {
 		outFile, err = os.OpenFile(outFilename, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 		if err != nil {
 			return errors.Wrap(err, "opening output file for writing CRS")
 		}
+		outWriter = outFile
+		defer func() {
+			_ = outFile.Close()
+			if err != nil {
+				utils.Should(os.Remove(outFilename))
+			}
+		}()
 	}
 
 	req := v1.CRSGenRequest{Name: name}
@@ -56,6 +54,7 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	if err != nil {
 		return errors.Wrap(err, "generating new CRS")
 	}
+
 	crs := resp.GetCrs()
 	meta := resp.GetMeta()
 
@@ -74,18 +73,14 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 		getPrettyUser(meta.GetCreatedBy()),
 		meta.GetId())
 
-	outWriter := cliEnvironment.InputOutput().Out()
-	if outFile != nil {
-		outWriter = outFile
-	}
 	_, err = outWriter.Write(crs)
 	if err != nil {
 		return errors.Wrapf(err, "writing CRS to %s", stringutils.FirstNonEmpty(outFilename, "<stdout>"))
 	}
-	if outFile != nil {
-		cliEnvironment.Logger().InfofLn("The newly generated CRS has been written to file %q.", outFile.Name())
+	if outFilename != "" {
+		cliEnvironment.Logger().InfofLn("The newly generated CRS has been written to file %q.", outFilename)
 		if err := outFile.Close(); err != nil {
-			return errors.Wrapf(err, "closing output file %q", outFile.Name())
+			return errors.Wrapf(err, "closing output file %q", outFilename)
 		}
 	}
 
