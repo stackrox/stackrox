@@ -96,10 +96,8 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 			if outputFile == "" {
 				return common.ErrInvalidCommandOption.New("No output files specified with --output (for stdout, specify '-')")
 			}
-			if outputFile != "" {
-				if outputFile == "-" {
-					outputFile = ""
-				}
+			if outputFile == "-" {
+				outputFile = ""
 			}
 			return generateCRS(cliEnvironment, name, outputFile, flags.Timeout(cmd), flags.RetryTimeout(cmd))
 		},
