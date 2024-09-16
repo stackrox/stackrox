@@ -94,6 +94,7 @@ func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) 
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("SHREWS -- in deployments.Deployments %+v", q)
 	deployments, err := resolver.DeploymentDataStore.SearchRawDeployments(ctx, q)
 	return resolver.wrapDeploymentsWithContext(ctx, deployments, err)
 }
