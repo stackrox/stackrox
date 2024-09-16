@@ -78,6 +78,7 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 // Deployments returns GraphQL resolvers all deployments
 func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployments")
+	log.Info("SHREWS -- in deployments.Deployments")
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -514,6 +515,7 @@ func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuer
 
 func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
+	log.Info("SHREWS -- in deployments.ImageComponents")
 	return resolver.root.ImageComponents(resolver.withDeploymentScopeContext(ctx), args)
 }
 
@@ -524,6 +526,7 @@ func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, arg
 
 func (resolver *deploymentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilities")
+	log.Info("SHREWS -- in deployments.ImageVulnerabilities")
 	return resolver.root.ImageVulnerabilities(resolver.withDeploymentScopeContext(ctx), args)
 }
 
@@ -539,6 +542,7 @@ func (resolver *deploymentResolver) ImageVulnerabilityCounter(ctx context.Contex
 
 func (resolver *deploymentResolver) ImageCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCVECountBySeverity")
+	log.Info("SHREWS -- in deployments.ImageCVECountBySeverity")
 
 	if !features.VulnMgmtWorkloadCVEs.Enabled() {
 		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
