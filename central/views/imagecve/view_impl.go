@@ -199,6 +199,9 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 	}
+	cloned.Selects = append(cloned.Selects,
+		common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
+	)
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
 	}
