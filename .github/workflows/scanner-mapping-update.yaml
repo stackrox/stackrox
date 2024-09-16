@@ -25,7 +25,7 @@ jobs:
       run: |
         curl --fail --silent --show-error --max-time 60 --retry 3 --create-dirs \
           -o '${{env.REPOMAPPING_DIR}}/#1' \
-          'https://access.redhat.com/security/data/metrics/{repository-to-cpe.json,container-name-repos-map.json}'
+          'https://security.access.redhat.com/data/metrics/{repository-to-cpe.json,container-name-repos-map.json}'
         for f in ${{env.REPOMAPPING_DIR}}/*; do
           jq empty "$f"
         done

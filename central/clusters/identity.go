@@ -69,3 +69,16 @@ func IssueSecuredClusterInitCertificates() (CertBundle, uuid.UUID, error) {
 	}
 	return certs, bundleID, nil
 }
+
+// IssueSecuredClusterCRSCertificates creates a cert which holds init certificates which have a UUID nil cluster id
+// These certificates are used to register new clusters at central.
+// All certificates share the same init bundle UUID written in the OU subject field.
+func IssueSecuredClusterCRSCertificates() (*mtls.IssuedCert, uuid.UUID, error) {
+	initID := centralsensor.RegisteredInitCertClusterID
+	crsID := uuid.NewV4()
+	cert, err := mtls.IssueNewCert(mtls.NewInitSubject(initID, storage.ServiceType_REGISTRANT_SERVICE, crsID))
+	if err != nil {
+		return nil, uuid.Nil, err
+	}
+	return cert, crsID, nil
+}

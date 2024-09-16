@@ -227,6 +227,31 @@ func (s *handlerTestSuite) mockHandleZipContents(zipPath string) error {
 	return errors.New("test failed")
 }
 
+func (s *handlerTestSuite) TestServeHTTP_Invalid() {
+	h := New(s.datastore, handlerOpts{})
+	w := httptest.NewRecorder()
+
+	// PUT is not allowed.
+	req, err := http.NewRequestWithContext(s.ctx, http.MethodPut, "https://central.stackrox.svc/scannerdefinitions", nil)
+	s.Require().NoError(err)
+	h.ServeHTTP(w, req)
+	s.Equal(http.StatusMethodNotAllowed, w.Code)
+
+	// There are no query params to identify the file to GET.
+	req, err = http.NewRequestWithContext(s.ctx, http.MethodGet, "https://central.stackrox.svc/scannerdefinitions", nil)
+	s.Require().NoError(err)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	s.Equal(http.StatusBadRequest, w.Code)
+
+	// There is no request body to POST.
+	req, err = http.NewRequestWithContext(s.ctx, http.MethodPost, "https://central.stackrox.svc/scannerdefinitions", nil)
+	s.Require().NoError(err)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	s.Equal(http.StatusBadRequest, w.Code)
+}
+
 func (s *handlerTestSuite) TestServeHTTP_Offline_Post_V2() {
 	s.T().Setenv(env.OfflineModeEnv.EnvVar(), "true")
 	s.T().Setenv(features.ScannerV4.EnvVar(), "false")
@@ -290,8 +315,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 	// Should not get anything with bad UUID.
 	req := s.getRequestBadUUID()
 	h.ServeHTTP(w, req)
-	// TODO: This should be a 404. Update in a followup.
-	s.Equal(http.StatusInternalServerError, w.Code)
+	s.Equal(http.StatusNotFound, w.Code)
 
 	// Should get online vulns.
 	req = s.getRequestUUID()
@@ -307,7 +331,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V2() {
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/json", w.Header().Get("Content-Type"))
-	s.Regexpf(`{"since":".*","until":".*"}`, w.Body.String(), "content1 did not match")
+	s.Regexp(`{"since":".*","until":".*"}`, w.Body.String())
 
 	// Write offline definitions, directly.
 	// Set the offline dump's modified time to later than the online update's.
@@ -363,11 +387,13 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 
 	// No mapping json file
 	req = s.getRequestFile("name2repos")
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusNotFound, w.Code)
 
 	// No mapping json file
 	req = s.getRequestFile("repo2cpe")
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusNotFound, w.Code)
 
@@ -376,22 +402,25 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 	s.Require().NoError(err)
 	resp, err := http.DefaultClient.Do(req)
 	s.Require().NoError(err)
-	defer utils.IgnoreError(resp.Body.Close)
+	s.T().Cleanup(func() {
+		_ = resp.Body.Close()
+	})
 	s.Require().Equal(http.StatusOK, resp.StatusCode)
 
 	filePath := filepath.Join(s.T().TempDir(), "test.zip")
 	outFile, err := os.Create(filePath)
 	s.Require().NoError(err)
-
 	_, err = io.Copy(outFile, resp.Body)
 	s.Require().NoError(err)
 	utils.IgnoreError(outFile.Close)
 
+	// Upload offline vulns, directly.
 	err = s.mockHandleZipContents(filePath)
 	s.Require().NoError(err)
 
 	// This will fail because 4.5.0 uses the multi-bundle ZIP format.
 	req = s.getRequestVersion("4.5.0")
+	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusNotFound, w.Code)
 
@@ -401,18 +430,25 @@ func (s *handlerTestSuite) TestServeHTTP_Offline_Get_V4() {
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/zip", w.Header().Get("Content-Type"))
+	s.Greater(w.Body.Len(), 0)
 
-	w = httptest.NewRecorder()
 	req = s.getRequestFile("repo2cpe")
-	h.ServeHTTP(w, req)
-	s.Equal(http.StatusOK, w.Code)
-	s.Equal("application/json", w.Header().Get("Content-Type"))
-
 	w = httptest.NewRecorder()
-	req = s.getRequestFile("name2repos")
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/json", w.Header().Get("Content-Type"))
+	s.Greater(w.Body.Len(), 0)
+
+	req = s.getRequestFile("name2repos")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	s.Equal(http.StatusOK, w.Code)
+	s.Greater(w.Body.Len(), 0)
+
+	req = s.getRequestFile("invalid")
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	s.Equal(http.StatusNotFound, w.Code)
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4() {
@@ -421,8 +457,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4() {
 
 	req := s.getRequestVersion("randomName")
 	h.ServeHTTP(w, req)
-	// If the version is invalid or versioned bundle cannot be found, it's a 500
-	s.Equal(http.StatusInternalServerError, w.Code)
+	s.Equal(http.StatusNotFound, w.Code)
 
 	// Should get dev zstd file from online update.
 	req = s.getRequestVersion("dev")
@@ -430,6 +465,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4() {
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/zstd", w.Header().Get("Content-Type"))
+	s.Greater(w.Body.Len(), 0)
 
 	// Release version.
 	req = s.getRequestVersion("4.4.0")
@@ -437,13 +473,15 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4() {
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/zstd", w.Header().Get("Content-Type"))
+	s.Greater(w.Body.Len(), 0)
 
-	// Should get dev zstd file from online update.
+	// Nightly version.
 	req = s.getRequestVersion("4.3.x-nightly-20240106")
 	w = httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/zstd", w.Header().Get("Content-Type"))
+	s.Greater(w.Body.Len(), 0)
 
 	// Multi-bundle ZIP.
 	req = s.getRequestVersion("dev")
@@ -452,6 +490,7 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4() {
 	h.ServeHTTP(w, req)
 	s.Equal(http.StatusOK, w.Code)
 	s.Equal("application/zip", w.Header().Get("Content-Type"))
+	s.Greater(w.Body.Len(), 0)
 }
 
 func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4_Mappings() {

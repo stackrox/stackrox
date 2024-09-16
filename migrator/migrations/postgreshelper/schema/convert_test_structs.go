@@ -52,7 +52,7 @@ func ConvertTestStruct_NestedFromProto(obj *storage.TestStruct_Nested, idx int, 
 // ConvertTestStructToProto converts Gorm model `TestStructs` to its protobuf type object
 func ConvertTestStructToProto(m *TestStructs) (*storage.TestStruct, error) {
 	var msg storage.TestStruct
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

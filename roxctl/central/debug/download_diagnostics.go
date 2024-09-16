@@ -27,6 +27,7 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 	var clusters []string
 	var since string
 	var withComplianceOperator bool
+	var withDBOnly bool
 
 	c := &cobra.Command{
 		Use:   "download-diagnostics",
@@ -46,6 +47,10 @@ func downloadDiagnosticsCommand(cliEnvironment environment.Environment) *cobra.C
 
 			if withComplianceOperator {
 				values.Add("compliance-operator", "true")
+			}
+
+			if withDBOnly {
+				values.Add("database-only", "true")
 			}
 
 			urlParams := values.Encode()
@@ -78,6 +83,7 @@ To specify timeout, run  'roxctl' command:
 	c.PersistentFlags().StringSliceVar(&clusters, "clusters", nil, "Comma separated list of sensor clusters from which logs should be collected")
 	c.PersistentFlags().StringVar(&since, "since", "", "Timestamp starting when logs should be collected from sensor clusters")
 	c.PersistentFlags().BoolVarP(&withComplianceOperator, "with-compliance-operator", "", false, "Include compliance operator resources in the diagnostic bundle")
+	c.PersistentFlags().BoolVarP(&withDBOnly, "with-database-only", "", false, "Include ONLY database diagnostics in the diagnostic bundle")
 
 	return c
 }

@@ -1,7 +1,14 @@
-FROM quay.io/tommartensen/hermetic-experiment:latest as builder-runner
+FROM registry.access.redhat.com/ubi9:latest AS ubi-repo-donor
+
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.22 AS builder-runner
+
+# For some reason, openshift-golang-builder 9 comes without any RPM repos in /etc/yum.repos.d/
+# We, however, need to install some packages and so we need to configure RPM repos. The ones for UBI are sufficient.
+COPY --from=ubi-repo-donor /etc/yum.repos.d/ubi.repo /etc/yum.repos.d/ubi.repo
+RUN dnf -y upgrade --nobest && dnf -y install --nodocs --noplugins jq
 
 # Use a new stage to enable caching of the package installations for local development
-FROM builder-runner as builder
+FROM builder-runner AS builder
 
 COPY . /stackrox
 WORKDIR /stackrox/operator
@@ -9,6 +16,12 @@ WORKDIR /stackrox/operator
 ARG MAIN_IMAGE_TAG
 ENV VERSION=$MAIN_IMAGE_TAG
 ENV ROX_PRODUCT_BRANDING=RHACS_BRANDING
+
+# Reset GOFLAGS='-mod=vendor' value which comes by default in openshift-golang-builder and causes build errors like
+#  go: inconsistent vendoring in /stackrox/operator/tools/operator-sdk:
+#      github.com/operator-framework/operator-lifecycle-manager@v0.27.0: is explicitly required in go.mod, but not marked as explicit in vendor/modules.txt
+ENV GOFLAGS=''
+
 RUN make bundle-post-process
 
 FROM scratch

@@ -2500,6 +2500,20 @@
     {
       "protopath": "cluster_init.proto",
       "def": {
+        "enums": [
+          {
+            "name": "InitBundleMeta.InitBundleVersion",
+            "enum_fields": [
+              {
+                "name": "INIT_BUNDLE"
+              },
+              {
+                "name": "CRS",
+                "integer": 1
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "InitBundleMeta",
@@ -2533,6 +2547,11 @@
                 "id": 6,
                 "name": "expires_at",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "version",
+                "type": "InitBundleVersion"
               }
             ]
           }
@@ -11617,6 +11636,11 @@
                 "id": 5,
                 "name": "alert_dcr_config",
                 "type": "DataCollectionRuleConfig"
+              },
+              {
+                "id": 6,
+                "name": "audit_log_dcr_config",
+                "type": "DataCollectionRuleConfig"
               }
             ],
             "messages": [
@@ -11632,6 +11656,11 @@
                     "id": 2,
                     "name": "data_collection_rule_id",
                     "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "enabled",
+                    "type": "bool"
                   }
                 ]
               }
@@ -15450,6 +15479,10 @@
               {
                 "name": "SCANNER_V4_SERVICE",
                 "integer": 16
+              },
+              {
+                "name": "REGISTRANT_SERVICE",
+                "integer": 17
               }
             ]
           }

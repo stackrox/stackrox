@@ -9,10 +9,15 @@ option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
 message InitBundleMeta {
+  enum InitBundleVersion {
+    INIT_BUNDLE = 0;
+    CRS = 1;
+  }
   string id = 1; // @gotags: sql:"pk"
   string name = 2;
   google.protobuf.Timestamp created_at = 3;
   User created_by = 4;
   bool is_revoked = 5;
   google.protobuf.Timestamp expires_at = 6;
+  InitBundleVersion version = 7;
 }

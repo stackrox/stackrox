@@ -74,8 +74,8 @@ function getPolicyFieldsAsTree(existingGroups, descriptors): TreeViewDataItem[] 
             })
             .map<TreeViewDataItem>((child: Descriptor) => ({
                 name: child.longName,
-                title: child.shortName || child.name,
-                id: kebabCase(child.shortName),
+                title: child.shortName,
+                id: kebabCase(child.name),
             })),
     }));
 

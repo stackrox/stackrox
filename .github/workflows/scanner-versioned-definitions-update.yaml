@@ -1,4 +1,5 @@
-name: Scanner versioned vulnerability bundles update
+name: Scanner versioned vulnerabilities update
+
 on:
   schedule:
   - cron: "30 */4 * * *"
@@ -20,6 +21,7 @@ on:
 
 jobs:
   parse-versions:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     runs-on: ubuntu-latest
     outputs:
       versions: ${{ steps.set-versions.outputs.versions }}
@@ -37,6 +39,7 @@ jobs:
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
   prepare-environment:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     runs-on: ubuntu-latest
     outputs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
@@ -58,7 +61,7 @@ jobs:
             nvd-feeds)
                 nvd_file=nvd-feeds.zip
                 ;;
-            ,*)
+            *)
                 echo >&2 "error: invalid NVD bundle type '$NVD_BUNDLE_TYPE'"
                 exit 1
         esac
@@ -104,7 +107,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.4
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -140,36 +143,33 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Build updater
-      run: |
-        echo "Building updater for version ${{ env.SCANNER_BUNDLE_VERSION }} on branch ${{ env.ROX_GIT_REF }}..."
-        make tag
-        make -C scanner bin/updater
-
     - name: Download NVD
       uses: ./.github/actions/download-artifact-with-retry
       with:
         name: nvd
-        path: nvd.zip
+        path: .
 
-    - name: Set Updater
+    - name: Build updater
       run: |
-        chmod +x scanner/bin/updater
-        mkdir vulns
+        echo "Building updater for version ${{ env.SCANNER_BUNDLE_VERSION }} based on git ref ${{ env.ROX_GIT_REF }}..."
+        make tag
+        make -C scanner bin/updater
 
-    - name: Create Folder
+    - name: Create bundle output directory
       run: mkdir -p definitions/${{ env.SCANNER_BUNDLE_VERSION }}
 
-    - name: Run Updater (single bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
+    - name: Sanity check NVD zip
       run: |
-        scanner/bin/updater export vulns --manual-url "${{ needs.prepare-environment.outputs.manual_url }}"
-        mv vulns/* definitions/${{ env.SCANNER_BUNDLE_VERSION }}/
+        path="$PWD/nvd.zip"
+        echo "checking contents of $path"
+        unzip -l "$path"
+        echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
+
+    - name: Run Updater (single bundle)
+      run: |
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ env.SCANNER_BUNDLE_VERSION }}"
 
     - name: Run updater (multi bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
@@ -181,12 +181,12 @@ jobs:
         path: definitions
 
   build-upload-pr-vulnerabilities:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     needs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.2
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.4
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -214,26 +214,6 @@ jobs:
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Build updater
-      run: |
-        echo "Building updater for pull request ${{ env.PR_NAME }}..."
-        make tag
-        make -C scanner bin/updater
-
-    - name: Download NVD
-      uses: ./.github/actions/download-artifact-with-retry
-      with:
-        name: nvd
-        path: nvd.zip
-
-    - name: Set Updater
-      run: |
-        chmod +x scanner/bin/updater
-        mkdir vulns
-
-    - name: Create Folder
-      run: mkdir -p definitions/${{ github.event.pull_request.number }}
-
     - name: Authenticate with test GCS bucket
       if: github.event_name == 'pull_request'
       uses: google-github-actions/auth@v2
@@ -243,22 +223,39 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Run Updater (single bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
+    - name: Download NVD
+      uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd
+        path: .
+
+    - name: Build updater
       run: |
-        scanner/bin/updater export vulns --manual-url "${{ needs.prepare-environment.outputs.manual_url }}"
-        mv vulns/* definitions/${{ github.event.pull_request.number }}/
+        echo "Building updater for pull request ${{ env.PR_NAME }}..."
+        make tag
+        make -C scanner bin/updater
+
+    - name: Sanity check NVD zip
+      run: |
+        path="$PWD/nvd.zip"
+        echo "checking contents of $path"
+        unzip -l "$path"
+        echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
+
+    - name: Create bundle output directory
+      run: mkdir -p definitions/${{ github.event.pull_request.number }}
+
+    - name: Run Updater (single bundle)
+      run: |
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ github.event.pull_request.number }}"
 
     - name: Run updater (multi bundle)
-      env:
-        STACKROX_NVD_ZIP_PATH: nvd.zip
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
 
     # PR owner is responsible for verifying vulnerability bundles are generated
-    - name: Update PR vulnerabilities
+    - name: Upload PR vulnerabilities
       run: |
         branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
         # Replace / with -, so the branch name isn't truncated when pushed to GCS.
@@ -273,11 +270,16 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
+    # Checkout to run ./.github/actions/download-artifact-with-retry
     - uses: actions/checkout@v4
-
-    - name: Download definitions artifacts
-      uses: actions/download-artifact@v4
       with:
+        fetch-depth: 0
+
+    - uses: ./.github/actions/download-artifact-with-retry
+      with:
+        # Only download vulnerability bundles.
+        # This avoids accidentally downloading nvd.zip.
+        pattern: "artifact_*"
         path: downloaded_artifacts
 
     - name: Move files artifacts
