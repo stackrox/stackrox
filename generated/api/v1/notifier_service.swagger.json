@@ -718,6 +718,9 @@
         "clientCert": {
           "type": "string",
           "title": "client certificate which is used for authentication"
+        },
+        "privateKey": {
+          "type": "string"
         }
       }
     },

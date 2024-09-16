@@ -154,6 +154,7 @@ message MicrosoftSentinel {
 
   // client certificate which is used for authentication
   string client_cert = 7;
+  string private_key = 8;
 }
 
 message Syslog {

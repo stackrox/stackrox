@@ -2,10 +2,13 @@ package microsoftsentinel
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"time"
 
 	azureErrors "github.com/Azure/azure-sdk-for-go-extensions/pkg/errors"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs"
 	"github.com/pkg/errors"
@@ -67,27 +70,42 @@ func (s sentinel) AuditLoggingEnabled() bool {
 func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	config := notifier.GetMicrosoftSentinel()
 
-	err := Validate(config, false)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not create sentinel notifier, validation failed")
+	var azureTokenCredential azcore.TokenCredential
+	var authErrList = errorhelpers.NewErrorList("Sentinel authentication")
+	if config.GetClientCert() != "" && config.GetPrivateKey() != "" {
+		certBlock, _ := pem.Decode([]byte(config.GetClientCert()))
+		cert, err := x509.ParseCertificate(certBlock.Bytes)
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid cert")
+		}
+
+		keyBlock, _ := pem.Decode([]byte(config.GetPrivateKey()))
+		privateKey, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not parse private key")
+		}
+
+		azureTokenCredential, err = azidentity.NewClientCertificateCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), []*x509.Certificate{cert}, privateKey, &azidentity.ClientCertificateCredentialOptions{})
+		if err != nil {
+			authErrList.AddError(errors.Wrap(err, "could not create azure credentials with client cert"))
+		}
 	}
 
-	var azureCredentials *azidentity.ClientSecretCredential
-	if config.GetSecret() != "" {
-		azureCredentials, err = azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), config.GetSecret(), &azidentity.ClientSecretCredentialOptions{})
+	if config.GetSecret() != "" && azureTokenCredential == nil {
+		var err error
+		azureTokenCredential, err = azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), config.GetSecret(), &azidentity.ClientSecretCredentialOptions{})
 		if err != nil {
-			return nil, errors.Wrap(err, "could not create azure credentials with secret")
+			authErrList.AddError(errors.Wrap(err, "could not create azure credentials with secret"))
 		}
-	} else if config.GetClientCert() != "" {
-		azureCredentials, err = azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), config.GetClientCert(), &azidentity.ClientSecretCredentialOptions{})
-		if err != nil {
-			return nil, errors.Wrap(err, "could not create azure credentials with client cert")
-		}
-	} else {
-		return nil, errors.New("no client secret or certificate is required")
 	}
 
-	client, err := azlogs.NewClient(config.GetLogIngestionEndpoint(), azureCredentials, &azlogs.ClientOptions{})
+	if azureTokenCredential == nil {
+		return nil, authErrList
+	} else if !authErrList.Empty() {
+		log.Warnf("could not authenticate with at least one credential, got error: %s", authErrList.String())
+	}
+
+	client, err := azlogs.NewClient(config.GetLogIngestionEndpoint(), azureTokenCredential, &azlogs.ClientOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create azure logs client")
 	}
