@@ -38,7 +38,7 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	if outFilename != "" {
 		outFile, err = os.OpenFile(outFilename, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 		if err != nil {
-			return errors.Wrap(err, "opening output file for writing CRS")
+			return errors.Wrap(err, "creating output file for writing CRS")
 		}
 		outWriter = outFile
 		defer func() {
