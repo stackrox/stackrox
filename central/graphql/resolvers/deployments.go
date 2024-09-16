@@ -79,7 +79,9 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 // Deployments returns GraphQL resolvers all deployments
 func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployments")
-	log.Infof("SHREWS -- in deployments.Deployments %v", args)
+	log.Infof("SHREWS -- in deployments.Deployments %+v", args.Pagination)
+	log.Infof("SHREWS -- in deployments.Deployments %+v", args.Query)
+	log.Infof("SHREWS -- in deployments.Deployments %+v", args.String())
 	pc, _, _, ok := runtime.Caller(1)
 	details := runtime.FuncForPC(pc)
 	if ok && details != nil {
