@@ -228,6 +228,7 @@ func (m *ListPolicy) CloneVT() *ListPolicy {
 	r.LastUpdated = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastUpdated).CloneVT())
 	r.EventSource = m.EventSource
 	r.IsDefault = m.IsDefault
+	r.Source = m.Source
 	if rhs := m.LifecycleStages; rhs != nil {
 		tmpContainer := make([]LifecycleStage, len(rhs))
 		copy(tmpContainer, rhs)
@@ -719,6 +720,9 @@ func (this *ListPolicy) EqualVT(that *ListPolicy) bool {
 		return false
 	}
 	if this.IsDefault != that.IsDefault {
+		return false
+	}
+	if this.Source != that.Source {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1431,6 +1435,11 @@ func (m *ListPolicy) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.Source != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Source))
+		i--
+		dAtA[i] = 0x58
+	}
 	if m.IsDefault {
 		i--
 		if m.IsDefault {
@@ -2035,6 +2044,9 @@ func (m *ListPolicy) SizeVT() (n int) {
 	}
 	if m.IsDefault {
 		n += 2
+	}
+	if m.Source != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Source))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3862,6 +3874,25 @@ func (m *ListPolicy) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.IsDefault = bool(v != 0)
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Source", wireType)
+			}
+			m.Source = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Source |= PolicySource(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -6259,6 +6290,25 @@ func (m *ListPolicy) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.IsDefault = bool(v != 0)
+		case 11:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Source", wireType)
+			}
+			m.Source = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Source |= PolicySource(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
