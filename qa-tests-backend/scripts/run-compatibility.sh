@@ -82,8 +82,8 @@ _compatibility_test() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
-    verify_scannerV2_deployed
-    verify_scannerV4_deployed
+    verify_scannerV2_deployed "stackrox"
+    verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
 
