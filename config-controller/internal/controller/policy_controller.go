@@ -18,13 +18,11 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/config-controller/pkg/client"
-	"github.com/stackrox/rox/generated/storage"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -61,15 +59,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, fmt.Errorf("Failed to get policy: namespace=%s, name=%s", req.Namespace, req.Name)
 	}
 
-	desiredState := &storage.Policy{}
-	// Get the desired state from the policy CR spec and fill it into policy
-	specBytes, err := json.Marshal(policyCR.Spec)
-	if err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "Failed to marshal policy spec")
-	}
-	if err := json.Unmarshal(specBytes, desiredState); err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "Failed to unmarshal policy")
-	}
+	desiredState := policyCR.Spec.ToProtobuf()
 
 	existingPolicy, exists, err := r.PolicyClient.GetPolicy(ctx, req.Name)
 	if err != nil {

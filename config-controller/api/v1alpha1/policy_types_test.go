@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -60,7 +59,7 @@ func TestMarshalJSON(t *testing.T) {
 
 	assert.Equal(t, expected, policyCRSpec)
 
-	protoPolicy := expected.ToProtobuf()
+	protoPolicy := policyCRSpec.ToProtobuf()
 
 	protoBytes, err := protojson.MarshalOptions{
 		Multiline: true,
