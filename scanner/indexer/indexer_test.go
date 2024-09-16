@@ -195,7 +195,7 @@ func TestRandomExpiry(t *testing.T) {
 	const iterations = 1000
 	for range iterations {
 		expiry := randomExpiry(now)
-		assert.True(t, expiry.After(sevenDays) || expiry.Equal(sevenDays))
+		assert.False(t, expiry.Before(sevenDays))
 		assert.True(t, expiry.Before(thirtyDays))
 	}
 }

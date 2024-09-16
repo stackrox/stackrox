@@ -12,13 +12,20 @@ import (
 )
 
 const (
+	// initName is the name of the GC initialization process.
+	// This is used by the lock to prevent concurrent initializations.
 	initName = `manifest-init`
 
+	// gcName is the name of the GC process.
+	// This is used by the lock to prevent concurrent GC runs.
 	gcName     = `manifest-garbage-collection`
+	// gcInterval is the base interval between GC runs.
 	gcInterval = 6 * time.Hour
 )
 
 var (
+	// jitterHours defines the potential durations
+	// to add to gcInterval for some amount of jitter between GC runs.
 	jitterHours = []time.Duration{
 		-1 * time.Hour,
 		0 * time.Hour,
@@ -26,15 +33,25 @@ var (
 	}
 )
 
+// GC represents an indexer manifest garbage collector.
+//
+// After initialization, it periodically runs a process
+// to identify expired manifests and delete them from
+// both the manifest metadata storage maintained by StackRox
+// and the manifest storage maintained by ClairCore.
 type GC struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
 	metadataStore postgres.IndexerMetadataStore
 	locker        updates.LockSource
+	// deleteFunc represents the function used to delete manifests from ClairCore.
+	//
+	// This is used instead of passing the entire *libindex.Libindex to the GC.
 	deleteFunc    DeleteManifestsFunc
 }
 
+// DeleteManifestsFunc represents the type of the function used to delete manifests from ClairCore.
 type DeleteManifestsFunc func(ctx context.Context, d ...claircore.Digest) ([]claircore.Digest, error)
 
 func NewGC(ctx context.Context, metadataStore postgres.IndexerMetadataStore, locker updates.LockSource, deleteFunc DeleteManifestsFunc) *GC {
@@ -49,6 +66,7 @@ func NewGC(ctx context.Context, metadataStore postgres.IndexerMetadataStore, loc
 	}
 }
 
+// Start begins periodic garbage collection.
 func (g *GC) Start() error {
 	ctx := zlog.ContextWithValues(g.ctx, "component", "indexer/manifest/GC.Start")
 
@@ -123,11 +141,13 @@ func (g *GC) runGC() error {
 	return nil
 }
 
+// Stop ends periodic garbage collection.
 func (g *GC) Stop() error {
 	g.cancel()
 	return nil
 }
 
+// jitter randomly chooses a duration from jitterHours.
 func jitter() time.Duration {
 	return jitterHours[rand.IntN(len(jitterHours))]
 }
