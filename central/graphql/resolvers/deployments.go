@@ -2,6 +2,8 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
+	"runtime"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -78,7 +80,12 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 // Deployments returns GraphQL resolvers all deployments
 func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployments")
-	log.Info("SHREWS -- in deployments.Deployments")
+	log.Infof("SHREWS -- in deployments.Deployments %v", args)
+	pc, _, _, ok := runtime.Caller(1)
+	details := runtime.FuncForPC(pc)
+	if ok && details != nil {
+		fmt.Printf("called from %s\n", details.Name())
+	}
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -542,7 +549,12 @@ func (resolver *deploymentResolver) ImageVulnerabilityCounter(ctx context.Contex
 
 func (resolver *deploymentResolver) ImageCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCVECountBySeverity")
-	log.Info("SHREWS -- in deployments.ImageCVECountBySeverity")
+	log.Infof("SHREWS -- in deployments.ImageCVECountBySeverity %v", q)
+	pc, _, _, ok := runtime.Caller(1)
+	details := runtime.FuncForPC(pc)
+	if ok && details != nil {
+		fmt.Printf("called from %s\n", details.Name())
+	}
 
 	if !features.VulnMgmtWorkloadCVEs.Enabled() {
 		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
