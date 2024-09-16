@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"runtime"
 	"time"
 
@@ -84,7 +83,7 @@ func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) 
 	pc, _, _, ok := runtime.Caller(1)
 	details := runtime.FuncForPC(pc)
 	if ok && details != nil {
-		fmt.Printf("called from %s\n", details.Name())
+		log.Infof("SHREWS -- called from %s\n", details.Name())
 	}
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
@@ -553,7 +552,7 @@ func (resolver *deploymentResolver) ImageCVECountBySeverity(ctx context.Context,
 	pc, _, _, ok := runtime.Caller(1)
 	details := runtime.FuncForPC(pc)
 	if ok && details != nil {
-		fmt.Printf("called from %s\n", details.Name())
+		log.Infof("SHREWS -- called from %s\n", details.Name())
 	}
 
 	if !features.VulnMgmtWorkloadCVEs.Enabled() {
