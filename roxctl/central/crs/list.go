@@ -29,8 +29,6 @@ func listCRSs(cliEnvironment environment.Environment, timeout time.Duration, ret
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
 
-	tabWriter := tabwriter.NewWriter(cliEnvironment.InputOutput().Out(), 4, 8, 2, '\t', 0)
-
 	rsp, err := svc.GetCRSs(ctx, &v1.Empty{})
 	if err != nil {
 		return errors.Wrap(err, "getting all CRSs")
@@ -39,6 +37,7 @@ func listCRSs(cliEnvironment environment.Environment, timeout time.Duration, ret
 	crsMetas := rsp.GetItems()
 	sort.Slice(crsMetas, func(i, j int) bool { return crsMetas[i].GetName() < crsMetas[j].GetName() })
 
+	tabWriter := tabwriter.NewWriter(cliEnvironment.InputOutput().Out(), 4, 8, 2, '\t', 0)
 	fmt.Fprintln(tabWriter, "Name\tCreated at\tExpires at\tCreated by\tID")
 	fmt.Fprintln(tabWriter, "====\t==========\t==========\t==========\t==")
 
