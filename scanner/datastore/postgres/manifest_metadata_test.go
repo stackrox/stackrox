@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_ManifestMetadata_Init(t *testing.T) {
+func Test_ManifestMetadata_MigrateManifests(t *testing.T) {
 	ctx := context.Background()
-	pool := testDB(t, ctx, "manifest_metadata_init_test")
+	pool := testDB(t, ctx, "manifest_metadata_migrate_manifests_test")
 	ccStore, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
 	require.NoError(t, err)
 	store, err := InitPostgresIndexerMetadataStore(ctx, pool, true, IndexerMetadataStoreOpts{IndexerStore: ccStore})
@@ -40,10 +40,16 @@ func Test_ManifestMetadata_Init(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	ms, err := store.Init(ctx)
+	// Migrate all manifests.
+	ms, err := store.MigrateManifests(ctx)
 	require.NoError(t, err)
 	assert.Len(t, ms, 4)
 	assert.ElementsMatch(t, shas, ms)
+
+	// All manifests have already been migrated, so do nothing.
+	ms, err = store.MigrateManifests(ctx)
+	require.NoError(t, err)
+	assert.Empty(t, ms)
 }
 
 func Test_ManifestMetadata(t *testing.T) {
