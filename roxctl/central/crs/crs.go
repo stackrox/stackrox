@@ -10,7 +10,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "crs",
-		Short: "Manage Cluster Registration Secrets (CRS)",
+		Short: "Manage Cluster Registration Secrets (CRSs)",
 	}
 
 	c.AddCommand(

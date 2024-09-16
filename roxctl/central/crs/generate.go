@@ -87,9 +87,9 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputFile string
 
 	c := &cobra.Command{
-		Use:   "generate <crs name>",
-		Short: "Generate a new CRS",
-		Long:  "Generate a new CRS for bootstrapping a new StackRox secured cluster",
+		Use:   "generate <CRS name>",
+		Short: "Generate a new Cluster Registration Secret",
+		Long:  "Generate a new CRS for bootstrapping a new Secured Cluster",
 		Args:  common.ExactArgsWithCustomErrMessage(1, "No name for the CRS specified"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := args[0]

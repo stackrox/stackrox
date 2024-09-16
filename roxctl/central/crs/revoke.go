@@ -82,8 +82,8 @@ func revokeCRSs(cliEnvironment environment.Environment, idsOrNames []string,
 func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "revoke <CRS ID or name> [<CRS ID or name> ...]",
-		Short: "Revoke a cluster registration secret",
-		Long:  "Revoke a cluster registration secret (CRS) for bootstrapping new StackRox secured clusters",
+		Short: "Revoke a Cluster Registration Secret",
+		Long:  "Revoke a Cluster Registration Secret (CRS) for bootstrapping new Secured Clusters",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return revokeCRSs(cliEnvironment, args, flags.Timeout(cmd), flags.RetryTimeout(cmd))
