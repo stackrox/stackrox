@@ -100,7 +100,7 @@ The `--focus-workload` parameter allows specifying a workload name, such that th
 The supported formats for the input workload name are: `name` or `namespace/name`. For example, if the workload of interest from the report is `default/backend[Deployment]`, the input workload specified can be `--focus-workload=default/backend` or `--focus-workload=backend`. In addition, to focus connections inferred from Route/Ingress resources, the specified workload can be `--focus-workload=ingress-controller`.
 If the input `focus-workload` value speifies a workload name that does not exist in the input resources YAML manifests, the netpol connectivity map output will be empty.
 
-The `--exposure` parameter prints the permitted connectivity with additional information of potential permitted connectivity to workload entities that may be matched by policy rules, but do not have a match in the input manifests. Using this parameter helps to find out where network policies may be tightened, or to validate that no unexpected exposure is present due to policies misconfiguration.
+The `--exposure` parameter prints the permitted connectivity with additional information of potential permitted connectivity to workload entities that may be matched by policy rules, but do not have a match in the input manifests. More details about exposure analysis and its output are [here](./exposure_analysis.md)
 
 When running in a CI pipeline, `roxctl netpol connectivity map` may benefit from the `--fail` option that stops the processing on the first encountered error.
 
