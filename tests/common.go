@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"os/exec"
@@ -359,6 +360,11 @@ func (ks *KubernetesSuite) SetupSuite() {
 
 func (ks *KubernetesSuite) logf(format string, args ...any) {
 	logf(ks.T(), format, args...)
+}
+
+type logMatcher interface {
+	Match(reader io.ReadSeeker) (bool, error)
+	fmt.Stringer
 }
 
 // waitUntilLog waits until ctx expires or logs of container in all pods matching podLabels satisfy all logMatchers.

@@ -31,11 +31,6 @@ func allMatch(reader io.ReadSeeker, matchers ...logMatcher) (ok bool, err error)
 	return true, nil
 }
 
-type logMatcher interface {
-	Match(reader io.ReadSeeker) (bool, error)
-	fmt.Stringer
-}
-
 // multiLineMatcher matches when the desired number of lines are found.
 type multiLineLogMatcher struct {
 	re       *regexp.Regexp
