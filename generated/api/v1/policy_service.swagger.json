@@ -915,6 +915,9 @@
         },
         "isDefault": {
           "type": "boolean"
+        },
+        "source": {
+          "$ref": "#/definitions/storagePolicySource"
         }
       }
     },
