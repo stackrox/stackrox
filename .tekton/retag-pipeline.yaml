@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: basic-component-pipeline
+  name: retag-pipeline
 spec:
 
   finally:
@@ -15,7 +15,7 @@ spec:
     # Run when any task has Failed
     - input: $(tasks.status)
       operator: in
-      values: ["Failed"]
+      values: [ "Failed" ]
     taskRef:
       params:
       - name: name
@@ -52,8 +52,14 @@ spec:
     name: output-image-repo
     type: string
   - default: "-fast"
-    description: Suffix that will be appended to the output image tag.
-    name: output-tag-suffix
+    description: Suffix that's appended to generated image tags.
+    name: image-tag-suffix
+    type: string
+  - description: Base (input) Image Repository
+    name: base-image-repo
+    type: string
+  - description: Makefile target to execute in order to determine base (input) image tag.
+    name: base-image-tag-makefile-target
     type: string
   - default: .
     description: Path to the source code of an application's component from where
@@ -78,6 +84,7 @@ spec:
     name: hermetic
     type: string
   - default: ""
+    # No language dependencies need to be prefetched for retagging.
     description: Build dependencies to be prefetched by Cachi2
     name: prefetch-input
     type: string
@@ -124,14 +131,12 @@ spec:
   - description: ""
     name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
-  - description: ""
-    name: JAVA_COMMUNITY_DEPENDENCIES
-    value: $(tasks.build-container-amd64.results.JAVA_COMMUNITY_DEPENDENCIES)
 
   workspaces:
   - name: git-auth
 
   tasks:
+  # TODO(ROX-24468): fix source and dependencies provenance
 
   - name: init
     params:
@@ -185,14 +190,23 @@ spec:
     - name: basic-auth
       workspace: git-auth
 
-  - name: determine-image-tag
+  - name: determine-output-image-tag
     params:
     - name: TAG_SUFFIX
-      value: $(params.output-tag-suffix)
+      value: $(params.image-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: MAKEFILE_DIRECTORY
-      value: $(params.image-tag-makefile-directory)
+    taskRef:
+      name: determine-image-tag
+
+  - name: determine-base-image-tag
+    params:
+    - name: MAKEFILE_TARGET
+      value: $(params.base-image-tag-makefile-target)
+    - name: TAG_SUFFIX
+      value: $(params.image-tag-suffix)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     taskRef:
       name: determine-image-tag
 
@@ -219,7 +233,7 @@ spec:
   - name: build-container-amd64
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-amd64
+      value: $(params.output-image-repo):$(tasks.determine-output-image-tag.results.IMAGE_TAG)-amd64
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -234,8 +248,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+      - BASE_IMAGE=$(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-amd64
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -257,7 +270,7 @@ spec:
   - name: build-container-s390x
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-s390x
+      value: $(params.output-image-repo):$(tasks.determine-output-image-tag.results.IMAGE_TAG)-s390x
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -272,8 +285,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+      - BASE_IMAGE=$(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-s390x
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -297,7 +309,7 @@ spec:
   - name: build-container-ppc64le
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-ppc64le
+      value: $(params.output-image-repo):$(tasks.determine-output-image-tag.results.IMAGE_TAG)-ppc64le
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -312,8 +324,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+      - BASE_IMAGE=$(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-ppc64le
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -337,7 +348,7 @@ spec:
   - name: build-container-arm64
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)-arm64
+      value: $(params.output-image-repo):$(tasks.determine-output-image-tag.results.IMAGE_TAG)-arm64
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -352,8 +363,7 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - VERSIONS_SUFFIX=$(params.output-tag-suffix)
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+      - BASE_IMAGE=$(params.base-image-repo):$(tasks.determine-base-image-tag.results.IMAGE_TAG)-arm64
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -377,7 +387,7 @@ spec:
   - name: build-image-manifest
     params:
     - name: IMAGE
-      value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
+      value: $(params.output-image-repo):$(tasks.determine-output-image-tag.results.IMAGE_TAG)
     - name: COMMIT_SHA
       value: $(tasks.clone-repository.results.commit)
     - name: IMAGES
@@ -511,7 +521,7 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
 
   - name: sast-snyk-check
     params:

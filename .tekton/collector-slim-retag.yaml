@@ -1,0 +1,62 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+
+metadata:
+  annotations:
+    build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "500"
+    # TODO(ROX-21073): re-enable for all PR branches
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
+      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
+  labels:
+    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/component: collector
+    pipelines.appstudio.openshift.io/type: build
+  name: collector-slim-retag
+  namespace: rh-acs-tenant
+
+spec:
+
+  params:
+  - name: dockerfile
+    value: .konflux/konflux.retag.Dockerfile
+  - name: git-url
+    value: '{{repo_url}}'
+  - name: image-expires-after
+    value: '13w'
+  - name: output-image-repo
+    value: quay.io/rhacs-eng/collector-slim
+  - name: base-image-repo
+    value: quay.io/rhacs-eng/collector
+  - name: base-image-tag-makefile-target
+    value: collector-tag
+  - name: revision
+    value: '{{revision}}'
+  - name: rebuild
+    value: 'true'
+  - name: hermetic
+    value: "true"
+  - name: build-source-image
+    value: 'true'
+  - name: clone-depth
+    value: '0'
+  - name: clone-fetch-tags
+    value: 'true'
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
+
+  pipelineRef:
+    name: retag-pipeline
+
+  timeouts:
+    tasks: 1h
+    # Reserve time for final tasks to run.
+    finally: 10m
+    pipeline: 1h10m
