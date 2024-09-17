@@ -22,7 +22,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
-import { getHasSearchApplied } from 'utils/searchUtils';
+import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
@@ -260,11 +260,7 @@ function ImageCvePage() {
     >(imageCveAffectedImagesQuery, {
         variables: {
             query,
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
             statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
         skip: entityTab !== 'Image',
@@ -296,11 +292,7 @@ function ImageCvePage() {
             moderateImageCountQuery: getDeploymentSearchQuery('MODERATE_VULNERABILITY_SEVERITY'),
             importantImageCountQuery: getDeploymentSearchQuery('IMPORTANT_VULNERABILITY_SEVERITY'),
             criticalImageCountQuery: getDeploymentSearchQuery('CRITICAL_VULNERABILITY_SEVERITY'),
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
             statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
         skip: entityTab !== 'Deployment',

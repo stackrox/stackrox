@@ -16,7 +16,7 @@ import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
-import { getHasSearchApplied } from 'utils/searchUtils';
+import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
@@ -186,11 +186,7 @@ function DeploymentPageVulnerabilities({
         variables: {
             id: deploymentId,
             query,
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
             statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
         },
     });
