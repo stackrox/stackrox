@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/compliance/framework"
 	"github.com/stackrox/rox/pkg/compliance/msgfmt"
 	"gopkg.in/yaml.v3"
-	v1 "k8s.io/apiserver/pkg/apis/config/v1"
+	v1 "k8s.io/apiserver/pkg/apis/apiserver/v1"
 )
 
 const tlsCiphers = "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256," +
