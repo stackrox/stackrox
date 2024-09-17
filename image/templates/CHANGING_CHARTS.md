@@ -95,7 +95,7 @@ logic.
 1. Locate the Helm chart you want to extend under `image/templates/helm/stackrox-secured-cluster`
 1. Add the desired field to the `config-shape.yaml.tpl` and add the type as a comment
 1. Add the field to the `proto/storage/cluster.proto:CompleteClusterConfig` message, this is later used to keep track of the Helm configuration
-1. Add the config field to the `image/templates/helm/stackrox-secured-cluster/internal/cluster-config.yaml.tpl` file. This is later rendered and mounted as a file from the helm-cluster-config secret into Sensor.
+1. Add the config field to the `image/templates/helm/stackrox-secured-cluster/internal/cluster-config.yaml.tpl` file. This is later rendered and mounted as a file from the [helm-cluster-config secret](https://github.com/stackrox/stackrox/blob/d8f215a1c0465b1b506dcae297b3776aa5fe7612/image/templates/helm/stackrox-secured-cluster/templates/cluster-config.yaml) into Sensor.
 1. Add the conversion logic from the Helm config to a Cluster proto in `central/cluster/datastore/datastore_impl.go:configureFromHelmConfig()`. This conversion updates or creates the cluster to the returned `Cluster` proto.
    The conversion takes in the data read from Sensor from its `helm-cluster-config` secret
 1. Regenerate `proto-srcs` and recompile central and sensor and deploy them. (You may want to mount binaries into pods directly with `./dev-tools/enable-hotreload.sh <component>`
