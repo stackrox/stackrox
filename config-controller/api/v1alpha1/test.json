@@ -9,6 +9,7 @@
     "BUILD",
     "DEPLOY"
   ],
+  "eventSource": "DEPLOYMENT_EVENT",
   "exclusions": [
     {
       "name": "Don't alert on deployment collector in namespace stackrox",

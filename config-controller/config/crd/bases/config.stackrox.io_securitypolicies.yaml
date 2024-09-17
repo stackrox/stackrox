@@ -66,7 +66,7 @@ spec:
                 enum:
                 - NOT_APPLICABLE
                 - DEPLOYMENT_EVENT
-                - AUDIT_LOG_EVENt
+                - AUDIT_LOG_EVENT
                 type: string
               exclusions:
                 items:
