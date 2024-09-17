@@ -14,7 +14,6 @@ option java_package = "io.stackrox.proto.api.v2";
 message ReportConfiguration {
   enum ReportType {
     VULNERABILITY = 0;
-    COMPLIANCE = 1;
   }
   string id = 1;
   string name = 2;
@@ -88,13 +87,7 @@ message ReportSchedule {
 message ResourceScope {
   oneof scope_reference {
     CollectionReference collection_scope = 1;
-    ComplianceScanConfigReference compliance_scan_schedule_scope = 2;
   }
-}
-
-message ComplianceScanConfigReference {
-  string id = 1;
-  string scan_config_name = 2;
 }
 
 message CollectionReference {
@@ -150,25 +143,12 @@ message ReportSnapshot {
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 5;
   }
-  CollectionSnapshot collection_snapshot = 6; // deprecate this
+  CollectionSnapshot collection_snapshot = 6;
   ReportSchedule schedule = 7;
   ReportStatus report_status = 8;
   repeated NotifierConfiguration notifiers = 9;
   SlimUser user = 10;
   bool is_download_available = 11;
-  ReportSnapshotData snapshot_data = 12;
-}
-
-message ReportSnapshotData {
-  oneof data {
-    CollectionSnapshot collection_snapshot = 1;
-    ComplianceScanConfigSnapshot compliance_scan_config_snapshot = 2;
-  }
-}
-
-message ComplianceScanConfigSnapshot {
-  string id = 1;
-  string name = 2;
 }
 
 message ReportStatus {

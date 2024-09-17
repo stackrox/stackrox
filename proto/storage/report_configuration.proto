@@ -15,7 +15,6 @@ option java_package = "io.stackrox.proto.storage";
 message ReportConfiguration {
   enum ReportType {
     VULNERABILITY = 0;
-    COMPLIANCE = 1;
   }
 
   string id = 1; // @gotags: sql:"pk"
@@ -75,6 +74,5 @@ message VulnerabilityReportFilters {
 message ResourceScope {
   oneof scope_reference {
     string collection_id = 1; // @gotags: search:"Collection ID"
-    string scan_config_id = 2; // @gotags: search:"Compliance Scan Config ID"
   }
 }

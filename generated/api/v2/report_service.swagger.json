@@ -591,8 +591,7 @@
     "ReportConfigurationReportType": {
       "type": "string",
       "enum": [
-        "VULNERABILITY",
-        "COMPLIANCE"
+        "VULNERABILITY"
       ],
       "default": "VULNERABILITY"
     },
@@ -723,28 +722,6 @@
       }
     },
     "v2CollectionSnapshot": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
-      }
-    },
-    "v2ComplianceScanConfigReference": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "scanConfigName": {
-          "type": "string"
-        }
-      }
-    },
-    "v2ComplianceScanConfigSnapshot": {
       "type": "object",
       "properties": {
         "id": {
@@ -975,8 +952,7 @@
           "$ref": "#/definitions/v2VulnerabilityReportFilters"
         },
         "collectionSnapshot": {
-          "$ref": "#/definitions/v2CollectionSnapshot",
-          "title": "deprecate this"
+          "$ref": "#/definitions/v2CollectionSnapshot"
         },
         "schedule": {
           "$ref": "#/definitions/v2ReportSchedule"
@@ -996,20 +972,6 @@
         },
         "isDownloadAvailable": {
           "type": "boolean"
-        },
-        "snapshotData": {
-          "$ref": "#/definitions/v2ReportSnapshotData"
-        }
-      }
-    },
-    "v2ReportSnapshotData": {
-      "type": "object",
-      "properties": {
-        "collectionSnapshot": {
-          "$ref": "#/definitions/v2CollectionSnapshot"
-        },
-        "complianceScanConfigSnapshot": {
-          "$ref": "#/definitions/v2ComplianceScanConfigSnapshot"
         }
       }
     },
@@ -1058,9 +1020,6 @@
       "properties": {
         "collectionScope": {
           "$ref": "#/definitions/v2CollectionReference"
-        },
-        "complianceScanScheduleScope": {
-          "$ref": "#/definitions/v2ComplianceScanConfigReference"
         }
       }
     },

@@ -13,7 +13,7 @@ func ValidateReportRequest(request *ReportRequest) error {
 		return errors.New("Report request is nil.")
 	}
 	errorList := errorhelpers.NewErrorList("validating report request")
-	if request.Collection == nil && request.ComplianceScanConfig == nil {
+	if request.Collection == nil {
 		errorList.AddError(errors.New("Report request does not have a valid non-nil collection."))
 	}
 

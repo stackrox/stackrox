@@ -1,7 +1,6 @@
 package v2
 
 import (
-	complianceScanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
@@ -24,7 +23,6 @@ func initialize() {
 		reportConfigDS.Singleton(),
 		reportSnapshotDS.Singleton(),
 		collectionDatastore,
-		complianceScanConfigDS.Singleton(),
 		notifierDS.Singleton(),
 		reportGen.Singleton(),
 		validation.Singleton(),

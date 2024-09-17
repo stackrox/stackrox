@@ -8,7 +8,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
-	complianceScanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/common"
@@ -45,7 +44,6 @@ type scheduler struct {
 	reportConfigDatastore reportConfigDS.DataStore
 	reportSnapshotStore   reportSnapshotDS.DataStore
 	collectionDatastore   collectionDS.DataStore
-	complianceDatastore   complianceScanConfigDS.DataStore
 	notifierDatastore     notifierDS.DataStore
 	reportGenerator       reportGen.ReportGenerator
 	validator             *validation.Validator
@@ -84,7 +82,7 @@ type scheduler struct {
 
 // New instantiates a new cron scheduler and supports adding and removing report requests
 func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore reportSnapshotDS.DataStore,
-	collectionDatastore collectionDS.DataStore, complianceDatastore complianceScanConfigDS.DataStore, notifierDatastore notifierDS.DataStore,
+	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
 	reportGenerator reportGen.ReportGenerator, validator *validation.Validator) Scheduler {
 
 	cronScheduler := cron.New()
@@ -93,12 +91,12 @@ func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore rep
 	if err != nil {
 		panic(err)
 	}
-	return newSchedulerImpl(reportConfigDatastore, reportSnapshotStore, collectionDatastore, complianceDatastore, notifierDatastore,
+	return newSchedulerImpl(reportConfigDatastore, reportSnapshotStore, collectionDatastore, notifierDatastore,
 		reportGenerator, validator, cronScheduler, ourSchema)
 }
 
 func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotStore reportSnapshotDS.DataStore,
-	collectionDatastore collectionDS.DataStore, complianceDatastore complianceScanConfigDS.DataStore, notifierDatastore notifierDS.DataStore,
+	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
 	reportGenerator reportGen.ReportGenerator, validator *validation.Validator, cronScheduler *cron.Cron,
 	schema *graphql.Schema) *scheduler {
 	s := &scheduler{
@@ -106,7 +104,6 @@ func newSchedulerImpl(reportConfigDatastore reportConfigDS.DataStore, reportSnap
 		reportConfigDatastore:  reportConfigDatastore,
 		reportSnapshotStore:    reportSnapshotStore,
 		collectionDatastore:    collectionDatastore,
-		complianceDatastore:    complianceDatastore,
 		notifierDatastore:      notifierDatastore,
 		reportGenerator:        reportGenerator,
 		validator:              validator,
@@ -340,33 +337,18 @@ func (s *scheduler) queuePendingReports() {
 			continue
 		}
 
-		var collection *storage.ResourceCollection
-		if snap.GetCollection() != nil {
-			collection, found, err = s.collectionDatastore.Get(scheduledCtx, snap.GetCollection().GetId())
-			if err != nil {
-				log.Errorf("Error finding collection ID '%s': %s", snap.GetCollection().GetId(), err)
-				continue
-			}
-			if !found {
-				log.Errorf("Collection ID '%s' not found", snap.GetCollection().GetId())
-			}
+		collection, found, err := s.collectionDatastore.Get(scheduledCtx, snap.GetCollection().GetId())
+		if err != nil {
+			log.Errorf("Error finding collection ID '%s': %s", snap.GetCollection().GetId(), err)
+			continue
 		}
-		var scanConfig *storage.ComplianceOperatorScanConfigurationV2
-		if snap.GetSnapshotData().GetComplianceScanConfigSnapshot() != nil {
-			scanConfig, found, err = s.complianceDatastore.GetScanConfiguration(scheduledCtx, snap.GetSnapshotData().GetComplianceScanConfigSnapshot().GetId())
-			if err != nil {
-				log.Errorf("funding scan configuration ID %s", snap.GetSnapshotData().GetComplianceScanConfigSnapshot().GetId())
-				continue
-			}
-			if !found {
-				log.Errorf("Scan configuration %s not found", snap.GetSnapshotData().GetComplianceScanConfigSnapshot().GetId())
-			}
+		if !found {
+			log.Errorf("Collection ID '%s' not found", snap.GetCollection().GetId())
 		}
 
 		_, err = s.SubmitReportRequest(scheduledCtx, &reportGen.ReportRequest{
-			ReportSnapshot:       snap,
-			ComplianceScanConfig: scanConfig,
-			Collection:           collection,
+			ReportSnapshot: snap,
+			Collection:     collection,
 		}, true)
 		if err != nil {
 			log.Errorf("Error rescheduling pending report job for report config ID '%s': %s", snap.GetReportConfigurationId(), err)

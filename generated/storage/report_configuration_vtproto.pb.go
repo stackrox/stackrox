@@ -200,15 +200,6 @@ func (m *ResourceScope_CollectionId) CloneVT() isResourceScope_ScopeReference {
 	return r
 }
 
-func (m *ResourceScope_ScanConfigId) CloneVT() isResourceScope_ScopeReference {
-	if m == nil {
-		return (*ResourceScope_ScanConfigId)(nil)
-	}
-	r := new(ResourceScope_ScanConfigId)
-	r.ScanConfigId = m.ScanConfigId
-	return r
-}
-
 func (this *ReportConfiguration) EqualVT(that *ReportConfiguration) bool {
 	if this == that {
 		return true
@@ -542,23 +533,6 @@ func (this *ResourceScope_CollectionId) EqualVT(thatIface isResourceScope_ScopeR
 		return false
 	}
 	if this.CollectionId != that.CollectionId {
-		return false
-	}
-	return true
-}
-
-func (this *ResourceScope_ScanConfigId) EqualVT(thatIface isResourceScope_ScopeReference) bool {
-	that, ok := thatIface.(*ResourceScope_ScanConfigId)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if this.ScanConfigId != that.ScanConfigId {
 		return false
 	}
 	return true
@@ -1028,20 +1002,6 @@ func (m *ResourceScope_CollectionId) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
-func (m *ResourceScope_ScanConfigId) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *ResourceScope_ScanConfigId) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	i -= len(m.ScanConfigId)
-	copy(dAtA[i:], m.ScanConfigId)
-	i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ScanConfigId)))
-	i--
-	dAtA[i] = 0x12
-	return len(dAtA) - i, nil
-}
 func (m *ReportConfiguration) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -1240,16 +1200,6 @@ func (m *ResourceScope_CollectionId) SizeVT() (n int) {
 	var l int
 	_ = l
 	l = len(m.CollectionId)
-	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	return n
-}
-func (m *ResourceScope_ScanConfigId) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.ScanConfigId)
 	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	return n
 }
@@ -2309,38 +2259,6 @@ func (m *ResourceScope) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ScopeReference = &ResourceScope_CollectionId{CollectionId: string(dAtA[iNdEx:postIndex])}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScanConfigId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ScopeReference = &ResourceScope_ScanConfigId{ScanConfigId: string(dAtA[iNdEx:postIndex])}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -3444,42 +3362,6 @@ func (m *ResourceScope) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.ScopeReference = &ResourceScope_CollectionId{CollectionId: stringValue}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ScanConfigId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.ScopeReference = &ResourceScope_ScanConfigId{ScanConfigId: stringValue}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

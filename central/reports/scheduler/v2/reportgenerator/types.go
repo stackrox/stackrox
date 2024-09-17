@@ -8,10 +8,9 @@ import (
 
 // ReportRequest contains information needed to generate and notify a report
 type ReportRequest struct {
-	ReportSnapshot       *storage.ReportSnapshot
-	Collection           *storage.ResourceCollection
-	ComplianceScanConfig *storage.ComplianceOperatorScanConfigurationV2
-	DataStartTime        time.Time
+	ReportSnapshot *storage.ReportSnapshot
+	Collection     *storage.ResourceCollection
+	DataStartTime  time.Time
 }
 
 type reportEmailBodyFormat struct {

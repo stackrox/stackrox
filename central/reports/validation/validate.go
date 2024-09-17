@@ -5,7 +5,6 @@ import (
 	"net/mail"
 
 	"github.com/pkg/errors"
-	complianceScanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
@@ -32,18 +31,16 @@ type Validator struct {
 	reportConfigDatastore reportConfigDS.DataStore
 	snapshotDatastore     snapshotDS.DataStore
 	collectionDatastore   collectionDS.DataStore
-	complianceDatastore   complianceScanConfigDS.DataStore
 	notifierDatastore     notifierDS.DataStore
 }
 
 // New Validator instance
 func New(reportConfigDatastore reportConfigDS.DataStore, reportSnapshotDatastore snapshotDS.DataStore,
-	collectionDatastore collectionDS.DataStore, complianceDatastore complianceScanConfigDS.DataStore, notifierDatastore notifierDS.DataStore) *Validator {
+	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore) *Validator {
 	return &Validator{
 		reportConfigDatastore: reportConfigDatastore,
 		snapshotDatastore:     reportSnapshotDatastore,
 		collectionDatastore:   collectionDatastore,
-		complianceDatastore:   complianceDatastore,
 		notifierDatastore:     notifierDatastore,
 	}
 }
@@ -63,7 +60,7 @@ func (v *Validator) ValidateReportConfiguration(config *apiV2.ReportConfiguratio
 	if err := v.validateResourceScope(config); err != nil {
 		return err
 	}
-	if err := v.validateReportFilters(config); err != nil && config.GetType() == apiV2.ReportConfiguration_VULNERABILITY {
+	if err := v.validateReportFilters(config); err != nil {
 		return err
 	}
 
@@ -157,22 +154,8 @@ func (v *Validator) validateEmailConfig(emailConfig *apiV2.EmailNotifierConfigur
 }
 
 func (v *Validator) validateResourceScope(config *apiV2.ReportConfiguration) error {
-	if config.GetResourceScope() == nil || (config.GetResourceScope().GetCollectionScope() == nil && config.GetResourceScope().GetComplianceScanScheduleScope() == nil) {
+	if config.GetResourceScope() == nil || config.GetResourceScope().GetCollectionScope() == nil {
 		return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid resource scope")
-	}
-	if config.GetResourceScope().GetComplianceScanScheduleScope() != nil {
-		scanConfigID := config.GetResourceScope().GetComplianceScanScheduleScope().GetId()
-		if scanConfigID == "" {
-			return errors.Wrap(errox.InvalidArgs, "Report configuration must specify a valid scan configuration ID")
-		}
-		_, exists, err := v.complianceDatastore.GetScanConfiguration(allAccessCtx, scanConfigID)
-		if err != nil {
-			return errors.Errorf("could not retrieve scan configuration from db: %v", err)
-		}
-		if !exists {
-			return errors.Wrapf(errox.NotFound, "Scan Configuration %s not found.", scanConfigID)
-		}
-		return nil
 	}
 	collectionID := config.GetResourceScope().GetCollectionScope().GetCollectionId()
 
@@ -233,25 +216,12 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 			"Email request sent for a report configuration that does not have any email notifiers configured")
 	}
 
-	var collection *storage.ResourceCollection
-	if config.GetResourceScope().GetCollectionId() != "" {
-		collection, found, err = v.collectionDatastore.Get(allAccessCtx, config.GetResourceScope().GetCollectionId())
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error finding collection ID '%s'", config.GetResourceScope().GetCollectionId())
-		}
-		if !found {
-			return nil, errors.Wrapf(errox.NotFound, "Collection ID '%s' not found", config.GetResourceScope().GetCollectionId())
-		}
+	collection, found, err := v.collectionDatastore.Get(allAccessCtx, config.GetResourceScope().GetCollectionId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Error finding collection ID '%s'", config.GetResourceScope().GetCollectionId())
 	}
-	var scanConfig *storage.ComplianceOperatorScanConfigurationV2
-	if config.GetResourceScope().GetScanConfigId() != "" {
-		scanConfig, found, err = v.complianceDatastore.GetScanConfiguration(allAccessCtx, config.GetResourceScope().GetScanConfigId())
-		if err != nil {
-			return nil, errors.Wrapf(err, "could not get scan config %s", config.GetResourceScope().GetScanConfigId())
-		}
-		if !found {
-			return nil, errors.Wrapf(errox.NotFound, "could not find scan config %s", config.GetResourceScope().GetScanConfigId())
-		}
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "Collection ID '%s' not found", config.GetResourceScope().GetCollectionId())
 	}
 
 	notifierIDs := make([]string, 0, len(config.GetNotifiers()))
@@ -267,9 +237,8 @@ func (v *Validator) ValidateAndGenerateReportRequest(
 	}
 
 	return &reportGen.ReportRequest{
-		Collection:           collection,
-		ComplianceScanConfig: scanConfig,
-		ReportSnapshot:       generateReportSnapshot(config, collection, scanConfig, protoNotifiers, notificationMethod, requestType, requesterID),
+		Collection:     collection,
+		ReportSnapshot: generateReportSnapshot(config, collection, protoNotifiers, notificationMethod, requestType, requesterID),
 	}, nil
 }
 
@@ -299,7 +268,6 @@ func (v *Validator) ValidateCancelReportRequest(reportID string, requester *stor
 func generateReportSnapshot(
 	config *storage.ReportConfiguration,
 	collection *storage.ResourceCollection,
-	scanConfig *storage.ComplianceOperatorScanConfigurationV2,
 	protoNotifiers []*storage.Notifier,
 	notificationMethod storage.ReportStatus_NotificationMethod,
 	requestType storage.ReportStatus_RunMethod,
@@ -310,40 +278,23 @@ func generateReportSnapshot(
 		Name:                  config.GetName(),
 		Description:           config.GetDescription(),
 		Type:                  storage.ReportSnapshot_VULNERABILITY,
-		Schedule:              config.GetSchedule(),
+		Collection: &storage.CollectionSnapshot{
+			Id:   config.GetResourceScope().GetCollectionId(),
+			Name: collection.GetName(),
+		},
+		Schedule: config.GetSchedule(),
 		ReportStatus: &storage.ReportStatus{
 			RunState:                 storage.ReportStatus_WAITING,
 			ReportRequestType:        requestType,
 			ReportNotificationMethod: notificationMethod,
 		},
 	}
-	if collection != nil {
-		snapshot.Collection = &storage.CollectionSnapshot{
-			Id:   config.GetResourceScope().GetCollectionId(),
-			Name: collection.GetName(),
-		}
-	}
-	if scanConfig != nil {
-		snapshot.SnapshotData = &storage.ReportSnapshotData{
-			Data: &storage.ReportSnapshotData_ComplianceScanConfigSnapshot{
-				ComplianceScanConfigSnapshot: &storage.ComplianceScanConfigSnapshot{
-					Id:   config.GetResourceScope().GetScanConfigId(),
-					Name: scanConfig.GetScanConfigName(),
-				},
-			},
-		}
-	}
 
-	var reportFilters *storage.VulnerabilityReportFilters
-	if collection != nil {
-		reportFilters = config.GetVulnReportFilters().CloneVT()
-	}
+	reportFilters := config.GetVulnReportFilters().CloneVT()
 	var requester *storage.SlimUser
 	switch requestType {
 	case storage.ReportStatus_ON_DEMAND:
-		if collection != nil {
-			reportFilters.AccessScopeRules = common.ExtractAccessScopeRules(requesterID)
-		}
+		reportFilters.AccessScopeRules = common.ExtractAccessScopeRules(requesterID)
 		requester = &storage.SlimUser{
 			Id:   requesterID.UID(),
 			Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
@@ -352,10 +303,8 @@ func generateReportSnapshot(
 		requester = config.GetCreator()
 	}
 	snapshot.Requester = requester
-	if collection != nil {
-		snapshot.Filter = &storage.ReportSnapshot_VulnReportFilters{
-			VulnReportFilters: reportFilters,
-		}
+	snapshot.Filter = &storage.ReportSnapshot_VulnReportFilters{
+		VulnReportFilters: reportFilters,
 	}
 
 	notifierSnaps := make([]*storage.NotifierSnapshot, 0, len(config.GetNotifiers()))
