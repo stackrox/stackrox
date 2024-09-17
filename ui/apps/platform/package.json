@@ -102,6 +102,7 @@
         "test-watch": "react-app-rewired test",
         "lint": "eslint --quiet .",
         "lint:fix": "eslint --fix --quiet .",
+        "tsc": "tsc",
         "cypress-open": "./scripts/cypress.sh open --config defaultCommandTimeout=8000",
         "cypress-spec": "./scripts/cypress.sh run --spec",
         "cypress-component": "./scripts/cypress-component.sh open --component",
@@ -128,11 +129,11 @@
         "@testing-library/jest-dom": "^6.5.0",
         "@testing-library/react": "^16.0.1",
         "@testing-library/user-event": "^14.5.2",
-        "@types/jest": "^29.5.12",
-        "@types/lodash": "^4.17.4",
+        "@types/jest": "^29.5.13",
+        "@types/lodash": "^4.17.7",
         "@types/pluralize": "^0.0.33",
-        "@types/qs": "^6.9.15",
-        "@types/react": "^18.3.3",
+        "@types/qs": "^6.9.16",
+        "@types/react": "^18.3.6",
         "@types/react-dom": "^18.3.0",
         "@types/react-redux": "^7.1.33",
         "@types/segment-analytics": "^0.0.38",
@@ -169,7 +170,7 @@
         "redux-saga-test-plan": "^3.7.0",
         "tailwindcss": "^2.0.3",
         "ts-jest": "^29.2.5",
-        "typescript": "^5.5.4"
+        "typescript": "^5.6.2"
     },
     "resolutions": {
         "@jest/types": "^29.6.3",
@@ -222,7 +223,7 @@
             "react-dom": "^18.0.0"
         },
         "react-scripts": {
-            "typescript": "5.5.4"
+            "typescript": "5.6.2"
         },
         "react-select": {
             "react": "^18.0.0",
