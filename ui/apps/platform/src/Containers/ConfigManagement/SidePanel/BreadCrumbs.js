@@ -88,9 +88,7 @@ const BreadCrumbLinks = (props) => {
     const match = useRouteMatch();
 
     // disable because unused history might be specified for rest spread idiom.
-    /* eslint-disable no-unused-vars */
     const { className, ...params } = props;
-    /* eslint-enable no-unused-vars */
     const { entityType1, entityId1, entityListType2, entityId2 } = params;
     if (!entityId1) {
         return null;

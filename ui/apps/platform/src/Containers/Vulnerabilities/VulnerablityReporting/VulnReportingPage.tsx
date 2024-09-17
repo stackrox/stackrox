@@ -31,8 +31,7 @@ function VulnReportingPage() {
             <Route
                 exact
                 path={vulnerabilityReportsPath}
-                // eslint-disable-next-line react/no-children-prop
-                children={() => {
+                render={() => {
                     if (pageAction === 'create' && hasWriteAccessForReport) {
                         return <CreateVulnReportPage />;
                     }
@@ -45,8 +44,7 @@ function VulnReportingPage() {
             <Route
                 exact
                 path={vulnerabilityReportPath}
-                // eslint-disable-next-line react/no-children-prop
-                children={() => {
+                render={() => {
                     if (pageAction === 'edit' && hasWriteAccessForReport) {
                         return <EditVulnReportPage />;
                     }

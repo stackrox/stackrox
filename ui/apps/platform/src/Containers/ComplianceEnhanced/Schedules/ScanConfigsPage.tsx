@@ -25,30 +25,25 @@ function ScanConfigsPage() {
 
     return (
         <Switch>
-            <Route exact path={complianceEnhancedSchedulesPath}>
-                <Route
-                    // eslint-disable-next-line react/no-children-prop
-                    children={() => {
-                        if (pageAction === 'create' && hasWriteAccessForCompliance) {
-                            return <CreateScanConfigPage />;
-                        }
-                        if (pageAction === undefined) {
-                            return (
-                                <ScanConfigsTablePage
-                                    hasWriteAccessForCompliance={hasWriteAccessForCompliance}
-                                />
-                            );
-                        }
-                        return <Redirect to={complianceEnhancedSchedulesPath} />;
-                    }}
-                />
-            </Route>
+            <Route
+                exact
+                path={complianceEnhancedSchedulesPath}
+                render={() => {
+                    if (pageAction === 'create' && hasWriteAccessForCompliance) {
+                        return <CreateScanConfigPage />;
+                    }
+                    if (!pageAction) {
+                        return (
+                            <ScanConfigsTablePage
+                                hasWriteAccessForCompliance={hasWriteAccessForCompliance}
+                            />
+                        );
+                    }
+                    return <Redirect to={complianceEnhancedSchedulesPath} />;
+                }}
+            />
             <Route exact path={scanConfigDetailsPath}>
-                {() => (
-                    <ScanConfigDetailPage
-                        hasWriteAccessForCompliance={hasWriteAccessForCompliance}
-                    />
-                )}
+                <ScanConfigDetailPage hasWriteAccessForCompliance={hasWriteAccessForCompliance} />
             </Route>
         </Switch>
     );
