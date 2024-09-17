@@ -131,4 +131,7 @@ var (
 
 	// Display NVD CVSS score in UI.
 	NvdCvssUI = registerFeature("Display NVD CVSS score in UI", "ROX_NVD_CVSS_UI")
+
+	// Display clusters page patternfly redesign.
+	ClustersPageMigrationUI = registerFeature("Display clusters page patternfly redesign", "ROX_CLUSTERS_PAGE_MIGRATION_UI")
 )
