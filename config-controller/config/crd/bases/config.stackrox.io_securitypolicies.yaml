@@ -130,7 +130,7 @@ spec:
                           booleanOperator:
                             enum:
                             - OR
-                            - AND `json:"//,omitempty"`
+                            - AND
                             type: string
                           fieldName:
                             type: string

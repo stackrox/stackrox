@@ -202,7 +202,7 @@ type PolicySection struct {
 
 type PolicyGroup struct {
 	FieldName string `json:"fieldName,omitempty"`
-	// +kubebuilder:validation:Enum=OR;AND `json:"//,omitempty"`
+	// +kubebuilder:validation:Enum=OR;AND
 	BooleanOperator string        `json:"booleanOperator,omitempty"`
 	Negate          bool          `json:"negate,omitempty"`
 	Values          []PolicyValue `json:"values,omitempty"`
