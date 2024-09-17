@@ -1,0 +1,93 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: retag-image
+  namespace: rh-acs-tenant
+# TODO(ROX-22196): Refactor to a task bundle
+spec:
+  description: |
+    Copies input image to the desired repo with the desired tag.
+    Handles index images that reference per-arch images.
+    TODO: Copies attached `cosign` and `oras` artifacts.
+    TODO: Copies source images that are logically linked to the input image digest.
+  params:
+  - name: INPUT_IMAGE_REPO
+    description: Repository of the input image
+    type: string
+  - name: INPUT_IMAGE_TAG
+    description: Tag of the input image
+    type: string
+  - name: OUTPUT_IMAGE_REPO
+    description: Repository of the output image
+    type: string
+  - name: OUTPUT_IMAGE_TAG
+    description: Repository of the output image
+    type: string
+  results:
+  - name: IMAGE_DIGEST
+    description: Digest of the output image; should be the same as of the input one
+  - name: IMAGE_URL
+    description: Image repository and tag of the output image
+  - name: IMAGE_REF
+    description: Image reference of the output image containing both the repository and the digest
+  steps:
+  - name: copy-image
+    image: quay.io/konflux-ci/release-service-utils:latest@sha256:48b31c88616f47328da613092e62b54b30cfbc7b3eb972d213db7b696f8edbf7
+    script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      
+      SKOPEO_RETRIES=5
+      
+      function copy_image() {
+        local -r input_url="${1}"
+        local -r output_url="${2}"
+
+        if [[ "${input_url}" == "${output_url}" ]]; then
+          >&2 echo "Will not copy image ${input_url} into itself."
+          exit 5
+        fi
+
+        echo "Copying image from ${input_url} ..."
+        echo "... to ${output_url} ..."
+
+        skopeo copy \
+          --retry-times="${SKOPEO_RETRIES}" \
+          --all \
+          --preserve-digests \
+          "docker://${input_url}" \
+          "docker://${output_url}"
+      }
+
+      function get_digest() {
+        local -r image_url="${1}"
+        skopeo inspect \
+          --retry-times="${SKOPEO_RETRIES}" \
+          --format '{{.Digest}}' \
+          --no-tags \
+          "docker://${image_url}"
+      }
+
+      INPUT_URL="$(params.INPUT_IMAGE_REPO):$(params.INPUT_IMAGE_TAG)"
+      OUTPUT_URL="$(params.OUTPUT_IMAGE_REPO):$(params.OUTPUT_IMAGE_TAG)"
+      
+      # This copies the images themselves.
+      # It also handles the case when the image is index on top of arch-specific containers in which case arch-specific
+      # containers are also copied (but not tags of arch-specific containers if they were additionally tagged).
+      copy_image "${INPUT_URL}" "${OUTPUT_URL}"
+
+      echo "Figuring the input image digest ..."
+      INPUT_DIGEST="$(get_digest "${INPUT_URL}")"
+
+      echo "Figuring the output image digest ..."
+      OUTPUT_DIGEST="$(get_digest "${OUTPUT_URL}")"
+
+      echo "Checking if the input image digest ${INPUT_DIGEST} is the same as the output image digest ${OUTPUT_DIGEST} ..."
+      [[ "${INPUT_DIGEST}" == "${OUTPUT_DIGEST}" ]]
+
+      echo "Done"
+      
+      echo -n "${OUTPUT_DIGEST}" | tee "$(results.IMAGE_DIGEST.path)"; echo
+      echo -n "${OUTPUT_URL}" | tee "$(results.IMAGE_URL.path)"; echo
+      # build-image-index task provides both tag and the digest in the IMAGE_REF. We follow its example.
+      echo -n "${OUTPUT_URL}@${OUTPUT_DIGEST}" | tee "$(results.IMAGE_REF.path)"; echo
