@@ -13,4 +13,4 @@ trap die_func TERM INT
 
 echo "Sleeping forever... (SIGINT or Ctrl-C to exit)"
 
-sleep inf && wait
+sleep inf & wait

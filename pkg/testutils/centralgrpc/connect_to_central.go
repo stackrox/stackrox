@@ -73,16 +73,21 @@ func UnauthenticatedGRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
 }
 
 // GRPCConnectionToCentral returns a GRPC connection to Central, which can be used in E2E tests.
-// Basic auth is used to establish the connection. It fatals the test if there's an error.
-func GRPCConnectionToCentral(t testutils.T) *grpc.ClientConn {
-	return grpcConnectionToCentral(t, func(opts *clientconn.Options) {
-		opts.ConfigureBasicAuth(RoxUsername(t), RoxPassword(t))
-	})
-}
+// Basic auth is used to establish the connection if no other options are provided which
+// configure auth. It fatals the test if there's an error.
+func GRPCConnectionToCentral(t testutils.T, optsFuncs ...func(opts *clientconn.Options)) *grpc.ClientConn {
+	var tmpOpts clientconn.Options
+	for _, optsFunc := range optsFuncs {
+		optsFunc(&tmpOpts)
+	}
 
-// GRPCConnectionToCentralWithOpts returns a GRPC connection to Central, which can be used in E2E tests.
-// Use optsFuncs to configure the connection (ie: to use basic auth, token auth, handle TLS, etc.)
-func GRPCConnectionToCentralWithOpts(t testutils.T, optsFuncs ...func(opts *clientconn.Options)) *grpc.ClientConn {
+	if tmpOpts.PerRPCCreds == nil {
+		// No options configured auth, fallback to basic auth.
+		optsFuncs = append(optsFuncs, func(opts *clientconn.Options) {
+			opts.ConfigureBasicAuth(RoxUsername(t), RoxPassword(t))
+		})
+	}
+
 	return grpcConnectionToCentral(t, optsFuncs...)
 }
 

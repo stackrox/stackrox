@@ -156,7 +156,9 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	ts.ubi9ImageB = NewDeleScanTestImage(t, "registry.access.redhat.com/ubi9/ubi-minimal:9.4-1227@sha256:35a12657ce1bcb2b7667f4e6e0147186c1e0172cc43ece5452ab85afd6532791")
 
 	// Dockerfiles for these are located at qa-tests-backend/test-images/delegated-scanning/*.
-	// The base images were chosen at random due on smallish size and self running.
+	//
+	// These images were chosen at random due on smallish size, are self running, contain
+	// at least one vulnerability, and do not overlap with other images tested in this suite.
 	ts.nginxImage = NewDeleScanTestImage(t, "quay.io/rhacs-eng/qa:dele-scan-nginx@sha256:68b418b74715000e41a894428bd787442945592486a08d4cbea89a9b4fa03302")
 	ts.httpdImage = NewDeleScanTestImage(t, "quay.io/rhacs-eng/qa:dele-scan-httpd@sha256:489576ec07d6d8d64690bedb4cf1eeb366a8f03f8530367c3eee0c71579b5f5e")
 	ts.memcachedImage = NewDeleScanTestImage(t, "itms.invalid/rhacs-eng/qa:dele-scan-memcached@sha256:1cf25340014838bef90aa9d19eaef725a0b4986af3c8e8a6be3203c2cef8cb61")
@@ -821,8 +823,8 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName string, img *storage.Image) {
 	require.Equal(t, imgFullName, img.GetName().GetFullName())
 	require.True(t, img.GetIsClusterLocal(), "image %q not flagged as cluster local which is expected for any delegated scans, most likely the scan was NOT delegated, check Central/Sensor logs to confirm", imgFullName)
-	require.NotNil(t, img.GetScan(), "image scan for %q is nil, check logs for errors, image notes: %v", imgFullName, img.GetNotes())
-	require.NotEmpty(t, img.GetScan().GetComponents(), "image scan for %q has no components, check central logs for errors, this can happen if indexing succeeds but matching fails, ROX-17472 will make this an error in the future", imgFullName)
+	require.NotNil(t, img.GetScan(), "image scan for %q is nil, check logs for scan errors, image notes: %v", imgFullName, img.GetNotes())
+	require.NotEmpty(t, img.GetScan().GetComponents(), "image scan for %q has no components, check central logs for scan errors, this can happen if indexing succeeds but matching fails, ROX-17472 will make this an error in the future", imgFullName)
 
 	// Ensure at least one component has a vulnerability.
 	for _, c := range img.GetScan().GetComponents() {
@@ -998,7 +1000,7 @@ func (ts *DelegatedScanningSuite) getLimitedCentralConn(ctx context.Context, per
 	_, token := mustCreateAPIToken(t, ctx, deleScanAPITokenName, []string{deleScanRoleName})
 
 	// Connect to central using the new token.
-	conn := centralgrpc.GRPCConnectionToCentralWithOpts(t, func(opts *clientconn.Options) {
+	conn := centralgrpc.GRPCConnectionToCentral(t, func(opts *clientconn.Options) {
 		opts.ConfigureTokenAuth(token)
 	})
 

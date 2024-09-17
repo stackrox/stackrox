@@ -371,14 +371,14 @@ type logMatcher interface {
 func (ks *KubernetesSuite) waitUntilLog(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
 	ls := labels.SelectorFromSet(podLabels).String()
 	checkLogs := ks.checkLogsClosure(ctx, namespace, ls, container, logMatchers...)
-	ks.logf("Waiting until %q pods logs "+description+": %s", ls, logMatchers)
-	mustEventually(ks.T(), ctx, checkLogs, 10*time.Second, fmt.Sprintf("Not all %q pods logs "+description, ls))
+	ks.logf("Waiting until %q pods logs %s: %s", ls, description, logMatchers)
+	mustEventually(ks.T(), ctx, checkLogs, 10*time.Second, fmt.Sprintf("Not all %q pods logs %s", ls, description))
 }
 
 // checkLogsMatch will check if the logs of container in all pods matching pod labels satisfy all log matchers.
 func (ks *KubernetesSuite) checkLogsMatch(ctx context.Context, namespace string, podLabels map[string]string, container string, description string, logMatchers ...logMatcher) {
 	ls := labels.SelectorFromSet(podLabels).String()
-	ks.logf("Checking %q pods logs "+description+": %s", ls, logMatchers)
+	ks.logf("Checking %q pods logs %s: %s", ls, description, logMatchers)
 	err := ks.checkLogsClosure(ctx, namespace, ls, container, logMatchers...)()
 	require.NoError(ks.T(), err, fmt.Sprintf("%q was untrue", description))
 }
@@ -456,7 +456,6 @@ func (ks *KubernetesSuite) waitUntilK8sDeploymentReady(ctx context.Context, name
 		select {
 		case <-ctx.Done():
 			require.NoError(ks.T(), ctx.Err())
-
 		case <-ticker.C:
 			deploy, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metaV1.GetOptions{})
 			require.NoError(ks.T(), err, "getting deployment %q from namespace %q", deploymentName, namespace)
