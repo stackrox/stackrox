@@ -20,7 +20,7 @@ source "$ROOT/qa-tests-backend/scripts/lib.sh"
 # shellcheck source=../../qa-tests-backend/scripts/workload-identities/workload-identities.sh
 source "$ROOT/qa-tests-backend/scripts/workload-identities/workload-identities.sh"
 
-set -euo pipefail
+set -exuo -o pipefail
 
 run_part_1() {
     info "Starting test (qa-tests-backend part I)"
