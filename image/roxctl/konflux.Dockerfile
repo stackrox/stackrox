@@ -42,6 +42,7 @@ RUN microdnf upgrade -y --nobest && \
 COPY LICENSE /licenses/LICENSE
 
 ARG MAIN_IMAGE_TAG
+RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
 
 LABEL \
     com.redhat.component="rhacs-roxctl-container" \
