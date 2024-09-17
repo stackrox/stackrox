@@ -119,7 +119,7 @@ func createVulnRequests(ctx context.Context, database *types.Databases, now *pro
 			return errors.Wrapf(err, "failed to check if global vulnerability exception for CVE %s exist in the database", cve)
 		}
 		if matchingReqsExist {
-			log.Infof(fmt.Sprintf("global vulnerability exception already exists for CVE %s", cve))
+			log.Infof("global vulnerability exception already exists for CVE %s", cve)
 			continue
 		}
 

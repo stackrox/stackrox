@@ -30,7 +30,7 @@ var (
 )
 
 func readUserInput(prompt string) (string, error) {
-	printToStderr(prompt)
+	printToStderr("%s", prompt)
 	reader := bufio.NewReader(os.Stdin)
 	text, err := reader.ReadString('\n')
 	if err != nil {
