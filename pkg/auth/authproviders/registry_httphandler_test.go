@@ -667,6 +667,8 @@ func (*tstAuthProviderBackendFactory) CreateBackend(_ context.Context, _ string,
 	return testAuthProviderBackend, nil
 }
 
+func (*tstAuthProviderBackendFactory) CleanupBackend(_ string) error { return nil }
+
 func (f *tstAuthProviderBackendFactory) ProcessHTTPRequest(_ http.ResponseWriter,
 	_ *http.Request) (string, string, error) {
 	return f.providerID, f.clientState, f.err

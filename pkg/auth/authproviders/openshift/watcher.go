@@ -27,7 +27,7 @@ func registerBackend(b *backend) {
 	}
 	backendRegistrationMutex.Lock()
 	defer backendRegistrationMutex.Unlock()
-	registeredBackends[b.ID()] = b
+	registeredBackends[b.id] = b
 }
 
 func deregisterBackend(id string) {
@@ -38,7 +38,7 @@ func deregisterBackend(id string) {
 
 func handleCertPoolUpdate() {
 	backends := make([]*backend, 0)
-	concurrency.WithRLock(backendRegistrationMutex, func() {
+	concurrency.WithRLock(&backendRegistrationMutex, func() {
 		for _, b := range registeredBackends {
 			backends = append(backends, b)
 		}
