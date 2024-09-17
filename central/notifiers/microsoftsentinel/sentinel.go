@@ -72,14 +72,14 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 
 	var azureTokenCredential azcore.TokenCredential
 	var authErrList = errorhelpers.NewErrorList("Sentinel authentication")
-	if config.GetClientCert() != "" && config.GetPrivateKey() != "" {
-		certBlock, _ := pem.Decode([]byte(config.GetClientCert()))
+	if config.GetClientCertAuthConfig().GetClientCert() != "" && config.GetClientCertAuthConfig().GetPrivateKey() != "" {
+		certBlock, _ := pem.Decode([]byte(config.GetClientCertAuthConfig().GetClientCert()))
 		cert, err := x509.ParseCertificate(certBlock.Bytes)
 		if err != nil {
 			return nil, errors.Wrap(err, "invalid cert")
 		}
 
-		keyBlock, _ := pem.Decode([]byte(config.GetPrivateKey()))
+		keyBlock, _ := pem.Decode([]byte(config.GetClientCertAuthConfig().GetPrivateKey()))
 		privateKey, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
 		if err != nil {
 			return nil, errors.Wrap(err, "could not parse private key")
@@ -126,6 +126,7 @@ func (s sentinel) ProtoNotifier() *storage.Notifier {
 
 func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
 	if s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled() {
+		log.Infof("test %+v", s.notifier.GetMicrosoftSentinel())
 		err := s.SendAuditMessage(ctx, s.getTestAuditLogMessage())
 		if err != nil {
 			return notifiers.NewNotifierError("could not send audit message to sentinel", err)
@@ -269,8 +270,8 @@ func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
 		errorList.AddString("Application Client Id must be specified")
 	}
 
-	if (sentinel.GetSecret() == "" && sentinel.GetClientCert() == "") && validateSecret {
-		errorList.AddString("Secret or Client Certificate must be specified")
+	if (sentinel.GetSecret() == "" && (sentinel.GetClientCertAuthConfig().GetClientCert() == "" || sentinel.GetClientCertAuthConfig().GetPrivateKey() == "")) && validateSecret {
+		errorList.AddString("Secret or Client Certificate authentication must be specified")
 	}
 
 	if !errorList.Empty() {

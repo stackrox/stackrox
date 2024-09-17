@@ -167,6 +167,9 @@ func (suite *SentinelTestSuite) TestValidate() {
 			},
 			ExpectedErrorMsg: "[Audit Logging Data Collection Rule Id must be specified, Audit Logging Stream Name must be specified]",
 		},
+		"Test at least one authentication method must be configured": {
+			Config: &storage.MicrosoftSentinel{},
+		},
 	}
 
 	for name, testCase := range testCases {

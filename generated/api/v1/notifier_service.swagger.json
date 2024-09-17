@@ -300,6 +300,18 @@
         }
       }
     },
+    "MicrosoftSentinelClientCertAuthConfig": {
+      "type": "object",
+      "properties": {
+        "clientCert": {
+          "type": "string"
+        },
+        "privateKey": {
+          "type": "string"
+        }
+      },
+      "title": "client certificate which is used for authentication"
+    },
     "MicrosoftSentinelDataCollectionRuleConfig": {
       "type": "object",
       "properties": {
@@ -715,12 +727,8 @@
         "auditLogDcrConfig": {
           "$ref": "#/definitions/MicrosoftSentinelDataCollectionRuleConfig"
         },
-        "clientCert": {
-          "type": "string",
-          "title": "client certificate which is used for authentication"
-        },
-        "privateKey": {
-          "type": "string"
+        "clientCertAuthConfig": {
+          "$ref": "#/definitions/MicrosoftSentinelClientCertAuthConfig"
         }
       }
     },
