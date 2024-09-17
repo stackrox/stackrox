@@ -96,6 +96,7 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 
 func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveCore, error) {
 	log.Infof("SHREWS -- view_impl.Get %v----------------------------------", options)
+	log.Infof("Query = %v", q.String())
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
