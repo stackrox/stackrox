@@ -25,6 +25,9 @@ import (
 // +kubebuilder:validation:Enum=DEPLOY;BUILD;RUNTIME
 type LifecycleStage string
 
+// +kubebuilder:validation:Enum=NOT_APPLICABLE;DEPLOYMENT_EVENT;AUDIT_LOG_EVENt
+type EventSource string
+
 // +kubebuilder:validation:Enum=UNSET_ENFORCEMENT;SCALE_TO_ZERO_ENFORCEMENT;UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT;KILL_POD_ENFORCEMENT;FAIL_BUILD_ENFORCEMENT;FAIL_KUBE_REQUEST_ENFORCEMENT;FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
 type EnforcementAction string
 
@@ -37,6 +40,7 @@ type SecurityPolicySpec struct {
 	Categories  []string `json:"categories,omitempty"`
 	// +kubebuilder:validation:MinItems=1
 	LifecycleStages []LifecycleStage `json:"lifecycleStages,omitempty"`
+	EventSource     EventSource      `json:"eventSource,omitempty"`
 	Exclusions      []Exclusion      `json:"exclusions,omitempty"`
 	Scope           []Scope          `json:"scope,omitempty"`
 	// +kubebuilder:validation:Enum=UNSET_SEVERITY;LOW_SEVERITY;MEDIUM_SEVERITY;HIGH_SEVERITY;CRITICAL_SEVERITY
@@ -120,6 +124,11 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 	val, found := storage.Severity_value[p.Severity]
 	if found {
 		proto.Severity = storage.Severity(val)
+	}
+
+	val, found = storage.EventSource_value[string(p.EventSource)]
+	if found {
+		proto.EventSource = storage.EventSource(val)
 	}
 
 	for _, ea := range p.EnforcementActions {

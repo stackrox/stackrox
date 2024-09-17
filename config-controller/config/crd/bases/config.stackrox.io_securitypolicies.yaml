@@ -62,6 +62,12 @@ spec:
                   - FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
                   type: string
                 type: array
+              eventSource:
+                enum:
+                - NOT_APPLICABLE
+                - DEPLOYMENT_EVENT
+                - AUDIT_LOG_EVENt
+                type: string
               exclusions:
                 items:
                   properties:
