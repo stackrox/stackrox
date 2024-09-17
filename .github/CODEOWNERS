@@ -12,10 +12,12 @@ central/policy/**/*                 @stackrox/core-workflows
 central/reports/**/*                @stackrox/core-workflows
 central/reportconfiguration/**/*    @stackrox/core-workflows
 central/vulnmgmt/**/*               @stackrox/core-workflows
+central/search/**/*                 @stackrox/core-workflows
 proto/storage/*                     @stackrox/core-workflows
 migrator/**/*                       @stackrox/core-workflows
 pkg/postgres/**/*                   @stackrox/core-workflows
 tests/upgrade/*                     @stackrox/core-workflows
+config-controller/**/*              @stackrox/core-workflows
 
 # Merlin's main responsibilities include roxctl, authN (authproviders), authZ (SAC), declarative config,
 # performance testing, administration events, cloud sources, and image signatures.
@@ -33,11 +35,17 @@ tests/performance           @stackrox/merlin
 
 /ui/**/* @stackrox/ui
 
-pkg/images/defaults/**/*    @stackrox/maple
-roxctl/netpol/**/*          @stackrox/maple
-sensor/**/*                 @stackrox/maple
+pkg/images/defaults/**/*          @stackrox/maple
+roxctl/netpol/**/*                @stackrox/maple
+sensor/**/*                       @stackrox/maple
+central/compliance/**/*           @stackrox/maple
+central/compliance-operator/**/*  @stackrox/maple
 
-operator/**/* @stackrox/draco
+operator/**/*             @stackrox/draco
+pkg/images/templates/**/* @stackrox/draco
+deploy/**/*               @stackrox/draco
+central/clutsterinit/**/* @stackrox/draco
+central/clusters/**/*     @stackrox/draco
 
 # Scanner team's responsibilities include anything related to the scanner itself and scanning utilities
 # such as vulnerability uploading and image integrations.
