@@ -25,7 +25,6 @@ func TestMarshalJSON(t *testing.T) {
 	assert.NoError(t, json.Unmarshal(bytes, &policyCRSpec), "Failed to unmarshal policy spec CR JSON")
 
 	expected := SecurityPolicySpec{
-		Name:            "Test policy",
 		Description:     "This is a test description",
 		Rationale:       "This is a test rationale",
 		Remediation:     "This is a test remediation",

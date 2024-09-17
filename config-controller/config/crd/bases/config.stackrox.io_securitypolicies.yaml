@@ -117,8 +117,6 @@ spec:
                 type: array
               mitreVectorsLocked:
                 type: boolean
-              name:
-                type: string
               notifiers:
                 items:
                   type: string

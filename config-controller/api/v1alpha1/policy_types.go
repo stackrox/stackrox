@@ -30,7 +30,6 @@ type EnforcementAction string
 
 // SecurityPolicySpec defines the desired state of SecurityPolicy
 type SecurityPolicySpec struct {
-	Name        string   `json:"name,omitempty"`
 	Description string   `json:"description,omitempty"`
 	Rationale   string   `json:"rationale,omitempty"`
 	Remediation string   `json:"remediation,omitempty"`
@@ -54,7 +53,6 @@ type SecurityPolicySpec struct {
 
 func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 	proto := storage.Policy{
-		Name:               p.Name,
 		Description:        p.Description,
 		Rationale:          p.Rationale,
 		Remediation:        p.Remediation,
