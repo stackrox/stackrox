@@ -3,6 +3,7 @@ package imagecve
 import (
 	"context"
 	"sort"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views"
@@ -200,6 +201,17 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 }
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
+	addSeverities := false
+	severitySort := []string{
+		search.CriticalSeverityCount.String(),
+		search.FixableCriticalSeverityCount.String(),
+		search.ImportantSeverityCount.String(),
+		search.FixableImportantSeverityCount.String(),
+		search.ModerateSeverityCount.String(),
+		search.FixableModerateSeverityCount.String(),
+		search.LowSeverityCount.String(),
+		search.FixableLowSeverityCount.String(),
+	}
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
@@ -207,6 +219,20 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
 	}
+
+	for _, severity := range severitySort {
+		if strings.Contains(cloned.GetPagination().String(), severity) {
+			addSeverities = true
+			break
+		}
+	}
+
+	if addSeverities {
+		cloned.Selects = append(cloned.Selects,
+			common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
+		)
+	}
+
 	return cloned
 }
 

@@ -107,6 +107,8 @@ func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*i
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
 	log.Info("SHREWS -- in image_cve_core.ImageCVEs")
 
+	sortStuff := search.NewQueryBuilder().WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.CriticalSeverityCount).Reversed(true)).AddSortOption(search.NewSortOption(search.CVE))).ProtoQuery()
+
 	if !features.VulnMgmtWorkloadCVEs.Enabled() {
 		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
 	}
@@ -117,6 +119,7 @@ func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*i
 	if err != nil {
 		return nil, err
 	}
+	query.Pagination.SortOptions = sortStuff.Pagination.SortOptions
 
 	cves, err := resolver.ImageCVEView.Get(ctx, query, views.ReadOptions{})
 	ret, err := resolver.wrapImageCVECoresWithContext(ctx, cves, err)
