@@ -6,28 +6,61 @@ import (
 	"path"
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	log = logging.LoggerForModule()
 
 	_ k8scfgwatch.Handler = (*handler)(nil)
+
+	registeredBackends       = map[string]*backend{}
+	backendRegistrationMutex = sync.RWMutex{}
 )
 
-type notifyCertPoolUpdate = func()
+func registerBackend(b *backend) {
+	if b == nil {
+		return
+	}
+	backendRegistrationMutex.Lock()
+	defer backendRegistrationMutex.Unlock()
+	registeredBackends[b.ID()] = b
+}
 
-func watchCertPool(n notifyCertPoolUpdate) {
+func deregisterBackend(id string) {
+	backendRegistrationMutex.Lock()
+	defer backendRegistrationMutex.Unlock()
+	delete(registeredBackends, id)
+}
+
+func handleCertPoolUpdate() {
+	backends := make([]*backend, 0)
+	concurrency.WithRLock(backendRegistrationMutex, func() {
+		for _, b := range registeredBackends {
+			backends = append(backends, b)
+		}
+	})
+	for _, b := range backends {
+		b.recreateOpenshiftConnector()
+	}
+}
+
+// WatchCertPool starts watching the underlying cert pool injected into the openshift connector.
+// In case the cert pool changes, we re-create the openshift connector so that newly added trusted CAs
+// are being added included.
+func WatchCertPool() {
 	opts := k8scfgwatch.Options{
 		Interval: 5 * time.Second,
 		Force:    true,
 	}
 
 	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), path.Dir(serviceOperatorCAPath),
-		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: internalCAs, onCertPoolUpdate: n}), opts)
+		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: internalCAs, onCertPoolUpdate: handleCertPoolUpdate}), opts)
 	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), path.Dir(injectedCAPath),
-		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: injectedCAs, onCertPoolUpdate: n}), opts)
+		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: injectedCAs, onCertPoolUpdate: handleCertPoolUpdate}), opts)
 }
 
 type handler struct {

@@ -80,10 +80,7 @@ func newBackend(id string, callbackURLPath string, _ map[string]string) (authpro
 		openshiftConnector:  openshiftConnector,
 	}
 
-	// Start watching the underlying cert pool injected into the openshift connector.
-	// In case the cert pool changes, we re-create the openshift connector so that newly added trusted CAs
-	// are being added included.
-	watchCertPool(b.recreateOpenshiftConnector)
+	registerBackend(b)
 
 	return b, nil
 }

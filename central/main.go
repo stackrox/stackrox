@@ -524,6 +524,7 @@ func startGRPCServer() {
 	// is the case, we can be setting up an auth providers which won't work.
 	if env.EnableOpenShiftAuth.BooleanSetting() {
 		authProviderBackendFactories[openshift.TypeName] = openshift.NewFactory
+		openshift.WatchCertPool()
 	}
 
 	for typeName, factoryCreator := range authProviderBackendFactories {
