@@ -60,6 +60,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	desiredState := policyCR.Spec.ToProtobuf()
+	desiredState.Name = policyCR.GetName()
 
 	existingPolicy, exists, err := r.PolicyClient.GetPolicy(ctx, req.Name)
 	if err != nil {
