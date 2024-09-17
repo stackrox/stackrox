@@ -95,6 +95,7 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 }
 
 func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveCore, error) {
+	log.Info("SHREWS -- view_impl.Get ----------------------------------")
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
@@ -143,10 +144,12 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		})
 		ret = append(ret, r)
 	}
+	log.Info("SHREWS -- view_impl.Get End ----------------------------------")
 	return ret, nil
 }
 
 func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	log.Info("SHREWS -- view_impl.GetDeploymentIDs")
 	var err error
 	q, err = common.WithSACFilter(ctx, resources.Deployment, q)
 	if err != nil {
@@ -171,6 +174,7 @@ func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query
 }
 
 func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]string, error) {
+	log.Info("SHREWS -- view_impl.GetImageIDs")
 	var err error
 	q, err = common.WithSACFilter(ctx, resources.Image, q)
 	if err != nil {
@@ -199,9 +203,6 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 	}
-	cloned.Selects = append(cloned.Selects,
-		common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
-	)
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
 	}
