@@ -56,9 +56,10 @@ function ClusterDeployment({
                     >
                         <Title headingLevel="h3">1. Configure possibility of future upgrades</Title>
                         <Text>
-                            Configuring clusters for future upgrades creates a powerful service account in your secured
-                            cluster that will be used to perform the upgrades. This is a prerequisite
-                            for automated or on-click upgrades of legacy-installed Secured Clusters to work.
+                            Configuring clusters for future upgrades creates a powerful service
+                            account in your secured cluster that will be used to perform the
+                            upgrades. This is a prerequisite for automated or on-click upgrades of
+                            legacy-installed Secured Clusters to work.
                         </Text>
                         <Switch
                             label="Configured for upgrades: Secured Clusters can be upgraded to match Central's version."
@@ -67,9 +68,7 @@ function ClusterDeployment({
                             isChecked={createUpgraderSA}
                         />
                         <Title headingLevel="h3">2. Download files</Title>
-                        <Text>
-                            Download the required configuration files, keys, and scripts.
-                        </Text>
+                        <Text>Download the required configuration files, keys, and scripts.</Text>
                         <Flex
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsSm' }}
