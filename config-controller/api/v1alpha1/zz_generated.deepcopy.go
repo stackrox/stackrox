@@ -264,7 +264,7 @@ func (in *SecurityPolicySpec) DeepCopyInto(out *SecurityPolicySpec) {
 	}
 	if in.EnforcementActions != nil {
 		in, out := &in.EnforcementActions, &out.EnforcementActions
-		*out = make([]string, len(*in))
+		*out = make([]EnforcementAction, len(*in))
 		copy(*out, *in)
 	}
 	if in.Notifiers != nil {

@@ -25,6 +25,9 @@ import (
 // +kubebuilder:validation:Enum=DEPLOY;BUILD;RUNTIME
 type LifecycleStage string
 
+// +kubebuilder:validation:Enum=UNSET_ENFORCEMENT;SCALE_TO_ZERO_ENFORCEMENT;UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT;KILL_POD_ENFORCEMENT;FAIL_BUILD_ENFORCEMENT;FAIL_KUBE_REQUEST_ENFORCEMENT;FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
+type EnforcementAction string
+
 // SecurityPolicySpec defines the desired state of SecurityPolicy
 type SecurityPolicySpec struct {
 	Name        string   `json:"name,omitempty"`
@@ -38,9 +41,8 @@ type SecurityPolicySpec struct {
 	Exclusions      []Exclusion      `json:"exclusions,omitempty"`
 	Scope           []Scope          `json:"scope,omitempty"`
 	// +kubebuilder:validation:Enum=UNSET_SEVERITY;LOW_SEVERITY;MEDIUM_SEVERITY;HIGH_SEVERITY;CRITICAL_SEVERITY
-	Severity string `json:"severity,omitempty"`
-	// +kubebuilder:validation:Enum=UNSET_ENFORCEMENT;SCALE_TO_ZERO_ENFORCEMENT;UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT;KILL_POD_ENFORCEMENT;FAIL_BUILD_ENFORCEMENT;FAIL_KUBE_REQUEST_ENFORCEMENT;FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
-	EnforcementActions []string             `json:"enforcementActions,omitempty"`
+	Severity           string               `json:"severity,omitempty"`
+	EnforcementActions []EnforcementAction  `json:"enforcementActions,omitempty"`
 	Notifiers          []string             `json:"notifiers,omitempty"`
 	PolicyVersion      string               `json:"policyVersion,omitempty"`
 	PolicySections     []PolicySection      `json:"policySections,omitempty"`
@@ -123,7 +125,7 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 	}
 
 	for _, ea := range p.EnforcementActions {
-		val, found := storage.EnforcementAction_value[ea]
+		val, found := storage.EnforcementAction_value[string(ea)]
 		if found {
 			proto.EnforcementActions = append(proto.EnforcementActions, storage.EnforcementAction(val))
 		}

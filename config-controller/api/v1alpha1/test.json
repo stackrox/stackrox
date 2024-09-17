@@ -23,6 +23,9 @@
     }
   ],
   "severity": "LOW_SEVERITY",
+  "enforcementActions": [
+    "SCALE_TO_ZERO_ENFORCEMENT"
+  ],
   "policyVersion": "1.1",
   "policySections": [
     {

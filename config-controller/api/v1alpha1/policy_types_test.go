@@ -41,8 +41,9 @@ func TestMarshalJSON(t *testing.T) {
 				},
 			}},
 		},
-		Severity:      "LOW_SEVERITY",
-		PolicyVersion: "1.1",
+		Severity:           "LOW_SEVERITY",
+		EnforcementActions: []EnforcementAction{"SCALE_TO_ZERO_ENFORCEMENT"},
+		PolicyVersion:      "1.1",
 		PolicySections: []PolicySection{{
 			SectionName: "Section name",
 			PolicyGroups: []PolicyGroup{{
