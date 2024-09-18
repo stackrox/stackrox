@@ -154,7 +154,7 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 		// This is required for config-controller auth.
 		configs = append(configs, &storage.AuthMachineToMachineConfig{
 			Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-			TokenExpirationDuration: "1h",
+			TokenExpirationDuration: "1m",
 			Mappings: []*storage.AuthMachineToMachineConfig_Mapping{{
 				Key:             "sub",
 				ValueExpression: fmt.Sprintf("system:serviceaccount:%s:config-controller", env.Namespace.Setting()),
