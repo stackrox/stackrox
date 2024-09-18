@@ -40,6 +40,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-22701: Prevent deleting default policies through the API
 
 - ROX-20723: Remove monorepo substructure under `ui/` directory and switch from yarn v1 to npm for package management. Use `npm run` in place of `yarn` commands.
+- ROX-26306: Increase minimum Node.js version from `">=18.0.0"` to `"^18.18.0 || >=20.0.0"` for open source community to run `make lint` command in the ui directory.
+    - Node.js 18.18.0 was released on 2023-09-18
+    - Node.js 18 moves from Maintenance to End-of-Life status on 2025-04-30
+    - Node.js 20 moves from Active to Maintenance status on 2024-10-22
 
 ## [4.5.0]
 
