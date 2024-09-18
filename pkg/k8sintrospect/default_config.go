@@ -1,7 +1,7 @@
 package k8sintrospect
 
 import (
-	"github.com/stackrox/rox/operator/apis/platform/v1alpha1"
+	"github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/pkg/env"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
