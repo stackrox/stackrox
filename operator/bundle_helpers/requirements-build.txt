@@ -12,3 +12,4 @@ tomli==2.0.1
 trove-classifiers==2024.9.12
 typing-extensions==4.12.2
 flit_core==3.9.0
+calver==2022.6.26
