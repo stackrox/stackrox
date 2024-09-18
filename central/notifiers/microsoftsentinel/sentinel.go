@@ -68,8 +68,15 @@ func (s sentinel) AuditLoggingEnabled() bool {
 	return s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled()
 }
 
+// newSentinelNotifier returns a new sentinel notifier. It will try to authenticate first with the
+// client cert authentication, if this fails it will try to use the secret.
 func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	config := notifier.GetMicrosoftSentinel()
+
+	err := Validate(config, false)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create sentinel notifier, validation failed")
+	}
 
 	var azureTokenCredential azcore.TokenCredential
 	var authErrList = errorhelpers.NewErrorList("Sentinel authentication")

@@ -308,6 +308,8 @@ func getNotifierConfig() *storage.Notifier {
 		Config: &storage.Notifier_MicrosoftSentinel{
 			MicrosoftSentinel: &storage.MicrosoftSentinel{
 				LogIngestionEndpoint: "portal.azure.com",
+				ApplicationClientId:  uuid.NewDummy().String(),
+				DirectoryTenantId:    uuid.NewDummy().String(),
 				AlertDcrConfig: &storage.MicrosoftSentinel_DataCollectionRuleConfig{
 					DataCollectionRuleId: alertDcrID,
 					StreamName:           alertStreamName,
