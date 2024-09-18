@@ -393,7 +393,6 @@ upgrade-dirty-tag-via-olm: kuttl
 # Commands to enter local Python virtual environment and get needed dependencies there.
 ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ; \
-	# pip3 install --upgrade -r bundle_helpers/requirements-build.txt ;
 	pip3 install -r bundle_helpers/requirements.txt
 
 .PHONY: bundle
