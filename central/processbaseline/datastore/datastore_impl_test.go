@@ -427,7 +427,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	protoassert.Equal(suite.T(), key, baseline.GetKey())
 	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
 	suite.True(baseline.UserLockedTimestamp == nil)
-	suite.True(baseline.Elements == nil || len(baseline.Elements) == 0)
+	suite.True(len(baseline.Elements) == 0)
 
 }
 
