@@ -14,7 +14,7 @@ export function useDeploymentListeningEndpoints(
     perPage: number
 ) {
     const queryFn = useCallback(() => {
-        return listDeployments(searchFilter, sortOption, page - 1, perPage).then((res) => {
+        return listDeployments(searchFilter, sortOption, page, perPage).then((res) => {
             return Promise.all(
                 res.map((deployment) => {
                     const { request } = getListeningEndpointsForDeployment(deployment.id);

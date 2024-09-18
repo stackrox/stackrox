@@ -359,7 +359,7 @@ describe('searchUtils', () => {
             ).toContain('pagination.offset=0');
         });
 
-        it('should ensure that the offset is always a multiple of the page number', () => {
+        it('should ensure that the offset is always a multiple of the page size', () => {
             const testValues = [
                 [1, 10],
                 [3, 10],
@@ -380,7 +380,7 @@ describe('searchUtils', () => {
                 expect(offsetParam).not.toBe('');
                 expect(typeof offsetParam).toBe('string');
                 const offset = parseInt(offsetParam as string, 10);
-                expect(offset % page).toBe(0);
+                expect(offset % pageSize).toBe(0);
             });
         });
     });

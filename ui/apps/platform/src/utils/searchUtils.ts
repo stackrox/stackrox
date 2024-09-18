@@ -194,28 +194,20 @@ export function flattenFilterValue<UndefinedFallback>(
  *
  * @param searchFilter The `SearchFilter` to apply to the list query
  * @param sortOption The field to sort results by and whether to sort ascending or descending
- * @param page The page offset to return
- * @param pageSize The number of items per page
+ * @param page The page offset to return, pages are 1-indexed
+ * @param perPage The number of items per page
  */
 export function getListQueryParams(
     searchFilter: SearchFilter,
     sortOption: ApiSortOption,
-    page?: number,
-    pageSize?: number
+    page: number,
+    perPage: number
 ): string {
-    let offset: number | undefined;
-    if (typeof page === 'number' && typeof pageSize === 'number') {
-        offset = page > 0 ? page * pageSize : 0;
-    }
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     return qs.stringify(
         {
             query,
-            pagination: {
-                offset,
-                limit: pageSize,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
         { allowDots: true }
     );
@@ -234,13 +226,18 @@ export function getPaginationParams({
     perPage: number;
     sortOption?: ApiSortOption;
 }): Pagination {
-    const sortObject = sortOption ? { sortOption } : {};
-
-    return {
-        offset: (page - 1) * perPage,
-        limit: perPage,
-        ...sortObject,
+    const safePage = Math.max(1, page); // Prevent negative page numbers, page numbers are 1-indexed
+    const safePerPage = Math.max(1, perPage); // Prevent negative perPage values
+    const paginationBase = {
+        offset: (safePage - 1) * safePerPage,
+        limit: safePerPage,
     };
+
+    if (typeof sortOption === 'undefined') {
+        return paginationBase;
+    }
+
+    return { ...paginationBase, sortOption };
 }
 
 /**
