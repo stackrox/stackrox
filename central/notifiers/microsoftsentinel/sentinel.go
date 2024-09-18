@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/x509utils"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -48,7 +49,7 @@ type sentinel struct {
 	azlogsClient azureLogsClient
 }
 
-func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
+func (s *sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
 	if !features.MicrosoftSentinelNotifier.Enabled() {
 		return nil
 	}
@@ -64,7 +65,7 @@ func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) e
 	return nil
 }
 
-func (s sentinel) AuditLoggingEnabled() bool {
+func (s *sentinel) AuditLoggingEnabled() bool {
 	return s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled()
 }
 
@@ -123,22 +124,23 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	}, nil
 }
 
-func (s sentinel) Close(_ context.Context) error {
+func (s *sentinel) Close(_ context.Context) error {
 	return nil
 }
 
-func (s sentinel) ProtoNotifier() *storage.Notifier {
+func (s *sentinel) ProtoNotifier() *storage.Notifier {
 	return s.notifier
 }
 
-func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
+func (s *sentinel) Test(ctx context.Context) *notifiers.NotifierError {
 	if s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled() {
 		err := s.SendAuditMessage(ctx, s.getTestAuditLogMessage())
 		if err != nil {
 			return notifiers.NewNotifierError("could not send audit message to sentinel", err)
 		}
 	} else {
-		log.Info("audit message are disabled, test audit message was not send to sentinel")
+		log.Infow("audit message disabled, test audit message not sent",
+			logging.NotifierName(s.notifier.GetName()))
 	}
 
 	if s.notifier.GetMicrosoftSentinel().GetAlertDcrConfig().GetEnabled() {
@@ -147,13 +149,13 @@ func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
 			return notifiers.NewNotifierError("could not send alert notify to sentinel", err)
 		}
 	} else {
-		log.Info("alert notifier is disabled, test alert was not send to sentinel")
+		log.Infow("alert notifier is disabled, test alert was not send to sentinel",
+			logging.NotifierName(s.notifier.GetName()))
 	}
-
 	return nil
 }
 
-func (s sentinel) getTestAuditLogMessage() *v1.Audit_Message {
+func (s *sentinel) getTestAuditLogMessage() *v1.Audit_Message {
 	return &v1.Audit_Message{
 		Request: &v1.Audit_Message_Request{
 			Endpoint: "test-endpoint",
@@ -162,7 +164,7 @@ func (s sentinel) getTestAuditLogMessage() *v1.Audit_Message {
 	}
 }
 
-func (s sentinel) getTestAlert() *storage.Alert {
+func (s *sentinel) getTestAlert() *storage.Alert {
 	alert := &storage.Alert{
 		Policy: &storage.Policy{
 			Name:        "test-policy",
@@ -175,7 +177,7 @@ func (s sentinel) getTestAlert() *storage.Alert {
 	return alert
 }
 
-func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
+func (s *sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	if !features.MicrosoftSentinelNotifier.Enabled() {
 		return errors.New("Microsoft Sentinel notifier is disabled.")
 	}
@@ -191,7 +193,7 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	return nil
 }
 
-func (s sentinel) uploadLogs(ctx context.Context, dcrConfig *storage.MicrosoftSentinel_DataCollectionRuleConfig, msg proto.Message) error {
+func (s *sentinel) uploadLogs(ctx context.Context, dcrConfig *storage.MicrosoftSentinel_DataCollectionRuleConfig, msg proto.Message) error {
 	bytesToSend, err := s.prepareLogsToSend(msg)
 	if err != nil {
 		return err
@@ -217,7 +219,7 @@ func (s sentinel) uploadLogs(ctx context.Context, dcrConfig *storage.MicrosoftSe
 }
 
 // prepareLogsToSend converts a proto message, wraps it into an array and converts it to JSON which is expected by Sentinel.
-func (s sentinel) prepareLogsToSend(msg protocompat.Message) ([]byte, error) {
+func (s *sentinel) prepareLogsToSend(msg protocompat.Message) ([]byte, error) {
 	// convert object to an unstructured map to later wrap it as an array.
 	logToSendObj, err := protocompat.MarshalMap(msg)
 	if err != nil {
@@ -284,4 +286,10 @@ func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
 		return errorList
 	}
 	return nil
+}
+
+func (s *sentinel) getLoggingFields() []zapcore.Field {
+	return []zapcore.Field{
+		logging.NotifierName(s.notifier.GetName()),
+	}
 }
