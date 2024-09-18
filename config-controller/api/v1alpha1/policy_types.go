@@ -53,11 +53,6 @@ type SecurityPolicySpec struct {
 	CriteriaLocked     bool                 `json:"criteriaLocked,omitempty"`
 	MitreVectorsLocked bool                 `json:"mitreVectorsLocked,omitempty"`
 	IsDefault          bool                 `json:"isDefault,omitempty"`
-	DummyField         DummyStruct          `json:"dummyField,omitempty"`
-}
-
-type DummyStruct struct {
-	Something string `json:"something,omitempty"`
 }
 
 func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
