@@ -62,6 +62,20 @@ check-operator-generated-files-up-to-date || {
     echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 }
 
+info 'Check config-controller files are up to date (If this fails, run `make -C config-controller manifests generate` and commit the result.)'
+function check-config-controller-generated-files-up-to-date() {
+    make config-controller-gen
+    echo 'Checking for diffs after making config-controller-gen...'
+    git diff --exit-code HEAD
+}
+check-config-controller-generated-files-up-to-date || {
+    save_junit_failure "Check_Config_Controller_Generated_Files" \
+        "Config controller generated files are not up to date" \
+        "$(git diff HEAD || true)"
+    git reset --hard HEAD
+    echo check-config-controller-generated-files-up-to-date >> "$FAIL_FLAG"
+}
+
 info 'Check .containerignore file is in sync with .dockerignore (If this fails, follow instructions in .containerignore to update it.)'
 function check-containerignore-is-in-sync() {
     diff \

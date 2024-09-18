@@ -232,6 +232,11 @@ central-build-nodeps:
 	@echo "+ $@"
 	$(GOBUILD) central
 
+.PHONY: config-controller-gen
+config-controller-gen:
+	make -C config-controller/ manifests
+	make -C config-controller/ generate
+
 .PHONY: config-controller-build-nodeps
 config-controller-build-nodeps:
 	@echo "+ $@"
