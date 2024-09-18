@@ -22,19 +22,19 @@ const (
 )
 
 func TestHandler(t *testing.T) {
-	suite.Run(t, new(localScannerSuite))
+	suite.Run(t, new(securedClusterCertgenSuite))
 }
 
-type localScannerSuite struct {
+type securedClusterCertgenSuite struct {
 	suite.Suite
 }
 
-func (s *localScannerSuite) SetupTest() {
+func (s *securedClusterCertgenSuite) SetupTest() {
 	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
 }
 
-func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
+func (s *securedClusterCertgenSuite) TestCertMapContainsExpectedFiles() {
 	testCases := []struct {
 		service     storage.ServiceType
 		expectError bool
@@ -64,7 +64,7 @@ func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
 	}
 }
 
-func (s *localScannerSuite) TestValidateServiceCertificate() {
+func (s *securedClusterCertgenSuite) TestValidateServiceCertificate() {
 	testCases := []storage.ServiceType{
 		storage.ServiceType_SCANNER_SERVICE,
 		storage.ServiceType_SCANNER_DB_SERVICE,
@@ -84,7 +84,7 @@ func (s *localScannerSuite) TestValidateServiceCertificate() {
 	}
 }
 
-func (s *localScannerSuite) TestCertificateGeneration() {
+func (s *securedClusterCertgenSuite) TestLocalScannerCertificateGeneration() {
 	testCases := []struct {
 		service                  storage.ServiceType
 		expectOU                 string
@@ -124,7 +124,45 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 	}
 }
 
-func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
+func (s *securedClusterCertgenSuite) TestSecuredClusterCertificateGeneration() {
+	testCases := []struct {
+		service                  storage.ServiceType
+		expectOU                 string
+		expectedAlternativeNames []string
+	}{
+		{storage.ServiceType_SENSOR_SERVICE, "SENSOR_SERVICE",
+			[]string{"sensor.stackrox", "sensor.stackrox.svc", "sensor-webhook.stackrox.svc", "sensor.namespace", "sensor.namespace.svc", "sensor-webhook.namespace.svc"}},
+		{storage.ServiceType_COLLECTOR_SERVICE, "COLLECTOR_SERVICE",
+			[]string{"collector.stackrox", "collector.stackrox.svc", "collector.namespace", "collector.namespace.svc"}},
+		{storage.ServiceType_ADMISSION_CONTROL_SERVICE, "ADMISSION_CONTROL_SERVICE",
+			[]string{"admission-control.stackrox", "admission-control.stackrox.svc", "admission-control.namespace", "admission-control.namespace.svc"}},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.service.String(), func() {
+			certIssuer := certIssuerImpl{
+				allSupportedServiceTypes: securedClusterServiceTypes,
+			}
+			certMap, err := certIssuer.generateServiceCertMap(tc.service, namespace, clusterID)
+			s.Require().NoError(err)
+			cert, err := helpers.ParseCertificatePEM(certMap["cert.pem"])
+			s.Require().NoError(err)
+
+			subject := cert.Subject
+			certOUs := subject.OrganizationalUnit
+			s.Require().Len(certOUs, 1)
+			s.Equal(tc.expectOU, certOUs[0])
+
+			s.Equal(fmt.Sprintf("%s: %s", tc.expectOU, clusterID), subject.CommonName)
+
+			certAlternativeNames := cert.DNSNames
+			s.ElementsMatch(tc.expectedAlternativeNames, certAlternativeNames)
+			s.Equal(cert.NotBefore.Add((365*24+1)*time.Hour), cert.NotAfter)
+		})
+	}
+}
+
+func (s *securedClusterCertgenSuite) TestServiceIssueLocalScannerCerts() {
 	getServiceTypes := func() set.FrozenSet[string] {
 		serviceTypes := v2ServiceTypes
 		if features.ScannerV4.Enabled() {
@@ -190,4 +228,61 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 		})
 	}
 	testutils.MustUpdateFeature(s.T(), features.ScannerV4, scannerV4Enabled)
+}
+
+// TestServiceIssueSecuredClusterCerts checks the issuance of certificates for secured clusters.
+func (s *securedClusterCertgenSuite) TestServiceIssueSecuredClusterCerts() {
+	getServiceTypes := func() set.FrozenSet[string] {
+		serviceTypes := securedClusterServiceTypes
+		serviceTypeNames := make([]string, 0, serviceTypes.Cardinality())
+		for _, serviceType := range serviceTypes.AsSlice() {
+			serviceTypeNames = append(serviceTypeNames, serviceType.String())
+		}
+		return set.NewFrozenSet(serviceTypeNames...)
+	}
+
+	testCases := map[string]struct {
+		namespace  string
+		clusterID  string
+		shouldFail bool
+	}{
+		"valid parameters": {
+			namespace:  namespace,
+			clusterID:  clusterID,
+			shouldFail: false,
+		},
+		"namespace missing": {
+			namespace:  "",
+			clusterID:  clusterID,
+			shouldFail: true,
+		},
+		"clusterID missing": {
+			namespace:  namespace,
+			clusterID:  "",
+			shouldFail: true,
+		},
+	}
+
+	for tcName, tc := range testCases {
+		s.Run(tcName, func() {
+			certs, err := IssueSecuredClusterCerts(tc.namespace, tc.clusterID)
+			if tc.shouldFail {
+				s.Require().Error(err)
+				return
+			}
+			s.Require().NoError(err)
+			s.Require().NotNil(certs.GetCaPem())
+			s.Require().NotEmpty(certs.GetServiceCerts())
+
+			expectedServiceTypes := getServiceTypes().Unfreeze()
+			for _, cert := range certs.ServiceCerts {
+				certService := cert.GetServiceType().String()
+				s.Contains(expectedServiceTypes, certService, "[%s] unexpected certificate service type %q", tcName, certService)
+				expectedServiceTypes.Remove(certService)
+				s.NotEmpty(cert.GetCert().GetCertPem())
+				s.NotEmpty(cert.GetCert().GetKeyPem())
+			}
+			s.Empty(expectedServiceTypes.AsSlice(), "[%s] not all expected certificates were returned by IssueSecuredClusterCerts", tcName)
+		})
+	}
 }

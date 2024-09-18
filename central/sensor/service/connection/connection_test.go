@@ -442,6 +442,68 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 	}
 }
 
+func (s *testSuite) TestIssueSecuredClusterCerts() {
+	namespace, clusterID, requestID := "namespace", "clusterID", "requestID"
+	testCases := map[string]struct {
+		requestID  string
+		namespace  string
+		clusterID  string
+		shouldFail bool
+	}{
+		"no parameter missing": {requestID: requestID, namespace: namespace, clusterID: clusterID, shouldFail: false},
+		"requestID missing":    {requestID: "", namespace: namespace, clusterID: clusterID, shouldFail: true},
+		"namespace missing":    {requestID: requestID, namespace: "", clusterID: clusterID, shouldFail: true},
+		"clusterID missing":    {requestID: requestID, namespace: namespace, clusterID: "", shouldFail: true},
+	}
+	for tcName, tc := range testCases {
+		s.Run(tcName, func() {
+			sendC := make(chan *central.MsgToSensor)
+			sensorMockConn := &sensorConnection{
+				clusterID: tc.clusterID,
+				sendC:     sendC,
+				stopSig:   concurrency.NewErrorSignal(),
+				sensorHello: &central.SensorHello{
+					DeploymentIdentification: &storage.SensorDeploymentIdentification{
+						AppNamespace: tc.namespace,
+					},
+				},
+			}
+			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			defer cancel()
+			request := &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_IssueSecuredClusterCertsRequest{
+					IssueSecuredClusterCertsRequest: &central.IssueSecuredClusterCertsRequest{
+						RequestId: tc.requestID,
+					},
+				},
+			}
+
+			handleDoneErrSig := concurrency.NewErrorSignal()
+			go func() {
+				handleDoneErrSig.SignalWithError(sensorMockConn.handleMessage(ctx, request))
+			}()
+
+			select {
+			case msgToSensor := <-sendC:
+				response := msgToSensor.GetIssueSecuredClusterCertsResponse()
+				s.Equal(tc.requestID, response.GetRequestId())
+				if tc.shouldFail {
+					s.NotNil(response.GetError())
+				} else {
+					s.NotNil(response.GetCertificates())
+				}
+			case <-ctx.Done():
+				s.Fail(ctx.Err().Error())
+			}
+
+			handleErr, ok := handleDoneErrSig.WaitUntil(ctx)
+			s.Require().True(ok)
+			s.NoError(handleErr)
+		})
+	}
+}
+
 func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 	ctx := context.Background()
 	clusterID := "this-cluster"
