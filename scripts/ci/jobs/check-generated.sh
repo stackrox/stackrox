@@ -62,7 +62,8 @@ check-operator-generated-files-up-to-date || {
     echo check-operator-generated-files-up-to-date >> "$FAIL_FLAG"
 }
 
-info 'Check config-controller files are up to date (If this fails, run `make -C config-controller manifests generate` and commit the result.)'
+# shellcheck disable=SC2016
+info 'Check config-controller files are up to date (If this fails, run `make config-controller-gen` and commit the result.)'
 function check-config-controller-generated-files-up-to-date() {
     make config-controller-gen
     echo 'Checking for diffs after making config-controller-gen...'
