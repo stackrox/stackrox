@@ -246,7 +246,7 @@ spec:
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key
+      value: subscription-manager-activation-key-prod
     taskRef:
       params:
       - name: name
@@ -288,7 +288,7 @@ spec:
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key
+      value: subscription-manager-activation-key-prod
     taskRef:
       params:
       - name: name
@@ -331,7 +331,7 @@ spec:
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key
+      value: subscription-manager-activation-key-prod
     taskRef:
       params:
       - name: name
@@ -374,7 +374,7 @@ spec:
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: ACTIVATION_KEY
-      value: subscription-manager-activation-key
+      value: subscription-manager-activation-key-prod
     taskRef:
       params:
       - name: name
