@@ -38,13 +38,13 @@ var _ = Describe("Policy Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		policy := &configv1alpha1.Policy{}
+		policy := &configv1alpha1.SecurityPolicy{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind Policy")
 			err := k8sClient.Get(ctx, typeNamespacedName, policy)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &configv1alpha1.Policy{
+				resource := &configv1alpha1.SecurityPolicy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -57,7 +57,7 @@ var _ = Describe("Policy Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &configv1alpha1.Policy{}
+			resource := &configv1alpha1.SecurityPolicy{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -66,9 +66,9 @@ var _ = Describe("Policy Controller", func() {
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			controllerReconciler := &PolicyReconciler{
-				Client: k8sClient,
-				Scheme: k8sClient.Scheme(),
+			controllerReconciler := &SecurityPolicyReconciler{
+				K8sClient: k8sClient,
+				Scheme:    k8sClient.Scheme(),
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{

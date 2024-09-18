@@ -1,0 +1,19 @@
+{
+  "id": "abc123",
+  "name": "Test Policy 1",
+  "description": "This is another test policy for unit tests!",
+  "policySections": [
+    {
+      "policyGroups": [
+        {
+          "fieldName": "Image Component",
+          "values": [
+            {
+              "value": "wget="
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
