@@ -1,2 +1,13 @@
+attrs==24.2.0
+hatchling==1.25.0
+iniconfig==2.0.0
+packaging==24.1
+pathspec==0.12.1
 pip==24.2
+pluggy==1.5.0
+py==1.11.0
 setuptools==74.1.2
+setuptools-scm==8.1.0
+tomli==2.0.1
+trove-classifiers==2024.9.12
+typing-extensions==4.12.2
