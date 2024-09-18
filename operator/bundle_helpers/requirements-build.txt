@@ -11,3 +11,4 @@ setuptools-scm==8.1.0
 tomli==2.0.1
 trove-classifiers==2024.9.12
 typing-extensions==4.12.2
+flit_core==3.9.0
