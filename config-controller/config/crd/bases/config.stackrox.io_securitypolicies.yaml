@@ -49,6 +49,11 @@ spec:
                 type: string
               disabled:
                 type: boolean
+              dummyField:
+                properties:
+                  something:
+                    type: string
+                type: object
               enforcementActions:
                 items:
                   enum:
