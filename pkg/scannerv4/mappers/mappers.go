@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/constants"
 )
@@ -301,6 +302,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		if v == nil {
 			continue
 		}
+		// Do this up here to fail early, if needed.
 		issued, err := protocompat.ConvertTimeToTimestampOrError(v.Issued)
 		if err != nil {
 			return nil, err
@@ -368,6 +370,9 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 			if len(nvdVuln.Descriptions) > 0 {
 				description = nvdVuln.Descriptions[0].Value
 			}
+		}
+		if v.Issued.IsZero() {
+			issued = protoconv.ConvertTimeString(nvdVuln.Published)
 		}
 		if vulnerabilities == nil {
 			vulnerabilities = make(map[string]*v4.VulnerabilityReport_Vulnerability, len(vulns))
