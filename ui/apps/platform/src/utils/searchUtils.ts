@@ -227,7 +227,7 @@ export function getPaginationParams({
     sortOption?: ApiSortOption;
 }): Pagination {
     const safePage = Math.max(1, page); // Prevent negative page numbers, page numbers are 1-indexed
-    const safePerPage = Math.max(1, perPage); // Prevent negative perPage values
+    const safePerPage = Math.max(0, perPage); // Prevent negative perPage values
     const paginationBase = {
         offset: (safePage - 1) * safePerPage,
         limit: safePerPage,
