@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/smtp"
 	"net/textproto"
+	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -593,8 +594,14 @@ func PlainTextAlert(alert *storage.Alert, uiEndpoint string, mitreStore mitreDS.
 }
 
 func BuildReportMessage(recipients []string, from, subject, messageText string, zippedReportData *bytes.Buffer, reportName string) Message {
+	brandName := branding.GetProductNameShort()
+	boundedReportName := reportName
+	if len(reportName) > 80 {
+		boundedReportName = reportName[0:80]
+	}
+
 	if subject == "" {
-		subject = fmt.Sprintf("%s %s for %s", branding.GetProductNameShort(), reportName, time.Now().Format("02-January-2006"))
+		subject = fmt.Sprintf("%s report %s for %s", brandName, boundedReportName, time.Now().Format("02-January-2006"))
 	}
 
 	msg := Message{
@@ -605,10 +612,11 @@ func BuildReportMessage(recipients []string, from, subject, messageText string, 
 		EmbedLogo: true,
 	}
 
-	baseFilename := strings.ReplaceAll(reportName, " ", "_")
+	reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
+	baseFilename := reg.ReplaceAllString(boundedReportName, "_")
 	if zippedReportData != nil {
 		msg.Attachments = map[string][]byte{
-			fmt.Sprintf("%s_%s_%s.zip", branding.GetProductNameShort(), baseFilename, time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
+			fmt.Sprintf("%s_%s_%s.zip", brandName, baseFilename, time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
 		}
 	}
 

@@ -10,8 +10,60 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestBuildReportMessage(t *testing.T) {
+	recipients := []string{"scooby@stackrox.com", "shaggy@stackrox.com"}
+	from := "velma@stackrox.com"
+	subject := ""
+	messageText := "Mares eat oats and does eat oats, and little lambs eat ivy."
+
+	var attachBuf bytes.Buffer
+	content := make([]byte, 200)
+	_, err := rand.Read(content)
+	assert.NoError(t, err)
+
+	reportName := "Mystery Inc fixable and non-fixable critical, important, and moderate vulnerabilities"
+
+	msg := BuildReportMessage(recipients, from, subject, messageText, &attachBuf, reportName)
+
+	msgBytes := msg.Bytes()
+	msgStr := string(msgBytes)
+
+	brandName := branding.GetProductNameShort()
+	expectedSubjectHeader := fmt.Sprintf("Subject: %s report %s for ", brandName, reportName[0:80])
+
+	reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
+	baseFilename := reg.ReplaceAllString(reportName[0:80], "_")
+	expectedReportAttachmentHeader := fmt.Sprintf("Content-Disposition: attachment; filename=%s_%s_", brandName, baseFilename)
+
+	expectedBody := fmt.Sprintf("<div>\r\n%s\r\n</div>\r\n", messageText)
+
+	assert.Contains(t, msgStr, "From: velma@stackrox.com\r\n")
+	assert.Contains(t, msgStr, "To: scooby@stackrox.com,shaggy@stackrox.com\r\n")
+	assert.Contains(t, msgStr, expectedSubjectHeader)
+	assert.Contains(t, msgStr, "MIME-Version: 1.0\r\n")
+	assert.Contains(t, msgStr, "Content-Type: multipart/mixed;")
+	assert.Contains(t, msgStr, "Content-Type: application/zip\r\n")
+	assert.Contains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
+	assert.Contains(t, msgStr, expectedReportAttachmentHeader)
+
+	assert.Contains(t, msgStr, "Content-Type: image/png; name=logo.png\r\n")
+	assert.Contains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
+	assert.Contains(t, msgStr, "Content-Disposition: inline; filename=logo.png\r\n")
+	assert.Contains(t, msgStr, "Content-ID: <logo.png>\r\n")
+	assert.Contains(t, msgStr, "X-Attachment-Id: logo.png\r\n")
+
+	assert.Contains(t, msgStr, base64.StdEncoding.EncodeToString(attachBuf.Bytes()))
+	assert.Contains(t, msgStr, expectedBody)
+
+	lastBoundary, expectedFinalBoundary, err := obtainLastAndExpectedBoundaryString(msgStr)
+	if assert.NoError(t, err) {
+		assert.Equal(t, expectedFinalBoundary, lastBoundary)
+	}
+}
 
 func TestEmailMsgWithAttachment(t *testing.T) {
 	var attachBuf bytes.Buffer
