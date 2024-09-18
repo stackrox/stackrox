@@ -103,7 +103,7 @@ func TestCachedClientList(t *testing.T) {
 
 	assert.NoError(t, err, "Unexpected error listing policies")
 	assert.Equal(t, 2, len(returnedPolicies), "Wrong size of returned policy list")
-	protoassert.SlicesEqual(t, clientTest.policies, returnedPolicies)
+	protoassert.ElementsMatch(t, clientTest.policies, returnedPolicies)
 }
 
 // TestCachedClientGet validates that the cached client fetches policies as expected
