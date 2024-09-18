@@ -128,8 +128,10 @@ message CollectorNamespaceConfig {
 }
 
 message CollectorConfig {
-  repeated CollectorFeature cluster_scope_config = 1;
-  repeated CollectorNamespaceConfig namespace_scope_config = 2;
+  ProcessConfig process_config = 1;
+  NetworkConnectionConfig network_connection_config = 2;
+  NetworkEndpointConfig network_endpoint_config = 3;
+  repeated CollectorNamespaceConfig namespace_scope_config = 4;
 }
 
 message TolerationsConfig {

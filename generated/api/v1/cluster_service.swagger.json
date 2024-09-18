@@ -726,12 +726,14 @@
     "storageCollectorConfig": {
       "type": "object",
       "properties": {
-        "clusterScopeConfig": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageCollectorFeature"
-          }
+        "processConfig": {
+          "$ref": "#/definitions/storageProcessConfig"
+        },
+        "networkConnectionConfig": {
+          "$ref": "#/definitions/storageNetworkConnectionConfig"
+        },
+        "networkEndpointConfig": {
+          "$ref": "#/definitions/storageNetworkEndpointConfig"
         },
         "namespaceScopeConfig": {
           "type": "array",

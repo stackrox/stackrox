@@ -345,8 +345,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterUpgradeStatus_UpgradeProcessStatus_UpgradeProcessType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectionMethod(0)))
 	utils.Must(builder.AddType("CollectorConfig", []string{
-		"clusterScopeConfig: [CollectorFeature]!",
 		"namespaceScopeConfig: [CollectorNamespaceConfig]!",
+		"networkConnectionConfig: NetworkConnectionConfig",
+		"networkEndpointConfig: NetworkEndpointConfig",
+		"processConfig: ProcessConfig",
 	}))
 	utils.Must(builder.AddType("CollectorFeature", []string{
 		"networkConnections: NetworkConnectionConfig",
@@ -4726,14 +4728,24 @@ func (resolver *Resolver) wrapCollectorConfigsWithContext(ctx context.Context, v
 	return output, nil
 }
 
-func (resolver *collectorConfigResolver) ClusterScopeConfig(ctx context.Context) ([]*collectorFeatureResolver, error) {
-	value := resolver.data.GetClusterScopeConfig()
-	return resolver.root.wrapCollectorFeatures(value, nil)
-}
-
 func (resolver *collectorConfigResolver) NamespaceScopeConfig(ctx context.Context) ([]*collectorNamespaceConfigResolver, error) {
 	value := resolver.data.GetNamespaceScopeConfig()
 	return resolver.root.wrapCollectorNamespaceConfigs(value, nil)
+}
+
+func (resolver *collectorConfigResolver) NetworkConnectionConfig(ctx context.Context) (*networkConnectionConfigResolver, error) {
+	value := resolver.data.GetNetworkConnectionConfig()
+	return resolver.root.wrapNetworkConnectionConfig(value, true, nil)
+}
+
+func (resolver *collectorConfigResolver) NetworkEndpointConfig(ctx context.Context) (*networkEndpointConfigResolver, error) {
+	value := resolver.data.GetNetworkEndpointConfig()
+	return resolver.root.wrapNetworkEndpointConfig(value, true, nil)
+}
+
+func (resolver *collectorConfigResolver) ProcessConfig(ctx context.Context) (*processConfigResolver, error) {
+	value := resolver.data.GetProcessConfig()
+	return resolver.root.wrapProcessConfig(value, true, nil)
 }
 
 type collectorFeatureResolver struct {

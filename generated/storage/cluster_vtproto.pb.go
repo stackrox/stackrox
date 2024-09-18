@@ -351,13 +351,9 @@ func (m *CollectorConfig) CloneVT() *CollectorConfig {
 		return (*CollectorConfig)(nil)
 	}
 	r := new(CollectorConfig)
-	if rhs := m.ClusterScopeConfig; rhs != nil {
-		tmpContainer := make([]*CollectorFeature, len(rhs))
-		for k, v := range rhs {
-			tmpContainer[k] = v.CloneVT()
-		}
-		r.ClusterScopeConfig = tmpContainer
-	}
+	r.ProcessConfig = m.ProcessConfig.CloneVT()
+	r.NetworkConnectionConfig = m.NetworkConnectionConfig.CloneVT()
+	r.NetworkEndpointConfig = m.NetworkEndpointConfig.CloneVT()
 	if rhs := m.NamespaceScopeConfig; rhs != nil {
 		tmpContainer := make([]*CollectorNamespaceConfig, len(rhs))
 		for k, v := range rhs {
@@ -1395,22 +1391,14 @@ func (this *CollectorConfig) EqualVT(that *CollectorConfig) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if len(this.ClusterScopeConfig) != len(that.ClusterScopeConfig) {
+	if !this.ProcessConfig.EqualVT(that.ProcessConfig) {
 		return false
 	}
-	for i, vx := range this.ClusterScopeConfig {
-		vy := that.ClusterScopeConfig[i]
-		if p, q := vx, vy; p != q {
-			if p == nil {
-				p = &CollectorFeature{}
-			}
-			if q == nil {
-				q = &CollectorFeature{}
-			}
-			if !p.EqualVT(q) {
-				return false
-			}
-		}
+	if !this.NetworkConnectionConfig.EqualVT(that.NetworkConnectionConfig) {
+		return false
+	}
+	if !this.NetworkEndpointConfig.EqualVT(that.NetworkEndpointConfig) {
+		return false
 	}
 	if len(this.NamespaceScopeConfig) != len(that.NamespaceScopeConfig) {
 		return false
@@ -3128,20 +3116,38 @@ func (m *CollectorConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x12
+			dAtA[i] = 0x22
 		}
 	}
-	if len(m.ClusterScopeConfig) > 0 {
-		for iNdEx := len(m.ClusterScopeConfig) - 1; iNdEx >= 0; iNdEx-- {
-			size, err := m.ClusterScopeConfig[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-			i--
-			dAtA[i] = 0xa
+	if m.NetworkEndpointConfig != nil {
+		size, err := m.NetworkEndpointConfig.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
 		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.NetworkConnectionConfig != nil {
+		size, err := m.NetworkConnectionConfig.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.ProcessConfig != nil {
+		size, err := m.ProcessConfig.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -4962,11 +4968,17 @@ func (m *CollectorConfig) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if len(m.ClusterScopeConfig) > 0 {
-		for _, e := range m.ClusterScopeConfig {
-			l = e.SizeVT()
-			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-		}
+	if m.ProcessConfig != nil {
+		l = m.ProcessConfig.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.NetworkConnectionConfig != nil {
+		l = m.NetworkConnectionConfig.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.NetworkEndpointConfig != nil {
+		l = m.NetworkEndpointConfig.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if len(m.NamespaceScopeConfig) > 0 {
 		for _, e := range m.NamespaceScopeConfig {
@@ -7309,7 +7321,7 @@ func (m *CollectorConfig) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterScopeConfig", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ProcessConfig", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7336,12 +7348,86 @@ func (m *CollectorConfig) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ClusterScopeConfig = append(m.ClusterScopeConfig, &CollectorFeature{})
-			if err := m.ClusterScopeConfig[len(m.ClusterScopeConfig)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if m.ProcessConfig == nil {
+				m.ProcessConfig = &ProcessConfig{}
+			}
+			if err := m.ProcessConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NetworkConnectionConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.NetworkConnectionConfig == nil {
+				m.NetworkConnectionConfig = &NetworkConnectionConfig{}
+			}
+			if err := m.NetworkConnectionConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpointConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.NetworkEndpointConfig == nil {
+				m.NetworkEndpointConfig = &NetworkEndpointConfig{}
+			}
+			if err := m.NetworkEndpointConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NamespaceScopeConfig", wireType)
 			}
@@ -12973,7 +13059,7 @@ func (m *CollectorConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterScopeConfig", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ProcessConfig", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -13000,12 +13086,86 @@ func (m *CollectorConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.ClusterScopeConfig = append(m.ClusterScopeConfig, &CollectorFeature{})
-			if err := m.ClusterScopeConfig[len(m.ClusterScopeConfig)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if m.ProcessConfig == nil {
+				m.ProcessConfig = &ProcessConfig{}
+			}
+			if err := m.ProcessConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NetworkConnectionConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.NetworkConnectionConfig == nil {
+				m.NetworkConnectionConfig = &NetworkConnectionConfig{}
+			}
+			if err := m.NetworkConnectionConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpointConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.NetworkEndpointConfig == nil {
+				m.NetworkEndpointConfig = &NetworkEndpointConfig{}
+			}
+			if err := m.NetworkEndpointConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field NamespaceScopeConfig", wireType)
 			}
