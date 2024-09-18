@@ -68,8 +68,7 @@ func (s sentinel) AuditLoggingEnabled() bool {
 	return s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled()
 }
 
-// newSentinelNotifier returns a new sentinel notifier. It will try to authenticate first with the
-// client cert authentication, if this fails it will try to use the secret.
+// newSentinelNotifier returns a new sentinel notifier.
 func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	config := notifier.GetMicrosoftSentinel()
 
@@ -78,6 +77,8 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 		return nil, errors.Wrap(err, "could not create sentinel notifier, validation failed")
 	}
 
+	// Tries to build authentication token for Client Cert Auth, if this is not possible proceed to create token credentials
+	// for secrets.
 	var azureTokenCredential azcore.TokenCredential
 	var authErrList = errorhelpers.NewErrorList("Sentinel authentication")
 	if config.GetClientCertAuthConfig().GetClientCert() != "" && config.GetClientCertAuthConfig().GetPrivateKey() != "" {
@@ -89,12 +90,12 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 		keyBlock, _ := pem.Decode([]byte(config.GetClientCertAuthConfig().GetPrivateKey()))
 		privateKey, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
 		if err != nil {
-			return nil, errors.Wrap(err, "could not parse private key")
+			return nil, errors.Wrap(err, "could not parse azure sentinel private key")
 		}
 
 		azureTokenCredential, err = azidentity.NewClientCertificateCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), certs, privateKey, &azidentity.ClientCertificateCredentialOptions{})
 		if err != nil {
-			authErrList.AddError(errors.Wrap(err, "could not create azure credentials with client cert"))
+			authErrList.AddError(errors.Wrap(err, "could not create azure sentinel credentials with client cert"))
 		}
 	}
 
@@ -106,10 +107,9 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 		}
 	}
 
+	// if no token was created authentication failed
 	if azureTokenCredential == nil {
 		return nil, authErrList
-	} else if !authErrList.Empty() {
-		log.Warnf("authenticated successfully, but failed at least one auth method, got error: %s", authErrList.String())
 	}
 
 	client, err := azlogs.NewClient(config.GetLogIngestionEndpoint(), azureTokenCredential, &azlogs.ClientOptions{})
