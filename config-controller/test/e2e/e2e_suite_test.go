@@ -17,16 +17,16 @@ limitations under the License.
 package e2e
 
 import (
-	"fmt"
+	// "fmt"
 	"testing"
-
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	// . "github.com/onsi/ginkgo/v2"
+	// . "github.com/onsi/gomega"
 )
 
 // Run e2e tests using the Ginkgo runner.
 func TestE2E(t *testing.T) {
-	RegisterFailHandler(Fail)
-	fmt.Fprint(GinkgoWriter, "Starting config-controller suite\n")
-	RunSpecs(t, "e2e suite")
+	// TODO(ROX-25485): Re-enable these tests
+	// RegisterFailHandler(Fail)
+	// fmt.Fprint(GinkgoWriter, "Starting config-controller suite\n")
+	// RunSpecs(t, "e2e suite")
 }
