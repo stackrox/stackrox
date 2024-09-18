@@ -36,12 +36,13 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { policiesBasePath } from 'routePaths';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { SearchFilter } from 'types/search';
-import { columns, defaultPolicyLabel, userPolicyLabel } from './PoliciesTable.utils';
+import { columns } from './PoliciesTable.utils';
 import {
     LabelAndNotifierIdsForType,
     formatLifecycleStages,
     formatNotifierCountsWithLabelStrings,
     getLabelAndNotifierIdsForTypes,
+    getPolicyOriginLabel,
 } from '../policies.utils';
 
 import './PoliciesTable.css';
@@ -420,9 +421,7 @@ function PoliciesTable({
                                     <Td dataLabel="Status">
                                         <PolicyDisabledIconText isDisabled={disabled} />
                                     </Td>
-                                    <Td dataLabel="Origin">
-                                        {isDefault ? defaultPolicyLabel : userPolicyLabel}
-                                    </Td>
+                                    <Td dataLabel="Origin">{getPolicyOriginLabel(policy)}</Td>
                                     <Td dataLabel="Notifiers">
                                         {notifierCountsWithLabelStrings.length === 0 ? (
                                             '-'

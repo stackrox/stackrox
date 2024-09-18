@@ -1,5 +1,5 @@
 import { ClientPolicy, Policy } from 'types/policy.proto';
-import { getClientWizardPolicy, getServerPolicy } from './policies.utils';
+import { getClientWizardPolicy, getPolicyOriginLabel, getServerPolicy } from './policies.utils';
 
 describe('policies.utils', () => {
     describe('getClientWizardPolicy', () => {
@@ -108,6 +108,7 @@ describe('policies.utils', () => {
                 criteriaLocked: false,
                 mitreVectorsLocked: false,
                 isDefault: false,
+                source: 'IMPERATIVE',
             };
 
             const clientPolicy: ClientPolicy = {
@@ -273,6 +274,7 @@ describe('policies.utils', () => {
                         ],
                     },
                 ],
+                source: 'IMPERATIVE',
             };
 
             expect(getClientWizardPolicy(serverPolicy)).toEqual(clientPolicy);
@@ -381,6 +383,7 @@ describe('policies.utils', () => {
                 criteriaLocked: false,
                 mitreVectorsLocked: false,
                 isDefault: false,
+                source: 'IMPERATIVE',
             };
 
             const clientPolicy: ClientPolicy = {
@@ -546,9 +549,27 @@ describe('policies.utils', () => {
                         ],
                     },
                 ],
+                source: 'IMPERATIVE',
             };
 
             expect(getServerPolicy(clientPolicy)).toEqual(serverPolicy);
+        });
+    });
+
+    describe('getPolicyOriginLabel', () => {
+        it('should return the origin display value for a policy', () => {
+            expect(
+                getPolicyOriginLabel({ isDefault: true, source: 'IMPERATIVE' } as const)
+            ).toEqual('System');
+            expect(
+                getPolicyOriginLabel({ isDefault: false, source: 'IMPERATIVE' } as const)
+            ).toEqual('Locally managed');
+            expect(
+                getPolicyOriginLabel({ isDefault: true, source: 'DECLARATIVE' } as const)
+            ).toEqual('System');
+            expect(
+                getPolicyOriginLabel({ isDefault: false, source: 'DECLARATIVE' } as const)
+            ).toEqual('Externally managed');
         });
     });
 });
