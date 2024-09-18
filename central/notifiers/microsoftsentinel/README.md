@@ -36,3 +36,7 @@ The `msg` field is treated as an object in Sentinel, allowing flexibility withou
 
 To properly use this data, users are required to parse the `msg` object within their **Data Collection Rule (DCR)** pipeline.
 This parsing step is necessary due to the nature of the data, which often consists of complex, nested JSON objects (e.g., details regarding violations or deployment information). Even if a schema were used, parsing would still be required to extract relevant information from these nested structures.
+
+### Authentication
+
+To generate client certificate and a private key use: `openssl req -x509 -newkey rsa:2048 -days 365 -keyout ca-key.pem -out ca-cert.pem -nodes`

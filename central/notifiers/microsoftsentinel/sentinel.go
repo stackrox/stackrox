@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/x509utils"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -73,8 +74,7 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	var azureTokenCredential azcore.TokenCredential
 	var authErrList = errorhelpers.NewErrorList("Sentinel authentication")
 	if config.GetClientCertAuthConfig().GetClientCert() != "" && config.GetClientCertAuthConfig().GetPrivateKey() != "" {
-		certBlock, _ := pem.Decode([]byte(config.GetClientCertAuthConfig().GetClientCert()))
-		cert, err := x509.ParseCertificate(certBlock.Bytes)
+		certs, err := x509utils.ConvertPEMTox509Certs([]byte(config.GetClientCertAuthConfig().GetClientCert()))
 		if err != nil {
 			return nil, errors.Wrap(err, "invalid cert")
 		}
@@ -85,7 +85,7 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 			return nil, errors.Wrap(err, "could not parse private key")
 		}
 
-		azureTokenCredential, err = azidentity.NewClientCertificateCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), []*x509.Certificate{cert}, privateKey, &azidentity.ClientCertificateCredentialOptions{})
+		azureTokenCredential, err = azidentity.NewClientCertificateCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), certs, privateKey, &azidentity.ClientCertificateCredentialOptions{})
 		if err != nil {
 			authErrList.AddError(errors.Wrap(err, "could not create azure credentials with client cert"))
 		}
@@ -126,7 +126,6 @@ func (s sentinel) ProtoNotifier() *storage.Notifier {
 
 func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
 	if s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled() {
-		log.Infof("test %+v", s.notifier.GetMicrosoftSentinel())
 		err := s.SendAuditMessage(ctx, s.getTestAuditLogMessage())
 		if err != nil {
 			return notifiers.NewNotifierError("could not send audit message to sentinel", err)

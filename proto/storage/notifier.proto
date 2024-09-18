@@ -153,7 +153,6 @@ message MicrosoftSentinel {
   DataCollectionRuleConfig audit_log_dcr_config = 6;
 
   // client certificate which is used for authentication
-  // to create a key and client certificate you can run: openssl req -x509 -newkey rsa:2048 -days 365 -keyout ca-key.pem -out ca-cert.pem -nodes
   message ClientCertAuthConfig {
     string client_cert = 1;
     string private_key = 2;
