@@ -369,7 +369,7 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	}
 
 	if validImportRoot == "pkg" {
-		allowedPackages = appendPackageWithChildren(allowedPackages, "operator/apis")
+		allowedPackages = appendPackageWithChildren(allowedPackages, "operator/api")
 	}
 
 	for _, imp := range imports {
