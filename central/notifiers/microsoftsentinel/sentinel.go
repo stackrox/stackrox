@@ -109,7 +109,7 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	if azureTokenCredential == nil {
 		return nil, authErrList
 	} else if !authErrList.Empty() {
-		log.Warnf("could not authenticate with at least one credential, got error: %s", authErrList.String())
+		log.Warnf("authenticated successfully, but failed at least one auth method, got error: %s", authErrList.String())
 	}
 
 	client, err := azlogs.NewClient(config.GetLogIngestionEndpoint(), azureTokenCredential, &azlogs.ClientOptions{})
