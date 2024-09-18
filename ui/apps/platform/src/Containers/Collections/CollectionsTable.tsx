@@ -127,9 +127,6 @@ function CollectionsTable({
                             perPage={perPage}
                             onSetPage={(_, newPage) => setPage(newPage)}
                             onPerPageSelect={(_, newPerPage) => {
-                                if (collectionsCount < (page - 1) * newPerPage) {
-                                    setPage(1);
-                                }
                                 setPerPage(newPerPage);
                             }}
                         />
