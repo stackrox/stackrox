@@ -3,6 +3,7 @@ package microsoftsentinel
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"io"
 	"net/http"
 	"testing"
@@ -25,6 +26,14 @@ const (
 
 	auditStreamName = "Custom-stackrox_audit_CL"
 	auditDcrID      = "aaaaaaaa-bbbb-4022-0000-222222222222"
+)
+
+var (
+	//go:embed testdata/sentinel-ca-key.pem
+	sentinelCaKey string
+
+	//go:embed testdata/sentinel-ca-cert.pem
+	sentinelCaCert string
 )
 
 func TestSentinelNotifier(t *testing.T) {
@@ -278,6 +287,19 @@ func (suite *SentinelTestSuite) TestAuditLogEnabled() {
 	notifier.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().Enabled = false
 	suite.Assert().False(notifier.AuditLoggingEnabled())
 
+}
+
+func (suite *SentinelTestSuite) TestNewSentinelNotifier() {
+	config := getNotifierConfig()
+	config.GetMicrosoftSentinel().ClientCertAuthConfig = &storage.MicrosoftSentinel_ClientCertAuthConfig{
+		ClientCert: sentinelCaCert,
+		PrivateKey: sentinelCaKey,
+	}
+
+	notifier, err := newSentinelNotifier(config)
+
+	suite.Require().NoError(err)
+	suite.NotNil(notifier)
 }
 
 func getNotifierConfig() *storage.Notifier {
