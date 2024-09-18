@@ -21,7 +21,7 @@ func main() {
 	defer cancel()
 	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
 	if err := run(ctx, client); err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 }
 

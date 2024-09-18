@@ -340,7 +340,7 @@ func (c *TestContext) run(t *testing.T, tr *testRun) {
 			c.runWithResourcesPermutation(t, tr)
 		} else {
 			if err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback); err != nil {
-				t.Fatalf(err.Error())
+				t.Fatal(err.Error())
 			}
 		}
 	}
