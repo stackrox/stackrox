@@ -13,6 +13,11 @@ import (
 // secretDataMap represents data stored as part of a secret.
 type secretDataMap = map[string][]byte
 
+var securedClusterServiceTypes = set.NewFrozenSet[storage.ServiceType](
+	storage.ServiceType_SENSOR_SERVICE,
+	storage.ServiceType_COLLECTOR_SERVICE,
+	storage.ServiceType_ADMISSION_CONTROL_SERVICE)
+
 var v2ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 var v4ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
 var localScannerServiceTypes = func() set.FrozenSet[storage.ServiceType] {
@@ -39,6 +44,14 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 	}
 
 	return certIssuer.issueCertificates(serviceTypes, namespace, clusterID)
+}
+
+// IssueSecuredClusterCerts issues certificates for the services of a secured clusters (excluding local scanner).
+func IssueSecuredClusterCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
+	certIssuer := certIssuerImpl{
+		allSupportedServiceTypes: securedClusterServiceTypes,
+	}
+	return certIssuer.issueCertificates(securedClusterServiceTypes, namespace, clusterID)
 }
 
 func (c *certIssuerImpl) issueCertificates(serviceTypes set.FrozenSet[storage.ServiceType], namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
