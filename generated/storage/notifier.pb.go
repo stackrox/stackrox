@@ -1480,7 +1480,9 @@ type MicrosoftSentinel_ClientCertAuthConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// PEM encoded ASN.1 DER format.
 	ClientCert string `protobuf:"bytes,1,opt,name=client_cert,json=clientCert,proto3" json:"client_cert,omitempty"`
+	// PEM encoded PKCS #8, ASN.1 DER format.
 	PrivateKey string `protobuf:"bytes,2,opt,name=private_key,json=privateKey,proto3" json:"private_key,omitempty"`
 }
 

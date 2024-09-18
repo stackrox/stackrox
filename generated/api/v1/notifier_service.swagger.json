@@ -304,10 +304,12 @@
       "type": "object",
       "properties": {
         "clientCert": {
-          "type": "string"
+          "type": "string",
+          "description": "PEM encoded ASN.1 DER format."
         },
         "privateKey": {
-          "type": "string"
+          "type": "string",
+          "description": "PEM encoded PKCS #8, ASN.1 DER format."
         }
       },
       "title": "client certificate which is used for authentication"
