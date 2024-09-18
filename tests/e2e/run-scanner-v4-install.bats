@@ -243,7 +243,7 @@ EOF
 
     _deploy_stackrox
 
-    # Verify that Scanner v2 and V4 are up.
+    # Verify that Scanner V2 and V4 are up.
     verify_scannerV2_deployed "stackrox"
     verify_scannerV4_deployed "stackrox"
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
