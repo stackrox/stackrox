@@ -64,6 +64,8 @@ export type TabTitleProps = {
 const configDetailsTabId = 'VulnReportsConfigDetails';
 const allReportJobsTabId = 'VulnReportsConfigReportJobs';
 
+const headingLevel = 'h2';
+
 function ViewVulnReportPage() {
     const history = useHistory();
     const { reportId } = useParams();
@@ -289,9 +291,13 @@ function ViewVulnReportPage() {
                 <PageSection isCenterAligned id={configDetailsTabId}>
                     <Card>
                         <CardBody>
-                            <ReportParametersDetails formValues={reportFormValues} />
+                            <ReportParametersDetails
+                                headingLevel={headingLevel}
+                                formValues={reportFormValues}
+                            />
                             <Divider component="div" className="pf-v5-u-py-md" />
                             <NotifierConfigurationView
+                                headingLevel={headingLevel}
                                 customBodyDefault={defaultEmailBody}
                                 customSubjectDefault={getDefaultEmailSubject(
                                     reportFormValues.reportParameters.reportName,

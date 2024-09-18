@@ -7,7 +7,7 @@ import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import { ComplianceProfileSummary, complianceV2Url } from './ComplianceCommon';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
-import { NotifierConfiguration } from './ReportsService.types';
+import { NotifierConfiguration, ReportStatus } from './ReportsService.types';
 import { Empty } from './types';
 
 const complianceScanConfigBaseUrl = `${complianceV2Url}/scan/configurations`;
@@ -77,6 +77,15 @@ export type ComplianceScanConfigurationStatus = {
     lastUpdatedTime: string; // ISO 8601 date string
     modifiedBy: SlimUser;
     lastExecutedTime: string | null; // either ISO 8601 date string or null when scan is in progress
+};
+
+// @TODO: This may change and be moved around depending on how backend implements it.
+export type ComplianceScanSnapshot = {
+    reportJobId: string;
+    reportStatus: ReportStatus;
+    user: SlimUser;
+    isDownloadAvailable: boolean;
+    scanConfig: ComplianceScanConfigurationStatus;
 };
 
 export type ListComplianceScanConfigurationsResponse = {
