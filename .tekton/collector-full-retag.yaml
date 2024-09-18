@@ -22,8 +22,6 @@ metadata:
 spec:
 
   params:
-  - name: dockerfile
-    value: .konflux/konflux.retag.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
   - name: image-expires-after
@@ -36,16 +34,6 @@ spec:
     value: collector-tag
   - name: revision
     value: '{{revision}}'
-  - name: rebuild
-    value: 'true'
-  - name: hermetic
-    value: "true"
-  - name: build-source-image
-    value: 'true'
-  - name: clone-depth
-    value: '0'
-  - name: clone-fetch-tags
-    value: 'true'
 
   workspaces:
   - name: git-auth

@@ -61,17 +61,24 @@ spec:
   - description: Makefile target to execute in order to determine base (input) image tag.
     name: base-image-tag-makefile-target
     type: string
+  - default: ""
+    description: Image tag expiration time, time values could be something like
+      1h, 2d, 3w for hours, days, and weeks, respectively.
+    name: image-expires-after
+    type: string
+
+  # Common params for all retagging pipelines.
   - default: .
     description: Path to the source code of an application's component from where
       to build image.
     name: path-context
     type: string
-  - default: Dockerfile
+  - default: .konflux/konflux.retag.Dockerfile
     description: Path to the Dockerfile inside the context specified by parameter
       path-context
     name: dockerfile
     type: string
-  - default: "false"
+  - default: "true"
     description: Force rebuild image
     name: rebuild
     type: string
@@ -79,7 +86,7 @@ spec:
     description: Skip checks against built image
     name: skip-checks
     type: string
-  - default: "false"
+  - default: "true"
     description: Execute the build with network isolation
     name: hermetic
     type: string
@@ -91,11 +98,6 @@ spec:
   - default: "false"
     description: Java build
     name: java
-    type: string
-  - default: ""
-    description: Image tag expiration time, time values could be something like
-      1h, 2d, 3w for hours, days, and weeks, respectively.
-    name: image-expires-after
     type: string
   - default: "true"
     description: Build a source image.
