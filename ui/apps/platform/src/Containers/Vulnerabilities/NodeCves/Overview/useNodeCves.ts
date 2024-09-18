@@ -56,9 +56,7 @@ export type NodeCVE = {
 
 export default function useNodeCves({
     querySearchFilter,
-    page,
-    perPage,
-    sortOption,
+    ...pagination
 }: { querySearchFilter: QuerySearchFilter } & ClientPagination) {
     return useQuery<
         { nodeCVEs: NodeCVE[] },
@@ -69,7 +67,7 @@ export default function useNodeCves({
     >(cvesListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: getPaginationParams({ page, perPage, sortOption }),
+            pagination: getPaginationParams(pagination),
         },
     });
 }
