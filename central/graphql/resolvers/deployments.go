@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"runtime"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -79,14 +78,7 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 // Deployments returns GraphQL resolvers all deployments
 func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Deployments")
-	log.Infof("SHREWS -- in deployments.Deployments %+v", args.Pagination)
-	log.Infof("SHREWS -- in deployments.Deployments %+v", args.Query)
-	log.Infof("SHREWS -- in deployments.Deployments %+v", args.String())
-	pc, _, _, ok := runtime.Caller(1)
-	details := runtime.FuncForPC(pc)
-	if ok && details != nil {
-		log.Infof("SHREWS -- called from %s\n", details.Name())
-	}
+
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
@@ -94,7 +86,6 @@ func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) 
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("SHREWS -- in deployments.Deployments %+v", q)
 	deployments, err := resolver.DeploymentDataStore.SearchRawDeployments(ctx, q)
 	return resolver.wrapDeploymentsWithContext(ctx, deployments, err)
 }
@@ -524,7 +515,6 @@ func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuer
 
 func (resolver *deploymentResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageComponents")
-	log.Info("SHREWS -- in deployments.ImageComponents")
 	return resolver.root.ImageComponents(resolver.withDeploymentScopeContext(ctx), args)
 }
 
@@ -535,7 +525,6 @@ func (resolver *deploymentResolver) ImageComponentCount(ctx context.Context, arg
 
 func (resolver *deploymentResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageVulnerabilities")
-	log.Info("SHREWS -- in deployments.ImageVulnerabilities")
 	return resolver.root.ImageVulnerabilities(resolver.withDeploymentScopeContext(ctx), args)
 }
 
@@ -551,12 +540,6 @@ func (resolver *deploymentResolver) ImageVulnerabilityCounter(ctx context.Contex
 
 func (resolver *deploymentResolver) ImageCVECountBySeverity(ctx context.Context, q RawQuery) (*resourceCountBySeverityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "ImageCVECountBySeverity")
-	log.Infof("SHREWS -- in deployments.ImageCVECountBySeverity %v", q)
-	pc, _, _, ok := runtime.Caller(1)
-	details := runtime.FuncForPC(pc)
-	if ok && details != nil {
-		log.Infof("SHREWS -- called from %s\n", details.Name())
-	}
 
 	if !features.VulnMgmtWorkloadCVEs.Enabled() {
 		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
@@ -568,7 +551,6 @@ func (resolver *deploymentResolver) ImageCVECountBySeverity(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("SHREWS -- in deployments.ImageCVECountBySeverity %+v", query)
 	val, err := resolver.root.ImageCVEView.CountBySeverity(resolver.withDeploymentScopeContext(ctx), query)
 	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, val, err)
 }

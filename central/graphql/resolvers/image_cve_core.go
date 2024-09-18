@@ -58,7 +58,6 @@ type imageCVECoreResolver struct {
 }
 
 func (resolver *Resolver) wrapImageCVECoreWithContext(ctx context.Context, value imagecve.CveCore, err error) (*imageCVECoreResolver, error) {
-	log.Info("SHREWS -- in image_cve_core.wrapImageCVECoreWithContext")
 	if err != nil || value == nil {
 		return nil, err
 	}
@@ -66,7 +65,6 @@ func (resolver *Resolver) wrapImageCVECoreWithContext(ctx context.Context, value
 }
 
 func (resolver *Resolver) wrapImageCVECoresWithContext(ctx context.Context, values []imagecve.CveCore, err error) ([]*imageCVECoreResolver, error) {
-	log.Info("SHREWS -- in image_cve_core.wrapImageCVECoresWithContext")
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -81,7 +79,6 @@ func (resolver *Resolver) wrapImageCVECoresWithContext(ctx context.Context, valu
 // Note: Client must explicitly pass observed/deferred CVEs.
 func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
-	log.Info("SHREWS -- in image_cve_core.ImageCVECount")
 
 	if !features.VulnMgmtWorkloadCVEs.Enabled() {
 		return 0, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
@@ -105,7 +102,6 @@ func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32,
 // Note: Client must explicitly pass observed/deferred CVEs.
 func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
-	log.Info("SHREWS -- in image_cve_core.ImageCVEs")
 
 	if !features.VulnMgmtWorkloadCVEs.Enabled() {
 		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
@@ -135,7 +131,6 @@ func (resolver *imageCVECoreResolver) AffectedImageCount(_ context.Context) int3
 }
 
 func (resolver *imageCVECoreResolver) AffectedImageCountBySeverity(ctx context.Context) (*resourceCountBySeverityResolver, error) {
-	log.Info("SHREWS -- in image_cve_core.AffectedImageCountBySeverity")
 	return resolver.root.wrapResourceCountByCVESeverityWithContext(ctx, resolver.data.GetImagesBySeverity(), nil)
 }
 
@@ -145,7 +140,6 @@ func (resolver *imageCVECoreResolver) CVE(_ context.Context) string {
 
 func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*deploymentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Deployments")
-	log.Info("SHREWS -- in image_cve_core.Deployments")
 
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
@@ -237,7 +231,6 @@ func (resolver *imageCVECoreResolver) ExceptionCount(ctx context.Context, args s
 
 func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*imageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Images")
-	log.Info("SHREWS -- in image_cve_core.Images")
 
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -279,7 +272,6 @@ func (resolver *Resolver) ImageCVE(ctx context.Context, args struct {
 	SubfieldScopeQuery *string
 }) (*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEMetadata")
-	log.Info("SHREWS -- in image_cve_core.ImageCVE")
 
 	if !features.VulnMgmtWorkloadCVEs.Enabled() {
 		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())

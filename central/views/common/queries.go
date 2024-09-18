@@ -3,13 +3,8 @@ package common
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // WithCountQuery returns a query to count the number of distinct values of the given field
@@ -22,7 +17,6 @@ func WithCountQuery(q *v1.Query, field search.FieldLabel) *v1.Query {
 }
 
 func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabel) *v1.Query {
-	log.Info("SHREWS -- in view_impl.withCountBySeverityAndFixabilityQuery")
 	cloned := q.CloneVT()
 	cloned.Selects = append(cloned.Selects,
 		search.NewQuerySelect(countOn).
