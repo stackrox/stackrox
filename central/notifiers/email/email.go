@@ -612,7 +612,7 @@ func BuildReportMessage(recipients []string, from, subject, messageText string, 
 		EmbedLogo: true,
 	}
 
-	reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
+	reg := regexp.MustCompile(`[^a-zA-Z0-9]+`)
 	baseFilename := reg.ReplaceAllString(boundedReportName, "_")
 	if zippedReportData != nil {
 		msg.Attachments = map[string][]byte{

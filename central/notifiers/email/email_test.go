@@ -35,7 +35,7 @@ func TestBuildReportMessage(t *testing.T) {
 	brandName := branding.GetProductNameShort()
 	expectedSubjectHeader := fmt.Sprintf("Subject: %s report %s for ", brandName, reportName[0:80])
 
-	reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
+	reg := regexp.MustCompile(`[^a-zA-Z0-9]+`)
 	baseFilename := reg.ReplaceAllString(reportName[0:80], "_")
 	expectedReportAttachmentHeader := fmt.Sprintf("Content-Disposition: attachment; filename=%s_%s_", brandName, baseFilename)
 
