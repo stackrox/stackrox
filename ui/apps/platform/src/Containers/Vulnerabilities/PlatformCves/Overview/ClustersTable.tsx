@@ -13,6 +13,7 @@ import { ApiSortOption } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import { getPaginationParams } from 'utils/searchUtils';
 import {
     CLUSTER_KUBERNETES_VERSION_SORT_FIELD,
     CLUSTER_SORT_FIELD,
@@ -87,11 +88,7 @@ function ClustersTable({
     >(clusterListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 
