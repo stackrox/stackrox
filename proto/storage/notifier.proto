@@ -154,11 +154,11 @@ message MicrosoftSentinel {
 
   // client certificate which is used for authentication
   message ClientCertAuthConfig {
-      // PEM encoded ASN.1 DER format.
-      string client_cert = 1;
+    // PEM encoded ASN.1 DER format.
+    string client_cert = 1;
 
-      // PEM encoded PKCS #8, ASN.1 DER format.
-      string private_key = 2;
+    // PEM encoded PKCS #8, ASN.1 DER format.
+    string private_key = 2;
   }
   ClientCertAuthConfig client_cert_auth_config = 7;
 }
