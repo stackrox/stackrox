@@ -1985,12 +1985,21 @@
             "fields": [
               {
                 "id": 1,
-                "name": "cluster_scope_config",
-                "type": "CollectorFeature",
-                "is_repeated": true
+                "name": "process_config",
+                "type": "ProcessConfig"
               },
               {
                 "id": 2,
+                "name": "network_connection_config",
+                "type": "NetworkConnectionConfig"
+              },
+              {
+                "id": 3,
+                "name": "network_endpoint_config",
+                "type": "NetworkEndpointConfig"
+              },
+              {
+                "id": 4,
                 "name": "namespace_scope_config",
                 "type": "CollectorNamespaceConfig",
                 "is_repeated": true
