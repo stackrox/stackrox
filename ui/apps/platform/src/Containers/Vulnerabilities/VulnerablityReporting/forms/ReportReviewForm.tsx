@@ -31,6 +31,8 @@ export type ReportReviewFormParams = {
     formValues: ReportFormValues;
 };
 
+const headingLevel = 'h3';
+
 function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactElement {
     return (
         <>
@@ -47,9 +49,10 @@ function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactE
                 padding={{ default: 'noPadding' }}
                 className="pf-v5-u-py-lg pf-v5-u-px-lg"
             >
-                <ReportParametersDetails formValues={formValues} />
+                <ReportParametersDetails headingLevel={headingLevel} formValues={formValues} />
                 <Divider component="div" className="pf-v5-u-py-md" />
                 <NotifierConfigurationView
+                    headingLevel={headingLevel}
                     customBodyDefault={defaultEmailBody}
                     customSubjectDefault={getDefaultEmailSubject(
                         formValues.reportParameters.reportName,

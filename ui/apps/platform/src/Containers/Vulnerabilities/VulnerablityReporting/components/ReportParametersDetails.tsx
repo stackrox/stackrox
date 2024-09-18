@@ -19,10 +19,14 @@ import {
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 
 export type ReportParametersDetailsProps = {
+    headingLevel: 'h2' | 'h3';
     formValues: ReportFormValues;
 };
 
-function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): ReactElement {
+function ReportParametersDetails({
+    headingLevel,
+    formValues,
+}: ReportParametersDetailsProps): ReactElement {
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
             formValues.reportParameters.cveSeverities.map((severity) => (
@@ -53,7 +57,7 @@ function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): 
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem>
-                <Title headingLevel="h3">Report parameters</Title>
+                <Title headingLevel={headingLevel}>Report parameters</Title>
             </FlexItem>
             <FlexItem flex={{ default: 'flexNone' }}>
                 <DescriptionList
