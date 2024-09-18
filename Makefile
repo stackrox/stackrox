@@ -232,11 +232,6 @@ central-build-nodeps:
 	@echo "+ $@"
 	$(GOBUILD) central
 
-.PHONY: config-controller-gen
-config-controller-gen:
-	make -C config-controller/ manifests
-	make -C config-controller/ generate
-
 .PHONY: config-controller-build-nodeps
 config-controller-build-nodeps:
 	@echo "+ $@"
@@ -353,8 +348,13 @@ clean-proto-generated-srcs:
 	@echo "+ $@"
 	git clean -xdf generated
 
+.PHONY: config-controller-gen
+config-controller-gen:
+	make -C config-controller/ manifests
+	make -C config-controller/ generate
+
 .PHONY: generated-srcs
-generated-srcs: go-generated-srcs
+generated-srcs: go-generated-srcs config-controller-gen
 
 deps: $(shell find $(BASE_DIR) -name "go.sum")
 	@echo "+ $@"
