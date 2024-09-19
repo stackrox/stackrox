@@ -23,7 +23,7 @@ var (
 type serviceImpl struct {
 	sensor.UnimplementedCollectorServiceServer
 
-	collectorC chan common.MessageToCollectorWithAddress
+	collectorC chan *sensor.MsgToCollector
 
 	connectionManager *connectionManager
 }
@@ -32,7 +32,7 @@ func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (s *serviceImpl) Start() error {
-	s.collectorC = make(chan common.MessageToCollectorWithAddress)
+	s.collectorC = make(chan *sensor.MsgToCollector)
 	return nil
 }
 
@@ -44,13 +44,10 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 
 func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	if msg.GetClusterConfig() != nil && msg.GetClusterConfig().GetConfig() != nil && msg.GetClusterConfig().GetConfig().GetCollectorConfig() != nil {
-		s.collectorC <- common.MessageToCollectorWithAddress{
-			Msg: &sensor.MsgToCollector{
-				Msg: &sensor.MsgToCollector_CollectorConfig{
-					CollectorConfig: msg.GetClusterConfig().GetConfig().GetCollectorConfig(),
-				},
+		s.collectorC <- &sensor.MsgToCollector{
+			Msg: &sensor.MsgToCollector_CollectorConfig{
+				CollectorConfig: msg.GetClusterConfig().GetConfig().GetCollectorConfig(),
 			},
-			Broadcast: true,
 		}
 	}
 
@@ -86,34 +83,20 @@ func (c *connectionManager) remove(connection sensor.CollectorService_Communicat
 	delete(c.connectionMap, connection)
 }
 
-func (s *serviceImpl) startSendingLoop() {
-	for msg := range s.collectorC {
-		for conn := range s.connectionManager.connectionMap {
-			err := conn.Send(msg.Msg)
-			if err != nil {
-				log.Info("Sending msg failed")
-				return
-			}
-		}
-	}
-}
-
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
 
 	s.connectionManager.add(server)
 	defer s.connectionManager.remove(server)
 
-	go s.startSendingLoop()
-
-	// Collector may not actually send anything to sensor, but this stops
-	// the function from exiting.
-	for {
-                _, err := server.Recv()
-                if err != nil {
-                        log.Errorf("Receiving message from collector")
-                        return err
-                }
-        }
+	for msg := range s.collectorC {
+		for conn := range s.connectionManager.connectionMap {
+			err := conn.Send(msg)
+			if err != nil {
+				log.Info("Sending msg failed")
+				return err
+			}
+		}
+	}
 
 	return nil
 }

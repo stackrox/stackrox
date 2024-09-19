@@ -111,7 +111,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	complianceMultiplexer := compliance.NewMultiplexer()
 	// TODO(ROX-16931): Turn auditLogEventsInput and auditLogCollectionManager into ComplianceComponents if possible
 	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.ComplianceC())
-	var collectorC chan common.MessageToCollectorWithAddress
+	var collectorC chan *sensorInternal.MsgToCollector
 	collectorRuntimeConfigService := collector.NewService(collectorC)
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)

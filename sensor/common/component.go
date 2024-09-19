@@ -76,14 +76,6 @@ type MessageToComplianceWithAddress struct {
 	Broadcast bool
 }
 
-// This is probably not needed as we will just always use broadcast.
-// MessageToCollectorWithAddress adds the Hostname to sensor.MsgToCollector so we know where to send it to.
-type MessageToCollectorWithAddress struct {
-	Msg       *sensor.MsgToCollector
-	Hostname  string
-	Broadcast bool
-}
-
 // ComplianceComponent is a sensor component that can communicate with compliance. All the messages intended for
 // compliance are returned by ComplianceC(). It must be started before the compliance.Multiplexer or we panic.
 type ComplianceComponent interface {
@@ -99,7 +91,7 @@ type CollectorComponent interface {
 	SensorComponent
 	Stopped() concurrency.ReadOnlyErrorSignal
 
-	CollectorC() chan MessageToCollectorWithAddress
+	CollectorC() chan sensor.MsgToCollector
 }
 
 // CentralGRPCConnAware allows to set gRPC connections in sensor components.
