@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
 	"github.com/facebookincubator/nvdtools/cvss2"
@@ -23,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -302,11 +304,6 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		if v == nil {
 			continue
 		}
-		// Do this up here to fail early, if needed.
-		issued, err := protocompat.ConvertTimeToTimestampOrError(v.Issued)
-		if err != nil {
-			return nil, err
-		}
 		var pkgID string
 		if v.Package != nil {
 			pkgID = v.Package.ID
@@ -371,8 +368,14 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 				description = nvdVuln.Descriptions[0].Value
 			}
 		}
-		if v.Issued.IsZero() {
-			issued = protoconv.ConvertTimeString(nvdVuln.Published)
+		issued := issuedTime(v.Issued, nvdVuln.Published)
+		if issued == nil {
+			zlog.Warn(ctx).
+				Err(err).
+				Str("vuln_id", v.ID).
+				Str("vuln_name", v.Name).
+				Str("vuln_updater", v.Updater).
+				Msg("issued time invalid: leaving empty")
 		}
 		if vulnerabilities == nil {
 			vulnerabilities = make(map[string]*v4.VulnerabilityReport_Vulnerability, len(vulns))
@@ -393,6 +396,20 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		}
 	}
 	return vulnerabilities, nil
+}
+
+// issuedTime attempts to return the issued time for the vulnerability.
+// If ccTime is non-zero, that time is preferred. Otherwise, if the nvdTime is populated, then use that.
+// Otherwise, return nil.
+func issuedTime(ccTime time.Time, nvdTime string) *timestamppb.Timestamp {
+	if !ccTime.IsZero() {
+		return protocompat.ConvertTimeToTimestampOrNil(&ccTime)
+	}
+	if nvdTime != "" {
+		return protoconv.ConvertTimeString(nvdTime)
+	}
+
+	return nil
 }
 
 func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Severity) v4.VulnerabilityReport_Vulnerability_Severity {

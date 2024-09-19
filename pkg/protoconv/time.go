@@ -12,15 +12,14 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	// vulnTimeLayouts lists each known time format
-	// returned by vulnerability scanners.
-	vulnTimeLayouts = []string{
+	// timeLayouts lists each known time format returned by vulnerability scanners.
+	timeLayouts = []string{
 		// NVD API v2 time layout.
 		"2006-01-02T15:04:05.999",
 		// NVD JSON feed time layout.
 		"2006-01-02T15:04Z",
-		// Red Hat Security API time layout.
-		"2006-01-02T15:04:03Z",
+		// Red Hat Security API time layout and catchall.
+		time.RFC3339,
 	}
 )
 
@@ -77,7 +76,7 @@ func ConvertTimeString(str string) *timestamppb.Timestamp {
 	if str == "" {
 		return nil
 	}
-	for _, layout := range vulnTimeLayouts {
+	for _, layout := range timeLayouts {
 		t, err := time.Parse(layout, str)
 		if err != nil {
 			continue
