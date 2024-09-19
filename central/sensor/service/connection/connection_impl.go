@@ -10,10 +10,10 @@ import (
 	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
-	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/scrape"
+	"github.com/stackrox/rox/central/securedclustercertgen"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -339,7 +339,7 @@ func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Cont
 		err = errors.New("requestID is required to issue the certificates for the local scanner")
 	} else {
 		var certificates *storage.TypedServiceCertificateSet
-		certificates, err = localscanner.IssueLocalScannerCerts(namespace, clusterID)
+		certificates, err = securedclustercertgen.IssueLocalScannerCerts(namespace, clusterID)
 		response = &central.IssueLocalScannerCertsResponse{
 			RequestId: requestID,
 			Response: &central.IssueLocalScannerCertsResponse_Certificates{

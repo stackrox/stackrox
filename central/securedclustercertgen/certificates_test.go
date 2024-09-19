@@ -1,4 +1,4 @@
-package localscanner
+package securedclustercertgen
 
 import (
 	"fmt"
@@ -46,7 +46,10 @@ func (s *localScannerSuite) TestCertMapContainsExpectedFiles() {
 
 	for _, tc := range testCases {
 		s.Run(tc.service.String(), func() {
-			certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
+			certIssuer := certIssuerImpl{
+				allSupportedServiceTypes: localScannerServiceTypes,
+			}
+			certMap, err := certIssuer.generateServiceCertMap(tc.service, namespace, clusterID)
 			if tc.expectError {
 				s.Require().Error(err)
 				return
@@ -69,7 +72,10 @@ func (s *localScannerSuite) TestValidateServiceCertificate() {
 
 	for _, serviceType := range testCases {
 		s.Run(serviceType.String(), func() {
-			certMap, err := generateServiceCertMap(serviceType, namespace, clusterID)
+			certIssuer := certIssuerImpl{
+				allSupportedServiceTypes: localScannerServiceTypes,
+			}
+			certMap, err := certIssuer.generateServiceCertMap(serviceType, namespace, clusterID)
 			s.Require().NoError(err)
 			validatingCA, err := mtls.LoadCAForValidation(certMap["ca.pem"])
 			s.Require().NoError(err)
@@ -96,7 +102,10 @@ func (s *localScannerSuite) TestCertificateGeneration() {
 
 	for _, tc := range testCases {
 		s.Run(tc.service.String(), func() {
-			certMap, err := generateServiceCertMap(tc.service, namespace, clusterID)
+			certIssuer := certIssuerImpl{
+				allSupportedServiceTypes: localScannerServiceTypes,
+			}
+			certMap, err := certIssuer.generateServiceCertMap(tc.service, namespace, clusterID)
 			s.Require().NoError(err)
 			cert, err := helpers.ParseCertificatePEM(certMap["cert.pem"])
 			s.Require().NoError(err)
@@ -119,7 +128,7 @@ func (s *localScannerSuite) TestServiceIssueLocalScannerCerts() {
 	getServiceTypes := func() set.FrozenSet[string] {
 		serviceTypes := v2ServiceTypes
 		if features.ScannerV4.Enabled() {
-			serviceTypes = allSupportedServiceTypes
+			serviceTypes = localScannerServiceTypes
 		}
 		serviceTypeNames := make([]string, 0, serviceTypes.Cardinality())
 		for _, serviceType := range serviceTypes.AsSlice() {

@@ -1,4 +1,4 @@
-package localscanner
+package securedclustercertgen
 
 import (
 	"github.com/hashicorp/go-multierror"
@@ -15,31 +15,43 @@ type secretDataMap = map[string][]byte
 
 var v2ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 var v4ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
-var allSupportedServiceTypes = func() set.FrozenSet[storage.ServiceType] {
+var localScannerServiceTypes = func() set.FrozenSet[storage.ServiceType] {
 	types := v2ServiceTypes.Unfreeze()
 	types = types.Union(v4ServiceTypes.Unfreeze())
 	return types.Freeze()
 }()
 
+type certIssuerImpl struct {
+	allSupportedServiceTypes set.FrozenSet[storage.ServiceType]
+}
+
 // IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
 func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
+	// In any case, generate certificates for Scanner v2.
+	serviceTypes := v2ServiceTypes
+	if features.ScannerV4.Enabled() {
+		// Additionally, generate certificates for Scanner v4.
+		serviceTypes = localScannerServiceTypes
+	}
+
+	certIssuer := certIssuerImpl{
+		allSupportedServiceTypes: localScannerServiceTypes,
+	}
+
+	return certIssuer.issueCertificates(serviceTypes, namespace, clusterID)
+}
+
+func (c *certIssuerImpl) issueCertificates(serviceTypes set.FrozenSet[storage.ServiceType], namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
 	if namespace == "" {
-		return nil, errors.New("namespace is required to issue the certificates for the local scanner")
+		return nil, errors.New("namespace is required to issue the certificates for the secured cluster")
 	}
 
 	var certIssueError error
 	var caPem []byte
 
-	// In any case, generate certificates for Scanner v2.
-	serviceTypes := v2ServiceTypes
-	if features.ScannerV4.Enabled() {
-		// Additionally, generate certificates for Scanner v4.
-		serviceTypes = allSupportedServiceTypes
-	}
-
 	serviceCerts := make([]*storage.TypedServiceCertificate, 0, serviceTypes.Cardinality())
 	for _, serviceType := range serviceTypes.AsSlice() {
-		ca, cert, err := localScannerCertificatesFor(serviceType, namespace, clusterID)
+		ca, cert, err := c.certificatesFor(serviceType, namespace, clusterID)
 		if err != nil {
 			certIssueError = multierror.Append(certIssueError, err)
 			continue
@@ -61,8 +73,8 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 	return &certsSet, nil
 }
 
-func localScannerCertificatesFor(serviceType storage.ServiceType, namespace string, clusterID string) (caPem []byte, cert *storage.TypedServiceCertificate, err error) {
-	certificates, err := generateServiceCertMap(serviceType, namespace, clusterID)
+func (c *certIssuerImpl) certificatesFor(serviceType storage.ServiceType, namespace string, clusterID string) (caPem []byte, cert *storage.TypedServiceCertificate, err error) {
+	certificates, err := c.generateServiceCertMap(serviceType, namespace, clusterID)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "generating certificate for service %s", serviceType)
 	}
@@ -77,9 +89,9 @@ func localScannerCertificatesFor(serviceType storage.ServiceType, namespace stri
 	return caPem, cert, err
 }
 
-func generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterID string) (secretDataMap, error) {
-	if !allSupportedServiceTypes.Contains(serviceType) {
-		return nil, errors.Errorf("can only generate certificates for Scanner services, service type %s is not supported",
+func (c *certIssuerImpl) generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterID string) (secretDataMap, error) {
+	if !c.allSupportedServiceTypes.Contains(serviceType) {
+		return nil, errors.Errorf("service type %s is not supported",
 			serviceType)
 	}
 
@@ -92,9 +104,6 @@ func generateServiceCertMap(serviceType storage.ServiceType, namespace string, c
 	fileMap := make(secretDataMap, numServiceCertDataEntries)
 	subject := mtls.NewSubject(clusterID, serviceType)
 	issueOpts := []mtls.IssueCertOption{
-		// TODO(ROX-9128): restore after we make sure clients can reliably reconnect
-		// after certificate rotation, as part of ROX-8577.
-		// mtls.WithValidityExpiringInDays(),
 		mtls.WithNamespace(namespace),
 	}
 	if err := certgen.IssueServiceCert(fileMap, ca, subject, "", issueOpts...); err != nil {
