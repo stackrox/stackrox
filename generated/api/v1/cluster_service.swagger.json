@@ -745,7 +745,7 @@
           "description": "The namespace scope config is an array since it controls multiple\nfeatures and for each feature there can be different configs for\ndifferent sets of namespaces."
         }
       },
-      "description": "CollectorConfig controls which type of data is reported by collector\nand processing of that data by collector. For now this configuration\ncontrols if processes, network connections, and network endpoints are\nreported. It also controls if process information is reported with\nnetwork endpoints and if external IPs are aggregated. External IP\naggregation is controlled at the namespace level and in the future\nother features will also be controlled at the namespace level."
+      "description": "CollectorConfig controls which type of data is reported by collector\nand processing of that data by collector. For now this configuration\ncontrols if processes, network connections, and network endpoints are\nreported. It also controls if process information is reported with\nnetwork endpoints and if external IPs are aggregated. External IP\naggregation is controlled at the namespace level and in the future\nother features may also be controlled at the namespace level."
     },
     "storageCollectorFeature": {
       "type": "object",

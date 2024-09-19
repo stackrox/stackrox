@@ -1331,7 +1331,7 @@ func (x *CollectorNamespaceConfig) GetNamespaceSelection() []*CollectorNamespace
 // reported. It also controls if process information is reported with
 // network endpoints and if external IPs are aggregated. External IP
 // aggregation is controlled at the namespace level and in the future
-// other features will also be controlled at the namespace level.
+// other features may also be controlled at the namespace level.
 type CollectorConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
