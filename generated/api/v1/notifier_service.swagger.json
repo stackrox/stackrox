@@ -300,6 +300,20 @@
         }
       }
     },
+    "MicrosoftSentinelClientCertAuthConfig": {
+      "type": "object",
+      "properties": {
+        "clientCert": {
+          "type": "string",
+          "description": "PEM encoded ASN.1 DER format."
+        },
+        "privateKey": {
+          "type": "string",
+          "description": "PEM encoded PKCS #8, ASN.1 DER format."
+        }
+      },
+      "title": "client certificate which is used for authentication"
+    },
     "MicrosoftSentinelDataCollectionRuleConfig": {
       "type": "object",
       "properties": {
@@ -714,6 +728,9 @@
         },
         "auditLogDcrConfig": {
           "$ref": "#/definitions/MicrosoftSentinelDataCollectionRuleConfig"
+        },
+        "clientCertAuthConfig": {
+          "$ref": "#/definitions/MicrosoftSentinelClientCertAuthConfig"
         }
       }
     },
