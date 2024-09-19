@@ -727,7 +727,8 @@
       "type": "object",
       "properties": {
         "processConfig": {
-          "$ref": "#/definitions/storageProcessConfig"
+          "$ref": "#/definitions/storageProcessConfig",
+          "description": "The following three are applied at the cluster level."
         },
         "networkConnectionConfig": {
           "$ref": "#/definitions/storageNetworkConnectionConfig"
@@ -740,9 +741,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageCollectorNamespaceConfig"
-          }
+          },
+          "description": "The namespace scope config is an array since it controls multiple\nfeatures and for each feature there can be different configs for\ndifferent sets of namespaces."
         }
-      }
+      },
+      "description": "CollectorConfig controls which type of data is reported by collector\nand processing of that data by collector. For now this configuration\ncontrols if processes, network connections, and network endpoints are\nreported. It also controls if process information is reported with\nnetwork endpoints and if external IPs are aggregated. External IP\naggregation is controlled at the namespace level and in the future\nother features will also be controlled at the namespace level."
     },
     "storageCollectorFeature": {
       "type": "object",

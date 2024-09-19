@@ -1325,15 +1325,26 @@ func (x *CollectorNamespaceConfig) GetNamespaceSelection() []*CollectorNamespace
 	return nil
 }
 
+// CollectorConfig controls which type of data is reported by collector
+// and processing of that data by collector. For now this configuration
+// controls if processes, network connections, and network endpoints are
+// reported. It also controls if process information is reported with
+// network endpoints and if external IPs are aggregated. External IP
+// aggregation is controlled at the namespace level and in the future
+// other features will also be controlled at the namespace level.
 type CollectorConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ProcessConfig           *ProcessConfig              `protobuf:"bytes,1,opt,name=process_config,json=processConfig,proto3" json:"process_config,omitempty"`
-	NetworkConnectionConfig *NetworkConnectionConfig    `protobuf:"bytes,2,opt,name=network_connection_config,json=networkConnectionConfig,proto3" json:"network_connection_config,omitempty"`
-	NetworkEndpointConfig   *NetworkEndpointConfig      `protobuf:"bytes,3,opt,name=network_endpoint_config,json=networkEndpointConfig,proto3" json:"network_endpoint_config,omitempty"`
-	NamespaceScopeConfig    []*CollectorNamespaceConfig `protobuf:"bytes,4,rep,name=namespace_scope_config,json=namespaceScopeConfig,proto3" json:"namespace_scope_config,omitempty"`
+	// The following three are applied at the cluster level.
+	ProcessConfig           *ProcessConfig           `protobuf:"bytes,1,opt,name=process_config,json=processConfig,proto3" json:"process_config,omitempty"`
+	NetworkConnectionConfig *NetworkConnectionConfig `protobuf:"bytes,2,opt,name=network_connection_config,json=networkConnectionConfig,proto3" json:"network_connection_config,omitempty"`
+	NetworkEndpointConfig   *NetworkEndpointConfig   `protobuf:"bytes,3,opt,name=network_endpoint_config,json=networkEndpointConfig,proto3" json:"network_endpoint_config,omitempty"`
+	// The namespace scope config is an array since it controls multiple
+	// features and for each feature there can be different configs for
+	// different sets of namespaces.
+	NamespaceScopeConfig []*CollectorNamespaceConfig `protobuf:"bytes,4,rep,name=namespace_scope_config,json=namespaceScopeConfig,proto3" json:"namespace_scope_config,omitempty"`
 }
 
 func (x *CollectorConfig) Reset() {
