@@ -304,14 +304,11 @@ _pg_want_help() {
 }
 
 _main() {
-	echo 'SHREWS -- docker entry point main'
 	# if first arg looks like a flag, assume we want to run postgres server
 	if [ "${1:0:1}" = '-' ]; then
 		set -- postgres "$@"
 	fi
 
-    echo "$1"
-    echo 'SHREWS -- docker entry point main - 0.5'
 	if [ "$1" = 'postgres' ] && ! _pg_want_help "$@"; then
 		docker_setup_env
 		echo "$POSTGRES_PASSWORD"
@@ -323,33 +320,25 @@ _main() {
 			exec gosu postgres "$BASH_SOURCE" "$@"
 		fi
 
-        echo 'SHREWS -- docker entry point main - 1'
 		# only run initialization on an empty data directory
 		if [ -z "$DATABASE_ALREADY_EXISTS" ]; then
 			docker_verify_minimum_env
-			echo 'SHREWS -- docker entry point main - 1.1'
 
 			# check dir permissions to reduce likelihood of half-initialized database
 			ls /docker-entrypoint-initdb.d/ > /dev/null
 
 			docker_init_database_dir
-			echo 'SHREWS -- docker entry point main - 1.2'
 			pg_setup_hba_conf "$@"
-			echo 'SHREWS -- docker entry point main - 1.3'
 
 			# PGPASSWORD is required for psql when authentication is required for 'local' connections via pg_hba.conf and is otherwise harmless
 			# e.g. when '--auth=md5' or '--auth-local=md5' is used in POSTGRES_INITDB_ARGS
 			export PGPASSWORD="${PGPASSWORD:-$POSTGRES_PASSWORD}"
-			echo 'SHREWS -- docker entry point main - 2'
 			docker_temp_server_start "$@"
-			echo 'SHREWS -- docker entry point main - 3'
 
 			docker_setup_db
 			docker_process_init_files /docker-entrypoint-initdb.d/*
 
-            echo 'SHREWS -- docker entry point main - 4'
 			docker_temp_server_stop
-			echo 'SHREWS -- docker entry point main - 5'
 			unset PGPASSWORD
 
 			echo

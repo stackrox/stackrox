@@ -45,12 +45,10 @@ ENV LANG="en_US.utf8"
 STOPSIGNAL SIGINT
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-#ENTRYPOINT ["container-entrypoint"]
 
 EXPOSE 5432
 # Note that postgresql.conf should be mounted from ConfigMap
 CMD ["postgres", "-c", "config_file=/etc/stackrox.d/config/postgresql.conf"]
-#CMD ["run-postgresql"]
 
 HEALTHCHECK --interval=10s --timeout=5s CMD pg_isready
 
