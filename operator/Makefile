@@ -65,6 +65,12 @@ INDEX_IMG ?= $(INDEX_IMG_BASE):v$(VERSION)
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 
+# If OPERATOR_IMAGE_DIGEST is set, overwrite the operator image to use using this digest.
+# Used for image pinning.
+ifneq ($(OPERATOR_IMAGE_DIGEST),)
+IMG = "$(IMAGE_TAG_BASE)@$(OPERATOR_IMAGE_DIGEST)"
+endif
+
 # Set up the so-called "storage image" for executing scorecard test suite.
 # By default a busybox image is pulled from docker.io. In order to rule out timing issues related to rate limiting
 # we use our own copy of a busybox image from quay.io.

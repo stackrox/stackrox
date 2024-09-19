@@ -14,9 +14,15 @@ COPY . /stackrox
 WORKDIR /stackrox/operator
 
 ARG MAIN_IMAGE_TAG
+ARG OPERATOR_IMAGE_DIGEST
+ARG OPERATOR_IMAGE_REPO
+
 RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
+
 ENV VERSION=$MAIN_IMAGE_TAG
 ENV ROX_PRODUCT_BRANDING=RHACS_BRANDING
+ENV OPERATOR_IMAGE_DIGEST=${OPERATOR_IMAGE_DIGEST}
+ENV IMAGE_TAG_BASE=${OPERATOR_IMAGE_REPO}
 
 # Reset GOFLAGS='-mod=vendor' value which comes by default in openshift-golang-builder and causes build errors like
 #  go: inconsistent vendoring in /stackrox/operator/tools/operator-sdk:
