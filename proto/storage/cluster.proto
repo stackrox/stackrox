@@ -127,10 +127,21 @@ message CollectorNamespaceConfig {
   repeated NamespaceRule namespace_selection = 2;
 }
 
+// CollectorConfig controls which type of data is reported by collector
+// and processing of that data by collector. For now this configuration
+// controls if processes, network connections, and network endpoints are
+// reported. It also controls if process information is reported with
+// network endpoints and if external IPs are aggregated. External IP
+// aggregation is controlled at the namespace level and in the future
+// other features will also be controlled at the namespace level.
 message CollectorConfig {
+  // The following three are applied at the cluster level.
   ProcessConfig process_config = 1;
   NetworkConnectionConfig network_connection_config = 2;
   NetworkEndpointConfig network_endpoint_config = 3;
+  // The namespace scope config is an array since it controls multiple
+  // features and for each feature there can be different configs for
+  // different sets of namespaces.
   repeated CollectorNamespaceConfig namespace_scope_config = 4;
 }
 
