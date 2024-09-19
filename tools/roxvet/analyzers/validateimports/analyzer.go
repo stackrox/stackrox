@@ -368,6 +368,10 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 		allowedPackages = appendPackageWithChildren(allowedPackages, "tests/bad-ca")
 	}
 
+	if validImportRoot == "pkg" {
+		allowedPackages = appendPackageWithChildren(allowedPackages, "operator/api")
+	}
+
 	for _, imp := range imports {
 		err := verifySingleImportFromAllowedPackagesOnly(imp, packageName, validImportRoot, allowedPackages...)
 		if err != nil {
