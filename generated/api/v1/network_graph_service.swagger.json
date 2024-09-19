@@ -106,18 +106,6 @@
             "in": "query",
             "required": false,
             "type": "string"
-          },
-          {
-            "name": "deploymentId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "egressOnly",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
           }
         ],
         "tags": [
@@ -161,14 +149,14 @@
         ]
       }
     },
-    "/v1/networkgraph/cluster/{clusterId}/externalentities/{deploymentId}": {
+    "/v1/networkgraph/cluster/{clusterId}/externalentities/flows/{deploymentId}": {
       "get": {
-        "operationId": "NetworkGraphService_GetExternalNetworkEntities2",
+        "operationId": "NetworkGraphService_GetExternalNetworkFlows",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1GetExternalNetworkEntitiesResponse"
+              "$ref": "#/definitions/v1GetExternalNetworkFlowsResponse"
             }
           },
           "default": {
@@ -199,6 +187,12 @@
           },
           {
             "name": "egressOnly",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "ingressOnly",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -489,6 +483,42 @@
         }
       }
     },
+    "storageNetworkFlow": {
+      "type": "object",
+      "properties": {
+        "props": {
+          "$ref": "#/definitions/storageNetworkFlowProperties"
+        },
+        "lastSeenTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "clusterId": {
+          "type": "string",
+          "title": "Need the clusterID as that is part of the key in RocksDB"
+        }
+      }
+    },
+    "storageNetworkFlowProperties": {
+      "type": "object",
+      "properties": {
+        "srcEntity": {
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "title": "The source deployment ID of the network flow"
+        },
+        "dstEntity": {
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "title": "The destination deployment ID of the network flow"
+        },
+        "dstPort": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "l4protocol": {
+          "$ref": "#/definitions/storageL4Protocol"
+        }
+      }
+    },
     "storageNetworkGraphConfig": {
       "type": "object",
       "properties": {
@@ -511,6 +541,18 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkEntity"
+          }
+        }
+      }
+    },
+    "v1GetExternalNetworkFlowsResponse": {
+      "type": "object",
+      "properties": {
+        "flows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageNetworkFlow"
           }
         }
       }

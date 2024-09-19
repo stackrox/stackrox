@@ -65,12 +65,22 @@ message PatchNetworkEntityRequest {
 message GetExternalNetworkEntitiesRequest {
   string cluster_id = 1;
   string query = 2;
-  string deployment_id = 3;
-  bool egress_only = 4;
 }
 
 message GetExternalNetworkEntitiesResponse {
   repeated storage.NetworkEntity entities = 1;
+}
+
+message GetExternalNetworkFlowsRequest {
+  string cluster_id = 1;
+  string query = 2;
+  string deployment_id = 3;
+  bool egress_only = 4;
+  bool ingress_only = 5;
+}
+
+message GetExternalNetworkFlowsResponse {
+  repeated storage.NetworkFlow flows = 1;
 }
 
 message PutNetworkGraphConfigRequest {
@@ -85,11 +95,13 @@ service NetworkGraphService {
   rpc GetExternalNetworkEntities(GetExternalNetworkEntitiesRequest)
       returns (GetExternalNetworkEntitiesResponse) {
     option (google.api.http) = {
-      get : "/v1/networkgraph/cluster/{cluster_id}/externalentities"
-      additional_bindings {
-        get : "/v1/networkgraph/cluster/{cluster_id}/externalentities/"
-              "{deployment_id}"
-      }
+      get: "/v1/networkgraph/cluster/{cluster_id}/externalentities"
+    };
+  }
+
+  rpc GetExternalNetworkFlows(GetExternalNetworkFlowsRequest) returns (GetExternalNetworkFlowsResponse) {
+    option (google.api.http) = {
+      get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/flows/{deployment_id}"
     };
   }
 
