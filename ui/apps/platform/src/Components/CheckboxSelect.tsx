@@ -1,5 +1,13 @@
 import React, { ReactElement } from 'react';
-import { Select, SelectOption, MenuToggle, MenuToggleElement, Badge } from '@patternfly/react-core';
+import {
+    Select,
+    SelectOption,
+    MenuToggle,
+    MenuToggleElement,
+    Badge,
+    Flex,
+    FlexItem,
+} from '@patternfly/react-core';
 
 import { ensureString } from 'utils/ensure';
 
@@ -47,12 +55,13 @@ function CheckboxSelect({
             isDisabled={isDisabled}
             icon={toggleIcon}
         >
-            {toggleLabel}
-            {selection && selection.length > 0 && (
-                <Badge isRead className="pf-v5-u-ml-sm">
-                    {selection.length}
-                </Badge>
-            )}
+            <Flex
+                alignItems={{ default: 'alignItemsCenter' }}
+                spaceItems={{ default: 'spaceItemsSm' }}
+            >
+                <FlexItem>{toggleLabel}</FlexItem>
+                {selection && selection.length > 0 && <Badge isRead>{selection.length}</Badge>}
+            </Flex>
         </MenuToggle>
     );
 

@@ -72,7 +72,7 @@ function ReportJobs({ scanConfig }: ReportJobsProps) {
         setPage(1);
     };
 
-    const onMyJobsFilterToggle = (checked: boolean) => {
+    const onMyJobsFilterChange = (checked: boolean) => {
         setShowOnlyMyJobs(checked);
         setPage(1);
     };
@@ -93,7 +93,7 @@ function ReportJobs({ scanConfig }: ReportJobsProps) {
                     <ToolbarItem className="pf-v5-u-flex-grow-1" alignSelf="center">
                         <MyJobsFilter
                             showOnlyMyJobs={showOnlyMyJobs}
-                            onToggle={onMyJobsFilterToggle}
+                            onMyJobsFilterChange={onMyJobsFilterChange}
                         />
                     </ToolbarItem>
                     <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
