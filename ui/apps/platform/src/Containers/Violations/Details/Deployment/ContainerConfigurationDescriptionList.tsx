@@ -34,60 +34,44 @@ function ContainerConfigurationDescriptionList({
     return (
         <DescriptionList isCompact isHorizontal>
             <ContainerImage image={image} />
-            {(command?.length > 0 || args?.length > 0) && (
-                <>
-                    {command.length > 0 && (
-                        <DescriptionListItem
-                            term="Commands"
-                            desc={<MultilineDescription descArr={command} />}
-                            aria-label="Commands"
-                        />
-                    )}
-                    {args?.length > 0 && (
-                        <DescriptionListItem
-                            term="Arguments"
-                            desc={<MultilineDescription descArr={args} />}
-                            aria-label="Arguments"
-                        />
-                    )}
-                </>
+            <DescriptionListItem
+                term="Commands"
+                desc={command?.length > 0 ? <MultilineDescription descArr={command} /> : 'None'}
+                aria-label="Commands"
+            />
+            <DescriptionListItem
+                term="Arguments"
+                desc={args?.length > 0 ? <MultilineDescription descArr={args} /> : 'None'}
+                aria-label="Arguments"
+            />
+            <DescriptionListItem
+                term="Resources"
+                desc={
+                    resources ? <ContainerResourcesDescriptionList resources={resources} /> : 'None'
+                }
+            />
+            {volumes == null || volumes.length === 0 ? (
+                <DescriptionListItem term="volumes" desc="None" />
+            ) : (
+                volumes.map((volume, i) => (
+                    <DescriptionListItem
+                        key={volume.name}
+                        term={`volumes[${i}]`}
+                        desc={<ContainerVolumeDescriptionList volume={volume} />}
+                    />
+                ))
             )}
-            {!!resources && (
-                <DescriptionListItem
-                    term="Resources"
-                    desc={
-                        resources ? (
-                            <ContainerResourcesDescriptionList resources={resources} />
-                        ) : (
-                            'None'
-                        )
-                    }
-                />
+            {secrets == null || secrets.length === 0 ? (
+                <DescriptionListItem term="secrets" desc="None" />
+            ) : (
+                secrets.map((secret, i) => (
+                    <DescriptionListItem
+                        key={`${secret.name}_${secret.path}`}
+                        term={`secrets[${i}]`}
+                        desc={<ContainerSecretDescriptionList secret={secret} />}
+                    />
+                ))
             )}
-            {!!volumes &&
-                (volumes.length === 0 ? (
-                    <DescriptionListItem term="volumes" desc="None" />
-                ) : (
-                    volumes.map((volume, i) => (
-                        <DescriptionListItem
-                            key={volume.name}
-                            term={`volumes[${i}]`}
-                            desc={<ContainerVolumeDescriptionList volume={volume} />}
-                        />
-                    ))
-                ))}
-            {!!secrets &&
-                (secrets.length === 0 ? (
-                    <DescriptionListItem term="secrets" desc="None" />
-                ) : (
-                    secrets.map((secret, i) => (
-                        <DescriptionListItem
-                            key={`${secret.name}_${secret.path}`}
-                            term={`secrets[${i}]`}
-                            desc={<ContainerSecretDescriptionList secret={secret} />}
-                        />
-                    ))
-                ))}
         </DescriptionList>
     );
 }

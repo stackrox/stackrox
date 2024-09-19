@@ -14,18 +14,13 @@ function ContainerConfiguration({ deployment }: ContainerConfigurationProps): Re
     if (deployment === null) {
         content =
             "Container configurations are unavailable because the alert's deployment no longer exists.";
-    } else {
-        if (Array.isArray(deployment?.containers) && deployment.containers.length !== 0) {
-            content = deployment.containers.map((container, i) => (
-                <React.Fragment key={container.id}>
-                    <Title headingLevel="h4" className="pf-v5-u-mb-md">{`containers[${i}]`}</Title>
-                    <ContainerConfigurationDescriptionList
-                        key={container.id}
-                        container={container}
-                    />
-                </React.Fragment>
-            ));
-        }
+    } else if (deployment.containers.length !== 0) {
+        content = deployment.containers.map((container, i) => (
+            <React.Fragment key={container.id}>
+                <Title headingLevel="h4" className="pf-v5-u-mb-md">{`containers[${i}]`}</Title>
+                <ContainerConfigurationDescriptionList key={container.id} container={container} />
+            </React.Fragment>
+        ));
     }
 
     return (
