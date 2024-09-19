@@ -12,6 +12,8 @@ import (
 type Manager interface {
 	// SubmitReportRequest queues an on demand compliance report generation request for execution
 	SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error
+	UpsertResult(*storage.ComplianceOperatorCheckResultV2) error
+	UpsertScan(*storage.ComplianceOperatorScanV2) error
 
 	// Start Scheduler
 	Start()

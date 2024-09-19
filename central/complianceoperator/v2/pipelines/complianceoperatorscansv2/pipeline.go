@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	v2 "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -29,12 +31,18 @@ func GetPipeline() pipeline.Fragment {
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline(v2Datastore v2.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
-		v2Datastore: v2Datastore,
+		v2Datastore:   v2Datastore,
+		reportManager: manager.Singleton(),
 	}
 }
 
+type ReportManager interface {
+	UpsertScan(*storage.ComplianceOperatorScanV2) error
+}
+
 type pipelineImpl struct {
-	v2Datastore v2.DataStore
+	v2Datastore   v2.DataStore
+	reportManager ReportManager
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -82,7 +90,11 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.v2Datastore.DeleteScan(ctx, event.GetId())
 	default:
-		return s.v2Datastore.UpsertScan(ctx, internaltov2storage.ComplianceOperatorScanObject(complianceScanObject, clusterID))
+		scan := internaltov2storage.ComplianceOperatorScanObject(complianceScanObject, clusterID)
+		if err := s.reportManager.UpsertScan(scan); err != nil {
+			return err
+		}
+		return s.v2Datastore.UpsertScan(ctx, scan)
 	}
 }
 
