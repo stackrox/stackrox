@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -17,10 +16,6 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/utils"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 type imageCVECoreViewImpl struct {
@@ -96,8 +91,6 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 }
 
 func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveCore, error) {
-	log.Infof("SHREWS -- view_impl.Get %v----------------------------------", options)
-	log.Infof("Query = %v", q.String())
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
@@ -146,12 +139,10 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 		})
 		ret = append(ret, r)
 	}
-	log.Info("SHREWS -- view_impl.Get End ----------------------------------")
 	return ret, nil
 }
 
 func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query) ([]string, error) {
-	log.Info("SHREWS -- view_impl.GetDeploymentIDs")
 	var err error
 	q, err = common.WithSACFilter(ctx, resources.Deployment, q)
 	if err != nil {
@@ -176,7 +167,6 @@ func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query
 }
 
 func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]string, error) {
-	log.Info("SHREWS -- view_impl.GetImageIDs")
 	var err error
 	q, err = common.WithSACFilter(ctx, resources.Image, q)
 	if err != nil {
@@ -201,6 +191,11 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 }
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
+	// For pagination and sort to work properly, the filter query to get the CVEs needs to
+	// include the fields we are sorting on.  At this time custom code is required when
+	// sorting on custom sort fields.  For instance counts on the Severity column based on
+	// a value of that column
+	// TODO(ROX-26310): Update the search framework to inject required select.
 	addSeverities := false
 	severitySort := []string{
 		search.CriticalSeverityCount.String(),
@@ -220,6 +215,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 		Fields: []string{search.CVE.String()},
 	}
 
+	// Check to see if a severity sort is in the query
 	for _, severity := range severitySort {
 		if strings.Contains(cloned.GetPagination().String(), severity) {
 			addSeverities = true
@@ -227,6 +223,8 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 		}
 	}
 
+	// Add the severity selects if severity is a sort option to ensure we have the filtered
+	// list of CVEs ordered appropriately.
 	if addSeverities {
 		cloned.Selects = append(cloned.Selects,
 			common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
@@ -237,7 +235,6 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 }
 
 func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
-	log.Info("SHREWS -- in view_impl.withSelectCVECoreResponseQuery")
 	cloned := q.CloneVT()
 	if len(cveIDsToFilter) > 0 {
 		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
@@ -251,8 +248,6 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		cloned.Selects = append(cloned.Selects,
 			common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
 		)
-	} else {
-		log.Info("SHREWS -- in view_impl.withSelectCVECoreResponseQuery -- skip get by severity")
 	}
 	if !options.SkipGetTopCVSS {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto())
