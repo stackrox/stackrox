@@ -1903,7 +1903,8 @@ slack_workflow_failure() {
     repo=$(jq -r <<<"${github_context}" '.repository')
     run_id=$(jq -r <<<"${github_context}" '.run_id')
 
-    local mention_author="true"
+    # If global "mention_author" is set use that value.
+    local mention_author="${mention_author:-true}"
     local slack_mention=""
     _make_slack_mention
 
