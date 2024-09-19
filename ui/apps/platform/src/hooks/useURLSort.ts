@@ -45,7 +45,7 @@ function getValidSortOption(activeSortOption: SortOption | SortOption[]): ApiSor
 
 function getActiveSortOption(
     sortOption: QueryValue,
-    defaultSortOption: SortOption
+    defaultSortOption: SortOption | NonEmptyArray<SortOption>
 ): SortOption | NonEmptyArray<SortOption> {
     if (Array.isArray(sortOption)) {
         const validOptions = sortOption.filter(isSortOption);
@@ -57,13 +57,16 @@ function getActiveSortOption(
 
 export type UseURLSortProps = {
     sortFields: (string | string[])[];
-    defaultSortOption: SortOption;
+    defaultSortOption: SortOption | NonEmptyArray<SortOption>;
     onSort?: (newSortOption: SortOption | SortOption[]) => void;
 };
 
 export type UseURLSortResult = {
     sortOption: ApiSortOption;
-    setSortOption: (newSortOption: SortOption, historyAction?: HistoryAction | undefined) => void;
+    setSortOption: (
+        newSortOption: SortOption | SortOption[],
+        historyAction?: HistoryAction | undefined
+    ) => void;
     getSortParams: GetSortParams;
 };
 

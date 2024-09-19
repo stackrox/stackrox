@@ -33,6 +33,7 @@ import {
     getDefaultWorkloadSortOption,
     getDefaultZeroCveSortOption,
     getWorkloadSortFields,
+    syncSeveritySortOption,
 } from 'Containers/Vulnerabilities/utils/sortUtils';
 import useURLSort from 'hooks/useURLSort';
 import {
@@ -173,7 +174,7 @@ function WorkloadCvesOverviewPage() {
 
     const currentVulnerabilityState = useVulnerabilityState();
 
-    const { searchFilter, setSearchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion(
         'entityTab',
@@ -242,6 +243,11 @@ function WorkloadCvesOverviewPage() {
         onSort: () => pagination.setPage(1),
     });
 
+    function setSearchFilter(searchFilter: SearchFilter) {
+        setURLSearchFilter(searchFilter);
+        syncSeveritySortOption(searchFilter, sort.sortOption, sort.setSortOption);
+    }
+
     function updateDefaultFilters(values: DefaultFilters) {
         pagination.setPage(1);
         setStoredValue({ preferences: { defaultFilters: values } });
@@ -288,7 +294,7 @@ function WorkloadCvesOverviewPage() {
         // Reset all filters, sorting, and pagination and apply to the current history entry
         setActiveEntityTabKey('CVE');
         setSearchFilter({});
-        sort.setSortOption(getDefaultWorkloadSortOption('CVE'));
+        sort.setSortOption(getDefaultWorkloadSortOption('CVE', searchFilter));
         pagination.setPage(1);
         setObservedCveMode('WITH_CVES');
 

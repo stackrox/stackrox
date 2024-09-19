@@ -35,6 +35,7 @@ import {
     aggregateByCVSS,
     aggregateByCreatedTime,
     aggregateByDistinctCount,
+    getSeveritySortOptions,
 } from '../../utils/sortUtils';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
@@ -155,7 +156,13 @@ function CVEsTable({
                     <ExpandRowTh />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <TooltipTh tooltip="Severity of this CVE across images">
+                    <TooltipTh
+                        sort={getSortParams(
+                            'Images By Severity',
+                            getSeveritySortOptions(filteredSeverities)
+                        )}
+                        tooltip="Severity of this CVE across images"
+                    >
                         Images by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>

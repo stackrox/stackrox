@@ -16,6 +16,7 @@ import { getQueryString } from 'utils/queryStringUtils';
 import { searchValueAsArray, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
+import { ensureStringArray } from 'Components/CompoundSearchFilter/utils/utils';
 import {
     FixableStatus,
     NodeEntityTab,
@@ -157,6 +158,10 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
     }
 
     return cleanSearchFilter;
+}
+
+export function getAppliedSeverities(searchFilter: SearchFilter): VulnerabilitySeverityLabel[] {
+    return ensureStringArray(searchFilter.SEVERITY).filter(isVulnerabilitySeverityLabel);
 }
 
 // Given a search filter, determine which severities should be hidden from the user

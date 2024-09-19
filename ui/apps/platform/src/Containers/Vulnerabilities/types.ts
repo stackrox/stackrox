@@ -2,7 +2,7 @@ import * as yup from 'yup';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 
-const vulnerabilitySeverityLabels = ['Critical', 'Important', 'Moderate', 'Low'] as const;
+export const vulnerabilitySeverityLabels = ['Critical', 'Important', 'Moderate', 'Low'] as const;
 export type VulnerabilitySeverityLabel = (typeof vulnerabilitySeverityLabels)[number];
 export function isVulnerabilitySeverityLabel(value: unknown): value is VulnerabilitySeverityLabel {
     return vulnerabilitySeverityLabels.some((severity) => severity === value);

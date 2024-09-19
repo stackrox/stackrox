@@ -14,6 +14,12 @@ import {
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
+import { sortByTableHeader } from '../../../helpers/tableHelpers';
+import {
+    getRouteMatcherMapForGraphQL,
+    expectRequestedSort,
+    interceptAndWatchRequests,
+} from '../../../helpers/request';
 
 describe('Workload CVE overview page tests', () => {
     const isAdvancedFiltersEnabled = hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS');
@@ -240,6 +246,58 @@ describe('Workload CVE overview page tests', () => {
                 expect(requestQuery).not.to.contain('image cve count');
                 expect(requestQuery).not.to.contain('image:r/quay.io/bogus');
             });
+        });
+
+        it('should default to multi-severity sort and keep in sync with applied filters', () => {
+            interceptAndWatchRequests(getRouteMatcherMapForGraphQL(['getImageCVEList'])).then(
+                ({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
+                    visitWorkloadCveOverview({ clearFiltersOnVisit: false });
+                    // Wait for the initial request to complete, this fires twice due to the default filters being applied.
+                    // Ideally we fix this in the future to avoid the additional overhead.
+                    waitForRequests();
+
+                    // Check the default sort
+                    waitAndYieldRequestBodyVariables().then(
+                        expectRequestedSort([
+                            { field: 'Critical Severity Count', reversed: true },
+                            { field: 'Important Severity Count', reversed: true },
+                        ])
+                    );
+
+                    // Check that adding a severity filter changes the sort
+                    applyLocalSeverityFilters('Moderate');
+                    waitAndYieldRequestBodyVariables().then(
+                        expectRequestedSort([
+                            { field: 'Critical Severity Count', reversed: true },
+                            { field: 'Important Severity Count', reversed: true },
+                            { field: 'Moderate Severity Count', reversed: true },
+                        ])
+                    );
+
+                    // Check that the severity sort is reversible
+                    sortByTableHeader('Images by severity');
+                    waitAndYieldRequestBodyVariables().then(
+                        expectRequestedSort([
+                            { field: 'Critical Severity Count', reversed: false },
+                            { field: 'Important Severity Count', reversed: false },
+                            { field: 'Moderate Severity Count', reversed: false },
+                        ])
+                    );
+
+                    // Check that sorting by another column works as intended
+                    sortByTableHeader('CVE');
+                    waitAndYieldRequestBodyVariables().then(
+                        expectRequestedSort({ field: 'CVE', reversed: true })
+                    );
+
+                    // Check that changing the severity filter when a non-severity sort is applied
+                    // maintains the current sort
+                    applyLocalSeverityFilters('Low');
+                    waitAndYieldRequestBodyVariables().then(
+                        expectRequestedSort({ field: 'CVE', reversed: true })
+                    );
+                }
+            );
         });
     });
 });
