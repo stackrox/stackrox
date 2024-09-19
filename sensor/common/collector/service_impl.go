@@ -105,6 +105,16 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 
 	go s.startSendingLoop()
 
+	// Collector may not actually send anything to sensor, but this stops
+	// the function from exiting.
+	for {
+                _, err := server.Recv()
+                if err != nil {
+                        log.Errorf("Receiving message from collector")
+                        return err
+                }
+        }
+
 	return nil
 }
 
