@@ -36,7 +36,8 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule(option.EnableAdministrationEvents())
+	log                     = logging.LoggerForModule(option.EnableAdministrationEvents())
+	reportFilenameValidator = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 )
 
 const (
@@ -612,8 +613,7 @@ func BuildReportMessage(recipients []string, from, subject, messageText string, 
 		EmbedLogo: true,
 	}
 
-	reg := regexp.MustCompile(`[^a-zA-Z0-9]+`)
-	baseFilename := reg.ReplaceAllString(boundedReportName, "_")
+	baseFilename := reportFilenameValidator.ReplaceAllString(boundedReportName, "_")
 	if zippedReportData != nil {
 		msg.Attachments = map[string][]byte{
 			fmt.Sprintf("%s_%s_%s.zip", brandName, baseFilename, time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
