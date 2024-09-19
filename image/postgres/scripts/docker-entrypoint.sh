@@ -223,16 +223,11 @@ docker_setup_db() {
 # This should be called before any other functions
 docker_setup_env() {
 	file_env 'POSTGRES_PASSWORD'
-#	$(cat /run/secrets/stackrox.io/secrets/password)
 
 	file_env 'POSTGRES_USER' 'postgres'
 	file_env 'POSTGRES_DB' "$POSTGRES_USER"
 	file_env 'POSTGRES_INITDB_ARGS'
 	: "${POSTGRES_HOST_AUTH_METHOD:=}"
-
-    file_env 'POSTGRESQL_USER' 'postgres'
-    file_env 'POSTGRESQL_PASSWORD' "$POSTGRES_PASSWORD"
-    file_env 'POSTGRESQL_DATABASE' "$POSTGRES_USER"
 
 	declare -g DATABASE_ALREADY_EXISTS
 	# look specifically for PG_VERSION, as it is expected in the DB dir
@@ -311,8 +306,6 @@ _main() {
 
 	if [ "$1" = 'postgres' ] && ! _pg_want_help "$@"; then
 		docker_setup_env
-		echo "$POSTGRES_PASSWORD"
-
 		# setup data directories and permissions (when run as root)
 		docker_create_db_directories
 		if [ "$(id -u)" = '0' ]; then
