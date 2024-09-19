@@ -143,7 +143,7 @@ type LifecycleOption = 'ALL' | Exclude<LifecycleStage, 'BUILD'>;
 export type Config = {
     sortType: SortTypeOption;
     lifecycle: LifecycleOption;
-    hiddenSeverities: Readonly<PolicySeverity[]>;
+    hiddenSeverities: readonly PolicySeverity[];
 };
 
 type ViolationsByPolicyCategoryChartProps = {
