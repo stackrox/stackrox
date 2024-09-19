@@ -66,7 +66,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 			arg:  &claircore.VulnerabilityReport{},
 			want: &v4.VulnerabilityReport{Contents: &v4.Contents{}},
 		},
-		"when invalid time in vulnerability map then error": {
+		"when invalid time in vulnerability map then nil issued": {
 			arg: &claircore.VulnerabilityReport{
 				Vulnerabilities: map[string]*claircore.Vulnerability{
 					"sample CVE": {
@@ -76,7 +76,13 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 					},
 				},
 			},
-			wantErr: "internal error",
+			want: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"sample CVE": {
+						Id: "sample CVE",
+					},
+				}},
 		},
 		"when sample fields are set then conversion is successful": {
 			arg: &claircore.VulnerabilityReport{
@@ -1260,7 +1266,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
 				"foo": {
 					"CVE-2021-44228": {
-						ID: "CVE-2021-44228",
+						ID:        "CVE-2021-44228",
 						Published: "2021-12-10T10:15:09.143",
 					},
 				},
