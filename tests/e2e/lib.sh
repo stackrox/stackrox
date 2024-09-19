@@ -557,6 +557,10 @@ wait_for_collectors_to_be_operational() {
         return
     fi
 
+    # Ensure collector DaemonSet state is stable
+    kubectl rollout status daemonset collector --namespace "${sensor_namespace}" --timeout=5m --watch=true
+
+    # Check each collector pod readiness.
     local start_time
     start_time="$(date '+%s')"
     local all_ready="false"
