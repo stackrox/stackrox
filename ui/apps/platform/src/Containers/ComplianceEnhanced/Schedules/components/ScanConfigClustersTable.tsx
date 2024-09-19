@@ -29,11 +29,9 @@ function ScanConfigClustersTable({
 
     const onPerPageSelect = (
         _event: React.MouseEvent | React.KeyboardEvent | MouseEvent,
-        newPerPage: number,
-        newPage: number
+        newPerPage: number
     ) => {
         setPerPage(newPerPage);
-        setPage(newPage);
     };
 
     // Index of the currently sorted column

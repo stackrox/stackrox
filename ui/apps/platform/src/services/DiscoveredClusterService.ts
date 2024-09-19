@@ -3,6 +3,7 @@ import qs from 'qs';
 import { SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
 
+import { getPaginationParams } from 'utils/searchUtils';
 import axios from './instance';
 
 import { Pagination } from './types';
@@ -113,8 +114,7 @@ export function getListDiscoveredClustersArg({
     sortOption,
 }): ListDiscoveredClustersRequest {
     const filter = getDiscoveredClustersFilter(searchFilter);
-    const offset = (page - 1) * perPage;
-    const pagination: Pagination = { limit: perPage, offset, sortOption };
+    const pagination = getPaginationParams({ page, perPage, sortOption });
     return { filter, pagination };
 }
 

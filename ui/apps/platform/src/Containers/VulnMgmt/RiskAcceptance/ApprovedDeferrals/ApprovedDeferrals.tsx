@@ -3,7 +3,7 @@ import { PageSection, PageSectionVariants } from '@patternfly/react-core';
 
 import usePagination from 'hooks/patternfly/usePagination';
 import queryService from 'utils/queryService';
-import { getHasSearchApplied } from 'utils/searchUtils';
+import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import useURLSearch from 'hooks/useURLSearch';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useVulnerabilityRequests from '../useVulnerabilityRequests';
@@ -28,14 +28,14 @@ function ApprovedDeferrals(): ReactElement {
     const { isLoading, data, refetchQuery } = useVulnerabilityRequests({
         query,
         requestID,
-        pagination: {
-            limit: perPage,
-            offset: (page - 1) * perPage,
+        pagination: getPaginationParams({
+            page,
+            perPage,
             sortOption: {
                 field: 'Last Updated',
                 reversed: false,
             },
-        },
+        }),
     });
 
     const rows = data?.vulnerabilityRequests || [];
