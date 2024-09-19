@@ -2,6 +2,7 @@ import React, { ReactElement, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { FormikProvider, useFormik } from 'formik';
 import {
+    Alert,
     Breadcrumb,
     Title,
     BreadcrumbItem,
@@ -134,6 +135,12 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
 
     return (
         <>
+            {policy.id && policy.source === 'DECLARATIVE' && (
+                <Alert isInline title="Externally managed policy" component="p" variant="warning">
+                    You are editing a policy that is managed externally. Any local changes to this
+                    policy will be automatically overwritten during the next sync.
+                </Alert>
+            )}
             <PageSection variant="light" isFilled id="policy-page" className="pf-v5-u-pb-0">
                 <Breadcrumb className="pf-v5-u-mb-md">
                     <BreadcrumbItemLink to={policiesBasePath}>Policies</BreadcrumbItemLink>
