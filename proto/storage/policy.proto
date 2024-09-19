@@ -9,6 +9,10 @@ import "storage/scope.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
+// Note: If you add a new field to the Policy proto, please update the PolicySpec struct
+// in `config-controller/api/v1alpha1/policy_types.go` and the ToProtobuf() function
+// to account for the new field, and its conversion.
+
 //Next tag: 28
 message Policy {
   string id = 1; // @gotags: search:"Policy ID,store,hidden" sql:"pk,index=btree"
@@ -109,6 +113,7 @@ message ListPolicy {
   google.protobuf.Timestamp last_updated = 8;
   EventSource event_source = 9;
   bool is_default = 10;
+  PolicySource source = 11;
 }
 
 // Please ensure any changes to the following are reflected in comment of top-level policy field `enforcement_actions`.

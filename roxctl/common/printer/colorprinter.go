@@ -52,7 +52,7 @@ type colorPrinter struct {
 func DefaultColorPrinter() ColorfulPrinter {
 	wordToColorfulWord := make(map[string]string, len(colorKeyWordMap))
 	for w, attr := range colorKeyWordMap {
-		wordToColorfulWord[w] = color.New(attr...).Sprintf(w)
+		wordToColorfulWord[w] = color.New(attr...).Sprint(w)
 	}
 	c := &colorPrinter{
 		err:             color.New(color.FgRed, color.Bold).FprintfFunc(),

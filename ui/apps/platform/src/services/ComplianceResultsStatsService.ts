@@ -37,9 +37,15 @@ export type ListComplianceClusterProfileStatsResponse = {
 /**
  * Fetches the scan stats grouped by profile.
  */
-export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanStatsResponse> {
+export function getComplianceProfilesStats(
+    scanConfigSearchFilter: SearchFilter
+): Promise<ListComplianceProfileScanStatsResponse> {
+    const query = getRequestQueryStringForSearchFilter(scanConfigSearchFilter);
+    const params = qs.stringify({ query }, { arrayFormat: 'repeat', allowDots: true });
     return axios
-        .get<ListComplianceProfileScanStatsResponse>(`${complianceResultsStatsBaseUrl}/profiles`)
+        .get<ListComplianceProfileScanStatsResponse>(
+            `${complianceResultsStatsBaseUrl}/profiles?${params}`
+        )
         .then((response) => response.data);
 }
 

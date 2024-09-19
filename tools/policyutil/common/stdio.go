@@ -56,7 +56,7 @@ func ReadUserInput(prompt string) (string, error) {
 		PrintLog("%v", err)
 		tty = os.Stdout
 	}
-	printf(tty, false, prompt)
+	printf(tty, false, "%s", prompt)
 	defer printf(tty, true, "")
 
 	reader := bufio.NewReader(os.Stdin)

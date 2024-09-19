@@ -1107,6 +1107,23 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
+		"when OSV and severity is not CVSS skip CVSS": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					Issued:             now,
+					NormalizedSeverity: claircore.Low,
+					Severity:           "LOW",
+					Updater:            "osv/sample-updater",
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Issued:             protoNow,
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW,
+					Severity:           "LOW",
+				},
+			},
+		},
 		"when unknown updater then return NVD scores": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {

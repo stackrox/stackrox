@@ -12,6 +12,7 @@ import { VulnerabilityState } from 'types/cve.proto';
 
 import { getTableUIState } from 'utils/getTableUIState';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
+import { getPaginationParams } from 'utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import CVEsTable, { ImageCVE, cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
@@ -53,11 +54,7 @@ function CVEsTableContainer({
     }>(cveListQuery, {
         variables: {
             query: workloadCvesScopedQueryString,
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
             statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
     });

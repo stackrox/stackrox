@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Print a JSON containing all scanner vulnerability bundle streams, as directed
-# by the `RELEASE_VERSION` file.
+# by the `scanner/updater/version/RELEASE_VERSION` file.
 
 set -euo pipefail
 

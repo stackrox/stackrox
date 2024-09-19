@@ -7,6 +7,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 
 import { getTableUIState } from 'utils/getTableUIState';
+import { getPaginationParams } from 'utils/searchUtils';
 import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { VulnerabilitySeverityLabel } from '../../types';
@@ -41,11 +42,7 @@ function DeploymentsTableContainer({
     }>(deploymentListQuery, {
         variables: {
             query: workloadCvesScopedQueryString,
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 

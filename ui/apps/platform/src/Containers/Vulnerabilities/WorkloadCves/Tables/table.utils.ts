@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
 import { min } from 'date-fns';
 import sortBy from 'lodash/sortBy';
+import uniq from 'lodash/uniq';
 import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import { SourceType } from 'types/image.proto';
 import { ApiSortOption } from 'types/search';
@@ -265,11 +266,11 @@ export function formatVulnerabilityData(
             .filter((d): d is string => d !== null);
         const oldestDiscoveredVulnDate = min(...allDiscoveredDates);
         // TODO This logic is used in many places, could extract to a util
-        const uniqueComponents = new Set(allVulnerableComponents.map((c) => c.name));
+        const uniqueComponents = uniq(allVulnerableComponents.map((c) => c.name));
         const affectedComponentsText =
-            uniqueComponents.size === 1
-                ? uniqueComponents.values().next().value
-                : `${uniqueComponents.size} components`;
+            uniqueComponents.length === 1
+                ? uniqueComponents[0]
+                : `${uniqueComponents.length} components`;
 
         const vulnerabilityImages = images
             .map((img) => ({

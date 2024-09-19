@@ -64,7 +64,7 @@ _EO_KUTTL_HELP_
     junit_wrap bundle-test-image \
                 "Run scorecard tests." \
                 "See log for error details." \
-                "$ROOT/operator/scripts/retry.sh" "4" "2" \
+                "$ROOT/operator/hack/retry.sh" "4" "2" \
                 "make" "-C" "operator" "bundle-test-image"
 }
 

@@ -2,13 +2,17 @@ package microsoftsentinel
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"time"
 
 	azureErrors "github.com/Azure/azure-sdk-for-go-extensions/pkg/errors"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs"
 	"github.com/pkg/errors"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/administration/events/option"
@@ -19,12 +23,15 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/x509utils"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
 	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
 	_ notifiers.AlertNotifier = (*sentinel)(nil)
+	_ notifiers.AuditNotifier = (*sentinel)(nil)
 )
 
 func init() {
@@ -41,6 +48,27 @@ type sentinel struct {
 	azlogsClient azureLogsClient
 }
 
+func (s sentinel) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
+	if !features.MicrosoftSentinelNotifier.Enabled() {
+		return nil
+	}
+
+	if !s.AuditLoggingEnabled() {
+		return nil
+	}
+
+	err := s.uploadLogs(ctx, s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig(), msg)
+	if err != nil {
+		return errors.Wrap(err, "failed to upload audit log to Microsoft Sentinel")
+	}
+	return nil
+}
+
+func (s sentinel) AuditLoggingEnabled() bool {
+	return s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled()
+}
+
+// newSentinelNotifier returns a new sentinel notifier.
 func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 	config := notifier.GetMicrosoftSentinel()
 
@@ -49,13 +77,42 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 		return nil, errors.Wrap(err, "could not create sentinel notifier, validation failed")
 	}
 
-	// TODO(ROX-25739): Support certificate authentication
-	azureCredentials, err := azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), config.GetSecret(), &azidentity.ClientSecretCredentialOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "could not create azure credentials")
+	// Tries to build authentication token for Client Cert Auth, if this is not possible proceed to create token credentials
+	// for secrets.
+	var azureTokenCredential azcore.TokenCredential
+	var authErrList = errorhelpers.NewErrorList("Sentinel authentication")
+	if config.GetClientCertAuthConfig().GetClientCert() != "" && config.GetClientCertAuthConfig().GetPrivateKey() != "" {
+		certs, err := x509utils.ConvertPEMTox509Certs([]byte(config.GetClientCertAuthConfig().GetClientCert()))
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid cert")
+		}
+
+		keyBlock, _ := pem.Decode([]byte(config.GetClientCertAuthConfig().GetPrivateKey()))
+		privateKey, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not parse azure sentinel private key")
+		}
+
+		azureTokenCredential, err = azidentity.NewClientCertificateCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), certs, privateKey, &azidentity.ClientCertificateCredentialOptions{})
+		if err != nil {
+			authErrList.AddError(errors.Wrap(err, "could not create azure sentinel credentials with client cert"))
+		}
 	}
 
-	client, err := azlogs.NewClient(config.GetLogIngestionEndpoint(), azureCredentials, &azlogs.ClientOptions{})
+	if config.GetSecret() != "" && azureTokenCredential == nil {
+		var err error
+		azureTokenCredential, err = azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), config.GetSecret(), &azidentity.ClientSecretCredentialOptions{})
+		if err != nil {
+			authErrList.AddError(errors.Wrap(err, "could not create azure credentials with secret"))
+		}
+	}
+
+	// if no token was created authentication failed
+	if azureTokenCredential == nil {
+		return nil, authErrList
+	}
+
+	client, err := azlogs.NewClient(config.GetLogIngestionEndpoint(), azureTokenCredential, &azlogs.ClientOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create azure logs client")
 	}
@@ -64,10 +121,6 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 		notifier:     notifier,
 		azlogsClient: &azureLogsClientImpl{client: client},
 	}, nil
-}
-
-func (s sentinel) sentinel() *storage.MicrosoftSentinel {
-	return s.notifier.GetMicrosoftSentinel()
 }
 
 func (s sentinel) Close(_ context.Context) error {
@@ -79,13 +132,34 @@ func (s sentinel) ProtoNotifier() *storage.Notifier {
 }
 
 func (s sentinel) Test(ctx context.Context) *notifiers.NotifierError {
-	alert := s.getTestAlert()
-
-	err := s.AlertNotify(ctx, alert)
-	if err != nil {
-		return notifiers.NewNotifierError("could not send event", err)
+	if s.notifier.GetMicrosoftSentinel().GetAuditLogDcrConfig().GetEnabled() {
+		err := s.SendAuditMessage(ctx, s.getTestAuditLogMessage())
+		if err != nil {
+			return notifiers.NewNotifierError("could not send audit message to sentinel", err)
+		}
+	} else {
+		log.Info("audit message are disabled, test audit message was not send to sentinel")
 	}
+
+	if s.notifier.GetMicrosoftSentinel().GetAlertDcrConfig().GetEnabled() {
+		err := s.AlertNotify(ctx, s.getTestAlert())
+		if err != nil {
+			return notifiers.NewNotifierError("could not send alert notify to sentinel", err)
+		}
+	} else {
+		log.Info("alert notifier is disabled, test alert was not send to sentinel")
+	}
+
 	return nil
+}
+
+func (s sentinel) getTestAuditLogMessage() *v1.Audit_Message {
+	return &v1.Audit_Message{
+		Request: &v1.Audit_Message_Request{
+			Endpoint: "test-endpoint",
+			Method:   "GET",
+		},
+	}
 }
 
 func (s sentinel) getTestAlert() *storage.Alert {
@@ -110,15 +184,23 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 		return nil
 	}
 
-	bytesToSend, err := s.prepareLogsToSend(alert)
+	err := s.uploadLogs(ctx, s.notifier.GetMicrosoftSentinel().GetAlertDcrConfig(), alert)
+	if err != nil {
+		return errors.Wrap(err, "failed to upload alert notifications to Microsoft Sentinel")
+	}
+	return nil
+}
+
+func (s sentinel) uploadLogs(ctx context.Context, dcrConfig *storage.MicrosoftSentinel_DataCollectionRuleConfig, msg proto.Message) error {
+	bytesToSend, err := s.prepareLogsToSend(msg)
 	if err != nil {
 		return err
 	}
 
-	err = retry.WithRetry(func() error {
+	return retry.WithRetry(func() error {
 		// UploadResponse is unhandled because it currently is only a placeholder in the azure client library and does not
 		// contain any information to be processed.
-		_, err := s.azlogsClient.Upload(ctx, s.sentinel().GetAlertDcrConfig().GetDataCollectionRuleId(), s.sentinel().GetAlertDcrConfig().GetStreamName(), bytesToSend, &azlogs.UploadOptions{})
+		_, err := s.azlogsClient.Upload(ctx, dcrConfig.GetDataCollectionRuleId(), dcrConfig.GetStreamName(), bytesToSend, &azlogs.UploadOptions{})
 		azRespErr := azureErrors.IsResponseError(err)
 		if azRespErr != nil {
 			return notifiers.CreateError(s.notifier.GetName(), azRespErr.RawResponse, codes.MicrosoftSentinelGeneric)
@@ -132,16 +214,12 @@ func (s sentinel) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 			time.Sleep(wait * time.Millisecond)
 		}),
 	)
-
-	if err != nil {
-		return errors.Wrap(err, "failed to upload logs to azure")
-	}
-	return nil
 }
 
-func (s sentinel) prepareLogsToSend(alert *storage.Alert) ([]byte, error) {
+// prepareLogsToSend converts a proto message, wraps it into an array and converts it to JSON which is expected by Sentinel.
+func (s sentinel) prepareLogsToSend(msg protocompat.Message) ([]byte, error) {
 	// convert object to an unstructured map to later wrap it as an array.
-	logToSendObj, err := protocompat.MarshalMap(alert)
+	logToSendObj, err := protocompat.MarshalMap(msg)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to send alert to Microsoft Sentinel")
 	}
@@ -170,13 +248,23 @@ func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
 		errorList.AddString("Log Ingestion Endpoint must be specified")
 	}
 
+	if sentinel.GetAuditLogDcrConfig().GetEnabled() {
+		if sentinel.GetAuditLogDcrConfig().GetDataCollectionRuleId() == "" {
+			errorList.AddString("Audit Logging Data Collection Rule Id must be specified")
+		}
+
+		if sentinel.GetAuditLogDcrConfig().GetStreamName() == "" {
+			errorList.AddString("Audit Logging Stream Name must be specified")
+		}
+	}
+
 	if sentinel.GetAlertDcrConfig().GetEnabled() {
 		if sentinel.GetAlertDcrConfig().GetDataCollectionRuleId() == "" {
-			errorList.AddString("Data Collection Rule Id must be specified")
+			errorList.AddString("Alert Data Collection Rule Id must be specified")
 		}
 
 		if sentinel.GetAlertDcrConfig().GetStreamName() == "" {
-			errorList.AddString("Stream Name must be specified")
+			errorList.AddString("Alert Stream Name must be specified")
 		}
 	}
 
@@ -188,8 +276,8 @@ func Validate(sentinel *storage.MicrosoftSentinel, validateSecret bool) error {
 		errorList.AddString("Application Client Id must be specified")
 	}
 
-	if sentinel.GetSecret() == "" && validateSecret {
-		errorList.AddString("Secret must be specified")
+	if (sentinel.GetSecret() == "" && (sentinel.GetClientCertAuthConfig().GetClientCert() == "" || sentinel.GetClientCertAuthConfig().GetPrivateKey() == "")) && validateSecret {
+		errorList.AddString("Secret or Client Certificate authentication must be specified")
 	}
 
 	if !errorList.Empty() {

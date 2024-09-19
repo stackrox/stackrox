@@ -170,6 +170,7 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 			LastUpdated:     p.GetLastUpdated(),
 			EventSource:     p.GetEventSource(),
 			IsDefault:       p.GetIsDefault(),
+			Source:          p.GetSource(),
 		})
 	}
 	return listPolicies

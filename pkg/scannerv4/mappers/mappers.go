@@ -37,9 +37,9 @@ var (
 	// Updater patterns are used to determine the security updater the
 	// vulnerability was detected.
 
-	osvUpdaterPattern  = regexp.MustCompile(`^osv/.*`)
+	awsUpdaterPrefix   = `aws-`
+	osvUpdaterPrefix   = `osv/`
 	rhelUpdaterPattern = regexp.MustCompile(`^RHEL\d+-`)
-	awsUpdaterPattern  = regexp.MustCompile(`^aws-`)
 
 	// Name patterns are regexes to match against vulnerability fields to
 	// extract their name according to their updater.
@@ -649,7 +649,16 @@ func severityAndScores(ctx context.Context, vuln *claircore.Vulnerability, nvdVu
 	switch {
 	case rhelUpdaterPattern.MatchString(vuln.Updater):
 		return rhelSeverityAndScores(vuln)
-	case osvUpdaterPattern.MatchString(vuln.Updater), strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
+	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix):
+		if isOSVDBSpecificSeverity(vuln.Severity) {
+			zlog.Debug(ctx).
+				Str("severity", vuln.Severity).
+				Msg("severity is not a CVSS vector, falling back to NVD")
+			break
+		}
+		// The severity may be a CVSS vector, so fallthrough to check.
+		fallthrough
+	case strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
 		sev, err := cvssVector(vuln.Severity)
 		if err != nil {
 			zlog.Debug(ctx).
@@ -709,6 +718,18 @@ func rhelSeverityAndScores(vuln *claircore.Vulnerability) (severityValues, error
 	}
 
 	return values, nil
+}
+
+// isOSVDBSpecificSeverity determines if the given severity is a valid severity
+// from a database_specific object in the OSV data.
+// See https://github.com/quay/claircore/blob/v1.5.30/updater/osv/osv.go#L686 for more information.
+func isOSVDBSpecificSeverity(severity string) bool {
+	switch strings.ToLower(severity) {
+	case "unknown", "negligible", "low", "moderate", "medium", "high", "critical":
+		return true
+	default:
+		return false
+	}
 }
 
 // cvssVector parses the given CVSS vector.
@@ -784,7 +805,7 @@ func vulnerabilityName(vuln *claircore.Vulnerability) string {
 		if v, ok := findName(vuln, rhelVulnNamePattern); ok {
 			return v
 		}
-	case awsUpdaterPattern.MatchString(vuln.Updater):
+	case strings.HasPrefix(vuln.Updater, awsUpdaterPrefix):
 		if v, ok := findName(vuln, awsVulnNamePattern); ok {
 			return v
 		}
@@ -858,7 +879,7 @@ OUTER:
 // in one particular image. The two versions of the CVE are exactly the same
 // except for the repository name (cpe:/a:redhat:enterprise_linux:8::appstream vs cpe:/o:redhat:enterprise_linux:8::baseos).
 // The entry for this vulnerability as it matched this package in this image may be found in
-// https://access.redhat.com/security/data/oval/v2/RHEL8/rhel-8-including-unpatched.oval.xml.bz2.
+// https://security.access.redhat.com/data/oval/v2/RHEL8/rhel-8-including-unpatched.oval.xml.bz2.
 // After reading the entry in this file, it is clear Claircore matched this vulnerability to this stream's
 // CVE-2019-12900 entry twice (once per matching repository).
 //

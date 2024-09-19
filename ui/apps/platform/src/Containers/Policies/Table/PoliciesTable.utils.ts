@@ -1,15 +1,6 @@
 import { sortSeverity, sortAsciiCaseInsensitive, sortValueByLength } from 'sorters/sorters';
 import { ListPolicy } from 'types/policy.proto';
-
-export const defaultPolicyLabel = 'System';
-export const userPolicyLabel = 'User';
-
-function sortPolicyOrigin(a, b) {
-    const aOrigin = a ? defaultPolicyLabel : userPolicyLabel;
-    const bOrigin = b ? defaultPolicyLabel : userPolicyLabel;
-
-    return sortAsciiCaseInsensitive(aOrigin, bOrigin);
-}
+import { getPolicyOriginLabel } from '../policies.utils';
 
 export const columns = [
     {
@@ -25,7 +16,9 @@ export const columns = [
     {
         Header: 'Origin',
         accessor: 'isDefault',
-        sortMethod: (a: ListPolicy, b: ListPolicy) => sortPolicyOrigin(a.isDefault, b.isDefault),
+        sortMethod: (a: ListPolicy, b: ListPolicy) =>
+            sortAsciiCaseInsensitive(getPolicyOriginLabel(a), getPolicyOriginLabel(b)),
+        width: 20 as const,
     },
     {
         Header: 'Notifiers',

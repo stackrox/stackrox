@@ -181,7 +181,7 @@ func createEnumPredicate(fullPath, value string, enumRef protoreflect.ProtoEnum)
 					matchedValue = strconv.Itoa(int(instanceAsInt))
 				}
 				return &search.Result{
-					Matches: formatSingleMatchf(fullPath, matchedValue),
+					Matches: formatSingleMatchf(fullPath, "%s", matchedValue),
 				}, true
 			}
 		}
@@ -262,7 +262,7 @@ func wrapStringMatcher(fullPath string, matcher func(string) bool) internalPredi
 		instanceAsStr := instance.String()
 		if matcher(instance.String()) {
 			return &search.Result{
-				Matches: formatSingleMatchf(fullPath, instanceAsStr),
+				Matches: formatSingleMatchf(fullPath, "%s", instanceAsStr),
 			}, true
 		}
 		return nil, false

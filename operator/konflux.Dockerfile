@@ -1,6 +1,6 @@
 # TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
 # We're targeting a floating tag here which should be reasonably safe to do as both RHEL major 8 and Go major.minor 1.20 should provide enough stability.
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.21 as builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 as builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -17,8 +17,7 @@ ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" S
 # GOTAGS="release"
 ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 
-RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh operator && \
-    cp bin/linux_$(go env GOARCH)/operator image/bin/operator
+RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator
 
 
 # TODO(ROX-20312): pin image tags when there's a process that updates them automatically.

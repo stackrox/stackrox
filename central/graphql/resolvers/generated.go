@@ -828,9 +828,15 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("MicrosoftSentinel", []string{
 		"alertDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig",
 		"applicationClientId: String!",
+		"auditLogDcrConfig: MicrosoftSentinel_DataCollectionRuleConfig",
+		"clientCertAuthConfig: MicrosoftSentinel_ClientCertAuthConfig",
 		"directoryTenantId: String!",
 		"logIngestionEndpoint: String!",
 		"secret: String!",
+	}))
+	utils.Must(builder.AddType("MicrosoftSentinel_ClientCertAuthConfig", []string{
+		"clientCert: String!",
+		"privateKey: String!",
 	}))
 	utils.Must(builder.AddType("MicrosoftSentinel_DataCollectionRuleConfig", []string{
 		"dataCollectionRuleId: String!",
@@ -9675,6 +9681,16 @@ func (resolver *microsoftSentinelResolver) ApplicationClientId(ctx context.Conte
 	return value
 }
 
+func (resolver *microsoftSentinelResolver) AuditLogDcrConfig(ctx context.Context) (*microsoftSentinel_DataCollectionRuleConfigResolver, error) {
+	value := resolver.data.GetAuditLogDcrConfig()
+	return resolver.root.wrapMicrosoftSentinel_DataCollectionRuleConfig(value, true, nil)
+}
+
+func (resolver *microsoftSentinelResolver) ClientCertAuthConfig(ctx context.Context) (*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	value := resolver.data.GetClientCertAuthConfig()
+	return resolver.root.wrapMicrosoftSentinel_ClientCertAuthConfig(value, true, nil)
+}
+
 func (resolver *microsoftSentinelResolver) DirectoryTenantId(ctx context.Context) string {
 	value := resolver.data.GetDirectoryTenantId()
 	return value
@@ -9687,6 +9703,58 @@ func (resolver *microsoftSentinelResolver) LogIngestionEndpoint(ctx context.Cont
 
 func (resolver *microsoftSentinelResolver) Secret(ctx context.Context) string {
 	value := resolver.data.GetSecret()
+	return value
+}
+
+type microsoftSentinel_ClientCertAuthConfigResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.MicrosoftSentinel_ClientCertAuthConfig
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfig(value *storage.MicrosoftSentinel_ClientCertAuthConfig, ok bool, err error) (*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinel_ClientCertAuthConfigResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfigs(values []*storage.MicrosoftSentinel_ClientCertAuthConfig, err error) ([]*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinel_ClientCertAuthConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinel_ClientCertAuthConfigResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfigWithContext(ctx context.Context, value *storage.MicrosoftSentinel_ClientCertAuthConfig, ok bool, err error) (*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &microsoftSentinel_ClientCertAuthConfigResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapMicrosoftSentinel_ClientCertAuthConfigsWithContext(ctx context.Context, values []*storage.MicrosoftSentinel_ClientCertAuthConfig, err error) ([]*microsoftSentinel_ClientCertAuthConfigResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*microsoftSentinel_ClientCertAuthConfigResolver, len(values))
+	for i, v := range values {
+		output[i] = &microsoftSentinel_ClientCertAuthConfigResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *microsoftSentinel_ClientCertAuthConfigResolver) ClientCert(ctx context.Context) string {
+	value := resolver.data.GetClientCert()
+	return value
+}
+
+func (resolver *microsoftSentinel_ClientCertAuthConfigResolver) PrivateKey(ctx context.Context) string {
+	value := resolver.data.GetPrivateKey()
 	return value
 }
 

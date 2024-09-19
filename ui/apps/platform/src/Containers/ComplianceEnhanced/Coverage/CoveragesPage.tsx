@@ -36,6 +36,7 @@ import {
     coverageProfileChecksPath,
     coverageProfileClustersPath,
 } from './compliance.coverage.routes';
+import { createScanConfigFilter } from './compliance.coverage.utils';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
 import ProfileStatsWidget from './components/ProfileStatsWidget';
@@ -69,7 +70,9 @@ function CoveragesPage() {
 
     const fetchProfilesStats = useCallback(async () => {
         setSelectedProfileStats(undefined);
-        const response = await getComplianceProfilesStats();
+        const response = await getComplianceProfilesStats(
+            createScanConfigFilter(selectedScanConfigName)
+        );
         if (response) {
             const profileStats = response.scanStats.find(
                 (profile) => profile.profileName === profileName
@@ -77,7 +80,7 @@ function CoveragesPage() {
             setSelectedProfileStats(profileStats);
         }
         return response;
-    }, [profileName]);
+    }, [profileName, selectedScanConfigName]);
 
     const { isLoading: isLoadingProfilesStats, error: profilesStatsError } =
         useRestQuery(fetchProfilesStats);

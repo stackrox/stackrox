@@ -2500,6 +2500,20 @@
     {
       "protopath": "cluster_init.proto",
       "def": {
+        "enums": [
+          {
+            "name": "InitBundleMeta.InitBundleVersion",
+            "enum_fields": [
+              {
+                "name": "INIT_BUNDLE"
+              },
+              {
+                "name": "CRS",
+                "integer": 1
+              }
+            ]
+          }
+        ],
         "messages": [
           {
             "name": "InitBundleMeta",
@@ -2533,6 +2547,11 @@
                 "id": 6,
                 "name": "expires_at",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "version",
+                "type": "InitBundleVersion"
               }
             ]
           }
@@ -11617,6 +11636,16 @@
                 "id": 5,
                 "name": "alert_dcr_config",
                 "type": "DataCollectionRuleConfig"
+              },
+              {
+                "id": 6,
+                "name": "audit_log_dcr_config",
+                "type": "DataCollectionRuleConfig"
+              },
+              {
+                "id": 7,
+                "name": "client_cert_auth_config",
+                "type": "ClientCertAuthConfig"
               }
             ],
             "messages": [
@@ -11637,6 +11666,21 @@
                     "id": 3,
                     "name": "enabled",
                     "type": "bool"
+                  }
+                ]
+              },
+              {
+                "name": "ClientCertAuthConfig",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "client_cert",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "private_key",
+                    "type": "string"
                   }
                 ]
               }
@@ -12259,6 +12303,11 @@
                 "id": 10,
                 "name": "is_default",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "source",
+                "type": "PolicySource"
               }
             ]
           },
@@ -15455,6 +15504,10 @@
               {
                 "name": "SCANNER_V4_SERVICE",
                 "integer": 16
+              },
+              {
+                "name": "REGISTRANT_SERVICE",
+                "integer": 17
               }
             ]
           }
