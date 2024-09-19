@@ -7,6 +7,7 @@ import { SearchFilter } from 'types/search';
 import queryService from 'utils/queryService';
 import useTableSort from 'hooks/patternfly/useTableSort';
 import { SortOption } from 'types/table';
+import { getPaginationParams } from 'utils/searchUtils';
 import ObservedCVEsTable from './ObservedCVEsTable';
 import useImageVulnerabilities from '../useImageVulnerabilities';
 import { EmbeddedImageScanComponent } from '../imageVulnerabilities.graphql';
@@ -38,11 +39,7 @@ function ObservedCVEs({ imageId, showComponentDetails }: ObservedCVEsProps): Rea
     const { isLoading, data, refetchQuery } = useImageVulnerabilities({
         imageId,
         vulnsQuery,
-        pagination: {
-            limit: perPage,
-            offset: (page - 1) * perPage,
-            sortOption,
-        },
+        pagination: getPaginationParams({ page, perPage, sortOption }),
     });
 
     const itemCount = data?.image?.vulnCount || 0;
