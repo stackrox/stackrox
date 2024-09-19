@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 )
 
@@ -161,11 +162,24 @@ func (s *serviceImpl) getBaselinePeerByEntityID(
 
 	peers := baseline.GetPeers()
 	for _, peer := range peers {
+		peerType := peer.GetEntity().GetInfo().GetType()
+		peerId := peer.GetEntity().GetInfo().GetId()
 		key := networkgraph.Entity{
-			Type: peer.GetEntity().GetInfo().GetType(),
-			ID:   peer.GetEntity().GetInfo().GetId(),
+			Type: peerType,
+			ID:   peerId,
 		}
 		result[key] = peer
+		// Insert second peer entry for the masked deployment ID
+		// that can be issued by the network graph deployment masker
+		if peerType == storage.NetworkEntityInfo_DEPLOYMENT {
+			deploymentName := peer.GetEntity().GetInfo().GetDeployment().GetName()
+			maskedID := uuid.NewV5FromNonUUIDs(peerId, deploymentName).String()
+			maskedKey := networkgraph.Entity{
+				Type: peerType,
+				ID:   maskedID,
+			}
+			result[maskedKey] = peer
+		}
 	}
 
 	return result
