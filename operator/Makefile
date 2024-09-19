@@ -428,6 +428,19 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
        bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 	$(OPERATOR_SDK) bundle validate ./bundle --select-optional suite=operatorframework
 
+.PHONY: operator-version-for-bundle
+operator-version-for-bundle:
+	@set -euo pipefail ;\
+	$(ACTIVATE_PYTHON) >/dev/null; \
+	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
+	candidate_version=$$(./bundle_helpers/patch-csv.py \
+		--use-version $(VERSION) \
+		--first-version $${first_version} \
+		--operator-image $(IMG) \
+		--echo-replaced-version-only \
+		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml); \
+	echo "CANDIDATE_VERSION=$${candidate_version}"
+
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
 # Copy the original bundle to build/ directory.
