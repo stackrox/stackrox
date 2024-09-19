@@ -11641,6 +11641,11 @@
                 "id": 6,
                 "name": "audit_log_dcr_config",
                 "type": "DataCollectionRuleConfig"
+              },
+              {
+                "id": 7,
+                "name": "client_cert_auth_config",
+                "type": "ClientCertAuthConfig"
               }
             ],
             "messages": [
@@ -11661,6 +11666,21 @@
                     "id": 3,
                     "name": "enabled",
                     "type": "bool"
+                  }
+                ]
+              },
+              {
+                "name": "ClientCertAuthConfig",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "client_cert",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "private_key",
+                    "type": "string"
                   }
                 ]
               }
