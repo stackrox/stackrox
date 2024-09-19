@@ -16,3 +16,4 @@ calver==2022.6.26
 hatch-vcs==0.4.0
 hatch-fancy-pypi-readme==24.1.0
 wheel==0.44.0
+Cython==3.0.11
