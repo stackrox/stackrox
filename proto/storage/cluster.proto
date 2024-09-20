@@ -99,9 +99,12 @@ message ProcessConfig {
   bool enabled = 1;
 }
 
+// External IP aggregation is controlled at the namespace level and in the future
+// other features may also be controlled at the namespace level.
 message NetworkConnectionConfig {
   bool enabled = 1;
   bool aggregate_external = 2;
+  repeated string namespace_regexes = 3;
 }
 
 message NetworkEndpointConfig {
@@ -109,40 +112,16 @@ message NetworkEndpointConfig {
   bool include_listening_endpoint_processes = 2;
 }
 
-message CollectorFeature {
-  oneof feature {
-    ProcessConfig processes = 1;
-    NetworkConnectionConfig network_connections = 2;
-    NetworkEndpointConfig network_endpoints = 3;
-  }
-}
-
-message CollectorNamespaceConfig {
-  message NamespaceRule {
-    string namespace = 1;
-    storage.MatchType match_type = 2;
-  }
-
-  CollectorFeature feature = 1;
-  repeated NamespaceRule namespace_selection = 2;
-}
-
 // CollectorConfig controls which type of data is reported by collector
 // and processing of that data by collector. For now this configuration
 // controls if processes, network connections, and network endpoints are
 // reported. It also controls if process information is reported with
-// network endpoints and if external IPs are aggregated. External IP
-// aggregation is controlled at the namespace level and in the future
-// other features may also be controlled at the namespace level.
+// network endpoints and if external IPs are aggregated.
 message CollectorConfig {
   // The following three are applied at the cluster level.
   ProcessConfig process_config = 1;
   NetworkConnectionConfig network_connection_config = 2;
   NetworkEndpointConfig network_endpoint_config = 3;
-  // The namespace scope config is an array since it controls multiple
-  // features and for each feature there can be different configs for
-  // different sets of namespaces.
-  repeated CollectorNamespaceConfig namespace_scope_config = 4;
 }
 
 message TolerationsConfig {
