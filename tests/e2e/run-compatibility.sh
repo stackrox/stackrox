@@ -20,6 +20,7 @@ source "$ROOT/tests/e2e/lib.sh"
 
 run_compatibility_tests() {
     if [[ "$#" -ne 2 ]]; then
+        info "Called: $@"
         die "missing args. usage: run_compatibility_tests <central_version> <sensor_version>"
     fi
 
