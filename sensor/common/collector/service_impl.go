@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -98,15 +99,17 @@ func (c *connectionManager) remove(connection sensor.CollectorService_Communicat
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
 
-	s.connectionManager.add(server)
-	defer s.connectionManager.remove(server)
+	if features.CollectorRuntimeConfig.Enabled() {
+		s.connectionManager.add(server)
+		defer s.connectionManager.remove(server)
 
-	for msg := range s.collectorC {
-		for conn := range s.connectionManager.connectionMap {
-			err := conn.Send(msg)
-			if err != nil {
-				log.Info("Sending msg failed")
-				return err
+		for msg := range s.collectorC {
+			for conn := range s.connectionManager.connectionMap {
+				err := conn.Send(msg)
+				if err != nil {
+					log.Info("Sending msg failed")
+					return err
+				}
 			}
 		}
 	}
