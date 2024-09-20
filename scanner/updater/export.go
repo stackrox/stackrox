@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -66,11 +67,25 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		bundles[uSet] = []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
 	}
 
+	// Rate limit to ~16 requests/second by default.
+	interval := 62*time.Millisecond
+	configuredInterval := os.Getenv("STACKROX_SCANNER_V4_UPDATER_INTERVAL")
+	if configuredInterval != "" {
+		parsedInterval, err := time.ParseDuration(configuredInterval)
+		switch {
+		case err != nil:
+			log.Println(fmt.Errorf("invalid interval, using default (%v): %w", interval, err))
+		case parsedInterval < interval:
+			log.Println(fmt.Errorf("interval is too small (%v): using default (%v)", parsedInterval, interval))
+		default:
+			interval = parsedInterval
+		}
+	}
+
 	// The http client for pulling data from security sources.
-	limiter := rate.NewLimiter(rate.Every(time.Second), 15)
 	httpClient := &http.Client{
 		Transport: &rateLimitedTransport{
-			limiter:   limiter,
+			limiter:   rate.NewLimiter(rate.Every(interval), 1),
 			transport: http.DefaultTransport,
 		},
 	}
