@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pods"
@@ -111,8 +112,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	complianceMultiplexer := compliance.NewMultiplexer()
 	// TODO(ROX-16931): Turn auditLogEventsInput and auditLogCollectionManager into ComplianceComponents if possible
 	complianceService := compliance.NewService(o, auditLogEventsInput, auditLogCollectionManager, complianceMultiplexer.ComplianceC())
-	var collectorC chan *sensorInternal.MsgToCollector
-	collectorRuntimeConfigService := collector.NewService(collectorC)
+	collectorRuntimeConfigService := collector.NewService()
 
 	configHandler := config.NewCommandHandler(admCtrlSettingsMgr, deploymentIdentification, helmManagedConfig, auditLogCollectionManager)
 	enforcer, err := enforcer.New(cfg.k8sClient)
@@ -168,7 +168,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		imageService,
 		enhancer,
 		complianceService,
-		collectorRuntimeConfigService,
+	}
+	if features.CollectorRuntimeConfig.Enabled() {
+		components = append(components, collectorRuntimeConfigService)
 	}
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher)
@@ -231,7 +233,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
-		collectorRuntimeConfigService,
+	}
+
+	if features.CollectorRuntimeConfig.Enabled() {
+		apiServices = append(apiServices, collectorRuntimeConfigService)
 	}
 
 	if admCtrlSettingsMgr != nil {

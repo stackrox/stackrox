@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -38,7 +37,9 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {}
+func (s *serviceImpl) Stop(_ error) {
+	close(s.collectorC)
+}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
@@ -99,17 +100,15 @@ func (c *connectionManager) remove(connection sensor.CollectorService_Communicat
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
 
-	if features.CollectorRuntimeConfig.Enabled() {
-		s.connectionManager.add(server)
-		defer s.connectionManager.remove(server)
+	s.connectionManager.add(server)
+	defer s.connectionManager.remove(server)
 
-		for msg := range s.collectorC {
-			for conn := range s.connectionManager.connectionMap {
-				err := conn.Send(msg)
-				if err != nil {
-					log.Errorf(err, "Failed sending runtime config to Collector")
-					return err
-				}
+	for msg := range s.collectorC {
+		for conn := range s.connectionManager.connectionMap {
+			err := conn.Send(msg)
+			if err != nil {
+				log.Error(err, "Failed sending runtime config to Collector")
+				return err
 			}
 		}
 	}
