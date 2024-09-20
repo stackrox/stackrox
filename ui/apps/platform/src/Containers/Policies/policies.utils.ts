@@ -27,6 +27,7 @@ import {
     PolicyDeploymentExclusion,
     PolicyImageExclusion,
     ListPolicy,
+    BasePolicy,
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
@@ -716,4 +717,8 @@ export function getPolicyOriginLabel({
         return 'System';
     }
     return source === 'IMPERATIVE' ? 'Locally managed' : 'Externally managed';
+}
+
+export function isExternalPolicy(policy: ListPolicy) {
+    return policy.source === 'DECLARATIVE';
 }

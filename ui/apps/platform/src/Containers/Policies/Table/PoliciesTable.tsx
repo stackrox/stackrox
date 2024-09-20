@@ -43,9 +43,14 @@ import {
     formatNotifierCountsWithLabelStrings,
     getLabelAndNotifierIdsForTypes,
     getPolicyOriginLabel,
+    isExternalPolicy,
 } from '../policies.utils';
 
 import './PoliciesTable.css';
+
+function isExternalPolicySelected(policies: ListPolicy[], selectedIds: string[]): boolean {
+    return policies.filter(({ id }) => selectedIds.includes(id)).some(isExternalPolicy);
+}
 
 type PoliciesTableProps = {
     notifiers: NotifierIntegration[];
@@ -465,6 +470,11 @@ function PoliciesTable({
                 </Table>
             </PageSection>
             <ConfirmationModal
+                title={`${
+                    isExternalPolicySelected(policies, deletingIds)
+                        ? 'Delete policies?'
+                        : 'Permanently delete policies?'
+                } (${deletingIds.length})`}
                 ariaLabel="Confirm delete"
                 confirmText="Delete"
                 isLoading={isDeleting}
@@ -472,8 +482,21 @@ function PoliciesTable({
                 onConfirm={onConfirmDeletePolicy}
                 onCancel={onCancelDeletePolicy}
             >
-                Are you sure you want to delete {deletingIds.length}&nbsp;
-                {pluralize('policy', deletingIds.length)}?
+                {isExternalPolicySelected(policies, deletingIds) ? (
+                    <>
+                        Deleted policies will be removed from the system and will no longer trigger
+                        violations.{' '}
+                        <em>
+                            The current selection includes at least one externally managed policy
+                            that will be restored automatically during the next resync.
+                        </em>
+                    </>
+                ) : (
+                    <>
+                        Deleted policies will be permanently removed from the system and will no
+                        longer trigger violations.
+                    </>
+                )}
             </ConfirmationModal>
             <EnableDisableNotificationModal
                 enableDisableType={enableDisableType}
