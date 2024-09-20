@@ -289,6 +289,26 @@ func (s *clusterInitBackendTestSuite) TestInitBundleLifecycle() {
 
 }
 
+func (s *clusterInitBackendTestSuite) TestCRSNameMustBeUnique() {
+	ctx := s.ctx
+	crsName := "test1"
+
+	s.certProvider.EXPECT().GetCRSCert().DoAndReturn(
+		func() (*mtls.IssuedCert, uuid.UUID, error) {
+			return s.crsCert, uuid.NewV4(), nil
+		},
+	).AnyTimes()
+
+	// Issue new CRS.
+	_, err := s.backend.IssueCRS(ctx, crsName)
+	s.Require().NoError(err)
+
+	// Attempt to issue again with same name.
+	_, err = s.backend.IssueCRS(ctx, crsName)
+	s.Require().Error(err)
+	s.Require().ErrorIs(err, store.ErrInitBundleDuplicateName)
+}
+
 func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	ctx := s.ctx
 	crsName := "test1"
