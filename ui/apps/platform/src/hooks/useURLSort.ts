@@ -123,7 +123,7 @@ export type UseURLSortResult = {
  *     <Th sort={getSortParams('name')}>Name</Th>
  *     <Th sort={getSortParams('age')}>Age</Th>
  *     <Th sort={getSortParams('date')}>Date</Th>
- *    <Th sort={getSortParams('critical count', [
+ *    <Th sort={getSortParams('severity count', [
  *       { field: 'critical count' },
  *       { field: 'important count' },
  *    ])}>Critical Count</Th>
