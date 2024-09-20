@@ -26,7 +26,7 @@ import "storage/image.proto";
 
 option go_package = "./internalapi/central;central";
 
-// next available tag: 19
+// next available tag: 20
 message MsgFromSensor {
   string hash_key = 7;
   string dedupe_key = 8;
@@ -55,7 +55,7 @@ message ReassessPolicies {}
 
 message ReprocessDeployments {}
 
-// next available tag: 29
+// next available tag: 30
 message MsgToSensor {
   oneof msg {
     SensorEnforcement enforcement = 1;

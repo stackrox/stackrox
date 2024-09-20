@@ -68,7 +68,7 @@ func (NodeInventoryACK_Action) EnumDescriptor() ([]byte, []int) {
 	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{5, 0}
 }
 
-// next available tag: 19
+// next available tag: 20
 type MsgFromSensor struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -446,7 +446,7 @@ func (*ReprocessDeployments) Descriptor() ([]byte, []int) {
 	return file_internalapi_central_sensor_iservice_proto_rawDescGZIP(), []int{2}
 }
 
-// next available tag: 29
+// next available tag: 30
 type MsgToSensor struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

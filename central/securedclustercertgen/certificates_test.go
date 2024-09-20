@@ -164,7 +164,7 @@ func (s *securedClusterCertgenSuite) TestSecuredClusterCertificateGeneration() {
 
 func (s *securedClusterCertgenSuite) TestServiceIssueLocalScannerCerts() {
 	getServiceTypes := func() set.FrozenSet[string] {
-		serviceTypes := v2ServiceTypes
+		serviceTypes := scannerV2ServiceTypes
 		if features.ScannerV4.Enabled() {
 			serviceTypes = localScannerServiceTypes
 		}

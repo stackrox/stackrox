@@ -18,11 +18,11 @@ var securedClusterServiceTypes = set.NewFrozenSet[storage.ServiceType](
 	storage.ServiceType_COLLECTOR_SERVICE,
 	storage.ServiceType_ADMISSION_CONTROL_SERVICE)
 
-var v2ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
-var v4ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
+var scannerV2ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
+var scannerV4ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
 var localScannerServiceTypes = func() set.FrozenSet[storage.ServiceType] {
-	types := v2ServiceTypes.Unfreeze()
-	types = types.Union(v4ServiceTypes.Unfreeze())
+	types := scannerV2ServiceTypes.Unfreeze()
+	types = types.Union(scannerV4ServiceTypes.Unfreeze())
 	return types.Freeze()
 }()
 
@@ -33,7 +33,7 @@ type certIssuerImpl struct {
 // IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
 func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
 	// In any case, generate certificates for Scanner v2.
-	serviceTypes := v2ServiceTypes
+	serviceTypes := scannerV2ServiceTypes
 	if features.ScannerV4.Enabled() {
 		// Additionally, generate certificates for Scanner v4.
 		serviceTypes = localScannerServiceTypes
@@ -46,7 +46,7 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 	return certIssuer.issueCertificates(serviceTypes, namespace, clusterID)
 }
 
-// IssueSecuredClusterCerts issues certificates for the services of a secured clusters (excluding local scanner).
+// IssueSecuredClusterCerts issues certificates for the services of a secured cluster (excluding local scanner).
 func IssueSecuredClusterCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
 	certIssuer := certIssuerImpl{
 		allSupportedServiceTypes: securedClusterServiceTypes,
