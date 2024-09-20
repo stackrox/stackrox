@@ -14,7 +14,7 @@ spec:
     type: string
   results:
   - name: IMAGE_DIGEST
-    description: Image digest.
+    description: Image digest in the format `sha256:abcdef0123`.
   workspaces:
   - name: pull-secret
     readOnly: true
