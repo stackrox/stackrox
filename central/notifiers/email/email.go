@@ -37,6 +37,7 @@ import (
 
 var (
 	log                     = logging.LoggerForModule(option.EnableAdministrationEvents())
+	reportNameValidator     = regexp.MustCompile(`[^a-zA-Z0-9] +`)
 	reportFilenameValidator = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 )
 
@@ -596,13 +597,14 @@ func PlainTextAlert(alert *storage.Alert, uiEndpoint string, mitreStore mitreDS.
 
 func BuildReportMessage(recipients []string, from, subject, messageText string, zippedReportData *bytes.Buffer, reportName string) Message {
 	brandName := branding.GetProductNameShort()
-	boundedReportName := reportName
-	if len(reportName) > 80 {
-		boundedReportName = reportName[0:80]
+
+	sanitizedReportName := reportNameValidator.ReplaceAllString(reportName, " ")
+	if len(sanitizedReportName) > 80 {
+		sanitizedReportName = sanitizedReportName[0:80]
 	}
 
 	if subject == "" {
-		subject = fmt.Sprintf("%s report %s for %s", brandName, boundedReportName, time.Now().Format("02-January-2006"))
+		subject = fmt.Sprintf("%s report %s for %s", brandName, sanitizedReportName, time.Now().Format("02-January-2006"))
 	}
 
 	msg := Message{
@@ -613,7 +615,7 @@ func BuildReportMessage(recipients []string, from, subject, messageText string, 
 		EmbedLogo: true,
 	}
 
-	baseFilename := reportFilenameValidator.ReplaceAllString(boundedReportName, "_")
+	baseFilename := reportFilenameValidator.ReplaceAllString(sanitizedReportName, "_")
 	if zippedReportData != nil {
 		msg.Attachments = map[string][]byte{
 			fmt.Sprintf("%s_%s_%s.zip", brandName, baseFilename, time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
