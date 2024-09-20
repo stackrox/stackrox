@@ -14,6 +14,8 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // generateCRS generates a new CRS using Central's API and writes the newly generated CRS into the
@@ -52,6 +54,9 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	req := v1.CRSGenRequest{Name: name}
 	resp, err := svc.GenerateCRS(ctx, &req)
 	if err != nil {
+		if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
+			return errors.Wrap(err, "missing CRS support in Central")
+		}
 		return errors.Wrap(err, "generating new CRS")
 	}
 
