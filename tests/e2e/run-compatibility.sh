@@ -18,9 +18,9 @@ source "$ROOT/tests/scripts/setup-certs.sh"
 # shellcheck source=../../tests/e2e/lib.sh
 source "$ROOT/tests/e2e/lib.sh"
 
-test_compatibility() {
+run_compatibility_tests() {
     if [[ "$#" -ne 2 ]]; then
-        die "missing args. usage: test_compatibility <central_version> <sensor_version>"
+        die "missing args. usage: run_compatibility_tests <central_version> <sensor_version>"
     fi
 
     local central_version="$1"
@@ -34,10 +34,10 @@ test_compatibility() {
     info "Starting go compatibility tests with central v${short_central_tag} and sensor v${short_sensor_tag}"
 
     junit_wrap CentralSensorVersionCompatibility "central: ${short_central_tag}, sensor: ${short_sensor_tag}" "" \
-        _test_compatibility "${central_version}" "${sensor_version}" "${short_central_tag}" "${short_sensor_tag}"
+        _run_compatibility_tests "${central_version}" "${sensor_version}" "${short_central_tag}" "${short_sensor_tag}"
 }
 
-_test_compatibility() {
+_run_compatibility_tests() {
     local central_version="$1"
     local sensor_version="$2"
     local short_central_tag="$3"
@@ -125,5 +125,5 @@ shorten_tag() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    test_compatibility "$*"
+    run_compatibility_tests "$*"
 fi
