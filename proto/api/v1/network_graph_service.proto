@@ -92,17 +92,12 @@ service NetworkGraphService {
     option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}"};
   }
 
-  rpc GetExternalNetworkEntities(GetExternalNetworkEntitiesRequest)
-      returns (GetExternalNetworkEntitiesResponse) {
-    option (google.api.http) = {
-      get: "/v1/networkgraph/cluster/{cluster_id}/externalentities"
-    };
+  rpc GetExternalNetworkEntities(GetExternalNetworkEntitiesRequest) returns (GetExternalNetworkEntitiesResponse) {
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities"};
   }
 
   rpc GetExternalNetworkFlows(GetExternalNetworkFlowsRequest) returns (GetExternalNetworkFlowsResponse) {
-    option (google.api.http) = {
-      get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/flows/{deployment_id}"
-    };
+    option (google.api.http) = {get: "/v1/networkgraph/cluster/{cluster_id}/externalentities/flows/{deployment_id}"};
   }
 
   rpc CreateExternalNetworkEntity(CreateNetworkEntityRequest) returns (storage.NetworkEntity) {
