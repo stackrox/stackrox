@@ -11,14 +11,16 @@ import {
 } from '@patternfly/react-core';
 import * as yup from 'yup';
 
-import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
-
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import usePageState from 'Containers/Integrations/hooks/usePageState';
+import useMetadata from 'hooks/useMetadata';
+import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
+import { getVersionedDocs } from 'utils/versioning';
+
 import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 import useIntegrationForm from '../../useIntegrationForm';
 import { IntegrationFormProps } from '../../integrationFormTypes';
@@ -152,6 +154,7 @@ function GcsIntegrationForm({
         initialValues: formInitialValues,
         validationSchema,
     });
+    const { version } = useMetadata();
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
@@ -324,7 +327,10 @@ function GcsIntegrationForm({
                                             For more information, see{' '}
                                             <ExternalLink>
                                                 <a
-                                                    href="https://docs.openshift.com/acs/integration/integrate-using-short-lived-tokens.html"
+                                                    href={getVersionedDocs(
+                                                        version,
+                                                        'integration/integrate-using-short-lived-tokens.html'
+                                                    )}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                 >
