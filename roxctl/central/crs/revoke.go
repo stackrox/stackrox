@@ -25,7 +25,10 @@ func applyRevokeCRSs(ctx context.Context, cliEnvironment environment.Environment
 	}
 
 	var revokeIds []string
+	idNames := make(map[string]string)
+
 	for _, meta := range resp.Items {
+		idNames[meta.GetId()] = meta.GetName()
 		if idsOrNames.Remove(meta.GetId()) || idsOrNames.Remove(meta.GetName()) {
 			revokeIds = append(revokeIds, meta.GetId())
 		}
@@ -39,17 +42,18 @@ func applyRevokeCRSs(ctx context.Context, cliEnvironment environment.Environment
 	if err != nil {
 		return errors.Wrap(err, "revoking CRSs")
 	}
-	printResponseResult(cliEnvironment.Logger(), revokeIds, revokeResp)
+	printResponseResult(cliEnvironment.Logger(), idNames, revokeIds, revokeResp)
 
 	return nil
 }
 
-func printResponseResult(logger logger.Logger, revokeIds []string, resp *v1.CRSRevokeResponse) {
+func printResponseResult(logger logger.Logger, idNames map[string]string, revokeIds []string, resp *v1.CRSRevokeResponse) {
 	for _, id := range resp.GetRevokedIds() {
-		logger.InfofLn("Revoked %q", id)
+		logger.InfofLn("Revoked %s (%q)", id, idNames[id])
 	}
 	for _, revokeErr := range resp.GetCrsRevocationErrors() {
-		logger.ErrfLn("Error revoking %q: %s", revokeErr.Id, revokeErr.Error)
+		id := revokeErr.GetId()
+		logger.ErrfLn("Error revoking %s (%q): %s", id, idNames[id], revokeErr.Error)
 	}
 
 	if len(resp.GetCrsRevocationErrors()) == 0 {
