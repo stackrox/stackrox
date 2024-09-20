@@ -96,7 +96,24 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v1.GetExternalNetworkEntitiesRequest) (*v1.GetExternalNetworkEntitiesResponse, error) {
-	return s.getExternalEntities(ctx, request)
+	query, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	query, _ = search.FilterQueryWithMap(query, schema.NetworkEntitiesSchema.OptionsMap)
+	if err != nil {
+		return nil, errors.Wrapf(errox.InvalidArgs, "failed to parse query %q: %v", query.String(), err.Error())
+	}
+
+	ets, err := s.entities.GetEntityByQuery(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.GetExternalNetworkEntitiesResponse{
+		Entities: ets,
+	}, nil
 }
 
 func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.GetExternalNetworkFlowsRequest) (*v1.GetExternalNetworkFlowsResponse, error) {
@@ -166,34 +183,6 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 
 	return &v1.GetExternalNetworkFlowsResponse{
 		Flows: filtered,
-	}, nil
-}
-
-func (s *serviceImpl) getExternalEntities(ctx context.Context, request *v1.GetExternalNetworkEntitiesRequest) (*v1.GetExternalNetworkEntitiesResponse, error) {
-	query, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-	}
-
-	query, _ = search.FilterQueryWithMap(query, schema.NetworkEntitiesSchema.OptionsMap)
-	pred, err := netEntityPredFactory.GeneratePredicate(query)
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "failed to parse query %q: %v", query.String(), err.Error())
-	}
-
-	ret, err := s.entities.GetAllMatchingEntities(ctx, func(entity *storage.NetworkEntity) bool {
-		// Do not respect the graph configuration.
-		if entity.GetScope().GetClusterId() == "" || entity.GetScope().GetClusterId() == request.GetClusterId() {
-			return pred.Matches(entity)
-		}
-		return false
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &v1.GetExternalNetworkEntitiesResponse{
-		Entities: ret,
 	}, nil
 }
 
