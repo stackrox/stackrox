@@ -37,7 +37,7 @@ import (
 
 var (
 	log                     = logging.LoggerForModule(option.EnableAdministrationEvents())
-	reportNameValidator     = regexp.MustCompile(`[^a-zA-Z0-9] +`)
+	reportNameValidator     = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
 	reportFilenameValidator = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 )
 
