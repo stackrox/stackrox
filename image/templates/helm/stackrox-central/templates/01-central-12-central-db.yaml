@@ -92,9 +92,9 @@ spec:
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
-        {{ if not $._rox.central.db.existingSecret }}
+        {{- if not $._rox.central.db.existingSecret.name }}
         - name: central-db-password
-        {{- else -}}
+        {{- else }}
         - name: {{ $._rox.central.db.existingSecret.name }}
         {{- end }}
           mountPath: /run/secrets/stackrox.io/secrets
@@ -149,11 +149,11 @@ spec:
       - name: config-volume
         configMap:
           name: {{ default "central-db-config" ._rox.central.db.configOverride }}
-      {{ if not $._rox.central.db.existingSecret -}}
+      {{- if not $._rox.central.db.existingSecret.name }}
       - name: central-db-password
         secret:
           secretName: central-db-password
-      {{- else -}}
+      {{- else }}
       - name: {{ $._rox.central.db.existingSecret.name }}
         secret:
           secretName: {{ $._rox.central.db.existingSecret.name }}

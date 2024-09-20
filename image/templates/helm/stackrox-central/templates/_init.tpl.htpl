@@ -28,9 +28,6 @@
 {{ $rox := deepCopy $.Values }}
 {{ $_ := set $ "_rox" $rox }}
 
-{{ include "srox.getExistingTLSSecret" (list $rox.ca $.Release.Namespace "cert" )}}
-{{ include "srox.getExistingTLSSecret" (list $rox.ca $.Release.Namespace "key" )}}
-
 {{/* Global state (accessed from sub-templates) */}}
 {{ $generatedName := printf "stackrox-generated-%s" (randAlphaNum 6 | lower) }}
 {{ $state := dict }}

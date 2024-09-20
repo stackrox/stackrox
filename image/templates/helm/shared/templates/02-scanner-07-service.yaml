@@ -28,7 +28,7 @@ spec:
     app: scanner
   type: ClusterIP
 
-{{- if not ._rox.scanner.db.external -}}
+{{- if not ._rox.scanner.db.external }}
 ---
 apiVersion: v1
 kind: Service
@@ -47,7 +47,7 @@ spec:
   selector:
     app: scanner-db
   type: ClusterIP
-{{ end -}}
+{{- end }}
 {{ if ._rox.env.istio }}
 ---
 

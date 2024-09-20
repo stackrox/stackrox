@@ -81,6 +81,10 @@ central:
       secrets: null # [string]
   extraMounts: null # [dict]
   db:
+    external: null # bool
+    existingSecret:
+      name: null # string
+      key: null # string
     nodeSelector: null # string | dict
     tolerations: null # [dict]
     hostAliases: null # [dict]

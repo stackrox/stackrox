@@ -1,0 +1,2200 @@
+=== RUN   TestWithHelmtest
+=== RUN   TestWithHelmtest/testdata/helmtest
+=== PAUSE TestWithHelmtest/testdata/helmtest
+=== CONT  TestWithHelmtest/testdata/helmtest
+=== RUN   TestWithHelmtest/testdata/helmtest/existing-db-password.test.yaml
+=== PAUSE TestWithHelmtest/testdata/helmtest/existing-db-password.test.yaml
+=== CONT  TestWithHelmtest/testdata/helmtest/existing-db-password.test.yaml
+=== RUN   TestWithHelmtest/testdata/helmtest/existing-db-password.test.yaml/Debug
+=== PAUSE TestWithHelmtest/testdata/helmtest/existing-db-password.test.yaml/Debug
+=== CONT  TestWithHelmtest/testdata/helmtest/existing-db-password.test.yaml/Debug
+--------DEBUG--------
+apiVersion: v1
+kind: Secret
+metadata:
+    annotations:
+        email: support@stackrox.com
+        helm.sh/hook: pre-install,pre-upgrade
+        helm.sh/resource-policy: keep
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: scanner-tls
+    namespace: stackrox
+stringData:
+    ca.pem: |
+        CA cert
+    cert.pem: |
+        Scanner cert
+    key.pem: |
+        Scanner key
+type: Opaque
+
+--------DEBUG--------
+apiVersion: v1
+kind: Secret
+metadata:
+    annotations:
+        email: support@stackrox.com
+        helm.sh/hook: pre-install,pre-upgrade
+        helm.sh/resource-policy: keep
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: scanner-db-tls
+    namespace: stackrox
+stringData:
+    ca.pem: |
+        CA cert
+    cert.pem: |
+        ScannerDB cert
+    key.pem: |
+        ScannerDB key
+type: Opaque
+
+--------DEBUG--------
+apiVersion: v1
+kind: Secret
+metadata:
+    annotations:
+        email: support@stackrox.com
+        helm.sh/hook: pre-install,pre-upgrade
+        helm.sh/resource-policy: keep
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-tls
+    namespace: stackrox
+stringData:
+    ca-key.pem: |
+        CA key
+    ca.pem: |
+        CA cert
+    cert.pem: |
+        Central cert
+    jwt-key.pem: |
+        -----BEGIN RSA PRIVATE KEY-----
+        MIIJKQIBAAKCAgEAlcZlC6mKFpjzZ5qGjYRr32kXwzC3REPLGzXbFREqqHA9QVra
+        0s1km2UoTZGcYyPVMOSIVF82CGON7WideynFc9XLr2olAkhLw7slkVsSNFj73WIF
+        pbVWiHsb8eHD0CRWSKDPGW/5PSOOGyatDLbTlq0fjzjqRhLlTuUryYVXmHTkRDFU
+        0xrEvfFu2IXJK3rpE8Kg7HqbmBB50KdFubdzO4zM64Efnc7J0X5PR4jhrpY6xi+o
+        f0Q1QbiL7M+cG52NCix0Ay5GnCxQ0wDxlYU/HzfpMHAfnR/WICQ3h2806/i+icHC
+        Q/bx/dSVwp7n5YME5cK23Pn/Q/zY/tLPaR72uxhJms3eXG4cXWUH83nZweCFxSuc
+        KcOQWV2Jb60zXy7uPQRFwwpKWRvJW4nZU4Tirgew9lU6eEMXamMPyqTUnIJegdfG
+        snUshR9H9jolrb1mfHqv3XWrSz2faY+ufQUTEH4hRoad3PTK+mJzhStM05+QeMdW
+        1bQ0dRVwWZeWkOjPZrYw7+DtDc1Z+qhHDEkw0mR4s/Bj0N/HhpU+mhCPNRbqyFzA
+        0DiYlRuaby3qRPAmY2pInWRLO61hV6efAy7qdxs3aNGeE1An8B+n9yXJlWXGGprs
+        UF7S6V5DWlCu2AH7SHcblG/HrhroPEdS5MJqENSUPSVTruG/R8j8OEgjRscCAwEA
+        AQKCAgAVQrdfQ27FrGqI32eQOSby7MEhxQ2O1CzFrQxvXiN3C4+2ckYzvFI2uNJS
+        yIOxkwmVSiuMBoPuBuvDsqEANbrAqa2jNecQ/uA6ZZt8mbfo1GTUVTDGCArDju41
+        lL2uEypoXuNnEf0IT77BXekcr+szLVoYg5TF47LHU0K29YWsr5Mjlvkaimc5K0d3
+        1u3qjST+2Bbt2q2xlU0lcEk2hrMF1gPUvlyVkyAU6+AnIGgg11R6g5NglXcV4DOE
+        pyfax6+YrRy+wtflHWlPuoeQmPyP2ujwJkpmjHlh0KJNSFzzzjiF54pDCY/qXz3v
+        BY2Xh9SvJMe+cIJqzT6kVZp5qpqNVtqafGUfyPg6hxlrKo/ATSnRZobAEQK9QBK9
+        AzC4d8NKEb1Deeh/D+s9Yvgf6HDZjbQzZvyvQ8yafuEhrQNtzFsuiDxDFzI6HrF+
+        UNKbfKAC4g7UY+cTd3dNGrlp7o/br1sor9P1+Gmdm5N+hk7zVIsKawKTI36XaNc+
+        S2X7MK3F//parEvcN3H8gXxePCdcC5ObeRFPwDrGul7gecgzKtl38QXM86nQNo7y
+        rYGG6SepaSRr5nOQeB9oaMqG0UfVUF68UekVQ5TTsIwb9Arf5cmBexDHMLGN2eF3
+        xLF7E54Xntg1zKn7SdrxINPxrpME0oZKS254iEBjlgX/uTa/QQKCAQEAwxeCXgC5
+        RchNh8P2YcrpxfdwQMO/sQLeTfYDQnVSV3Ccuhc4qdkLmFmndt+QWI9FaofBVMfx
+        BciiPU3dW22Ripn8O/SLv0RorWx7hiTzIlN073TAsPnXqezREAg58x0vQRXyx2ZL
+        hhcoMC0h8hNEq+E19wYml0yrVMOQrSZSCUh3e5HHcJj9SUsP+z1zlGmIZbuXQkGX
+        VVs7HdxfcIOK3AR8MIZ5oy7xc/8w+XZOjUKQ4+8TFbMlTug8iQJtQtNVtL86BQit
+        O6GcbWmcjjlkS2k03ONvOC3Gbhs1Lo/pp0B8Sm7mo47hCqKw0ZyPeAr2CCpm/Lzl
+        Budt8ZVcoPzpIQKCAQEAxIj860RpgTYNvIVIFMISm/9VJ9I02/ZYOmv12AYS/hPh
+        CfIT2hm2uxjSFyv8czgHRHopfno59KLlcN1KwutMr88CZC9mmELUS3PtxlT7BN4L
+        F3+Cgn/holDrKXnwoHtj8W3XJVGM9thrYkN3yPA0kbXWv8bswFefuIL7M3ayNeEs
+        xB6TcDssk2hhC57Oi2cNmEVvU2KfNHE4wAO8hQEZdNzPQUlH/IBmartuu/ItEsTu
+        fQ2k+bc9bPp7H9oLSrT1Fzdb4iWIg7HocsPbgn07yg3iyDybNvhkFrpwv5JuM0qu
+        wm6itiGFqKj3v98LuHqxv0/PO07GXiI8kI3pvH2q5wKCAQEAozE2LzYBxRrBp/DH
+        V5RqKtxJvRNBdWuF08cXgO8s2tHreErWblWNuno8eFaYo0vtcChxE19RAVqMRCWv
+        Jbyowzz93pU4lN0/hto5FcQw0aToKyoJycCko5LiarvG5dOi5JnchOnQATG7v1jx
+        jVKK3hA8mQ8/Fs7efsA8dGqaswM4V1hhcZG4RigRDUOhPCNvIlJiO90sHw16jQb7
+        mt2eOV9TFzBV7afl9/ce234YRVfKZbBl0YASlEf141HxXbX0eoZ/nRhd+IS+mlN+
+        zwW5HM+7lY52SZMY6p+9w95EQFDT51uPeH+bRc9Dg4OoC2130urNTVshZb4PnMcp
+        Pc1xoQKCAQEAoJvmPIlSwwIeZaJxzmzu8kbOG1XAVsVRQqT5aklEehhavlry+Dgt
+        SWa2QbNzgeEWp1JB2JcgB5ibcgmV0AakS8QbCy5lZCaxANxDQuItpMOkQta0G9tP
+        0+rW0rVQ/IT5ntIJkPi8/vjLgKjsGeyauTzluyFgVqsE3q9Dg8ILTtauU7M8/+mL
+        uwcAz5M+7VMRHBAaMwWUXzHrk5c6F2NXn1XXlV3Ck0mG6NA1ZSg6x2ziDJX67Qtf
+        ClEED3qL4chRxmA6GWxczGq2MBt4poGbO7rvSn2kxl5kxOIlw5hxsD7m5AOvurFY
+        XgV/OXCYTnEOEu6wxqHQoBrQbb1bdusnnwKCAQBU4IFM57z2NGhL+PtyL87jJ9XD
+        Xw/WbUbgy9ztyWgRHPINBVdIiz+2ceWKvTKbbPf0jJrOO6YaxTHjHQKDI6aHNn+6
+        Ze8KtKJzoPT+aKa50J1eGVQPrAZN8K9JC4UDQ8p+wQnkmCKxCnjsvg7Ub9KyTc7i
+        XECkHe4+2bd8badr+dpjoKq0+MeG+IKlwE8THPrwaUfr7ZJWhEsTTvLCJBvmoH//
+        NiMMXm5lpYSlJObQGkgtL4Y7Bshu18VrYKKhKZ9Xo1CGKfswrWAbKop3kPqLw1u/
+        BN6PJ3Wom+0A7rk0vJ9NyPPNc3mNGp8jzFSfqoycjRCA7PzdQCqEr0e+zGXE
+        -----END RSA PRIVATE KEY-----
+    key.pem: |
+        Central key
+type: Opaque
+
+--------DEBUG--------
+apiVersion: v1
+imagePullSecrets: null
+kind: ServiceAccount
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central
+    namespace: stackrox
+
+--------DEBUG--------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-central-psp
+rules:
+    - apiGroups:
+        - policy
+      resourceNames:
+        - stackrox-central
+      resources:
+        - podsecuritypolicies
+      verbs:
+        - use
+
+--------DEBUG--------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-central-psp
+    namespace: stackrox
+roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: stackrox-central-psp
+subjects:
+    - kind: ServiceAccount
+      name: central
+      namespace: stackrox
+
+--------DEBUG--------
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-central
+spec:
+    allowPrivilegeEscalation: false
+    fsGroup:
+        ranges:
+            - max: 4000
+              min: 4000
+        rule: MustRunAs
+    hostIPC: false
+    hostNetwork: false
+    hostPID: false
+    privileged: false
+    runAsUser:
+        ranges:
+            - max: 4000
+              min: 4000
+        rule: MustRunAs
+    seLinux:
+        rule: RunAsAny
+    supplementalGroups:
+        rule: RunAsAny
+    volumes:
+        - configMap
+        - emptyDir
+        - projected
+        - secret
+        - downwardAPI
+
+--------DEBUG--------
+apiVersion: v1
+kind: Service
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central
+    namespace: stackrox
+spec:
+    ports:
+        - name: https
+          port: 443
+          targetPort: api
+    selector:
+        app: central
+    type: ClusterIP
+
+--------DEBUG--------
+apiVersion: v1
+imagePullSecrets: null
+kind: ServiceAccount
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-db
+    namespace: stackrox
+
+--------DEBUG--------
+apiVersion: v1
+data:
+    config.yaml: |
+        # Configuration file for scanner.
+
+        scanner:
+          centralEndpoint: https://central.stackrox.svc
+          sensorEndpoint: https://sensor.stackrox.svc
+          database:
+            # Database driver
+            type: pgsql
+            options:
+              # PostgreSQL Connection string
+              # https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING
+              source: host=scanner-db.stackrox.svc port=5432 user=postgres sslmode=verify-full statement_timeout=60000
+              # Number of elements kept in the cache
+              # Values unlikely to change (e.g. namespaces) are cached in order to save prevent needless roundtrips to the database.
+              cachesize: 16384
+
+          api:
+            httpsPort: 8080
+            grpcPort: 8443
+
+          updater:
+            # Frequency with which the scanner will poll for vulnerability updates.
+            interval: 5m
+
+          logLevel: INFO
+
+          # The scanner intentionally avoids extracting or analyzing any files
+          # larger than the following default sizes to prevent DoS attacks.
+          # Leave these commented to use a reasonable default.
+
+          # The max size of files in images that are extracted.
+          # Increasing this number increases memory pressure.
+          # maxExtractableFileSizeMB: 200
+          # The max size of ELF executable files that are analyzed.
+          # Increasing this number may increase disk pressure.
+          # maxELFExecutableFileSizeMB: 800
+          # The max size of image file reader buffer. Image file data beyond this limit are overflowed to temporary files on disk.
+          # maxImageFileReaderBufferSizeMB: 100
+
+          exposeMonitoring: false
+kind: ConfigMap
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: scanner-config
+    namespace: stackrox
+
+--------DEBUG--------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    annotations:
+        email: support@stackrox.com
+        helm.sh/hook: pre-install,pre-upgrade
+        helm.sh/hook-delete-policy: never
+        helm.sh/resource-policy: keep
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-db
+    namespace: stackrox
+spec:
+    accessModes:
+        - ReadWriteOnce
+    resources:
+        requests:
+            storage: 100Gi
+
+--------DEBUG--------
+apiVersion: v1
+kind: Secret
+metadata:
+    annotations:
+        email: support@stackrox.com
+        helm.sh/hook: pre-install,pre-upgrade
+        helm.sh/resource-policy: keep
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-htpasswd
+    namespace: stackrox
+stringData:
+    htpasswd: |
+        admin:$2a$10$5Hrju/v03w0rgPwQWSgJJeRYK3iSyWvDxLcvBkUd7kZ23npOnj2wW
+type: Opaque
+
+--------DEBUG--------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app: central-db
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-db
+    namespace: stackrox
+spec:
+    minReadySeconds: 15
+    replicas: 1
+    selector:
+        matchLabels:
+            app: central-db
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            annotations:
+                email: support@stackrox.com
+                meta.helm.sh/release-name: stackrox-central-services
+                meta.helm.sh/release-namespace: stackrox
+                owner: stackrox
+            labels:
+                app: central-db
+                app.kubernetes.io/component: central
+                app.kubernetes.io/instance: stackrox-central-services
+                app.kubernetes.io/managed-by: Helm
+                app.kubernetes.io/name: stackrox
+                app.kubernetes.io/part-of: stackrox-central-services
+                app.kubernetes.io/version: 1.2.3
+                helm.sh/chart: stackrox-central-services-1.23.4
+            namespace: stackrox
+        spec:
+            affinity:
+                nodeAffinity:
+                    preferredDuringSchedulingIgnoredDuringExecution:
+                        - preference:
+                            matchExpressions:
+                                - key: cloud.google.com/gke-preemptible
+                                  operator: NotIn
+                                  values:
+                                    - "true"
+                          weight: 100
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/infra
+                                  operator: Exists
+                          weight: 50
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/compute
+                                  operator: Exists
+                          weight: 25
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/master
+                                  operator: DoesNotExist
+                          weight: 100
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/control-plane
+                                  operator: DoesNotExist
+                          weight: 100
+            containers:
+                - env:
+                    - name: POSTGRES_HOST_AUTH_METHOD
+                      value: password
+                    - name: PGDATA
+                      value: /var/lib/postgresql/data/pgdata
+                  image: test.registry/central-db:1.2.4
+                  name: central-db
+                  ports:
+                    - containerPort: 5432
+                      name: postgresql
+                      protocol: TCP
+                  readinessProbe:
+                    exec:
+                        command:
+                            - /bin/sh
+                            - -c
+                            - -e
+                            - |
+                              exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+                    failureThreshold: 3
+                    periodSeconds: 10
+                    successThreshold: 1
+                    timeoutSeconds: 1
+                  resources:
+                    limits:
+                        cpu: "8"
+                        memory: 16Gi
+                    requests:
+                        cpu: "4"
+                        memory: 8Gi
+                  securityContext:
+                    runAsGroup: 70
+                    runAsUser: 70
+                  volumeMounts:
+                    - mountPath: /etc/stackrox.d/config/
+                      name: config-volume
+                    - mountPath: /var/lib/postgresql/data
+                      name: disk
+                    - mountPath: /run/secrets/stackrox.io/certs
+                      name: central-db-tls-volume
+                    - mountPath: /dev/shm
+                      name: shared-memory
+            initContainers:
+                - command:
+                    - init-entrypoint.sh
+                  env:
+                    - name: PGDATA
+                      value: /var/lib/postgresql/data/pgdata
+                  image: test.registry/central-db:1.2.4
+                  name: init-db
+                  resources:
+                    limits:
+                        cpu: "8"
+                        memory: 16Gi
+                    requests:
+                        cpu: "4"
+                        memory: 8Gi
+                  securityContext:
+                    runAsGroup: 70
+                    runAsUser: 70
+                  volumeMounts:
+                    - mountPath: /var/lib/postgresql/data
+                      name: disk
+                    - mountPath: /run/secrets/stackrox.io/secrets
+                      name: existing-central-db-password
+            securityContext:
+                fsGroup: 70
+            serviceAccountName: central-db
+            terminationGracePeriodSeconds: 120
+            volumes:
+                - name: disk
+                  persistentVolumeClaim:
+                    claimName: central-db
+                - configMap:
+                    name: central-db-config
+                  name: config-volume
+                - name: existing-central-db-password
+                  secret:
+                    items:
+                        - key: password
+                          path: password
+                    secretName: existing-central-db-password
+                - name: central-db-tls-volume
+                  secret:
+                    defaultMode: 416
+                    items:
+                        - key: cert.pem
+                          path: server.crt
+                        - key: key.pem
+                          path: server.key
+                        - key: ca.pem
+                          path: root.crt
+                    secretName: central-db-tls
+                - emptyDir:
+                    medium: Memory
+                    sizeLimit: 2Gi
+                  name: shared-memory
+
+--------DEBUG--------
+apiVersion: v1
+kind: Service
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-db
+    namespace: stackrox
+spec:
+    ports:
+        - name: tcp-db
+          port: 5432
+          protocol: TCP
+          targetPort: postgresql
+    selector:
+        app: central-db
+    type: ClusterIP
+
+--------DEBUG--------
+apiVersion: v1
+data:
+    central-external-db.yaml: |
+        centralDB:
+          external: false
+          source: >
+            host=central-db.stackrox.svc
+            port=5432
+            user=postgres
+            sslmode=verify-full
+            sslrootcert=/run/secrets/stackrox.io/certs/ca.pem
+            statement_timeout=1.2e+06
+            pool_min_conns=10
+            pool_max_conns=90
+            client_encoding=UTF8
+kind: ConfigMap
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-external-db
+    namespace: stackrox
+
+--------DEBUG--------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app: central
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central
+    namespace: stackrox
+spec:
+    minReadySeconds: 15
+    replicas: 1
+    selector:
+        matchLabels:
+            app: central
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            annotations:
+                email: support@stackrox.com
+                meta.helm.sh/release-name: stackrox-central-services
+                meta.helm.sh/release-namespace: stackrox
+                owner: stackrox
+                traffic.sidecar.istio.io/excludeInboundPorts: "8443"
+            labels:
+                app: central
+                app.kubernetes.io/component: central
+                app.kubernetes.io/instance: stackrox-central-services
+                app.kubernetes.io/managed-by: Helm
+                app.kubernetes.io/name: stackrox
+                app.kubernetes.io/part-of: stackrox-central-services
+                app.kubernetes.io/version: 1.2.3
+                helm.sh/chart: stackrox-central-services-1.23.4
+            namespace: stackrox
+        spec:
+            affinity:
+                nodeAffinity:
+                    preferredDuringSchedulingIgnoredDuringExecution:
+                        - preference:
+                            matchExpressions:
+                                - key: cloud.google.com/gke-preemptible
+                                  operator: NotIn
+                                  values:
+                                    - "true"
+                          weight: 100
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/infra
+                                  operator: Exists
+                          weight: 50
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/compute
+                                  operator: Exists
+                          weight: 25
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/master
+                                  operator: DoesNotExist
+                          weight: 100
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/control-plane
+                                  operator: DoesNotExist
+                          weight: 100
+            containers:
+                - command:
+                    - /stackrox/central-entrypoint.sh
+                  env:
+                    - name: ROX_MEMLIMIT
+                      valueFrom:
+                        resourceFieldRef:
+                            resource: limits.memory
+                    - name: GOMAXPROCS
+                      valueFrom:
+                        resourceFieldRef:
+                            resource: limits.cpu
+                    - name: POD_NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                            fieldPath: metadata.namespace
+                    - name: ROX_TELEMETRY_API_WHITELIST
+                      value: /api/splunk/ta/*,/v1/auth/m2m/exchange,/api/cli/download/*
+                    - name: ROX_OFFLINE_MODE
+                      value: "false"
+                    - name: ROX_INSTALL_METHOD
+                      value: helm
+                  image: test.registry/main:1.2.3
+                  name: central
+                  ports:
+                    - containerPort: 8443
+                      name: api
+                  readinessProbe:
+                    httpGet:
+                        path: /v1/ping
+                        port: 8443
+                        scheme: HTTPS
+                  resources:
+                    limits:
+                        cpu: 4000m
+                        memory: 8Gi
+                    requests:
+                        cpu: 1500m
+                        memory: 4Gi
+                  securityContext:
+                    capabilities:
+                        drop:
+                            - NET_RAW
+                    readOnlyRootFilesystem: true
+                  volumeMounts:
+                    - mountPath: /var/log/stackrox/
+                      name: varlog
+                    - mountPath: /tmp
+                      name: central-tmp-volume
+                    - mountPath: /etc/ssl
+                      name: central-etc-ssl-volume
+                    - mountPath: /etc/pki/ca-trust
+                      name: central-etc-pki-volume
+                    - mountPath: /run/secrets/stackrox.io/certs/
+                      name: central-certs-volume
+                      readOnly: true
+                    - mountPath: /run/secrets/stackrox.io/default-tls-cert/
+                      name: central-default-tls-cert-volume
+                      readOnly: true
+                    - mountPath: /run/secrets/stackrox.io/htpasswd/
+                      name: central-htpasswd-volume
+                      readOnly: true
+                    - mountPath: /run/secrets/stackrox.io/jwt/
+                      name: central-jwt-volume
+                      readOnly: true
+                    - mountPath: /usr/local/share/ca-certificates/
+                      name: additional-ca-volume
+                      readOnly: true
+                    - mountPath: /run/secrets/stackrox.io/central-license/
+                      name: central-license-volume
+                      readOnly: true
+                    - mountPath: /etc/stackrox
+                      name: central-config-volume
+                    - mountPath: /run/secrets/stackrox.io/proxy-config/
+                      name: proxy-config-volume
+                      readOnly: true
+                    - mountPath: /etc/stackrox.d/endpoints/
+                      name: endpoints-config-volume
+                      readOnly: true
+                    - mountPath: /run/secrets/stackrox.io/db-password
+                      name: existing-central-db-password
+                      readOnly: true
+                    - mountPath: /etc/ext-db
+                      name: central-external-db-volume
+            securityContext:
+                fsGroup: 4000
+                runAsUser: 4000
+            serviceAccountName: central
+            volumes:
+                - emptyDir: {}
+                  name: varlog
+                - emptyDir: {}
+                  name: central-tmp-volume
+                - emptyDir: {}
+                  name: central-etc-ssl-volume
+                - emptyDir: {}
+                  name: central-etc-pki-volume
+                - name: central-certs-volume
+                  secret:
+                    secretName: central-tls
+                - name: central-default-tls-cert-volume
+                  secret:
+                    optional: true
+                    secretName: central-default-tls-cert
+                - name: central-htpasswd-volume
+                  secret:
+                    optional: true
+                    secretName: central-htpasswd
+                - name: central-jwt-volume
+                  secret:
+                    items:
+                        - key: jwt-key.pem
+                          path: jwt-key.pem
+                    secretName: central-tls
+                - name: additional-ca-volume
+                  secret:
+                    optional: true
+                    secretName: additional-ca
+                - name: central-license-volume
+                  secret:
+                    optional: true
+                    secretName: central-license
+                - configMap:
+                    name: central-config
+                    optional: true
+                  name: central-config-volume
+                - name: proxy-config-volume
+                  secret:
+                    optional: true
+                    secretName: proxy-config
+                - configMap:
+                    name: central-endpoints
+                  name: endpoints-config-volume
+                - name: existing-central-db-password
+                  secret:
+                    items:
+                        - key: password
+                          path: password
+                    secretName: existing-central-db-password
+                - configMap:
+                    name: central-external-db
+                    optional: true
+                  name: central-external-db-volume
+
+--------DEBUG--------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-db
+    namespace: stackrox
+spec:
+    ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                    app: central
+          ports:
+            - port: 5432
+              protocol: TCP
+    podSelector:
+        matchLabels:
+            app: central-db
+    policyTypes:
+        - Ingress
+        - Egress
+
+--------DEBUG--------
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: scanner
+    namespace: stackrox
+spec:
+    maxReplicas: 5
+    minReplicas: 2
+    scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: scanner
+    targetCPUUtilizationPercentage: 150
+
+--------DEBUG--------
+apiVersion: v1
+data:
+    endpoints.yaml: |
+        # Sample endpoints.yaml configuration for StackRox Central.
+        #
+        # # CAREFUL: If the following line is uncommented, do not expose the default endpoint on port 8443 by default.
+        # #          This will break normal operation.
+        # disableDefault: true # if true, don't serve on :8443
+        # endpoints:
+        #   # Serve plaintext HTTP only on port 8080
+        #   - listen: ":8080"
+        #     # Backend protocols, possible values are 'http' and 'grpc'. If unset or empty, assume both.
+        #     protocols:
+        #       - http
+        #     tls:
+        #       # Disable TLS. If this is not specified, assume TLS is enabled.
+        #       disable: true
+        #   # Serve HTTP and  gRPC for sensors only on port 8444
+        #   - listen: ":8444"
+        #     tls:
+        #       # Which TLS certificates to serve, possible values are 'service' (StackRox-generated service certificates)
+        #       # and 'default' (user-configured default TLS certificate). If unset or empty, assume both.
+        #       serverCerts:
+        #         - default
+        #         - service
+        #       # Client authentication settings.
+        #       clientAuth:
+        #         # Enforce TLS client authentication. If unset, do not enforce, only request certificates
+        #         # opportunistically.
+        #         required: true
+        #         # Which TLS client CAs to serve, possible values are 'service' (CA for StackRox-generated service
+        #         # certificates) and 'user' (CAs for PKI auth providers). If unset or empty, assume both.
+        #         certAuthorities: # if not set, assume ["user", "service"]
+        #           - service
+kind: ConfigMap
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-endpoints
+    namespace: stackrox
+
+--------DEBUG--------
+apiVersion: v1
+kind: Service
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: scanner
+    namespace: stackrox
+spec:
+    ports:
+        - name: https-scanner
+          port: 8080
+          targetPort: 8080
+        - name: grpcs-scanner
+          port: 8443
+          targetPort: 8443
+    selector:
+        app: scanner
+    type: ClusterIP
+
+--------DEBUG--------
+apiVersion: v1
+kind: Service
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: scanner-db
+    namespace: stackrox
+spec:
+    ports:
+        - name: tcp-db
+          port: 5432
+          targetPort: 5432
+    selector:
+        app: scanner-db
+    type: ClusterIP
+
+--------DEBUG--------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-scanner-psp
+rules:
+    - apiGroups:
+        - policy
+      resourceNames:
+        - stackrox-scanner
+      resources:
+        - podsecuritypolicies
+      verbs:
+        - use
+
+--------DEBUG--------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-scanner-psp
+    namespace: stackrox
+roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: stackrox-scanner-psp
+subjects:
+    - kind: ServiceAccount
+      name: scanner
+      namespace: stackrox
+
+--------DEBUG--------
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-scanner
+spec:
+    allowPrivilegeEscalation: false
+    fsGroup:
+        rule: RunAsAny
+    hostIPC: false
+    hostNetwork: false
+    hostPID: false
+    privileged: false
+    runAsUser:
+        rule: RunAsAny
+    seLinux:
+        rule: RunAsAny
+    supplementalGroups:
+        rule: RunAsAny
+    volumes:
+        - configMap
+        - emptyDir
+        - projected
+        - secret
+        - downwardAPI
+        - persistentVolumeClaim
+
+--------DEBUG--------
+apiVersion: v1
+data:
+    central-config.yaml: |
+        maintenance:
+          safeMode: false # When set to true, Central will sleep forever on the next restart
+          compaction:
+            enabled: true
+            bucketFillFraction: .5 # This controls how densely to compact the buckets. Usually not advised to modify
+            freeFractionThreshold: 0.75 # This is the threshold for free bytes / total bytes after which compaction will occur
+          forceRollbackVersion: none # This is the config and target rollback version after upgrade complete.
+kind: ConfigMap
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-config
+    namespace: stackrox
+
+--------DEBUG--------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-central-db-psp
+rules:
+    - apiGroups:
+        - policy
+      resourceNames:
+        - stackrox-central-db
+      resources:
+        - podsecuritypolicies
+      verbs:
+        - use
+
+--------DEBUG--------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-central-db-psp
+    namespace: stackrox
+roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: stackrox-central-db-psp
+subjects:
+    - kind: ServiceAccount
+      name: central-db
+      namespace: stackrox
+
+--------DEBUG--------
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-central-db
+spec:
+    allowPrivilegeEscalation: false
+    fsGroup:
+        ranges:
+            - max: 70
+              min: 70
+        rule: MustRunAs
+    hostIPC: false
+    hostNetwork: false
+    hostPID: false
+    privileged: false
+    runAsUser:
+        ranges:
+            - max: 70
+              min: 70
+        rule: MustRunAs
+    seLinux:
+        rule: RunAsAny
+    supplementalGroups:
+        rule: RunAsAny
+    volumes:
+        - emptyDir
+        - projected
+        - secret
+        - downwardAPI
+        - persistentVolumeClaim
+        - hostPath
+        - configMap
+
+--------DEBUG--------
+apiVersion: v1
+data:
+    pg_hba.conf: |
+        # PostgreSQL Client Authentication Configuration File
+        # ===================================================
+        #
+        # Refer to the "Client Authentication" section in the PostgreSQL
+        # documentation for a complete description of this file.  A short
+        # synopsis follows.
+        #
+        # This file controls: which hosts are allowed to connect, how clients
+        # are authenticated, which PostgreSQL user names they can use, which
+        # databases they can access.  Records take one of these forms:
+        #
+        # local      DATABASE  USER  METHOD  [OPTIONS]
+        # host       DATABASE  USER  ADDRESS  METHOD  [OPTIONS]
+        # hostssl    DATABASE  USER  ADDRESS  METHOD  [OPTIONS]
+        # hostnossl  DATABASE  USER  ADDRESS  METHOD  [OPTIONS]
+        #
+        # (The uppercase items must be replaced by actual values.)
+        #
+        # The first field is the connection type: "local" is a Unix-domain
+        # socket, "host" is either a plain or SSL-encrypted TCP/IP socket,
+        # "hostssl" is an SSL-encrypted TCP/IP socket, and "hostnossl" is a
+        # plain TCP/IP socket.
+        #
+        # DATABASE can be "all", "sameuser", "samerole", "replication", a
+        # database name, or a comma-separated list thereof. The "all"
+        # keyword does not match "replication". Access to replication
+        # must be enabled in a separate record (see example below).
+        #
+        # USER can be "all", a user name, a group name prefixed with "+", or a
+        # comma-separated list thereof.  In both the DATABASE and USER fields
+        # you can also write a file name prefixed with "@" to include names
+        # from a separate file.
+        #
+        # ADDRESS specifies the set of hosts the record matches.  It can be a
+        # host name, or it is made up of an IP address and a CIDR mask that is
+        # an integer (between 0 and 32 (IPv4) or 128 (IPv6) inclusive) that
+        # specifies the number of significant bits in the mask.  A host name
+        # that starts with a dot (.) matches a suffix of the actual host name.
+        # Alternatively, you can write an IP address and netmask in separate
+        # columns to specify the set of hosts.  Instead of a CIDR-address, you
+        # can write "samehost" to match any of the server's own IP addresses,
+        # or "samenet" to match any address in any subnet that the server is
+        # directly connected to.
+        #
+        # METHOD can be "trust", "reject", "md5", "password", "scram-sha-256",
+        # "gss", "sspi", "ident", "peer", "pam", "ldap", "radius" or "cert".
+        # Note that "password" sends passwords in clear text; "md5" or
+        # "scram-sha-256" are preferred since they send encrypted passwords.
+        #
+        # OPTIONS are a set of options for the authentication in the format
+        # NAME=VALUE.  The available options depend on the different
+        # authentication methods -- refer to the "Client Authentication"
+        # section in the documentation for a list of which options are
+        # available for which authentication methods.
+        #
+        # Database and user names containing spaces, commas, quotes and other
+        # special characters must be quoted.  Quoting one of the keywords
+        # "all", "sameuser", "samerole" or "replication" makes the name lose
+        # its special character, and just match a database or username with
+        # that name.
+        #
+        # This file is read on server startup and when the server receives a
+        # SIGHUP signal.  If you edit the file on a running system, you have to
+        # SIGHUP the server for the changes to take effect, run "pg_ctl reload",
+        # or execute "SELECT pg_reload_conf()".
+        #
+        # Put your actual configuration here
+        # ----------------------------------
+        #
+        # If you want to allow non-local connections, you need to add more
+        # "host" records.  In that case you will also need to make PostgreSQL
+        # listen on a non-local interface via the listen_addresses
+        # configuration parameter, or via the -i or -h command line switches.
+
+        # CAUTION: Configuring the system for local "trust" authentication
+        # allows any local user to connect as any PostgreSQL user, including
+        # the database superuser.  If you do not trust all your local users,
+        # use another authentication method.
+
+
+        # TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+        # "local" is for Unix domain socket connections only
+        local   all             all                                     scram-sha-256
+        # IPv4 local connections:
+        host    all             all             127.0.0.1/32            scram-sha-256
+        # IPv6 local connections:
+        host    all             all             ::1/128                 scram-sha-256
+        # Allow replication connections from localhost, by a user with the
+        # replication privilege.
+        local   replication     all                                     trust
+        host    replication     all             127.0.0.1/32            trust
+        host    replication     all             ::1/128                 trust
+
+        ### STACKROX MODIFIED
+        # Reject all non ssl connections from IPs
+        hostnossl  all       all   0.0.0.0/0     reject
+        hostnossl  all       all   ::0/0         reject
+
+        # Accept connections from ssl with password
+        hostssl    all       all   0.0.0.0/0     scram-sha-256
+        hostssl    all       all   ::0/0         scram-sha-256
+        ###
+    postgresql.conf: |
+        hba_file = '/etc/stackrox.d/config/pg_hba.conf'
+        listen_addresses = '*'
+        max_connections = 200
+        password_encryption = scram-sha-256
+
+        ssl = on
+        ssl_ca_file = '/run/secrets/stackrox.io/certs/root.crt'
+        ssl_cert_file = '/run/secrets/stackrox.io/certs/server.crt'
+        ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
+
+        shared_buffers = 2GB
+        work_mem = 40MB
+        maintenance_work_mem = 512MB
+        effective_cache_size = 4GB
+
+        dynamic_shared_memory_type = posix
+        max_wal_size = 5GB
+        min_wal_size = 80MB
+
+        log_timezone = 'Etc/UTC'
+        datestyle = 'iso, mdy'
+        timezone = 'Etc/UTC'
+        lc_messages = 'en_US.utf8'
+        lc_monetary = 'en_US.utf8'		# locale for monetary formatting
+        lc_numeric = 'en_US.utf8'		# locale for number formatting
+        lc_time = 'en_US.utf8'			# locale for time formatting
+
+        default_text_search_config = 'pg_catalog.english'
+        shared_preload_libraries = 'pg_stat_statements'	# StackRox customized
+
+        # Logging. For more details, see
+        # https://www.postgresql.org/docs/current/runtime-config-logging.html
+
+        # It's convenienv for troubleshooting to log which client has connected and
+        # disconnected and when.
+        log_connections = 'on'
+        log_disconnections = 'on'
+
+        # Checkpoints might affect IO throughput.
+        log_checkpoints = 'on'
+
+        # Make excessive locking visible, since it could affect query latency.
+        log_lock_waits = 'on'
+
+        # It's useful for troubleshooting to log any query, that took longer than
+        # 500ms. Just in case if there is any sensitive information in the query
+        # parameters, do not log them, only the query itself.
+        log_min_duration_statement = 500
+        log_parameter_max_length = 0
+
+        # Creating temporary files might indicate switching query plan to a worse one
+        # due to lack of memory. Log any activity with temporary files larger than 1024 bytes.
+        log_temp_files = 1024
+
+        # Autovacuum has to keep up with the data growth. Log any autovacuum activity,
+        # that took longer than 500ms.
+        log_autovacuum_min_duration = 500
+kind: ConfigMap
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-db-config
+    namespace: stackrox
+
+--------DEBUG--------
+apiVersion: v1
+kind: Secret
+metadata:
+    annotations:
+        email: support@stackrox.com
+        helm.sh/hook: pre-install,pre-upgrade
+        helm.sh/resource-policy: keep
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-db-tls
+    namespace: stackrox
+stringData:
+    ca.pem: |
+        CA cert
+    cert.pem: |
+        Central DB cert
+    key.pem: |
+        Central DB key
+type: Opaque
+
+--------DEBUG--------
+apiVersion: v1
+imagePullSecrets: null
+kind: ServiceAccount
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: scanner
+    namespace: stackrox
+
+--------DEBUG--------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-central-diagnostics
+    namespace: stackrox
+rules:
+    - apiGroups:
+        - '*'
+      resources:
+        - deployments
+        - daemonsets
+        - replicasets
+        - configmaps
+        - services
+        - pods
+        - pods/log
+        - events
+        - namespaces
+      verbs:
+        - get
+        - list
+
+--------DEBUG--------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-central-diagnostics
+    namespace: stackrox
+roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: stackrox-central-diagnostics
+subjects:
+    - kind: ServiceAccount
+      name: central
+      namespace: stackrox
+
+--------DEBUG--------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app: scanner
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: scanner
+    namespace: stackrox
+spec:
+    minReadySeconds: 15
+    replicas: 3
+    selector:
+        matchLabels:
+            app: scanner
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            annotations:
+                email: support@stackrox.com
+                meta.helm.sh/release-name: stackrox-central-services
+                meta.helm.sh/release-namespace: stackrox
+                owner: stackrox
+                traffic.sidecar.istio.io/excludeInboundPorts: 8080,8443
+            labels:
+                app: scanner
+                app.kubernetes.io/component: scanner
+                app.kubernetes.io/instance: stackrox-central-services
+                app.kubernetes.io/managed-by: Helm
+                app.kubernetes.io/name: stackrox
+                app.kubernetes.io/part-of: stackrox-central-services
+                app.kubernetes.io/version: 1.2.3
+                helm.sh/chart: stackrox-central-services-1.23.4
+            namespace: stackrox
+        spec:
+            affinity:
+                nodeAffinity:
+                    preferredDuringSchedulingIgnoredDuringExecution:
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/infra
+                                  operator: Exists
+                          weight: 50
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/compute
+                                  operator: Exists
+                          weight: 25
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/master
+                                  operator: DoesNotExist
+                          weight: 100
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/control-plane
+                                  operator: DoesNotExist
+                          weight: 100
+                podAntiAffinity:
+                    preferredDuringSchedulingIgnoredDuringExecution:
+                        - podAffinityTerm:
+                            labelSelector:
+                                matchLabels:
+                                    app: scanner
+                            topologyKey: kubernetes.io/hostname
+                          weight: 100
+            containers:
+                - command:
+                    - /entrypoint.sh
+                  env:
+                    - name: ROX_MEMLIMIT
+                      valueFrom:
+                        resourceFieldRef:
+                            resource: limits.memory
+                    - name: GOMAXPROCS
+                      valueFrom:
+                        resourceFieldRef:
+                            resource: limits.cpu
+                    - name: POD_NAME
+                      valueFrom:
+                        fieldRef:
+                            fieldPath: metadata.name
+                    - name: POD_NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                            fieldPath: metadata.namespace
+                  image: test.registry/scanner:2.2.2
+                  name: scanner
+                  ports:
+                    - containerPort: 8080
+                      name: https
+                    - containerPort: 8443
+                      name: grpc
+                  readinessProbe:
+                    failureThreshold: 6
+                    httpGet:
+                        path: /scanner/ping
+                        port: 8080
+                        scheme: HTTPS
+                    periodSeconds: 10
+                    successThreshold: 1
+                    timeoutSeconds: 10
+                  resources:
+                    limits:
+                        cpu: 2000m
+                        memory: 4Gi
+                    requests:
+                        cpu: 1000m
+                        memory: 1500Mi
+                  securityContext:
+                    capabilities:
+                        drop:
+                            - NET_RAW
+                    runAsUser: 65534
+                  volumeMounts:
+                    - mountPath: /etc/ssl
+                      name: scanner-etc-ssl-volume
+                    - mountPath: /etc/pki/ca-trust
+                      name: scanner-etc-pki-volume
+                    - mountPath: /usr/local/share/ca-certificates/
+                      name: additional-ca-volume
+                      readOnly: true
+                    - mountPath: /etc/scanner
+                      name: scanner-config-volume
+                      readOnly: true
+                    - mountPath: /run/secrets/stackrox.io/certs/
+                      name: scanner-tls-volume
+                      readOnly: true
+                    - mountPath: /var/lib/stackrox
+                      name: vuln-temp-db
+                    - mountPath: /run/secrets/stackrox.io/proxy-config/
+                      name: proxy-config-volume
+                      readOnly: true
+                    - mountPath: /run/secrets/stackrox.io/secrets
+                      name: existing-scanner-db-password
+                      readOnly: true
+            securityContext:
+                runAsNonRoot: true
+                runAsUser: 65534
+            serviceAccountName: scanner
+            volumes:
+                - name: additional-ca-volume
+                  secret:
+                    defaultMode: 420
+                    optional: true
+                    secretName: additional-ca
+                - emptyDir: {}
+                  name: scanner-etc-ssl-volume
+                - emptyDir: {}
+                  name: scanner-etc-pki-volume
+                - configMap:
+                    name: scanner-config
+                  name: scanner-config-volume
+                - name: scanner-tls-volume
+                  secret:
+                    secretName: scanner-tls
+                - emptyDir: {}
+                  name: vuln-temp-db
+                - name: proxy-config-volume
+                  secret:
+                    optional: true
+                    secretName: proxy-config
+                - name: existing-scanner-db-password
+                  secret:
+                    items:
+                        - key: password
+                          path: password
+                    secretName: existing-scanner-db-password
+
+--------DEBUG--------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app: scanner-db
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: scanner-db
+    namespace: stackrox
+spec:
+    minReadySeconds: 15
+    replicas: 1
+    selector:
+        matchLabels:
+            app: scanner-db
+    strategy:
+        type: Recreate
+    template:
+        metadata:
+            annotations:
+                email: support@stackrox.com
+                meta.helm.sh/release-name: stackrox-central-services
+                meta.helm.sh/release-namespace: stackrox
+                owner: stackrox
+                traffic.sidecar.istio.io/excludeInboundPorts: "5432"
+            labels:
+                app: scanner-db
+                app.kubernetes.io/component: scanner
+                app.kubernetes.io/instance: stackrox-central-services
+                app.kubernetes.io/managed-by: Helm
+                app.kubernetes.io/name: stackrox
+                app.kubernetes.io/part-of: stackrox-central-services
+                app.kubernetes.io/version: 1.2.3
+                helm.sh/chart: stackrox-central-services-1.23.4
+            namespace: stackrox
+        spec:
+            affinity:
+                nodeAffinity:
+                    preferredDuringSchedulingIgnoredDuringExecution:
+                        - preference:
+                            matchExpressions:
+                                - key: cloud.google.com/gke-preemptible
+                                  operator: NotIn
+                                  values:
+                                    - "true"
+                          weight: 100
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/infra
+                                  operator: Exists
+                          weight: 50
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/compute
+                                  operator: Exists
+                          weight: 25
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/master
+                                  operator: DoesNotExist
+                          weight: 100
+                        - preference:
+                            matchExpressions:
+                                - key: node-role.kubernetes.io/control-plane
+                                  operator: DoesNotExist
+                          weight: 100
+            containers:
+                - env: null
+                  image: test.registry/scanner-db:2.2.2
+                  name: db
+                  ports:
+                    - containerPort: 5432
+                      name: tcp-postgresql
+                      protocol: TCP
+                  resources:
+                    limits:
+                        cpu: 2000m
+                        memory: 4Gi
+                    requests:
+                        cpu: 200m
+                        memory: 512Mi
+                  volumeMounts:
+                    - mountPath: /var/lib/postgresql/data
+                      name: scanner-db-data
+                    - mountPath: /run/secrets/stackrox.io/certs
+                      name: scanner-db-tls-volume
+                      readOnly: true
+            initContainers:
+                - env:
+                    - name: POSTGRES_PASSWORD_FILE
+                      value: /run/secrets/stackrox.io/secrets/password
+                    - name: ROX_SCANNER_DB_INIT
+                      value: "true"
+                  image: test.registry/scanner-db:2.2.2
+                  name: init-db
+                  resources:
+                    limits:
+                        cpu: 2000m
+                        memory: 4Gi
+                    requests:
+                        cpu: 200m
+                        memory: 512Mi
+                  volumeMounts:
+                    - mountPath: /var/lib/postgresql/data
+                      name: scanner-db-data
+                    - mountPath: /run/secrets/stackrox.io/certs
+                      name: scanner-db-tls-volume
+                      readOnly: true
+                    - mountPath: /run/secrets/stackrox.io/secrets
+                      name: existing-scanner-db-password
+                      readOnly: true
+            securityContext:
+                fsGroup: 70
+                runAsGroup: 70
+                runAsNonRoot: true
+                runAsUser: 70
+            serviceAccountName: scanner
+            volumes:
+                - configMap:
+                    name: scanner-config
+                  name: scanner-config-volume
+                - name: scanner-tls-volume
+                  secret:
+                    secretName: scanner-tls
+                - name: scanner-db-tls-volume
+                  secret:
+                    defaultMode: 416
+                    items:
+                        - key: cert.pem
+                          path: server.crt
+                        - key: key.pem
+                          path: server.key
+                        - key: ca.pem
+                          path: root.crt
+                    secretName: scanner-db-tls
+                - emptyDir: {}
+                  name: scanner-db-data
+                - name: existing-scanner-db-password
+                  secret:
+                    items:
+                        - key: password
+                          path: password
+                    secretName: existing-scanner-db-password
+
+--------DEBUG--------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-sts-config-reader
+    namespace: stackrox
+rules:
+    - apiGroups:
+        - ""
+      resourceNames:
+        - gcp-cloud-credentials
+      resources:
+        - secrets
+      verbs:
+        - get
+        - list
+        - watch
+
+--------DEBUG--------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: central-sts-config-reader
+    namespace: stackrox
+roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: central-sts-config-reader
+subjects:
+    - kind: ServiceAccount
+      name: central
+      namespace: stackrox
+
+--------DEBUG--------
+apiVersion: v1
+kind: Secret
+metadata:
+    annotations:
+        email: support@stackrox.com
+        helm.sh/hook: pre-install,pre-upgrade
+        helm.sh/hook-delete-policy: never
+        helm.sh/resource-policy: keep
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: stackrox-generated-wdspnr
+    namespace: stackrox
+stringData:
+    generated-values.yaml: |
+        # The following values were generated by the StackRox Central Services Helm chart.
+        # You can pass this file to `helm install` via the `-f` parameter, which in conjunction
+        # with your local values files and values specified via `--set` will allow you to
+        # deterministically reproduce the deployment.
+        central:
+          db:
+            password:
+              value: TBTRTMtAWM6wOrYZiJESw7DvSoPXnWVL
+          jwtSigner:
+            key: |
+              -----BEGIN RSA PRIVATE KEY-----
+              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
+              -----END RSA PRIVATE KEY-----
+        scanner:
+          dbPassword:
+            value: kiO1lHuZ0VjE4w6y25qlr8STELIUFn6s
+
+--------DEBUG--------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: scanner
+    namespace: stackrox
+spec:
+    ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                    app: central
+          ports:
+            - port: 8080
+              protocol: TCP
+            - port: 8443
+              protocol: TCP
+        - from:
+            - podSelector:
+                matchLabels:
+                    app: sensor
+          ports:
+            - port: 8080
+              protocol: TCP
+            - port: 8443
+              protocol: TCP
+    podSelector:
+        matchLabels:
+            app: scanner
+    policyTypes:
+        - Ingress
+
+--------DEBUG--------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: scanner
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: scanner-db
+    namespace: stackrox
+spec:
+    ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                    app: scanner
+          ports:
+            - port: 5432
+              protocol: TCP
+    podSelector:
+        matchLabels:
+            app: scanner-db
+    policyTypes:
+        - Ingress
+
+--------DEBUG--------
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+    annotations:
+        email: support@stackrox.com
+        meta.helm.sh/release-name: stackrox-central-services
+        meta.helm.sh/release-namespace: stackrox
+        owner: stackrox
+    labels:
+        app.kubernetes.io/component: central
+        app.kubernetes.io/instance: stackrox-central-services
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: stackrox
+        app.kubernetes.io/part-of: stackrox-central-services
+        app.kubernetes.io/version: 1.2.3
+        helm.sh/chart: stackrox-central-services-1.23.4
+    name: allow-ext-to-central
+    namespace: stackrox
+spec:
+    ingress:
+        - ports:
+            - port: 8443
+              protocol: TCP
+    podSelector:
+        matchLabels:
+            app: central
+    policyTypes:
+        - Ingress
+
+--- PASS: TestWithHelmtest (0.03s)
+    --- PASS: TestWithHelmtest/testdata/helmtest (0.00s)
+        --- PASS: TestWithHelmtest/testdata/helmtest/existing-db-password.test.yaml (0.00s)
+            --- PASS: TestWithHelmtest/testdata/helmtest/existing-db-password.test.yaml/Debug (1.94s)
+PASS
+ok  	github.com/stackrox/rox/pkg/helm/charts/tests/centralservices	2.016s

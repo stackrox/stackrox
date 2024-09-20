@@ -1,0 +1,55 @@
+name: "Existing TLS tests"
+defs: |
+  def get_certs(resource):
+    resource.spec.template.spec.volumes | map(select(.name == "certs")) | .[].projected.sources ;
+  def get_volumemounts(container):
+    container.volumeMounts;
+values:
+  imagePullSecrets:
+    allowNone: true
+  createSecrets: false
+  ca:
+    existingSecret:
+      name: existing-ca-tls
+      cert: existing-ca.pem
+  admissionControl:
+    serviceTLS:
+      existingSecret: 
+        name: existing-admission-control-tls
+        cert: existing-cert.pem
+        key: existing-key.pem
+  collector:
+    serviceTLS:
+      existingSecret:
+        name: existing-collector-tls
+        cert: existing-cert.pem
+        key: existing-key.pem
+  sensor:
+    serviceTLS:
+      existingSecret: 
+        name: existing-sensor-tls
+        cert: existing-cert.pem
+        key: existing-key.pem
+tests:
+  - name: "Should mount existing CA secret to all deployments"
+    expect: |
+      get_certs(.deployments["admission-control"]) | map(select(.secret.name == "existing-ca-tls"))[] | assertThat(.secret.items[].key == "existing-ca.pem")
+      get_certs(.daemonsets["collector"]) | map(select(.secret.name == "existing-ca-tls"))[] | assertThat(.secret.items[].key == "existing-ca.pem")
+      get_certs(.deployments["sensor"]) | map(select(.secret.name == "existing-ca-tls"))[] | assertThat(.secret.items[].key == "existing-ca.pem")
+  - name: "Should mount existing TLS key and cert to admission control deployment"
+    expect: |
+      get_certs(.deployments["admission-control"]) | map(select(.secret.name == "existing-admission-control-tls")) | .[].secret.items | map(select(.key == "existing-cert.pem"))[] | assertThat(.path == "cert.pem")
+      get_certs(.deployments["admission-control"]) | map(select(.secret.name == "existing-admission-control-tls")) | .[].secret.items | map(select(.key == "existing-key.pem"))[] | assertThat(.path == "key.pem")
+  - name: "Should mount existing TLS key and cert to collector daemonset"
+    expect: |
+      get_certs(.daemonsets["collector"]) | map(select(.secret.name == "existing-collector-tls")) | .[].secret.items | map(select(.key == "existing-cert.pem"))[] | assertThat(.path == "cert.pem")
+      get_certs(.daemonsets["collector"]) | map(select(.secret.name == "existing-collector-tls")) | .[].secret.items | map(select(.key == "existing-key.pem"))[] | assertThat(.path == "key.pem")
+  - name: "Should mount existing TLS key and cert to sensor deployment"
+    expect: |
+      get_certs(.deployments["sensor"]) | map(select(.secret.name == "existing-sensor-tls")) | .[].secret.items | map(select(.key == "existing-cert.pem"))[] | assertThat(.path == "cert.pem")
+      get_certs(.deployments["sensor"]) | map(select(.secret.name == "existing-sensor-tls")) | .[].secret.items | map(select(.key == "existing-key.pem"))[] | assertThat(.path == "key.pem")
+  - name: "Should not generate TLS secrets when .Values.createSecrets is false"
+    expect: |
+      .objects | map(select(.kind == "Secret" and .metadata.name == "admission-control-tls")) | assertThat(length == 0)
+      .objects | map(select(.kind == "Secret" and .metadata.name == "collector-tls")) | assertThat(length == 0)
+      .objects | map(select(.kind == "Secret" and .metadata.name == "sensor-tls")) | assertThat(length == 0)

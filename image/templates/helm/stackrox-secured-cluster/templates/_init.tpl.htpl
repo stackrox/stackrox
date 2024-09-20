@@ -36,22 +36,6 @@
 {{ $rox := deepCopy $values }}
 {{ $_ := set $ "_rox" $rox }}
 
-{{/*
-  The below section checks if any preexisting k8s secrets have been provided to the helm chart. 
-  If so, it looks them up in the cluster and loads them into the _rox config. This allows us to 
-  support pre-existing CA/sensor/admissionControl/collector secrets. This means an operator can
-  pull the necessary TLS certs from the central service dashboard, load them into the k8s cluster
-  ahead of time, and then deploy the secured-cluster-services helm chart without needing to put
-  TLS secrets in a values file that could get committed into source control.
-    */}}
-
-{{ include "srox.getExistingTLSSecret" (list $rox.ca $.Release.Namespace "cert" )}}
-{{ include "srox.getExistingTLSSecret" (list $rox.sensor.serviceTLS $.Release.Namespace "cert" )}}
-{{ include "srox.getExistingTLSSecret" (list $rox.sensor.serviceTLS $.Release.Namespace "key" )}}
-{{ include "srox.getExistingTLSSecret" (list $rox.collector.serviceTLS $.Release.Namespace "cert" )}}
-{{ include "srox.getExistingTLSSecret" (list $rox.collector.serviceTLS $.Release.Namespace "key" )}}
-{{ include "srox.getExistingTLSSecret" (list $rox.admissionControl.serviceTLS $.Release.Namespace "cert" )}}
-{{ include "srox.getExistingTLSSecret" (list $rox.admissionControl.serviceTLS $.Release.Namespace "key" )}}
 
 {{ $configShape := $.Files.Get "internal/config-shape.yaml" | fromYaml }}
 {{/* Only merge scanner config shapes if kubectl output is disabled */}}
@@ -65,6 +49,13 @@
 
 {{ $_ = include "srox.mergeInto" (list $rox $configShape) }}
 {{ $_ = set $._rox "_configShape" $configShape }}
+
+{{- if not $._rox.createSecrets }}
+{{ $caSecretLookup := lookup "v1" "Secret" $.Release.Namespace $._rox.ca.existingSecret.name }}
+{{- if $caSecretLookup }}
+  {{ $_ = set $._rox "caSecretEnc" (index $caSecretLookup.data $._rox.ca.existingSecret.cert)}}
+{{- end }}
+{{- end }}
 
 {{/* Set the config fingerprint as computed or overridden via values. */}}
 {{ $configFP = default $configFP $._rox.meta.configFingerprintOverride }}
@@ -277,7 +268,7 @@ The following block checks for the validity of the provided init bundle. (`helm 
     {{ include "srox.fail" (list . "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation.") }}
 {{- else if and (not $helmInitBundleNotPresent) $operatorInitBundlePresent }}
     {{ include "srox.warn" (list . "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart.") }}
-{{- else if $helmInitBundleNotPresent }}
+{{- else if and $helmInitBundleNotPresent $._rox.createSecrets }}
     {{ include "srox.fail" (list . "A CA certificate must be specified") }}
 {{- end }}
 

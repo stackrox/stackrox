@@ -178,9 +178,9 @@ spec:
         - name: endpoints-config-volume
           mountPath: /etc/stackrox.d/endpoints/
           readOnly: true
-        {{ if not $._rox.central.db.existingSecret }}
+        {{- if not $._rox.central.db.existingSecret.name }}
         - name: central-db-password
-        {{- else -}}
+        {{- else }}
         - name: {{ $._rox.central.db.existingSecret.name }}
         {{- end }}
           mountPath: /run/secrets/stackrox.io/db-password
@@ -263,11 +263,11 @@ spec:
       - name: endpoints-config-volume
         configMap:
           name: central-endpoints
-      {{ if not $._rox.central.db.existingSecret -}}
+      {{- if not $._rox.central.db.existingSecret.name }}
       - name: central-db-password
         secret:
           secretName: central-db-password
-      {{- else -}}
+      {{- else }}
       - name: {{ $._rox.central.db.existingSecret.name }}
         secret:
           secretName: {{ $._rox.central.db.existingSecret.name }}
