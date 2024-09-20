@@ -76,6 +76,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Now the metadata and layers pulled will be based on the digest of the image provided by the container runtime (when available) instead of just the tag.
 - ROX-26748: Replaced 'unsafe' characters in the CSV report file name.
 - The endpoint `/v2/compliance/scan/configurations/reports/run` method has changed from `PUT` to `POST`.
+- ROX-23956, ROX-17355: Scanner V4 Indexer will now re-index manifests/images under two conditions: (1) upon Indexer update which knowingly affects manifests/images or (2) after some random amount of time between 7 and 30 days after indexing.
+  - This will allow image scans to reflect the latest features (for example, we support a new language, we will re-index an image to see if artifacts of the new language exist)
+  - This will also clean up manifests/Index Reports from Scanner V4 DB which are no longer relevant in the environment
+  - This will mean Scanner V4 Indexer will now pull images from the registry more than just once, putting some more load on registries.
 
 ## [4.5.0]
 
