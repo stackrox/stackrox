@@ -20,7 +20,7 @@ This is a problem, as there are several reasons why re-indexing is required:
   * For example, it may be possible an image is indexed before it's related repository CPEs were made available [here](https://security.access.redhat.com/data/metrics/repository-to-cpe.json). Once the data is available, the image should be re-indexed to ensure it's complete.
 
 Talking with the Clair team and inspecting the [Quay](https://github.com/quay/quay) and [Clair](https://github.com/quay/clair/blob/v4.7.4/httptransport/indexer_v1.go#L175) codebases, it is clear Clair has a built-in way to handle "versioned scanner" updates:
-it is up to the client (typically Quay) to track the Indexer's state (which is a hash of all the "versioned scanners" and their respective versions) returned by Clair to the client via `etag` alongside the Index Report.
+it is up to the client (typically Quay) to track the Indexer's state (which is a hash of all the "versioned scanners" and their respective versions) returned by Clair to the client via the `etag` HTTP header alongside the Index Report.
 The client then sends that state back to Clair in an `If-None-Match` header, so it may determine if there have been any updates to the "versioned scanners" since indexing the image.
 When done this way, the client does not need to generate a [`*claircore.Manifest`](https://github.com/quay/claircore/blob/v1.5.29/manifest.go#L5), which may be expensive.
 
