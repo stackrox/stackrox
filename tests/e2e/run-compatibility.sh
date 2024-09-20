@@ -20,7 +20,7 @@ source "$ROOT/tests/e2e/lib.sh"
 
 run_compatibility_tests() {
     if [[ "$#" -ne 2 ]]; then
-        info "run_compatibility_tests() Args: $@, Numargs: $#"
+        info "run_compatibility_tests() Args: $*, Numargs: $#"
         die "missing args. usage: run_compatibility_tests <central_version> <sensor_version>"
     fi
 
@@ -126,5 +126,5 @@ shorten_tag() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    run_compatibility_tests "$*"
+    run_compatibility_tests "$#"
 fi
