@@ -7,7 +7,7 @@ FROM quay.io/tommartensen/hermetic-experiment:latest as builder-runner
 # # For some reason, openshift-golang-builder 9 comes without any RPM repos in /etc/yum.repos.d/
 # # We, however, need to install some packages and so we need to configure RPM repos. The ones for UBI are sufficient.
 # COPY --from=ubi-repo-donor /etc/yum.repos.d/ubi.repo /etc/yum.repos.d/ubi.repo
-# RUN dnf -y upgrade --nobest && dnf -y install --nodocs --noplugins jq
+# RUN dnf -y upgrade --nobest && dnf -y install --nodocs --noplugins jq python3-devel
 
 # Use a new stage to enable caching of the package installations for local development
 FROM builder-runner AS builder
