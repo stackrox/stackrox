@@ -1326,18 +1326,16 @@ func (x *CollectorNamespaceConfig) GetNamespaceSelection() []*CollectorNamespace
 }
 
 // CollectorConfig controls which type of data is reported by collector
-// and processing of that data by collector. For now this configuration
-// controls if processes, network connections, and network endpoints are
-// reported. It also controls if process information is reported with
-// network endpoints and if external IPs are aggregated. External IP
-// aggregation is controlled at the namespace level and in the future
-// other features may also be controlled at the namespace level.
+// and how it is processed by collector. These configurations are used
+// to fine-tune collector's performance on large scale clusters.
+// For example, it controls if process information is reported with
+// network information and if external IPs should be aggregated.
 type CollectorConfig struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The following three are applied at the cluster level.
+	// The following configs are applied at the cluster level.
 	ProcessConfig           *ProcessConfig           `protobuf:"bytes,1,opt,name=process_config,json=processConfig,proto3" json:"process_config,omitempty"`
 	NetworkConnectionConfig *NetworkConnectionConfig `protobuf:"bytes,2,opt,name=network_connection_config,json=networkConnectionConfig,proto3" json:"network_connection_config,omitempty"`
 	NetworkEndpointConfig   *NetworkEndpointConfig   `protobuf:"bytes,3,opt,name=network_endpoint_config,json=networkEndpointConfig,proto3" json:"network_endpoint_config,omitempty"`
