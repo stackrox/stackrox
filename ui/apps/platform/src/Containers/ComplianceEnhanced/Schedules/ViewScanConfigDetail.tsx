@@ -53,7 +53,7 @@ function ViewScanConfigDetail({
     error = null,
 }: ViewScanConfigDetailProps): React.ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isReportJobsEnabled = !isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
+    const isReportJobsEnabled = isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
 
     const [selectedTab, setSelectedTab] = useState<JobContextTab>('CONFIGURATION_DETAILS');
     const [isTriggeringRescan, setIsTriggeringRescan] = useState(false);
