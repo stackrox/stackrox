@@ -11,7 +11,7 @@ import {
 
 import {
     ComplianceScanConfigurationStatus,
-    ComplianceScanSnapshot,
+    ComplianceReportSnapshot,
 } from 'services/ComplianceScanConfigurationService';
 import JobDetails from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/JobDetails';
 import ReportJobsTable from 'Components/ReportJob/ReportJobsTable';
@@ -25,7 +25,7 @@ import ReportRunStatesFilter, { ensureReportRunStates } from './ReportRunStatesF
 import MyJobsFilter from './MyJobsFilter';
 
 function createMockData(scanConfig: ComplianceScanConfigurationStatus) {
-    const snapshots: ComplianceScanSnapshot[] = [
+    const snapshots: ComplianceReportSnapshot[] = [
         {
             reportJobId: 'ab1c03ae-9707-43d1-932d-f948afb67b53',
             reportStatus: {
@@ -47,11 +47,11 @@ function createMockData(scanConfig: ComplianceScanConfigurationStatus) {
     return snapshots;
 }
 
-function getJobId(snapshot: ComplianceScanSnapshot) {
+function getJobId(snapshot: ComplianceReportSnapshot) {
     return snapshot.scanConfig.id;
 }
 
-function getConfigName(snapshot: ComplianceScanSnapshot) {
+function getConfigName(snapshot: ComplianceReportSnapshot) {
     return snapshot.scanConfig.scanName;
 }
 
@@ -136,7 +136,7 @@ function ReportJobs({ scanConfig }: ReportJobsProps) {
                 getConfigName={getConfigName}
                 onClearFilters={() => {}}
                 onDeleteDownload={() => {}}
-                renderExpandableRowContent={(snapshot: ComplianceScanSnapshot) => {
+                renderExpandableRowContent={(snapshot: ComplianceReportSnapshot) => {
                     return (
                         <>
                             <Card isFlat>

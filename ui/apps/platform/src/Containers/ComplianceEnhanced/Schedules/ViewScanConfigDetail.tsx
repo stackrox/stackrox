@@ -19,7 +19,6 @@ import {
 
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import useAlert from 'hooks/useAlert';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import {
     ComplianceScanConfigurationStatus,
@@ -37,6 +36,7 @@ import ReportJobs from './components/ReportJobs';
 
 type ViewScanConfigDetailProps = {
     hasWriteAccessForCompliance: boolean;
+    isReportJobsEnabled: boolean;
     scanConfig?: ComplianceScanConfigurationStatus;
     isLoading: boolean;
     error?: Error | string | null;
@@ -47,13 +47,11 @@ const allReportJobsTabId = 'ComplianceScanConfigReportJobs';
 
 function ViewScanConfigDetail({
     hasWriteAccessForCompliance,
+    isReportJobsEnabled,
     scanConfig,
     isLoading,
     error = null,
 }: ViewScanConfigDetailProps): React.ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isReportJobsEnabled = isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
-
     const [activeScanConfigTab, setActiveScanConfigTab] = useURLStringUnion(
         'scanConfigTab',
         jobContextTabs
@@ -157,6 +155,7 @@ function ViewScanConfigDetail({
                                             scanConfig.lastExecutedTime === null */
                                         }
                                         scanConfigResponse={scanConfig}
+                                        isReportJobsEnabled={isReportJobsEnabled}
                                     />
                                 </FlexItem>
                             )}

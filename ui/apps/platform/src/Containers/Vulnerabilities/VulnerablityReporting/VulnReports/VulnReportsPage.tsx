@@ -54,8 +54,8 @@ import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import pluralize from 'pluralize';
+import MyActiveJobStatus from 'Components/ReportJob/MyActiveJobStatus';
 import HelpIconTh from './HelpIconTh';
-import MyActiveJobStatus from './MyActiveJobStatus';
 
 const CreateReportsButton = () => {
     return (

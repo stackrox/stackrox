@@ -5,6 +5,7 @@ import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import { PageActions } from './compliance.scanConfigs.utils';
 import CreateScanConfigPage from './CreateScanConfigPage';
@@ -22,6 +23,8 @@ function ScanConfigsPage() {
 
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isReportJobsEnabled = isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
 
     return (
         <Switch>
@@ -36,15 +39,25 @@ function ScanConfigsPage() {
                         return (
                             <ScanConfigsTablePage
                                 hasWriteAccessForCompliance={hasWriteAccessForCompliance}
+                                isReportJobsEnabled={isReportJobsEnabled}
                             />
                         );
                     }
                     return <Redirect to={complianceEnhancedSchedulesPath} />;
                 }}
             />
-            <Route exact path={scanConfigDetailsPath}>
-                <ScanConfigDetailPage hasWriteAccessForCompliance={hasWriteAccessForCompliance} />
-            </Route>
+            <Route
+                exact
+                path={scanConfigDetailsPath}
+                render={() => {
+                    return (
+                        <ScanConfigDetailPage
+                            hasWriteAccessForCompliance={hasWriteAccessForCompliance}
+                            isReportJobsEnabled={isReportJobsEnabled}
+                        />
+                    );
+                }}
+            />
         </Switch>
     );
 }

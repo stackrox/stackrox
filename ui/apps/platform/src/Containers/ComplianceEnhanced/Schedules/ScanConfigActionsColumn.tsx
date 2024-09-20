@@ -17,6 +17,8 @@ export type ScanConfigActionsColumnProps = {
     handleSendReport: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleGenerateDownload: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     scanConfigResponse: ComplianceScanConfigurationStatus;
+    isSnapshotStatusPending: boolean;
+    isReportJobsEnabled: boolean;
 };
 
 function ScanConfigActionsColumn({
@@ -25,6 +27,8 @@ function ScanConfigActionsColumn({
     handleSendReport,
     handleGenerateDownload,
     scanConfigResponse,
+    isSnapshotStatusPending,
+    isReportJobsEnabled,
 }: ScanConfigActionsColumnProps): ReactElement {
     const history = useHistory();
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -49,6 +53,7 @@ function ScanConfigActionsColumn({
                     search: 'action=edit',
                 });
             },
+            isDisabled: isSnapshotStatusPending,
         },
         {
             isSeparator: true,
@@ -61,6 +66,7 @@ function ScanConfigActionsColumn({
                 event.preventDefault();
                 handleRunScanConfig(scanConfigResponse);
             },
+            isDisabled: isSnapshotStatusPending,
         },
         /* eslint-disable no-nested-ternary */
         {
@@ -71,11 +77,12 @@ function ScanConfigActionsColumn({
                     : /* isScanning
                       ? 'Send is disabled while scan is running'
                       : */ '',
-            isDisabled: notifiers.length === 0 /* || isScanning */,
             onClick: (event) => {
                 event.preventDefault();
                 handleSendReport(scanConfigResponse);
             },
+            isHidden: !isComplianceReportingEnabled,
+            isDisabled: notifiers.length === 0 || isSnapshotStatusPending,
         },
         /* eslint-enable no-nested-ternary */
         {
@@ -84,6 +91,8 @@ function ScanConfigActionsColumn({
                 event.preventDefault();
                 handleGenerateDownload(scanConfigResponse);
             },
+            isHidden: !isReportJobsEnabled,
+            isDisabled: isSnapshotStatusPending,
         },
         {
             isSeparator: true,
@@ -100,8 +109,9 @@ function ScanConfigActionsColumn({
                 event.preventDefault();
                 handleDeleteScanConfig(scanConfigResponse);
             },
+            isDisabled: isSnapshotStatusPending,
         },
-    ].filter(({ title }) => title !== 'Send report' || isComplianceReportingEnabled);
+    ].filter(({ isHidden }) => !isHidden);
 
     return (
         <ActionsColumn

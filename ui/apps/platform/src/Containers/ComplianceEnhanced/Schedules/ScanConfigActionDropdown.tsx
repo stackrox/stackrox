@@ -24,6 +24,7 @@ export type ScanConfigActionDropdownProps = {
     handleGenerateDownload: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     isScanning: boolean;
     scanConfigResponse: ComplianceScanConfigurationStatus;
+    isReportJobsEnabled: boolean;
 };
 
 function ScanConfigActionDropdown({
@@ -32,11 +33,11 @@ function ScanConfigActionDropdown({
     handleGenerateDownload,
     isScanning,
     scanConfigResponse,
+    isReportJobsEnabled,
 }: ScanConfigActionDropdownProps): ReactElement {
     const history = useHistory();
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
-    const isReportJobsEnabled = isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
 
     const [isOpen, setIsOpen] = useState(false);
 

@@ -47,6 +47,9 @@ import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
+import MyActiveJobStatusTh from 'Components/ReportJob/MyActiveJobStatusTh';
+import MyActiveJobStatus from 'Components/ReportJob/MyActiveJobStatus';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import {
@@ -54,9 +57,11 @@ import {
     getTimeWithHourMinuteFromISO8601,
 } from './compliance.scanConfigs.utils';
 import ScanConfigActionsColumn from './ScanConfigActionsColumn';
+import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapshotForComplianceReports';
 
 type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
+    isReportJobsEnabled: boolean;
 };
 
 const CreateScanConfigButton = () => {
@@ -75,6 +80,7 @@ const defaultSortOption = {
 
 function ScanConfigsTablePage({
     hasWriteAccessForCompliance,
+    isReportJobsEnabled,
 }: ScanConfigsTablePageProps): React.ReactElement {
     const [scanConfigsToDelete, setScanConfigsToDelete] = useState<
         ComplianceScanConfigurationStatus[]
@@ -93,10 +99,19 @@ function ScanConfigsTablePage({
         [sortOption, page, perPage]
     );
     const { data: listData, isLoading, error, refetch } = useRestQuery(listQuery);
+    const { complianceReportSnapshots } = useWatchLastSnapshotForComplianceReports(
+        listData?.configurations
+    );
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 
-    const colSpan = hasWriteAccessForCompliance ? 6 : 5;
+    let colSpan = 5;
+    if (hasWriteAccessForCompliance) {
+        colSpan += 1;
+    }
+    if (isReportJobsEnabled) {
+        colSpan += 1;
+    }
 
     function openDeleteModal(scanConfigs) {
         setScanConfigsToDelete(scanConfigs);
@@ -198,6 +213,10 @@ function ScanConfigsTablePage({
             const scanConfigUrl = generatePath(scanConfigDetailsPath, {
                 scanConfigId: id,
             });
+            const scanConfigSnapshot = complianceReportSnapshots[id];
+            const isSnapshotStatusPending =
+                scanConfigSnapshot?.reportStatus.runState === 'PREPARING' ||
+                scanConfigSnapshot?.reportStatus.runState === 'WAITING';
 
             return (
                 <Tr key={id}>
@@ -219,6 +238,11 @@ function ScanConfigsTablePage({
                     <Td dataLabel="Profiles">
                         {displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}
                     </Td>
+                    {isReportJobsEnabled && (
+                        <Td dataLabel="My active job status">
+                            <MyActiveJobStatus reportStatus={scanConfigSnapshot?.reportStatus} />
+                        </Td>
+                    )}
                     {hasWriteAccessForCompliance && (
                         <Td isActionCell>
                             <ScanConfigActionsColumn
@@ -227,6 +251,8 @@ function ScanConfigsTablePage({
                                 handleSendReport={handleSendReport}
                                 handleGenerateDownload={handleGenerateDownload}
                                 scanConfigResponse={scanSchedule}
+                                isSnapshotStatusPending={isSnapshotStatusPending}
+                                isReportJobsEnabled={isReportJobsEnabled}
                             />
                         </Td>
                     )}
@@ -343,6 +369,7 @@ function ScanConfigsTablePage({
                                 <Th>Last run</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
+                                {isReportJobsEnabled && <MyActiveJobStatusTh />}
                                 {hasWriteAccessForCompliance && <Td />}
                             </Tr>
                         </Thead>
@@ -397,3 +424,6 @@ function ScanConfigsTablePage({
 }
 
 export default ScanConfigsTablePage;
+function isFeatureFlagEnabled(arg0: string) {
+    throw new Error('Function not implemented.');
+}

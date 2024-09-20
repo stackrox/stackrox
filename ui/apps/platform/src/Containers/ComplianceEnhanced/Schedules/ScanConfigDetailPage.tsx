@@ -11,10 +11,12 @@ import { PageActions } from './compliance.scanConfigs.utils';
 
 type ScanConfigDetailPageProps = {
     hasWriteAccessForCompliance: boolean;
+    isReportJobsEnabled: boolean;
 };
 
 function ScanConfigDetailPage({
     hasWriteAccessForCompliance,
+    isReportJobsEnabled,
 }: ScanConfigDetailPageProps): React.ReactElement {
     const { scanConfigId } = useParams();
     const { pageAction } = usePageAction<PageActions>();
@@ -33,6 +35,7 @@ function ScanConfigDetailPage({
     return (
         <ViewScanConfigDetail
             hasWriteAccessForCompliance={hasWriteAccessForCompliance}
+            isReportJobsEnabled={isReportJobsEnabled}
             scanConfig={data}
             isLoading={isLoading}
             error={error}
