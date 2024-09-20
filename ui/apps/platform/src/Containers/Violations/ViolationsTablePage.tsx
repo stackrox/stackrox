@@ -116,7 +116,7 @@ function ViolationsTablePage(): ReactElement {
         const { request: alertRequest, cancel: cancelAlertRequest } = fetchAlerts(
             searchFilterWithViolationState,
             sortOption,
-            page - 1,
+            page,
             perPage
         );
 

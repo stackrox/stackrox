@@ -75,7 +75,7 @@ function DeniedRequests() {
                     'Request Status': ['DENIED'],
                 },
                 sortOption,
-                page - 1,
+                page,
                 perPage
             ),
         [searchFilter, sortOption, page, perPage]

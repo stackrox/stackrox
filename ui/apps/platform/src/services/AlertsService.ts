@@ -54,9 +54,9 @@ export function fetchAlerts(
     searchFilter: SearchFilter,
     sortOption: ApiSortOption,
     page: number,
-    pageSize: number
+    perPage: number
 ): CancellableRequest<ListAlert[]> {
-    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`, { signal })
