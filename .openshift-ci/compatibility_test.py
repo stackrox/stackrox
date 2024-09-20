@@ -35,6 +35,9 @@ def run_compatibility_tests(testfunc, cluster_name):
             # expected version string is like 74.x.x for ACS 3.74 versions
             is_3_74_sensor = test_tuple.sensor_version.startswith('74')
 
+            logging.info(f"Running compatibility tests for central-v{test_tuple.central_version}, "
+                         f"sensor-v{test_tuple.sensor_version} with function {testfunc.__name__}")
+
             sets.append(
                 {
                     "name": f'version compatibility tests: {test_versions}',
