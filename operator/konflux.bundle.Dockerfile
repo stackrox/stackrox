@@ -14,6 +14,7 @@ COPY . /stackrox
 WORKDIR /stackrox/operator
 
 ARG MAIN_IMAGE_TAG
+RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
 ENV VERSION=$MAIN_IMAGE_TAG
 ENV ROX_PRODUCT_BRANDING=RHACS_BRANDING
 
