@@ -126,5 +126,5 @@ shorten_tag() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    run_compatibility_tests "$#"
+    run_compatibility_tests "$@"
 fi
