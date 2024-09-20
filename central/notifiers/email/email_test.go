@@ -33,7 +33,7 @@ func TestBuildReportMessage(t *testing.T) {
 	msgStr := string(msgBytes)
 
 	// subject header should have special characters changed to spaces, and report name limited to 80 characters for safety
-	expectedSubjectHeader := "StackRox report Mystery Inc fixable and non-fixable critical important and moderate vulnerabilit for "
+	expectedSubjectHeader := "Subject: StackRox report Mystery Inc fixable and non-fixable critical important and moderate vulnerabilit for "
 
 	// filename header should have all non-alphanumerics collapsed to underscores, and report name limited to 80 characters for safety
 	expectedReportAttachmentHeader := "Content-Disposition: attachment; filename=StackRox_Mystery_Inc_fixable_and_non_fixable_critical_important_and_moderate_vulnerabilit_"

@@ -37,7 +37,7 @@ import (
 
 var (
 	log                     = logging.LoggerForModule(option.EnableAdministrationEvents())
-	reportNameValidator     = regexp.MustCompile(`[^a-zA-Z0-9 ]+`)
+	reportNameValidator     = regexp.MustCompile(`[^a-zA-Z0-9- ]+`)
 	reportFilenameValidator = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 )
 
@@ -598,7 +598,7 @@ func PlainTextAlert(alert *storage.Alert, uiEndpoint string, mitreStore mitreDS.
 func BuildReportMessage(recipients []string, from, subject, messageText string, zippedReportData *bytes.Buffer, reportName string) Message {
 	brandName := branding.GetProductNameShort()
 
-	sanitizedReportName := reportNameValidator.ReplaceAllString(reportName, " ")
+	sanitizedReportName := reportNameValidator.ReplaceAllString(reportName, "")
 	if len(sanitizedReportName) > 80 {
 		sanitizedReportName = sanitizedReportName[0:80]
 	}
