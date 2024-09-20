@@ -16,6 +16,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-25451: Secured Cluster Auto-Upgrader is now enabled for all kind of clusters.
 - ROX-26124: Added a `--with-database-only` only to diagnostic bundle.
   - `roxctl central debug download-diagnostics --with-database-only`
+- ROX-18899: Added Microsoft Sentinel notifier to send alerts and audit logs to Azure Log Analytics Workspace.
 
 ### Removed Features
 
