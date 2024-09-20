@@ -15,7 +15,7 @@ setup_file() {
     export ROX_CLUSTER_REGISTRATION_SECRETS=true
 }
 
-teardown() {
+teardown_file() {
     if [ -n "${out_dir:-}" ]; then
         rm -rf "${out_dir}"
     fi
@@ -35,5 +35,21 @@ teardown() {
 
 @test "CRS is not listed anymore after revoking" {
     run grep "^${crs_name}[[:space:]]" <(roxctl_authenticated central crs list)
+    assert_failure
+}
+
+@test "CRS generation fails if output file already exists" {
+    local crs_file="${out_dir}/${crs_name}.yaml"
+    local content="foo"
+    echo -n "${content}" > "${crs_file}"
+    run roxctl_authenticated central crs generate "${crs_name}" -o "${crs_file}"
+    assert_failure
+    [[ -f "${crs_file}" ]]
+    [[ "$(cat ${crs_file})" == "${content}" ]]
+}
+
+@test "Revoking non-existant CRS fails" {
+    local crs_file="${out_dir}/${crs_name}.yaml"
+    run roxctl_authenticated central crs revoke "i-dont-exist"
     assert_failure
 }
