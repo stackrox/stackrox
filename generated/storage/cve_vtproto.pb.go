@@ -194,6 +194,7 @@ func (m *ImageCVE) CloneVT() *ImageCVE {
 	r.SnoozeStart = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.SnoozeStart).CloneVT())
 	r.SnoozeExpiry = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.SnoozeExpiry).CloneVT())
 	r.Nvdcvss = m.Nvdcvss
+	r.NvdScoreVersion = m.NvdScoreVersion
 	if rhs := m.CvssMetrics; rhs != nil {
 		tmpContainer := make([]*CVSSScore, len(rhs))
 		for k, v := range rhs {
@@ -685,6 +686,9 @@ func (this *ImageCVE) EqualVT(that *ImageCVE) bool {
 				return false
 			}
 		}
+	}
+	if this.NvdScoreVersion != that.NvdScoreVersion {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1531,6 +1535,11 @@ func (m *ImageCVE) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.NvdScoreVersion != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.NvdScoreVersion))
+		i--
+		dAtA[i] = 0x60
 	}
 	if len(m.CvssMetrics) > 0 {
 		for iNdEx := len(m.CvssMetrics) - 1; iNdEx >= 0; iNdEx-- {
@@ -2402,6 +2411,9 @@ func (m *ImageCVE) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.NvdScoreVersion != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.NvdScoreVersion))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -4058,7 +4070,7 @@ func (m *CVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ScoreVersion |= CVEInfo_ScoreVersion(b&0x7F) << shift
+				m.ScoreVersion |= ScoreVersion(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -4540,6 +4552,25 @@ func (m *ImageCVE) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NvdScoreVersion", wireType)
+			}
+			m.NvdScoreVersion = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.NvdScoreVersion |= ScoreVersion(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

@@ -136,7 +136,7 @@ var (
 								Link:         "https://access.redhat.com/security/cve/CVE-2021-20297",
 								CreatedAt:    protocompat.ConvertTimeToTimestampOrNil(&scanDate),
 								LastModified: protocompat.ConvertTimeToTimestampOrNil(&updatedDate),
-								ScoreVersion: storage.CVEInfo_V3,
+								ScoreVersion: storage.ScoreVersion_V3,
 								CvssV3: &storage.CVSSV3{
 									Vector:              "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
 									ExploitabilityScore: 1.8,
@@ -188,7 +188,7 @@ var (
 								Link:         "https://access.redhat.com/security/cve/CVE-2024-28176",
 								CreatedAt:    protocompat.ConvertTimeToTimestampOrNil(&scanDate),
 								LastModified: protocompat.ConvertTimeToTimestampOrNil(&updatedDate),
-								ScoreVersion: storage.CVEInfo_V3,
+								ScoreVersion: storage.ScoreVersion_V3,
 								CvssV3: &storage.CVSSV3{
 									Vector:              "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
 									ExploitabilityScore: 3.9,
@@ -217,7 +217,7 @@ var (
 								Link:         "https://access.redhat.com/security/cve/CVE-2024-28180",
 								CreatedAt:    protocompat.ConvertTimeToTimestampOrNil(&scanDate),
 								LastModified: protocompat.ConvertTimeToTimestampOrNil(&updatedDate),
-								ScoreVersion: storage.CVEInfo_V3,
+								ScoreVersion: storage.ScoreVersion_V3,
 								CvssV3: &storage.CVSSV3{
 									Vector:              "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L",
 									ExploitabilityScore: 2.8,
@@ -269,7 +269,7 @@ var (
 								Link:         "https://access.redhat.com/security/cve/CVE-2017-9226",
 								CreatedAt:    protocompat.ConvertTimeToTimestampOrNil(&updatedDate),
 								LastModified: protocompat.ConvertTimeToTimestampOrNil(&joinedDate),
-								ScoreVersion: storage.CVEInfo_V3,
+								ScoreVersion: storage.ScoreVersion_V3,
 								CvssV3: &storage.CVSSV3{
 									Vector:              "CVSS:3.0/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:L",
 									ExploitabilityScore: 2.2,
@@ -297,7 +297,7 @@ var (
 								Link:         "https://access.redhat.com/security/cve/CVE-2019-16163",
 								CreatedAt:    protocompat.ConvertTimeToTimestampOrNil(&scanDate),
 								LastModified: protocompat.ConvertTimeToTimestampOrNil(&updatedDate),
-								ScoreVersion: storage.CVEInfo_V3,
+								ScoreVersion: storage.ScoreVersion_V3,
 								CvssV3: &storage.CVSSV3{
 									Vector:              "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
 									ExploitabilityScore: 2.8,
@@ -324,7 +324,7 @@ var (
 								Link:         "https://access.redhat.com/security/cve/CVE-2020-26159",
 								CreatedAt:    protocompat.ConvertTimeToTimestampOrNil(&scanDate),
 								LastModified: protocompat.ConvertTimeToTimestampOrNil(&joinedDate),
-								ScoreVersion: storage.CVEInfo_V3,
+								ScoreVersion: storage.ScoreVersion_V3,
 								CvssV3: &storage.CVSSV3{
 									Vector:              "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:H",
 									ExploitabilityScore: 3.9,

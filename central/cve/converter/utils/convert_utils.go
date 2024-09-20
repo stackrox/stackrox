@@ -266,10 +266,13 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerability) *storage.ImageCVE {
 	var nvdCvss float32
 	nvdCvss = 0
+	nvdVersion := storage.ScoreVersion_V2
 	for _, score := range from.GetCvssMetrics() {
 		if score.Source == storage.Source_SOURCE_NVD {
 			if score.GetCvssv3() != nil {
 				nvdCvss = score.GetCvssv3().GetScore()
+				nvdVersion = storage.ScoreVersion_V3
+
 			} else if score.GetCvssv2() != nil {
 				nvdCvss = score.GetCvssv2().GetScore()
 			}
@@ -288,19 +291,20 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 			CvssV2:       from.GetCvssV2(),
 			CvssV3:       from.GetCvssV3(),
 		},
-		Cvss:         from.GetCvss(),
-		Nvdcvss:      nvdCvss,
-		Severity:     from.GetSeverity(),
-		Snoozed:      from.GetSuppressed(),
-		SnoozeStart:  from.GetSuppressActivation(),
-		SnoozeExpiry: from.GetSuppressExpiry(),
-		CvssMetrics:  from.GetCvssMetrics(),
+		Cvss:            from.GetCvss(),
+		Nvdcvss:         nvdCvss,
+		NvdScoreVersion: nvdVersion,
+		Severity:        from.GetSeverity(),
+		Snoozed:         from.GetSuppressed(),
+		SnoozeStart:     from.GetSuppressActivation(),
+		SnoozeExpiry:    from.GetSuppressExpiry(),
+		CvssMetrics:     from.GetCvssMetrics(),
 	}
 	if ret.GetCveBaseInfo().GetCvssV3() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
+		ret.CveBaseInfo.ScoreVersion = storage.ScoreVersion_V3
 		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
 	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
+		ret.CveBaseInfo.ScoreVersion = storage.ScoreVersion_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
 	return ret
@@ -328,10 +332,10 @@ func EmbeddedVulnerabilityToClusterCVE(cveType storage.CVE_CVEType, from *storag
 		Type:         cveType,
 	}
 	if ret.GetCveBaseInfo().GetCvssV3() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
+		ret.CveBaseInfo.ScoreVersion = storage.ScoreVersion_V3
 		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
 	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
+		ret.CveBaseInfo.ScoreVersion = storage.ScoreVersion_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
 	return ret

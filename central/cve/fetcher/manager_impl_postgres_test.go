@@ -93,7 +93,7 @@ func TestReconcileIstioCVEsInPostgres(t *testing.T) {
 				CveBaseInfo: &storage.CVEInfo{
 					Cve:          "CVE-4",
 					Link:         "https://nvd.nist.gov/vuln/detail/CVE-4",
-					ScoreVersion: storage.CVEInfo_V3,
+					ScoreVersion: storage.ScoreVersion_V3,
 					CvssV3: &storage.CVSSV3{
 						Vector:              "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						ExploitabilityScore: 1.8,
@@ -285,7 +285,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 				CveBaseInfo: &storage.CVEInfo{
 					Cve:          "CVE-1",
 					Link:         "https://nvd.nist.gov/vuln/detail/CVE-1",
-					ScoreVersion: storage.CVEInfo_V3,
+					ScoreVersion: storage.ScoreVersion_V3,
 					CvssV3: &storage.CVSSV3{
 						Vector:              "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						ExploitabilityScore: 1.8,
@@ -326,7 +326,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 				CveBaseInfo: &storage.CVEInfo{
 					Cve:          "CVE-2",
 					Link:         "https://nvd.nist.gov/vuln/detail/CVE-2",
-					ScoreVersion: storage.CVEInfo_V3,
+					ScoreVersion: storage.ScoreVersion_V3,
 					CvssV3: &storage.CVSSV3{
 						Vector:              "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						ExploitabilityScore: 1.8,
@@ -364,7 +364,7 @@ func TestReconcileCVEsInPostgres(t *testing.T) {
 				CveBaseInfo: &storage.CVEInfo{
 					Cve:          "CVE-3",
 					Link:         "https://nvd.nist.gov/vuln/detail/CVE-3",
-					ScoreVersion: storage.CVEInfo_V3,
+					ScoreVersion: storage.ScoreVersion_V3,
 					CvssV3: &storage.CVSSV3{
 						Vector:              "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
 						ExploitabilityScore: 1.8,

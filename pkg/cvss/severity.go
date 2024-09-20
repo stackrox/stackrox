@@ -11,7 +11,7 @@ type VulnI interface {
 	GetSeverity() storage.VulnerabilitySeverity
 	GetCvssV2() *storage.CVSSV2
 	GetCvssV3() *storage.CVSSV3
-	GetScoreVersion() storage.CVEInfo_ScoreVersion
+	GetScoreVersion() storage.ScoreVersion
 }
 
 // NewFromEmbeddedVulnerability returns an instance of VulnI for *storage.EmbeddedVulnerability.
@@ -48,7 +48,7 @@ type vulnScoreInfo struct {
 	severity     storage.VulnerabilitySeverity
 	cvssv2       *storage.CVSSV2
 	cvssV3       *storage.CVSSV3
-	scoreVersion storage.CVEInfo_ScoreVersion
+	scoreVersion storage.ScoreVersion
 }
 
 func (v *vulnScoreInfo) GetSeverity() storage.VulnerabilitySeverity {
@@ -63,7 +63,7 @@ func (v *vulnScoreInfo) GetCvssV3() *storage.CVSSV3 {
 	return v.cvssV3
 }
 
-func (v *vulnScoreInfo) GetScoreVersion() storage.CVEInfo_ScoreVersion {
+func (v *vulnScoreInfo) GetScoreVersion() storage.ScoreVersion {
 	return v.scoreVersion
 }
 
@@ -108,24 +108,24 @@ func FormatSeverity(severity storage.VulnerabilitySeverity) string {
 	return strings.Title(strings.ToLower(strings.TrimSuffix(severity.String(), "_VULNERABILITY_SEVERITY")))
 }
 
-func scoreVersionFromEmbeddedVuln(vuln *storage.EmbeddedVulnerability) storage.CVEInfo_ScoreVersion {
+func scoreVersionFromEmbeddedVuln(vuln *storage.EmbeddedVulnerability) storage.ScoreVersion {
 	switch vuln.GetScoreVersion() {
 	case storage.EmbeddedVulnerability_V3:
-		return storage.CVEInfo_V3
+		return storage.ScoreVersion_V3
 	case storage.EmbeddedVulnerability_V2:
-		return storage.CVEInfo_V2
+		return storage.ScoreVersion_V2
 	default:
-		return storage.CVEInfo_UNKNOWN
+		return storage.ScoreVersion_UNKNOWN_VERSION
 	}
 }
 
-func scoreVersionFromCVE(vuln *storage.CVE) storage.CVEInfo_ScoreVersion {
+func scoreVersionFromCVE(vuln *storage.CVE) storage.ScoreVersion {
 	switch vuln.GetScoreVersion() {
 	case storage.CVE_V3:
-		return storage.CVEInfo_V3
+		return storage.ScoreVersion_V3
 	case storage.CVE_V2:
-		return storage.CVEInfo_V2
+		return storage.ScoreVersion_V2
 	default:
-		return storage.CVEInfo_UNKNOWN
+		return storage.ScoreVersion_UNKNOWN_VERSION
 	}
 }

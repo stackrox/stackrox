@@ -111,7 +111,21 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 	// Upsert test images.
 	images, err := imageSamples.GetTestImages(s.T())
 	s.Require().NoError(err)
+	// set cvss metrics list with one nvd cvss score
 	for _, image := range images {
+		for _, components := range image.GetScan().GetComponents() {
+			for _, vuln := range components.GetVulns() {
+				cvssScore := &storage.CVSSScore{
+					Source: storage.Source_SOURCE_NVD,
+					CvssScore: &storage.CVSSScore_Cvssv3{
+						Cvssv3: &storage.CVSSV3{
+							Score: 10,
+						},
+					},
+				}
+				vuln.CvssMetrics = []*storage.CVSSScore{cvssScore}
+			}
+		}
 		s.Require().NoError(imageStore.UpsertImage(ctx, image))
 	}
 
@@ -800,6 +814,15 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 						Published:               &vulnPublishDate,
 					}
 					cveMap[val.CVE] = val
+					for _, metric := range vuln.CvssMetrics {
+						if metric.Source == storage.Source_SOURCE_NVD {
+							if metric.GetCvssv2() != nil {
+								val.TopNVDCVSS = metric.GetCvssv2().GetScore()
+							} else {
+								val.TopNVDCVSS = metric.GetCvssv3().GetScore()
+							}
+						}
+					}
 				}
 
 				val.TopCVSS = max(val.GetTopCVSS(), vuln.GetCvss())
