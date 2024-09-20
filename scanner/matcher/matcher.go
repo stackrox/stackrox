@@ -154,7 +154,6 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	vulnUpdater, err := vuln.New(ctx, vuln.Opts{
 		Store:         store,
 		Locker:        locker,
-		Pool:          pool,
 		MetadataStore: metadataStore,
 		Client:        client,
 		URL:           cfg.VulnerabilitiesURL,
