@@ -32,7 +32,7 @@ function DeploymentTabWithReadAccessForDeployment({
                 <Alert
                     variant="warning"
                     isInline
-                    title="There was an error fetching the deployment details. This deployment may no longer exist. The information below is based on the last known state at the time the alert was triggered and may be outdated."
+                    title="Unable to fetch deployment details. The deployment may no longer exist. The information below reflects the last known state at the time the alert was triggered and may be outdated."
                     component="p"
                 >
                     {getAxiosErrorMessage(relatedDeploymentFetchError)}
