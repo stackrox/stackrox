@@ -141,7 +141,7 @@ which balances speed (a manifest will always be re-indexed within a month of its
 
 This will all be tracked in a new table (see [Manifest Metadata Table](#manifest-metadata-table) below).
 
-The table will be queried periodically for passed timestamps. These rows will be deleted and the related manifests/Index Reports will be deleted from ClairCore's tables.
+The table will be queried periodically for passed timestamps via goroutine. These rows will be deleted and the related manifests/Index Reports will be deleted from ClairCore's tables.
 In the chance the manifest is re-indexed but the row still exists in the Manifest Metadata table, the row will be updated with a new expiration timestamp.
 
 #### Alternative - Client Delete Requests
