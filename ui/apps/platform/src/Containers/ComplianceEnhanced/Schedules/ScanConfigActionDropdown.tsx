@@ -21,6 +21,7 @@ import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 export type ScanConfigActionDropdownProps = {
     handleRunScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleSendReport: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
+    handleGenerateDownload: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     isScanning: boolean;
     scanConfigResponse: ComplianceScanConfigurationStatus;
 };
@@ -28,12 +29,14 @@ export type ScanConfigActionDropdownProps = {
 function ScanConfigActionDropdown({
     handleRunScanConfig,
     handleSendReport,
+    handleGenerateDownload,
     isScanning,
     scanConfigResponse,
 }: ScanConfigActionDropdownProps): ReactElement {
     const history = useHistory();
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
+    const isReportJobsEnabled = isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
 
     const [isOpen, setIsOpen] = useState(false);
 
@@ -102,6 +105,20 @@ function ScanConfigActionDropdown({
             </DropdownItem>
         );
         /* eslint-enable no-nested-ternary */
+    }
+
+    if (isComplianceReportingEnabled && isReportJobsEnabled) {
+        dropdownItems.push(
+            <DropdownItem
+                key="Generate download"
+                component="button"
+                onClick={() => {
+                    handleGenerateDownload(scanConfigResponse);
+                }}
+            >
+                Generate download
+            </DropdownItem>
+        );
     }
 
     return (

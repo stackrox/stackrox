@@ -24,10 +24,10 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { OutlinedClockIcon } from '@patternfly/react-icons';
 
-import { complianceEnhancedCoveragePath, complianceEnhancedSchedulesPath } from 'routePaths';
+import { complianceEnhancedSchedulesPath } from 'routePaths';
 import DeleteModal from 'Components/PatternFly/DeleteModal';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import PageTitle from 'Components/PageTitle';
@@ -81,7 +81,6 @@ function ScanConfigsTablePage({
     >([]);
     const [scanConfigDeletionErrors, setScanConfigDeletionErrors] = useState<Error[]>([]);
     const [isDeletingScanConfigs, setIsDeletingScanConfigs] = useState(false);
-    const history = useHistory();
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
@@ -159,7 +158,7 @@ function ScanConfigsTablePage({
 
     function handleSendReport(scanConfigResponse: ComplianceScanConfigurationStatus) {
         clearAlertObj();
-        runComplianceReport(scanConfigResponse.id)
+        runComplianceReport(scanConfigResponse.id, 'EMAIL')
             .then(() => {
                 setAlertObj({
                     type: 'success',
@@ -170,6 +169,24 @@ function ScanConfigsTablePage({
                 setAlertObj({
                     type: 'danger',
                     title: 'Could not send a report',
+                    children: getAxiosErrorMessage(error),
+                });
+            });
+    }
+
+    function handleGenerateDownload(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        clearAlertObj();
+        runComplianceReport(scanConfigResponse.id, 'DOWNLOAD')
+            .then(() => {
+                setAlertObj({
+                    type: 'success',
+                    title: 'The report generation has started and will be available for download once complete',
+                });
+            })
+            .catch((error) => {
+                setAlertObj({
+                    type: 'danger',
+                    title: 'Could not generate a report',
                     children: getAxiosErrorMessage(error),
                 });
             });
@@ -208,6 +225,7 @@ function ScanConfigsTablePage({
                                 handleDeleteScanConfig={handleDeleteScanConfig}
                                 handleRunScanConfig={handleRunScanConfig}
                                 handleSendReport={handleSendReport}
+                                handleGenerateDownload={handleGenerateDownload}
                                 scanConfigResponse={scanSchedule}
                             />
                         </Td>
