@@ -51,9 +51,6 @@ spec:
   - description: Output Image Repository
     name: output-image-repo
     type: string
-  - name: operator-image-repo
-    description: Image repository for the StackRox Operator.
-    type: string
   - default: "-fast"
     description: Suffix that will be appended to the output image tag.
     name: output-tag-suffix
@@ -112,6 +109,9 @@ spec:
   - name: image-tag-makefile-directory
     description: Directory in which to run "make tag" command.
     default: "operator"
+    type: string
+  - name: operator-image-repo
+    description: Image repository for the StackRox Operator.
     type: string
 
   results:
