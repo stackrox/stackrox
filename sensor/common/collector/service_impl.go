@@ -107,7 +107,7 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 			for conn := range s.connectionManager.connectionMap {
 				err := conn.Send(msg)
 				if err != nil {
-					log.Info("Sending msg failed")
+					log.Errorf(err, "Failed sending runtime config to Collector")
 					return err
 				}
 			}

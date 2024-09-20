@@ -91,7 +91,7 @@ type CollectorComponent interface {
 	SensorComponent
 	Stopped() concurrency.ReadOnlyErrorSignal
 
-	CollectorC() chan sensor.MsgToCollector
+	CollectorC() <-chan sensor.MsgToCollector
 }
 
 // CentralGRPCConnAware allows to set gRPC connections in sensor components.
