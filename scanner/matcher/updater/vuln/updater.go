@@ -349,6 +349,8 @@ func (u *Updater) Initialized(ctx context.Context) bool {
 //
 // Note: periodic full GC will not be started.
 func (u *Updater) Update(ctx context.Context) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.Update")
+
 	var (
 		updated bool
 		err     error
@@ -366,6 +368,9 @@ func (u *Updater) Update(ctx context.Context) error {
 	// and when the vulnerabilities have been updated.
 	if !u.skipGC && updated {
 		u.runGC(ctx)
+	} else if !u.skipGC {
+		// Only log if GC is enabled to reduce noise when GC is disabled.
+		zlog.Info(ctx).Msg("no vulnerability updates: skipping GC")
 	}
 
 	return nil
