@@ -3,7 +3,8 @@ import { Button, DatePicker, Flex, SelectOption } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 
 import { getDate } from 'utils/dateUtils';
-import { dateConditions, ensureString } from '../utils/utils';
+import { ensureString } from 'utils/ensure';
+import { dateConditions } from '../utils/utils';
 
 import SimpleSelect from './SimpleSelect';
 

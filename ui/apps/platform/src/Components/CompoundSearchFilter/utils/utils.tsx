@@ -90,13 +90,6 @@ export function ensureStringArray(value: unknown): string[] {
     return [];
 }
 
-export function ensureString(value: unknown): string {
-    if (typeof value === 'string') {
-        return value;
-    }
-    return '';
-}
-
 export function ensureConditionNumber(value: unknown): { condition: string; number: number } {
     if (
         typeof value === 'object' &&
