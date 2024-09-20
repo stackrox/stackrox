@@ -56,8 +56,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - This will also apply to vulnerabilities obtained from the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) (used for container-first scanning).
     - This may potentially disrupt policies created around RHSAs, for example, but for most users, this change is much preferred over the previous results.
   - Scanner V4 now only considers vulnerabilities affecting Red Hat products dated back to 2014.
-    - Previously when reading Red Hat's OVAL data, the vulnerabilities dated back to pre-2000; however, most of those vulnerabilities were irrelevant.
-      We can found most, if not all, vulnerabilities prior to 2014 are not relevant these days, so they are not considered.
+    - Previously when reading Red Hat's OVAL data, the vulnerabilities dated back to pre-2000, but ClairCore only reads back to 2014.
   - Scanner V4 DB requires less space for vulnerability data, and its initialization time has improved from about 1 hour on SSD to about 10 minutes.
 
 ## [4.5.0]
