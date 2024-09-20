@@ -128,14 +128,16 @@ as unneeded Index Reports are permanently deleted and needed reports may just be
 **Note**: this approach also solves the "versioned scanner" update scenario; however, we opt to implement the [`checkManifest`](#reuse-claircores-checkmanifest-step)
 step for faster turnaround upon "versioned scanner" updates.
 
-Of course, determining a timeframe for deletion is non-trivial. Deleting too quickly means Index Reports may be corrected
+For each manifest/image, once it is successfully indexed, a random expiry will be generated and associated with
+the manifest. Of course, determining a timeframe for deletion is non-trivial. Deleting too quickly means Index Reports may be corrected
 faster, but too many (probably) unnecessary requests to the image registry and (probably) unnecessary CPU/memory/disk usage.
 Deleting too slowly means resource usage will be much less, but it may take (too) long to correct the Index Report.
 Similarly, we would need to ensure not all Index Reports are all re-indexed at the same time (hence random deletions)
 to ensure spikes are minimized.
 
-The deletions will be chosen from a range between **one week** and **one month**. We believe this is a sufficient timeframe
-which balances speed and resource consumption.
+The expirations will be chosen randomly from a range between **one week** and **one month**. We believe this is a sufficient timeframe
+which balances speed (a manifest will always be re-indexed within a month of its previous indexing) and resource consumption
+(choosing a random time within just a wide range will hopefully spread out the resource usage evenly and reduce massive spikes).
 
 This will all be tracked in a new table (see [Manifest Metadata Table](#manifest-metadata-table) below).
 
@@ -171,7 +173,8 @@ This may be done by injecting our migration into ClairCore's migrations, but it 
 ClairCore internals like this.
 
 Instead, upon Indexer startup, and once the PostgreSQL migrations have been completed, the Indexer will populate the [`manifest_metadata`](#manifest-metadata-table)
-with any manifests from ClairCore's `manifest` table missing from the `manifest_metadata` table.
+with any manifests from ClairCore's `manifest` table missing from the `manifest_metadata` table. The `expiration` for
+each manifest will be randomly generated.
 
 ### (Optional) Force Index Command
 
