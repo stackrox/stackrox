@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -67,7 +67,11 @@ func testHTTPServer(t *testing.T, content func(r *http.Request) io.ReadSeeker) (
 func TestSingleBundleUpdate(t *testing.T) {
 	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "false")
 
-	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
+	srv, now := testHTTPServer(t, func(r *http.Request) io.ReadSeeker {
+		accept := r.Header.Get("X-Scanner-V4-Accept")
+		if accept != "" {
+			t.Fatalf("X-Scanner-V4-Accept header should not be set for single-bundle")
+		}
 		return strings.NewReader("test")
 	})
 
@@ -75,15 +79,16 @@ func TestSingleBundleUpdate(t *testing.T) {
 		locker: updates.NewLocalLockSource(),
 		fail:   true,
 	}
+	store := mocks.NewMockMatcherStore(gomock.NewController(t))
 	metadataStore := mocks.NewMockMatcherMetadataStore(gomock.NewController(t))
 	u := &Updater{
 		locker:        locker,
-		pool:          nil,
+		store:         store,
 		metadataStore: metadataStore,
 		client:        srv.Client(),
 		url:           srv.URL,
 		root:          t.TempDir(),
-		skipGC:        true,
+		skipGC:        false,
 		importFunc: func(_ context.Context, _ io.Reader) error {
 			return nil
 		},
@@ -104,6 +109,9 @@ func TestSingleBundleUpdate(t *testing.T) {
 	metadataStore.EXPECT().
 		SetLastVulnerabilityUpdate(gomock.Any(), gomock.Eq(postgres.SingleBundleUpdateKey), now).
 		Return(nil)
+	store.EXPECT().
+		GC(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
 	err = u.Update(context.Background())
 	assert.NoError(t, err)
 
@@ -118,10 +126,11 @@ func TestSingleBundleUpdate(t *testing.T) {
 func TestMultiBundleUpdate(t *testing.T) {
 	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "true")
 
+	// TODO(ROX-26236): Test with zst files, as a chunk of the updater function is currently untested.
 	srv, now := testHTTPServer(t, func(r *http.Request) io.ReadSeeker {
 		accept := r.Header.Get("X-Scanner-V4-Accept")
 		if accept != "application/vnd.stackrox.scanner-v4.multi-bundle+zip" {
-			return strings.NewReader("test")
+			t.Fatalf("X-Scanner-V4-Accept header should be set to application/vnd.stackrox.scanner-v4.multi-bundle+zip for multi-bundle")
 		}
 		var buf bytes.Buffer
 		zipWriter := zip.NewWriter(&buf)
@@ -129,39 +138,49 @@ func TestMultiBundleUpdate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to close zip writer: %v", err)
 		}
+		// Return an empty ZIP file.
 		return bytes.NewReader(buf.Bytes())
 	})
 
 	locker := &testLocker{
 		locker: updates.NewLocalLockSource(),
 	}
+	store := mocks.NewMockMatcherStore(gomock.NewController(t))
 	metadataStore := mocks.NewMockMatcherMetadataStore(gomock.NewController(t))
 	u := &Updater{
 		locker:        locker,
-		pool:          nil,
+		store:         store,
 		metadataStore: metadataStore,
 		client:        srv.Client(),
 		url:           srv.URL,
 		root:          t.TempDir(),
-		skipGC:        true,
-		importFunc: func(_ context.Context, _ io.Reader) error {
-			return nil
-		},
-		retryDelay: 1 * time.Second,
-		retryMax:   1,
+		skipGC:        false,
+		importFunc:    func(_ context.Context, _ io.Reader) error { return nil },
+		retryDelay:    1 * time.Second,
+		retryMax:      1,
 	}
+
+	// Skip update and error when unable to get previous update time.
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(time.Time{}, errors.New("err"))
+	err := u.Update(context.Background())
+	assert.Error(t, err)
 
 	// Successful update.
 	metadataStore.EXPECT().
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now.Add(-time.Minute), nil)
 	metadataStore.EXPECT().
-		GetLastVulnerabilityUpdate(gomock.Any()).
-		Return(now, nil)
-	metadataStore.EXPECT().
 		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
 		Return(nil)
-	err := u.Update(context.Background())
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(now, nil)
+	store.EXPECT().
+		GC(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
+	err = u.Update(context.Background())
 	assert.NoError(t, err)
 
 	// No update.

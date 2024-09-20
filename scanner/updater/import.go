@@ -36,7 +36,6 @@ func Load(ctx context.Context, connString, vulnsURL string) error {
 	updater, err := vuln.New(ctx, vuln.Opts{
 		Store:         store,
 		Locker:        locker,
-		Pool:          pool,
 		MetadataStore: metadataStore,
 		URL:           vulnsURL,
 		SkipGC:        true,
