@@ -12,7 +12,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	// timeLayouts lists each known time format returned by vulnerability scanners.
+	// timeLayouts lists each known time format used throughout StackRox.
 	timeLayouts = []string{
 		// NVD API v2 time layout.
 		"2006-01-02T15:04:05.999",

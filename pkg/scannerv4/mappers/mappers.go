@@ -371,10 +371,13 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		issued := issuedTime(v.Issued, nvdVuln.Published)
 		if issued == nil {
 			zlog.Warn(ctx).
-				Err(err).
 				Str("vuln_id", v.ID).
 				Str("vuln_name", v.Name).
 				Str("vuln_updater", v.Updater).
+				// Use Str instead of Time because the latter will format the time into
+				// RFC3339 form, which may not be valid for this.
+				Str("claircore_issued", v.Issued.String()).
+				Str("nvd_published", nvdVuln.Published).
 				Msg("issued time invalid: leaving empty")
 		}
 		if vulnerabilities == nil {

@@ -903,7 +903,8 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
 	assert.NoError(t, err)
-	proto2021 := protoconv.ConvertTimeString("2021-12-10T10:15:09.143")
+	published2021 := "2021-12-10T10:15:09.143"
+	proto2021 := protoconv.ConvertTimeString(published2021)
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
 		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
@@ -1267,7 +1268,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				"foo": {
 					"CVE-2021-44228": {
 						ID:        "CVE-2021-44228",
-						Published: "2021-12-10T10:15:09.143",
+						Published: published2021,
 					},
 				},
 			},
