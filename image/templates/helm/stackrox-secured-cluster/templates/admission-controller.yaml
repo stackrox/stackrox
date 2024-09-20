@@ -243,7 +243,7 @@ webhooks:
           - istio-system
     failurePolicy: Ignore
     clientConfig:
-      {{- if not $._rox.createSecrets }}
+      {{- if not $._rox.generateTLS }}
       caBundle: {{ $._rox.caSecretEnc }}
       {{- else }}
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}
@@ -273,7 +273,7 @@ webhooks:
           - pods/portforward
     failurePolicy: Ignore
     clientConfig:
-      {{- if not $._rox.createSecrets }}
+      {{- if not $._rox.generateTLS }}
       caBundle: {{ $._rox.caSecretEnc }}
       {{- else }}
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}

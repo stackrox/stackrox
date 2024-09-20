@@ -6,6 +6,7 @@ registryOverride: null # string
 exposeMonitoring: null # bool
 createUpgraderServiceAccount: null # string
 helmManaged: null
+generateTLS: null # bool
 createSecrets: null
 additionalCAs: null # [obj]
 imagePullSecrets:

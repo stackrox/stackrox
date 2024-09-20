@@ -7,7 +7,7 @@ defs: |
 values:
   imagePullSecrets:
     allowNone: true
-  createSecrets: false
+  generateTLS: false
   ca:
     existingSecret:
       name: existing-ca-tls
@@ -48,7 +48,7 @@ tests:
     expect: |
       get_certs(.deployments["sensor"]) | map(select(.secret.name == "existing-sensor-tls")) | .[].secret.items | map(select(.key == "existing-cert.pem"))[] | assertThat(.path == "cert.pem")
       get_certs(.deployments["sensor"]) | map(select(.secret.name == "existing-sensor-tls")) | .[].secret.items | map(select(.key == "existing-key.pem"))[] | assertThat(.path == "key.pem")
-  - name: "Should not generate TLS secrets when .Values.createSecrets is false"
+  - name: "Should not generate TLS secrets when .Values.generateTLS is false"
     expect: |
       .objects | map(select(.kind == "Secret" and .metadata.name == "admission-control-tls")) | assertThat(length == 0)
       .objects | map(select(.kind == "Secret" and .metadata.name == "collector-tls")) | assertThat(length == 0)

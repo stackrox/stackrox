@@ -50,7 +50,7 @@
 {{ $_ = include "srox.mergeInto" (list $rox $configShape) }}
 {{ $_ = set $._rox "_configShape" $configShape }}
 
-{{- if not $._rox.createSecrets }}
+{{- if and (not $._rox.generateTLS) $._rox.ca.existingSecret.name }}
 {{ $caSecretLookup := lookup "v1" "Secret" $.Release.Namespace $._rox.ca.existingSecret.name }}
 {{- if $caSecretLookup }}
   {{ $_ = set $._rox "caSecretEnc" (index $caSecretLookup.data $._rox.ca.existingSecret.cert)}}
@@ -268,7 +268,7 @@ The following block checks for the validity of the provided init bundle. (`helm 
     {{ include "srox.fail" (list . "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart. Make sure to provide an init bundle for Helm chart installation.") }}
 {{- else if and (not $helmInitBundleNotPresent) $operatorInitBundlePresent }}
     {{ include "srox.warn" (list . "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart.") }}
-{{- else if and $helmInitBundleNotPresent $._rox.createSecrets }}
+{{- else if and $helmInitBundleNotPresent $._rox.generateTLS }}
     {{ include "srox.fail" (list . "A CA certificate must be specified") }}
 {{- end }}
 
