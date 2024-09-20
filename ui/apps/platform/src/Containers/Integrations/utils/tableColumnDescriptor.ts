@@ -201,6 +201,11 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                     integration.syslog.tcpConfig.skipTlsVerify ? 'Yes (Insecure)' : 'No (Secure)',
             },
         ],
+        microsoftSentinel: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'labelDefault', Header: 'Default Recipient' },
+            { accessor: 'labelKey', Header: 'Recipient Annotation Key' },
+        ],
     },
     imageIntegrations: {
         docker: [

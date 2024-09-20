@@ -247,6 +247,12 @@ export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = 
         label: 'Syslog',
         type: 'syslog',
     },
+    {
+        image: acscsEmail,
+        label: 'Micrsoft Sentinel',
+        type: 'microsoftSentinel',
+        // featureFlagDependency: ['ROX_MICROSOFT_SENTINEL'],
+    },
 ];
 
 export const backupIntegrationsSource = 'backups';
