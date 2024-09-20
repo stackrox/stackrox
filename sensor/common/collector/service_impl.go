@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
@@ -42,11 +43,23 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
+func getCollectorConfig(msg *central.MsgToSensor) *storage.CollectorConfig {
+	if clusterConfig := msg.GetClusterConfig(); clusterConfig != nil {
+		if config := clusterConfig.GetConfig(); config != nil {
+			if collectorConfig := config.GetCollectorConfig(); collectorConfig != nil {
+				return collectorConfig
+			}
+		}
+	}
+
+	return nil
+}
+
 func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	if msg.GetClusterConfig() != nil && msg.GetClusterConfig().GetConfig() != nil && msg.GetClusterConfig().GetConfig().GetCollectorConfig() != nil {
+	if collectorConfig := getCollectorConfig(msg); collectorConfig != nil {
 		s.collectorC <- &sensor.MsgToCollector{
 			Msg: &sensor.MsgToCollector_CollectorConfig{
-				CollectorConfig: msg.GetClusterConfig().GetConfig().GetCollectorConfig(),
+				CollectorConfig: collectorConfig,
 			},
 		}
 	}
