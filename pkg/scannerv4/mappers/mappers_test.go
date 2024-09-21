@@ -987,6 +987,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						"severity":     []string{"sample severity"},
 						"cvss3_vector": []string{"CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
 						"cvss3_score":  []string{"9.9"},
+						"cve":          []string{"CVE-1234-567"},
 					}.Encode(),
 					Updater: "RHEL8-updater",
 				},
@@ -1000,6 +1001,18 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 							BaseScore: 9.9,
 							Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
 						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 9.9,
+								Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+							Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+						},
 					},
 				},
 			},
@@ -1012,6 +1025,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						"severity":     []string{"sample severity"},
 						"cvss2_vector": []string{"AV:N/AC:L/Au:N/C:P/I:P/A:P"},
 						"cvss2_score":  []string{"1.1"},
+						"cve":          []string{"CVE-1234-567"},
 					}.Encode(),
 					Updater: "RHEL8-updater",
 				},
@@ -1024,6 +1038,18 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
 							BaseScore: 1.1,
 							Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+								BaseScore: 1.1,
+								Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+							Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
 						},
 					},
 				},
@@ -1055,6 +1081,20 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
 							BaseScore: 1.1,
 							Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 9.9,
+								Vector:    "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+							},
+							V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+								BaseScore: 1.1,
+								Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
 						},
 					},
 				},
@@ -1111,6 +1151,15 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
 							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
 						},
 					},
 				},
@@ -1171,6 +1220,17 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
 							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+							Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+						},
 					},
 				},
 			},
@@ -1213,6 +1273,17 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
 							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+							Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+						},
 					},
 				},
 			},
@@ -1251,6 +1322,17 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
 							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+							Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
 						},
 					},
 				},
