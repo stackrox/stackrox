@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	nvdBaseUrl  = "https://nvd.nist.gov/vuln/detail"
-	rhelBaseUrl = "https://access.redhat.com/security/cve"
+	nvdBaseURL  = "https://nvd.nist.gov/vuln/detail"
+	rhelBaseURL = "https://access.redhat.com/security/cve"
 )
 
 var (
