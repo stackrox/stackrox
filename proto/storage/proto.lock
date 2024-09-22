@@ -1925,23 +1925,11 @@
             ]
           },
           {
-            "name": "CollectorFeature",
+            "name": "CollectorNamespaceFeature",
             "fields": [
               {
-                "id": 1,
-                "name": "processes",
-                "type": "ProcessConfig",
-                "oneof_parent": "feature"
-              },
-              {
-                "id": 2,
-                "name": "network_connections",
-                "type": "NetworkConnectionConfig",
-                "oneof_parent": "feature"
-              },
-              {
                 "id": 3,
-                "name": "network_endpoints",
+                "name": "network_endpoint",
                 "type": "NetworkEndpointConfig",
                 "oneof_parent": "feature"
               }
@@ -1953,7 +1941,7 @@
               {
                 "id": 1,
                 "name": "feature",
-                "type": "CollectorFeature"
+                "type": "CollectorNamespaceFeature"
               },
               {
                 "id": 2,

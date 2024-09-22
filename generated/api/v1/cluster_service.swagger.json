@@ -747,20 +747,6 @@
       },
       "description": "CollectorConfig controls which type of data is reported by collector\nand how it is processed by collector. These configurations are used\nto fine-tune collector's performance on large scale clusters.\nFor example, it controls if process information is reported with\nnetwork information and if external IPs should be aggregated."
     },
-    "storageCollectorFeature": {
-      "type": "object",
-      "properties": {
-        "processes": {
-          "$ref": "#/definitions/storageProcessConfig"
-        },
-        "networkConnections": {
-          "$ref": "#/definitions/storageNetworkConnectionConfig"
-        },
-        "networkEndpoints": {
-          "$ref": "#/definitions/storageNetworkEndpointConfig"
-        }
-      }
-    },
     "storageCollectorHealthInfo": {
       "type": "object",
       "properties": {
@@ -794,7 +780,7 @@
       "type": "object",
       "properties": {
         "feature": {
-          "$ref": "#/definitions/storageCollectorFeature"
+          "$ref": "#/definitions/storageCollectorNamespaceFeature"
         },
         "namespaceSelection": {
           "type": "array",
@@ -802,6 +788,14 @@
             "type": "object",
             "$ref": "#/definitions/CollectorNamespaceConfigNamespaceRule"
           }
+        }
+      }
+    },
+    "storageCollectorNamespaceFeature": {
+      "type": "object",
+      "properties": {
+        "networkEndpoint": {
+          "$ref": "#/definitions/storageNetworkEndpointConfig"
         }
       }
     },

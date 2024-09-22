@@ -256,14 +256,14 @@ func (m *NetworkEndpointConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *CollectorFeature) CloneVT() *CollectorFeature {
+func (m *CollectorNamespaceFeature) CloneVT() *CollectorNamespaceFeature {
 	if m == nil {
-		return (*CollectorFeature)(nil)
+		return (*CollectorNamespaceFeature)(nil)
 	}
-	r := new(CollectorFeature)
+	r := new(CollectorNamespaceFeature)
 	if m.Feature != nil {
 		r.Feature = m.Feature.(interface {
-			CloneVT() isCollectorFeature_Feature
+			CloneVT() isCollectorNamespaceFeature_Feature
 		}).CloneVT()
 	}
 	if len(m.unknownFields) > 0 {
@@ -273,34 +273,16 @@ func (m *CollectorFeature) CloneVT() *CollectorFeature {
 	return r
 }
 
-func (m *CollectorFeature) CloneMessageVT() proto.Message {
+func (m *CollectorNamespaceFeature) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *CollectorFeature_Processes) CloneVT() isCollectorFeature_Feature {
+func (m *CollectorNamespaceFeature_NetworkEndpoint) CloneVT() isCollectorNamespaceFeature_Feature {
 	if m == nil {
-		return (*CollectorFeature_Processes)(nil)
+		return (*CollectorNamespaceFeature_NetworkEndpoint)(nil)
 	}
-	r := new(CollectorFeature_Processes)
-	r.Processes = m.Processes.CloneVT()
-	return r
-}
-
-func (m *CollectorFeature_NetworkConnections) CloneVT() isCollectorFeature_Feature {
-	if m == nil {
-		return (*CollectorFeature_NetworkConnections)(nil)
-	}
-	r := new(CollectorFeature_NetworkConnections)
-	r.NetworkConnections = m.NetworkConnections.CloneVT()
-	return r
-}
-
-func (m *CollectorFeature_NetworkEndpoints) CloneVT() isCollectorFeature_Feature {
-	if m == nil {
-		return (*CollectorFeature_NetworkEndpoints)(nil)
-	}
-	r := new(CollectorFeature_NetworkEndpoints)
-	r.NetworkEndpoints = m.NetworkEndpoints.CloneVT()
+	r := new(CollectorNamespaceFeature_NetworkEndpoint)
+	r.NetworkEndpoint = m.NetworkEndpoint.CloneVT()
 	return r
 }
 
@@ -1224,7 +1206,7 @@ func (this *NetworkEndpointConfig) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *CollectorFeature) EqualVT(that *CollectorFeature) bool {
+func (this *CollectorNamespaceFeature) EqualVT(that *CollectorNamespaceFeature) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -1237,7 +1219,7 @@ func (this *CollectorFeature) EqualVT(that *CollectorFeature) bool {
 			return false
 		}
 		if !this.Feature.(interface {
-			EqualVT(isCollectorFeature_Feature) bool
+			EqualVT(isCollectorNamespaceFeature_Feature) bool
 		}).EqualVT(that.Feature) {
 			return false
 		}
@@ -1245,15 +1227,15 @@ func (this *CollectorFeature) EqualVT(that *CollectorFeature) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *CollectorFeature) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*CollectorFeature)
+func (this *CollectorNamespaceFeature) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*CollectorNamespaceFeature)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *CollectorFeature_Processes) EqualVT(thatIface isCollectorFeature_Feature) bool {
-	that, ok := thatIface.(*CollectorFeature_Processes)
+func (this *CollectorNamespaceFeature_NetworkEndpoint) EqualVT(thatIface isCollectorNamespaceFeature_Feature) bool {
+	that, ok := thatIface.(*CollectorNamespaceFeature_NetworkEndpoint)
 	if !ok {
 		return false
 	}
@@ -1263,57 +1245,7 @@ func (this *CollectorFeature_Processes) EqualVT(thatIface isCollectorFeature_Fea
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.Processes, that.Processes; p != q {
-		if p == nil {
-			p = &ProcessConfig{}
-		}
-		if q == nil {
-			q = &ProcessConfig{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
-func (this *CollectorFeature_NetworkConnections) EqualVT(thatIface isCollectorFeature_Feature) bool {
-	that, ok := thatIface.(*CollectorFeature_NetworkConnections)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.NetworkConnections, that.NetworkConnections; p != q {
-		if p == nil {
-			p = &NetworkConnectionConfig{}
-		}
-		if q == nil {
-			q = &NetworkConnectionConfig{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
-func (this *CollectorFeature_NetworkEndpoints) EqualVT(thatIface isCollectorFeature_Feature) bool {
-	that, ok := thatIface.(*CollectorFeature_NetworkEndpoints)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.NetworkEndpoints, that.NetworkEndpoints; p != q {
+	if p, q := this.NetworkEndpoint, that.NetworkEndpoint; p != q {
 		if p == nil {
 			p = &NetworkEndpointConfig{}
 		}
@@ -2878,7 +2810,7 @@ func (m *NetworkEndpointConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 	return len(dAtA) - i, nil
 }
 
-func (m *CollectorFeature) MarshalVT() (dAtA []byte, err error) {
+func (m *CollectorNamespaceFeature) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2891,12 +2823,12 @@ func (m *CollectorFeature) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *CollectorFeature) MarshalToVT(dAtA []byte) (int, error) {
+func (m *CollectorNamespaceFeature) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *CollectorFeature) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *CollectorNamespaceFeature) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2920,53 +2852,15 @@ func (m *CollectorFeature) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *CollectorFeature_Processes) MarshalToVT(dAtA []byte) (int, error) {
+func (m *CollectorNamespaceFeature_NetworkEndpoint) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *CollectorFeature_Processes) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *CollectorNamespaceFeature_NetworkEndpoint) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.Processes != nil {
-		size, err := m.Processes.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-func (m *CollectorFeature_NetworkConnections) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *CollectorFeature_NetworkConnections) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.NetworkConnections != nil {
-		size, err := m.NetworkConnections.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x12
-	}
-	return len(dAtA) - i, nil
-}
-func (m *CollectorFeature_NetworkEndpoints) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *CollectorFeature_NetworkEndpoints) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.NetworkEndpoints != nil {
-		size, err := m.NetworkEndpoints.MarshalToSizedBufferVT(dAtA[:i])
+	if m.NetworkEndpoint != nil {
+		size, err := m.NetworkEndpoint.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -4876,7 +4770,7 @@ func (m *NetworkEndpointConfig) SizeVT() (n int) {
 	return n
 }
 
-func (m *CollectorFeature) SizeVT() (n int) {
+func (m *CollectorNamespaceFeature) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4889,38 +4783,14 @@ func (m *CollectorFeature) SizeVT() (n int) {
 	return n
 }
 
-func (m *CollectorFeature_Processes) SizeVT() (n int) {
+func (m *CollectorNamespaceFeature_NetworkEndpoint) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Processes != nil {
-		l = m.Processes.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	return n
-}
-func (m *CollectorFeature_NetworkConnections) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.NetworkConnections != nil {
-		l = m.NetworkConnections.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	return n
-}
-func (m *CollectorFeature_NetworkEndpoints) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.NetworkEndpoints != nil {
-		l = m.NetworkEndpoints.SizeVT()
+	if m.NetworkEndpoint != nil {
+		l = m.NetworkEndpoint.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -6893,7 +6763,7 @@ func (m *NetworkEndpointConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CollectorFeature) UnmarshalVT(dAtA []byte) error {
+func (m *CollectorNamespaceFeature) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6916,97 +6786,15 @@ func (m *CollectorFeature) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CollectorFeature: wiretype end group for non-group")
+			return fmt.Errorf("proto: CollectorNamespaceFeature: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CollectorFeature: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: CollectorNamespaceFeature: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Processes", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Feature.(*CollectorFeature_Processes); ok {
-				if err := oneof.Processes.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ProcessConfig{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Feature = &CollectorFeature_Processes{Processes: v}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetworkConnections", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Feature.(*CollectorFeature_NetworkConnections); ok {
-				if err := oneof.NetworkConnections.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &NetworkConnectionConfig{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Feature = &CollectorFeature_NetworkConnections{NetworkConnections: v}
-			}
-			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpoints", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpoint", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -7033,8 +6821,8 @@ func (m *CollectorFeature) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Feature.(*CollectorFeature_NetworkEndpoints); ok {
-				if err := oneof.NetworkEndpoints.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Feature.(*CollectorNamespaceFeature_NetworkEndpoint); ok {
+				if err := oneof.NetworkEndpoint.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
@@ -7042,7 +6830,7 @@ func (m *CollectorFeature) UnmarshalVT(dAtA []byte) error {
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Feature = &CollectorFeature_NetworkEndpoints{NetworkEndpoints: v}
+				m.Feature = &CollectorNamespaceFeature_NetworkEndpoint{NetworkEndpoint: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -7228,7 +7016,7 @@ func (m *CollectorNamespaceConfig) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Feature == nil {
-				m.Feature = &CollectorFeature{}
+				m.Feature = &CollectorNamespaceFeature{}
 			}
 			if err := m.Feature.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -12627,7 +12415,7 @@ func (m *NetworkEndpointConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *CollectorFeature) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *CollectorNamespaceFeature) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -12650,97 +12438,15 @@ func (m *CollectorFeature) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: CollectorFeature: wiretype end group for non-group")
+			return fmt.Errorf("proto: CollectorNamespaceFeature: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: CollectorFeature: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: CollectorNamespaceFeature: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Processes", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Feature.(*CollectorFeature_Processes); ok {
-				if err := oneof.Processes.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &ProcessConfig{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Feature = &CollectorFeature_Processes{Processes: v}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetworkConnections", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Feature.(*CollectorFeature_NetworkConnections); ok {
-				if err := oneof.NetworkConnections.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &NetworkConnectionConfig{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Feature = &CollectorFeature_NetworkConnections{NetworkConnections: v}
-			}
-			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpoints", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpoint", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -12767,8 +12473,8 @@ func (m *CollectorFeature) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Feature.(*CollectorFeature_NetworkEndpoints); ok {
-				if err := oneof.NetworkEndpoints.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Feature.(*CollectorNamespaceFeature_NetworkEndpoint); ok {
+				if err := oneof.NetworkEndpoint.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
@@ -12776,7 +12482,7 @@ func (m *CollectorFeature) UnmarshalVTUnsafe(dAtA []byte) error {
 				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Feature = &CollectorFeature_NetworkEndpoints{NetworkEndpoints: v}
+				m.Feature = &CollectorNamespaceFeature_NetworkEndpoint{NetworkEndpoint: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -12966,7 +12672,7 @@ func (m *CollectorNamespaceConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Feature == nil {
-				m.Feature = &CollectorFeature{}
+				m.Feature = &CollectorNamespaceFeature{}
 			}
 			if err := m.Feature.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
