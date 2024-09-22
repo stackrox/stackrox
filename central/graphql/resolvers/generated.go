@@ -363,11 +363,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"namespace: String!",
 	}))
 	utils.Must(builder.AddType("CollectorNamespaceFeature", []string{
-		"networkEndpoint: NetworkEndpointConfig",
+		"networkConnection: NetworkConnectionConfig",
 		"feature: CollectorNamespaceFeatureFeature",
 	}))
 	utils.Must(builder.AddUnionType("CollectorNamespaceFeatureFeature", []string{
-		"NetworkEndpointConfig",
+		"NetworkConnectionConfig",
 	}))
 	utils.Must(builder.AddType("CompleteClusterConfig", []string{
 		"clusterLabels: [Label!]!",
@@ -4942,9 +4942,9 @@ func (resolver *Resolver) wrapCollectorNamespaceFeaturesWithContext(ctx context.
 	return output, nil
 }
 
-func (resolver *collectorNamespaceFeatureResolver) NetworkEndpoint(ctx context.Context) (*networkEndpointConfigResolver, error) {
-	value := resolver.data.GetNetworkEndpoint()
-	return resolver.root.wrapNetworkEndpointConfig(value, true, nil)
+func (resolver *collectorNamespaceFeatureResolver) NetworkConnection(ctx context.Context) (*networkConnectionConfigResolver, error) {
+	value := resolver.data.GetNetworkConnection()
+	return resolver.root.wrapNetworkConnectionConfig(value, true, nil)
 }
 
 type collectorNamespaceFeatureFeatureResolver struct {
@@ -4952,16 +4952,16 @@ type collectorNamespaceFeatureFeatureResolver struct {
 }
 
 func (resolver *collectorNamespaceFeatureResolver) Feature() *collectorNamespaceFeatureFeatureResolver {
-	if val := resolver.data.GetNetworkEndpoint(); val != nil {
+	if val := resolver.data.GetNetworkConnection(); val != nil {
 		return &collectorNamespaceFeatureFeatureResolver{
-			resolver: &networkEndpointConfigResolver{root: resolver.root, data: val},
+			resolver: &networkConnectionConfigResolver{root: resolver.root, data: val},
 		}
 	}
 	return nil
 }
 
-func (resolver *collectorNamespaceFeatureFeatureResolver) ToNetworkEndpointConfig() (*networkEndpointConfigResolver, bool) {
-	res, ok := resolver.resolver.(*networkEndpointConfigResolver)
+func (resolver *collectorNamespaceFeatureFeatureResolver) ToNetworkConnectionConfig() (*networkConnectionConfigResolver, bool) {
+	res, ok := resolver.resolver.(*networkConnectionConfigResolver)
 	return res, ok
 }
 

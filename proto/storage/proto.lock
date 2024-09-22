@@ -1928,9 +1928,9 @@
             "name": "CollectorNamespaceFeature",
             "fields": [
               {
-                "id": 3,
-                "name": "network_endpoint",
-                "type": "NetworkEndpointConfig",
+                "id": 1,
+                "name": "network_connection",
+                "type": "NetworkConnectionConfig",
                 "oneof_parent": "feature"
               }
             ]

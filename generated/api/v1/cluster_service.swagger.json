@@ -794,8 +794,8 @@
     "storageCollectorNamespaceFeature": {
       "type": "object",
       "properties": {
-        "networkEndpoint": {
-          "$ref": "#/definitions/storageNetworkEndpointConfig"
+        "networkConnection": {
+          "$ref": "#/definitions/storageNetworkConnectionConfig"
         }
       }
     },

@@ -277,12 +277,12 @@ func (m *CollectorNamespaceFeature) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *CollectorNamespaceFeature_NetworkEndpoint) CloneVT() isCollectorNamespaceFeature_Feature {
+func (m *CollectorNamespaceFeature_NetworkConnection) CloneVT() isCollectorNamespaceFeature_Feature {
 	if m == nil {
-		return (*CollectorNamespaceFeature_NetworkEndpoint)(nil)
+		return (*CollectorNamespaceFeature_NetworkConnection)(nil)
 	}
-	r := new(CollectorNamespaceFeature_NetworkEndpoint)
-	r.NetworkEndpoint = m.NetworkEndpoint.CloneVT()
+	r := new(CollectorNamespaceFeature_NetworkConnection)
+	r.NetworkConnection = m.NetworkConnection.CloneVT()
 	return r
 }
 
@@ -1234,8 +1234,8 @@ func (this *CollectorNamespaceFeature) EqualMessageVT(thatMsg proto.Message) boo
 	}
 	return this.EqualVT(that)
 }
-func (this *CollectorNamespaceFeature_NetworkEndpoint) EqualVT(thatIface isCollectorNamespaceFeature_Feature) bool {
-	that, ok := thatIface.(*CollectorNamespaceFeature_NetworkEndpoint)
+func (this *CollectorNamespaceFeature_NetworkConnection) EqualVT(thatIface isCollectorNamespaceFeature_Feature) bool {
+	that, ok := thatIface.(*CollectorNamespaceFeature_NetworkConnection)
 	if !ok {
 		return false
 	}
@@ -1245,12 +1245,12 @@ func (this *CollectorNamespaceFeature_NetworkEndpoint) EqualVT(thatIface isColle
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.NetworkEndpoint, that.NetworkEndpoint; p != q {
+	if p, q := this.NetworkConnection, that.NetworkConnection; p != q {
 		if p == nil {
-			p = &NetworkEndpointConfig{}
+			p = &NetworkConnectionConfig{}
 		}
 		if q == nil {
-			q = &NetworkEndpointConfig{}
+			q = &NetworkConnectionConfig{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -2852,22 +2852,22 @@ func (m *CollectorNamespaceFeature) MarshalToSizedBufferVT(dAtA []byte) (int, er
 	return len(dAtA) - i, nil
 }
 
-func (m *CollectorNamespaceFeature_NetworkEndpoint) MarshalToVT(dAtA []byte) (int, error) {
+func (m *CollectorNamespaceFeature_NetworkConnection) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *CollectorNamespaceFeature_NetworkEndpoint) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *CollectorNamespaceFeature_NetworkConnection) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.NetworkEndpoint != nil {
-		size, err := m.NetworkEndpoint.MarshalToSizedBufferVT(dAtA[:i])
+	if m.NetworkConnection != nil {
+		size, err := m.NetworkConnection.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -4783,14 +4783,14 @@ func (m *CollectorNamespaceFeature) SizeVT() (n int) {
 	return n
 }
 
-func (m *CollectorNamespaceFeature_NetworkEndpoint) SizeVT() (n int) {
+func (m *CollectorNamespaceFeature_NetworkConnection) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.NetworkEndpoint != nil {
-		l = m.NetworkEndpoint.SizeVT()
+	if m.NetworkConnection != nil {
+		l = m.NetworkConnection.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -6792,9 +6792,9 @@ func (m *CollectorNamespaceFeature) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: CollectorNamespaceFeature: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 3:
+		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpoint", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NetworkConnection", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6821,16 +6821,16 @@ func (m *CollectorNamespaceFeature) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Feature.(*CollectorNamespaceFeature_NetworkEndpoint); ok {
-				if err := oneof.NetworkEndpoint.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Feature.(*CollectorNamespaceFeature_NetworkConnection); ok {
+				if err := oneof.NetworkConnection.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &NetworkEndpointConfig{}
+				v := &NetworkConnectionConfig{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Feature = &CollectorNamespaceFeature_NetworkEndpoint{NetworkEndpoint: v}
+				m.Feature = &CollectorNamespaceFeature_NetworkConnection{NetworkConnection: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -12444,9 +12444,9 @@ func (m *CollectorNamespaceFeature) UnmarshalVTUnsafe(dAtA []byte) error {
 			return fmt.Errorf("proto: CollectorNamespaceFeature: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 3:
+		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetworkEndpoint", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field NetworkConnection", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -12473,16 +12473,16 @@ func (m *CollectorNamespaceFeature) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Feature.(*CollectorNamespaceFeature_NetworkEndpoint); ok {
-				if err := oneof.NetworkEndpoint.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Feature.(*CollectorNamespaceFeature_NetworkConnection); ok {
+				if err := oneof.NetworkConnection.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &NetworkEndpointConfig{}
+				v := &NetworkConnectionConfig{}
 				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Feature = &CollectorNamespaceFeature_NetworkEndpoint{NetworkEndpoint: v}
+				m.Feature = &CollectorNamespaceFeature_NetworkConnection{NetworkConnection: v}
 			}
 			iNdEx = postIndex
 		default:

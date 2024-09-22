@@ -111,7 +111,7 @@ message NetworkEndpointConfig {
 
 message CollectorNamespaceFeature {
   oneof feature {
-    NetworkEndpointConfig network_endpoint = 3;
+    NetworkConnectionConfig network_connection = 1;
   }
 }
 
