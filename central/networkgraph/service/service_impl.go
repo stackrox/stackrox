@@ -32,7 +32,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -60,9 +59,8 @@ var (
 		},
 	})
 
-	defaultSince         = -5 * time.Minute
-	networkGraphSAC      = sac.ForResource(resources.NetworkGraph)
-	netEntityPredFactory = predicate.NewFactory("networkEntity", &storage.NetworkEntity{})
+	defaultSince    = -5 * time.Minute
+	networkGraphSAC = sac.ForResource(resources.NetworkGraph)
 )
 
 // serviceImpl provides APIs for alerts.
