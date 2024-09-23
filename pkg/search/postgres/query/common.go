@@ -139,3 +139,7 @@ func MatchFieldQuery(dbField *walker.Field, derivedMetadata *walker.DerivedSearc
 	}
 	return qe, nil
 }
+
+func isWildCardOrNullStringQuery(value string) bool {
+	return value == search.WildcardString || value == search.NullString
+}
