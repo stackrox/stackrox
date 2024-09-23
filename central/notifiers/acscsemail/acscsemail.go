@@ -106,9 +106,9 @@ func (e *acscsEmail) NetworkPolicyYAMLNotify(ctx context.Context, yaml string, c
 	return e.send(ctx, &msg)
 }
 
-func (e *acscsEmail) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText string) error {
+func (e *acscsEmail) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText, reportName string) error {
 	// using empty from here because the From header will be set by the managed service
-	msg := email.BuildReportMessage(recipients, "", subject, messageText, zippedReportData)
+	msg := email.BuildReportMessage(recipients, "", subject, messageText, zippedReportData, reportName)
 	return e.send(ctx, &msg)
 }
 
