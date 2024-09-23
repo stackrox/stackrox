@@ -314,9 +314,12 @@ jobs:
           4.4*)
             gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
             ;;
-          *)
+          4.5*)
             gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
             gsutil cp "$multi" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
+            ;;
+          *)
+            echo "Error: Unrecognized release version '$release'. Skipping..."
             ;;
           esac
         done
