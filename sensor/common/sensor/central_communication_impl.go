@@ -157,16 +157,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
-	if helmManagedCfg := configHandler.GetHelmManagedConfig(); helmManagedCfg != nil && helmManagedCfg.GetClusterId() == "" {
-		cachedClusterID, err := helmconfig.LoadCachedClusterID()
-		if err != nil {
-			log.Warnf("Failed to load cached cluster ID: %s", err)
-		} else if cachedClusterID != "" {
-			helmManagedCfg = helmManagedCfg.CloneVT()
-			helmManagedCfg.ClusterId = cachedClusterID
-			log.Infof("Re-using cluster ID %s of previous run. If you see the connection to central failing, re-apply a new Helm configuration via 'helm upgrade', or delete the sensor pod.", cachedClusterID)
-		}
-
+	if helmManagedCfg := configHandler.GetHelmManagedConfig(); helmManagedCfg != nil {
 		sensorHello.HelmManagedConfigInit = helmManagedCfg
 	}
 
@@ -240,7 +231,9 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 	}
 
 	clusterID := centralHello.GetClusterId()
-	clusterid.Set(clusterID)
+	if err = clusterid.Set(clusterID); err != nil {
+		log.Warnf("Cluster ID has changed after connecting to central: %v ", err)
+	}
 
 	if centralHello.GetManagedCentral() {
 		log.Info("Central is managed")

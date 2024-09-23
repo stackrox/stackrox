@@ -1,6 +1,8 @@
 package clusterid
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterid"
@@ -52,7 +54,7 @@ func GetNoWait() string {
 }
 
 // Set sets the global cluster ID value.
-func Set(value string) {
+func Set(value string) error {
 	effectiveClusterID, err := centralsensor.GetClusterID(value, clusterIDFromCert())
 	if err != nil {
 		log.Panicf("Invalid dynamic cluster ID value %q: %v", value, err)
@@ -68,6 +70,7 @@ func Set(value string) {
 		clusterID = effectiveClusterID
 		clusterIDAvailable.Signal()
 	} else if clusterID != effectiveClusterID {
-		log.Panicf("Newly set cluster ID value %q conflicts with previous value %q", effectiveClusterID, clusterID)
+		return fmt.Errorf("newly set cluster ID value %q conflicts with previous value %q", effectiveClusterID, clusterID)
 	}
+	return nil
 }
