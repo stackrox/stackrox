@@ -75,7 +75,7 @@ export function useWatchLastSnapshotForReports(
     const result: FetchLastSnapshotReturn = {
         reportSnapshots: data || {},
         isLoading,
-        error: getAxiosErrorMessage(error),
+        error: error ? getAxiosErrorMessage(error) : null,
         fetchSnapshots: refetch,
     };
 
