@@ -44,7 +44,6 @@ spec:
   enforcementActions:
   - FAIL_BUILD_ENFORCEMENT
   - KILL_POD_ENFORCEMENT
-  policyVersion: "1.1"
   policySections:
   - sectionName: ""
     policyGroups:

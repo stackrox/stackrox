@@ -121,7 +121,6 @@ type Policy struct {
 	Severity           string
 	EnforcementActions []string                             `yaml:"enforcementActions,omitempty"`
 	Notifiers          []string                             `yaml:",omitempty"`
-	PolicyVersion      string                               `yaml:"policyVersion"`
 	PolicySections     []*PolicySection                     `yaml:"policySections,omitempty"`
 	MitreAttackVectors []*storage.Policy_MitreAttackVectors `yaml:"mitreAttackVectors,omitempty"`
 	CriteriaLocked     bool                                 `yaml:"criteriaLocked"`
@@ -148,7 +147,6 @@ func convertPolicy(p *storage.Policy) *Policy {
 		Severity:           p.Severity.String(),
 		EnforcementActions: sliceutils.StringSlice(p.EnforcementActions...),
 		Notifiers:          p.Notifiers,
-		PolicyVersion:      p.PolicyVersion,
 		PolicySections:     sliceutils.ConvertSlice(p.PolicySections, convertPolicySection),
 		MitreAttackVectors: p.MitreAttackVectors,
 		CriteriaLocked:     p.CriteriaLocked,
