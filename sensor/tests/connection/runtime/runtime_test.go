@@ -152,8 +152,10 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		}, time.Minute)
 		assert.NoError(t, err)
 		assert.NotNil(t, msg)
+		t.Logf("Expecting Network Flow for %s -> %s", talkUID, nginxUID)
 		msg, err = testContext.WaitForMessageWithMatcher(func(event *central.MsgFromSensor) bool {
 			for _, flow := range event.GetNetworkFlowUpdate().GetUpdated() {
+				t.Logf("Processing Flow: %v - %v", flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity())
 				if flow.GetProps().GetSrcEntity().GetId() == talkUID && flow.GetProps().GetDstEntity().GetId() == nginxUID {
 					return true
 				}
