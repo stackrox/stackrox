@@ -121,9 +121,10 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceRep
 		ScanConfig:    req.ScanConfigName,
 		Profiles:      len(req.Profiles),
 	}
+	reportName := req.ScanConfigName
 
-	log.Infof("Sending email for scan config %s", req.ScanConfigName)
-	go rg.sendEmail(req.Ctx, zipData, formatEmailBody, formatEmailSub, req.Notifiers)
+	log.Infof("Sending email for scan config %s", reportName)
+	go rg.sendEmail(req.Ctx, zipData, formatEmailBody, formatEmailSub, req.Notifiers, reportName)
 }
 
 // getDataforReport returns map of cluster id and slice of ResultRow
@@ -224,7 +225,7 @@ func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportR
 	return resultEmailComplianceReport
 }
 
-func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration) {
+func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration, reportName string) {
 
 	errorList := errorhelpers.NewErrorList("Error sending compliance report email notifications")
 	for _, repNotifier := range notifiersList {
@@ -255,7 +256,7 @@ func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData 
 			emailSubject = customSubject
 		}
 		err = retryableSendReportResults(reportNotifier, repNotifier.GetEmailConfig().GetMailingLists(),
-			zipData, emailSubject, body)
+			zipData, emailSubject, body, reportName)
 		if err != nil {
 			errorList.AddError(errors.Errorf("Error sending compliance report email for notifier %s: %s",
 				repNotifier.GetEmailConfig().GetNotifierId(), err))
@@ -284,9 +285,9 @@ func formatEmailBodywithDetails(subject string, data *formatBody) (string, error
 }
 
 func retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
-	zippedCSVData *bytes.Buffer, emailSubject, emailBody string) error {
+	zippedCSVData *bytes.Buffer, emailSubject, emailBody, reportName string) error {
 	return retry.WithRetry(func() error {
-		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody)
+		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody, reportName)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
