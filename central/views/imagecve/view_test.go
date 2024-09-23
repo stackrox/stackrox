@@ -819,6 +819,9 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
 					val.FirstDiscoveredInSystem = &vulnTime
 				}
+				if val.GetPublishDate().After(vulnPublishDate) {
+					val.Published = &vulnPublishDate
+				}
 
 				if !seenForImage.Add(val.CVE) {
 					continue

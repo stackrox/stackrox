@@ -40,7 +40,7 @@ func init() {
 				"exceptionCount(requestStatus: [String]): Int!",
 				"images(pagination: Pagination): [Image!]!",
 				"topCVSS: Float!",
-				"cvePublishedDate: Time",
+				"publishedOn: Time",
 			}),
 		schema.AddQuery("imageCVECount(query: String): Int!"),
 		schema.AddQuery("imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!"),
@@ -196,7 +196,7 @@ func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context)
 	}
 }
 
-func (resolver *imageCVECoreResolver) CVEPublishedDate(_ context.Context) *graphql.Time {
+func (resolver *imageCVECoreResolver) PublishedOn(_ context.Context) *graphql.Time {
 	ts := resolver.data.GetPublishDate()
 	if ts == nil {
 		return nil
