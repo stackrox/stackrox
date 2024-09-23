@@ -8,13 +8,16 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	tokenIssuerMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
 const (
-	authProviderID = "41757468-5072-6f76-6964-657211111111"
+	authProviderID = "41757468-5072-6f76-6964-657200111111"
+	testProviderID = "41757468-5072-6f76-6964-657200222222"
 
 	baseLoginURL = "/base/login/url"
 	testLoginURL = "/test/login/url"
@@ -30,6 +33,12 @@ const (
 
 	baseAuthProviderBackendFactoryID = "4261636b-656e-6446-6163-746f72791111"
 	testAuthProviderBackendFactoryID = "4261636b-656e-6446-6163-746f72792222"
+
+	baseAuthProviderType = "base"
+	testAuthProviderType = "test"
+
+	baseAuthProviderName = "Auth Provider"
+	testAuthProviderName = "Test Auth Provider"
 )
 
 var (
@@ -308,6 +317,509 @@ func TestDefaultBackend(t *testing.T) {
 	assert.Nil(t, provider.backend)
 	assert.Equal(t, baseAuthProviderBackendConfig, provider.storedInfo.GetConfig())
 	assert.Equal(t, baseAuthProviderBackendFactory, provider.backendFactory)
+}
+
+func TestWithBackendFromFactory(t *testing.T) {
+	option := WithBackendFromFactory(context.Background(), testAuthProviderBackendFactory)
+
+	baseAuthProviderBackendFactory := &tstAuthProviderBackendFactory{
+		ID: baseAuthProviderBackendFactoryID,
+	}
+	baseAuthProviderBackend := &tstAuthProviderBackend{
+		ID: baseAuthProviderBackendID,
+	}
+
+	previousBackendProvider := &providerImpl{
+		backend:        baseAuthProviderBackend,
+		backendFactory: baseAuthProviderBackendFactory,
+		storedInfo: &storage.AuthProvider{
+			Config: baseAuthProviderBackendConfig,
+		},
+	}
+	assert.Equal(t, baseAuthProviderBackend, previousBackendProvider.backend)
+	assert.Equal(t, baseAuthProviderBackendFactory, previousBackendProvider.backendFactory)
+	assert.Equal(t, baseAuthProviderBackendConfig, previousBackendProvider.storedInfo.GetConfig())
+	revert1, err := option(previousBackendProvider)
+	assert.NoError(t, err)
+	assert.Equal(t, testAuthProviderBackend, previousBackendProvider.backend)
+	assert.Equal(t, testAuthProviderBackendFactory, previousBackendProvider.backendFactory)
+	assert.Equal(t, testAuthProviderBackendConfig, previousBackendProvider.storedInfo.GetConfig())
+	err = revert1(previousBackendProvider)
+	assert.NoError(t, err)
+	assert.Equal(t, baseAuthProviderBackend, previousBackendProvider.backend)
+	assert.Equal(t, baseAuthProviderBackendFactory, previousBackendProvider.backendFactory)
+	assert.Equal(t, baseAuthProviderBackendConfig, previousBackendProvider.storedInfo.GetConfig())
+
+	provider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Type:   "test",
+			Config: baseAuthProviderBackendConfig,
+		},
+		backendFactory: baseAuthProviderBackendFactory,
+	}
+	assert.Nil(t, provider.backend)
+	assert.Equal(t, baseAuthProviderBackendConfig, provider.storedInfo.GetConfig())
+	assert.Equal(t, baseAuthProviderBackendFactory, provider.backendFactory)
+	revert3, err := option(provider)
+	assert.NoError(t, err)
+	assert.Equal(t, testAuthProviderBackend, provider.backend)
+	assert.Equal(t, testAuthProviderBackendFactory, provider.backendFactory)
+	assert.Equal(t, testAuthProviderBackendConfig, provider.storedInfo.GetConfig())
+	err = revert3(provider)
+	assert.NoError(t, err)
+	assert.Nil(t, provider.backend)
+	assert.Equal(t, baseAuthProviderBackendConfig, provider.storedInfo.GetConfig())
+	assert.Equal(t, baseAuthProviderBackendFactory, provider.backendFactory)
+}
+
+func TestDoNotStore(t *testing.T) {
+	option := DoNotStore()
+
+	baseProvider := &providerImpl{}
+	assert.False(t, baseProvider.doNotStore)
+	revert1, err := option(baseProvider)
+	assert.NoError(t, err)
+	assert.True(t, baseProvider.doNotStore)
+	err = revert1(baseProvider)
+	assert.NoError(t, err)
+	assert.False(t, baseProvider.doNotStore)
+
+	doNotStoreProvider := &providerImpl{
+		doNotStore: true,
+	}
+	assert.True(t, doNotStoreProvider.doNotStore)
+	revert2, err := option(doNotStoreProvider)
+	assert.NoError(t, err)
+	assert.True(t, doNotStoreProvider.doNotStore)
+	err = revert2(doNotStoreProvider)
+	assert.NoError(t, err)
+	assert.True(t, doNotStoreProvider.doNotStore)
+
+	doStoreProvider := &providerImpl{
+		doNotStore: false,
+	}
+	assert.False(t, doStoreProvider.doNotStore)
+	revert3, err := option(doStoreProvider)
+	assert.NoError(t, err)
+	assert.True(t, doStoreProvider.doNotStore)
+	err = revert3(doStoreProvider)
+	assert.NoError(t, err)
+	assert.False(t, doStoreProvider.doNotStore)
+}
+
+func TestWithRoleMapper(t *testing.T) {
+	baseRoleMapper := &fakeRoleMapper{ID: baseRoleMapperID}
+	optionTestRoleMapper := &fakeRoleMapper{ID: testRoleMapperID}
+
+	option := WithRoleMapper(optionTestRoleMapper)
+
+	previousMapperProvider := &providerImpl{
+		roleMapper: baseRoleMapper,
+	}
+	assert.Equal(t, baseRoleMapper, previousMapperProvider.roleMapper)
+	revert1, err := option(previousMapperProvider)
+	assert.NoError(t, err)
+	assert.Equal(t, optionTestRoleMapper, previousMapperProvider.roleMapper)
+	err = revert1(previousMapperProvider)
+	assert.NoError(t, err)
+	assert.Equal(t, baseRoleMapper, previousMapperProvider.roleMapper)
+
+	noIDProvider := &providerImpl{}
+	assert.Nil(t, noIDProvider.roleMapper)
+	assert.Empty(t, noIDProvider.storedInfo.GetId())
+	revert2, err := option(noIDProvider)
+	assert.NoError(t, err)
+	assert.Equal(t, optionTestRoleMapper, noIDProvider.roleMapper)
+	err = revert2(noIDProvider)
+	assert.NoError(t, err)
+	assert.Nil(t, noIDProvider.roleMapper)
+
+	provider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Id: authProviderID,
+		},
+	}
+	assert.Nil(t, provider.roleMapper)
+	assert.Equal(t, authProviderID, provider.storedInfo.GetId())
+	revert3, err := option(provider)
+	assert.NoError(t, err)
+	assert.Equal(t, optionTestRoleMapper, provider.roleMapper)
+	err = revert3(provider)
+	assert.NoError(t, err)
+	assert.Nil(t, provider.roleMapper)
+}
+
+func TestWithStorageView(t *testing.T) {
+	baseStorageView := &storage.AuthProvider{
+		Id: authProviderID,
+	}
+	testStorageView := &storage.AuthProvider{
+		Id: testProviderID,
+	}
+	option := WithStorageView(testStorageView)
+
+	noStorageViewProvider := &providerImpl{}
+	assert.Nil(t, noStorageViewProvider.storedInfo)
+	revert1, err := option(noStorageViewProvider)
+	assert.NoError(t, err)
+	protoassert.Equal(t, testStorageView, noStorageViewProvider.storedInfo)
+	err = revert1(noStorageViewProvider)
+	assert.NoError(t, err)
+	assert.Nil(t, noStorageViewProvider.storedInfo)
+
+	previousStorageViewProvider := &providerImpl{
+		storedInfo: baseStorageView,
+	}
+	protoassert.Equal(t, baseStorageView, previousStorageViewProvider.storedInfo)
+	revert2, err := option(previousStorageViewProvider)
+	assert.NoError(t, err)
+	protoassert.Equal(t, testStorageView, previousStorageViewProvider.storedInfo)
+	// validate that the provider stored info is a copy of the input object
+	testStorageView.Type = "changed"
+	protoassert.NotEqual(t, testStorageView, previousStorageViewProvider.storedInfo)
+	err = revert2(previousStorageViewProvider)
+	assert.NoError(t, err)
+	protoassert.Equal(t, baseStorageView, previousStorageViewProvider.storedInfo)
+}
+
+func TestWithID(t *testing.T) {
+	option := WithID(testProviderID)
+
+	noStorageProvider := &providerImpl{}
+	assert.Nil(t, noStorageProvider.storedInfo)
+	assert.Empty(t, noStorageProvider.storedInfo.GetId())
+	revert1, err := option(noStorageProvider)
+	assert.ErrorIs(t, err, errox.InvariantViolation)
+	assert.Nil(t, noStorageProvider.storedInfo)
+	assert.Empty(t, noStorageProvider.storedInfo.GetId())
+	err = revert1(noStorageProvider)
+	assert.NoError(t, err)
+	assert.Nil(t, noStorageProvider.storedInfo)
+	assert.Empty(t, noStorageProvider.storedInfo.GetId())
+
+	noIDProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{},
+	}
+	assert.NotNil(t, noIDProvider.storedInfo)
+	assert.Empty(t, noIDProvider.storedInfo.GetId())
+	revert2, err := option(noIDProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, noIDProvider.storedInfo)
+	assert.Equal(t, testProviderID, noIDProvider.storedInfo.GetId())
+	err = revert2(noIDProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, noIDProvider.storedInfo)
+	assert.Empty(t, noIDProvider.storedInfo.GetId())
+
+	prevIDProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Id: authProviderID,
+		},
+	}
+	assert.NotNil(t, prevIDProvider.storedInfo)
+	assert.Equal(t, authProviderID, prevIDProvider.storedInfo.GetId())
+	revert3, err := option(prevIDProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, prevIDProvider.storedInfo)
+	assert.Equal(t, testProviderID, prevIDProvider.storedInfo.GetId())
+	err = revert3(prevIDProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, prevIDProvider.storedInfo)
+	assert.Equal(t, authProviderID, prevIDProvider.storedInfo.GetId())
+
+	breakRevertProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Id: authProviderID,
+		},
+	}
+	assert.NotNil(t, breakRevertProvider.storedInfo)
+	assert.Equal(t, authProviderID, breakRevertProvider.storedInfo.GetId())
+	revert4, err := option(breakRevertProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, breakRevertProvider.storedInfo)
+	assert.Equal(t, testProviderID, breakRevertProvider.storedInfo.GetId())
+	breakRevertProvider.storedInfo = nil
+	assert.Nil(t, breakRevertProvider.storedInfo)
+	assert.Empty(t, breakRevertProvider.storedInfo.GetId())
+	err = revert4(breakRevertProvider)
+	assert.ErrorIs(t, err, errox.InvariantViolation)
+	assert.Nil(t, breakRevertProvider.storedInfo)
+	assert.Empty(t, breakRevertProvider.storedInfo.GetId())
+}
+
+func TestWithType(t *testing.T) {
+	option := WithType(testAuthProviderType)
+
+	noStorageProvider := &providerImpl{}
+	assert.Nil(t, noStorageProvider.storedInfo)
+	assert.Empty(t, noStorageProvider.storedInfo.GetType())
+	revert1, err := option(noStorageProvider)
+	assert.ErrorIs(t, err, errox.InvariantViolation)
+	assert.Nil(t, noStorageProvider.storedInfo)
+	assert.Empty(t, noStorageProvider.storedInfo.GetType())
+	err = revert1(noStorageProvider)
+	assert.NoError(t, err)
+	assert.Nil(t, noStorageProvider.storedInfo)
+	assert.Empty(t, noStorageProvider.storedInfo.GetType())
+
+	noTypeProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{},
+	}
+	assert.NotNil(t, noTypeProvider.storedInfo)
+	assert.Empty(t, noTypeProvider.storedInfo.GetType())
+	revert2, err := option(noTypeProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, noTypeProvider.storedInfo)
+	assert.Equal(t, testAuthProviderType, noTypeProvider.storedInfo.GetType())
+	err = revert2(noTypeProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, noTypeProvider.storedInfo)
+	assert.Empty(t, noTypeProvider.storedInfo.GetType())
+
+	prevTypeProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Type: baseAuthProviderType,
+		},
+	}
+	assert.NotNil(t, prevTypeProvider.storedInfo)
+	assert.Equal(t, baseAuthProviderType, prevTypeProvider.storedInfo.GetType())
+	revert3, err := option(prevTypeProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, prevTypeProvider.storedInfo)
+	assert.Equal(t, testAuthProviderType, prevTypeProvider.storedInfo.GetType())
+	err = revert3(prevTypeProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, prevTypeProvider.storedInfo)
+	assert.Equal(t, baseAuthProviderType, prevTypeProvider.storedInfo.GetType())
+
+	breakRevertProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Type: baseAuthProviderType,
+		},
+	}
+	assert.NotNil(t, breakRevertProvider.storedInfo)
+	assert.Equal(t, baseAuthProviderType, breakRevertProvider.storedInfo.GetType())
+	revert4, err := option(breakRevertProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, breakRevertProvider.storedInfo)
+	assert.Equal(t, testAuthProviderType, breakRevertProvider.storedInfo.GetType())
+	breakRevertProvider.storedInfo = nil
+	assert.Nil(t, breakRevertProvider.storedInfo)
+	assert.Empty(t, breakRevertProvider.storedInfo.GetType())
+	err = revert4(breakRevertProvider)
+	assert.ErrorIs(t, err, errox.InvariantViolation)
+	assert.Nil(t, breakRevertProvider.storedInfo)
+	assert.Empty(t, breakRevertProvider.storedInfo.GetType())
+}
+
+func TestWithName(t *testing.T) {
+	option := WithName(testAuthProviderName)
+
+	noStorageProvider := &providerImpl{}
+	assert.Nil(t, noStorageProvider.storedInfo)
+	assert.Empty(t, noStorageProvider.storedInfo.GetName())
+	revert1, err := option(noStorageProvider)
+	assert.ErrorIs(t, err, errox.InvariantViolation)
+	assert.Nil(t, noStorageProvider.storedInfo)
+	assert.Empty(t, noStorageProvider.storedInfo.GetName())
+	err = revert1(noStorageProvider)
+	assert.NoError(t, err)
+	assert.Nil(t, noStorageProvider.storedInfo)
+	assert.Empty(t, noStorageProvider.storedInfo.GetName())
+
+	noTypeProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{},
+	}
+	assert.NotNil(t, noTypeProvider.storedInfo)
+	assert.Empty(t, noTypeProvider.storedInfo.GetName())
+	revert2, err := option(noTypeProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, noTypeProvider.storedInfo)
+	assert.Equal(t, testAuthProviderName, noTypeProvider.storedInfo.GetName())
+	err = revert2(noTypeProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, noTypeProvider.storedInfo)
+	assert.Empty(t, noTypeProvider.storedInfo.GetName())
+
+	prevNameProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Name: baseAuthProviderName,
+		},
+	}
+	assert.NotNil(t, prevNameProvider.storedInfo)
+	assert.Equal(t, baseAuthProviderName, prevNameProvider.storedInfo.GetName())
+	revert3, err := option(prevNameProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, prevNameProvider.storedInfo)
+	assert.Equal(t, testAuthProviderName, prevNameProvider.storedInfo.GetName())
+	err = revert3(prevNameProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, prevNameProvider.storedInfo)
+	assert.Equal(t, baseAuthProviderName, prevNameProvider.storedInfo.GetName())
+
+	breakRevertProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Name: baseAuthProviderName,
+		},
+	}
+	assert.NotNil(t, breakRevertProvider.storedInfo)
+	assert.Equal(t, baseAuthProviderName, breakRevertProvider.storedInfo.GetName())
+	revert4, err := option(breakRevertProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, breakRevertProvider.storedInfo)
+	assert.Equal(t, testAuthProviderName, breakRevertProvider.storedInfo.GetName())
+	breakRevertProvider.storedInfo = nil
+	assert.Nil(t, breakRevertProvider.storedInfo)
+	assert.Empty(t, breakRevertProvider.storedInfo.GetName())
+	err = revert4(breakRevertProvider)
+	assert.ErrorIs(t, err, errox.InvariantViolation)
+	assert.Nil(t, breakRevertProvider.storedInfo)
+	assert.Empty(t, breakRevertProvider.storedInfo.GetName())
+}
+
+func TestWithEnabled(t *testing.T) {
+	doEnable := WithEnabled(true)
+	doDisable := WithEnabled(false)
+
+	noStoreViewProvider := &providerImpl{}
+	assert.Nil(t, noStoreViewProvider.storedInfo)
+	assert.False(t, noStoreViewProvider.storedInfo.GetEnabled())
+
+	revert1, err := doEnable(noStoreViewProvider)
+	assert.ErrorIs(t, err, errox.InvariantViolation)
+	assert.Nil(t, noStoreViewProvider.storedInfo)
+	assert.False(t, noStoreViewProvider.storedInfo.GetEnabled())
+	err = revert1(noStoreViewProvider)
+	assert.NoError(t, err)
+	assert.Nil(t, noStoreViewProvider.storedInfo)
+	assert.False(t, noStoreViewProvider.storedInfo.GetEnabled())
+
+	revert2, err := doDisable(noStoreViewProvider)
+	assert.ErrorIs(t, err, errox.InvariantViolation)
+	assert.Nil(t, noStoreViewProvider.storedInfo)
+	assert.False(t, noStoreViewProvider.storedInfo.GetEnabled())
+	err = revert2(noStoreViewProvider)
+	assert.Nil(t, noStoreViewProvider.storedInfo)
+	assert.False(t, noStoreViewProvider.storedInfo.GetEnabled())
+
+	defaultStoredInfoProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{},
+	}
+	assert.NotNil(t, defaultStoredInfoProvider.storedInfo)
+	assert.False(t, defaultStoredInfoProvider.storedInfo.GetEnabled())
+
+	revert3, err := doEnable(defaultStoredInfoProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, defaultStoredInfoProvider.storedInfo)
+	assert.True(t, defaultStoredInfoProvider.storedInfo.GetEnabled())
+	err = revert3(defaultStoredInfoProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, defaultStoredInfoProvider.storedInfo)
+	assert.False(t, defaultStoredInfoProvider.storedInfo.GetEnabled())
+
+	revert4, err := doDisable(defaultStoredInfoProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, defaultStoredInfoProvider.storedInfo)
+	assert.False(t, defaultStoredInfoProvider.storedInfo.GetEnabled())
+	err = revert4(defaultStoredInfoProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, defaultStoredInfoProvider.storedInfo)
+	assert.False(t, defaultStoredInfoProvider.storedInfo.GetEnabled())
+
+	enabledProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Enabled: true,
+		},
+	}
+	assert.NotNil(t, enabledProvider.storedInfo)
+	assert.True(t, enabledProvider.storedInfo.GetEnabled())
+
+	revert5, err := doEnable(enabledProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, enabledProvider.storedInfo)
+	assert.True(t, enabledProvider.storedInfo.GetEnabled())
+	err = revert5(enabledProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, enabledProvider.storedInfo)
+	assert.True(t, enabledProvider.storedInfo.GetEnabled())
+
+	revert6, err := doDisable(enabledProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, enabledProvider.storedInfo)
+	assert.False(t, enabledProvider.storedInfo.GetEnabled())
+	err = revert6(enabledProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, enabledProvider.storedInfo)
+	assert.True(t, enabledProvider.storedInfo.GetEnabled())
+
+	disabledProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Enabled: false,
+		},
+	}
+	assert.NotNil(t, disabledProvider.storedInfo)
+	assert.False(t, disabledProvider.storedInfo.GetEnabled())
+
+	revert7, err := doEnable(disabledProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, disabledProvider.storedInfo)
+	assert.True(t, disabledProvider.storedInfo.GetEnabled())
+	err = revert7(disabledProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, disabledProvider.storedInfo)
+	assert.False(t, disabledProvider.storedInfo.GetEnabled())
+
+	revert8, err := doDisable(disabledProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, disabledProvider.storedInfo)
+	assert.False(t, disabledProvider.storedInfo.GetEnabled())
+	err = revert8(disabledProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, disabledProvider.storedInfo)
+	assert.False(t, disabledProvider.storedInfo.GetEnabled())
+
+	breakEnableRevertProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Enabled: false,
+		},
+	}
+	assert.NotNil(t, breakEnableRevertProvider.storedInfo)
+	assert.False(t, breakEnableRevertProvider.storedInfo.GetEnabled())
+	revert9, err := doEnable(breakEnableRevertProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, breakEnableRevertProvider.storedInfo)
+	assert.True(t, breakEnableRevertProvider.storedInfo.GetEnabled())
+	breakEnableRevertProvider.storedInfo = nil
+	assert.Nil(t, breakEnableRevertProvider.storedInfo)
+	assert.False(t, breakEnableRevertProvider.storedInfo.GetEnabled())
+	err = revert9(breakEnableRevertProvider)
+	assert.ErrorIs(t, err, errox.InvariantViolation)
+	assert.Nil(t, breakEnableRevertProvider.storedInfo)
+	assert.False(t, breakEnableRevertProvider.storedInfo.GetEnabled())
+
+	breakDisableRevertProvider := &providerImpl{
+		storedInfo: &storage.AuthProvider{
+			Enabled: true,
+		},
+	}
+	assert.NotNil(t, breakDisableRevertProvider.storedInfo)
+	assert.True(t, breakDisableRevertProvider.storedInfo.GetEnabled())
+	revert10, err := doDisable(breakDisableRevertProvider)
+	assert.NoError(t, err)
+	assert.NotNil(t, breakDisableRevertProvider.storedInfo)
+	assert.False(t, breakDisableRevertProvider.storedInfo.GetEnabled())
+	breakDisableRevertProvider.storedInfo = nil
+	assert.Nil(t, breakDisableRevertProvider.storedInfo)
+	assert.False(t, breakDisableRevertProvider.storedInfo.GetEnabled())
+	err = revert10(breakDisableRevertProvider)
+	assert.ErrorIs(t, err, errox.InvariantViolation)
+	assert.Nil(t, breakDisableRevertProvider.storedInfo)
+	assert.False(t, breakDisableRevertProvider.storedInfo.GetEnabled())
+
+}
+
+func TestWithActive(t *testing.T) {
+
 }
 
 // region test utilities

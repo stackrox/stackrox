@@ -34,11 +34,11 @@ func WithBackendFromFactory(ctx context.Context, factory BackendFactory) Provide
 		oldBackendFactory := pr.backendFactory
 		oldBackend := pr.backend
 		oldConfig := pr.storedInfo.GetConfig()
-		backendID := pr.storedInfo.GetId()
 		revert := func(pr *providerImpl) error {
 			if pr.storedInfo != nil {
 				pr.storedInfo.Config = oldConfig
 			}
+			backendID := pr.storedInfo.GetId()
 			pr.backend = oldBackend
 			err := pr.backendFactory.CleanupBackend(backendID)
 			pr.backendFactory = oldBackendFactory
