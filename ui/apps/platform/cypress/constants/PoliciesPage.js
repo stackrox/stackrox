@@ -84,6 +84,7 @@ export const selectors = {
         },
     },
     importUploadModal: {
+        modalWrapper: '.pf-v5-c-modal-box',
         titleText: '.pf-v5-c-modal-box__title-text:contains("Import policy JSON")',
         fileInput: '.pf-v5-c-file-upload input[type="file"]',
         policyNames: '[data-testid="policies-to-import"] div',
