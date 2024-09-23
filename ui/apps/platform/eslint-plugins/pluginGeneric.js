@@ -132,7 +132,9 @@ const rules = {
         create(context) {
             const isDocs = (href) =>
                 href.startsWith('https://docs.openshift.com/acs/') ||
-                href.startsWith('https://docs.redhat.com/acs/');
+                href.startsWith(
+                    'https://docs.redhat.com/en/documentation/red_hat_advanced_cluster_security_for_kubernetes/'
+                );
             return {
                 JSXOpeningElement(node) {
                     if (node.name?.name === 'a') {
