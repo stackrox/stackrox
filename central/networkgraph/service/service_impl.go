@@ -101,10 +101,7 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	query, err = search.FilterQueryWithMap(query, schema.NetworkEntitiesSchema.OptionsMap)
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "failed to parse query %q: %v", query.String(), err.Error())
-	}
+	query, _ = search.FilterQueryWithMap(query, schema.NetworkEntitiesSchema.OptionsMap)
 
 	ets, err := s.entities.GetEntityByQuery(ctx, query)
 	if err != nil {
@@ -129,60 +126,36 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 		return nil, err
 	}
 
-	flows, err := flowStore.GetFlowsForDeployment(ctx, request.GetDeploymentId(), false)
+	flows, err := flowStore.GetExternalFlowsForDeployment(ctx, request.GetDeploymentId())
 	if err != nil {
 		return nil, err
 	}
 
-	filtered := make([]*storage.NetworkFlow, 0, len(flows))
+	// Populate entities. This could probably be implemented in the DB query
+	// for better efficiency, but is simply implemented here for now.
 	for _, flow := range flows {
-		props := flow.GetProps()
-		srcType, dstType := props.GetSrcEntity().GetType(), props.GetDstEntity().GetType()
+		var toGet string
+		var toSet **storage.NetworkEntityInfo
 
-		if request.GetEgressOnly() {
-			if srcType != storage.NetworkEntityInfo_DEPLOYMENT {
-				continue
-			}
+		if flow.GetProps().GetSrcEntity().GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			toGet = flow.GetProps().GetSrcEntity().GetId()
+			toSet = &flow.GetProps().SrcEntity
+		}
+		if flow.GetProps().GetDstEntity().GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			toGet = flow.GetProps().GetDstEntity().GetId()
+			toSet = &flow.GetProps().DstEntity
 		}
 
-		if request.GetIngressOnly() {
-			if srcType != storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-				continue
-			}
+		entity, _, err := s.entities.GetEntity(ctx, toGet)
+		if err != nil {
+			return nil, err
 		}
 
-		if dstType != storage.NetworkEntityInfo_EXTERNAL_SOURCE && srcType != storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-			// not an external flow
-			continue
-		}
-
-		if srcType == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-			src, found, err := s.entities.GetEntity(ctx, props.GetSrcEntity().GetId())
-			if !found {
-				return nil, errors.Wrapf(errox.NotFound, "network entity %s not found", props.GetSrcEntity().GetId())
-			}
-			if err != nil {
-				return nil, err
-			}
-			props.SrcEntity = src.GetInfo()
-		}
-
-		if dstType == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-			dst, found, err := s.entities.GetEntity(ctx, props.GetDstEntity().GetId())
-			if !found {
-				return nil, errors.Wrapf(errox.NotFound, "network entity %s not found", props.GetDstEntity().GetId())
-			}
-			if err != nil {
-				return nil, err
-			}
-			props.DstEntity = dst.GetInfo()
-		}
-
-		filtered = append(filtered, flow)
+		*toSet = entity.GetInfo()
 	}
 
 	return &v1.GetExternalNetworkFlowsResponse{
-		Flows: filtered,
+		Flows: flows,
 	}, nil
 }
 

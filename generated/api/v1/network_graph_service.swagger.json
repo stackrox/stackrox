@@ -178,24 +178,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
-          {
-            "name": "query",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "egressOnly",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "ingressOnly",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
           }
         ],
         "tags": [

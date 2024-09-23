@@ -12,9 +12,7 @@ import "storage/network_graph_config.proto";
 option go_package = "./api/v1;v1";
 option java_package = "io.stackrox.proto.api.v1";
 
-message NetworkGraphScope {
-  string query = 1;
-}
+message NetworkGraphScope { string query = 1; }
 
 message NetworkEdgeProperties {
   uint32 port = 1;
@@ -73,10 +71,7 @@ message GetExternalNetworkEntitiesResponse {
 
 message GetExternalNetworkFlowsRequest {
   string cluster_id = 1;
-  string query = 2;
   string deployment_id = 3;
-  bool egress_only = 4;
-  bool ingress_only = 5;
 }
 
 message GetExternalNetworkFlowsResponse {
