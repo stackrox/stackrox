@@ -1888,7 +1888,7 @@
             "name": "NetworkConnectionConfig",
             "fields": [
               {
-                "id": 2,
+                "id": 1,
                 "name": "aggregate_external",
                 "type": "bool"
               }

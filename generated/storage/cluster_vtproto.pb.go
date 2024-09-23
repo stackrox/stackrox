@@ -2404,7 +2404,7 @@ func (m *NetworkConnectionConfig) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 			dAtA[i] = 0
 		}
 		i--
-		dAtA[i] = 0x10
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -5837,7 +5837,7 @@ func (m *NetworkConnectionConfig) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: NetworkConnectionConfig: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 2:
+		case 1:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AggregateExternal", wireType)
 			}
@@ -10886,7 +10886,7 @@ func (m *NetworkConnectionConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 			return fmt.Errorf("proto: NetworkConnectionConfig: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 2:
+		case 1:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AggregateExternal", wireType)
 			}
