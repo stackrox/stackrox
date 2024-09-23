@@ -24,7 +24,10 @@ function DeploymentTabWithoutReadAccessForDeployment({
                         <Card isFlat>
                             <CardTitle component="h3">Deployment overview</CardTitle>
                             <CardBody>
-                                <DeploymentOverview alertDeployment={alertDeployment} />
+                                <DeploymentOverview
+                                    alertDeployment={alertDeployment}
+                                    deployment={null}
+                                />
                             </CardBody>
                         </Card>
                     </FlexItem>
