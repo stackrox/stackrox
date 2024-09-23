@@ -13,11 +13,6 @@ import (
 // secretDataMap represents data stored as part of a secret.
 type secretDataMap = map[string][]byte
 
-var securedClusterServiceTypes = set.NewFrozenSet[storage.ServiceType](
-	storage.ServiceType_SENSOR_SERVICE,
-	storage.ServiceType_COLLECTOR_SERVICE,
-	storage.ServiceType_ADMISSION_CONTROL_SERVICE)
-
 var scannerV2ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 var scannerV4ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
 var localScannerServiceTypes = func() set.FrozenSet[storage.ServiceType] {
@@ -26,8 +21,27 @@ var localScannerServiceTypes = func() set.FrozenSet[storage.ServiceType] {
 	return types.Freeze()
 }()
 
+var securedClusterServiceTypes = set.NewFrozenSet[storage.ServiceType](
+	storage.ServiceType_SENSOR_SERVICE,
+	storage.ServiceType_COLLECTOR_SERVICE,
+	storage.ServiceType_ADMISSION_CONTROL_SERVICE)
+
+var allSupportedServiceTypes = func() set.FrozenSet[storage.ServiceType] {
+	types := securedClusterServiceTypes.Unfreeze()
+	types = types.Union(localScannerServiceTypes.Unfreeze())
+	return types.Freeze()
+}()
+
 type certIssuerImpl struct {
 	allSupportedServiceTypes set.FrozenSet[storage.ServiceType]
+}
+
+// IssueSecuredClusterCerts issues certificates for all the services of a secured cluster (including local scanner).
+func IssueSecuredClusterCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
+	certIssuer := certIssuerImpl{
+		allSupportedServiceTypes: allSupportedServiceTypes,
+	}
+	return certIssuer.issueCertificates(allSupportedServiceTypes, namespace, clusterID)
 }
 
 // IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
@@ -44,14 +58,6 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 	}
 
 	return certIssuer.issueCertificates(serviceTypes, namespace, clusterID)
-}
-
-// IssueSecuredClusterCerts issues certificates for the services of a secured cluster (excluding local scanner).
-func IssueSecuredClusterCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
-	certIssuer := certIssuerImpl{
-		allSupportedServiceTypes: securedClusterServiceTypes,
-	}
-	return certIssuer.issueCertificates(securedClusterServiceTypes, namespace, clusterID)
 }
 
 func (c *certIssuerImpl) issueCertificates(serviceTypes set.FrozenSet[storage.ServiceType], namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {

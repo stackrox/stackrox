@@ -233,7 +233,7 @@ func (s *securedClusterCertgenSuite) TestServiceIssueLocalScannerCerts() {
 // TestServiceIssueSecuredClusterCerts checks the issuance of certificates for secured clusters.
 func (s *securedClusterCertgenSuite) TestServiceIssueSecuredClusterCerts() {
 	getServiceTypes := func() set.FrozenSet[string] {
-		serviceTypes := securedClusterServiceTypes
+		serviceTypes := allSupportedServiceTypes
 		serviceTypeNames := make([]string, 0, serviceTypes.Cardinality())
 		for _, serviceType := range serviceTypes.AsSlice() {
 			serviceTypeNames = append(serviceTypeNames, serviceType.String())
