@@ -1885,23 +1885,8 @@
             ]
           },
           {
-            "name": "ProcessConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "enabled",
-                "type": "bool"
-              }
-            ]
-          },
-          {
             "name": "NetworkConnectionConfig",
             "fields": [
-              {
-                "id": 1,
-                "name": "enabled",
-                "type": "bool"
-              },
               {
                 "id": 2,
                 "name": "aggregate_external",
@@ -1910,87 +1895,12 @@
             ]
           },
           {
-            "name": "NetworkEndpointConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "enabled",
-                "type": "bool"
-              },
-              {
-                "id": 2,
-                "name": "include_listening_endpoint_processes",
-                "type": "bool"
-              }
-            ]
-          },
-          {
-            "name": "CollectorNamespaceFeature",
-            "fields": [
-              {
-                "id": 1,
-                "name": "network_connection",
-                "type": "NetworkConnectionConfig",
-                "oneof_parent": "feature"
-              }
-            ]
-          },
-          {
-            "name": "CollectorNamespaceConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "feature",
-                "type": "CollectorNamespaceFeature"
-              },
-              {
-                "id": 2,
-                "name": "namespace_selection",
-                "type": "NamespaceRule",
-                "is_repeated": true
-              }
-            ],
-            "messages": [
-              {
-                "name": "NamespaceRule",
-                "fields": [
-                  {
-                    "id": 1,
-                    "name": "namespace",
-                    "type": "string"
-                  },
-                  {
-                    "id": 2,
-                    "name": "match_type",
-                    "type": "storage.MatchType"
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "name": "CollectorConfig",
             "fields": [
               {
                 "id": 1,
-                "name": "process_config",
-                "type": "ProcessConfig"
-              },
-              {
-                "id": 2,
                 "name": "network_connection_config",
                 "type": "NetworkConnectionConfig"
-              },
-              {
-                "id": 3,
-                "name": "network_endpoint_config",
-                "type": "NetworkEndpointConfig"
-              },
-              {
-                "id": 4,
-                "name": "namespace_scope_config",
-                "type": "CollectorNamespaceConfig",
-                "is_repeated": true
               }
             ]
           },

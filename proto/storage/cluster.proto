@@ -95,51 +95,17 @@ message AdmissionControllerConfig {
   bool enforce_on_updates = 5;
 }
 
-message ProcessConfig {
-  bool enabled = 1;
-}
-
 message NetworkConnectionConfig {
-  bool enabled = 1;
   bool aggregate_external = 2;
-}
-
-message NetworkEndpointConfig {
-  bool enabled = 1;
-  bool include_listening_endpoint_processes = 2;
-}
-
-message CollectorNamespaceFeature {
-  oneof feature {
-    NetworkConnectionConfig network_connection = 1;
-  }
-}
-
-message CollectorNamespaceConfig {
-  message NamespaceRule {
-    string namespace = 1;
-    storage.MatchType match_type = 2;
-  }
-
-  CollectorNamespaceFeature feature = 1;
-  repeated NamespaceRule namespace_selection = 2;
 }
 
 // CollectorConfig controls which type of data is reported by collector
 // and how it is processed by collector. These configurations are used
 // to fine-tune collector's performance on large scale clusters.
-// For example, it controls if process information is reported with
-// network information and if external IPs should be aggregated.
+// At this time it only controls if external IPs are aggregated at the
+// cluster level.
 message CollectorConfig {
-  // The following configs are applied at the cluster level.
-  ProcessConfig process_config = 1;
-  NetworkConnectionConfig network_connection_config = 2;
-  NetworkEndpointConfig network_endpoint_config = 3;
-
-  // The namespace scope config is an array since it controls multiple
-  // features and for each feature there can be different configs for
-  // different sets of namespaces.
-  repeated CollectorNamespaceConfig namespace_scope_config = 4;
+  NetworkConnectionConfig network_connection_config = 1;
 }
 
 message TolerationsConfig {

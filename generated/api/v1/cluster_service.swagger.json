@@ -350,17 +350,6 @@
         }
       }
     },
-    "CollectorNamespaceConfigNamespaceRule": {
-      "type": "object",
-      "properties": {
-        "namespace": {
-          "type": "string"
-        },
-        "matchType": {
-          "$ref": "#/definitions/storageMatchType"
-        }
-      }
-    },
     "UpgradeProcessStatusUpgradeProcessType": {
       "type": "string",
       "enum": [
@@ -726,26 +715,11 @@
     "storageCollectorConfig": {
       "type": "object",
       "properties": {
-        "processConfig": {
-          "$ref": "#/definitions/storageProcessConfig",
-          "description": "The following configs are applied at the cluster level."
-        },
         "networkConnectionConfig": {
           "$ref": "#/definitions/storageNetworkConnectionConfig"
-        },
-        "networkEndpointConfig": {
-          "$ref": "#/definitions/storageNetworkEndpointConfig"
-        },
-        "namespaceScopeConfig": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageCollectorNamespaceConfig"
-          },
-          "description": "The namespace scope config is an array since it controls multiple\nfeatures and for each feature there can be different configs for\ndifferent sets of namespaces."
         }
       },
-      "description": "CollectorConfig controls which type of data is reported by collector\nand how it is processed by collector. These configurations are used\nto fine-tune collector's performance on large scale clusters.\nFor example, it controls if process information is reported with\nnetwork information and if external IPs should be aggregated."
+      "description": "CollectorConfig controls which type of data is reported by collector\nand how it is processed by collector. These configurations are used\nto fine-tune collector's performance on large scale clusters.\nAt this time it only controls if external IPs are aggregated at the\ncluster level."
     },
     "storageCollectorHealthInfo": {
       "type": "object",
@@ -775,29 +749,6 @@
         }
       },
       "description": "CollectorHealthInfo carries data about collector deployment but does not include collector health status derived from this data.\nAggregated collector health status is not included because it is derived in central and not in the component that\nfirst reports CollectorHealthInfo (sensor)."
-    },
-    "storageCollectorNamespaceConfig": {
-      "type": "object",
-      "properties": {
-        "feature": {
-          "$ref": "#/definitions/storageCollectorNamespaceFeature"
-        },
-        "namespaceSelection": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/CollectorNamespaceConfigNamespaceRule"
-          }
-        }
-      }
-    },
-    "storageCollectorNamespaceFeature": {
-      "type": "object",
-      "properties": {
-        "networkConnection": {
-          "$ref": "#/definitions/storageNetworkConnectionConfig"
-        }
-      }
     },
     "storageCompleteClusterConfig": {
       "type": "object",
@@ -860,32 +811,10 @@
       ],
       "default": "MANAGER_TYPE_UNKNOWN"
     },
-    "storageMatchType": {
-      "type": "string",
-      "enum": [
-        "EXACT",
-        "REGEX"
-      ],
-      "default": "EXACT"
-    },
     "storageNetworkConnectionConfig": {
       "type": "object",
       "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
         "aggregateExternal": {
-          "type": "boolean"
-        }
-      }
-    },
-    "storageNetworkEndpointConfig": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
-        "includeListeningEndpointProcesses": {
           "type": "boolean"
         }
       }
@@ -908,14 +837,6 @@
           "items": {
             "type": "string"
           }
-        }
-      }
-    },
-    "storageProcessConfig": {
-      "type": "object",
-      "properties": {
-        "enabled": {
-          "type": "boolean"
         }
       }
     },
