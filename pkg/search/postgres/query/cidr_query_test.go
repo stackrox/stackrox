@@ -25,7 +25,7 @@ func TestCIDRQuery(t *testing.T) {
 	}{
 		{
 			value:          valueCIDR.String(),
-			expectedQuery:  "blah <<= '$$'",
+			expectedQuery:  "blah <<= $$",
 			expectedValues: []interface{}{valueCIDR},
 			goEquivalentPairs: &[]PredicatePair{
 				{
