@@ -116,7 +116,7 @@ type Policy struct {
 	Categories         []string     `yaml:",omitempty"`
 	LifecycleStages    []string     `yaml:"lifecycleStages"`
 	EventSource        string       `yaml:"eventSource"`
-	Exclusions         []*Exclusion `yaml:"exclusions,omitempty"`
+	Exclusions         []*Exclusion `yaml:",omitempty"`
 	Scope              []*Scope     `yaml:",omitempty"`
 	Severity           string
 	EnforcementActions []string                             `yaml:"enforcementActions,omitempty"`
