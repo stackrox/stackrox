@@ -85,6 +85,16 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
         # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
         del csv_doc['spec']['relatedImages']
 
+    policy_crd = {
+        "name": "securitypolicies.config.stackrox.io",
+        "version": "v1alpha1",
+        "kind": "SecurityPolicy",
+        "displayName": "Security Policy",
+        "description": "SecurityPolicy is the Schema for the policies API",
+    }
+
+    csv_doc["spec"]["customresourcedefinitions"]["owned"].append(policy_crd)
+
 
 def parse_skips(spec, raw_name):
     raw_skips = spec.get("skips", [])

@@ -434,6 +434,7 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 	mkdir -p build/
 	rm -rf build/bundle
 	cp -a bundle build/
+	cp ../config-controller/config/crd/bases/*.yaml build/bundle/manifests/ ;\
 # Run Python script to post-process necessary files in the build/bundle/. Configure Python dependencies if not done already.
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
