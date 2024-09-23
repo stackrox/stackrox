@@ -169,22 +169,19 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 		{
 			query:           search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentNameOneOff.Name).Query(),
 			expectedResults: []string{deploymentNameOneOff.GetName()},
-			ignoreOrder:     true,
 		},
 		{
-			query:           search.NewQueryBuilder().AddStrings(search.DeploymentName, "name").Query(),
+			query: search.NewQueryBuilder().AddStrings(search.DeploymentName, "name").Query(),
+			// This is odd, but this is correct. Bleve scores name12 higher than name1
 			expectedResults: []string{"name12", "name1"},
-			ignoreOrder:     true,
 		},
 		{
 			query:           fmt.Sprintf("%s:", search.DeploymentName),
 			expectedResults: []string{"name12", "nginx_server", "name1"},
-			ignoreOrder:     true,
 		},
 		{
 			query:           fmt.Sprintf("%s:name12,", search.DeploymentName),
 			expectedResults: []string{"name12", "nginx_server", "name1"},
-			ignoreOrder:     true,
 		},
 		{
 			query:           fmt.Sprintf("%s:he=h", search.DeploymentLabel),

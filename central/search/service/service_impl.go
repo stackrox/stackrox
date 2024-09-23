@@ -42,11 +42,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	pageSize               = 10
-	maxAutocompleteResults = 10
-	maxRetries             = 10
-)
+const maxAutocompleteResults = 10
 
 var (
 	categoryToOptionsMultimap = func() map[v1.SearchCategory]search.OptionsMultiMap {
@@ -58,6 +54,11 @@ var (
 		return result
 	}()
 )
+
+type autocompleteResult struct {
+	value string
+	score float64
+}
 
 // SearchFunc represents a function that goes from a query to a proto search result.
 type SearchFunc func(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
@@ -149,7 +150,7 @@ func handleMatch(fieldPath, value string) string {
 	return value
 }
 
-func handleMapResults(matches map[string][]string) set.StringSet {
+func handleMapResults(matches map[string][]string, score float64) []autocompleteResult {
 	var keys []string
 	var values []string
 	for k, match := range matches {
@@ -159,9 +160,9 @@ func handleMapResults(matches map[string][]string) set.StringSet {
 			values = match
 		}
 	}
-	results := set.NewStringSet()
+	results := make([]autocompleteResult, 0, len(keys))
 	for i := 0; i < len(keys); i++ {
-		results.Add(fmt.Sprintf("%s=%s", keys[i], values[i]))
+		results = append(results, autocompleteResult{value: fmt.Sprintf("%s=%s", keys[i], values[i]), score: score})
 	}
 	return results
 }
@@ -194,94 +195,84 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 	}
 	// Set the max return size for the query
 	query.Pagination = &v1.QueryPagination{
-		Limit: pageSize,
+		Limit: maxAutocompleteResults,
 	}
 
 	if len(categories) == 0 {
 		categories = autocompleteCategories.AsSlice()
 	}
-
-	resultSet := set.NewStringSet()
-	for i := 0; i < maxRetries; i++ {
-		query.Pagination.Offset = int32(i * pageSize)
-		for _, category := range categories {
-			res, err := searchForCategory(ctx, query, autocompleteKey, category, searchers)
-			if err != nil {
-				return nil, err
+	var autocompleteResults []autocompleteResult
+	for _, category := range categories {
+		if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(query) {
+			continue
+		}
+		searcher, ok := searchers[category]
+		if searcher == nil {
+			if ok {
+				utils.Should(errors.Errorf("searchers map has an entry for category %v, but the returned searcher was nil", category))
 			}
-			if res == nil {
+			return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
+		}
+
+		optMultiMap := categoryToOptionsMultimap[category]
+		if optMultiMap == nil {
+			return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
+		}
+
+		autocompleteFields := optMultiMap.GetAll(autocompleteKey)
+		if len(autocompleteFields) == 0 {
+			// Category for field to be autocompleted not applicable.
+			continue
+		}
+
+		// All the field paths to consider for the autocomplete field.
+		fieldPaths := make([]string, 0, 3*len(autocompleteFields))
+		for _, field := range autocompleteFields {
+			fieldPaths = append(fieldPaths,
+				field.GetFieldPath(),
+				search.ToMapKeyPath(field.GetFieldPath()),
+				search.ToMapValuePath(field.GetFieldPath()),
+			)
+		}
+
+		results, err := searcher.Search(ctx, query)
+		if err != nil {
+			log.Errorf("failed to search category %s: %s", category.String(), err)
+			return nil, err
+		}
+		for _, r := range results {
+			matches := trimMatches(r.Matches, fieldPaths)
+			// In postgres, we do not need to combine map key and values matches as `k=v` because it is already done by postgres searcher.
+			// With postgres, the following condition will not pass anyway.
+			//
+			// This implies that the object is a map because it has multiple values
+			if isMapMatch(matches) {
+				autocompleteResults = append(autocompleteResults, handleMapResults(matches, r.Score)...)
 				continue
 			}
-			for _, value := range res.AsSlice() {
-				resultSet.Add(value)
-				if resultSet.Cardinality() == maxAutocompleteResults {
-					return resultSet.AsSlice(), nil
+
+			for fieldPath, match := range matches {
+				for _, v := range match {
+					value := handleMatch(fieldPath, v)
+					autocompleteResults = append(autocompleteResults, autocompleteResult{value: value, score: r.Score})
 				}
 			}
 		}
 	}
-	return resultSet.AsSlice(), nil
-}
 
-func searchForCategory(ctx context.Context, query *v1.Query, autocompleteKey string,
-	category v1.SearchCategory, searchers map[v1.SearchCategory]search.Searcher) (set.StringSet, error) {
-	if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(query) {
-		return nil, nil
-	}
-	searcher, ok := searchers[category]
-	if searcher == nil {
-		if ok {
-			utils.Should(errors.Errorf("searchers map has an entry for category %v, but the returned searcher was nil", category))
-		}
-		return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
-	}
-
-	optMultiMap := categoryToOptionsMultimap[category]
-	if optMultiMap == nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "Search category %q is not implemented", category.String())
-	}
-
-	autocompleteFields := optMultiMap.GetAll(autocompleteKey)
-	if len(autocompleteFields) == 0 {
-		// Category for field to be autocompleted not applicable.
-		return nil, nil
-	}
-
-	// All the field paths to consider for the autocomplete field.
-	fieldPaths := make([]string, 0, 3*len(autocompleteFields))
-	for _, field := range autocompleteFields {
-		fieldPaths = append(fieldPaths,
-			field.GetFieldPath(),
-			search.ToMapKeyPath(field.GetFieldPath()),
-			search.ToMapValuePath(field.GetFieldPath()),
-		)
-	}
-
-	results, err := searcher.Search(ctx, query)
-	if err != nil {
-		log.Errorf("failed to search category %s: %s", category.String(), err)
-		return nil, err
-	}
+	sort.Slice(autocompleteResults, func(i, j int) bool { return autocompleteResults[i].score > autocompleteResults[j].score })
 	resultSet := set.NewStringSet()
-	for _, r := range results {
-		matches := trimMatches(r.Matches, fieldPaths)
-		// In postgres, we do not need to combine map key and values matches as `k=v` because it is already done by postgres searcher.
-		// With postgres, the following condition will not pass anyway.
-		//
-		// This implies that the object is a map because it has multiple values
-		if isMapMatch(matches) {
-			resultSet = resultSet.Union(handleMapResults(matches))
-			continue
-		}
 
-		for fieldPath, match := range matches {
-			for _, v := range match {
-				value := handleMatch(fieldPath, v)
-				resultSet.Add(value)
-			}
+	var stringResults []string
+	for _, a := range autocompleteResults {
+		if added := resultSet.Add(a.value); added {
+			stringResults = append(stringResults, a.value)
+		}
+		if resultSet.Cardinality() == maxAutocompleteResults {
+			break
 		}
 	}
-	return resultSet, nil
+	return stringResults, nil
 }
 
 func (s *serviceImpl) autocomplete(ctx context.Context, queryString string, categories []v1.SearchCategory) ([]string, error) {
