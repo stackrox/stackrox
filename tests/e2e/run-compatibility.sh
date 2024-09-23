@@ -48,6 +48,7 @@ _run_compatibility_tests() {
     info "Starting test (go compatibility test Central version - ${central_version}, Sensor version - ${sensor_version})"
 
     export_test_environment
+    ci_export CENTRAL_PERSISTENCE_NONE "true"
 
     export SENSOR_HELM_DEPLOY=true
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
