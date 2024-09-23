@@ -120,7 +120,7 @@ message NetworkEndpointConfig {
 message CollectorConfig {
   // The following three are applied at the cluster level.
   ProcessConfig process_config = 1;
-  NetworkConnectionConfig network_connection_config = 2;
+  repeated NetworkConnectionConfig network_connection_config = 2;
   NetworkEndpointConfig network_endpoint_config = 3;
 }
 
