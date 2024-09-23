@@ -29,5 +29,26 @@ clusterConfig:
       disableBypass: {{ ._rox.admissionControl.dynamic.disableBypass }}
       enforceOnUpdates: {{ ._rox.admissionControl.dynamic.enforceOnUpdates }}
     registryOverride: {{ ._rox.registryOverride }}
+    collectorConfig:
+      process_config:
+        enabled: {{ ._rox.processConfig.enabled | default true }}
+      network_connection_config:
+        enabled: {{ ._rox.networkEndpointConfig.enabled | default true }}
+        aggregate_external: {{ .Values.networkConnectionConfig.aggregateExternal | default true }}
+      network_endpoint_config:
+        enabled: {{ ._rox.networkEndpointConfig.enabled | default true }}
+        include_listening_endpoint_processes: {{ ._rox.networkEndpointConfig.includeListeningEndpointProcesses | default false }}
+      namespace_scope_config:
+        {{- range ._rox.namespaceScopeConfig }}
+        feature:
+          network_connection:
+            enabled: {{ .feature.networkConnection.enabled | default true }}
+            aggregate_external: {{ .feature.networkConnection.aggregateExternal | default true }}
+        namespace_selection:
+          {{- range .namespaceSelection }}
+          - namespace: {{ .namespace }}
+            match_type: {{ .matchType }}
+          {{- end }}
+        {{- end }}
   configFingerprint: {{ ._rox._configFP }}
   clusterLabels: {{- toYaml ._rox.clusterLabels | nindent 4 }}
