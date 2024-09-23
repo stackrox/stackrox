@@ -15,8 +15,6 @@ import (
 )
 
 const (
-	orphanedTimeout = 5 * time.Minute
-
 	pruneActiveComponentsStmt = `DELETE FROM active_components child WHERE NOT EXISTS
 		(SELECT 1 from deployments parent WHERE child.deploymentid = parent.id)`
 
@@ -86,6 +84,8 @@ const (
 )
 
 var (
+	orphanedTimeout = env.PruneOrphanedTimeout.DurationSetting()
+
 	pruningTimeout = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
 
 	log = logging.LoggerForModule()
