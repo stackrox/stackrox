@@ -126,5 +126,9 @@ shorten_tag() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    run_compatibility_tests "$@"
+    if [[ "$#" -ne 2 ]]; then
+        info "run-compatibility.sh Args: $*, Numargs: $#"
+        die "missing args. usage: run-compatibility.sh <central_version> <sensor_version>"
+    fi
+    run_compatibility_tests "$1" "$2"
 fi
