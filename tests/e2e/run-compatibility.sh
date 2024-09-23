@@ -75,11 +75,13 @@ _run_compatibility_tests() {
         export GOTAGS=release
     fi
     make -C tests compatibility-tests || touch FAIL
+    mkdir -p "${compatibility_dir}/all-tests-results"
     store_test_results "tests/all-tests-results" "${compatibility_dir}/all-tests-results"
     [[ ! -f FAIL ]] || die "e2e API tests failed"
 
     cd "$ROOT"
 
+    mkdir -p "${compatibility_dir}/initial_tests"
     collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "${compatibility_dir}/initial_tests"
 }
 
