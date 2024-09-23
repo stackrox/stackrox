@@ -180,6 +180,7 @@ func (s *serviceImpl) getBaselinePeerByEntityID(
 			Type: peerType,
 			ID:   peerId,
 		}
+		log.Info("Adding baseline peer ", peerType.String(), " ", peerId)
 		result[key] = peer
 		// In UI flows, the peers for flow comparison to the baseline are
 		// the ones received from the network graph call.
@@ -196,6 +197,7 @@ func (s *serviceImpl) getBaselinePeerByEntityID(
 				Type: peerType,
 				ID:   getMaskedDeploymentID(peerId, deploymentName),
 			}
+			log.Info("Adding masked baseline peer ", peerType, " ", maskedID)
 			result[maskedKey] = peer
 		}
 	}
