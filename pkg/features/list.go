@@ -106,7 +106,7 @@ var (
 	DelegateWatchedImageReprocessing = registerFeature("Enables delegating scans for watched images during reprocessing", "ROX_DELEGATE_WATCHED_IMAGE_REPROCESSING", enabled)
 
 	// CollectorRuntimeConfig enables filtering of runtime events.
-	CollectorRuntimeConfig = registerFeature("Enable collector runtime configuration", "ROX_COLLECTOR_RUNTIME_CONFIG")
+	CollectorRuntimeConfig = registerFeature("Enable collector runtime configuration", "ROX_COLLECTOR_RUNTIME_CONFIG", enabled)
 
 	// SensorSingleScanPerImage when set to enabled forces Sensor to allow only a single scan per image to be active at any given
 	// time. Will only have an affect if UnqualifiedSearchRegistries is also enabled.
