@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	_ "embed"
 	"slices"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ import (
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/datastore"
+	"github.com/stackrox/rox/central/policy/service/customresource"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -53,6 +55,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	// "sigs.k8s.io/yaml"
 )
 
 var (
@@ -68,6 +71,7 @@ var (
 			"/v1.PolicyService/ExportPolicies",
 			"/v1.PolicyService/PolicyFromSearch",
 			"/v1.PolicyService/GetPolicyMitreVectors",
+			"/v1.PolicyService/SaveAsCustomResources",
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			"/v1.PolicyService/PostPolicy",
@@ -1121,4 +1125,68 @@ func combineStrings(toCombine [][]string) []string {
 		}
 	}
 	return nil
+}
+
+func (s *serviceImpl) SaveAsCustomResources(request *v1.SaveAsCustomResourcesRequest, srv grpc.ServerStreamingServer[v1.SaveAsCustomResourcesResponse]) error {
+	ctx := srv.Context()
+	// missingIndices and policyErrors should not overlap
+	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.GetPolicyIds())
+	if err != nil {
+		return err
+	}
+	errDetails := &v1.ExportPoliciesErrorList{}
+	for _, missingIndex := range missingIndices {
+		policyID := request.GetPolicyIds()[missingIndex]
+		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+			PolicyId: policyID,
+			Error: &v1.PolicyError{
+				Error: "not found",
+			},
+		})
+		log.Warnf("A policy error occurred for id %s: not found", policyID)
+	}
+	if len(missingIndices) > 0 {
+		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be retrieved. Check the error details for a list of policies that could not be found").WithDetails(errDetails)
+		if err != nil {
+			return utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
+		}
+		return statusMsg.Err()
+	}
+
+	errDetails = &v1.ExportPoliciesErrorList{}
+	for _, policy := range policyList {
+		cr, err := customresource.GenerateCustomResource(policy)
+		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+			PolicyId: policy.GetId(),
+			Error: &v1.PolicyError{
+				Error: errors.Wrap(err, "").Error(),
+			},
+		})
+		if err := srv.Send(&v1.SaveAsCustomResourcesResponse{CustomResource: string(cr)}); err != nil {
+			return err
+		}
+
+	}
+	if len(errDetails.GetErrors()) > 0 {
+		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be converted to custom resources. Check the error details for the list of policies").WithDetails(errDetails)
+		if err != nil {
+			return utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
+		}
+		return statusMsg.Err()
+
+	}
+	return nil
+}
+
+// CustomPolicyGroup is a struct that mirrors storage.PolicyGroup
+// This allows us to manage the pointer to value conversion for PolicyGroups
+type CustomPolicyGroup storage.PolicyGroup
+
+// removePointers takes a slice of pointers and returns a slice of values
+func dereferenceSlice[T any](ptrSlice []*T) []T {
+	valSlice := make([]T, len(ptrSlice))
+	for i, ptr := range ptrSlice {
+		valSlice[i] = *ptr
+	}
+	return valSlice
 }

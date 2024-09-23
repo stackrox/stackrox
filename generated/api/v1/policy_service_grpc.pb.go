@@ -37,6 +37,7 @@ const (
 	PolicyService_ExportPolicies_FullMethodName                  = "/v1.PolicyService/ExportPolicies"
 	PolicyService_PolicyFromSearch_FullMethodName                = "/v1.PolicyService/PolicyFromSearch"
 	PolicyService_ImportPolicies_FullMethodName                  = "/v1.PolicyService/ImportPolicies"
+	PolicyService_SaveAsCustomResources_FullMethodName           = "/v1.PolicyService/SaveAsCustomResources"
 )
 
 // PolicyServiceClient is the client API for PolicyService service.
@@ -75,6 +76,8 @@ type PolicyServiceClient interface {
 	PolicyFromSearch(ctx context.Context, in *PolicyFromSearchRequest, opts ...grpc.CallOption) (*PolicyFromSearchResponse, error)
 	// ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
 	ImportPolicies(ctx context.Context, in *ImportPoliciesRequest, opts ...grpc.CallOption) (*ImportPoliciesResponse, error)
+	// SaveAsCustomResources saves the policies, designed by the policy ids, as custome resources
+	SaveAsCustomResources(ctx context.Context, in *SaveAsCustomResourcesRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SaveAsCustomResourcesResponse], error)
 }
 
 type policyServiceClient struct {
@@ -255,6 +258,25 @@ func (c *policyServiceClient) ImportPolicies(ctx context.Context, in *ImportPoli
 	return out, nil
 }
 
+func (c *policyServiceClient) SaveAsCustomResources(ctx context.Context, in *SaveAsCustomResourcesRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SaveAsCustomResourcesResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &PolicyService_ServiceDesc.Streams[0], PolicyService_SaveAsCustomResources_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[SaveAsCustomResourcesRequest, SaveAsCustomResourcesResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PolicyService_SaveAsCustomResourcesClient = grpc.ServerStreamingClient[SaveAsCustomResourcesResponse]
+
 // PolicyServiceServer is the server API for PolicyService service.
 // All implementations should embed UnimplementedPolicyServiceServer
 // for forward compatibility.
@@ -291,6 +313,8 @@ type PolicyServiceServer interface {
 	PolicyFromSearch(context.Context, *PolicyFromSearchRequest) (*PolicyFromSearchResponse, error)
 	// ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
 	ImportPolicies(context.Context, *ImportPoliciesRequest) (*ImportPoliciesResponse, error)
+	// SaveAsCustomResources saves the policies, designed by the policy ids, as custome resources
+	SaveAsCustomResources(*SaveAsCustomResourcesRequest, grpc.ServerStreamingServer[SaveAsCustomResourcesResponse]) error
 }
 
 // UnimplementedPolicyServiceServer should be embedded to have
@@ -350,6 +374,9 @@ func (UnimplementedPolicyServiceServer) PolicyFromSearch(context.Context, *Polic
 }
 func (UnimplementedPolicyServiceServer) ImportPolicies(context.Context, *ImportPoliciesRequest) (*ImportPoliciesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportPolicies not implemented")
+}
+func (UnimplementedPolicyServiceServer) SaveAsCustomResources(*SaveAsCustomResourcesRequest, grpc.ServerStreamingServer[SaveAsCustomResourcesResponse]) error {
+	return status.Errorf(codes.Unimplemented, "method SaveAsCustomResources not implemented")
 }
 func (UnimplementedPolicyServiceServer) testEmbeddedByValue() {}
 
@@ -677,6 +704,17 @@ func _PolicyService_ImportPolicies_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PolicyService_SaveAsCustomResources_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SaveAsCustomResourcesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(PolicyServiceServer).SaveAsCustomResources(m, &grpc.GenericServerStream[SaveAsCustomResourcesRequest, SaveAsCustomResourcesResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PolicyService_SaveAsCustomResourcesServer = grpc.ServerStreamingServer[SaveAsCustomResourcesResponse]
+
 // PolicyService_ServiceDesc is the grpc.ServiceDesc for PolicyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -753,6 +791,12 @@ var PolicyService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PolicyService_ImportPolicies_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "SaveAsCustomResources",
+			Handler:       _PolicyService_SaveAsCustomResources_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "api/v1/policy_service.proto",
 }

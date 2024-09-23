@@ -126,6 +126,14 @@ message GetPolicyMitreVectorsResponse {
   repeated storage.MitreAttackVector vectors = 2;
 }
 
+message SaveAsCustomResourcesRequest {
+  repeated string policy_ids = 1;
+}
+
+message SaveAsCustomResourcesResponse {
+  string custom_resource = 1;
+}
+
 // PolicyService APIs can be used to manage policies.
 service PolicyService {
   // GetPolicy returns the requested policy by ID.
@@ -234,5 +242,10 @@ service PolicyService {
       post: "/v1/policies/import"
       body: "*"
     };
+  }
+
+  // SaveAsCustomResources saves the policies, designed by the policy ids, as custome resources
+  rpc SaveAsCustomResources(SaveAsCustomResourcesRequest) returns (stream SaveAsCustomResourcesResponse) {
+    option (google.api.http) = {get: "/v1/policies/save-as"};
   }
 }

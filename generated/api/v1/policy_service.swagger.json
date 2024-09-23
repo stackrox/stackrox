@@ -373,6 +373,50 @@
         ]
       }
     },
+    "/v1/policies/save-as": {
+      "get": {
+        "summary": "SaveAsCustomResources saves the policies, designed by the policy ids, as custome resources",
+        "operationId": "PolicyService_SaveAsCustomResources",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1SaveAsCustomResourcesResponse"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of v1SaveAsCustomResourcesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "policyIds",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "PolicyService"
+        ]
+      }
+    },
     "/v1/policies/{id}": {
       "get": {
         "summary": "GetPolicy returns the requested policy by ID.",
@@ -1411,6 +1455,14 @@
         },
         "hasNestedFields": {
           "type": "boolean"
+        }
+      }
+    },
+    "v1SaveAsCustomResourcesResponse": {
+      "type": "object",
+      "properties": {
+        "customResource": {
+          "type": "string"
         }
       }
     },
