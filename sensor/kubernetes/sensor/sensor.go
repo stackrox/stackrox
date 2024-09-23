@@ -170,6 +170,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 	}
 	if features.CollectorRuntimeConfig.Enabled() {
+		log.Info("Adding collectorRuntimeConfigService as a component")
 		components = append(components, collectorRuntimeConfigService)
 	}
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
@@ -236,6 +237,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	if features.CollectorRuntimeConfig.Enabled() {
+		log.Info("Adding collectorRuntimeConfigService to apiServices")
 		apiServices = append(apiServices, collectorRuntimeConfigService)
 	}
 

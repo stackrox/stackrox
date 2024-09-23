@@ -58,7 +58,9 @@ func getCollectorConfig(msg *central.MsgToSensor) *storage.CollectorConfig {
 }
 
 func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
+	log.Info("In ProcessMessage")
 	if collectorConfig := getCollectorConfig(msg); collectorConfig != nil {
+		log.Infof("Sending message %+v ", collectorConfig)
 		s.collectorC <- &sensor.MsgToCollector{
 			Msg: &sensor.MsgToCollector_CollectorConfig{
 				CollectorConfig: collectorConfig,
@@ -86,6 +88,7 @@ func newConnectionManager() *connectionManager {
 
 func (c *connectionManager) add(connection sensor.CollectorService_CommunicateServer) {
 	c.connectionLock.Lock()
+	log.Info("Adding connection")
 	defer c.connectionLock.Unlock()
 
 	c.connectionMap[connection] = true
@@ -93,6 +96,7 @@ func (c *connectionManager) add(connection sensor.CollectorService_CommunicateSe
 
 func (c *connectionManager) remove(connection sensor.CollectorService_CommunicateServer) {
 	c.connectionLock.Lock()
+	log.Info("Removing connection")
 	defer c.connectionLock.Unlock()
 
 	delete(c.connectionMap, connection)
@@ -102,8 +106,11 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 
 	s.connectionManager.add(server)
 	defer s.connectionManager.remove(server)
+	log.Info("In Communicate")
 
 	for msg := range s.collectorC {
+		log.Info("Sending message")
+		log.Infof("len(s.connectionManager.connectionMap)= %+v", len(s.connectionManager.connectionMap))
 		for conn := range s.connectionManager.connectionMap {
 			err := conn.Send(msg)
 			if err != nil {
