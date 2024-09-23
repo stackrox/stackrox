@@ -17,6 +17,8 @@ message CloudSource {
 
   message Credentials {
     string secret = 1; // @gotags: scrub:"always"
+    string client_id = 2; // @gotags: scrub:"always"
+    string client_secret = 3; // @gotags: scrub:"always"
   }
   Credentials credentials = 4;
 
