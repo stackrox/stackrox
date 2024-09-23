@@ -45,7 +45,7 @@ teardown_file() {
     run roxctl_authenticated central crs generate "${crs_name}" -o "${crs_file}"
     assert_failure
     [[ -f "${crs_file}" ]]
-    [[ "$(cat ${crs_file})" == "${content}" ]]
+    [[ "$(cat "${crs_file}")" == "${content}" ]]
 }
 
 @test "Revoking non-existant CRS fails" {
