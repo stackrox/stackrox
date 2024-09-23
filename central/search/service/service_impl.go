@@ -42,7 +42,10 @@ import (
 	"google.golang.org/grpc"
 )
 
-const maxAutocompleteResults = 10
+const (
+	pagination             = 100
+	maxAutocompleteResults = 10
+)
 
 var (
 	categoryToOptionsMultimap = func() map[v1.SearchCategory]search.OptionsMultiMap {
@@ -195,7 +198,7 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 	}
 	// Set the max return size for the query
 	query.Pagination = &v1.QueryPagination{
-		Limit: maxAutocompleteResults,
+		Limit: pagination,
 	}
 
 	if len(categories) == 0 {
