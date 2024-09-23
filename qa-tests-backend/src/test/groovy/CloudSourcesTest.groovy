@@ -12,7 +12,7 @@ class CloudSourcesTest extends BaseSpecification {
     static final private String CLOUD_SOURCE_NAME = "testing OCM"
 
     @Tag("BAT")
-    def "Create OCM cloud source and verify discovered clusters exist"() {
+    def "Create OCM cloud source and verify discovered clusters exist: #authMethod"() {
         when:
         "OCM cloud source is created and tested"
         // On create we call "api.openshift.com" to ensure that configuration works. Internal timeout is ~8sec.
@@ -21,13 +21,15 @@ class CloudSourcesTest extends BaseSpecification {
         def cloudSourceId
         withRetry(5, 20) {
             cloudSourceId = CloudSourcesService.createCloudSource(CloudSourceService.CloudSource.newBuilder().
-                    setName(CLOUD_SOURCE_NAME).
-                    setType(CloudSourceService.CloudSource.Type.TYPE_OCM).
-                    setOcm(CloudSourceService.OCMConfig.newBuilder().
-                            setEndpoint("https://api.openshift.com").build()).
-                    setCredentials(CloudSourceService.CloudSource.Credentials.newBuilder().
-                            setSecret(Env.mustGetOcmOfflineToken()).build())
-                    .build())
+                setName(CLOUD_SOURCE_NAME).
+                setType(CloudSourceService.CloudSource.Type.TYPE_OCM).
+                setOcm(CloudSourceService.OCMConfig.newBuilder().
+                    setEndpoint("https://api.openshift.com").build()).
+                setCredentials(CloudSourceService.CloudSource.Credentials.newBuilder().
+                    setSecret(token).
+                    setClientId(clientId).
+                    setClientSecret(clientSecret).build())
+                .build())
             assert cloudSourceId
         }
 
@@ -44,5 +46,10 @@ class CloudSourcesTest extends BaseSpecification {
         if (cloudSourceId) {
             CloudSourcesService.deleteCloudSource(cloudSourceId)
         }
+
+        where:
+        authMethod            | token                        | clientId                 | clientSecret
+        "OCM offline token"   | Env.mustGetOcmOfflineToken() | ""                       | ""
+        "OCM service account" | ""                           | Env.mustGetOcmClientId() | Env.mustGetOcmClientSecret()
     }
 }

@@ -1444,6 +1444,16 @@
                     "id": 1,
                     "name": "secret",
                     "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "client_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "client_secret",
+                    "type": "string"
                   }
                 ]
               }
