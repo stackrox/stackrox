@@ -89,6 +89,7 @@ func newConnectionManager() *connectionManager {
 func (c *connectionManager) add(connection sensor.CollectorService_CommunicateServer) {
 	c.connectionLock.Lock()
 	log.Info("Adding connection")
+	log.Infof("connection= %+v", connection)
 	defer c.connectionLock.Unlock()
 
 	c.connectionMap[connection] = true
@@ -97,6 +98,7 @@ func (c *connectionManager) add(connection sensor.CollectorService_CommunicateSe
 func (c *connectionManager) remove(connection sensor.CollectorService_CommunicateServer) {
 	c.connectionLock.Lock()
 	log.Info("Removing connection")
+	log.Infof("connection= %+v", connection)
 	defer c.connectionLock.Unlock()
 
 	delete(c.connectionMap, connection)
