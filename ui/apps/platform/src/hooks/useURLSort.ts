@@ -27,7 +27,7 @@ function sortOptionToApiSortOption({
             ...sortOption,
             aggregateBy: {
                 aggregateFunc,
-                distinct: !!distinct,
+                distinct: distinct === 'true',
             },
         };
     }
@@ -45,7 +45,8 @@ function getActiveSortOption(
     defaultSortOption: SortOption
 ): SortOption | SortOption[] {
     if (Array.isArray(sortOption)) {
-        return sortOption.filter(isSortOption);
+        const validOptions = sortOption.filter(isSortOption);
+        return validOptions.length > 0 ? validOptions : defaultSortOption;
     }
 
     return isSortOption(sortOption) ? sortOption : defaultSortOption;
@@ -175,7 +176,7 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
         // We can't support multiple sort fields with different directions at this time, so
         // we'll just use the first sort field's direction.
         const direction = Array.isArray(activeSortOption)
-            ? activeSortOption[0].direction
+            ? activeSortOption[0].direction ?? 'desc'
             : activeSortOption.direction;
 
         return {

@@ -109,7 +109,7 @@ describe('useURLSort', () => {
 
         it('should retain the passed `aggregateBy` value when sorting', () => {
             const sortParams = cloneDeep(params);
-            const aggregateBy = { distinct: true, aggregateFunc: 'count' };
+            const aggregateBy = { distinct: 'true', aggregateFunc: 'count' };
             sortParams.defaultSortOption.aggregateBy = aggregateBy;
             const { result } = renderHook(() => useURLSort(sortParams), { wrapper });
 
@@ -125,6 +125,16 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.field).toEqual('Name');
             expect(result.current.sortOption.reversed).toEqual(false);
             expect(result.current.sortOption.aggregateBy.distinct).toEqual(true);
+            expect(result.current.sortOption.aggregateBy.aggregateFunc).toEqual('count');
+
+            actAndRunTicks(() => {
+                result.current
+                    .getSortParams('Name', { distinct: 'false', aggregateFunc: 'count' })
+                    .onSort(null, null, 'asc');
+            });
+            expect(result.current.sortOption.field).toEqual('Name');
+            expect(result.current.sortOption.reversed).toEqual(false);
+            expect(result.current.sortOption.aggregateBy.distinct).toEqual(false);
             expect(result.current.sortOption.aggregateBy.aggregateFunc).toEqual('count');
 
             actAndRunTicks(() => {
@@ -203,6 +213,20 @@ describe('useURLSort', () => {
 
         it('should get the sort options from URL by default', () => {
             const { result } = renderHook(() => useURLSort(params), { wrapper });
+
+            expect(result.current.sortOption.field).toEqual('Name');
+            expect(result.current.sortOption.reversed).toEqual(true);
+        });
+
+        it('should return the default sort option when an empty multi field sort option is provided', () => {
+            const { result } = renderHook(() => useURLSort(params), { wrapper });
+
+            expect(result.current.sortOption.field).toEqual('Name');
+            expect(result.current.sortOption.reversed).toEqual(true);
+
+            actAndRunTicks(() => {
+                result.current.getSortParams('Severity', []).onSort(null, null, 'asc');
+            });
 
             expect(result.current.sortOption.field).toEqual('Name');
             expect(result.current.sortOption.reversed).toEqual(true);
