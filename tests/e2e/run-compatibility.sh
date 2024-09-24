@@ -76,7 +76,7 @@ _run_compatibility_tests() {
     fi
     make -C tests compatibility-tests || touch FAIL
     mkdir -p "${compatibility_dir}/all-tests-results"
-    store_test_results "tests/all-tests-results" "${compatibility_dir}/all-tests-results"
+    store_test_results "tests/compatibility-tests-results" "${compatibility_dir}/compatibility-tests-results"
     [[ ! -f FAIL ]] || die "e2e API tests failed"
 
     cd "$ROOT"
