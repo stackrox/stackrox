@@ -83,17 +83,15 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 
 			regStore.UpsertSecret(namespace, fakeSecretName, dc, noServiceAcctName)
 
-			tcs := []struct {
-				imgStr string
-			}{
-				{"image-registry.openshift-image-registry.svc:5000/qa/nginx:1.18.0"},
-				{"image-registry.openshift-image-registry.svc.local:5000/qa/nginx:1.18.0"},
-				{"172.99.12.11:5000/qa/nginx:1.18.0"},
-				{"quay.io/rhacs-eng/scanner:latest"},
+			tcs := []string{
+				"image-registry.openshift-image-registry.svc:5000/qa/nginx:1.18.0",
+				"image-registry.openshift-image-registry.svc.local:5000/qa/nginx:1.18.0",
+				"172.99.12.11:5000/qa/nginx:1.18.0",
+				"quay.io/rhacs-eng/scanner:latest",
 			}
 			for i, tc := range tcs {
 				t.Run(fmt.Sprint(i), func(t *testing.T) {
-					img, _, err := utils.GenerateImageNameFromString(tc.imgStr)
+					img, _, err := utils.GenerateImageNameFromString(tc)
 					require.NoError(t, err)
 
 					regs, err := regStore.GetPullSecretRegistries(img, namespace, nil)
