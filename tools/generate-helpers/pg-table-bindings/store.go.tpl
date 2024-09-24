@@ -200,6 +200,8 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
         protocompat.NilOrTime({{$field.Getter "obj"}}),
     {{- else if eq $field.SQLType "uuid" }}
         pgutils.NilOrUUID({{$field.Getter "obj"}}),
+    {{- else if eq $field.SQLType "cidr" }}
+        pgutils.NilOrCIDR({{$field.Getter "obj"}}),
     {{- else if eq $field.DataType "map" }}
         pgutils.EmptyOrMap({{$field.Getter "obj"}}),
     {{- else }}
