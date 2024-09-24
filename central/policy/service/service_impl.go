@@ -1177,16 +1177,3 @@ func (s *serviceImpl) SaveAsCustomResources(request *v1.SaveAsCustomResourcesReq
 	}
 	return nil
 }
-
-// CustomPolicyGroup is a struct that mirrors storage.PolicyGroup
-// This allows us to manage the pointer to value conversion for PolicyGroups
-type CustomPolicyGroup storage.PolicyGroup
-
-// removePointers takes a slice of pointers and returns a slice of values
-func dereferenceSlice[T any](ptrSlice []*T) []T {
-	valSlice := make([]T, len(ptrSlice))
-	for i, ptr := range ptrSlice {
-		valSlice[i] = *ptr
-	}
-	return valSlice
-}
