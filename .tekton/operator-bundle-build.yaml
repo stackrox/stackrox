@@ -31,6 +31,8 @@ spec:
     value: '52w'
   - name: output-image-repo
     value: quay.io/rhacs-eng/stackrox-operator-bundle
+  - name: operator-image-repo
+    value: quay.io/rhacs-eng/stackrox-operator
   - name: revision
     value: '{{revision}}'
   - name: rebuild
@@ -51,13 +53,17 @@ spec:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
+  - name: quay-auth
+    secret:
+      secretName: quay-io-rhacs-eng-rw
 
   pipelineRef:
     name: operator-bundle-pipeline
 
   timeouts:
-    # The tasks regularly takes 1h to finish.
-    tasks: 1h
+    # The tasks regularly takes 1h to finish. Due to recently hit timeouts,
+    # let's try with 30m more.
+    tasks: 1h30m
     # Reserve time for final tasks to run.
     finally: 10m
-    pipeline: 1h10m
+    pipeline: 1h40m
