@@ -75,7 +75,7 @@ _run_compatibility_tests() {
         export GOTAGS=release
     fi
     make -C tests compatibility-tests || touch FAIL
-    mkdir -p "${compatibility_dir}/all-tests-results"
+    mkdir -p "${compatibility_dir}/compatibility-tests-results"
     store_test_results "tests/compatibility-tests-results" "${compatibility_dir}/compatibility-tests-results"
     [[ ! -f FAIL ]] || die "e2e API tests failed"
 
