@@ -114,7 +114,7 @@ func (c *connectionManager) remove(nodeName string) {
 }
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
-	incomingMD := metautils .ExtractIncoming(context.Background())
+	incomingMD := metautils.ExtractIncoming(server.Context())
 	incomingMD.Get(CollectorHelloMetadataKey)
 	outMD := metautils.MD{}
 
@@ -148,7 +148,7 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 	for msg := range s.collectorC {
 		log.Info("Sending message")
 		log.Infof("len(s.connectionManager.connectionMap)= %+v", len(s.connectionManager.connectionMap))
-		for conn := range s.connectionManager.connectionMap {
+		for _, conn := range s.connectionManager.connectionMap {
 			err := conn.Send(msg)
 			if err != nil {
 				log.Error(err, "Failed sending runtime config to Collector")
