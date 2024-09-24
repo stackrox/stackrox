@@ -589,11 +589,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				if !isInternet && centralcaps.Has(centralsensor.NetworkGraphLearnedExternalEntitiesSupported) {
 					entityType = networkgraph.LearnedExternalEntity(net.IPNetworkFromNetworkPeerID(conn.remote.IPAndPort))
 				}
-			} else {
-				if centralcaps.Has(centralsensor.NetworkGraphInternalEntitiesSupported) {
-					// Central without the capability would crash the UI if we make it display "Internal Entities".
-					entityType = networkgraph.InternalEntities()
-				}
+			} else if centralcaps.Has(centralsensor.NetworkGraphInternalEntitiesSupported) {
+				// Central without the capability would crash the UI if we make it display "Internal Entities".
+				entityType = networkgraph.InternalEntities()
 			}
 
 			// Fake a lookup result. This shows "External Entities" or "Internal Entities" in the network graph
