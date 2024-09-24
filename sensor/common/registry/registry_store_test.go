@@ -57,6 +57,8 @@ func alwaysFailCheckTLS(_ context.Context, _ string) (bool, error) {
 // TestRegistryStore_PullSecrets tests that the expected pull secrets
 // are retrieved (or not retrieved) from the store for various scenarios.
 func TestRegistryStore_PullSecrets(t *testing.T) {
+	t.Setenv(env.DelegatedScanningDisabled.EnvVar(), "false")
+
 	dceA := config.DockerConfigEntry{Username: "usernameA", Password: "passwordA"}
 	dceB := config.DockerConfigEntry{Username: "usernameB", Password: "passwordB"}
 	dcA := config.DockerConfig{fakeImgName.GetRegistry(): dceA}
@@ -202,6 +204,8 @@ func TestRegistryStore_PullSecrets(t *testing.T) {
 // and the upsert would fail if the TLS check failed. Performing the TLS check
 // on upsert slowed Sensor startup, it was made lazy as a result.
 func TestRegistryStore_LazyNoFailUpsertCheckTLS(t *testing.T) {
+	t.Setenv(env.DelegatedScanningDisabled.EnvVar(), "false")
+
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 	dc := config.DockerConfig{fakeImgName.GetRegistry(): dce}
 
@@ -234,6 +238,8 @@ func TestRegistryStore_LazyNoFailUpsertCheckTLS(t *testing.T) {
 // global pull secrets. Global pull secrets are secrets that can be used
 // for workloads in ANY namespace (as long as the url matches).
 func TestRegistryStore_GlobalStore(t *testing.T) {
+	t.Setenv(env.DelegatedScanningDisabled.EnvVar(), "false")
+
 	// commonTests executes tests that should have the same results regardless of
 	// how secrets are stored.
 	commonTests := func(t *testing.T) *Store {
@@ -278,6 +284,8 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 // TestRegistryStore_GlobalStoreLazyNoFailUpsertCheckTLS mirrors the objective of
 // the LazyNoFailUpsertCheckTLS test but instead upserts global registries.
 func TestRegistryStore_GlobalStoreLazyNoFailUpsertCheckTLS(t *testing.T) {
+	t.Setenv(env.DelegatedScanningDisabled.EnvVar(), "false")
+
 	// commonTests executes tests that should have the same results regardless of
 	// how secrets are stored.
 	commonTests := func(t *testing.T) {
@@ -484,6 +492,8 @@ func TestRegistryStore_GenImgIntegrationName(t *testing.T) {
 // stored is called. This expects go test to be executed with the `-race` flag so that
 // a panic will occur when a race detected.
 func TestDataRaceAtCleanup(t *testing.T) {
+	t.Setenv(env.DelegatedScanningDisabled.EnvVar(), "false")
+
 	// attemptToTriggerRace tries to trigger a data race.
 	attemptToTriggerRace := func() {
 		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
@@ -633,6 +643,8 @@ func TestRegistryStore_UpsertsByServiceAccount(t *testing.T) {
 // TestRegistryStore_SecretDelete ensures that secrets are deleted (or not deleted)
 // as expected.
 func TestRegistryStore_SecretDelete(t *testing.T) {
+	t.Setenv(env.DelegatedScanningDisabled.EnvVar(), "false")
+
 	imagePullSecrets := []string{fakeSecretName, "sec1", "sec2"}
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 	dcA := config.DockerConfig{fakeImgName.GetRegistry(): dce}
