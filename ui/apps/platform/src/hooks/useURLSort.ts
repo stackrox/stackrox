@@ -6,10 +6,13 @@ import isEqual from 'lodash/isEqual';
 import useURLParameter, { HistoryAction, QueryValue } from 'hooks/useURLParameter';
 import { SortAggregate, SortOption, ThProps, isSortOption } from 'types/table';
 import { ApiSortOption, ApiSortOptionSingle } from 'types/search';
+import { isNonEmptyArray, NonEmptyArray } from 'utils/type.utils';
+
+export type FieldOption = { field: string; aggregateBy?: SortAggregate };
 
 export type GetSortParams = (
     columnName: string,
-    fieldOptions?: SortAggregate | { field: string; aggregateBy?: SortAggregate }[]
+    fieldOptions?: SortAggregate | NonEmptyArray<FieldOption>
 ) => ThProps['sort'] | undefined;
 
 function sortOptionToApiSortOption({
@@ -43,10 +46,10 @@ function getValidSortOption(activeSortOption: SortOption | SortOption[]): ApiSor
 function getActiveSortOption(
     sortOption: QueryValue,
     defaultSortOption: SortOption
-): SortOption | SortOption[] {
+): SortOption | NonEmptyArray<SortOption> {
     if (Array.isArray(sortOption)) {
         const validOptions = sortOption.filter(isSortOption);
-        return validOptions.length > 0 ? validOptions : defaultSortOption;
+        return isNonEmptyArray(validOptions) ? validOptions : defaultSortOption;
     }
 
     return isSortOption(sortOption) ? sortOption : defaultSortOption;
@@ -144,7 +147,7 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
 
     function getSortParams(
         columnName: string,
-        fieldOptions?: SortAggregate | { field: string; aggregateBy?: SortAggregate }[]
+        fieldOptions?: SortAggregate | NonEmptyArray<FieldOption>
     ): ThProps['sort'] {
         // Convert the caller provided sort fields of type (string | string[]) to an
         // array of string[].
@@ -176,7 +179,7 @@ function useURLSort({ sortFields, defaultSortOption, onSort }: UseURLSortProps):
         // We can't support multiple sort fields with different directions at this time, so
         // we'll just use the first sort field's direction.
         const direction = Array.isArray(activeSortOption)
-            ? activeSortOption[0].direction ?? 'desc'
+            ? activeSortOption[0].direction
             : activeSortOption.direction;
 
         return {
