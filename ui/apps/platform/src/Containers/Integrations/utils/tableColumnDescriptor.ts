@@ -203,8 +203,12 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         ],
         microsoftSentinel: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'labelDefault', Header: 'Default Recipient' },
-            { accessor: 'labelKey', Header: 'Recipient Annotation Key' },
+            {
+                accessor: 'microsoftSentinel.logIngestionEndpoint',
+                Header: 'Log Ingestion Endpoint',
+            },
+            { accessor: 'microsoftSentinel.directoryTenantId', Header: 'Directory Tenant ID' },
+            { accessor: 'microsoftSentinel.applicationClientId', Header: 'Application Client ID' },
         ],
     },
     imageIntegrations: {

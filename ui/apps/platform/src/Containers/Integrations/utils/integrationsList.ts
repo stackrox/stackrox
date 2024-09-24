@@ -248,10 +248,10 @@ export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = 
         type: 'syslog',
     },
     {
-        image: acscsEmail,
+        image: azure,
         label: 'Micrsoft Sentinel',
         type: 'microsoftSentinel',
-        // featureFlagDependency: ['ROX_MICROSOFT_SENTINEL'],
+        featureFlagDependency: ['ROX_MICROSOFT_SENTINEL'],
     },
 ];
 
