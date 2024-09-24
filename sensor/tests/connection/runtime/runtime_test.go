@@ -91,6 +91,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		require.NotEqual(t, "", talkIP)
 
 		if !helper.UseRealCollector.BooleanSetting() {
+			t.Log("Using fake collector messages for the test")
 			nginxPodIDs, nginxContainerIDs := c.GetContainerIdsFromDeployment(nginxObj)
 			require.Len(t, nginxPodIDs, 1)
 			require.Len(t, nginxContainerIDs, 1)
