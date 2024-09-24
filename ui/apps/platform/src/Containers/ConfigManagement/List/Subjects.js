@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import pluralize from 'pluralize';
 
 import {
@@ -103,16 +104,9 @@ const buildTableColumns = (match, location) => {
 
 const createTableRows = (data) => data?.results || [];
 
-const Subjects = ({
-    match,
-    location,
-    selectedRowId,
-    onRowClick,
-    query,
-    className,
-    data,
-    totalResults,
-}) => {
+const Subjects = ({ selectedRowId, onRowClick, query, className, data, totalResults }) => {
+    const location = useLocation();
+    const match = useRouteMatch();
     const autoFocusSearchInput = !selectedRowId;
     const tableColumns = buildTableColumns(match, location);
     const queryText = queryService.objectToWhereClause(query);
