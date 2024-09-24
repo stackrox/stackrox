@@ -239,6 +239,14 @@ func (s *centralCommunicationImpl) initialSync(stream central.SensorService_Comm
 		log.Warn("Central is running a legacy version that might not support all current features")
 	}
 
+	// This is to check whether there are any situations where we found cached ID, but overwrite it
+	cachedClusterID, err := helmconfig.LoadCachedClusterID()
+	if err != nil {
+		log.Warnf("Failed to load cached cluster ID: %s", err)
+	} else {
+		log.Infof("Found cached cluster-id: %q", cachedClusterID)
+	}
+
 	clusterID := centralHello.GetClusterId()
 	clusterid.Set(clusterID)
 

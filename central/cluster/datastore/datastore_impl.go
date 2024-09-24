@@ -857,6 +857,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 		// Try to look up cluster ID by name, if this is for an existing cluster
 		clusterIDVal, _ := ds.nameToIDCache.Get(clusterName)
 		clusterID, _ = clusterIDVal.(string)
+		log.Infof("Found in cache: cluster ID %q for name %q", clusterID, clusterName)
 	}
 
 	isExisting := false
