@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/config-controller/pkg/client"
+	"github.com/stackrox/rox/generated/storage"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -59,8 +60,13 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, fmt.Errorf("Failed to get policy: namespace=%s, name=%s", req.Namespace, req.Name)
 	}
 
+	if ok, err := policyCR.Spec.IsValid(); !ok {
+		return ctrl.Result{}, errors.Wrapf(err, "Invalid policy resource: namespace=%s, name=%s", req.Namespace, req.Name)
+
+	}
 	desiredState := policyCR.Spec.ToProtobuf()
 	desiredState.Name = policyCR.GetName()
+	desiredState.Source = storage.PolicySource_DECLARATIVE
 
 	existingPolicy, exists, err := r.PolicyClient.GetPolicy(ctx, req.Name)
 	if err != nil {
