@@ -68,11 +68,7 @@ func (fds *flowDataStoreImpl) GetFlowsForDeployment(ctx context.Context, deploym
 }
 
 func (fds *flowDataStoreImpl) GetExternalFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
-	flows, err := fds.storage.GetExternalFlowsForDeployment(ctx, deploymentID)
-	if err != nil {
-		return nil, err
-	}
-	return flows, nil
+	return fds.storage.GetExternalFlowsForDeployment(ctx, deploymentID)
 }
 
 func (fds *flowDataStoreImpl) adjustFlowsForGraphConfig(_ context.Context, flows []*storage.NetworkFlow) ([]*storage.NetworkFlow, error) {

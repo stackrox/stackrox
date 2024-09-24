@@ -73,7 +73,7 @@ message GetExternalNetworkEntitiesResponse {
 
 message GetExternalNetworkFlowsRequest {
   string cluster_id = 1;
-  string deployment_id = 3;
+  string deployment_id = 2;
 }
 
 message GetExternalNetworkFlowsResponse {
