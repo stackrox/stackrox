@@ -273,11 +273,11 @@ describe('useURLSort', () => {
                     .getSortParams('Severity', [
                         {
                             field: 'Critical severity count',
-                            aggregateBy: { distinct: true, aggregateFunc: 'max' },
+                            aggregateBy: { distinct: 'true', aggregateFunc: 'max' },
                         },
                         {
                             field: 'Low severity count',
-                            aggregateBy: { distinct: true, aggregateFunc: 'max' },
+                            aggregateBy: { distinct: 'true', aggregateFunc: 'max' },
                         },
                     ])
                     .onSort(null, null, 'asc');
