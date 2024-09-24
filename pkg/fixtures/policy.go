@@ -3,7 +3,6 @@ package fixtures
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 var (
@@ -16,51 +15,6 @@ var (
 		Rationale:       "This is the rationale",
 		Remediation:     "This is the remediation",
 		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
-		Exclusions: []*storage.Exclusion{
-			{
-				Name: "exclusionName1",
-				Deployment: &storage.Exclusion_Deployment{
-					Name: "deployment1",
-					Scope: &storage.Scope{
-						Cluster:   "cluster1",
-						Namespace: "label1",
-						Label: &storage.Scope_Label{
-							Key:   "key1",
-							Value: "value1",
-						},
-					},
-				},
-				Expiration: protocompat.GetProtoTimestampFromSeconds(2334221123),
-			},
-			{
-				Name: "exclusionName2",
-				Deployment: &storage.Exclusion_Deployment{
-					Name: "deployment2",
-					Scope: &storage.Scope{
-						Cluster:   "cluster2",
-						Namespace: "label2",
-						Label: &storage.Scope_Label{
-							Key:   "key2",
-							Value: "value2",
-						},
-					},
-				},
-			},
-		},
-		EnforcementActions: []storage.EnforcementAction{
-			storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
-			storage.EnforcementAction_KILL_POD_ENFORCEMENT,
-		},
-		MitreAttackVectors: []*storage.Policy_MitreAttackVectors{
-			{
-				Tactic:     "This is a tactic.",
-				Techniques: []string{"technique1", "technique2"},
-			},
-			{
-				Tactic:     "This is another tactic.",
-				Techniques: []string{"technique1"},
-			},
-		},
 		Scope: []*storage.Scope{
 			{
 				Cluster:   "prod cluster",
