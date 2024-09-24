@@ -86,11 +86,29 @@ function ViewScanConfigDetail({
 
     function handleSendReport(scanConfigResponse: ComplianceScanConfigurationStatus) {
         clearAlertObj();
-        runComplianceReport(scanConfigResponse.id)
+        runComplianceReport(scanConfigResponse.id, 'EMAIL')
             .then(() => {
                 setAlertObj({
                     type: 'success',
                     title: 'Successfully requested to send a report',
+                });
+            })
+            .catch((error) => {
+                setAlertObj({
+                    type: 'danger',
+                    title: 'Could not send a report',
+                    children: getAxiosErrorMessage(error),
+                });
+            });
+    }
+
+    function handleGenerateDownload(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        clearAlertObj();
+        runComplianceReport(scanConfigResponse.id, 'DOWNLOAD')
+            .then(() => {
+                setAlertObj({
+                    type: 'success',
+                    title: 'The report generation has started and will be available for download once complete',
                 });
             })
             .catch((error) => {
@@ -131,6 +149,7 @@ function ViewScanConfigDetail({
                                     <ScanConfigActionDropdown
                                         handleRunScanConfig={handleRunScanConfig}
                                         handleSendReport={handleSendReport}
+                                        handleGenerateDownload={handleGenerateDownload}
                                         isScanning={
                                             isTriggeringRescan /* ||
                                             scanConfig.lastExecutedTime === null */

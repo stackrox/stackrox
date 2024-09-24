@@ -78,7 +78,7 @@ function ApprovedDeferrals() {
                     'Expired Request': 'false',
                 },
                 sortOption,
-                page - 1,
+                page,
                 perPage
             ),
         [searchFilter, sortOption, page, perPage]

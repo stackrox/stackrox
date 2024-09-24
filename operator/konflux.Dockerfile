@@ -24,6 +24,7 @@ RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/mai
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 ARG MAIN_IMAGE_TAG
+RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
 
 LABEL \
     com.redhat.component="rhacs-operator-container" \

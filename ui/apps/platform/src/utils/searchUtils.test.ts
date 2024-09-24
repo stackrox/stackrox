@@ -318,12 +318,12 @@ describe('searchUtils', () => {
     describe('getListQueryParams', () => {
         it('should include all provided parameters in the query string', () => {
             expect(
-                getListQueryParams(
-                    { Deployment: ['visa-processor', 'scanner'] },
-                    { field: 'Name', reversed: false },
-                    0,
-                    20
-                )
+                getListQueryParams({
+                    searchFilter: { Deployment: ['visa-processor', 'scanner'] },
+                    sortOption: { field: 'Name', reversed: false },
+                    page: 0,
+                    perPage: 20,
+                })
             ).toEqual(
                 [
                     'query=Deployment%3Avisa-processor%2Cscanner',
@@ -336,7 +336,14 @@ describe('searchUtils', () => {
         });
 
         it('should include pagination parameters when the search filter is empty', () => {
-            expect(getListQueryParams({}, { field: 'Name', reversed: false }, 0, 20)).toEqual(
+            expect(
+                getListQueryParams({
+                    searchFilter: {},
+                    sortOption: { field: 'Name', reversed: false },
+                    page: 0,
+                    perPage: 20,
+                })
+            ).toEqual(
                 [
                     'query=',
                     'pagination.offset=0',
@@ -348,18 +355,33 @@ describe('searchUtils', () => {
         });
 
         it('should ensure that negative pages result in an offset of 0', () => {
-            expect(getListQueryParams({}, { field: 'Name', reversed: false }, -1, 20)).toContain(
-                'pagination.offset=0'
-            );
-            expect(getListQueryParams({}, { field: 'Name', reversed: false }, -100, 20)).toContain(
-                'pagination.offset=0'
-            );
             expect(
-                getListQueryParams({}, { field: 'Name', reversed: false }, -Infinity, 20)
+                getListQueryParams({
+                    searchFilter: {},
+                    sortOption: { field: 'Name', reversed: false },
+                    page: -1,
+                    perPage: 20,
+                })
+            ).toContain('pagination.offset=0');
+            expect(
+                getListQueryParams({
+                    searchFilter: {},
+                    sortOption: { field: 'Name', reversed: false },
+                    page: -100,
+                    perPage: 20,
+                })
+            ).toContain('pagination.offset=0');
+            expect(
+                getListQueryParams({
+                    searchFilter: {},
+                    sortOption: { field: 'Name', reversed: false },
+                    page: -Infinity,
+                    perPage: 20,
+                })
             ).toContain('pagination.offset=0');
         });
 
-        it('should ensure that the offset is always a multiple of the page number', () => {
+        it('should ensure that the offset is always a multiple of the page size', () => {
             const testValues = [
                 [1, 10],
                 [3, 10],
@@ -368,19 +390,19 @@ describe('searchUtils', () => {
                 [10, 1],
             ];
 
-            testValues.forEach(([page, pageSize]) => {
-                const params = getListQueryParams(
-                    {},
-                    { field: 'Name', reversed: false },
+            testValues.forEach(([page, perPage]) => {
+                const params = getListQueryParams({
+                    searchFilter: {},
+                    sortOption: { field: 'Name', reversed: false },
                     page,
-                    pageSize
-                );
+                    perPage,
+                });
                 const matchArr = params.match(/pagination.offset=(\d+)/);
                 const offsetParam = matchArr?.[1];
                 expect(offsetParam).not.toBe('');
                 expect(typeof offsetParam).toBe('string');
                 const offset = parseInt(offsetParam as string, 10);
-                expect(offset % page).toBe(0);
+                expect(offset % perPage).toBe(0);
             });
         });
     });

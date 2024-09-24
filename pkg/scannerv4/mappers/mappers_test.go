@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -65,7 +66,7 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 			arg:  &claircore.VulnerabilityReport{},
 			want: &v4.VulnerabilityReport{Contents: &v4.Contents{}},
 		},
-		"when invalid time in vulnerability map then error": {
+		"when invalid time in vulnerability map then nil issued": {
 			arg: &claircore.VulnerabilityReport{
 				Vulnerabilities: map[string]*claircore.Vulnerability{
 					"sample CVE": {
@@ -75,7 +76,13 @@ func Test_ToProtoV4VulnerabilityReport(t *testing.T) {
 					},
 				},
 			},
-			wantErr: "internal error",
+			want: &v4.VulnerabilityReport{
+				Contents: &v4.Contents{},
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"sample CVE": {
+						Id: "sample CVE",
+					},
+				}},
 		},
 		"when sample fields are set then conversion is successful": {
 			arg: &claircore.VulnerabilityReport{
@@ -896,6 +903,8 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	now := time.Now()
 	protoNow, err := protocompat.ConvertTimeToTimestampOrError(now)
 	assert.NoError(t, err)
+	published2021 := "2021-12-10T10:15:09.143"
+	proto2021 := protoconv.ConvertTimeString(published2021)
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
 		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
@@ -1244,6 +1253,30 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 						},
 					},
+				},
+			},
+		},
+		"when issued time is empty, use NVD published time": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:      "foo",
+					Name:    "CVE-2021-44228",
+					Updater: "unknown updater",
+				},
+			},
+			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
+				"foo": {
+					"CVE-2021-44228": {
+						ID:        "CVE-2021-44228",
+						Published: published2021,
+					},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Id:     "foo",
+					Name:   "CVE-2021-44228",
+					Issued: proto2021,
 				},
 			},
 		},

@@ -20,6 +20,7 @@ type imageCVECoreResponse struct {
 	TopCVSS                            float32    `db:"cvss_max"`
 	AffectedImageCount                 int        `db:"image_sha_count"`
 	FirstDiscoveredInSystem            *time.Time `db:"cve_created_time_min"`
+	Published                          *time.Time `db:"cve_published_on_min"`
 }
 
 func (c *imageCVECoreResponse) GetCVE() string {
@@ -53,6 +54,10 @@ func (c *imageCVECoreResponse) GetAffectedImageCount() int {
 
 func (c *imageCVECoreResponse) GetFirstDiscoveredInSystem() *time.Time {
 	return c.FirstDiscoveredInSystem
+}
+
+func (c *imageCVECoreResponse) GetPublishDate() *time.Time {
+	return c.Published
 }
 
 type imageCVECoreCount struct {

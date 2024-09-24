@@ -327,6 +327,14 @@ class Env {
         return get("OCM_OFFLINE_TOKEN")
     }
 
+    static String mustGetOcmClientId() {
+        return get("CLOUD_SOURCES_TEST_OCM_CLIENT_ID")
+    }
+
+    static String mustGetOcmClientSecret() {
+        return get("CLOUD_SOURCES_TEST_OCM_CLIENT_SECRET")
+    }
+
     static String getTestTarget() {
         return get("TEST_TARGET", "")
     }

@@ -5,8 +5,8 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 
 const Factor = ({ message, url }) => {
     // TODO is the link external or internal?
-    /* eslint-disable generic/ExternalLink-a */
-    /* eslint-disable generic/a-target-rel */
+    /* eslint-disable generic/ExternalLink-anchor */
+    /* eslint-disable generic/anchor-target-rel */
     const renderedMessage = url ? (
         <a href={url} target="_blank" rel="noopener noreferrer">
             {message}
@@ -14,8 +14,8 @@ const Factor = ({ message, url }) => {
     ) : (
         message
     );
-    /* eslint-enable generic/ExternalLink-a */
-    /* eslint-enable generic/a-target-rel */
+    /* eslint-enable generic/ExternalLink-anchor */
+    /* eslint-enable generic/anchor-target-rel */
 
     return (
         <div className="px-3">

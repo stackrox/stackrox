@@ -11,11 +11,16 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-)
 
-const (
-	timeFormat         = "2006-01-02T15:04Z"
-	extendedTimeFormat = "2006-01-02T15:04:03Z"
+	// timeLayouts lists each known time format used throughout StackRox.
+	timeLayouts = []string{
+		// NVD API v2 time layout.
+		"2006-01-02T15:04:05.999",
+		// NVD JSON feed time layout.
+		"2006-01-02T15:04Z",
+		// Red Hat Security API time layout and catchall.
+		time.RFC3339,
+	}
 )
 
 // ConvertTimestampToTimeOrNow converts a proto timestamp to a golang Time, and returns time.Now() if there is an error.
@@ -71,10 +76,12 @@ func ConvertTimeString(str string) *timestamppb.Timestamp {
 	if str == "" {
 		return nil
 	}
-	if ts, err := time.Parse(timeFormat, str); err == nil {
-		return ConvertTimeToTimestamp(ts)
-	} else if ts, err := time.Parse(extendedTimeFormat, str); err == nil {
-		return ConvertTimeToTimestamp(ts)
+	for _, layout := range timeLayouts {
+		t, err := time.Parse(layout, str)
+		if err != nil {
+			continue
+		}
+		return ConvertTimeToTimestamp(t)
 	}
 	return nil
 }
