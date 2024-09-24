@@ -471,11 +471,7 @@ function PoliciesTable({
                 </Table>
             </PageSection>
             <ConfirmationModal
-                title={`${
-                    isExternalPolicySelected(policies, deletingIds)
-                        ? 'Delete policies?'
-                        : 'Permanently delete policies?'
-                } (${deletingIds.length})`}
+                title={`Delete policies? (${deletingIds.length})`}
                 ariaLabel="Confirm delete"
                 confirmText="Delete"
                 isLoading={isDeleting}
@@ -491,8 +487,10 @@ function PoliciesTable({
                         </FlexItem>
                         <FlexItem>
                             <em>
-                                The current selection includes at least one externally managed
-                                policy that will be restored automatically during the next resync.
+                                The current selection includes one or more externally managed
+                                policies that will only be removed from the system temporarily until
+                                the next resync. Locally managed policies will be removed
+                                permanently.
                             </em>
                         </FlexItem>
                     </Flex>

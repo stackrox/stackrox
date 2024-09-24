@@ -138,7 +138,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
             {isExternalPolicy(policy) && (
                 <Alert isInline title="Externally managed policy" component="p" variant="warning">
                     You are editing a policy that is managed externally. Any local changes to this
-                    policy will be automatically overwritten during the next sync.
+                    policy will be automatically overwritten during the next resync.
                 </Alert>
             )}
             <PageSection variant="light" isFilled id="policy-page" className="pf-v5-u-pb-0">

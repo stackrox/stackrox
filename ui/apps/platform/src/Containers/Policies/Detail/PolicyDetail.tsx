@@ -276,7 +276,7 @@ function PolicyDetail({
                 </AlertGroup>
             </PageSection>
             <ConfirmationModal
-                title={isExternalPolicy(policy) ? 'Delete policy?' : 'Permanently delete policy?'}
+                title={'Delete policy?'}
                 ariaLabel="Confirm delete"
                 confirmText="Delete"
                 isLoading={isRequesting}
@@ -287,7 +287,7 @@ function PolicyDetail({
                 {isExternalPolicy(policy) ? (
                     <>
                         This policy is managed externally and will only be removed from the system
-                        temporarily. The policy will not trigger violations until the next sync.
+                        temporarily. The policy will not trigger violations until the next resync.
                     </>
                 ) : (
                     <>
