@@ -11,6 +11,7 @@ option go_package = "./internalapi/sensor;sensor";
 message MsgToCollector {
   oneof msg {
     storage.CollectorConfig collector_config = 1;
+    SensorHello sensor_hello = 2;
   }
 }
 

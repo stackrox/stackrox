@@ -87,31 +87,30 @@ func (s *serviceImpl) ResponsesC() <-chan *message.ExpiringMessage {
 
 type connectionManager struct {
 	connectionLock sync.RWMutex
-	connectionMap  map[sensor.CollectorService_CommunicateServer]bool
+	connectionMap  map[string]sensor.CollectorService_CommunicateServer
 }
 
 func newConnectionManager() *connectionManager {
 	return &connectionManager{
-		connectionMap: make(map[sensor.CollectorService_CommunicateServer]bool),
+		connectionMap: make(map[string]sensor.CollectorService_CommunicateServer),
 	}
 }
 
-func (c *connectionManager) add(hello *storage.CollectorConfig, connection sensor.CollectorService_CommunicateServer) {
+func (c *connectionManager) add(hello *sensor.CollectorHello, connection sensor.CollectorService_CommunicateServer) {
 	c.connectionLock.Lock()
 	log.Info("Adding connection")
 	log.Infof("connection= %+v", connection)
 	defer c.connectionLock.Unlock()
 
-	c.connectionMap[hello.] = true
+	c.connectionMap[hello.GetDeploymentIdentification().GetK8SNodeName()] = true
 }
 
-func (c *connectionManager) remove(connection sensor.CollectorService_CommunicateServer) {
+func (c *connectionManager) remove(nodeName string) {
 	c.connectionLock.Lock()
-	log.Info("Removing connection")
-	log.Infof("connection= %+v", connection)
+	log.Info("Removing collector connection to node: %s", nodeName)
 	defer c.connectionLock.Unlock()
 
-	delete(c.connectionMap, connection)
+	delete(c.connectionMap, nodeName)
 }
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
@@ -143,7 +142,7 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 	}
 
 	s.connectionManager.add(collectorHello, server)
-	defer s.connectionManager.remove(server)
+	defer s.connectionManager.remove(collectorHello.GetDeploymentIdentification().GetK8SNodeName())
 	log.Info("In Communicate")
 
 	for msg := range s.collectorC {
