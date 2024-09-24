@@ -873,7 +873,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"priority: Int!",
 	}))
 	utils.Must(builder.AddType("NetworkConnectionConfig", []string{
-		"aggregateExternal: Boolean!",
+		"enableExternalIps: Boolean!",
 	}))
 	utils.Must(builder.AddType("NetworkEntityInfo", []string{
 		"deployment: NetworkEntityInfo_Deployment",
@@ -10164,8 +10164,8 @@ func (resolver *Resolver) wrapNetworkConnectionConfigsWithContext(ctx context.Co
 	return output, nil
 }
 
-func (resolver *networkConnectionConfigResolver) AggregateExternal(ctx context.Context) bool {
-	value := resolver.data.GetAggregateExternal()
+func (resolver *networkConnectionConfigResolver) EnableExternalIps(ctx context.Context) bool {
+	value := resolver.data.GetEnableExternalIps()
 	return value
 }
 

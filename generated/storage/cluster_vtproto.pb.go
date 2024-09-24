@@ -208,7 +208,7 @@ func (m *NetworkConnectionConfig) CloneVT() *NetworkConnectionConfig {
 		return (*NetworkConnectionConfig)(nil)
 	}
 	r := new(NetworkConnectionConfig)
-	r.AggregateExternal = m.AggregateExternal
+	r.EnableExternalIps = m.EnableExternalIps
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1032,7 +1032,7 @@ func (this *NetworkConnectionConfig) EqualVT(that *NetworkConnectionConfig) bool
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.AggregateExternal != that.AggregateExternal {
+	if this.EnableExternalIps != that.EnableExternalIps {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2396,9 +2396,9 @@ func (m *NetworkConnectionConfig) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.AggregateExternal {
+	if m.EnableExternalIps {
 		i--
-		if m.AggregateExternal {
+		if m.EnableExternalIps {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -4137,7 +4137,7 @@ func (m *NetworkConnectionConfig) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.AggregateExternal {
+	if m.EnableExternalIps {
 		n += 2
 	}
 	n += len(m.unknownFields)
@@ -5839,7 +5839,7 @@ func (m *NetworkConnectionConfig) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AggregateExternal", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EnableExternalIps", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -5856,7 +5856,7 @@ func (m *NetworkConnectionConfig) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.AggregateExternal = bool(v != 0)
+			m.EnableExternalIps = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10888,7 +10888,7 @@ func (m *NetworkConnectionConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AggregateExternal", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field EnableExternalIps", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -10905,7 +10905,7 @@ func (m *NetworkConnectionConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-			m.AggregateExternal = bool(v != 0)
+			m.EnableExternalIps = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

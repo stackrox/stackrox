@@ -814,7 +814,7 @@
     "storageNetworkConnectionConfig": {
       "type": "object",
       "properties": {
-        "aggregateExternal": {
+        "enableExternalIps": {
           "type": "boolean"
         }
       }

@@ -96,7 +96,7 @@ message AdmissionControllerConfig {
 }
 
 message NetworkConnectionConfig {
-  bool aggregate_external = 1;
+  bool enable_external_ips = 1;
 }
 
 // CollectorConfig controls which type of data is reported by collector
