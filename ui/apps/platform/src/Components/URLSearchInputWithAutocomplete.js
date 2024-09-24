@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
 import { components } from 'react-select';
 import queryString from 'qs';
 import { connect } from 'react-redux';
@@ -100,8 +100,6 @@ export const removeValuesForKey = (oldOptions, newOptions) => {
 };
 
 const URLSearchInputWithAutocomplete = ({
-    location,
-    history,
     autoCompleteResults,
     categoryOptions,
     setAllSearchOptions,
@@ -112,6 +110,8 @@ const URLSearchInputWithAutocomplete = ({
     prependAutocompleteQuery,
     ...rest
 }) => {
+    const location = useLocation();
+    const history = useHistory();
     const searchParam = useContext(searchContext);
     const workflowState = useContext(workflowStateContext);
 
@@ -309,8 +309,6 @@ URLSearchInputWithAutocomplete.propTypes = {
     placeholder: PropTypes.string.isRequired,
     categoryOptions: PropTypes.arrayOf(PropTypes.string),
     autoCompleteResults: PropTypes.arrayOf(PropTypes.string),
-    location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
     fetchAutocomplete: PropTypes.func,
     clearAutocomplete: PropTypes.func,
     setAllSearchOptions: PropTypes.func.isRequired,

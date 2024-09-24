@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import { useRouteMatch, useLocation, useHistory } from 'react-router-dom';
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
 
@@ -34,10 +33,10 @@ const ListFrontendPaginated = ({
     data,
     autoFocusSearchInput,
     noDataText,
-    match,
-    location,
-    history,
 }) => {
+    const match = useRouteMatch();
+    const location = useLocation();
+    const history = useHistory();
     const [page, setPage] = useState(0);
 
     function onRowClickHandler(row) {
@@ -160,9 +159,6 @@ ListFrontendPaginated.propTypes = {
     data: PropTypes.arrayOf(PropTypes.shape({})),
     autoFocusSearchInput: PropTypes.bool,
     noDataText: PropTypes.string,
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
 };
 
 ListFrontendPaginated.defaultProps = {
@@ -176,4 +172,4 @@ ListFrontendPaginated.defaultProps = {
     noDataText: 'No results found. Please refine your search.',
 };
 
-export default withRouter(ListFrontendPaginated);
+export default ListFrontendPaginated;

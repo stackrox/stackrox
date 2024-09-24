@@ -194,16 +194,12 @@ function CoveragesPage() {
                             </Toolbar>
                             <Divider />
                             <Switch>
-                                <Route
-                                    exact
-                                    path={coverageProfileChecksPath}
-                                    render={() => <ProfileChecksPage />}
-                                />
-                                <Route
-                                    exact
-                                    path={coverageProfileClustersPath}
-                                    render={() => <ProfileClustersPage />}
-                                />
+                                <Route exact path={coverageProfileChecksPath}>
+                                    <ProfileChecksPage />
+                                </Route>
+                                <Route exact path={coverageProfileClustersPath}>
+                                    <ProfileClustersPage />
+                                </Route>
                             </Switch>
                         </PageSection>
                     </>

@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
-import { withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { useHistory } from 'react-router-dom';
 
 import usePermissions from 'hooks/usePermissions';
 import entityTypes from 'constants/entityTypes';
@@ -29,7 +28,8 @@ const entityMenuTypes = [
     entityTypes.IMAGE_COMPONENT,
 ];
 
-const VulnDashboardPage = ({ history }) => {
+const VulnDashboardPage = () => {
+    const history = useHistory();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');
     const workflowState = useContext(workflowStateContext);
@@ -126,8 +126,4 @@ const VulnDashboardPage = ({ history }) => {
     );
 };
 
-VulnDashboardPage.propTypes = {
-    history: ReactRouterPropTypes.history.isRequired,
-};
-
-export default withRouter(VulnDashboardPage);
+export default VulnDashboardPage;
