@@ -49,7 +49,7 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, unreleased=None):
+def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, unreleased=None, replaced_version=None):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -75,8 +75,12 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
         csv_doc["metadata"]["labels"][f"operatorframework.io/arch.{arch}"] = "supported"
 
     skips = parse_skips(csv_doc["spec"], raw_name)
-    replaced_xyz = calculate_replaced_version(
-        version=version, first_version=first_version, previous_y_stream=previous_y_stream, skips=skips, unreleased=unreleased)
+    replaced_xyz = None
+    if replaced_version:
+        replaced_xyz = XyzVersion.parse_from(replaced_version)
+    else:
+        replaced_xyz = calculate_replaced_version(
+            version=version, first_version=first_version, previous_y_stream=previous_y_stream, skips=skips, unreleased=unreleased)
     if replaced_xyz is not None:
         csv_doc["spec"]["replaces"] = f"{raw_name}.v{replaced_xyz}"
 
@@ -155,7 +159,9 @@ def parse_args():
                         help='Which SemVer version of the operator to set in the patched CSV, e.g. 3.62.0')
     parser.add_argument("--first-version", required=True, metavar='version',
                         help='The first version of the operator that was published')
-    parser.add_argument("--operator-image", required=True, metavar='image',
+    parser.add_argument("--replaced-version", metavar='version',
+                        help='Version to be replaced by this operator build.')
+    parser.add_argument("--operator-image", metavar='image',
                         help='Which operator image to use in the patched CSV')
     parser.add_argument("--no-related-images", action='store_true',
                         help='Disable passthrough of related images')
@@ -184,6 +190,7 @@ def main():
     patch_csv(doc,
               operator_image=args.operator_image,
               version=args.use_version,
+              replaced_version=args.replaced_version,
               first_version=args.first_version,
               unreleased=args.unreleased,
               no_related_images=args.no_related_images,

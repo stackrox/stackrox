@@ -1,0 +1,74 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: determine-operator-replaced-version
+  namespace: rh-acs-tenant
+spec:
+  description: Determines previous operator version which the current build is to replace.
+  params:
+  - name: SOURCE_ARTIFACT
+    description: The Trusted Artifact URI pointing to the artifact with
+      the application source code. This should be the result of the git-clone task,
+      results from other tasks might fail as dirty.
+    type: string
+  - name: VERSION
+    description: Version...
+    type: string
+  results:
+  - name: OPERATOR_REPLACED_VERSION
+    description: Version of a previous operator version which is replaced by the current build.
+  volumes:
+  - name: workdir
+    emptyDir: { }
+  stepTemplate:
+    volumeMounts:
+    - mountPath: /var/workdir
+      name: workdir
+  steps:
+  - name: use-trusted-artifact
+    image: quay.io/redhat-appstudio/build-trusted-artifacts:latest@sha256:a390d28f69d61ab38aadf78b7c9b21ed09b79687bddae4cf1d02616bef5d7da7
+    args:
+    - use
+    - $(params.SOURCE_ARTIFACT)=/var/workdir/source
+  - name: determine-operator-replaced-version
+    # plain ubi images don't seem to be sufficient for the script below.
+    image: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.22
+    workingDir: /var/workdir/source/operator
+    script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      # This is essentially replicating what we use at the top of konflux.bundle.Dockerfile.
+      cat >/etc/yum.repos.d/ubi.repo <<EOF
+      [ubi-8-baseos-rpms]
+      name = Red Hat Universal Base Image 8 (RPMs) - BaseOS
+      baseurl = https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/\$basearch/baseos/os
+      enabled = 1
+      gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+      gpgcheck = 1
+      [ubi-8-appstream-rpms]
+      name = Red Hat Universal Base Image 8 (RPMs) - AppStream
+      baseurl = https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/\$basearch/appstream/os
+      enabled = 1
+      gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+      gpgcheck = 1
+      EOF
+      dnf -y upgrade --nobest && dnf -y install --nodocs --noplugins jq
+      unset VERSION
+      export GOFLAGS=""
+      export GO111MODULE=on
+      python3 -m venv bundle_helpers/.venv
+      . bundle_helpers/.venv/bin/activate
+      pip3 install --upgrade pip==21.3.1 setuptools==59.6.0
+      pip3 install -r bundle_helpers/requirements.txt
+      replaced_version=$(./bundle_helpers/patch-csv.py \
+        --use-version $(params.VERSION) \
+        --first-version 3.62.0 \
+        --echo-replaced-version-only \
+        < bundle/manifests/rhacs-operator.clusterserviceversion.yaml)
+      echo "Attempting to use replaced-version: ${replaced_version}"
+      if ! ../scripts/ci/lib.sh check_rhacs_eng_image_exists "stackrox-operator-index" "v${replaced_version}"; then
+        prev_y_stream=$(../../scripts/get-previous-y-stream.sh "${replaced_version}")
+        echo "WARNING: stackrox-operator-index:v${replaced_version} not found, using ${prev_y_stream} as replaced-version."
+        replaced_version="${prev_y_stream}"
+      fi
+      echo -n "${replaced_version}" > "$(results.OPERATOR_REPLACED_VERSION.path)"

@@ -5,7 +5,10 @@ FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.22 AS bui
 # For some reason, openshift-golang-builder 9 comes without any RPM repos in /etc/yum.repos.d/
 # We, however, need to install some packages and so we need to configure RPM repos. The ones for UBI are sufficient.
 COPY --from=ubi-repo-donor /etc/yum.repos.d/ubi.repo /etc/yum.repos.d/ubi.repo
-RUN dnf -y upgrade --nobest && dnf -y install --nodocs --noplugins jq
+RUN dnf -y upgrade --nobest && dnf -y install --nodocs --noplugins jq python3-pip
+
+COPY ./operator/bundle_helpers/requirements.txt /tmp/requirements.txt
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
 
 # Use a new stage to enable caching of the package installations for local development
 FROM builder-runner AS builder
@@ -14,7 +17,12 @@ COPY . /stackrox
 WORKDIR /stackrox/operator
 
 ARG MAIN_IMAGE_TAG
+ARG OPERATOR_IMAGE_DIGEST
+ARG OPERATOR_IMAGE_REPO
+ARG OPERATOR_REPLACED_VERSION
+
 RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
+
 ENV VERSION=$MAIN_IMAGE_TAG
 ENV ROX_PRODUCT_BRANDING=RHACS_BRANDING
 
@@ -23,7 +31,21 @@ ENV ROX_PRODUCT_BRANDING=RHACS_BRANDING
 #      github.com/operator-framework/operator-lifecycle-manager@v0.27.0: is explicitly required in go.mod, but not marked as explicit in vendor/modules.txt
 ENV GOFLAGS=''
 
-RUN make bundle-post-process
+RUN mkdir -p build/ && \
+    rm -rf build/bundle && \
+    cp -a bundle build/ && \
+    ./bundle_helpers/patch-csv.py \
+      --use-version "${VERSION}" \
+      --first-version 3.62.0 \
+      --replaced-version "${OPERATOR_REPLACED_VERSION}" \
+      --operator-image "${OPERATOR_IMAGE_REPO}:${OPERATOR_IMAGE_DIGEST}" \
+      --no-related-images \
+      --add-supported-arch amd64 \
+      --add-supported-arch arm64 \
+      --add-supported-arch ppc64le \
+      --add-supported-arch s390x \
+      < bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
+      > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 
 FROM scratch
 
