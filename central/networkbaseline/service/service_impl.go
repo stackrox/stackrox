@@ -155,6 +155,8 @@ func (s *serviceImpl) getStatusesForPeers(
 	return statuses
 }
 
+// getBaselinePeerByEntityID indexes the peers from the provided baseline
+// by their (type, ID) information.
 func (s *serviceImpl) getBaselinePeerByEntityID(
 	baseline *storage.NetworkBaseline,
 ) map[networkgraph.Entity]*storage.NetworkBaselinePeer {
@@ -169,20 +171,30 @@ func (s *serviceImpl) getBaselinePeerByEntityID(
 			ID:   peerId,
 		}
 		result[key] = peer
-		// Insert second peer entry for the masked deployment ID
-		// that can be issued by the network graph deployment masker
+		// In UI flows, the peers for flow comparison to the baseline are
+		// the ones received from the network graph call.
+		// Scoped Access Control masking in network graph generates new
+		// identifiers for entities that are not in the allowed scope of
+		// the requested, and this in a deterministic way.
+		// Here, the peer is also referenced by the ID that would be
+		// generated for the network graph, so that flows coming from or
+		// targeting masked entities would still be flagged as belonging to
+		// the network baseline.
 		if peerType == storage.NetworkEntityInfo_DEPLOYMENT {
 			deploymentName := peer.GetEntity().GetInfo().GetDeployment().GetName()
-			maskedID := uuid.NewV5FromNonUUIDs(peerId, deploymentName).String()
 			maskedKey := networkgraph.Entity{
 				Type: peerType,
-				ID:   maskedID,
+				ID:   getMaskedDeploymentID(peerId, deploymentName),
 			}
 			result[maskedKey] = peer
 		}
 	}
 
 	return result
+}
+
+func getMaskedDeploymentID(id string, name string) string {
+	return uuid.NewV5FromNonUUIDs(id, name).String()
 }
 
 func (s *serviceImpl) ModifyBaselineStatusForPeers(ctx context.Context, request *v1.ModifyBaselineStatusForPeersRequest) (*v1.Empty, error) {
