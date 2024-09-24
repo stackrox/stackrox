@@ -34,6 +34,7 @@ func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 
 func (s *serviceImpl) Start() error {
 	s.collectorC = make(chan *sensor.MsgToCollector)
+
 	return nil
 }
 
@@ -58,9 +59,7 @@ func getCollectorConfig(msg *central.MsgToSensor) *storage.CollectorConfig {
 }
 
 func (s *serviceImpl) ProcessMessage(msg *central.MsgToSensor) error {
-	log.Info("In ProcessMessage")
 	if collectorConfig := getCollectorConfig(msg); collectorConfig != nil {
-		log.Infof("Sending message %+v ", collectorConfig)
 		s.collectorC <- &sensor.MsgToCollector{
 			Msg: &sensor.MsgToCollector_CollectorConfig{
 				CollectorConfig: collectorConfig,
@@ -88,8 +87,6 @@ func newConnectionManager() *connectionManager {
 
 func (c *connectionManager) add(connection sensor.CollectorService_CommunicateServer) {
 	c.connectionLock.Lock()
-	log.Info("Adding connection")
-	log.Infof("connection= %+v", connection)
 	defer c.connectionLock.Unlock()
 
 	c.connectionMap[connection] = true
@@ -97,8 +94,6 @@ func (c *connectionManager) add(connection sensor.CollectorService_CommunicateSe
 
 func (c *connectionManager) remove(connection sensor.CollectorService_CommunicateServer) {
 	c.connectionLock.Lock()
-	log.Info("Removing connection")
-	log.Infof("connection= %+v", connection)
 	defer c.connectionLock.Unlock()
 
 	delete(c.connectionMap, connection)
@@ -107,17 +102,23 @@ func (c *connectionManager) remove(connection sensor.CollectorService_Communicat
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
 
 	s.connectionManager.add(server)
-	defer s.connectionManager.remove(server)
-	log.Info("In Communicate")
 
 	for msg := range s.collectorC {
-		log.Info("Sending message")
-		log.Infof("len(s.connectionManager.connectionMap)= %+v", len(s.connectionManager.connectionMap))
+		brokenConnections := make([]sensor.CollectorService_CommunicateServer, 0)
 		for conn := range s.connectionManager.connectionMap {
 			err := conn.Send(msg)
 			if err != nil {
 				log.Error(err, "Failed sending runtime config to Collector")
-				return err
+				brokenConnections = append(brokenConnections, conn)
+			}
+		}
+		for _, brokenConnection := range brokenConnections {
+			s.connectionManager.remove(brokenConnection)
+		}
+		for _, brokenConnection := range brokenConnections {
+			if server == brokenConnection {
+				log.Info("Returning from Communicate due to broken connection")
+				return nil // Will return error in the future
 			}
 		}
 	}
