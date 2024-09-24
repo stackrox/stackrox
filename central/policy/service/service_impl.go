@@ -1128,7 +1128,6 @@ func combineStrings(toCombine [][]string) []string {
 }
 
 func (s *serviceImpl) SaveAsCustomResources(ctx context.Context, request *v1.SaveAsCustomResourcesRequest) (*v1.SaveAsCustomResourcesResponse, error) {
-	// missingIndices and policyErrors should not overlap
 	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.GetPolicyIds())
 	if err != nil {
 		return nil, err
@@ -1156,12 +1155,14 @@ func (s *serviceImpl) SaveAsCustomResources(ctx context.Context, request *v1.Sav
 	resp := new(v1.SaveAsCustomResourcesResponse)
 	for _, policy := range policyList {
 		cr, err := customresource.GenerateCustomResource(policy)
-		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
-			PolicyId: policy.GetId(),
-			Error: &v1.PolicyError{
-				Error: errors.Wrapf(err, "Failed to marshal policy %s to custom resource", policy.GetId()).Error(),
-			},
-		})
+		if err != nil {
+			errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+				PolicyId: policy.GetId(),
+				Error: &v1.PolicyError{
+					Error: errors.Wrapf(err, "Failed to marshal policy to custom resource").Error(),
+				},
+			})
+		}
 		resp.CustomResources = append(resp.CustomResources, cr)
 	}
 	if len(errDetails.GetErrors()) > 0 {
