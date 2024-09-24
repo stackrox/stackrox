@@ -265,7 +265,7 @@ func TestRegistryStore_GlobalStore(t *testing.T) {
 
 		// When storing secrets by host an upsert of the global pull secret is NOT expected
 		// to also insert a record into the secrets by host store.
-		assert.Zero(t, len(regStore.storeByHost), "non-global store should not have been modified")
+		assert.Empty(t, regStore.storeByHost, "non-global store should not have been modified")
 	})
 
 	t.Run("SecretsByName", func(t *testing.T) {
@@ -325,15 +325,19 @@ func TestRegistryStore_CentralIntegrations(t *testing.T) {
 		},
 	}
 
+	imgName, _, err := utils.GenerateImageNameFromString("example.com/repo/path:tag")
+	require.NoError(t, err)
+
 	regStore.UpsertCentralRegistryIntegrations(iis)
 	assert.Len(t, regStore.centralRegistryIntegrations.GetAll(), 3)
+
+	regs := regStore.GetCentralRegistries(imgName)
+	assert.Len(t, regs, 1)
 
 	regStore.DeleteCentralRegistryIntegrations([]string{"a", "b"})
 	assert.Len(t, regStore.centralRegistryIntegrations.GetAll(), 1)
 
-	imgName, _, err := utils.GenerateImageNameFromString("example.com/repo/path:tag")
-	require.NoError(t, err)
-	regs := regStore.GetCentralRegistries(imgName)
+	regs = regStore.GetCentralRegistries(imgName)
 	assert.Len(t, regs, 1)
 }
 
