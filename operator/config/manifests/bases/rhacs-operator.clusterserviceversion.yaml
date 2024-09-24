@@ -498,6 +498,11 @@ spec:
         path: network
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Config-as-Code configuration
+        displayName: Config-as-Code
+        path: configAsCode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: |-
           Stores persistent data on a directory on the host. This is not recommended, and should only
           be used together with a node selector (only available in YAML view).
