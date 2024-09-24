@@ -99,34 +99,34 @@ export type UseURLSortResult = {
  * @example
  * // A use case where a table only has single sort columns
  * const { sortOption, setSortOption, getSortParams } = useURLSort({
- *    sortFields: ['name', 'age', 'date'],
- *    defaultSortOption: { field: 'name', direction: 'asc' },
+ *    sortFields: ['CVE', 'Top CVSS', 'First Discovered'],
+ *    defaultSortOption: { field: 'CVE', direction: 'asc' },
  * });
  *
  * return (
  *   <Thead>
- *     <Th sort={getSortParams('name')}>Name</Th>
- *     <Th sort={getSortParams('age')}>Age</Th>
- *     <Th sort={getSortParams('date')}>Date</Th>
+ *     <Th sort={getSortParams('CVE')}>CVE</Th>
+ *     <Th sort={getSortParams('Top CVSS')}>Top CVSS</Th>
+ *     <Th sort={getSortParams('First Discovered')}>First discovered</Th>
  *   </Thead>
  * );
  *
  * @example
  * // A use case where a table has both single and multi sort columns
  * const { sortOption, setSortOption, getSortParams } = useURLSort({
- *   sortFields: ['name', 'age', 'date', ['critical count', 'important count']],
- *  defaultSortOption: { field: 'name', direction: 'asc' },
+ *   sortFields: ['CVE', 'Top CVSS', 'First Discovered', ['Critical Severity Count', 'Important Severity Count']],
+ *  defaultSortOption: { field: 'CVE', direction: 'asc' },
  * });
  *
  * return (
  *   <Thead>
- *     <Th sort={getSortParams('name')}>Name</Th>
- *     <Th sort={getSortParams('age')}>Age</Th>
- *     <Th sort={getSortParams('date')}>Date</Th>
- *    <Th sort={getSortParams('severity count', [
- *       { field: 'critical count' },
- *       { field: 'important count' },
- *    ])}>Critical Count</Th>
+ *     <Th sort={getSortParams('CVE')}>CVE</Th>
+ *     <Th sort={getSortParams('Top CVSS')}>Top CVSS</Th>
+ *     <Th sort={getSortParams('First Discovered')}>First discovered</Th>
+ *    <Th sort={getSortParams('Images by severity', [
+ *       { field: 'Critical Severity Count' },
+ *       { field: 'Important Severity Count' },
+ *    ])}>Images by severity</Th>
  *   </Thead>
  * );
  *
