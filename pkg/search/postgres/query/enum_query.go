@@ -65,7 +65,7 @@ func newEnumQueryWhereClause(columnName string, field *pkgSearch.Field, value st
 			Values: []interface{}{},
 		}, nil
 	}
-	
+
 	var equality bool
 	switch len(queryModifiers) {
 	case 2:
