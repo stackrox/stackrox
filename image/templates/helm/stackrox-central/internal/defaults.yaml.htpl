@@ -316,6 +316,7 @@ defaults:
 
   configAsCode:
     enabled: true
+    installCRDs: true
 
   network:
     enableNetworkPolicies: true

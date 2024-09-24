@@ -541,6 +541,7 @@ central:
 [< if .FeatureFlags.ROX_POLICY_AS_CODE >]
 #configAsCode:
 #  enabled: true
+#  installCRDs: true
 #
 [< end >]
 ## EXPERT SETTINGS. You usually do not need to touch those.

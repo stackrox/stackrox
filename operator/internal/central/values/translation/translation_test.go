@@ -408,6 +408,9 @@ func TestTranslate(t *testing.T) {
 								ExposeEndpoint: &monitoringExposeEndpointEnabled,
 							},
 						},
+						ConfigAsCode: &platform.ConfigAsCodeSpec{
+							Enabled: pointer.Bool(true),
+						},
 						Customize: &platform.CustomizeSpec{
 							Labels: map[string]string{
 								"customize-label1": "customize-label1-value",
@@ -694,6 +697,9 @@ func TestTranslate(t *testing.T) {
 						},
 					},
 					"exposeMonitoring": true,
+				},
+				"configAsCode": map[string]interface{}{
+					"enabled": true,
 				},
 			},
 		},

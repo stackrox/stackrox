@@ -75,6 +75,10 @@ type CentralSpec struct {
 	// Network configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Network *GlobalNetworkSpec `json:"network,omitempty"`
+
+	// Config-as-Code configuration
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Config-as-Code,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	ConfigAsCode *ConfigAsCodeSpec `json:"configAsCode,omitempty"`
 }
 
 // Egress defines settings related to outgoing network traffic.
@@ -610,6 +614,10 @@ const (
 	// ScannerV4ComponentDisabled explicitly disables the Scanner V4 component.
 	ScannerV4ComponentDisabled ScannerV4ComponentPolicy = "Disabled"
 )
+
+type ConfigAsCodeSpec struct {
+	Enabled *bool `json:"enabled,omitempty"`
+}
 
 // -------------------------------------------------------------
 // Status
