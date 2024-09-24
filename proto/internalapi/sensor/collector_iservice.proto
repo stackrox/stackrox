@@ -4,6 +4,7 @@ package sensor;
 
 import "google/protobuf/empty.proto";
 import "storage/cluster.proto";
+import "internalapi/sensor/collector.proto";
 
 option go_package = "./internalapi/sensor;sensor";
 
@@ -16,6 +17,7 @@ message MsgToCollector {
 message MsgFromCollector {
   oneof msg {
     storage.CollectorConfig collector_config = 1;
+    CollectorHello collector_hello = 2;
   }
 }
 

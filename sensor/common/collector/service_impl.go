@@ -3,7 +3,9 @@ package collector
 import (
 	"context"
 
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -14,10 +16,18 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
 	log = logging.LoggerForModule()
+)
+
+const (
+	// CollectorHelloMetadataKey is the key to indicate both sensor and collector that collector, not sensor,
+	// will be the first to send a message on the stream. Sensor must not send keys
+	// unless it received header metadata from collector.
+	CollectorHelloMetadataKey = "Rox-Collector-Hello"
 )
 
 // CollectorService is the struct that manages the collector configuration
@@ -86,13 +96,13 @@ func newConnectionManager() *connectionManager {
 	}
 }
 
-func (c *connectionManager) add(connection sensor.CollectorService_CommunicateServer) {
+func (c *connectionManager) add(hello *storage.CollectorConfig, connection sensor.CollectorService_CommunicateServer) {
 	c.connectionLock.Lock()
 	log.Info("Adding connection")
 	log.Infof("connection= %+v", connection)
 	defer c.connectionLock.Unlock()
 
-	c.connectionMap[connection] = true
+	c.connectionMap[hello.] = true
 }
 
 func (c *connectionManager) remove(connection sensor.CollectorService_CommunicateServer) {
@@ -105,8 +115,34 @@ func (c *connectionManager) remove(connection sensor.CollectorService_Communicat
 }
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
+	incomingMD := metautils .ExtractIncoming(context.Background())
+	incomingMD.Get(CollectorHelloMetadataKey)
+	outMD := metautils.MD{}
 
-	s.connectionManager.add(server)
+	collectorSupportsHello := incomingMD.Get(CollectorHelloMetadataKey) == "true" +
+	if collectorSupportsHello {
+		outMD.Set(CollectorHelloMetadataKey, "true")
+	}
+
+	if err := server.SendHeader(metadata.MD(outMD)); err != nil {
+		return errors.Wrap(err, "sending header metadata to collector")
+	}
+
+	if !collectorSupportsHello {
+		return errors.New("Collector's does not support the CollectorHello handshake. It seems Collector is too old, please upgrade your Secured Cluster.")
+	}
+
+	firstMsg, err := server.Recv()
+	if err != nil {
+		return errors.Wrap(err, "receiving first message")
+	}
+
+	collectorHello := firstMsg.GetCollectorHello()
+	if collectorHello == nil {
+		return errors.Wrapf(err, "first message received is not a CollectorHello message, but %T", firstMsg.GetMsg())
+	}
+
+	s.connectionManager.add(collectorHello, server)
 	defer s.connectionManager.remove(server)
 	log.Info("In Communicate")
 

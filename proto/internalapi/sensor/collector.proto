@@ -2,14 +2,23 @@ syntax = "proto3";
 
 package sensor;
 
+import "storage/cluster.proto";
+
 option cc_enable_arenas = true;
 option go_package = "./internalapi/sensor;sensor";
 
-// A request message sent by collector to register with Sensor. Typically the first message in any streams.
-message CollectorRegisterRequest {
-  // The hostname on which collector is running.
-  string hostname = 1;
 
-  // A unique identifier for an instance of collector.
-  string instance_id = 2;
+message CollectorHello {
+  string version = 1;
+
+  message DeploymentIdentification {
+    string k8s_node_id = 1;
+    string k8s_node_name = 2;
+  }
+}
+
+message SensorHello {
+  string version = 1;
+
+  storage.CollectorConfig collector_config = 2;
 }

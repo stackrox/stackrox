@@ -1,0 +1,17 @@
+[
+  {
+    "src": "0.0.0.0-255.255.255.255",
+    "dst": "default/frontend[Deployment]",
+    "conn": "TCP 8080"
+  },
+  {
+    "src": "default/frontend[Deployment]",
+    "dst": "0.0.0.0-255.255.255.255",
+    "conn": "UDP 53"
+  },
+  {
+    "src": "default/frontend[Deployment]",
+    "dst": "default/backend[Deployment]",
+    "conn": "TCP 9090"
+  }
+]
