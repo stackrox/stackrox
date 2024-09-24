@@ -953,3 +953,57 @@ func (s *PolicyServiceTestSuite) TestDeletingPolicyErrOnDbError() {
 	s.Require().Error(err, expectedErr)
 	s.Require().Nil(resp)
 }
+
+func (s *PolicyServiceTestSuite) TestSaveAsInvalidIDFails() {
+	ctx := context.Background()
+	mockErrors := []*v1.ExportPolicyError{
+		makeError(mockRequestOneID.PolicyIds[0], "not found"),
+	}
+	s.policies.EXPECT().GetPolicies(ctx, mockRequestOneID.PolicyIds).Return(make([]*storage.Policy, 0), []int{0}, nil)
+
+	err := s.tested.SaveAsCustomResources(ctx, mockRequestOneID)
+	s.Nil(resp)
+	s.Error(err)
+	s.compareErrorsToExpected(mockErrors, err)
+}
+
+func (s *PolicyServiceTestSuite) TestSaveAsValidIDSucceeds() {
+	ctx := context.Background()
+	mockPolicy := &storage.Policy{
+		Id: mockRequestOneID.PolicyIds[0],
+	}
+	s.policies.EXPECT().GetPolicies(ctx, mockRequestOneID.PolicyIds).Return([]*storage.Policy{mockPolicy}, nil, nil)
+	resp, err := s.tested.SaveAsCustomResources(ctx, mockRequestOneID)
+	s.NoError(err)
+	s.NotNil(resp)
+	s.Len(resp.GetPolicies(), 1)
+	protoassert.Equal(s.T(), mockPolicy, resp.Policies[0])
+}
+
+func (s *PolicyServiceTestSuite) TestSaveAsMixedSuccessAndMissing() {
+	ctx := context.Background()
+	mockPolicy := &storage.Policy{
+		Id: mockRequestTwoIDs.PolicyIds[0],
+	}
+	mockErrors := []*v1.ExportPolicyError{
+		makeError(mockRequestTwoIDs.PolicyIds[1], "not found"),
+	}
+	s.policies.EXPECT().GetPolicies(ctx, mockRequestTwoIDs.PolicyIds).Return([]*storage.Policy{mockPolicy}, []int{1}, nil)
+	resp, err := s.tested.SaveAsCustomResources(ctx, mockRequestTwoIDs)
+	s.Nil(resp)
+	s.Error(err)
+	s.compareErrorsToExpected(mockErrors, err)
+}
+
+func (s *PolicyServiceTestSuite) TestSaveAsMultipleFailures() {
+	ctx := context.Background()
+	mockErrors := []*v1.ExportPolicyError{
+		makeError(mockRequestTwoIDs.PolicyIds[0], "not found"),
+		makeError(mockRequestTwoIDs.PolicyIds[1], "not found"),
+	}
+	s.policies.EXPECT().GetPolicies(ctx, mockRequestTwoIDs.PolicyIds).Return(make([]*storage.Policy, 0), []int{0, 1}, nil)
+	resp, err := s.tested.SaveAsCustomResources(ctx, mockRequestTwoIDs)
+	s.Nil(resp)
+	s.Error(err)
+	s.compareErrorsToExpected(mockErrors, err)
+}

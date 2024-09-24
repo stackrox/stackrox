@@ -590,7 +590,11 @@ func (m *SaveAsCustomResourcesResponse) CloneVT() *SaveAsCustomResourcesResponse
 		return (*SaveAsCustomResourcesResponse)(nil)
 	}
 	r := new(SaveAsCustomResourcesResponse)
-	r.CustomResource = m.CustomResource
+	if rhs := m.CustomResources; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.CustomResources = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1350,8 +1354,14 @@ func (this *SaveAsCustomResourcesResponse) EqualVT(that *SaveAsCustomResourcesRe
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.CustomResource != that.CustomResource {
+	if len(this.CustomResources) != len(that.CustomResources) {
 		return false
+	}
+	for i, vx := range this.CustomResources {
+		vy := that.CustomResources[i]
+		if vx != vy {
+			return false
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -2700,12 +2710,14 @@ func (m *SaveAsCustomResourcesResponse) MarshalToSizedBufferVT(dAtA []byte) (int
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.CustomResource) > 0 {
-		i -= len(m.CustomResource)
-		copy(dAtA[i:], m.CustomResource)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.CustomResource)))
-		i--
-		dAtA[i] = 0xa
+	if len(m.CustomResources) > 0 {
+		for iNdEx := len(m.CustomResources) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.CustomResources[iNdEx])
+			copy(dAtA[i:], m.CustomResources[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.CustomResources[iNdEx])))
+			i--
+			dAtA[i] = 0xa
+		}
 	}
 	return len(dAtA) - i, nil
 }
@@ -3207,9 +3219,11 @@ func (m *SaveAsCustomResourcesResponse) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.CustomResource)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	if len(m.CustomResources) > 0 {
+		for _, s := range m.CustomResources {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5809,7 +5823,7 @@ func (m *SaveAsCustomResourcesResponse) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CustomResource", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CustomResources", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -5837,7 +5851,7 @@ func (m *SaveAsCustomResourcesResponse) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.CustomResource = string(dAtA[iNdEx:postIndex])
+			m.CustomResources = append(m.CustomResources, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -8527,7 +8541,7 @@ func (m *SaveAsCustomResourcesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CustomResource", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field CustomResources", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -8559,7 +8573,7 @@ func (m *SaveAsCustomResourcesResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.CustomResource = stringValue
+			m.CustomResources = append(m.CustomResources, stringValue)
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

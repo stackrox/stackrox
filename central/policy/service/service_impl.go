@@ -1046,7 +1046,7 @@ func flattenPolicyGroupMap(policyGroupMap map[string][]*storage.PolicyGroup) []*
 
 		var policyValueLists []*storage.PolicyValue
 		for _, policyGroup := range singleGroupList {
-			// For now we don't care which search term a policy value came from because no two search terms can
+			// For now we don't care which search term a policy value came f/rom because no two search terms can
 			// generate a value for the same list index, and no search term can generate a value for more than one list
 			// index.  Therefore it is safe to flatten the values and naively generate all possible combinations.
 			policyValueLists = append(policyValueLists, policyGroup.GetValues()...)
@@ -1127,12 +1127,11 @@ func combineStrings(toCombine [][]string) []string {
 	return nil
 }
 
-func (s *serviceImpl) SaveAsCustomResources(request *v1.SaveAsCustomResourcesRequest, srv grpc.ServerStreamingServer[v1.SaveAsCustomResourcesResponse]) error {
-	ctx := srv.Context()
+func (s *serviceImpl) SaveAsCustomResources(ctx context.Context, request *v1.SaveAsCustomResourcesRequest) (*v1.SaveAsCustomResourcesResponse, error) {
 	// missingIndices and policyErrors should not overlap
 	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.GetPolicyIds())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	errDetails := &v1.ExportPoliciesErrorList{}
 	for _, missingIndex := range missingIndices {
@@ -1148,32 +1147,30 @@ func (s *serviceImpl) SaveAsCustomResources(request *v1.SaveAsCustomResourcesReq
 	if len(missingIndices) > 0 {
 		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be retrieved. Check the error details for a list of policies that could not be found").WithDetails(errDetails)
 		if err != nil {
-			return utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
+			return nil, utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
 		}
-		return statusMsg.Err()
+		return nil, statusMsg.Err()
 	}
 
 	errDetails = &v1.ExportPoliciesErrorList{}
+	resp := new(v1.SaveAsCustomResourcesResponse)
 	for _, policy := range policyList {
 		cr, err := customresource.GenerateCustomResource(policy)
 		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
 			PolicyId: policy.GetId(),
 			Error: &v1.PolicyError{
-				Error: errors.Wrap(err, "").Error(),
+				Error: errors.Wrapf(err, "Failed to marshal policy %s to custom resource", policy.GetId()).Error(),
 			},
 		})
-		if err := srv.Send(&v1.SaveAsCustomResourcesResponse{CustomResource: string(cr)}); err != nil {
-			return err
-		}
-
+		resp.CustomResources = append(resp.CustomResources, cr)
 	}
 	if len(errDetails.GetErrors()) > 0 {
-		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be converted to custom resources. Check the error details for the list of policies").WithDetails(errDetails)
+		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be marshal to custom resources. Check the error details for the list of policies").WithDetails(errDetails)
 		if err != nil {
-			return utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
+			return resp, utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
 		}
-		return statusMsg.Err()
+		return nil, statusMsg.Err()
 
 	}
-	return nil
+	return resp, nil
 }

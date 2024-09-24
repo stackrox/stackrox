@@ -379,18 +379,9 @@
         "operationId": "PolicyService_SaveAsCustomResources",
         "responses": {
           "200": {
-            "description": "A successful response.(streaming responses)",
+            "description": "A successful response.",
             "schema": {
-              "type": "object",
-              "properties": {
-                "result": {
-                  "$ref": "#/definitions/v1SaveAsCustomResourcesResponse"
-                },
-                "error": {
-                  "$ref": "#/definitions/googlerpcStatus"
-                }
-              },
-              "title": "Stream result of v1SaveAsCustomResourcesResponse"
+              "$ref": "#/definitions/v1SaveAsCustomResourcesResponse"
             }
           },
           "default": {
@@ -1461,8 +1452,11 @@
     "v1SaveAsCustomResourcesResponse": {
       "type": "object",
       "properties": {
-        "customResource": {
-          "type": "string"
+        "customResources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

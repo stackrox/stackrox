@@ -131,7 +131,7 @@ message SaveAsCustomResourcesRequest {
 }
 
 message SaveAsCustomResourcesResponse {
-  string custom_resource = 1;
+  repeated string custom_resources = 1;
 }
 
 // PolicyService APIs can be used to manage policies.
@@ -245,7 +245,7 @@ service PolicyService {
   }
 
   // SaveAsCustomResources saves the policies, designed by the policy ids, as custome resources
-  rpc SaveAsCustomResources(SaveAsCustomResourcesRequest) returns (stream SaveAsCustomResourcesResponse) {
+  rpc SaveAsCustomResources(SaveAsCustomResourcesRequest) returns (SaveAsCustomResourcesResponse) {
     option (google.api.http) = {get: "/v1/policies/save-as"};
   }
 }
