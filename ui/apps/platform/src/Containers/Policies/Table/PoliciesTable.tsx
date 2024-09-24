@@ -20,7 +20,6 @@ import {
 } from '@patternfly/react-core/deprecated';
 import { Table, Thead, Tbody, Tr, Th, Td, ExpandableRowContent } from '@patternfly/react-table';
 import { CaretDownIcon } from '@patternfly/react-icons';
-import pluralize from 'pluralize';
 
 import { ListPolicy } from 'types/policy.proto';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
@@ -488,7 +487,7 @@ function PoliciesTable({
                     <Flex direction={{ default: 'column' }}>
                         <FlexItem>
                             Deleted policies will be removed from the system and will no longer
-                            trigger violations.{' '}
+                            trigger violations.
                         </FlexItem>
                         <FlexItem>
                             <em>

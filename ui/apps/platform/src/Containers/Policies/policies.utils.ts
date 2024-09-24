@@ -27,7 +27,6 @@ import {
     PolicyDeploymentExclusion,
     PolicyImageExclusion,
     ListPolicy,
-    BasePolicy,
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';

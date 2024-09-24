@@ -32,7 +32,7 @@ import {
     POLICY_DEFINITION_RULES_ID,
     POLICY_REVIEW_ID,
 } from '../policies.constants';
-import { getServerPolicy } from '../policies.utils';
+import { getServerPolicy, isExternalPolicy } from '../policies.utils';
 import { getValidationSchema } from './policyValidationSchemas';
 import PolicyDetailsForm from './Step1/PolicyDetailsForm';
 import PolicyBehaviorForm from './Step2/PolicyBehaviorForm';
@@ -135,7 +135,7 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
 
     return (
         <>
-            {policy.id && policy.source === 'DECLARATIVE' && (
+            {isExternalPolicy(policy) && (
                 <Alert isInline title="Externally managed policy" component="p" variant="warning">
                     You are editing a policy that is managed externally. Any local changes to this
                     policy will be automatically overwritten during the next sync.
