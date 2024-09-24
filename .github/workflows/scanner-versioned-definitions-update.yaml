@@ -309,7 +309,7 @@ jobs:
         multi=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulnerabilities.zip
         # Parse all supported pre-4.6 releases and copy the versioned bundle v1 to ensure
         # these releases get updates.
-        grep -E "^[45]\.[0-9]+\.[0-9]+$" scanner/updater/version/RELEASE_VERSION | while read -r release; do
+        grep -E "^[0-9]\.[0-9]+\.[0-9]+$" scanner/updater/version/RELEASE_VERSION | while read -r release; do
           case "$release" in
           4.4*)
             gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
