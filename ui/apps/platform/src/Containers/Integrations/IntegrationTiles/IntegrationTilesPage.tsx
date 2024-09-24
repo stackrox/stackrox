@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { PageSection, Title } from '@patternfly/react-core';
+import { Flex, PageSection, Title } from '@patternfly/react-core';
 
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 
@@ -20,11 +20,13 @@ function IntegrationTilesPage(): ReactElement {
     return (
         <>
             <PageSection variant="light" component="div">
-                <Title headingLevel="h1">Integrations</Title>
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+                    <Title headingLevel="h1">Integrations</Title>
+                    {/*TODO(ROX-25633): Remove the banner again.*/}
+                    <OcmDeprecatedTokenBanner />
+                </Flex>
             </PageSection>
             <PageSection component="div">
-                {/*TODO(ROX-25633): Remove the banner again.*/}
-                <OcmDeprecatedTokenBanner />
                 <ImageIntegrationsSection />
                 <SignatureIntegrationsSection />
                 <NotifierIntegrationsSection />
