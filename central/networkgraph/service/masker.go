@@ -58,11 +58,9 @@ func (m *flowGraphMasker) MaskDeploymentsAndNamespaces() {
 	slices.Sort(orderedDeploymentIDsToMask)
 	for ix, deploymentID := range orderedDeploymentIDsToMask {
 		origDeployment := m.deploymentsToMask[deploymentID]
-		origDeploymentId := origDeployment.GetId()
-		origDeploymentName := origDeployment.GetName()
 		maskedDeploymentName := fmt.Sprintf("%s #%d", MaskedDeploymentName, ix+1)
 		maskedDeployment := &storage.ListDeployment{
-			Id:        uuid.NewV5FromNonUUIDs(origDeploymentId, origDeploymentName).String(),
+			Id:        getMaskedDeploymentID(origDeployment.GetId(), origDeployment.GetName()),
 			Name:      maskedDeploymentName,
 			Cluster:   origDeployment.GetCluster(),
 			ClusterId: origDeployment.GetClusterId(),
@@ -72,6 +70,10 @@ func (m *flowGraphMasker) MaskDeploymentsAndNamespaces() {
 		m.maskedDeployments = append(m.maskedDeployments, maskedDeployment)
 		delete(m.deploymentsToMask, deploymentID)
 	}
+}
+
+func getMaskedDeploymentID(id string, name string) string {
+	return uuid.NewV5FromNonUUIDs(id, name).String()
 }
 
 func (m *flowGraphMasker) GetMaskedDeployment(origDeployment *storage.ListDeployment) *storage.ListDeployment {
