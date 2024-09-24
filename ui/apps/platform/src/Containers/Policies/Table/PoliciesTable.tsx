@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import {
     Button,
+    Flex,
+    FlexItem,
     PageSection,
     Pagination,
     Toolbar,
@@ -483,14 +485,18 @@ function PoliciesTable({
                 onCancel={onCancelDeletePolicy}
             >
                 {isExternalPolicySelected(policies, deletingIds) ? (
-                    <>
-                        Deleted policies will be removed from the system and will no longer trigger
-                        violations.{' '}
-                        <em>
-                            The current selection includes at least one externally managed policy
-                            that will be restored automatically during the next resync.
-                        </em>
-                    </>
+                    <Flex direction={{ default: 'column' }}>
+                        <FlexItem>
+                            Deleted policies will be removed from the system and will no longer
+                            trigger violations.{' '}
+                        </FlexItem>
+                        <FlexItem>
+                            <em>
+                                The current selection includes at least one externally managed
+                                policy that will be restored automatically during the next resync.
+                            </em>
+                        </FlexItem>
+                    </Flex>
                 ) : (
                     <>
                         Deleted policies will be permanently removed from the system and will no
