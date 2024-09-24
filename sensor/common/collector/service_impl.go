@@ -115,11 +115,10 @@ func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServ
 		for _, brokenConnection := range brokenConnections {
 			s.connectionManager.remove(brokenConnection)
 		}
-		for _, brokenConnection := range brokenConnections {
-			if server == brokenConnection {
-				log.Info("Returning from Communicate due to broken connection")
-				return nil // Will return error in the future
-			}
+		_, exists := s.connectionManager.connectionMap[server]
+		if !exists {
+			log.Info("Returning from Communicate due to broken connection")
+			return nil // Will return error in the future
 		}
 	}
 
