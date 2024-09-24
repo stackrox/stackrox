@@ -878,7 +878,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 
 		cluster = clusterByID
 	} else if clusterName != "" {
-		// A this point, we can be sure that the cluster does not exist.
+		// At this point, we can be sure that the cluster does not exist.
 		cluster = &storage.Cluster{
 			Name:               clusterName,
 			InitBundleId:       bundleID,
