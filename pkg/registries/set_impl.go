@@ -181,8 +181,8 @@ func (e *setImpl) RemoveImageIntegration(id string) error {
 }
 
 func (e *setImpl) Len() int {
-	e.lock.Lock()
-	defer e.lock.Unlock()
+	e.lock.RLock()
+	defer e.lock.RUnlock()
 
 	return len(e.integrations)
 }
