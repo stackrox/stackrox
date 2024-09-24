@@ -56,6 +56,15 @@ func (m *MsgToCollector_CollectorConfig) CloneVT() isMsgToCollector_Msg {
 	return r
 }
 
+func (m *MsgToCollector_SensorHello) CloneVT() isMsgToCollector_Msg {
+	if m == nil {
+		return (*MsgToCollector_SensorHello)(nil)
+	}
+	r := new(MsgToCollector_SensorHello)
+	r.SensorHello = m.SensorHello.CloneVT()
+	return r
+}
+
 func (m *MsgFromCollector) CloneVT() *MsgFromCollector {
 	if m == nil {
 		return (*MsgFromCollector)(nil)
@@ -89,6 +98,15 @@ func (m *MsgFromCollector_CollectorConfig) CloneVT() isMsgFromCollector_Msg {
 			r.CollectorConfig = proto.Clone(rhs).(*storage.CollectorConfig)
 		}
 	}
+	return r
+}
+
+func (m *MsgFromCollector_CollectorHello) CloneVT() isMsgFromCollector_Msg {
+	if m == nil {
+		return (*MsgFromCollector_CollectorHello)(nil)
+	}
+	r := new(MsgFromCollector_CollectorHello)
+	r.CollectorHello = m.CollectorHello.CloneVT()
 	return r
 }
 
@@ -151,6 +169,31 @@ func (this *MsgToCollector_CollectorConfig) EqualVT(thatIface isMsgToCollector_M
 	return true
 }
 
+func (this *MsgToCollector_SensorHello) EqualVT(thatIface isMsgToCollector_Msg) bool {
+	that, ok := thatIface.(*MsgToCollector_SensorHello)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.SensorHello, that.SensorHello; p != q {
+		if p == nil {
+			p = &SensorHello{}
+		}
+		if q == nil {
+			q = &SensorHello{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
 func (this *MsgFromCollector) EqualVT(that *MsgFromCollector) bool {
 	if this == that {
 		return true
@@ -204,6 +247,31 @@ func (this *MsgFromCollector_CollectorConfig) EqualVT(thatIface isMsgFromCollect
 				return false
 			}
 		} else if !proto.Equal(p, q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *MsgFromCollector_CollectorHello) EqualVT(thatIface isMsgFromCollector_Msg) bool {
+	that, ok := thatIface.(*MsgFromCollector_CollectorHello)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.CollectorHello, that.CollectorHello; p != q {
+		if p == nil {
+			p = &CollectorHello{}
+		}
+		if q == nil {
+			q = &CollectorHello{}
+		}
+		if !p.EqualVT(q) {
 			return false
 		}
 	}
@@ -283,6 +351,25 @@ func (m *MsgToCollector_CollectorConfig) MarshalToSizedBufferVT(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
+func (m *MsgToCollector_SensorHello) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgToCollector_SensorHello) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.SensorHello != nil {
+		size, err := m.SensorHello.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
 func (m *MsgFromCollector) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -356,6 +443,25 @@ func (m *MsgFromCollector_CollectorConfig) MarshalToSizedBufferVT(dAtA []byte) (
 	}
 	return len(dAtA) - i, nil
 }
+func (m *MsgFromCollector_CollectorHello) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgFromCollector_CollectorHello) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.CollectorHello != nil {
+		size, err := m.CollectorHello.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	return len(dAtA) - i, nil
+}
 func (m *MsgToCollector) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -387,6 +493,18 @@ func (m *MsgToCollector_CollectorConfig) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *MsgToCollector_SensorHello) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.SensorHello != nil {
+		l = m.SensorHello.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
 func (m *MsgFromCollector) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -414,6 +532,18 @@ func (m *MsgFromCollector_CollectorConfig) SizeVT() (n int) {
 		} else {
 			l = proto.Size(m.CollectorConfig)
 		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *MsgFromCollector_CollectorHello) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.CollectorHello != nil {
+		l = m.CollectorHello.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -502,6 +632,47 @@ func (m *MsgToCollector) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 				m.Msg = &MsgToCollector_CollectorConfig{CollectorConfig: v}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SensorHello", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToCollector_SensorHello); ok {
+				if err := oneof.SensorHello.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &SensorHello{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToCollector_SensorHello{SensorHello: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -612,6 +783,47 @@ func (m *MsgFromCollector) UnmarshalVT(dAtA []byte) error {
 				m.Msg = &MsgFromCollector_CollectorConfig{CollectorConfig: v}
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectorHello", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgFromCollector_CollectorHello); ok {
+				if err := oneof.CollectorHello.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &CollectorHello{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgFromCollector_CollectorHello{CollectorHello: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -720,6 +932,47 @@ func (m *MsgToCollector) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Msg = &MsgToCollector_CollectorConfig{CollectorConfig: v}
 			}
 			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field SensorHello", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgToCollector_SensorHello); ok {
+				if err := oneof.SensorHello.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &SensorHello{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgToCollector_SensorHello{SensorHello: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -826,6 +1079,47 @@ func (m *MsgFromCollector) UnmarshalVTUnsafe(dAtA []byte) error {
 					}
 				}
 				m.Msg = &MsgFromCollector_CollectorConfig{CollectorConfig: v}
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CollectorHello", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgFromCollector_CollectorHello); ok {
+				if err := oneof.CollectorHello.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &CollectorHello{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgFromCollector_CollectorHello{CollectorHello: v}
 			}
 			iNdEx = postIndex
 		default:

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package sensor;
 
+import "storage/cluster.proto";
+
 option cc_enable_arenas = true;
 option go_package = "./internalapi/sensor;sensor";
 
@@ -12,4 +14,20 @@ message CollectorRegisterRequest {
 
   // A unique identifier for an instance of collector.
   string instance_id = 2;
+}
+
+message CollectorHello {
+  string version = 1;
+
+  message DeploymentIdentification {
+    string k8s_node_id = 1;
+    string k8s_node_name = 2;
+  }
+  DeploymentIdentification deployment_identification = 2;
+}
+
+message SensorHello {
+  string version = 1;
+
+  storage.CollectorConfig collector_config = 2;
 }
