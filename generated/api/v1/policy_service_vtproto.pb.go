@@ -265,11 +265,11 @@ func (m *PolicyError) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ExportPolicyError) CloneVT() *ExportPolicyError {
+func (m *PolicyOperationError) CloneVT() *PolicyOperationError {
 	if m == nil {
-		return (*ExportPolicyError)(nil)
+		return (*PolicyOperationError)(nil)
 	}
-	r := new(ExportPolicyError)
+	r := new(PolicyOperationError)
 	r.PolicyId = m.PolicyId
 	r.Error = m.Error.CloneVT()
 	if len(m.unknownFields) > 0 {
@@ -279,17 +279,17 @@ func (m *ExportPolicyError) CloneVT() *ExportPolicyError {
 	return r
 }
 
-func (m *ExportPolicyError) CloneMessageVT() proto.Message {
+func (m *PolicyOperationError) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *ExportPoliciesErrorList) CloneVT() *ExportPoliciesErrorList {
+func (m *PolicyOperationErrorList) CloneVT() *PolicyOperationErrorList {
 	if m == nil {
-		return (*ExportPoliciesErrorList)(nil)
+		return (*PolicyOperationErrorList)(nil)
 	}
-	r := new(ExportPoliciesErrorList)
+	r := new(PolicyOperationErrorList)
 	if rhs := m.Errors; rhs != nil {
-		tmpContainer := make([]*ExportPolicyError, len(rhs))
+		tmpContainer := make([]*PolicyOperationError, len(rhs))
 		for k, v := range rhs {
 			tmpContainer[k] = v.CloneVT()
 		}
@@ -302,7 +302,7 @@ func (m *ExportPoliciesErrorList) CloneVT() *ExportPoliciesErrorList {
 	return r
 }
 
-func (m *ExportPoliciesErrorList) CloneMessageVT() proto.Message {
+func (m *PolicyOperationErrorList) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -921,7 +921,7 @@ func (this *PolicyError) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *ExportPolicyError) EqualVT(that *ExportPolicyError) bool {
+func (this *PolicyOperationError) EqualVT(that *PolicyOperationError) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -936,14 +936,14 @@ func (this *ExportPolicyError) EqualVT(that *ExportPolicyError) bool {
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ExportPolicyError) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ExportPolicyError)
+func (this *PolicyOperationError) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*PolicyOperationError)
 	if !ok {
 		return false
 	}
 	return this.EqualVT(that)
 }
-func (this *ExportPoliciesErrorList) EqualVT(that *ExportPoliciesErrorList) bool {
+func (this *PolicyOperationErrorList) EqualVT(that *PolicyOperationErrorList) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -956,10 +956,10 @@ func (this *ExportPoliciesErrorList) EqualVT(that *ExportPoliciesErrorList) bool
 		vy := that.Errors[i]
 		if p, q := vx, vy; p != q {
 			if p == nil {
-				p = &ExportPolicyError{}
+				p = &PolicyOperationError{}
 			}
 			if q == nil {
-				q = &ExportPolicyError{}
+				q = &PolicyOperationError{}
 			}
 			if !p.EqualVT(q) {
 				return false
@@ -969,8 +969,8 @@ func (this *ExportPoliciesErrorList) EqualVT(that *ExportPoliciesErrorList) bool
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *ExportPoliciesErrorList) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*ExportPoliciesErrorList)
+func (this *PolicyOperationErrorList) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*PolicyOperationErrorList)
 	if !ok {
 		return false
 	}
@@ -1931,7 +1931,7 @@ func (m *PolicyError) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportPolicyError) MarshalVT() (dAtA []byte, err error) {
+func (m *PolicyOperationError) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1944,12 +1944,12 @@ func (m *ExportPolicyError) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportPolicyError) MarshalToVT(dAtA []byte) (int, error) {
+func (m *PolicyOperationError) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ExportPolicyError) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *PolicyOperationError) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1981,7 +1981,7 @@ func (m *ExportPolicyError) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *ExportPoliciesErrorList) MarshalVT() (dAtA []byte, err error) {
+func (m *PolicyOperationErrorList) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1994,12 +1994,12 @@ func (m *ExportPoliciesErrorList) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ExportPoliciesErrorList) MarshalToVT(dAtA []byte) (int, error) {
+func (m *PolicyOperationErrorList) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *ExportPoliciesErrorList) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *PolicyOperationErrorList) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2929,7 +2929,7 @@ func (m *PolicyError) SizeVT() (n int) {
 	return n
 }
 
-func (m *ExportPolicyError) SizeVT() (n int) {
+func (m *PolicyOperationError) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2947,7 +2947,7 @@ func (m *ExportPolicyError) SizeVT() (n int) {
 	return n
 }
 
-func (m *ExportPoliciesErrorList) SizeVT() (n int) {
+func (m *PolicyOperationErrorList) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4315,7 +4315,7 @@ func (m *PolicyError) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportPolicyError) UnmarshalVT(dAtA []byte) error {
+func (m *PolicyOperationError) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4338,10 +4338,10 @@ func (m *ExportPolicyError) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ExportPolicyError: wiretype end group for non-group")
+			return fmt.Errorf("proto: PolicyOperationError: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ExportPolicyError: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PolicyOperationError: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4434,7 +4434,7 @@ func (m *ExportPolicyError) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportPoliciesErrorList) UnmarshalVT(dAtA []byte) error {
+func (m *PolicyOperationErrorList) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4457,10 +4457,10 @@ func (m *ExportPoliciesErrorList) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ExportPoliciesErrorList: wiretype end group for non-group")
+			return fmt.Errorf("proto: PolicyOperationErrorList: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ExportPoliciesErrorList: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PolicyOperationErrorList: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4492,7 +4492,7 @@ func (m *ExportPoliciesErrorList) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Errors = append(m.Errors, &ExportPolicyError{})
+			m.Errors = append(m.Errors, &PolicyOperationError{})
 			if err := m.Errors[len(m.Errors)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -6997,7 +6997,7 @@ func (m *PolicyError) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportPolicyError) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *PolicyOperationError) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7020,10 +7020,10 @@ func (m *ExportPolicyError) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ExportPolicyError: wiretype end group for non-group")
+			return fmt.Errorf("proto: PolicyOperationError: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ExportPolicyError: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PolicyOperationError: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -7120,7 +7120,7 @@ func (m *ExportPolicyError) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *ExportPoliciesErrorList) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *PolicyOperationErrorList) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -7143,10 +7143,10 @@ func (m *ExportPoliciesErrorList) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ExportPoliciesErrorList: wiretype end group for non-group")
+			return fmt.Errorf("proto: PolicyOperationErrorList: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ExportPoliciesErrorList: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: PolicyOperationErrorList: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -7178,7 +7178,7 @@ func (m *ExportPoliciesErrorList) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Errors = append(m.Errors, &ExportPolicyError{})
+			m.Errors = append(m.Errors, &PolicyOperationError{})
 			if err := m.Errors[len(m.Errors)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
