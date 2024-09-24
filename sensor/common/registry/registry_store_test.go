@@ -706,6 +706,8 @@ func TestRegistryStore_SecretDelete(t *testing.T) {
 	})
 }
 
+// TestRegistyStore_Metrics ensures that metrics are calculated as expected
+// as data is added/removed from the store.
 func TestRegistyStore_Metrics(t *testing.T) {
 	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
 	dc := config.DockerConfig{"example.com": dce}
