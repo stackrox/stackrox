@@ -208,16 +208,14 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 		batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetConfig().GetEnv()))
 	}
 
-	if features.Flags["ROX_DEPLOYMENT_VOLUME_SEARCH"].Enabled() {
-		for childIndex, child := range obj.GetVolumes() {
-			if err := insertIntoDeploymentsContainersVolumes(batch, child, deploymentID, idx, childIndex); err != nil {
-				return err
-			}
+	for childIndex, child := range obj.GetVolumes() {
+		if err := insertIntoDeploymentsContainersVolumes(batch, child, deploymentID, idx, childIndex); err != nil {
+			return err
 		}
-
-		query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-		batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetVolumes()))
 	}
+
+	query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
+	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetVolumes()))
 
 	if features.Flags["ROX_DEPLOYMENT_SECRET_SEARCH"].Enabled() {
 		for childIndex, child := range obj.GetSecrets() {
