@@ -11,11 +11,10 @@ BENCHCOUNT ?= 1
 podman =
 # docker --version might not contain any traces of podman in the latest
 # version, search for more output
-ifeq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
+ifneq (,$(findstring podman,$(shell docker --version 2>/dev/null)))
 	podman = yes
 endif
-
-ifeq (,$(findstring Podman,$(shell docker version 2>/dev/null)))
+ifneq (,$(findstring Podman,$(shell docker version 2>/dev/null)))
 	podman = yes
 endif
 
