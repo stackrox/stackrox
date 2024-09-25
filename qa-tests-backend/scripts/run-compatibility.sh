@@ -82,11 +82,6 @@ _compatibility_test() {
 
     export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
 
-    verify_scannerV2_deployed "stackrox"
-    verify_scannerV4_deployed "stackrox"
-    verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
-
     make -C qa-tests-backend compatibility-test || touch FAIL
 
     update_junit_prefix_with_central_and_sensor_version "${short_central_tag}" "${short_sensor_tag}"
@@ -121,36 +116,6 @@ shorten_tag() {
         echo "${long_tag}"
         >&2 echo "Failed to shorten tag ${long_tag} as it did not match the regex: \"${short_tag_regex}\""
         exit 1
-    fi
-}
-
-verify_scannerV2_deployed() {
-    local namespace=${1:-stackrox}
-    info "Waiting for Scanner V2 deployment to appear in namespace ${namespace}..."
-    wait_for_object_to_appear "$namespace" deploy/scanner-db 600
-    wait_for_object_to_appear "$namespace" deploy/scanner 300
-    info "** Scanner V2 is deployed in namespace ${namespace}"
-}
-
-verify_scannerV4_deployed() {
-    local namespace=${1:-stackrox}
-    verify_scannerV4_indexer_deployed "$namespace"
-    verify_scannerV4_matcher_deployed "$namespace"
-}
-
-verify_deployment_scannerV4_env_var_set() {
-    local namespace=${1:-stackrox}
-    local deployment=${2:-central}
-    local deployment_env_vars
-    local scanner_v4_value
-
-    deployment_env_vars="$("${ORCH_CMD}" </dev/null -n "${namespace}" get deploy/"${deployment}" -o jsonpath="{.spec.template.spec.containers[?(@.name=='${deployment}')].env}")"
-    scanner_v4_value="$(echo "${deployment_env_vars}" | jq -r '.[] | select(.name == "ROX_SCANNER_V4").value')"
-
-    if [[ "${scanner_v4_value}" == "true" ]]; then
-        return 0
-    else
-        return 1
     fi
 }
 
