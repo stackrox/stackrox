@@ -463,7 +463,6 @@ payments/gateway[Deployment]            =>      entire-cluster : UDP 5353
 Ingress Exposure:
 frontend/asset-cache[Deployment]        <=      entire-cluster : TCP 8080
 frontend/webapp[Deployment]             <=      entire-cluster : TCP 8080'
-  
   normalized_expected_output=$(normalize_whitespaces "$expected_output")
   # partial is used to filter WARN and INFO messages
   assert_output --partial "$normalized_expected_output"
@@ -553,8 +552,7 @@ frontend/webapp[Deployment]             <=      entire-cluster : TCP 8080'
         "payments/gateway[Deployment]" -> "payments/visa-processor[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=0.5]
         "{ingress-controller}" -> "frontend/asset-cache[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
         "{ingress-controller}" -> "frontend/webapp[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
-}'
-  
+}' 
   normalized_expected_output=$(normalize_whitespaces "$expected_output")
   # partial is used to filter WARN and INFO messages
   assert_output --partial "$normalized_expected_output"
@@ -575,7 +573,6 @@ payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080
 Exposure Analysis Result:
 Egress Exposure:
 payments/gateway[Deployment]    =>      entire-cluster : UDP 5353'
-  
   normalized_expected_output=$(normalize_whitespaces "$expected_output")
   # partial is used to filter WARN and INFO messages
   assert_output --partial "$normalized_expected_output"
@@ -604,7 +601,6 @@ hello-world/workload-a[Deployment]      <=      [namespace with {effect=NoSchedu
 
 Workloads not protected by network policies:
 hello-world/workload-a[Deployment] is not protected on Egress'
-  
   normalized_expected_output=$(normalize_whitespaces "$expected_output")
   assert_output "$normalized_expected_output"
 }
