@@ -193,9 +193,10 @@ func (s *serviceImpl) getBaselinePeerByEntityID(
 		// the network baseline.
 		if peerType == storage.NetworkEntityInfo_DEPLOYMENT {
 			deploymentName := peer.GetEntity().GetInfo().GetDeployment().GetName()
+			maskedID := getMaskedDeploymentID(peerId, deploymentName)
 			maskedKey := networkgraph.Entity{
 				Type: peerType,
-				ID:   getMaskedDeploymentID(peerId, deploymentName),
+				ID:   maskedID,
 			}
 			log.Info("Adding masked baseline peer ", peerType, " ", maskedID)
 			result[maskedKey] = peer
