@@ -47,7 +47,7 @@ func (s *securedClusterCertgenSuite) TestCertMapContainsExpectedFiles() {
 	for _, tc := range testCases {
 		s.Run(tc.service.String(), func() {
 			certIssuer := certIssuerImpl{
-				allSupportedServiceTypes: localScannerServiceTypes,
+				serviceTypes: localScannerServiceTypes,
 			}
 			certMap, err := certIssuer.generateServiceCertMap(tc.service, namespace, clusterID)
 			if tc.expectError {
@@ -73,7 +73,7 @@ func (s *securedClusterCertgenSuite) TestValidateServiceCertificate() {
 	for _, serviceType := range testCases {
 		s.Run(serviceType.String(), func() {
 			certIssuer := certIssuerImpl{
-				allSupportedServiceTypes: localScannerServiceTypes,
+				serviceTypes: localScannerServiceTypes,
 			}
 			certMap, err := certIssuer.generateServiceCertMap(serviceType, namespace, clusterID)
 			s.Require().NoError(err)
@@ -103,7 +103,7 @@ func (s *securedClusterCertgenSuite) TestLocalScannerCertificateGeneration() {
 	for _, tc := range testCases {
 		s.Run(tc.service.String(), func() {
 			certIssuer := certIssuerImpl{
-				allSupportedServiceTypes: localScannerServiceTypes,
+				serviceTypes: localScannerServiceTypes,
 			}
 			certMap, err := certIssuer.generateServiceCertMap(tc.service, namespace, clusterID)
 			s.Require().NoError(err)
@@ -141,7 +141,7 @@ func (s *securedClusterCertgenSuite) TestSecuredClusterCertificateGeneration() {
 	for _, tc := range testCases {
 		s.Run(tc.service.String(), func() {
 			certIssuer := certIssuerImpl{
-				allSupportedServiceTypes: securedClusterServiceTypes,
+				serviceTypes: securedClusterServiceTypes,
 			}
 			certMap, err := certIssuer.generateServiceCertMap(tc.service, namespace, clusterID)
 			s.Require().NoError(err)

@@ -33,15 +33,15 @@ var allSupportedServiceTypes = func() set.FrozenSet[storage.ServiceType] {
 }()
 
 type certIssuerImpl struct {
-	allSupportedServiceTypes set.FrozenSet[storage.ServiceType]
+	serviceTypes set.FrozenSet[storage.ServiceType]
 }
 
 // IssueSecuredClusterCerts issues certificates for all the services of a secured cluster (including local scanner).
 func IssueSecuredClusterCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
 	certIssuer := certIssuerImpl{
-		allSupportedServiceTypes: allSupportedServiceTypes,
+		serviceTypes: allSupportedServiceTypes,
 	}
-	return certIssuer.issueCertificates(allSupportedServiceTypes, namespace, clusterID)
+	return certIssuer.issueCertificates(namespace, clusterID)
 }
 
 // IssueLocalScannerCerts issue certificates for a local scanner running in secured clusters.
@@ -54,13 +54,13 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 	}
 
 	certIssuer := certIssuerImpl{
-		allSupportedServiceTypes: localScannerServiceTypes,
+		serviceTypes: serviceTypes,
 	}
 
-	return certIssuer.issueCertificates(serviceTypes, namespace, clusterID)
+	return certIssuer.issueCertificates(namespace, clusterID)
 }
 
-func (c *certIssuerImpl) issueCertificates(serviceTypes set.FrozenSet[storage.ServiceType], namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
+func (c *certIssuerImpl) issueCertificates(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
 	if namespace == "" {
 		return nil, errors.New("namespace is required to issue the certificates for the secured cluster")
 	}
@@ -68,8 +68,8 @@ func (c *certIssuerImpl) issueCertificates(serviceTypes set.FrozenSet[storage.Se
 	var certIssueError error
 	var caPem []byte
 
-	serviceCerts := make([]*storage.TypedServiceCertificate, 0, serviceTypes.Cardinality())
-	for _, serviceType := range serviceTypes.AsSlice() {
+	serviceCerts := make([]*storage.TypedServiceCertificate, 0, c.serviceTypes.Cardinality())
+	for _, serviceType := range c.serviceTypes.AsSlice() {
 		ca, cert, err := c.certificatesFor(serviceType, namespace, clusterID)
 		if err != nil {
 			certIssueError = multierror.Append(certIssueError, err)
@@ -109,7 +109,7 @@ func (c *certIssuerImpl) certificatesFor(serviceType storage.ServiceType, namesp
 }
 
 func (c *certIssuerImpl) generateServiceCertMap(serviceType storage.ServiceType, namespace string, clusterID string) (secretDataMap, error) {
-	if !c.allSupportedServiceTypes.Contains(serviceType) {
+	if !c.serviceTypes.Contains(serviceType) {
 		return nil, errors.Errorf("service type %s is not supported",
 			serviceType)
 	}
