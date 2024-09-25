@@ -58,9 +58,9 @@ func (m *flowGraphMasker) MaskDeploymentsAndNamespaces() {
 	slices.Sort(orderedDeploymentIDsToMask)
 	for ix, deploymentID := range orderedDeploymentIDsToMask {
 		origDeployment := m.deploymentsToMask[deploymentID]
-		maskedDeploymentID := getMaskedDeploymentID(origDeployment.GetId(), origDeployment.GetName()),
+		maskedDeploymentID := getMaskedDeploymentID(origDeployment.GetId(), origDeployment.GetName())
 		maskedDeploymentName := fmt.Sprintf("%s #%d", MaskedDeploymentName, ix+1)
-		log.Info("Masked deployment ", origDeploymentId, " with new ID ", maskedDeploymentID)
+		log.Info("Masked deployment ", origDeployment.GetId(), " with new ID ", maskedDeploymentID)
 		maskedDeployment := &storage.ListDeployment{
 			Id:        maskedDeploymentID,
 			Name:      maskedDeploymentName,
