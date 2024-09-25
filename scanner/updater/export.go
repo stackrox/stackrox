@@ -74,9 +74,9 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 		parsedInterval, err := time.ParseDuration(configuredInterval)
 		switch {
 		case err != nil:
-			log.Println(fmt.Errorf("invalid interval, using default (%v): %w", interval, err))
+			log.Printf("invalid interval, using default (%v): %v", interval, err)
 		case parsedInterval < interval:
-			log.Println(fmt.Errorf("interval is too small (%v): using default (%v)", parsedInterval, interval))
+			log.Printf("interval is too small (%v): using default (%v)", parsedInterval, interval)
 		default:
 			interval = parsedInterval
 		}
