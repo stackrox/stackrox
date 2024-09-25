@@ -14,7 +14,7 @@ import {
     ComplianceScanSnapshot,
 } from 'services/ComplianceScanConfigurationService';
 import JobDetails from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/JobDetails';
-import ReportJobsTable from 'Components/ReportJobsTable';
+import ReportJobsTable from 'Components/ReportJob/ReportJobsTable';
 import { RunState } from 'services/ReportsService.types';
 import useURLPagination from 'hooks/useURLPagination';
 import ConfigDetails from './ConfigDetails';

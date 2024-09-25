@@ -31,10 +31,10 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { JobContextTab } from 'types/reportJob';
 import { ensureJobContextTab } from 'utils/reportJob';
+import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
 import ScanConfigActionDropdown from './ScanConfigActionDropdown';
 import ConfigDetails from './components/ConfigDetails';
 import ReportJobs from './components/ReportJobs';
-import ReportJobsHelpAction from '../../../Components/ReportJobsHelpAction';
 
 type ViewScanConfigDetailProps = {
     hasWriteAccessForCompliance: boolean;
