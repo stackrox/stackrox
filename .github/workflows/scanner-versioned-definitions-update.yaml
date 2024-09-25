@@ -62,7 +62,7 @@ jobs:
                 nvd_file=nvd-feeds.zip
                 ;;
             *)
-                echo >&2 "error: invalid NVD bundle type '$NVD_BUNDLE_TYPE'"
+                echo >&2 "Warning: invalid NVD bundle type '$NVD_BUNDLE_TYPE'"
                 exit 1
         esac
         url="https://definitions.stackrox.io/v4/nvd/$nvd_file"
@@ -166,11 +166,9 @@ jobs:
         echo "STACKROX_NVD_ZIP_PATH=$path" >> "$GITHUB_ENV"
 
     - name: Run Updater (single bundle)
-      if: ${{ env.SCANNER_BUNDLE_VERSION != 'dev' }}
+      if: ${{ env.SCANNER_BUNDLE_VERSION == 'v1' }}
       run: |
-        if [[ "${SCANNER_BUNDLE_VERSION//[^0-9.]/}" < "4.6.0" ]]; then
-          scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${SCANNER_BUNDLE_VERSION}"
-        fi
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${SCANNER_BUNDLE_VERSION}"
 
     - name: Run updater (multi bundle)
       run: |
