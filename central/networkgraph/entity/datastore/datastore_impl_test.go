@@ -226,6 +226,11 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	suite.NoError(err)
 	suite.Len(entities, 3)
 
+	query = search.NewQueryBuilder().AddStrings(search.ExternalSourceAddress, "192.0.2.0/29").ProtoQuery()
+	entities, err = suite.ds.GetEntityByQuery(suite.globalReadAccessCtx, query)
+	suite.NoError(err)
+	suite.Len(entities, 2)
+
 	// Test Delete
 	for _, c := range cases {
 		c := c
