@@ -88,7 +88,10 @@ function PoliciesTablePage({
             });
     }
 
-    function fetchPolicies(query: string, sortOption: ApiSortOption) {
+    function fetchPolicies(query: string, fetchSortOption: ApiSortOption) {
+        // The policy table does not currently support multi sort, but it must handle the case where the sortOption is an array
+        // due to the hook's API. Although this should not occur, we will handle it here by using the first option.
+        const sortOption = Array.isArray(fetchSortOption) ? fetchSortOption[0] : fetchSortOption;
         setIsLoading(true);
         getPolicies(query)
             .then((data) => {
