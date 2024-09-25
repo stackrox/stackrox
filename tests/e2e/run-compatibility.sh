@@ -43,9 +43,9 @@ _run_compatibility_tests() {
     local sensor_version="$2"
     local short_central_tag="$3"
     local short_sensor_tag="$4"
-    local compatibility_dir="compatibility_central-v${short_central_tag}_sensor-v${short_sensor_tag}"
+    local compatibility_dir="compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
 
-    info "Starting test (go compatibility test Central version - ${central_version}, Sensor version - ${sensor_version})"
+    info "Starting test (go compatibility test Central v${short_central_tag}, Sensor v${short_sensor_tag})"
 
     export_test_environment
     ci_export CENTRAL_PERSISTENCE_NONE "true"
@@ -75,13 +75,11 @@ _run_compatibility_tests() {
         export GOTAGS=release
     fi
     make -C tests compatibility-tests || touch FAIL
-    mkdir -p "${compatibility_dir}/compatibility-tests-results"
     store_test_results "tests/compatibility-tests-results" "${compatibility_dir}/compatibility-tests-results"
-    [[ ! -f FAIL ]] || die "compatibility tests failed for central v${short_central_tag}, sensor v${short_sensor_tag}"
+    [[ ! -f FAIL ]] || die "compatibility tests failed for Central v${short_central_tag}, Sensor v${short_sensor_tag}"
 
     cd "$ROOT"
 
-    mkdir -p "${compatibility_dir}/initial_tests"
     collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "${compatibility_dir}/initial_tests"
 }
 
