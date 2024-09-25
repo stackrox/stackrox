@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/contextutil"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -16,6 +18,10 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
 )
 
 type imageCVECoreViewImpl struct {
@@ -34,8 +40,11 @@ func (v *imageCVECoreViewImpl) Count(ctx context.Context, q *v1.Query) (int, err
 		return 0, err
 	}
 
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
 	var results []*imageCVECoreCount
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreCount](ctx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreCount](queryCtx, v.db, v.schema, common.WithCountQuery(q, search.CVE))
 	if err != nil {
 		return 0, err
 	}
@@ -61,8 +70,11 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 		return nil, err
 	}
 
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
 	var results []*resourceCountByImageCVESeverity
-	results, err = pgSearch.RunSelectRequestForSchema[resourceCountByImageCVESeverity](ctx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
+	results, err = pgSearch.RunSelectRequestForSchema[resourceCountByImageCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
 	if err != nil {
 		return nil, err
 	}
@@ -105,17 +117,9 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 
 	var cveIDsToFilter []string
 	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
-		// TODO(@charmik) : Update the SQL query generator to not include 'ORDER BY' and 'GROUP BY' fields in the select clause (before where).
-		//  SQL syntax does not need those fields in the select clause. The below query for example would work fine
-		//  "SELECT JSONB_AGG(DISTINCT(image_cves.Id)) AS cve_id FROM image_cves GROUP BY image_cves.CveBaseInfo_Cve ORDER BY MAX(image_cves.Cvss) DESC LIMIT 20;"
-		var identifiersList []*imageCVECoreResponse
-		identifiersList, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](ctx, v.db, v.schema, withSelectCVEIdentifiersQuery(cloned))
+		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
 		if err != nil {
 			return nil, err
-		}
-
-		for _, idList := range identifiersList {
-			cveIDsToFilter = append(cveIDsToFilter, idList.CVEIDs...)
 		}
 
 		if cloned.GetPagination() != nil && cloned.GetPagination().GetSortOptions() != nil {
@@ -124,9 +128,11 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 			cloned.Pagination = &v1.QueryPagination{SortOptions: cloned.GetPagination().GetSortOptions()}
 		}
 	}
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
 
 	var results []*imageCVECoreResponse
-	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](ctx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, cveIDsToFilter, options))
+	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, cveIDsToFilter, options))
 	if err != nil {
 		return nil, err
 	}
@@ -153,8 +159,11 @@ func (v *imageCVECoreViewImpl) GetDeploymentIDs(ctx context.Context, q *v1.Query
 		search.NewQuerySelect(search.DeploymentID).Distinct().Proto(),
 	}
 
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
 	var results []*deploymentResponse
-	results, err = pgSearch.RunSelectRequestForSchema[deploymentResponse](ctx, v.db, v.schema, q)
+	results, err = pgSearch.RunSelectRequestForSchema[deploymentResponse](queryCtx, v.db, v.schema, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
@@ -177,8 +186,11 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 		search.NewQuerySelect(search.ImageSHA).Distinct().Proto(),
 	}
 
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
 	var results []*imageResponse
-	results, err = pgSearch.RunSelectRequestForSchema[imageResponse](ctx, v.db, v.schema, q)
+	results, err = pgSearch.RunSelectRequestForSchema[imageResponse](queryCtx, v.db, v.schema, q)
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
@@ -268,4 +280,26 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		Fields: []string{search.CVE.String()},
 	}
 	return cloned
+}
+
+func (v *imageCVECoreViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query) ([]string, error) {
+	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
+	defer cancel()
+
+	var cveIDsToFilter []string
+
+	// TODO(@charmik) : Update the SQL query generator to not include 'ORDER BY' and 'GROUP BY' fields in the select clause (before where).
+	//  SQL syntax does not need those fields in the select clause. The below query for example would work fine
+	//  "SELECT JSONB_AGG(DISTINCT(image_cves.Id)) AS cve_id FROM image_cves GROUP BY image_cves.CveBaseInfo_Cve ORDER BY MAX(image_cves.Cvss) DESC LIMIT 20;"
+	var identifiersList []*imageCVECoreResponse
+	identifiersList, err := pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, idList := range identifiersList {
+		cveIDsToFilter = append(cveIDsToFilter, idList.CVEIDs...)
+	}
+
+	return cveIDsToFilter, nil
 }
