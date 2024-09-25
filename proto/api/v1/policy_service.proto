@@ -246,6 +246,9 @@ service PolicyService {
 
   // SaveAsCustomResources saves the policies, designed by the policy ids, as custome resources
   rpc SaveAsCustomResources(SaveAsCustomResourcesRequest) returns (SaveAsCustomResourcesResponse) {
-    option (google.api.http) = {get: "/v1/policies/save-as"};
+    option (google.api.http) = {
+      post: "/v1/policies/save-as"
+      body: "*"
+    };
   }
 }

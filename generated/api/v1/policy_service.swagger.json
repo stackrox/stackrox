@@ -374,7 +374,7 @@
       }
     },
     "/v1/policies/save-as": {
-      "get": {
+      "post": {
         "summary": "SaveAsCustomResources saves the policies, designed by the policy ids, as custome resources",
         "operationId": "PolicyService_SaveAsCustomResources",
         "responses": {
@@ -393,14 +393,12 @@
         },
         "parameters": [
           {
-            "name": "policyIds",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1SaveAsCustomResourcesRequest"
+            }
           }
         ],
         "tags": [
@@ -1446,6 +1444,17 @@
         },
         "hasNestedFields": {
           "type": "boolean"
+        }
+      }
+    },
+    "v1SaveAsCustomResourcesRequest": {
+      "type": "object",
+      "properties": {
+        "policyIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

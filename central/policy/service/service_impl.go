@@ -1046,7 +1046,7 @@ func flattenPolicyGroupMap(policyGroupMap map[string][]*storage.PolicyGroup) []*
 
 		var policyValueLists []*storage.PolicyValue
 		for _, policyGroup := range singleGroupList {
-			// For now we don't care which search term a policy value came f/rom because no two search terms can
+			// For now we don't care which search term a policy value came from because no two search terms can
 			// generate a value for the same list index, and no search term can generate a value for more than one list
 			// index.  Therefore it is safe to flatten the values and naively generate all possible combinations.
 			policyValueLists = append(policyValueLists, policyGroup.GetValues()...)
