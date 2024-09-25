@@ -13789,6 +13789,11 @@
                 "name": "access_scope_rules",
                 "type": "SimpleAccessScope.Rules",
                 "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "include_nvd_cvss",
+                "type": "bool"
               }
             ]
           },
