@@ -19,8 +19,9 @@ import { RunState } from 'services/ReportsService.types';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { ensureBoolean, ensureStringArray } from 'utils/ensure';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import ConfigDetails from './ConfigDetails';
-import ReportStatesFilter, { ensureReportStates } from './ReportStatusFilter';
+import ReportRunStatesFilter, { ensureReportRunStates } from './ReportRunStatesFilter';
 import MyJobsFilter from './MyJobsFilter';
 
 function createMockData(scanConfig: ComplianceScanConfigurationStatus) {
@@ -61,31 +62,33 @@ type ReportJobsProps = {
 function ReportJobs({ scanConfig }: ReportJobsProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { searchFilter, setSearchFilter } = useURLSearch();
+    const [isViewingOnlyMyJobs, setIsViewingOnlyMyJobs] = useURLStringUnion('viewOnlyMyJobs', [
+        'false',
+        'true',
+    ]);
 
-    const filteredReportStates = ensureStringArray(searchFilter['Report state']);
-    const viewOnlyMyJobs = ensureBoolean(searchFilter['View only my jobs']);
+    const filteredReportRunStates = ensureStringArray(searchFilter['Report State']);
 
     const onReportStatesFilterChange = (_checked: boolean, selectedStatus: RunState) => {
-        const isStatusIncluded = filteredReportStates.includes(selectedStatus);
+        const isStatusIncluded = filteredReportRunStates.includes(selectedStatus);
         if (isStatusIncluded) {
             setSearchFilter({
                 ...searchFilter,
-                'Report state': filteredReportStates.filter((status) => status !== selectedStatus),
+                'Report State': filteredReportRunStates.filter(
+                    (status) => status !== selectedStatus
+                ),
             });
         } else {
             setSearchFilter({
                 ...searchFilter,
-                'Report state': [...filteredReportStates, selectedStatus],
+                'Report State': [...filteredReportRunStates, selectedStatus],
             });
         }
         setPage(1);
     };
 
     const onMyJobsFilterChange = (checked: boolean) => {
-        setSearchFilter({
-            ...searchFilter,
-            'View only my jobs': String(checked),
-        });
+        setIsViewingOnlyMyJobs(String(checked));
         setPage(1);
     };
 
@@ -97,14 +100,14 @@ function ReportJobs({ scanConfig }: ReportJobsProps) {
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem alignItems="center">
-                        <ReportStatesFilter
-                            reportStates={ensureReportStates(filteredReportStates)}
+                        <ReportRunStatesFilter
+                            reportRunStates={ensureReportRunStates(filteredReportRunStates)}
                             onChange={onReportStatesFilterChange}
                         />
                     </ToolbarItem>
                     <ToolbarItem className="pf-v5-u-flex-grow-1" alignSelf="center">
                         <MyJobsFilter
-                            viewOnlyMyJobs={viewOnlyMyJobs}
+                            isViewingOnlyMyJobs={ensureBoolean(isViewingOnlyMyJobs)}
                             onMyJobsFilterChange={onMyJobsFilterChange}
                         />
                     </ToolbarItem>

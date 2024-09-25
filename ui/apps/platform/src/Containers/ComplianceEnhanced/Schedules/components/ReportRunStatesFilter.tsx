@@ -18,30 +18,32 @@ import CheckboxSelect from 'Components/CheckboxSelect';
  *                         and returns them as an array.
  *                         If the input is not an array or undefined, it returns an empty array.
  */
-export function ensureReportStates(searchFilterValue: string | string[] | undefined): RunState[] {
+export function ensureReportRunStates(
+    searchFilterValue: string | string[] | undefined
+): RunState[] {
     if (Array.isArray(searchFilterValue)) {
-        const reportStates = searchFilterValue.filter((value) => runStates[value]) as RunState[];
-        return reportStates;
+        const reportRunStates = searchFilterValue.filter((value) => runStates[value]) as RunState[];
+        return reportRunStates;
     }
     return [];
 }
 
-export type ReportStatesFilterProps = {
-    reportStates: RunState[];
+export type ReportRunStatesFilterProps = {
+    reportRunStates: RunState[];
     onChange: (checked: boolean, value: RunState) => void;
 };
 
-function ReportStatesFilter({ reportStates, onChange }: ReportStatesFilterProps) {
+function ReportRunStatesFilter({ reportRunStates, onChange }: ReportRunStatesFilterProps) {
     function onChangeHandler(checked: boolean, value: string) {
         onChange(checked, value as RunState);
     }
 
     return (
         <CheckboxSelect
-            ariaLabelMenu="Filter by report states select menu"
-            toggleLabel="Filter by report states"
+            ariaLabelMenu="Filter by report run states select menu"
+            toggleLabel="Filter by report run states"
             toggleIcon={<FilterIcon />}
-            selection={reportStates}
+            selection={reportRunStates}
             onChange={onChangeHandler}
         >
             <SelectList>
@@ -49,7 +51,7 @@ function ReportStatesFilter({ reportStates, onChange }: ReportStatesFilterProps)
                     key={runStates.PREPARING}
                     value={runStates.PREPARING}
                     hasCheckbox
-                    isSelected={reportStates.includes(runStates.PREPARING)}
+                    isSelected={reportRunStates.includes(runStates.PREPARING)}
                 >
                     Preparing
                 </SelectOption>
@@ -57,7 +59,7 @@ function ReportStatesFilter({ reportStates, onChange }: ReportStatesFilterProps)
                     key={runStates.WAITING}
                     value={runStates.WAITING}
                     hasCheckbox
-                    isSelected={reportStates.includes(runStates.WAITING)}
+                    isSelected={reportRunStates.includes(runStates.WAITING)}
                 >
                     Waiting
                 </SelectOption>
@@ -65,7 +67,7 @@ function ReportStatesFilter({ reportStates, onChange }: ReportStatesFilterProps)
                     key={runStates.GENERATED}
                     value={runStates.GENERATED}
                     hasCheckbox
-                    isSelected={reportStates.includes(runStates.GENERATED)}
+                    isSelected={reportRunStates.includes(runStates.GENERATED)}
                 >
                     Download generated
                 </SelectOption>
@@ -73,7 +75,7 @@ function ReportStatesFilter({ reportStates, onChange }: ReportStatesFilterProps)
                     key={runStates.DELIVERED}
                     value={runStates.DELIVERED}
                     hasCheckbox
-                    isSelected={reportStates.includes(runStates.DELIVERED)}
+                    isSelected={reportRunStates.includes(runStates.DELIVERED)}
                 >
                     Email delivered
                 </SelectOption>
@@ -81,7 +83,7 @@ function ReportStatesFilter({ reportStates, onChange }: ReportStatesFilterProps)
                     key={runStates.FAILURE}
                     value={runStates.FAILURE}
                     hasCheckbox
-                    isSelected={reportStates.includes(runStates.FAILURE)}
+                    isSelected={reportRunStates.includes(runStates.FAILURE)}
                 >
                     Error
                 </SelectOption>
@@ -90,4 +92,4 @@ function ReportStatesFilter({ reportStates, onChange }: ReportStatesFilterProps)
     );
 }
 
-export default ReportStatesFilter;
+export default ReportRunStatesFilter;

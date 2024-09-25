@@ -18,21 +18,19 @@ import {
 } from '@patternfly/react-core';
 
 import { complianceEnhancedSchedulesPath } from 'routePaths';
-import PageTitle from 'Components/PageTitle';
-import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useAlert from 'hooks/useAlert';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import {
     ComplianceScanConfigurationStatus,
     runComplianceReport,
     runComplianceScanConfiguration,
 } from 'services/ComplianceScanConfigurationService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import { jobContextTabs } from 'types/reportJob';
-import { ensureJobContextTab } from 'utils/reportJob';
+import PageTitle from 'Components/PageTitle';
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
-import useURLStringUnion from 'hooks/useURLStringUnion';
+import { jobContextTabs } from 'Components/ReportJob/types';
 import ScanConfigActionDropdown from './ScanConfigActionDropdown';
 import ConfigDetails from './components/ConfigDetails';
 import ReportJobs from './components/ReportJobs';
@@ -182,7 +180,7 @@ function ViewScanConfigDetail({
                     <Tabs
                         activeKey={activeScanConfigTab}
                         onSelect={(_e, tab) => {
-                            setActiveScanConfigTab(ensureJobContextTab(tab));
+                            setActiveScanConfigTab(tab);
                         }}
                         aria-label="Scan schedule details tabs"
                     >
