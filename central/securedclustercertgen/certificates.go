@@ -15,22 +15,14 @@ type secretDataMap = map[string][]byte
 
 var scannerV2ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 var scannerV4ServiceTypes = set.NewFrozenSet[storage.ServiceType](storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
-var localScannerServiceTypes = func() set.FrozenSet[storage.ServiceType] {
-	types := scannerV2ServiceTypes.Unfreeze()
-	types = types.Union(scannerV4ServiceTypes.Unfreeze())
-	return types.Freeze()
-}()
+var localScannerServiceTypes = scannerV2ServiceTypes.Union(scannerV4ServiceTypes)
 
 var securedClusterServiceTypes = set.NewFrozenSet[storage.ServiceType](
 	storage.ServiceType_SENSOR_SERVICE,
 	storage.ServiceType_COLLECTOR_SERVICE,
 	storage.ServiceType_ADMISSION_CONTROL_SERVICE)
 
-var allSupportedServiceTypes = func() set.FrozenSet[storage.ServiceType] {
-	types := securedClusterServiceTypes.Unfreeze()
-	types = types.Union(localScannerServiceTypes.Unfreeze())
-	return types.Freeze()
-}()
+var allSupportedServiceTypes = securedClusterServiceTypes.Union(localScannerServiceTypes)
 
 type certIssuerImpl struct {
 	serviceTypes set.FrozenSet[storage.ServiceType]
