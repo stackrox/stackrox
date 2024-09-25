@@ -717,3 +717,7 @@ export function getPolicyOriginLabel({
     }
     return source === 'IMPERATIVE' ? 'Locally managed' : 'Externally managed';
 }
+
+export function isExternalPolicy(policy: ListPolicy) {
+    return policy.source === 'DECLARATIVE';
+}
