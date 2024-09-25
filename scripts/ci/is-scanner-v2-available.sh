@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# Asserts that scanner v2 is running and ready in the supplied namespace
+
+# shellcheck source=../../tests/e2e/lib.sh
+source "$ROOT/tests/e2e/lib.sh"
+
+verify_scannerV2_deployed_and_ready() {
+    if [[ "$#" -ne 1 ]]; then
+        die "missing arg. usage: verify_scannerV2_deployed_and_ready <namespace>"
+    fi
+    local namespace=${1:-stackrox}
+    info "Waiting for Scanner V2 deployment to appear in namespace ${namespace}..."
+    wait_for_object_to_appear "$namespace" deploy/scanner-db 600
+    wait_for_object_to_appear "$namespace" deploy/scanner 300
+    info "** Scanner V2 is deployed in namespace ${namespace}"
+}
+
+verify_scannerV2_deployed_and_ready "$@"

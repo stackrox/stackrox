@@ -12,6 +12,19 @@ import util.Env
 // i.e. central is deployed elsewhere
 @IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
 class CertExpiryTest extends BaseSpecification {
+    def "Test Scanner is running"() {
+        when:
+        "The subsequent tests require Scanner running and functional"
+
+        then:
+        "Run a shell script that asserts that Scanner is running and functional"
+        cmd = "./scripts/ci/is-scanner-v2-available.sh stackrox"
+        def sout = new StringBuilder(), serr = new StringBuilder()
+        def proc = cmd.execute(null, new File(".."))
+        proc.consumeProcessOutput(sout, serr)
+        proc.waitFor()
+        assert proc.exitValue()
+    }
 
     def "Test Central cert expiry"() {
         when:
