@@ -1,6 +1,12 @@
 import qs from 'qs';
 
-import { SearchEntry, ApiSortOption, GraphQLSortOption, SearchFilter } from 'types/search';
+import {
+    SearchEntry,
+    ApiSortOption,
+    GraphQLSortOption,
+    SearchFilter,
+    ApiSortOptionSingle,
+} from 'types/search';
 import { Pagination } from 'services/types';
 import { ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
@@ -70,14 +76,19 @@ export function convertToRestSearch(workflowSearch: Record<string, string>): Sea
     return restSearch;
 }
 
-export function convertSortToGraphQLFormat({ field, reversed }: ApiSortOption): GraphQLSortOption {
+export function convertSortToGraphQLFormat({
+    field,
+    reversed,
+}: ApiSortOptionSingle): GraphQLSortOption {
     return {
         id: field,
         desc: reversed,
     };
 }
 
-export function convertSortToRestFormat(graphqlSort: GraphQLSortOption[]): Partial<ApiSortOption> {
+export function convertSortToRestFormat(
+    graphqlSort: GraphQLSortOption[]
+): Partial<ApiSortOptionSingle> {
     return {
         field: graphqlSort[0]?.id,
         reversed: graphqlSort[0]?.desc,
@@ -240,6 +251,12 @@ export function getPaginationParams({
 
     if (typeof sortOption === 'undefined') {
         return paginationBase;
+    }
+
+    // When using multiple sort options, the API expects an array of sort options and the
+    // plural form of `sortOption` is used.
+    if (Array.isArray(sortOption)) {
+        return { ...paginationBase, sortOptions: sortOption };
     }
 
     return { ...paginationBase, sortOption };
