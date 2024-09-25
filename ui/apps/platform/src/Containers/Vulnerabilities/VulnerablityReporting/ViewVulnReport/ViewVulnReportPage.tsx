@@ -45,7 +45,7 @@ import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 
-import ReportJobsHelpAction from 'Components/ReportJobsHelpAction';
+import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
 import { JobContextTab } from 'types/reportJob';
 import { ensureJobContextTab } from 'utils/reportJob';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
