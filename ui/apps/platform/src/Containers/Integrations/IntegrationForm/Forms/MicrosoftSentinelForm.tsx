@@ -1,6 +1,6 @@
 /* eslint-disable no-void */
 import React, { ReactElement } from 'react';
-import { Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
+import { Checkbox, Form, FormSection, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
@@ -15,6 +15,8 @@ import { IntegrationFormProps } from '../integrationFormTypes';
 
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
+
+import './MicrosoftSentinelForm.css';
 
 export type MicrosoftSentinel = {
     microsoftSentinel: {
@@ -128,6 +130,10 @@ function MicrosoftSentinelForm({
         return setFieldValue(event.target.id, value);
     }
 
+    function onUpdateCheckboxChange(value, event) {
+        return setFieldValue(event.target.id, value);
+    }
+
     function onUpdateCredentialsChange(value, event) {
         setFieldValue('notifier.microsoftSentinel.secret', '');
         return setFieldValue(event.target.id, value);
@@ -135,7 +141,12 @@ function MicrosoftSentinelForm({
 
     return (
         <>
-            <PageSection variant="light" isFilled hasOverflowScroll>
+            <PageSection
+                variant="light"
+                isFilled
+                hasOverflowScroll
+                className="microsoft-sentinel-form"
+            >
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
@@ -218,7 +229,7 @@ function MicrosoftSentinelForm({
                             errors={errors}
                         >
                             <Checkbox
-                                label="Update token"
+                                label="Update secret"
                                 id="updatePassword"
                                 isChecked={values.updatePassword}
                                 onChange={(event, value) => onUpdateCredentialsChange(value, event)}
@@ -247,6 +258,126 @@ function MicrosoftSentinelForm({
                             }
                         />
                     </FormLabelGroup>
+                    <FormSection
+                        title="Alert data collection rule configuration"
+                        titleElement="h3"
+                        className="pf-v5-u-mt-0"
+                    >
+                        <FormLabelGroup
+                            label="Alert data collection rule stream name"
+                            fieldId="notifier.microsoftSentinel.alertDcrConfig.streamName"
+                            touched={touched}
+                            helperText="(example, your-custom-sentinel-stream-0123456789)"
+                            errors={errors}
+                        >
+                            <TextInput
+                                isRequired
+                                type="text"
+                                id="notifier.microsoftSentinel.alertDcrConfig.streamName"
+                                value={values.notifier.microsoftSentinel.alertDcrConfig.streamName}
+                                onChange={(event, value) => onChange(value, event)}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                        <FormLabelGroup
+                            label="Alert data collection rule ID"
+                            fieldId="notifier.microsoftSentinel.alertDcrConfig.dataCollectionRuleId"
+                            touched={touched}
+                            helperText="(example, dcr-1234567890abcdef1234567890abcedf)"
+                            errors={errors}
+                        >
+                            <TextInput
+                                isRequired
+                                type="text"
+                                id="notifier.microsoftSentinel.alertDcrConfig.dataCollectionRuleId"
+                                value={
+                                    values.notifier.microsoftSentinel.alertDcrConfig
+                                        .dataCollectionRuleId
+                                }
+                                onChange={(event, value) => onChange(value, event)}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                        <FormLabelGroup
+                            label=""
+                            fieldId="notifier.microsoftSentinel.alertDcrConfig.enabled"
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Enabled"
+                                id="notifier.microsoftSentinel.alertDcrConfig.enabled"
+                                isChecked={values.notifier.microsoftSentinel.alertDcrConfig.enabled}
+                                onChange={(event, isChecked) =>
+                                    onUpdateCheckboxChange(isChecked, event)
+                                }
+                                onBlur={handleBlur}
+                            />
+                        </FormLabelGroup>
+                    </FormSection>
+                    <FormSection
+                        title="Audit data collection rule configuration"
+                        titleElement="h3"
+                        className="pf-v5-u-mt-0"
+                    >
+                        <FormLabelGroup
+                            label="Audit data collection rule stream name"
+                            fieldId="notifier.microsoftSentinel.auditLogDcrConfig.streamName"
+                            touched={touched}
+                            helperText="(example, your-custom-sentinel-stream-0123456789)"
+                            errors={errors}
+                        >
+                            <TextInput
+                                isRequired
+                                type="text"
+                                id="notifier.microsoftSentinel.auditLogDcrConfig.streamName"
+                                value={
+                                    values.notifier.microsoftSentinel.auditLogDcrConfig.streamName
+                                }
+                                onChange={(event, value) => onChange(value, event)}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                        <FormLabelGroup
+                            label="Audit data collection rule ID"
+                            fieldId="notifier.microsoftSentinel.auditLogDcrConfig.dataCollectionRuleId"
+                            touched={touched}
+                            helperText="(example, dcr-1234567890abcdef1234567890abcedf)"
+                            errors={errors}
+                        >
+                            <TextInput
+                                isRequired
+                                type="text"
+                                id="notifier.microsoftSentinel.auditLogDcrConfig.dataCollectionRuleId"
+                                value={
+                                    values.notifier.microsoftSentinel.auditLogDcrConfig
+                                        .dataCollectionRuleId
+                                }
+                                onChange={(event, value) => onChange(value, event)}
+                                onBlur={handleBlur}
+                                isDisabled={!isEditable}
+                            />
+                        </FormLabelGroup>
+                        <FormLabelGroup
+                            label=""
+                            fieldId="notifier.microsoftSentinel.auditLogDcrConfig.enabled"
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Enabled"
+                                id="notifier.microsoftSentinel.auditLogDcrConfig.enabled"
+                                isChecked={
+                                    values.notifier.microsoftSentinel.auditLogDcrConfig.enabled
+                                }
+                                onChange={(event, isChecked) =>
+                                    onUpdateCheckboxChange(isChecked, event)
+                                }
+                                onBlur={handleBlur}
+                            />
+                        </FormLabelGroup>
+                    </FormSection>
                 </Form>
             </PageSection>
             {isEditable && (

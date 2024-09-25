@@ -12,6 +12,7 @@ import googleregistry from 'images/google-container.svg';
 import ibm from 'images/ibm-ccr.svg';
 import jira from 'images/jira.svg';
 import logo from 'images/StackRox-integration-logo.svg';
+import microsoftSentinel from 'images/microsoft_sentinel.svg';
 import nexus from 'images/nexus.svg';
 import pagerduty from 'images/pagerduty.svg';
 import quay from 'images/quay.svg';
@@ -248,7 +249,7 @@ export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = 
         type: 'syslog',
     },
     {
-        image: azure,
+        image: microsoftSentinel,
         label: 'Micrsoft Sentinel',
         type: 'microsoftSentinel',
         featureFlagDependency: ['ROX_MICROSOFT_SENTINEL'],
