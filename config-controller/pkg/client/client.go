@@ -69,6 +69,7 @@ type CachedPolicyClient interface {
 	GetPolicy(ctx context.Context, name string) (*storage.Policy, bool, error)
 	CreatePolicy(ctx context.Context, policy *storage.Policy) (*storage.Policy, error)
 	UpdatePolicy(ctx context.Context, policy *storage.Policy) error
+	DeletePolicy(ctx context.Context, id string) error
 	FlushCache(ctx context.Context) error
 	EnsureFresh(ctx context.Context) error
 }
@@ -78,6 +79,7 @@ type PolicyClient interface {
 	GetPolicy(ctx context.Context, id string) (*storage.Policy, error)
 	PostPolicy(context.Context, *storage.Policy) (*storage.Policy, error)
 	PutPolicy(context.Context, *storage.Policy) error
+	DeletePolicy(ctx context.Context, id string) error
 	TokenExchange(ctx context.Context) error
 }
 
@@ -145,7 +147,7 @@ func (gc *grpcClient) PostPolicy(ctx context.Context, policy *storage.Policy) (*
 	policy, err := gc.svc.PostPolicy(ctx, req)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to POST policy")
+		return nil, errors.Wrapf(err, "Failed to create policy %q", policy.GetName())
 	}
 
 	return policy, nil
@@ -155,7 +157,17 @@ func (gc *grpcClient) PutPolicy(ctx context.Context, policy *storage.Policy) err
 	_, err := gc.svc.PutPolicy(ctx, policy)
 
 	if err != nil {
-		return errors.Wrap(err, "Failed to PUT policy")
+		return errors.Wrapf(err, "Failed to update policy %q", policy.GetName())
+	}
+
+	return nil
+}
+
+func (gc *grpcClient) DeletePolicy(ctx context.Context, id string) error {
+	_, err := gc.svc.DeletePolicy(ctx, &v1.ResourceByID{Id: id})
+
+	if err != nil {
+		return errors.Wrapf(err, "Failed to delete policy: %s", id)
 	}
 
 	return nil
@@ -252,6 +264,19 @@ func (c *client) UpdatePolicy(ctx context.Context, policy *storage.Policy) error
 	return nil
 }
 
+func (c *client) DeletePolicy(ctx context.Context, name string) error {
+	getLogger(ctx).Info("DELETE", "policyName", name)
+	policy := c.cache[name]
+
+	err := c.svc.DeletePolicy(ctx, policy.GetId())
+
+	if err != nil {
+		return errors.Wrapf(err, "Failed to DELETE policy %q", name)
+	}
+	delete(c.cache, policy.Name)
+	return nil
+}
+
 func (c *client) FlushCache(ctx context.Context) error {
 	if time.Since(c.lastUpdated).Seconds() < 10 {
 		// Don't flush the cache more often than every 10s
@@ -276,7 +301,6 @@ func (c *client) FlushCache(ctx context.Context) error {
 		}
 		newCache[policy.Name] = policy
 	}
-
 	c.cache = newCache
 	c.lastUpdated = time.Now()
 

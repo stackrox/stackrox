@@ -20,14 +20,21 @@ function AppPage(): ReactElement {
             <AppPageTitle />
             <AppPageFavicon />
             <Switch>
-                <Route path={loginPath} component={LoginPage} />
-                <Route
-                    path={authorizeRoxctlPath}
-                    render={(props) => <LoginPage {...props} authorizeRoxctlMode />}
-                />
-                <Route path={testLoginResultsPath} component={TestLoginResultsPage} />
-                <Route path={authResponsePrefix} component={LoadingSection} />
-                <Route component={AuthenticatedRoutes} />
+                <Route path={loginPath}>
+                    <LoginPage />
+                </Route>
+                <Route path={authorizeRoxctlPath}>
+                    <LoginPage authorizeRoxctlMode />
+                </Route>
+                <Route path={testLoginResultsPath}>
+                    <TestLoginResultsPage />
+                </Route>
+                <Route path={authResponsePrefix}>
+                    <LoadingSection />
+                </Route>
+                <Route>
+                    <AuthenticatedRoutes />
+                </Route>
             </Switch>
         </>
     );

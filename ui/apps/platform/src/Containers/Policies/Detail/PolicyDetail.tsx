@@ -31,6 +31,7 @@ import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import PolicyDetailContent from './PolicyDetailContent';
+import { isExternalPolicy } from '../policies.utils';
 
 function formatUpdateDisabledStateAction(disabled: boolean) {
     return disabled ? 'Enable policy' : 'Disable policy';
@@ -275,6 +276,7 @@ function PolicyDetail({
                 </AlertGroup>
             </PageSection>
             <ConfirmationModal
+                title={'Delete policy?'}
                 ariaLabel="Confirm delete"
                 confirmText="Delete"
                 isLoading={isRequesting}
@@ -282,7 +284,17 @@ function PolicyDetail({
                 onConfirm={onConfirmDeletePolicy}
                 onCancel={onCancelDeletePolicy}
             >
-                Are you sure you want to delete this policy?
+                {isExternalPolicy(policy) ? (
+                    <>
+                        This policy is managed externally and will only be removed from the system
+                        temporarily. The policy will not trigger violations until the next resync.
+                    </>
+                ) : (
+                    <>
+                        This policy will be permanently removed from the system and will no longer
+                        trigger violations.
+                    </>
+                )}
             </ConfirmationModal>
         </>
     );

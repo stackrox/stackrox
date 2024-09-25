@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { SortDirection, TableColumn } from 'types/table';
-import { ApiSortOption } from 'types/search';
+import { ApiSortOption, ApiSortOptionSingle } from 'types/search';
 
 export type UseTableSort = {
     activeSortIndex: number;
@@ -10,7 +10,7 @@ export type UseTableSort = {
     sortOption: ApiSortOption;
 };
 
-function useTableSort(columns: TableColumn[], defaultSort: ApiSortOption): UseTableSort {
+function useTableSort(columns: TableColumn[], defaultSort: ApiSortOptionSingle): UseTableSort {
     const defaultSortIndex = columns.findIndex((column) => column?.sortField === defaultSort.field);
     const defaultSortDirection = defaultSort.reversed ? 'desc' : 'asc';
     // index of the currently active column

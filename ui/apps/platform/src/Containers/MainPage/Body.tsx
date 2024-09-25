@@ -28,7 +28,6 @@ import {
     listeningEndpointsBasePath,
     mainPath,
     networkPath,
-    policiesPath,
     policyManagementBasePath,
     riskPath,
     searchPath,
@@ -43,6 +42,8 @@ import {
     exceptionManagementPath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
+    deprecatedPoliciesBasePath,
+    policiesBasePath,
 } from 'routePaths';
 import { useTheme } from 'Containers/ThemeProvider';
 
@@ -264,14 +265,27 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
                     <Route path={mainPath} exact render={() => <Redirect to={dashboardPath} />} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
-                    <Redirect exact from={deprecatedPoliciesPath} to={policiesPath} />
+                    <Route
+                        path={deprecatedPoliciesBasePath}
+                        exact
+                        render={() => <Redirect to={policiesBasePath} />}
+                    />
+                    <Route
+                        exact
+                        path={deprecatedPoliciesPath}
+                        render={({ match }) => (
+                            <Redirect to={`${policiesBasePath}/${match.params.policyId}`} />
+                        )}
+                    />
                     {Object.keys(routeComponentMap)
                         .filter((routeKey) => isRouteEnabled(routePredicates, routeKey as RouteKey))
                         .map((routeKey) => {
                             const { component, path } = routeComponentMap[routeKey];
                             return <Route key={routeKey} path={path} component={component} />;
                         })}
-                    <Route component={NotFoundPage} />
+                    <Route>
+                        <NotFoundPage />
+                    </Route>
                 </Switch>
                 {hasWriteAccessForInviting && showInviteModal && <InviteUsersModal />}
             </ErrorBoundary>

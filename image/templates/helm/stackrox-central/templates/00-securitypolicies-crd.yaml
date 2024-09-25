@@ -93,6 +93,8 @@ spec:
                               type: string
                           type: object
                       type: object
+                    expiration:
+                      type: string
                     image:
                       properties:
                         name:
@@ -158,8 +160,6 @@ spec:
                       type: string
                   type: object
                 type: array
-              policyVersion:
-                type: string
               rationale:
                 type: string
               remediation:

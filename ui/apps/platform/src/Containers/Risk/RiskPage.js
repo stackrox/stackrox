@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 
 import { PageBody } from 'Components/Panel';
@@ -12,13 +12,12 @@ import RiskPageHeader from './RiskPageHeader';
 import RiskSidePanel from './RiskSidePanel';
 import RiskTablePanel from './RiskTablePanel';
 
-const RiskPage = ({
-    history,
-    location: { pathname, search },
-    match: {
-        params: { deploymentId },
-    },
-}) => {
+const RiskPage = () => {
+    const history = useHistory();
+    const location = useLocation();
+    const params = useParams();
+    const { deploymentId } = params;
+    const { pathname, search } = location;
     const workflowState = parseURL({ pathname, search });
 
     // Handle changes to applied search options.
@@ -72,12 +71,6 @@ const RiskPage = ({
             </PageBody>
         </workflowStateContext.Provider>
     );
-};
-
-RiskPage.propTypes = {
-    history: ReactRouterPropTypes.history.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    match: ReactRouterPropTypes.match.isRequired,
 };
 
 export default RiskPage;
