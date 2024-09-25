@@ -58,6 +58,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Scanner V4 now only considers vulnerabilities affecting Red Hat products dated back to 2014.
     - Previously when reading Red Hat's OVAL data, the vulnerabilities dated back to pre-2000, but ClairCore only reads back to 2014.
   - Scanner V4 DB requires less space for vulnerability data, and its initialization time has improved from about 1 hour on SSD to about 10 minutes.
+- ROX-26372: `ROX_POSTGRES_VM_STATEMENT_TIMEOUT` env var defaulting to 3 minutes to allow customers to extend the timeout for queries backing VM pages only
 
 ## [4.5.0]
 
