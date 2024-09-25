@@ -77,7 +77,7 @@ _run_compatibility_tests() {
     make -C tests compatibility-tests || touch FAIL
     mkdir -p "${compatibility_dir}/compatibility-tests-results"
     store_test_results "tests/compatibility-tests-results" "${compatibility_dir}/compatibility-tests-results"
-    [[ ! -f FAIL ]] || die "e2e API tests failed"
+    [[ ! -f FAIL ]] || die "compatibility tests failed for central v${short_central_tag}, sensor v${short_sensor_tag}"
 
     cd "$ROOT"
 
