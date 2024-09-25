@@ -91,6 +91,11 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
         "kind": "SecurityPolicy",
         "displayName": "Security Policy",
         "description": "SecurityPolicy is the Schema for the policies API",
+        "resources": [{
+            "kind": "Deployment",
+            "name": "",
+            "version": "v1",
+        }],
     }
 
     csv_doc["spec"]["customresourcedefinitions"]["owned"].append(policy_crd)
