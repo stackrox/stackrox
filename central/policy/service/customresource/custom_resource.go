@@ -13,10 +13,10 @@ import (
 
 // CustomResource represents the structure for a SecurityPolicy Kubernetes Custom Resource.
 type CustomResource struct {
-	APIVersion string                 `yaml:"apiVersion"`
-	Kind       string                 `yaml:"kind"`
-	Metadata   map[string]interface{} `yaml:"metadata,omitempty"`
-	Spec       *Policy                `yaml:"spec"`
+	APIVersion         string                 `yaml:"apiVersion"`
+	Kind               string                 `yaml:"kind"`
+	Metadata           map[string]interface{} `yaml:"metadata,omitempty"`
+	SecurityPolicySpec *Policy                `yaml:"spec"`
 }
 
 // GenerateCustomResource generate custom resource in YAML text from a policy

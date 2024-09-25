@@ -161,9 +161,9 @@ func ConvertPolicyToCustomResource(p *storage.Policy) *CustomResource {
 		return nil
 	}
 	return &CustomResource{
-		APIVersion: "config.stackrox.io/v1alpha1",
-		Kind:       "SecurityPolicy",
-		Metadata:   map[string]interface{}{"name": p.GetName()},
-		Spec:       convertPolicy(p),
+		APIVersion:         "config.stackrox.io/v1alpha1",
+		Kind:               "SecurityPolicy",
+		Metadata:           map[string]interface{}{"name": p.GetName()},
+		SecurityPolicySpec: convertPolicy(p),
 	}
 }
