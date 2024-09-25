@@ -1,4 +1,4 @@
-//go:build compliance || test_compatibility
+//go:build compliance
 
 package tests
 
