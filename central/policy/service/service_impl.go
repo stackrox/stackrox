@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	_ "embed"
 	"slices"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ import (
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/datastore"
+	"github.com/stackrox/rox/central/policy/service/customresource"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -53,6 +55,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	// "sigs.k8s.io/yaml"
 )
 
 var (
@@ -68,6 +71,7 @@ var (
 			"/v1.PolicyService/ExportPolicies",
 			"/v1.PolicyService/PolicyFromSearch",
 			"/v1.PolicyService/GetPolicyMitreVectors",
+			"/v1.PolicyService/SaveAsCustomResources",
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			"/v1.PolicyService/PostPolicy",
@@ -717,10 +721,10 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 	if err != nil {
 		return nil, err
 	}
-	errDetails := &v1.ExportPoliciesErrorList{}
+	errDetails := &v1.PolicyOperationErrorList{}
 	for _, missingIndex := range missingIndices {
 		policyID := request.PolicyIds[missingIndex]
-		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+		errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
 			PolicyId: policyID,
 			Error: &v1.PolicyError{
 				Error: "not found",
@@ -1042,7 +1046,7 @@ func flattenPolicyGroupMap(policyGroupMap map[string][]*storage.PolicyGroup) []*
 
 		var policyValueLists []*storage.PolicyValue
 		for _, policyGroup := range singleGroupList {
-			// For now we don't care which search term a policy value came from because no two search terms can
+			// For now we don't care which search term a policy value came f/rom because no two search terms can
 			// generate a value for the same list index, and no search term can generate a value for more than one list
 			// index.  Therefore it is safe to flatten the values and naively generate all possible combinations.
 			policyValueLists = append(policyValueLists, policyGroup.GetValues()...)
@@ -1121,4 +1125,53 @@ func combineStrings(toCombine [][]string) []string {
 		}
 	}
 	return nil
+}
+
+func (s *serviceImpl) SaveAsCustomResources(ctx context.Context, request *v1.SaveAsCustomResourcesRequest) (*v1.SaveAsCustomResourcesResponse, error) {
+	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.GetPolicyIds())
+	if err != nil {
+		return nil, err
+	}
+	errDetails := &v1.PolicyOperationErrorList{}
+	for _, missingIndex := range missingIndices {
+		policyID := request.GetPolicyIds()[missingIndex]
+		errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
+			PolicyId: policyID,
+			Error: &v1.PolicyError{
+				Error: "not found",
+			},
+		})
+		log.Warnf("A policy error occurred for id %s: not found", policyID)
+	}
+	if len(missingIndices) > 0 {
+		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be retrieved. Check the error details for a list of policies that could not be found").WithDetails(errDetails)
+		if err != nil {
+			return nil, utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
+		}
+		return nil, statusMsg.Err()
+	}
+
+	errDetails = &v1.PolicyOperationErrorList{}
+	resp := new(v1.SaveAsCustomResourcesResponse)
+	for _, policy := range policyList {
+		cr, err := customresource.GenerateCustomResource(policy)
+		if err != nil {
+			errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
+				PolicyId: policy.GetId(),
+				Error: &v1.PolicyError{
+					Error: errors.Wrapf(err, "Failed to marshal policy to custom resource").Error(),
+				},
+			})
+		}
+		resp.CustomResources = append(resp.CustomResources, cr)
+	}
+	if len(errDetails.GetErrors()) > 0 {
+		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be marshal to custom resources. Check the error details for the list of policies").WithDetails(errDetails)
+		if err != nil {
+			return resp, utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
+		}
+		return nil, statusMsg.Err()
+
+	}
+	return resp, nil
 }

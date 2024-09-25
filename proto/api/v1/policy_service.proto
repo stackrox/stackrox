@@ -63,13 +63,13 @@ message PolicyError {
   string error = 1;
 }
 
-message ExportPolicyError {
+message PolicyOperationError {
   string policy_id = 1;
   PolicyError error = 2;
 }
 
-message ExportPoliciesErrorList {
-  repeated ExportPolicyError errors = 1;
+message PolicyOperationErrorList {
+  repeated PolicyOperationError errors = 1;
 }
 
 message PolicyFromSearchRequest {
@@ -124,6 +124,14 @@ message GetPolicyMitreVectorsRequest {
 message GetPolicyMitreVectorsResponse {
   storage.Policy policy = 1;
   repeated storage.MitreAttackVector vectors = 2;
+}
+
+message SaveAsCustomResourcesRequest {
+  repeated string policy_ids = 1;
+}
+
+message SaveAsCustomResourcesResponse {
+  repeated string custom_resources = 1;
 }
 
 // PolicyService APIs can be used to manage policies.
@@ -234,5 +242,10 @@ service PolicyService {
       post: "/v1/policies/import"
       body: "*"
     };
+  }
+
+  // SaveAsCustomResources saves the policies, designed by the policy ids, as custome resources
+  rpc SaveAsCustomResources(SaveAsCustomResourcesRequest) returns (SaveAsCustomResourcesResponse) {
+    option (google.api.http) = {get: "/v1/policies/save-as"};
   }
 }
