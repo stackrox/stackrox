@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
 
 import entityTypes from 'constants/entityTypes';
 import useCases from 'constants/useCaseTypes';
@@ -49,4 +48,4 @@ EntityList.defaultProps = {
     entityId: null,
 };
 
-export default withRouter(EntityList);
+export default EntityList;

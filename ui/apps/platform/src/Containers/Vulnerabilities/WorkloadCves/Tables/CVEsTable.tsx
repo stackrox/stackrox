@@ -166,7 +166,7 @@ function CVEsTable({
                         Top CVSS
                     </TooltipTh>
                     <TooltipTh
-                        sort={getSortParams('Image sha', aggregateByDistinctCount)}
+                        sort={getSortParams('Image Sha', aggregateByDistinctCount)}
                         tooltip="Ratio of total images affected by this CVE"
                     >
                         Affected images

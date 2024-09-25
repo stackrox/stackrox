@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
 
 import Query from 'Components/ThrowingQuery';
 import URLSearchInputWithAutocomplete from 'Components/URLSearchInputWithAutocomplete';
@@ -52,4 +51,4 @@ URLSearchInput.defaultProps = {
     categories: [],
 };
 
-export default withRouter(URLSearchInput);
+export default URLSearchInput;

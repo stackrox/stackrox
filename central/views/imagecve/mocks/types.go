@@ -114,6 +114,20 @@ func (mr *MockCveCoreMockRecorder) GetImagesBySeverity() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesBySeverity", reflect.TypeOf((*MockCveCore)(nil).GetImagesBySeverity))
 }
 
+// GetPublishDate mocks base method.
+func (m *MockCveCore) GetPublishDate() *time.Time {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPublishDate")
+	ret0, _ := ret[0].(*time.Time)
+	return ret0
+}
+
+// GetPublishDate indicates an expected call of GetPublishDate.
+func (mr *MockCveCoreMockRecorder) GetPublishDate() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublishDate", reflect.TypeOf((*MockCveCore)(nil).GetPublishDate))
+}
+
 // GetTopCVSS mocks base method.
 func (m *MockCveCore) GetTopCVSS() float32 {
 	m.ctrl.T.Helper()

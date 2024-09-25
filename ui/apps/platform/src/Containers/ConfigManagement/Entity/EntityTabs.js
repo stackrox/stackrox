@@ -4,8 +4,7 @@ import entityTypes from 'constants/entityTypes';
 import entityLabels from 'messages/entity';
 import pluralize from 'pluralize';
 import URLService from 'utils/URLService';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import { withRouter } from 'react-router-dom';
+import { useRouteMatch, useLocation } from 'react-router-dom';
 import GroupedTabs from 'Components/GroupedTabs';
 import entityTabsMap from '../entityTabRelationships';
 
@@ -39,7 +38,10 @@ const ENTITY_TO_TAB = {
     [entityTypes.CONTROL]: TAB_GROUPS.POLICIES,
 };
 
-const EntityTabs = ({ match, location, entityType, entityListType, pageEntityId }) => {
+const EntityTabs = ({ entityType, entityListType, pageEntityId }) => {
+    const match = useRouteMatch();
+    const location = useLocation();
+
     function getTab(relationship) {
         const failingText =
             entityType === entityTypes.DEPLOYMENT && relationship === entityTypes.POLICY
@@ -76,12 +78,10 @@ EntityTabs.propTypes = {
     entityType: PropTypes.string.isRequired,
     entityListType: PropTypes.string,
     pageEntityId: PropTypes.string.isRequired,
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
 };
 
 EntityTabs.defaultProps = {
     entityListType: null,
 };
 
-export default withRouter(EntityTabs);
+export default EntityTabs;
