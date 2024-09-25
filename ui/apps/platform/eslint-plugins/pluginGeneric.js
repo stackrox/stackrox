@@ -112,6 +112,33 @@ const rules = {
             };
         },
     },
+    'pagination-function-call': {
+        // Require that pagination property has function call like getPaginationParams.
+        // Some classic pages have queryService.getPagination function call instead.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that pagination property has function call like getPaginationParams',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                Property(node) {
+                    if (node.key?.name === 'pagination' && !node.shorthand) {
+                        if (node.value?.type !== 'CallExpression') {
+                            context.report({
+                                node,
+                                message:
+                                    'Require that pagination property has function call like getPaginationParams',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
 
     // ESLint naming convention for negative rules.
     // If your rule only disallows something, prefix it with no.

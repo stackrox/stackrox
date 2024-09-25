@@ -89,7 +89,7 @@ function ScanConfigsTablePage({
     });
 
     const listQuery = useCallback(
-        () => listComplianceScanConfigurations(sortOption, page - 1, perPage),
+        () => listComplianceScanConfigurations(sortOption, page, perPage),
         [sortOption, page, perPage]
     );
     const { data: listData, isLoading, error, refetch } = useRestQuery(listQuery);
