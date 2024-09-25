@@ -81,7 +81,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	} else {
 		if _, err = r.PolicyClient.CreatePolicy(ctx, desiredState); err != nil {
-			retErr := errors.Wrap(err, fmt.Sprintf("Failed to create policy %s", req.Name))
+			retErr = errors.Wrap(err, fmt.Sprintf("Failed to create policy %s", req.Name))
 			policyCR.Status.Accepted = false
 			policyCR.Status.Message = retErr.Error()
 		} else {
