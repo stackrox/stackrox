@@ -80,7 +80,7 @@ function useWatchLastSnapshotForComplianceReports(
     const result: FetchLastComplianceReportSnapshotReturn = {
         complianceReportSnapshots: data || {},
         isLoading,
-        error: getAxiosErrorMessage(error),
+        error: error ? getAxiosErrorMessage(error) : null,
         fetchSnapshots: refetch,
     };
 

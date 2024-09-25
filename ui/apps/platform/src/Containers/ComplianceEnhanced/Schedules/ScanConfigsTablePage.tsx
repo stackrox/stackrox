@@ -424,6 +424,3 @@ function ScanConfigsTablePage({
 }
 
 export default ScanConfigsTablePage;
-function isFeatureFlagEnabled(arg0: string) {
-    throw new Error('Function not implemented.');
-}
