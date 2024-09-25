@@ -80,7 +80,7 @@ _run_compatibility_tests() {
 
     cd "$ROOT"
 
-    collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "initial_tests"
+    collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "${compatibility_dir}/initial_tests"
 }
 
 test_preamble() {
