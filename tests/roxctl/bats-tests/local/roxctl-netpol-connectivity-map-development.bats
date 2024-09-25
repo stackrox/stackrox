@@ -552,7 +552,7 @@ frontend/webapp[Deployment]             <=      entire-cluster : TCP 8080'
         "payments/gateway[Deployment]" -> "payments/visa-processor[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=0.5]
         "{ingress-controller}" -> "frontend/asset-cache[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
         "{ingress-controller}" -> "frontend/webapp[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
-}' 
+}'
   normalized_expected_output=$(normalize_whitespaces "$expected_output")
   # partial is used to filter WARN and INFO messages
   assert_output --partial "$normalized_expected_output"
