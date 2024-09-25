@@ -78,6 +78,105 @@ func (x *CollectorRegisterRequest) GetInstanceId() string {
 	return ""
 }
 
+type NetworkConnectionConfig struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	EnableExternalIps bool `protobuf:"varint,1,opt,name=enable_external_ips,json=enableExternalIps,proto3" json:"enable_external_ips,omitempty"`
+}
+
+func (x *NetworkConnectionConfig) Reset() {
+	*x = NetworkConnectionConfig{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_internalapi_sensor_collector_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *NetworkConnectionConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkConnectionConfig) ProtoMessage() {}
+
+func (x *NetworkConnectionConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_sensor_collector_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkConnectionConfig.ProtoReflect.Descriptor instead.
+func (*NetworkConnectionConfig) Descriptor() ([]byte, []int) {
+	return file_internalapi_sensor_collector_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *NetworkConnectionConfig) GetEnableExternalIps() bool {
+	if x != nil {
+		return x.EnableExternalIps
+	}
+	return false
+}
+
+// CollectorConfig controls which type of data is reported by collector
+// and how it is processed by collector. These configurations are used
+// to fine-tune collector's performance on large scale clusters.
+// At this time it only controls if external IPs are aggregated at the
+// cluster level.
+type CollectorConfig struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	NetworkConnectionConfig *NetworkConnectionConfig `protobuf:"bytes,1,opt,name=network_connection_config,json=networkConnectionConfig,proto3" json:"network_connection_config,omitempty"`
+}
+
+func (x *CollectorConfig) Reset() {
+	*x = CollectorConfig{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_internalapi_sensor_collector_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CollectorConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CollectorConfig) ProtoMessage() {}
+
+func (x *CollectorConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_sensor_collector_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CollectorConfig.ProtoReflect.Descriptor instead.
+func (*CollectorConfig) Descriptor() ([]byte, []int) {
+	return file_internalapi_sensor_collector_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CollectorConfig) GetNetworkConnectionConfig() *NetworkConnectionConfig {
+	if x != nil {
+		return x.NetworkConnectionConfig
+	}
+	return nil
+}
+
 var File_internalapi_sensor_collector_proto protoreflect.FileDescriptor
 
 var file_internalapi_sensor_collector_proto_rawDesc = []byte{
@@ -89,9 +188,21 @@ var file_internalapi_sensor_collector_proto_rawDesc = []byte{
 	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x68, 0x6f, 0x73, 0x74,
 	0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65,
 	0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x69, 0x6e, 0x73, 0x74, 0x61,
-	0x6e, 0x63, 0x65, 0x49, 0x64, 0x42, 0x20, 0x5a, 0x1b, 0x2e, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72,
-	0x6e, 0x61, 0x6c, 0x61, 0x70, 0x69, 0x2f, 0x73, 0x65, 0x6e, 0x73, 0x6f, 0x72, 0x3b, 0x73, 0x65,
-	0x6e, 0x73, 0x6f, 0x72, 0xf8, 0x01, 0x01, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x63, 0x65, 0x49, 0x64, 0x22, 0x49, 0x0a, 0x17, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b,
+	0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x12, 0x2e, 0x0a, 0x13, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x65, 0x78, 0x74, 0x65, 0x72,
+	0x6e, 0x61, 0x6c, 0x5f, 0x69, 0x70, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x11, 0x65,
+	0x6e, 0x61, 0x62, 0x6c, 0x65, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x49, 0x70, 0x73,
+	0x22, 0x6e, 0x0a, 0x0f, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x43, 0x6f, 0x6e,
+	0x66, 0x69, 0x67, 0x12, 0x5b, 0x0a, 0x19, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x5f, 0x63,
+	0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x73, 0x65, 0x6e, 0x73, 0x6f, 0x72, 0x2e,
+	0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f,
+	0x6e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x17, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b,
+	0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
+	0x42, 0x20, 0x5a, 0x1b, 0x2e, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x61, 0x70,
+	0x69, 0x2f, 0x73, 0x65, 0x6e, 0x73, 0x6f, 0x72, 0x3b, 0x73, 0x65, 0x6e, 0x73, 0x6f, 0x72, 0xf8,
+	0x01, 0x01, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -106,16 +217,19 @@ func file_internalapi_sensor_collector_proto_rawDescGZIP() []byte {
 	return file_internalapi_sensor_collector_proto_rawDescData
 }
 
-var file_internalapi_sensor_collector_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_internalapi_sensor_collector_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_internalapi_sensor_collector_proto_goTypes = []any{
 	(*CollectorRegisterRequest)(nil), // 0: sensor.CollectorRegisterRequest
+	(*NetworkConnectionConfig)(nil),  // 1: sensor.NetworkConnectionConfig
+	(*CollectorConfig)(nil),          // 2: sensor.CollectorConfig
 }
 var file_internalapi_sensor_collector_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	1, // 0: sensor.CollectorConfig.network_connection_config:type_name -> sensor.NetworkConnectionConfig
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_collector_proto_init() }
@@ -136,6 +250,30 @@ func file_internalapi_sensor_collector_proto_init() {
 				return nil
 			}
 		}
+		file_internalapi_sensor_collector_proto_msgTypes[1].Exporter = func(v any, i int) any {
+			switch v := v.(*NetworkConnectionConfig); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_internalapi_sensor_collector_proto_msgTypes[2].Exporter = func(v any, i int) any {
+			switch v := v.(*CollectorConfig); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -143,7 +281,7 @@ func file_internalapi_sensor_collector_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_internalapi_sensor_collector_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
