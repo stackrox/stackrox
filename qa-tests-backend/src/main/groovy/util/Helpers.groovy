@@ -168,7 +168,7 @@ class Helpers {
         log.debug "Ran: ${cmd}\nExit: ${proc.exitValue()}\nStdout: $sout\nStderr: $serr"
     }
 
-    static int shellCmdWithOutput(String cmd) {
+    static int shellCmdExitValue(String cmd) {
         def sout = new StringBuilder(), serr = new StringBuilder()
         def proc = cmd.execute(null, new File(".."))
         proc.consumeProcessOutput(sout, serr)
