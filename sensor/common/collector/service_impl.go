@@ -27,6 +27,7 @@ type serviceImpl struct {
 	collectorC chan *sensor.MsgToCollector
 
 	connectionManager *connectionManager
+	msg *sensor.MsgToCollector
 }
 
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
@@ -101,9 +102,17 @@ func (c *connectionManager) remove(connection sensor.CollectorService_Communicat
 
 func (s *serviceImpl) Communicate(server sensor.CollectorService_CommunicateServer) error {
 
+	if s.msg != nil {
+		err := server.Send(s.msg)
+		if err != nil {
+			log.Error(err, "Failed sending runtime config to Collector")
+		}
+	}
+
 	s.connectionManager.add(server)
 
 	for msg := range s.collectorC {
+		s.msg = msg
 		brokenConnections := make([]sensor.CollectorService_CommunicateServer, 0)
 		for conn := range s.connectionManager.connectionMap {
 			err := conn.Send(msg)
