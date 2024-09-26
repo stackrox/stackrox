@@ -60,7 +60,7 @@ func NewLocalScannerTLSIssuer(
 		msgFromCentralC:              msgFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
-		getServiceCertificatesRepoFn: certrepo.NewLocalScannerCertificatesRepo,
+		getServiceCertificatesRepoFn: NewServiceCertificatesRepo,
 		certRequester:                NewCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
 }

@@ -1,4 +1,4 @@
-package certrepo
+package certrepo_test
 
 import (
 	"context"
@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/localscanner"
 	"github.com/stretchr/testify/suite"
 	appsApiv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -100,7 +102,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 		secondCASize int
 	}{
 		"same CAs successful get":  {expectedErr: nil, secondCASize: 0},
-		"different CAs failed get": {expectedErr: ErrDifferentCAForDifferentServiceTypes, secondCASize: 1},
+		"different CAs failed get": {expectedErr: certrepo.ErrDifferentCAForDifferentServiceTypes, secondCASize: 1},
 	}
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
@@ -179,7 +181,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetNoSecretDataFailure() {
 
 	_, err := fixture.repo.GetServiceCertificates(context.Background())
 
-	s.ErrorIs(err, ErrMissingSecretData)
+	s.ErrorIs(err, certrepo.ErrMissingSecretData)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetUnexpectedSecretsOwnerFailure() {
@@ -187,7 +189,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetUnexpectedSecretsOwnerF
 
 	_, err := fixture.repo.GetServiceCertificates(context.Background())
 
-	s.ErrorIs(err, ErrUnexpectedSecretsOwner)
+	s.ErrorIs(err, certrepo.ErrUnexpectedSecretsOwner)
 }
 
 func (s *serviceCertificatesRepoSecretsImplSuite) TestGetSecretDataMissingKeysSuccess() {
@@ -253,7 +255,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertsMissingServiceT
 func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsNoCertificatesSuccess() {
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
-	repo := NewLocalScannerCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+	repo := localscanner.NewServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
 	persistedCertificates, err := repo.EnsureServiceCertificates(context.Background(), nil)
 	protoassert.SlicesEqual(s.T(), emptyPersistedCertificates, persistedCertificates)
@@ -266,7 +268,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsCancelFailure
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 
-	repo := NewLocalScannerCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+	repo := localscanner.NewServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
 	_, err := repo.EnsureServiceCertificates(ctx, certificates.CloneVT())
 	s.Error(err)
@@ -275,7 +277,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestCreateSecretsCancelFailure
 func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificateMissingSecretSuccess() {
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
-	repo := NewLocalScannerCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+	repo := localscanner.NewServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
 	persistedCertificates, err := repo.EnsureServiceCertificates(context.Background(), certificates)
 
@@ -288,12 +290,13 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureServiceCertificatesF
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	ctx := context.Background()
-	repo := NewLocalScannerCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+	repo := localscanner.NewServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
 	persistedCertificates, err := repo.EnsureServiceCertificates(ctx, scannersCertificateSet)
 	s.NoError(err)
 	protoassert.SlicesEqual(s.T(), scannersCertificateSet.ServiceCerts, persistedCertificates)
-	expectedSecretNames := []string{scannerSecretName, scannerDbSecretName, scannerV4IndexerSecretName, scannerV4DbSecretName}
+	expectedSecretNames := []string{localscanner.ScannerSecretName, localscanner.ScannerDbSecretName,
+		localscanner.ScannerV4IndexerSecretName, localscanner.ScannerV4DbSecretName}
 	for _, secretName := range expectedSecretNames {
 		_, err = secretsClient.Get(ctx, secretName, metav1.GetOptions{})
 		s.NoError(err)
@@ -305,7 +308,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertificatesScannerV
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	ctx := context.Background()
-	repo := NewLocalScannerCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+	repo := localscanner.NewServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 	scannerV2Certificates := []*storage.TypedServiceCertificate{
 		createServiceCertificate(storage.ServiceType_SCANNER_SERVICE),
 		createServiceCertificate(storage.ServiceType_SCANNER_DB_SERVICE),
@@ -314,13 +317,13 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestEnsureCertificatesScannerV
 	persistedCertificates, err := repo.EnsureServiceCertificates(context.Background(), scannersCertificateSet)
 	s.NoError(err)
 	protoassert.SlicesEqual(s.T(), scannerV2Certificates, persistedCertificates)
-	_, err = secretsClient.Get(ctx, scannerSecretName, metav1.GetOptions{})
+	_, err = secretsClient.Get(ctx, localscanner.ScannerSecretName, metav1.GetOptions{})
 	s.NoError(err)
-	_, err = secretsClient.Get(ctx, scannerDbSecretName, metav1.GetOptions{})
+	_, err = secretsClient.Get(ctx, localscanner.ScannerDbSecretName, metav1.GetOptions{})
 	s.NoError(err)
-	_, err = secretsClient.Get(ctx, scannerV4IndexerSecretName, metav1.GetOptions{})
+	_, err = secretsClient.Get(ctx, localscanner.ScannerV4IndexerSecretName, metav1.GetOptions{})
 	s.ErrorContains(err, "not found")
-	_, err = secretsClient.Get(ctx, scannerV4DbSecretName, metav1.GetOptions{})
+	_, err = secretsClient.Get(ctx, localscanner.ScannerV4DbSecretName, metav1.GetOptions{})
 	s.ErrorContains(err, "not found")
 }
 
@@ -342,7 +345,7 @@ func createServiceCertificate(serviceType storage.ServiceType) *storage.TypedSer
 }
 
 type certSecretsRepoFixture struct {
-	repo          *ServiceCertificatesRepoSecrets
+	repo          *certrepo.ServiceCertificatesRepoSecrets
 	secretsClient corev1.SecretInterface
 	certificates  *storage.TypedServiceCertificateSet
 }
@@ -422,22 +425,22 @@ func sensorOwnerReference() []metav1.OwnerReference {
 }
 
 func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
-	secretsClient corev1.SecretInterface) *ServiceCertificatesRepoSecrets {
+	secretsClient corev1.SecretInterface) *certrepo.ServiceCertificatesRepoSecrets {
 
-	secretsSpecs := make(map[storage.ServiceType]serviceCertSecretSpec)
+	secretsSpecs := make(map[storage.ServiceType]certrepo.ServiceCertSecretSpec)
 	for serviceType, secret := range secrets {
-		secretsSpecs[serviceType] = serviceCertSecretSpec{
-			secretName:          secret.Name,
-			caCertFileName:      mtls.CACertFileName,
-			serviceCertFileName: mtls.ServiceCertFileName,
-			serviceKeyFileName:  mtls.ServiceKeyFileName,
+		secretsSpecs[serviceType] = certrepo.ServiceCertSecretSpec{
+			SecretName:          secret.Name,
+			CaCertFileName:      mtls.CACertFileName,
+			ServiceCertFileName: mtls.ServiceCertFileName,
+			ServiceKeyFileName:  mtls.ServiceKeyFileName,
 		}
 	}
 
-	return &ServiceCertificatesRepoSecrets{
-		secrets:        secretsSpecs,
-		ownerReference: sensorOwnerReference()[0],
-		namespace:      namespace,
-		secretsClient:  secretsClient,
+	return &certrepo.ServiceCertificatesRepoSecrets{
+		Secrets:        secretsSpecs,
+		OwnerReference: sensorOwnerReference()[0],
+		Namespace:      namespace,
+		SecretsClient:  secretsClient,
 	}
 }
