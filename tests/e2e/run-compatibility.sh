@@ -69,6 +69,9 @@ _run_compatibility_tests() {
 
     prepare_for_endpoints_test
 
+    # Give some time for stackrox to be reachable
+    wait_for_api
+
     info "E2E API tests"
     if pr_has_label "ci-release-build"; then
         echo "Running e2e tests in release mode"
