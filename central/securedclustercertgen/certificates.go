@@ -62,7 +62,7 @@ func (c *certIssuerImpl) issueCertificates(namespace string, clusterID string) (
 
 	serviceCerts := make([]*storage.TypedServiceCertificate, 0, c.serviceTypes.Cardinality())
 	for _, serviceType := range c.serviceTypes.AsSlice() {
-		ca, cert, err := c.certificatesFor(serviceType, namespace, clusterID)
+		ca, cert, err := c.certificateFor(serviceType, namespace, clusterID)
 		if err != nil {
 			certIssueError = multierror.Append(certIssueError, err)
 			continue
@@ -84,7 +84,7 @@ func (c *certIssuerImpl) issueCertificates(namespace string, clusterID string) (
 	return &certsSet, nil
 }
 
-func (c *certIssuerImpl) certificatesFor(serviceType storage.ServiceType, namespace string, clusterID string) (caPem []byte, cert *storage.TypedServiceCertificate, err error) {
+func (c *certIssuerImpl) certificateFor(serviceType storage.ServiceType, namespace string, clusterID string) (caPem []byte, cert *storage.TypedServiceCertificate, err error) {
 	certificates, err := c.generateServiceCertMap(serviceType, namespace, clusterID)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "generating certificate for service %s", serviceType)
