@@ -1,11 +1,5 @@
 [
     {
-        "comment": "ROX-5861: compliance restarts with openshift after sensor bounce tests",
-        "job": "^(ocp|openshift)",
-        "logfile": "compliance-previous",
-        "logline": "Fatal: error initializing stream to sensor"
-    },
-    {
         "comment": "collector initialization restart with download failure",
         "job": ".*",
         "logfile": "collector-previous",
