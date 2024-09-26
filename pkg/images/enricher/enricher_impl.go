@@ -338,6 +338,7 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
 	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
+	log.Debugf("ROSS IMAGE METADATA FOR %s (%s) - IS OUT OF DATE? %v", image.GetName().GetFullName(), image.GetId(), metadataOutOfDate)
 	if !metadataOutOfDate {
 		return false, nil
 	}
@@ -348,6 +349,7 @@ func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext
 		if metadataValue, ok := e.metadataCache.Get(getRef(image)); ok {
 			e.metrics.IncrementMetadataCacheHit()
 			image.Metadata = metadataValue.CloneVT()
+			log.Debugf("ROSS IMAGE METADATA GOT CACHED VALUE %s (%s) (ref: %s)", image.GetName().GetFullName(), image.GetId(), getRef(image))
 			return true, nil
 		}
 		e.metrics.IncrementMetadataCacheMiss()
