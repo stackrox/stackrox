@@ -50,13 +50,20 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 		}
 
 		component := &storage.EmbeddedImageScanComponent{
-			Name:          pkg.GetName(),
-			Version:       pkg.GetVersion(),
-			Vulns:         vulnerabilities(report.GetVulnerabilities(), vulnIDs),
-			FixedBy:       pkg.GetFixedInVersion(),
-			Source:        source,
-			Location:      location,
-			HasLayerIndex: layerIdx,
+			Name:     pkg.GetName(),
+			Version:  pkg.GetVersion(),
+			Vulns:    vulnerabilities(report.GetVulnerabilities(), vulnIDs),
+			FixedBy:  pkg.GetFixedInVersion(),
+			Source:   source,
+			Location: location,
+		}
+		// DO NOT BLINDLY SET THIS INSIDE THE STRUCT DECLARATION DIRECTLY ABOVE.
+		// IF layerIdx IS nil, IT DOES NOT MEAN HasLayerIndex WILL BE THE SAME nil.
+		// GO CAN SOMETIMES BE ANNOYING AND nil DOES NOT ALWAYS EQUAL nil.
+		// IT IS MUCH SAFER TO ONLY SET HasLayerIndex TO layerIdx WHEN WE KNOW FOR
+		// SURE layerIdx != nil!!!
+		if layerIdx != nil {
+			component.HasLayerIndex = layerIdx
 		}
 
 		components = append(components, component)

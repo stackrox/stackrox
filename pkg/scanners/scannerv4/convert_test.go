@@ -120,6 +120,189 @@ func TestConvert(t *testing.T) {
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
 }
 
+func TestComponents(t *testing.T) {
+	testcases := []struct {
+		name     string
+		metadata *storage.ImageMetadata
+		report   *v4.VulnerabilityReport
+		expected []*storage.EmbeddedImageScanComponent
+	}{
+		{
+			name: "basic no vulns",
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Digest: "sha256:809a91adbd71a06ab4513434ec04c8f496f042614a8d12033933e9e433c4c179",
+					Layers: []*storage.ImageLayer{
+						{
+							Empty: true,
+						},
+						{
+							Empty: true,
+						},
+						{
+							Empty: true,
+						},
+						{
+							Instruction: "RUN",
+							Value:       "mv -fZ /tmp/ubi.repo /etc/yum.repos.d/ubi.repo || :",
+						},
+						{
+							Instruction: "COPY",
+							Value:       "--chmod=755 ./sleepforever.sh /sleepforever.sh # buildkit",
+						},
+						{
+							Empty: true,
+						},
+					},
+				},
+				V2: &storage.V2Metadata{
+					Digest: "sha256:ac9f0defc3f00ff1459e77b930bbd82870570560b3437b88010514fea79b1808",
+				},
+				LayerShas: []string{
+					"sha256:423c986e97ebd515f172eb484f176107e279ad0ac1db8ead5b21a60a208a8b3c",
+					"sha256:c7212d1c19435c5a25bf5ac9ee9de2bfa66e97684bdc383822b72a934f795545",
+				},
+				DataSource: &storage.DataSource{
+					Id:   "dataSourceID",
+					Name: "dataSourceName",
+				},
+			},
+			report: &v4.VulnerabilityReport{
+				HashId: "hashID",
+				Contents: &v4.Contents{
+					Packages: []*v4.Package{
+						{
+							Id:      "1",
+							Name:    "glib2",
+							Version: "2.68.4-14.el9",
+						},
+					},
+					Distributions: []*v4.Distribution{
+						{
+							Id:        "1",
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:      "sqlite:var/lib/rpm",
+									IntroducedIn:   "sha256:423c986e97ebd515f172eb484f176107e279ad0ac1db8ead5b21a60a208a8b3c",
+									DistributionId: "1",
+									RepositoryIds:  []string{"0"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:     "glib2",
+					Version:  "2.68.4-14.el9",
+					Source:   storage.SourceType_OS,
+					Location: "var/lib/rpm",
+					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+						LayerIndex: 3,
+					},
+				},
+			},
+		},
+		{
+			name: "layer mismatch, no layer indexes",
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Digest: "sha256:809a91adbd71a06ab4513434ec04c8f496f042614a8d12033933e9e433c4c179",
+					Layers: []*storage.ImageLayer{
+						{
+							Empty: true,
+						},
+						{
+							Empty: true,
+						},
+						{
+							Empty: true,
+						},
+						{
+							Instruction: "RUN",
+							Value:       "mv -fZ /tmp/ubi.repo /etc/yum.repos.d/ubi.repo || :",
+						},
+						{
+							Instruction: "COPY",
+							Value:       "--chmod=755 ./sleepforever.sh /sleepforever.sh # buildkit",
+						},
+						{
+							Empty: true,
+						},
+					},
+				},
+				V2: &storage.V2Metadata{
+					Digest: "sha256:ac9f0defc3f00ff1459e77b930bbd82870570560b3437b88010514fea79b1808",
+				},
+				LayerShas: []string{
+					"sha256:423c986e97ebd515f172eb484f176107e279ad0ac1db8ead5b21a60a208a8b3c",
+					"sha256:c7212d1c19435c5a25bf5ac9ee9de2bfa66e97684bdc383822b72a934f795545",
+				},
+				DataSource: &storage.DataSource{
+					Id:   "dataSourceID",
+					Name: "dataSourceName",
+				},
+			},
+			report: &v4.VulnerabilityReport{
+				HashId: "hashID",
+				Contents: &v4.Contents{
+					Packages: []*v4.Package{
+						{
+							Id:      "1",
+							Name:    "glib2",
+							Version: "2.68.4-14.el9",
+						},
+					},
+					Distributions: []*v4.Distribution{
+						{
+							Id:        "1",
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:      "sqlite:var/lib/rpm",
+									IntroducedIn:   "sha256:0fa3315a0cca1299566b56c9efd78f83279c1fc50fa6e5b7297565ba6f007253",
+									DistributionId: "1",
+									RepositoryIds:  []string{"0"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:          "glib2",
+					Version:       "2.68.4-14.el9",
+					Source:        storage.SourceType_OS,
+					Location:      "var/lib/rpm",
+					HasLayerIndex: nil,
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			cs := components(tc.metadata, tc.report)
+			assert.Len(t, cs, len(tc.expected))
+			for i, got := range cs {
+				assert.Truef(t, tc.expected[i].EqualVT(got), "expected: %+#v\ngot: %+#v", tc.expected[i], got)
+			}
+		})
+	}
+}
+
 func TestSetScoresAndScoreVersion(t *testing.T) {
 	testcases := []struct {
 		name     string
