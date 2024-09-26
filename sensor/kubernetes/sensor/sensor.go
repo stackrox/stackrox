@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
+	"github.com/stackrox/rox/sensor/common/collectorruntimeconfig"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/delegatedregistry"
@@ -144,7 +145,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
 	networkFlowManager :=
-		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub)
+		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), collectorruntimeconfig.StoreInstance(), policyDetector, pubSub)
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
