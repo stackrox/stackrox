@@ -2,6 +2,7 @@ package phonehome
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -86,5 +87,25 @@ func Test_hasPathIn(t *testing.T) {
 	for _, pp := range falseCases {
 		rp.Path = pp.path
 		assert.False(t, rp.HasPathIn(pp.paths), pp.path, " in ", pp.paths)
+	}
+}
+
+func TestHasUserAgentIn(t *testing.T) {
+	rp := RequestParams{
+		UserAgent: "Agent",
+	}
+	tests := map[string]bool{
+		"Ogent,Agent,Ugent":  true,
+		"Ogent,Xgent,Ugent":  false,
+		"Ogent,Agen*,Ugent":  true,
+		"Ogent,AgentX,Ugent": false,
+		"Agen*":              true,
+		"*gent":              false,
+		"A*,Ag*,Age*":        true,
+	}
+	for pattern, match := range tests {
+		t.Run(pattern, func(t *testing.T) {
+			assert.Equal(t, match, rp.HasUserAgentIn(strings.Split(pattern, ",")))
+		})
 	}
 }
