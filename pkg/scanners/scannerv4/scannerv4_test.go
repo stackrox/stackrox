@@ -11,8 +11,8 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 	s4ClientMocks "github.com/stackrox/rox/pkg/scannerv4/client/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

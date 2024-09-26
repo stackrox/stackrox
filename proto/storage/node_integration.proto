@@ -19,6 +19,7 @@ message NodeIntegration {
   }
 }
 
+// FIXME: Is this needed anymore?
 message NodeMatcherIntegration {
   string id = 1;
   string name = 2;

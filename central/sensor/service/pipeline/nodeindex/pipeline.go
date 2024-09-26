@@ -88,14 +88,14 @@ func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.Ms
 		return errors.WithMessagef(err, "enriching node %s with index report", event.GetId())
 	}
 
-	/*	// Update the whole node in the database with the new and previous information.
+	// TODO(ROX-26089): Update the whole node in the database with the new and previous information after conversion
+	/*
 		err = p.riskManager.CalculateRiskAndUpsertNode(node)
 		if err != nil {
 			log.Error(err)
 			return err
-		}*/
-
-	// TODO: Add message ack
+		}
+	*/
 
 	return nil
 

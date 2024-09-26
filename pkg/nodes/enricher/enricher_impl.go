@@ -18,6 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+var _ NodeEnricher = (*enricherImpl)(nil)
+
 var (
 	log = logging.LoggerForModule()
 )
@@ -32,8 +34,6 @@ type enricherImpl struct {
 
 	metrics metrics
 }
-
-// Node Scanning / Scanner v2
 
 // UpsertNodeIntegration creates or updates a node integration.
 func (e *enricherImpl) UpsertNodeIntegration(integration *storage.NodeIntegration) error {
@@ -228,65 +228,4 @@ func SupportsNodeScanning(node *storage.Node) bool {
 		}
 	}
 	return false
-}
-
-// Node Matcher / Scanner v4
-
-// EnrichNodeWithIndexReport does vulnerability scanning for Scanner v4 and sets the result in node.NodeScan.
-// node must not be nil
-// indexReport can be nil - in that case it is skipped on scanning
-// func (e *enricherImpl) EnrichNodeWithIndexReport(node *storage.Node, indexReport *v4.IndexReport) error {
-// 	node.Notes = node.Notes[:0]
-//
-// 	err := e.enrichWithIndexReport(node, indexReport)
-// 	if err != nil {
-// 		node.Notes = append(node.Notes, storage.Node_MISSING_SCAN_DATA)
-// 	}
-//
-// 	// e.cves.EnrichNodeWithSuppressedCVEs(node)
-//
-// 	return err
-// }
-//
-// func (e *enricherImpl) enrichWithIndexReport(node *storage.Node, indexReport *v4.IndexReport) error {
-// 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error matching node %s:%s", node.GetClusterName(), node.GetName()))
-//
-// 	scanners := concurrency.WithRLock1(&e.lock, func() []types.NodeMatcherWithDataSource {
-// 		scanners := make([]types.NodeMatcherWithDataSource, 0, len(e.matchers))
-// 		for _, scanner := range e.matchers {
-// 			scanners = append(scanners, scanner)
-// 		}
-// 		return scanners
-// 	})
-//
-// 	if len(scanners) == 0 {
-// 		errorList.AddError(errors.New("no node matchers integrated"))
-// 		return errorList.ToError()
-// 	}
-//
-// 	for _, scanner := range scanners {
-// 		if err := e.enrichNodeWithMatcher(node, indexReport, scanner.GetNodeMatcher()); err != nil {
-// 			errorList.AddError(err)
-// 			continue
-// 		}
-// 		return nil
-// 	}
-//
-// 	return errorList.ToError()
-// }
-
-func (e *enricherImpl) enrichNodeWithMatcher(node *storage.Node, indexReport *v4.IndexReport, scanner types.NodeMatcher) error {
-	vr, err := scanner.GetNodeVulnerabilityReport(node, indexReport)
-	if err != nil {
-		return errors.Wrapf(err, "scanning node %s with scanner %q", node.GetName(), scanner.Name())
-	}
-	log.Infof("Scanned node %s with scanner %q and found %d packages with %d vulnerabilities",
-		node.GetName(), scanner.Name(), len(vr.GetContents().Packages), len(vr.GetVulnerabilities()))
-
-	// TODO: Convert v4.VulnerabilityReport into a NodeScan and set node.Scan = scan
-	// node.Scan = scan
-	// converter.FillV2NodeVulnerabilities(node)
-	// FillScanStats(node)
-
-	return nil
 }

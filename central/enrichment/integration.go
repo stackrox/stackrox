@@ -43,10 +43,10 @@ func isNodeIntegration(integration *storage.ImageIntegration) bool {
 	return false
 }
 
-// imageIntegrationToNodeIntegration converts the given image integration into a node integration.
+// ImageIntegrationToNodeIntegration converts the given image integration into a node integration.
 // Currently, only StackRox Scanner and Scanner v4 are supported node integrations.
 // Assumes integration.GetCategories() includes storage.ImageIntegrationCategory_NODE_SCANNER.
-func imageIntegrationToNodeIntegration(integration *storage.ImageIntegration) (*storage.NodeIntegration, error) {
+func ImageIntegrationToNodeIntegration(integration *storage.ImageIntegration) (*storage.NodeIntegration, error) {
 	if integration.GetType() != scannerTypes.Clairify && integration.GetType() != scannerTypes.ScannerV4 {
 		return nil, errors.Errorf("requires a %s or %s config: %q", scannerTypes.Clairify, scannerTypes.ScannerV4, integration.GetName())
 	}
@@ -69,7 +69,7 @@ func imageIntegrationToNodeIntegration(integration *storage.ImageIntegration) (*
 	default:
 		return nil, errors.Errorf("unsupported integration type: %q", integration.GetType())
 	}
-	log.Infof("Created Node Integration %s / %s from Image integration", i.GetName(), i.GetType())
+	log.Infof("Created Node Integration %s / %s from Image integration", i.GetName(), i.GetType()) // FIXME: Switch to debug level
 
 	return i, nil
 }
@@ -89,7 +89,6 @@ func imageIntegrationToOrchestratorIntegration(integration *storage.ImageIntegra
 }
 
 func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {
-	log.Infof("Upserting Integration %s / %s", integration.GetName(), integration.GetType())
 	if err := m.imageIntegrationSet.UpdateImageIntegration(integration); err != nil {
 		return err
 	}
@@ -99,8 +98,8 @@ func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {
 		m.cveFetcher.RemoveIntegration(integration.GetId())
 		return nil
 	}
-	log.Infof("Converting Integration to Node: %s / %s", integration.GetName(), integration.GetType())
-	nodeIntegration, err := imageIntegrationToNodeIntegration(integration)
+	log.Infof("Converting Integration to Node: %s / %s", integration.GetName(), integration.GetType()) // FIXME: Loglevel or remove
+	nodeIntegration, err := ImageIntegrationToNodeIntegration(integration)
 	if err != nil {
 		return err
 	}

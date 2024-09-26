@@ -14,17 +14,11 @@ import (
 //
 //go:generate mockgen-wrapper
 type NodeEnricher interface {
-	// Node Scan / Scanner v2
 	EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error
 	EnrichNode(node *storage.Node) error
 	CreateNodeScanner(integration *storage.NodeIntegration) (types.NodeScannerWithDataSource, error)
 	UpsertNodeIntegration(integration *storage.NodeIntegration) error
 	RemoveNodeIntegration(id string)
-	// Node Index / Scanner v4
-	// EnrichNodeWithIndexReport(node *storage.Node, indexReport *v4.IndexReport) error
-	// CreateNodeMatcer(integration *storage.NodeMatcherIntegration) (types.NodeMatcherWithDataSource, error)
-	// UpsertNodeMatcherIntegration(integration *storage.NodeMatcherIntegration) error
-	// RemoveNodeMatcherIntegration(id string)
 }
 
 // CVESuppressor provides enrichment for suppressed CVEs for an node's components.

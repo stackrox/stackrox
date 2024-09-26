@@ -86,7 +86,7 @@ func (c *Compliance) Start() {
 		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
 
-	if c.nodeScanner.IsActive() { // TODO: This mustn't be depending on a v2 setting
+	if c.nodeScanner.IsActive() || env.NodeIndexEnabled.BooleanSetting() {
 		nodeInventoriesC := c.manageNodeScanLoop(ctx)
 		// sending nodeInventories into output toSensorC
 		for n := range nodeInventoriesC {
@@ -137,6 +137,9 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheHit)
 				}
 			case <-t.C:
+				if !c.nodeScanner.IsActive() {
+					break
+				}
 				log.Infof("Scanning node %q", nodeName)
 				msg, err := c.nodeScanner.ScanNode(ctx)
 				if err != nil {
@@ -154,7 +157,7 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 					if err != nil {
 						log.Errorf("Error creating node index: %v", err)
 					} else {
-						log.Infof("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
+						log.Infof("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages())) // FIXME: Debug level
 						nodeInventoriesC <- c.createIndexMsg(report)
 					}
 				}
