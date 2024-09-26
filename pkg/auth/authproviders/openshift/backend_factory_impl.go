@@ -19,6 +19,7 @@ const (
 
 type factory struct {
 	callbackURLPath string
+	newBackendFunc  func(id string, callbackURL string, config map[string]string) (*backend, error)
 }
 
 var _ authproviders.BackendFactory = (*factory)(nil)
@@ -28,11 +29,16 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	urlPathPrefix = strings.TrimRight(urlPathPrefix, "/") + "/"
 	return &factory{
 		callbackURLPath: urlPathPrefix + callbackRelativePath,
+		newBackendFunc:  newBackend,
 	}
 }
 
 func (f *factory) CreateBackend(_ context.Context, id string, _ []string, config map[string]string, _ map[string]string) (authproviders.Backend, error) {
-	return newBackend(id, f.callbackURLPath, config)
+	b, err := f.newBackendFunc(id, f.callbackURLPath, config)
+	if err == nil {
+		registerBackend(b)
+	}
+	return b, err
 }
 
 func (f *factory) CleanupBackend(id string) error {

@@ -48,6 +48,14 @@ func handleCertPoolUpdate() {
 	}
 }
 
+// GetRegisteredBackendCount gives the number of backend registered
+// in the certificate watcher update loop.
+func GetRegisteredBackendCount() int {
+	backendRegistrationMutex.RLock()
+	defer backendRegistrationMutex.RUnlock()
+	return len(registeredBackends)
+}
+
 // WatchCertPool starts watching the underlying cert pool injected into the openshift connector.
 // In case the cert pool changes, we re-create the openshift connector so that newly added trusted CAs
 // are being added included.
