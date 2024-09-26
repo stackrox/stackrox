@@ -180,6 +180,6 @@ func (r *SecurityPolicyReconciler) deletePolicyInCentral(ctx context.Context, po
 		return errors.New(fmt.Sprintf("policy %q is not externally managed and can be deleted only from central", name))
 	}
 
-	return errors.Wrap(r.PolicyClient.DeletePolicy(ctx, cachedPolicy.GetId()),
+	return errors.Wrap(r.PolicyClient.DeletePolicy(ctx, name),
 		fmt.Sprintf("failed to delete policy %q in Central", name))
 }
