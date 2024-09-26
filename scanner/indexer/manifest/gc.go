@@ -8,6 +8,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 )
 
@@ -18,9 +19,7 @@ const (
 
 	// gcName is the name of the GC process.
 	// This is used by the lock to prevent concurrent GC runs.
-	gcName     = `manifest-garbage-collection`
-	// gcInterval is the base interval between GC runs.
-	gcInterval = 6 * time.Hour
+	gcName = `manifest-garbage-collection`
 )
 
 var (
@@ -31,6 +30,9 @@ var (
 		0 * time.Hour,
 		1 * time.Hour,
 	}
+
+	// gcInterval is the base interval between GC runs.
+	gcInterval = env.ScannerV4ManifestGCInterval.DurationSetting()
 )
 
 // GC represents an indexer manifest garbage collector.
@@ -48,7 +50,7 @@ type GC struct {
 	// deleteFunc represents the function used to delete manifests from ClairCore.
 	//
 	// This is used instead of passing the entire *libindex.Libindex to the GC.
-	deleteFunc    DeleteManifestsFunc
+	deleteFunc DeleteManifestsFunc
 }
 
 // DeleteManifestsFunc represents the type of the function used to delete manifests from ClairCore.
