@@ -42,7 +42,7 @@ const emptyDefaultFilters = {
 type AdvancedFiltersToolbarProps = {
     searchFilterConfig: CompoundSearchFilterProps['config'];
     searchFilter: SearchFilter;
-    onFilterChange: (searchFilter: SearchFilter, payload: OnSearchPayload) => void;
+    onFilterChange: (searchFilter: SearchFilter, payload?: OnSearchPayload) => void;
     cveStatusFilterField?: 'FIXABLE' | 'CLUSTER CVE FIXABLE';
     className?: string;
     defaultFilters?: DefaultFilters;
@@ -160,6 +160,8 @@ function AdvancedFiltersToolbar({
                 {getHasSearchApplied(searchFilter) && (
                     <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                         <SearchFilterChips
+                            searchFilter={searchFilter}
+                            onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={filterChipGroupDescriptors}
                         />
                     </ToolbarGroup>
