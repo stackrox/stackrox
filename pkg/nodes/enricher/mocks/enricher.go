@@ -41,21 +41,6 @@ func (m *MockNodeEnricher) EXPECT() *MockNodeEnricherMockRecorder {
 	return m.recorder
 }
 
-// CreateNodeMatcher mocks base method.
-func (m *MockNodeEnricher) CreateNodeMatcher(integration *storage.NodeMatcherIntegration) (types.NodeMatcherWithDataSource, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateNodeMatcher", integration)
-	ret0, _ := ret[0].(types.NodeMatcherWithDataSource)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateNodeMatcher indicates an expected call of CreateNodeMatcher.
-func (mr *MockNodeEnricherMockRecorder) CreateNodeMatcher(integration any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNodeMatcher", reflect.TypeOf((*MockNodeEnricher)(nil).CreateNodeMatcher), integration)
-}
-
 // CreateNodeScanner mocks base method.
 func (m *MockNodeEnricher) CreateNodeScanner(integration *storage.NodeIntegration) (types.NodeScannerWithDataSource, error) {
 	m.ctrl.T.Helper()
@@ -83,20 +68,6 @@ func (m *MockNodeEnricher) EnrichNode(node *storage.Node) error {
 func (mr *MockNodeEnricherMockRecorder) EnrichNode(node any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNode", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNode), node)
-}
-
-// EnrichNodeWithIndexReport mocks base method.
-func (m *MockNodeEnricher) EnrichNodeWithIndexReport(node *storage.Node, indexReport *v4.IndexReport) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnrichNodeWithIndexReport", node, indexReport)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// EnrichNodeWithIndexReport indicates an expected call of EnrichNodeWithIndexReport.
-func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithIndexReport(node, indexReport any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithIndexReport", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNodeWithIndexReport), node, indexReport)
 }
 
 // EnrichNodeWithInventory mocks base method.

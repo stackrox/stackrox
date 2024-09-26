@@ -64,23 +64,6 @@ type NodeScannerWithDataSource interface {
 	DataSource() *storage.DataSource
 }
 
-// FIXME: Begin - Are these needed anymore?
-
-// NodeMatcher is the interface all v4 node matchers must implement
-type NodeMatcher interface {
-	NodeMatchSemaphore
-	Name() string
-	GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error)
-	Type() string
-}
-
-type NodeMatcherWithDataSource interface {
-	GetNodeMatcher() NodeMatcher
-	DataSource() *storage.DataSource
-}
-
-// FIXME: End - Are these needed anymore?
-
 // OrchestratorScanner is the interface all orchestrator scanners must implement
 type OrchestratorScanner interface {
 	ScanSemaphore

@@ -56,7 +56,6 @@ func ImageIntegrationToNodeIntegration(integration *storage.ImageIntegration) (*
 		Type: integration.GetType(),
 	}
 
-	log.Infof("Switching type to convert ")
 	switch integration.GetType() {
 	case scannerTypes.ScannerV4:
 		i.IntegrationConfig = &storage.NodeIntegration_Scannerv4{
@@ -69,7 +68,7 @@ func ImageIntegrationToNodeIntegration(integration *storage.ImageIntegration) (*
 	default:
 		return nil, errors.Errorf("unsupported integration type: %q", integration.GetType())
 	}
-	log.Infof("Created Node Integration %s / %s from Image integration", i.GetName(), i.GetType()) // FIXME: Switch to debug level
+	log.Debugf("Created Node Integration %s / %s from Image integration", i.GetName(), i.GetType())
 
 	return i, nil
 }
@@ -98,7 +97,7 @@ func (m *managerImpl) Upsert(integration *storage.ImageIntegration) error {
 		m.cveFetcher.RemoveIntegration(integration.GetId())
 		return nil
 	}
-	log.Infof("Converting Integration to Node: %s / %s", integration.GetName(), integration.GetType()) // FIXME: Loglevel or remove
+	log.Debugf("Converting Integration to Node: %s / %s", integration.GetName(), integration.GetType())
 	nodeIntegration, err := ImageIntegrationToNodeIntegration(integration)
 	if err != nil {
 		return err

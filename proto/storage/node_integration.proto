@@ -18,14 +18,3 @@ message NodeIntegration {
     ScannerV4Config scannerv4 = 5;
   }
 }
-
-// FIXME: Is this needed anymore?
-message NodeMatcherIntegration {
-  string id = 1;
-  string name = 2;
-  string type = 3;
-
-  oneof IntegrationConfig {
-    ClairV4Config clairv4 = 4;
-  }
-}

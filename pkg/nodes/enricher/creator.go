@@ -40,16 +40,3 @@ func (e *enricherImpl) CreateNodeScanner(source *storage.NodeIntegration) (types
 		},
 	}, nil
 }
-
-type nodeMatcherWithDataSource struct { // FIXME: Is that in use anymore?
-	nodeMatcher types.NodeMatcher
-	datasource  *storage.DataSource
-}
-
-func (n nodeMatcherWithDataSource) GetNodeMatcher() types.NodeMatcher {
-	return n.nodeMatcher
-}
-
-func (n nodeMatcherWithDataSource) DataSource() *storage.DataSource {
-	return n.datasource
-}
