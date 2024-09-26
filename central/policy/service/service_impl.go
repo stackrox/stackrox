@@ -1158,7 +1158,7 @@ func (s *serviceImpl) SaveAsCustomResources(ctx context.Context, request *v1.Sav
 			errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
 				PolicyId: policy.GetId(),
 				Error: &v1.PolicyError{
-					Error: errors.Wrapf(err, "Failed to marshal policy to custom resource").Error(),
+					Error: errors.Wrap(err, "Failed to marshal policy to custom resource").Error(),
 				},
 			})
 		}
