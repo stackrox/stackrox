@@ -1,8 +1,8 @@
 package collectorruntimeconfig
 
 import (
-	// "github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
+	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 
 	// "github.com/stackrox/rox/pkg/net"
@@ -19,7 +19,7 @@ func newHandler() *handlerImpl {
 		stopSig:                    concurrency.NewSignal(),
 		updateSig:                  concurrency.NewSignal(),
 		collectorConfig:            nil,
-		collectorConfigProtoStream: concurrency.NewValueStream[*storage.CollectorConfig](nil),
+		collectorConfigProtoStream: concurrency.NewValueStream[*sensor.CollectorConfig](nil),
 	}
 }
 

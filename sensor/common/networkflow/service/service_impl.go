@@ -9,7 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
+	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -90,8 +90,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return s.authFuncOverride(ctx, fullMethodName)
 }
 
+//// PushNetworkConnectionInfo handles the bidirectional gRPC stream with the collector
+// func (s *serviceImpl) PushNetworkConnectionInfo(stream sensor.NetworkConnectionInfoService_CommunicateServer) error {
+//	return s.receiveMessages(stream)
+//}
+
 // PushNetworkConnectionInfo handles the bidirectional gRPC stream with the collector
-func (s *serviceImpl) PushNetworkConnectionInfo(stream sensor.NetworkConnectionInfoService_CommunicateServer) error {
+func (s *serviceImpl) Communicate(stream sensor.NetworkConnectionInfoService_CommunicateServer) error {
 	return s.receiveMessages(stream)
 }
 
@@ -139,7 +144,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 		}
 	}
 
-	var collectorConfigIterator concurrency.ValueStreamIter[*storage.CollectorConfig]
+	var collectorConfigIterator concurrency.ValueStreamIter[*sensor.CollectorConfig]
 	if features.CollectorRuntimeConfig.Enabled() {
 		collectorConfigIterator = s.manager.CollectorConfigValueStream().Iterator(false)
 		if err := s.sendCollectorConfig(stream, collectorConfigIterator); err != nil {
@@ -229,7 +234,9 @@ func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoServic
 	}
 
 	controlMsg := &sensor.MsgToCollector{
-		PublicIpAddresses: listProto,
+		Msg: &sensor.MsgToCollector_PublicIpAddresses{
+			PublicIpAddresses: listProto,
+		},
 	}
 
 	if err := stream.Send(controlMsg); err != nil {
@@ -245,7 +252,9 @@ func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoSe
 	}
 
 	controlMsg := &sensor.MsgToCollector{
-		IpNetworks: listProto,
+		Msg: &sensor.MsgToCollector_IpNetworks{
+			IpNetworks: listProto,
+		},
 	}
 
 	if err := stream.Send(controlMsg); err != nil {
@@ -254,14 +263,16 @@ func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoSe
 	return nil
 }
 
-func (s *serviceImpl) sendCollectorConfig(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*storage.CollectorConfig]) error {
+func (s *serviceImpl) sendCollectorConfig(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.CollectorConfig]) error {
 	collectorConfig := iter.Value()
 	if collectorConfig == nil {
 		return nil
 	}
 
 	controlMsg := &sensor.MsgToCollector{
-		CollectorConfig: collectorConfig,
+		Msg: &sensor.MsgToCollector_CollectorConfig{
+			CollectorConfig: collectorConfig,
+		},
 	}
 
 	if err := stream.Send(controlMsg); err != nil {

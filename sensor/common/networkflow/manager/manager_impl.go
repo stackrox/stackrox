@@ -1199,6 +1199,6 @@ func (m *networkFlowManager) ExternalSrcsValueStream() concurrency.ReadOnlyValue
 	return m.externalSrcs.ExternalSrcsValueStream()
 }
 
-func (m *networkFlowManager) CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*storage.CollectorConfig] {
+func (m *networkFlowManager) CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*sensor.CollectorConfig] {
 	return m.collectorRuntimeConfig.CollectorConfigValueStream()
 }

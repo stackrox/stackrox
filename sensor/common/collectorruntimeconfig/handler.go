@@ -3,11 +3,11 @@ package collectorruntimeconfig
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 
-	"github.com/stackrox/rox/generated/storage"
+	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
@@ -22,7 +22,7 @@ var (
 //
 //go:generate mockgen-wrapper
 type Store interface {
-	CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*storage.CollectorConfig]
+	CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*sensor.CollectorConfig]
 }
 
 // Handler forwards the collector runtime config received from Central to Collectors.
@@ -34,8 +34,8 @@ type handlerImpl struct {
 	stopSig   concurrency.Signal
 	updateSig concurrency.Signal
 
-	collectorConfig            *storage.CollectorConfig
-	collectorConfigProtoStream *concurrency.ValueStream[*storage.CollectorConfig]
+	collectorConfig            *sensor.CollectorConfig
+	collectorConfigProtoStream *concurrency.ValueStream[*sensor.CollectorConfig]
 
 	lock sync.Mutex
 }
@@ -56,16 +56,22 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func getCollectorConfig(msg *central.MsgToSensor) *storage.CollectorConfig {
-	if clusterConfig := msg.GetClusterConfig(); clusterConfig != nil {
-		if config := clusterConfig.GetConfig(); config != nil {
-			if collectorConfig := config.GetCollectorConfig(); collectorConfig != nil {
-				return collectorConfig
-			}
-		}
+func getCollectorConfig(msg *central.MsgToSensor) *sensor.CollectorConfig {
+	// if clusterConfig := msg.GetClusterConfig(); clusterConfig != nil {
+	//	if config := clusterConfig.GetConfig(); config != nil {
+	//		if collectorConfig := config.GetCollectorConfig(); collectorConfig != nil {
+	//			return collectorConfig
+	//		}
+	//	}
+	//}
+
+	return &sensor.CollectorConfig{
+		NetworkConnectionConfig: &sensor.NetworkConnectionConfig{
+			EnableExternalIps: true,
+		},
 	}
 
-	return nil
+	// return nil
 }
 
 func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
@@ -112,6 +118,6 @@ func (h *handlerImpl) pushConfigToValueStream() {
 	h.collectorConfigProtoStream.Push(h.collectorConfig)
 }
 
-func (h *handlerImpl) CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*storage.CollectorConfig] {
+func (h *handlerImpl) CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*sensor.CollectorConfig] {
 	return h.collectorConfigProtoStream
 }
