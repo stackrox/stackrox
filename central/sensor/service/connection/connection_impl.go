@@ -372,14 +372,14 @@ func (c *sensorConnection) processIssueSecuredClusterCertsRequest(ctx context.Co
 	requestID := request.GetRequestId()
 	clusterID := c.clusterID
 	namespace := c.sensorHello.GetDeploymentIdentification().GetAppNamespace()
-	errMsg := fmt.Sprintf("issuing Sensor certificates for request ID %q, cluster ID %q and namespace %q",
+	errMsg := fmt.Sprintf("issuing Secured Cluster certificates for request ID %q, cluster ID %q and namespace %q",
 		requestID, clusterID, namespace)
 	var (
 		err      error
 		response *central.IssueSecuredClusterCertsResponse
 	)
 	if requestID == "" {
-		err = errors.New("requestID is required to issue the certificates for Sensor")
+		err = errors.New("requestID is required to issue the certificates for a Secured Cluster")
 	} else {
 		var certificates *storage.TypedServiceCertificateSet
 		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID)
