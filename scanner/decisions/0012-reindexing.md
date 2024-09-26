@@ -180,7 +180,7 @@ each manifest will be randomly generated.
 
 In case the seven to thirty days interval is too long, we may consider adding some way to force a re-indexing via `roxctl`.
 The details for such is out of scope for this document, but it is worth mentioning, as it may prove to be useful
-sometime in the future. # TODO CREATE TICKET FOR THIS
+sometime in the future (ROX-26406).
 
 ## Consequences
 
