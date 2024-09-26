@@ -123,8 +123,9 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", digest.Name(), err)
 	}
 
-	log.Debugf("Vuln report received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
+	log.Debugf("Vuln report received for %q (digest %q) (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
 		image.GetName().GetFullName(),
+		digest.String(),
 		vr.GetHashId(),
 		len(vr.GetContents().GetDistributions()),
 		len(vr.GetContents().GetEnvironments()),
