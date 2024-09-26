@@ -92,20 +92,23 @@ func Test_hasPathIn(t *testing.T) {
 
 func TestHasUserAgentIn(t *testing.T) {
 	rp := RequestParams{
-		UserAgent: "Agent",
+		UserAgent: "Some Agent Value",
 	}
 	tests := map[string]bool{
 		"Ogent,Agent,Ugent":  true,
 		"Ogent,Xgent,Ugent":  false,
-		"Ogent,Agen*,Ugent":  true,
+		"Ogent,Agen,Ugent":   true,
 		"Ogent,AgentX,Ugent": false,
-		"Agen*":              true,
-		"*gent":              false,
-		"A*,Ag*,Age*":        true,
+		"Agen":               true,
+		"gent":               true,
+		"Some":               true,
+		"Value":              true,
+		"Some Agent":         true,
+		"A,Ag,Age":           true,
 	}
-	for pattern, match := range tests {
-		t.Run(pattern, func(t *testing.T) {
-			assert.Equal(t, match, rp.HasUserAgentIn(strings.Split(pattern, ",")))
+	for substrings, match := range tests {
+		t.Run(substrings, func(t *testing.T) {
+			assert.Equal(t, match, rp.HasUserAgentWith(strings.Split(substrings, ",")))
 		})
 	}
 }

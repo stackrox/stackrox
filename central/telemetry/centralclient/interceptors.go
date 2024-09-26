@@ -38,11 +38,11 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 
 // apiCall enables API Call events for the API paths specified in the
 // trackedPaths ("*" value enables all paths) or for the calls with the
-// User-Agent matching the wildcards specified in the trackedUserAgents, and
+// User-Agent containing the substrings specified in the trackedUserAgents, and
 // have no match in the ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, _ map[string]any) bool {
 	return !rp.HasPathIn(ignoredPaths) && (rp.HasPathIn(trackedPaths) ||
-		rp.HasUserAgentIn(trackedUserAgents))
+		rp.HasUserAgentWith(trackedUserAgents))
 }
 
 // roxctl enables the roxctl event.

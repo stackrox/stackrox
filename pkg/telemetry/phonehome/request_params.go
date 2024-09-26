@@ -28,17 +28,13 @@ type ServiceMethod struct {
 	HTTPPath   string
 }
 
-func wildcardMatches(pattern, value string) bool {
-	if strings.HasSuffix(pattern, "*") {
-		return strings.HasPrefix(value, pattern[0:len(pattern)-1])
-	}
-	return value == pattern
-}
-
 // PathMatches returns true if Path equals to pattern or matches '*'-terminating
 // wildcard. E.g. path '/v1/object/id' will match pattern '/v1/object/*'.
 func (rp *RequestParams) PathMatches(pattern string) bool {
-	return wildcardMatches(pattern, rp.Path)
+	if strings.HasSuffix(pattern, "*") {
+		return strings.HasPrefix(rp.Path, pattern[0:len(pattern)-1])
+	}
+	return rp.Path == pattern
 }
 
 // HasPathIn returns true if Path matches an element in patterns.
@@ -51,10 +47,10 @@ func (rp *RequestParams) HasPathIn(patterns []string) bool {
 	return false
 }
 
-// HasUserAgentIn returns true if UserAgent matches an element in patterns.
-func (rp *RequestParams) HasUserAgentIn(patterns []string) bool {
-	for _, pattern := range patterns {
-		if wildcardMatches(pattern, rp.UserAgent) {
+// HasUserAgentWith returns true if UserAgent contains any of the sub-strings.
+func (rp *RequestParams) HasUserAgentWith(substrings []string) bool {
+	for _, pattern := range substrings {
+		if strings.Contains(rp.UserAgent, pattern) {
 			return true
 		}
 	}
