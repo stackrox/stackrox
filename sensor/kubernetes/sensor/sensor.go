@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pods"
@@ -166,6 +167,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		imageService,
 		enhancer,
 		complianceService,
+	}
+	if features.CollectorRuntimeConfig.Enabled() {
+		log.Info("Adding collectorRuntimeConfigService as a component")
+		components = append(components, collectorruntimeconfig.Singleton())
 	}
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher)

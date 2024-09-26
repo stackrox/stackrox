@@ -72,4 +72,3 @@ service NetworkConnectionInfoService {
   rpc Communicate(stream NetworkConnectionInfoMessage) returns (stream MsgToCollector);
   // rpc Communicate(stream MsgFromCollector) returns (stream MsgToCollector); // TODO Uncomment in 4.7
 }
-

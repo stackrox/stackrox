@@ -9,7 +9,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -90,6 +89,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return s.authFuncOverride(ctx, fullMethodName)
 }
 
+// Leaving this commented out for now. Will not merge like this
 //// PushNetworkConnectionInfo handles the bidirectional gRPC stream with the collector
 // func (s *serviceImpl) PushNetworkConnectionInfo(stream sensor.NetworkConnectionInfoService_CommunicateServer) error {
 //	return s.receiveMessages(stream)
@@ -105,6 +105,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 
 	incomingMD := metautils.ExtractIncoming(stream.Context())
 	hostname = incomingMD.Get("rox-collector-hostname")
+	log.Infof("In recevieMessage hostname= %+v", hostname)
 	if hostname == "" {
 		return errors.New("collector did not transmit a hostname in initial metadata")
 	}
@@ -145,7 +146,9 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 	}
 
 	var collectorConfigIterator concurrency.ValueStreamIter[*sensor.CollectorConfig]
+	log.Infof("CollectorRuntimeConfig.Enabled()= %+v", features.CollectorRuntimeConfig.Enabled())
 	if features.CollectorRuntimeConfig.Enabled() {
+		log.Info("CollectorRuntimeConfig is enabled")
 		collectorConfigIterator = s.manager.CollectorConfigValueStream().Iterator(false)
 		if err := s.sendCollectorConfig(stream, collectorConfigIterator); err != nil {
 			return err
@@ -163,6 +166,11 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 		var externalSrcsItrDoneC <-chan struct{}
 		if externalSrcsIterator != nil {
 			externalSrcsItrDoneC = externalSrcsIterator.Done()
+		}
+
+		var collectorConfigItrDoneC <-chan struct{}
+		if collectorConfigIterator != nil {
+			collectorConfigItrDoneC = collectorConfigIterator.Done()
 		}
 
 		select {
@@ -196,6 +204,11 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 		case <-externalSrcsItrDoneC:
 			externalSrcsIterator = externalSrcsIterator.TryNext()
 			if err := s.sendExternalSrcsList(stream, externalSrcsIterator); err != nil {
+				return err
+			}
+		case <-collectorConfigItrDoneC:
+			collectorConfigIterator = collectorConfigIterator.TryNext()
+			if err := s.sendCollectorConfig(stream, collectorConfigIterator); err != nil {
 				return err
 			}
 		}

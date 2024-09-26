@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 
-	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -57,24 +56,26 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func getCollectorConfig(msg *central.MsgToSensor) *sensor.CollectorConfig {
-	// if clusterConfig := msg.GetClusterConfig(); clusterConfig != nil {
-	//	if config := clusterConfig.GetConfig(); config != nil {
-	//		if collectorConfig := config.GetCollectorConfig(); collectorConfig != nil {
-	//			return collectorConfig
-	//		}
-	//	}
-	//}
-
-	return &sensor.CollectorConfig{
-		NetworkConnectionConfig: &sensor.NetworkConnectionConfig{
-			EnableExternalIps: true,
-		},
+	if clusterConfig := msg.GetClusterConfig(); clusterConfig != nil {
+		log.Info("Created fake collector config")
+		return &sensor.CollectorConfig{
+			NetworkConnectionConfig: &sensor.NetworkConnectionConfig{
+				EnableExternalIps: true,
+			},
+		}
+		// TODO: Once the collector config is a part of cluster config uncomment thi
+		// if config := clusterConfig.GetConfig(); config != nil {
+		//	if collectorConfig := config.GetCollectorConfig(); collectorConfig != nil {
+		//		return collectorConfig
+		//	}
+		//}
 	}
 
-	// return nil
+	return nil
 }
 
 func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+	log.Info("In ProcessMessage for collector runtime config")
 	collectorConfig := getCollectorConfig(msg)
 	if collectorConfig == nil {
 		return nil
@@ -115,6 +116,7 @@ func (h *handlerImpl) pushConfigToValueStream() {
 
 	defer h.updateSig.Reset()
 
+	log.Info("In pushConfigToValueStream")
 	h.collectorConfigProtoStream.Push(h.collectorConfig)
 }
 

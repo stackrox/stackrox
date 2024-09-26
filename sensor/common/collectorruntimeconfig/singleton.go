@@ -2,10 +2,8 @@ package collectorruntimeconfig
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 
-	// "github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
