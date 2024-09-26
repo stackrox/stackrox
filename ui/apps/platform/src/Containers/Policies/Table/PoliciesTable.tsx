@@ -30,6 +30,7 @@ import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
 import EnableDisableNotificationModal, {
     EnableDisableType,
 } from 'Containers/Policies/Modal/EnableDisableNotificationModal';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import useSet from 'hooks/useSet';
 import { AlertVariantType } from 'hooks/patternfly/useToasts';
@@ -61,6 +62,7 @@ type PoliciesTableProps = {
     hasWriteAccessForPolicy: boolean;
     deletePoliciesHandler: (ids: string[]) => Promise<void>;
     exportPoliciesHandler: (ids, onClearAll?) => void;
+    saveAsCustomResourceHandler: (ids, onClearAll?) => void;
     enablePoliciesHandler: (ids) => void;
     disablePoliciesHandler: (ids) => void;
     handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
@@ -78,6 +80,7 @@ function PoliciesTable({
     hasWriteAccessForPolicy,
     deletePoliciesHandler,
     exportPoliciesHandler,
+    saveAsCustomResourceHandler,
     enablePoliciesHandler,
     disablePoliciesHandler,
     handleChangeSearchFilter,
@@ -86,6 +89,8 @@ function PoliciesTable({
     searchFilter,
     searchOptions,
 }: PoliciesTableProps): React.ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isPolicyAsCodeEnabled = isFeatureFlagEnabled('ROX_POLICY_AS_CODE');
     const expandedRowSet = useSet<string>();
     const history = useHistory();
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
@@ -267,6 +272,23 @@ function PoliciesTable({
                                             >
                                                 {`Export policies (${selectedPolicies.length})`}
                                             </DropdownItem>,
+                                            isPolicyAsCodeEnabled ? (
+                                                <DropdownItem
+                                                    key="Save as Custom Resource"
+                                                    component="button"
+                                                    isDisabled={selectedPolicies.length === 0}
+                                                    onClick={() =>
+                                                        saveAsCustomResourceHandler(
+                                                            selectedIds,
+                                                            onClearAll
+                                                        )
+                                                    }
+                                                >
+                                                    {`Save as Custom Resource (${selectedPolicies.length})`}
+                                                </DropdownItem>
+                                            ) : (
+                                                <></>
+                                            ),
                                             <DropdownSeparator key="Separator" />,
                                             <DropdownItem
                                                 key="Delete policy"
@@ -365,6 +387,16 @@ function PoliciesTable({
                             title: 'Export policy to JSON',
                             onClick: () => exportPoliciesHandler([id]),
                         };
+                        // Store as an array so that we can conditionally spread into actionItems
+                        // based on feature flag without having to deal with nulls
+                        const saveAsCustomResourceActionItems: ActionItem[] = isPolicyAsCodeEnabled
+                            ? [
+                                  {
+                                      title: 'Save as Custom Resource',
+                                      onClick: () => saveAsCustomResourceHandler([id]),
+                                  },
+                              ]
+                            : [];
                         const actionItems = hasWriteAccessForPolicy
                             ? [
                                   {
@@ -385,6 +417,7 @@ function PoliciesTable({
                                             onClick: () => disablePoliciesHandler([id]),
                                         },
                                   exportPolicyAction,
+                                  ...saveAsCustomResourceActionItems,
                                   {
                                       isSeparator: true,
                                   },
@@ -396,7 +429,7 @@ function PoliciesTable({
                                       isDisabled: isDefault,
                                   },
                               ]
-                            : [exportPolicyAction];
+                            : [exportPolicyAction, ...saveAsCustomResourceActionItems];
                         const rowIndex = rowIdToIndex[id];
                         return (
                             <Tbody

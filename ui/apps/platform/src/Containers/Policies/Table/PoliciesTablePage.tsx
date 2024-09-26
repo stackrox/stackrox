@@ -21,6 +21,7 @@ import {
     deletePolicies,
     exportPolicies,
     updatePoliciesDisabledState,
+    savePoliciesAsCustomResource,
 } from 'services/PoliciesService';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import useURLSort from 'hooks/useURLSort';
@@ -147,6 +148,24 @@ function PoliciesTablePage({
             });
     }
 
+    function saveAsCustomResourceHandler(ids: string[], onClearAll?: () => void) {
+        savePoliciesAsCustomResource(ids)
+            .then(() => {
+                addToast(`Successfully saved selected policies as Custom Resources`, 'success');
+                if (onClearAll) {
+                    onClearAll();
+                }
+            })
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                addToast(
+                    `Could not save the selected policies as Custom Resources`,
+                    'danger',
+                    message
+                );
+            });
+    }
+
     function enablePoliciesHandler(ids: string[]) {
         const policyText = pluralize('policy', ids.length);
         updatePoliciesDisabledState(ids, false)
@@ -226,6 +245,7 @@ function PoliciesTablePage({
                 hasWriteAccessForPolicy={hasWriteAccessForPolicy}
                 deletePoliciesHandler={deletePoliciesHandler}
                 exportPoliciesHandler={exportPoliciesHandler}
+                saveAsCustomResourceHandler={saveAsCustomResourceHandler}
                 enablePoliciesHandler={enablePoliciesHandler}
                 disablePoliciesHandler={disablePoliciesHandler}
                 handleChangeSearchFilter={handleChangeSearchFilter}

@@ -61,6 +61,7 @@ export const policies = {
     export: '/v1/policies/export',
     import: '/v1/policies/import',
     reassess: '/v1/policies/reassess',
+    saveAs: '/v1/policies/save-as',
 };
 
 export const integrationHealth = {

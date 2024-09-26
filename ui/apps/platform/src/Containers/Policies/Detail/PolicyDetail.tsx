@@ -26,10 +26,15 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { policiesBasePath } from 'routePaths';
-import { deletePolicy, exportPolicies } from 'services/PoliciesService';
+import {
+    deletePolicy,
+    savePoliciesAsCustomResource,
+    exportPolicies,
+} from 'services/PoliciesService';
 import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import PolicyDetailContent from './PolicyDetailContent';
 import { isExternalPolicy } from '../policies.utils';
 
@@ -48,6 +53,8 @@ function PolicyDetail({
     hasWriteAccessForPolicy,
     policy,
 }: PolicyDetailProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isPolicyAsCodeEnabled = isFeatureFlagEnabled('ROX_POLICY_AS_CODE');
     const history = useHistory();
 
     const [isRequesting, setIsRequesting] = useState(false);
@@ -90,6 +97,21 @@ function PolicyDetail({
             .catch((error) => {
                 const message = getAxiosErrorMessage(error);
                 addToast('Could not export the policy', 'danger', message);
+            })
+            .finally(() => {
+                setIsRequesting(false);
+            });
+    }
+
+    function onSaveAsCustomResource() {
+        setIsRequesting(true);
+        savePoliciesAsCustomResource([id])
+            .then(() => {
+                addToast('Successfully saved policy as Custom Resource', 'success');
+            })
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                addToast('Could not save policy as Custom Resource', 'danger', message);
             })
             .finally(() => {
                 setIsRequesting(false);
@@ -212,6 +234,17 @@ function PolicyDetail({
                                               >
                                                   Export policy to JSON
                                               </DropdownItem>,
+                                              isPolicyAsCodeEnabled ? (
+                                                  <DropdownItem
+                                                      key="Save as Custom Resource"
+                                                      component="button"
+                                                      onClick={onSaveAsCustomResource}
+                                                  >
+                                                      Save as Custom Resource
+                                                  </DropdownItem>
+                                              ) : (
+                                                  <> </>
+                                              ),
                                               <DropdownItem
                                                   key="Enable/Disable policy"
                                                   component="button"
@@ -239,6 +272,17 @@ function PolicyDetail({
                                               >
                                                   Export policy to JSON
                                               </DropdownItem>,
+                                              isPolicyAsCodeEnabled ? (
+                                                  <DropdownItem
+                                                      key="Save as Custom Resource"
+                                                      component="button"
+                                                      onClick={onSaveAsCustomResource}
+                                                  >
+                                                      Save as Custom Resource
+                                                  </DropdownItem>
+                                              ) : (
+                                                  <> </>
+                                              ),
                                           ]
                                 }
                             />
