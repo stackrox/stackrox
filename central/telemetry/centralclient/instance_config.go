@@ -126,6 +126,7 @@ func InstanceConfig() *phonehome.Config {
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
 		log.Info("API path telemetry enabled for: ", trackedPaths)
+		log.Info("API User-Agent telemetry enabled for: ", trackedUserAgents)
 
 		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
 			return props, nil
