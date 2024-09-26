@@ -32,6 +32,9 @@ func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) 
 func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) []*storage.EmbeddedImageScanComponent {
 	layerSHAToIndex := clair.BuildSHAToIndexMap(metadata)
 
+	log.Debugf("ROSS METADATA: %+v", metadata)
+	log.Debugf("ROSS METADATA layerSHAToIndex: %v", layerSHAToIndex)
+
 	pkgs := report.GetContents().GetPackages()
 	components := make([]*storage.EmbeddedImageScanComponent, 0, len(pkgs))
 	for _, pkg := range pkgs {
@@ -67,6 +70,7 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 
 func environment(report *v4.VulnerabilityReport, id string) *v4.Environment {
 	envList, ok := report.GetContents().GetEnvironments()[id]
+	log.Debugf("ROSS ENVIRONMENT: %+v - %v", envList.GetEnvironments(), ok)
 	if !ok {
 		return nil
 	}
