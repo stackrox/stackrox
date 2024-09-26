@@ -7,13 +7,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"gopkg.in/yaml.v3"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 const (
