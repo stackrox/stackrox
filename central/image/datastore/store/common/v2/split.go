@@ -113,7 +113,7 @@ func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.
 		Location:         embedded.GetLocation(),
 	}
 
-	fmt.Printf("DAVE: 001 %q embedded.HasLayerIndex: %v\n", image.GetName().GetFullName(), embedded.HasLayerIndex)
+	fmt.Printf("DAVE: 001 %q embedded.HasLayerIndex: %v (id: %q)\n", image.GetName().GetFullName(), embedded.HasLayerIndex, image.GetId())
 	if embedded.HasLayerIndex != nil {
 		ret.HasLayerIndex = &storage.ImageComponentEdge_LayerIndex{
 			LayerIndex: embedded.GetLayerIndex(),
