@@ -44,11 +44,11 @@ func (s *securedClusterCertgenSuite) TestCertMapContainsExpectedFiles() {
 		{storage.ServiceType_SENSOR_SERVICE, true},
 	}
 
+	certIssuer := certIssuerImpl{
+		serviceTypes: localScannerServiceTypes,
+	}
 	for _, tc := range testCases {
 		s.Run(tc.service.String(), func() {
-			certIssuer := certIssuerImpl{
-				serviceTypes: localScannerServiceTypes,
-			}
 			certMap, err := certIssuer.generateServiceCertMap(tc.service, namespace, clusterID)
 			if tc.expectError {
 				s.Require().Error(err)
@@ -70,11 +70,11 @@ func (s *securedClusterCertgenSuite) TestValidateServiceCertificate() {
 		storage.ServiceType_SCANNER_DB_SERVICE,
 	}
 
+	certIssuer := certIssuerImpl{
+		serviceTypes: localScannerServiceTypes,
+	}
 	for _, serviceType := range testCases {
 		s.Run(serviceType.String(), func() {
-			certIssuer := certIssuerImpl{
-				serviceTypes: localScannerServiceTypes,
-			}
 			certMap, err := certIssuer.generateServiceCertMap(serviceType, namespace, clusterID)
 			s.Require().NoError(err)
 			validatingCA, err := mtls.LoadCAForValidation(certMap["ca.pem"])
@@ -100,11 +100,11 @@ func (s *securedClusterCertgenSuite) TestLocalScannerCertificateGeneration() {
 			[]string{"scanner-v4-db.stackrox", "scanner-v4-db.stackrox.svc", "scanner-v4-db.namespace", "scanner-v4-db.namespace.svc"}},
 	}
 
+	certIssuer := certIssuerImpl{
+		serviceTypes: localScannerServiceTypes,
+	}
 	for _, tc := range testCases {
 		s.Run(tc.service.String(), func() {
-			certIssuer := certIssuerImpl{
-				serviceTypes: localScannerServiceTypes,
-			}
 			certMap, err := certIssuer.generateServiceCertMap(tc.service, namespace, clusterID)
 			s.Require().NoError(err)
 			cert, err := helpers.ParseCertificatePEM(certMap["cert.pem"])
@@ -138,11 +138,11 @@ func (s *securedClusterCertgenSuite) TestSecuredClusterCertificateGeneration() {
 			[]string{"admission-control.stackrox", "admission-control.stackrox.svc", "admission-control.namespace", "admission-control.namespace.svc"}},
 	}
 
+	certIssuer := certIssuerImpl{
+		serviceTypes: securedClusterServiceTypes,
+	}
 	for _, tc := range testCases {
 		s.Run(tc.service.String(), func() {
-			certIssuer := certIssuerImpl{
-				serviceTypes: securedClusterServiceTypes,
-			}
 			certMap, err := certIssuer.generateServiceCertMap(tc.service, namespace, clusterID)
 			s.Require().NoError(err)
 			cert, err := helpers.ParseCertificatePEM(certMap["cert.pem"])
