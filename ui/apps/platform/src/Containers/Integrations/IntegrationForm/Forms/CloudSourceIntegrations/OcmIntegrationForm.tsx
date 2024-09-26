@@ -1,14 +1,6 @@
 import React, { ReactElement } from 'react';
 import * as yup from 'yup';
-import {
-    Button,
-    Checkbox,
-    Flex,
-    FlexItem,
-    Form,
-    PageSection,
-    TextInput,
-} from '@patternfly/react-core';
+import { Checkbox, Flex, FlexItem, Form, PageSection, TextInput } from '@patternfly/react-core';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import FormMessage from 'Components/PatternFly/FormMessage';
