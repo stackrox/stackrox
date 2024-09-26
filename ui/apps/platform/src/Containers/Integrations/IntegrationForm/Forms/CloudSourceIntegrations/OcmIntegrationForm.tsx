@@ -10,6 +10,7 @@ import {
     TextInput,
 } from '@patternfly/react-core';
 import usePageState from 'Containers/Integrations/hooks/usePageState';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
@@ -208,35 +209,38 @@ function OcmIntegrationForm({
                         label="Client ID"
                         labelIcon={
                             <IntegrationHelpIcon
+                                hasAutoWidth
                                 helpTitle="Service account client ID"
                                 helpText={
                                     <Flex direction={{ default: 'column' }}>
                                         <FlexItem>
                                             Client identifier for a{' '}
-                                            <Button
-                                                variant="link"
-                                                isInline
-                                                component="a"
-                                                href="https://console.redhat.com/iam/service-accounts"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                Red Hat service account
-                                            </Button>
-                                            . The service account must belong to a group with the{' '}
-                                            <strong>Subscription Viewer</strong> role. See{' '}
-                                            <Button
-                                                variant="link"
-                                                isInline
-                                                component="a"
-                                                href="https://docs.redhat.com/en/documentation/openshift_cluster_manager/1-latest/html-single/managing_clusters/index#assembly-user-management-ocm"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                Configuring access to clusters in OpenShift Cluster
-                                                Manager
-                                            </Button>{' '}
-                                            for more information.
+                                            <ExternalLink>
+                                                <a
+                                                    href="https://console.redhat.com/iam/service-accounts"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    Red Hat service account
+                                                </a>
+                                            </ExternalLink>
+                                        </FlexItem>
+                                        <FlexItem>
+                                            The service account must belong to a group with the{' '}
+                                            <strong>Subscription Viewer</strong> role.
+                                        </FlexItem>
+                                        <FlexItem>
+                                            For more information, see{' '}
+                                            <ExternalLink>
+                                                <a
+                                                    href="https://docs.redhat.com/en/documentation/openshift_cluster_manager/1-latest/html-single/managing_clusters/index#assembly-user-management-ocm"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    Configuring access to clusters in OpenShift
+                                                    Cluster Manager
+                                                </a>
+                                            </ExternalLink>
                                         </FlexItem>
                                         <FlexItem>
                                             <em>
@@ -275,35 +279,38 @@ function OcmIntegrationForm({
                         label="Client secret"
                         labelIcon={
                             <IntegrationHelpIcon
+                                hasAutoWidth
                                 helpTitle="Service account client secret"
                                 helpText={
                                     <Flex direction={{ default: 'column' }}>
                                         <FlexItem>
                                             Client secret for a{' '}
-                                            <Button
-                                                variant="link"
-                                                isInline
-                                                component="a"
-                                                href="https://console.redhat.com/iam/service-accounts"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                Red Hat service account
-                                            </Button>
-                                            . The service account must belong to a group with the{' '}
-                                            <strong>Subscription Viewer</strong> role. See{' '}
-                                            <Button
-                                                variant="link"
-                                                isInline
-                                                component="a"
-                                                href="https://docs.redhat.com/en/documentation/openshift_cluster_manager/1-latest/html-single/managing_clusters/index#assembly-user-management-ocm"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                Configuring access to clusters in OpenShift Cluster
-                                                Manager
-                                            </Button>{' '}
-                                            for more information.
+                                            <ExternalLink>
+                                                <a
+                                                    href="https://console.redhat.com/iam/service-accounts"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    Red Hat service account
+                                                </a>
+                                            </ExternalLink>
+                                        </FlexItem>
+                                        <FlexItem>
+                                            The service account must belong to a group with the{' '}
+                                            <strong>Subscription Viewer</strong> role.
+                                        </FlexItem>
+                                        <FlexItem>
+                                            For more information, see{' '}
+                                            <ExternalLink>
+                                                <a
+                                                    href="https://docs.redhat.com/en/documentation/openshift_cluster_manager/1-latest/html-single/managing_clusters/index#assembly-user-management-ocm"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    Configuring access to clusters in OpenShift
+                                                    Cluster Manager
+                                                </a>
+                                            </ExternalLink>
                                         </FlexItem>
                                         <FlexItem>
                                             <em>
@@ -342,21 +349,20 @@ function OcmIntegrationForm({
                         label="API token (deprecated)"
                         labelIcon={
                             <IntegrationHelpIcon
+                                hasAutoWidth
                                 helpTitle="API token"
                                 helpText={
                                     <Flex direction={{ default: 'column' }}>
                                         <FlexItem>
-                                            <Button
-                                                variant="link"
-                                                isInline
-                                                component="a"
-                                                href="https://console.redhat.com/openshift/token"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                OpenShift Cluster Manager offline token
-                                            </Button>
-                                            .
+                                            <ExternalLink>
+                                                <a
+                                                    href="https://console.redhat.com/openshift/token"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    OpenShift Cluster Manager offline token
+                                                </a>
+                                            </ExternalLink>
                                         </FlexItem>
                                         <FlexItem>
                                             <em>
