@@ -43,7 +43,6 @@ func TestMarshalJSON(t *testing.T) {
 		Severity:           "LOW_SEVERITY",
 		EventSource:        "DEPLOYMENT_EVENT",
 		EnforcementActions: []EnforcementAction{"SCALE_TO_ZERO_ENFORCEMENT"},
-		PolicyVersion:      "1.1",
 		PolicySections: []PolicySection{{
 			SectionName: "Section name",
 			PolicyGroups: []PolicyGroup{{

@@ -1,8 +1,7 @@
 import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from '@apollo/client';
-import { withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { useHistory } from 'react-router-dom';
 
 import PageNotFound from 'Components/PageNotFound';
 import Loader from 'Components/Loader';
@@ -39,8 +38,8 @@ const WorkflowListPage = ({
     selection,
     setSelection,
     renderRowActionButtons,
-    history,
 }) => {
+    const history = useHistory();
     const workflowState = useContext(workflowStateContext);
     const [sortFields, setSortFields] = useState({});
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -149,7 +148,6 @@ WorkflowListPage.propTypes = {
     selection: PropTypes.arrayOf(PropTypes.string),
     setSelection: PropTypes.func,
     renderRowActionButtons: PropTypes.func,
-    history: ReactRouterPropTypes.history.isRequired,
     totalResults: PropTypes.number,
 };
 
@@ -172,4 +170,4 @@ WorkflowListPage.defaultProps = {
     totalResults: 0,
 };
 
-export default withRouter(WorkflowListPage);
+export default WorkflowListPage;

@@ -3,7 +3,7 @@ import qs from 'qs';
 
 import { ApiSortOption, SearchFilter } from 'types/search';
 import { SlimUser } from 'types/user.proto';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import { ComplianceProfileSummary, complianceV2Url } from './ComplianceCommon';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
@@ -110,15 +110,11 @@ export type ListComplianceScanConfigsClusterProfileResponse = {
  */
 export function listComplianceScanConfigurations(
     sortOption?: ApiSortOption,
-    page?: number,
-    pageSize?: number
+    page = 1, // one-based page for compatibility with PatternFly Pagination element
+    perPage = 0
 ): Promise<ListComplianceScanConfigurationsResponse> {
-    let offset: number | undefined;
-    if (typeof page === 'number' && typeof pageSize === 'number') {
-        offset = page > 0 ? page * pageSize : 0;
-    }
     const query = {
-        pagination: { offset, limit: pageSize, sortOption },
+        pagination: getPaginationParams({ page, perPage, sortOption }),
     };
     const params = qs.stringify(query, { arrayFormat: 'repeat', allowDots: true });
     return axios

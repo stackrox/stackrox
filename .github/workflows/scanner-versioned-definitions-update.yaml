@@ -245,10 +245,6 @@ jobs:
     - name: Create bundle output directory
       run: mkdir -p definitions/${{ github.event.pull_request.number }}
 
-    - name: Run Updater (single bundle)
-      run: |
-        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${{ github.event.pull_request.number }}"
-
     - name: Run updater (multi bundle)
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles

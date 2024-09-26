@@ -94,25 +94,24 @@ export function fetchDeploymentsWithProcessInfo(
  */
 export function fetchDeploymentsWithProcessInfoLegacy(
     options: RestSearchOption[] = [],
-    sortOption: Record<string, string>,
-    page: number,
-    pageSize: number
+    sortOption: ApiSortOption,
+    page: number, // zero-based page
+    perPage: number
 ): Promise<ListDeploymentWithProcessInfo[]> {
-    const offset = page * pageSize;
     let searchOptions: RestSearchOption[] = options;
     if (shouldHideOrchestratorComponents()) {
         searchOptions = [...options, ...orchestratorComponentsOption];
     }
     const query = searchOptionsToQuery(searchOptions);
-    const queryObject: Record<
-        string,
-        string | Record<string, number | string | Record<string, string>>
-    > = {
-        pagination: {
-            offset,
-            limit: pageSize,
+    const queryObject: {
+        pagination: Pagination;
+        query?: string;
+    } = {
+        pagination: getPaginationParams({
+            page: page + 1, // one-based page for compatibility with PatternFly Pagination element
+            perPage,
             sortOption,
-        },
+        }),
     };
     if (query) {
         queryObject.query = query;

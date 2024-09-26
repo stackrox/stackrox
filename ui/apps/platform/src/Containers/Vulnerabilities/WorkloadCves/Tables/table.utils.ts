@@ -4,7 +4,7 @@ import sortBy from 'lodash/sortBy';
 import uniq from 'lodash/uniq';
 import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
 import { SourceType } from 'types/image.proto';
-import { ApiSortOption } from 'types/search';
+import { ApiSortOptionSingle } from 'types/search';
 
 import {
     getHighestVulnerabilitySeverity,
@@ -190,7 +190,7 @@ function extractCommonComponentFields(
 
 export function sortTableData<TableRowType extends TableDataRow>(
     tableData: TableRowType[],
-    sortOption: ApiSortOption
+    sortOption: ApiSortOptionSingle
 ): TableRowType[] {
     const sortedRows = sortBy(tableData, (row) => {
         switch (sortOption.field) {

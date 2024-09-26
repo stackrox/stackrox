@@ -4,8 +4,8 @@ import { HelpIcon } from '@patternfly/react-icons';
 
 import { systemConfigPath } from 'routePaths';
 import usePermissions from 'hooks/usePermissions';
-import PopoverBodyContent from './PopoverBodyContent';
-import ExternalLink from './PatternFly/IconText/ExternalLink';
+import PopoverBodyContent from '../PopoverBodyContent';
+import ExternalLink from '../PatternFly/IconText/ExternalLink';
 
 type ReportJobsHelpActionProps = {
     reportType: 'Vulnerability' | 'Scan schedule';
