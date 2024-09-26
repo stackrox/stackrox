@@ -275,6 +275,8 @@ func (s *serviceImpl) sendCollectorConfig(stream sensor.NetworkConnectionInfoSer
 		},
 	}
 
+	log.Infof("Sending collector config %+v", controlMsg)
+
 	if err := stream.Send(controlMsg); err != nil {
 		return errors.Wrap(err, "sending collector config")
 	}
