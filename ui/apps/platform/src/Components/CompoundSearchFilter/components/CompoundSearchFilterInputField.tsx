@@ -9,7 +9,7 @@ import {
 
 import { SearchFilter } from 'types/search';
 import CheckboxSelect from 'Components/CheckboxSelect';
-import { ensureString } from 'utils/ensure';
+import { ensureString, ensureStringArray } from 'utils/ensure';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
 import { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
@@ -18,7 +18,6 @@ import {
     dateConditionMap,
     ensureConditionDate,
     ensureConditionNumber,
-    ensureStringArray,
     getAttribute,
     getEntity,
     hasGroupedSelectOptions,
