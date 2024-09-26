@@ -1,6 +1,8 @@
 package env
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/size"
 )
@@ -18,4 +20,8 @@ var (
 	// ScannerV4AnonymousAuth specifies if Scanner V4 should authorize anonymous users. This is meant for debugging purposes.
 	// Default: Enabled for non-release builds. Disabled for release builds.
 	ScannerV4AnonymousAuth = RegisterBooleanSetting("ROX_SCANNER_V4_ALLOW_ANONYMOUS_AUTH", !buildinfo.ReleaseBuild)
+
+	// ScannerV4ManifestGCInterval specifies the interval between manifest garbage collection runs.
+	// The manifest garbage collector runs periodically to check for expired manifests and then delete them.
+	ScannerV4ManifestGCInterval = registerDurationSetting("ROX_SCANNER_V4_MANIFEST_GC_INTERVAL", 6*time.Hour)
 )
