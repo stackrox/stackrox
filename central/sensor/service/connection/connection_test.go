@@ -492,6 +492,22 @@ func (s *testSuite) TestIssueSecuredClusterCerts() {
 					s.NotNil(response.GetError())
 				} else {
 					s.NotNil(response.GetCertificates())
+
+					certificates := response.GetCertificates()
+					s.NotNil(certificates.GetServiceCerts())
+					s.NotNil(certificates.GetCaPem())
+
+					serviceCertificates := certificates.GetServiceCerts()
+					expectedCertificates := 7
+					s.Equal(expectedCertificates, len(serviceCertificates))
+
+					for _, serviceCertificate := range serviceCertificates {
+						cert := serviceCertificate.GetCert()
+
+						s.NotNil(cert.GetCertPem())
+						s.NotNil(cert.GetKeyPem())
+					}
+
 				}
 			case <-ctx.Done():
 				s.Fail(ctx.Err().Error())
