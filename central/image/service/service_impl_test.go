@@ -1,18 +1,26 @@
 package service
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
+	imageStoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
+	riskManagerMocks "github.com/stackrox/rox/central/risk/manager/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	enricherMocks "github.com/stackrox/rox/pkg/images/enricher/mocks"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protoconv"
 	pkgTestUtils "github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+	"golang.org/x/sync/semaphore"
 )
 
 func TestAuthz(t *testing.T) {
@@ -149,7 +157,7 @@ func TestShouldUpdateExistingScan(t *testing.T) {
 
 }
 
-func TestUpdatingImageFromRequest(t *testing.T) {
+func TestUpdatingImageNameFromRequest(t *testing.T) {
 	createImgName := func(name string) *storage.ImageName {
 		imgName, _, err := utils.GenerateImageNameFromString(name)
 		if err != nil {
@@ -207,8 +215,49 @@ func TestUpdatingImageFromRequest(t *testing.T) {
 			pkgTestUtils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, tc.feature)
 
 			clone := tc.existingImg.CloneVT()
-			updateImageFromRequest(clone, tc.reqImgName)
+			updateImageNameFromRequest(clone, tc.reqImgName)
 			protoassert.Equal(t, tc.expectedName, clone.Name)
 		})
 	}
+}
+
+func TestReprocessClusterLocal(t *testing.T) {
+	// TODO: ADD PANIC TESTS
+	// imageStore.
+	imgID := "id"
+	ctx := context.Background()
+	ctrl := gomock.NewController(t)
+	imageStoreMock := imageStoreMocks.NewMockDataStore(ctrl)
+	enricherMock := enricherMocks.NewMockImageEnricher(ctrl)
+	riskManagerMock := riskManagerMocks.NewMockManager(ctrl)
+
+	svc := serviceImpl{
+		enricher:              enricherMock,
+		datastore:             imageStoreMock,
+		riskManager:           riskManagerMock,
+		internalScanSemaphore: semaphore.NewWeighted(10),
+	}
+
+	imgName, _, err := utils.GenerateImageNameFromString("registry.invalid/repo/path:tag")
+	require.NoError(t, err)
+
+	imageStoreMock.EXPECT().GetImage(ctx, imgID).Return(&storage.Image{
+		IsClusterLocal: true,
+		Scan: &storage.ImageScan{
+			// ScanTime: timestamppb.New(time.Now().Add(-reprocessInterval * 3)),
+			ScanTime: nil,
+		},
+	}, true, nil)
+	enricherMock.EXPECT().EnrichImage(ctx, gomock.Any(), gomock.Any())
+	riskManagerMock.EXPECT().CalculateRiskAndUpsertImage(gomock.Any())
+
+	r, err := svc.ScanImageInternal(ctx, &v1.ScanImageInternalRequest{
+		Image: &storage.ContainerImage{
+			Id:   imgID,
+			Name: imgName,
+		},
+	})
+	require.NoError(t, err)
+
+	fmt.Printf("%+v\n", r)
 }

@@ -7,6 +7,8 @@
 package storage
 
 import (
+	"fmt"
+
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -928,8 +930,13 @@ func (m *EmbeddedImageScanComponent) GetHasLayerIndex() isEmbeddedImageScanCompo
 }
 
 func (x *EmbeddedImageScanComponent) GetLayerIndex() int32 {
-	if x, ok := x.GetHasLayerIndex().(*EmbeddedImageScanComponent_LayerIndex); ok {
-		return x.LayerIndex
+	fmt.Printf("DAVE: 001 EmbeddedImageScanComponent: %v\n", x)
+	fmt.Printf("DAVE: 002 EmbeddedImageScanComponent - x.GetHasLayerIndex(): %v\n", x.GetHasLayerIndex())
+	v, ok := x.GetHasLayerIndex().(*EmbeddedImageScanComponent_LayerIndex)
+	fmt.Printf("DAVE: 003 EmbeddedImageScanComponent -  v: %v\n", v)
+	fmt.Printf("DAVE: 004 EmbeddedImageScanComponent - ok: %v\n", ok)
+	if ok{
+		return v.LayerIndex
 	}
 	return 0
 }

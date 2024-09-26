@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -111,10 +113,12 @@ func generateImageComponentEdge(image *storage.Image, convImgComponent *storage.
 		Location:         embedded.GetLocation(),
 	}
 
+	fmt.Printf("DAVE: 001 %q embedded.HasLayerIndex: %v\n", image.GetName().GetFullName(), embedded.HasLayerIndex)
 	if embedded.HasLayerIndex != nil {
 		ret.HasLayerIndex = &storage.ImageComponentEdge_LayerIndex{
 			LayerIndex: embedded.GetLayerIndex(),
 		}
+		fmt.Printf("DAVE: 002 %q ret.HasLayerIndex: %v\n", image.GetName().GetFullName(), ret.HasLayerIndex)
 	}
 	return ret
 }

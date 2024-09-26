@@ -249,38 +249,74 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	)
 
 	imgID := request.GetImage().GetId()
-	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over the images.
+	// Always pull the image from the store if the ID != "". Central will manage the reprocessing over images that
+	// are NOT flagged as cluster local.
 	if imgID != "" {
 		existingImg, exists, err := s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			return nil, err
 		}
 
-		// If the image exists and the image name from the request matches at least one stored image name(/reference),
-		// then we returned the stored image.
-		// Otherwise, we run the enrichment pipeline using the existing image with the requests image being added to it.
 		if exists {
-			if protoutils.SliceContains(request.GetImage().GetName(), existingImg.GetNames()) {
+			// Determine if the image is flagged as cluster local and has an expired scan, if so will attempt a
+			// scan via Central.
+			var clusterLocalScanExpired bool
+			if env.ResetClusterLocalOnCentralScan.BooleanSetting() && existingImg.GetIsClusterLocal() {
+				// Remove the cluster local flag (if set), should this image be successfully scanned we want Central
+				// to reprocess it in the future (Central will NOT reprocess images flagged as cluster local). Sensor
+				// would have only sent this request if the image is not meant to be scanned locally (ie: via the delegated
+				// scanning config) or Sensor has no local scanner.
+				existingImg.IsClusterLocal = false
+
+				// Check to see if the last scan is older then 2x the reprocessing interval, this should give Sensor's
+				// a chance to reprocess the image.
+				scanTime := existingImg.GetScan().GetScanTime()
+				if !timestamp.FromProtobuf(scanTime).Add(reprocessInterval * 2).After(timestamp.Now()) {
+					log.Warnf("Received request from cluster %q to scan cluster local image %q (id: %v) that has an expired scan %q a",
+						request.GetSource().GetClusterId(),
+						request.GetImage().GetName().GetFullName(),
+						imgID,
+						scanTime.AsTime().UTC().String(),
+					)
+
+					// Inform the rest of the workflow that the scan is expired.
+					clusterLocalScanExpired = true
+				}
+			}
+
+			nameFound := protoutils.SliceContains(request.GetImage().GetName(), existingImg.GetNames())
+			if nameFound && !clusterLocalScanExpired {
+				// If the image exists and the image name from the request matches at least one stored image name(/reference),
+				// then we returned the stored image.
+				log.Debugf("Returning cached image %q (id: %v) to cluster %q", request.GetImage().GetName().GetFullName(), imgID, request.GetSource().GetClusterId())
 				return internalScanRespFromImage(existingImg), nil
 			}
-			existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
-			img = existingImg
 
 			log.Debugw("Scan cache ignored enriching image",
 				logging.ImageName(existingImg.GetName().GetFullName()),
 				logging.ImageID(imgID),
 				logging.String("request_image", request.GetImage().GetName().GetFullName()),
+				logging.Bool("cluster_local_scan_expired", clusterLocalScanExpired),
 			)
 
-			// We only want to force re-fetching of signatures and verification data, the additional image name has no
-			// impact on image scan data.
-			fetchOpt = enricher.ForceRefetchSignaturesOnly
-			imgExists = true
+			if !nameFound {
+				// Add the missing image name from the request to the existing image, this is necessary for
+				// validating image signatures.
+				existingImg.Names = append(existingImg.Names, request.GetImage().GetName())
 
-			if updateImageFromRequest(img, request.GetImage().GetName()) {
-				// Ensure that the change to Names is not overwritten by the enricher.
+				// If this is the only change made to the image - we only want to force re-fetching of signatures
+				// and verification data, the additional image name has no impact on image scans.
+				fetchOpt = enricher.ForceRefetchSignaturesOnly
+			}
+
+			imageNameUpdated := updateImageNameFromRequest(existingImg, request.GetImage().GetName())
+			if imageNameUpdated || clusterLocalScanExpired {
+				// Ensure that the change to Names and/or the cluster local flag is not overwritten by the enricher.
 				fetchOpt = enricher.IgnoreExistingImages
 			}
+
+			imgExists = true
+			img = existingImg
 		}
 	}
 
@@ -308,10 +344,10 @@ func (s *serviceImpl) ScanImageInternal(ctx context.Context, request *v1.ScanIma
 	return internalScanRespFromImage(img), nil
 }
 
-// updateImageFromRequest will update the name of existing image with the one from the request
+// updateImageNameFromRequest will update the name of existing image with the one from the request
 // if the names differ and the metadata for the existing image was unable to be pulled previously.
 // Returns true if an update was made, false otherwise.
-func updateImageFromRequest(existingImg *storage.Image, reqImgName *storage.ImageName) bool {
+func updateImageNameFromRequest(existingImg *storage.Image, reqImgName *storage.ImageName) bool {
 	if !features.UnqualifiedSearchRegistries.Enabled() || reqImgName == nil {
 		// The need for this behavior is associated with the use of unqualified search
 		// registries or short name aliases (currently), if the feature is disabled
