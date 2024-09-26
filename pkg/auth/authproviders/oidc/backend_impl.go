@@ -299,13 +299,13 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 		return nil, err
 	}
 
-	log.Infof("Creating OIDC provider from %q discovery endpoint", issuerHelper.Issuer())
+	log.Infof("Creating OIDC provider for %q", issuerHelper.Issuer())
 	provider, err := createOIDCProvider(ctx, issuerHelper, providerFactory)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Infof("Creating OIDC provider backend %q", id)
+	log.Infof("Creating OIDC provider backend %s", id)
 	b := &backendImpl{
 		id:                 id,
 		noncePool:          noncePool,
