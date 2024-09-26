@@ -30,7 +30,7 @@ class CertExpiryTest extends BaseSpecification {
     def "Test Scanner cert expiry"() {
         when:
         "Fetch the current scanner-tls secret, and the scanner cert expiry as returned by Central"
-        assert Helpers.shellCmdExitValue("./scripts/ci/is-scanner-v2-available.sh stackrox") == 0
+        assert shellCmdExitValue("./scripts/ci/is-scanner-v2-available.sh stackrox") == 0
         def scannerTLSSecret = orchestrator.getSecret("scanner-tls", "stackrox")
         assert scannerTLSSecret
         def scannerCertExpiryFromCentral = new Date(CredentialExpiryService.getScannerCertExpiry().getSeconds() * 1000)
