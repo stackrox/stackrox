@@ -72,11 +72,12 @@ _run_compatibility_tests() {
     # Give some time for stackrox to be reachable
     wait_for_api
 
-    info "E2E API tests"
+    info "API version compatibility tests"
     if pr_has_label "ci-release-build"; then
-        echo "Running e2e tests in release mode"
+        echo "Running version compatibility tests in release mode"
         export GOTAGS=release
     fi
+    kubectl -n stackrox get pods
     make -C tests compatibility-tests || touch FAIL
     store_test_results "tests/compatibility-tests-results" "${compatibility_dir}"
     [[ ! -f FAIL ]] || die "compatibility tests failed for Central v${short_central_tag}, Sensor v${short_sensor_tag}"
