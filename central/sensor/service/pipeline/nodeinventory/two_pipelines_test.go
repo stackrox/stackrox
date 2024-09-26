@@ -211,7 +211,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 					return &fakeNodeScanner{}, nil
 				}
 			}
-			tt.enricher = nodeEnricher.NewWithCreator(tt.mocks.cveDatastore, metrics.CentralSubsystem, creator)
+			tt.enricher = nodeEnricher.NewWithCreator(tt.mocks.cveDatastore, metrics.CentralSubsystem, creator, creator)
 			err := tt.enricher.UpsertNodeIntegration(&storage.NodeIntegration{
 				Id:   "1",
 				Name: "dummy-scanner",
