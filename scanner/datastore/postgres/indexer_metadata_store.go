@@ -37,8 +37,8 @@ type indexerMetadataStore struct {
 
 // IndexerMetadataStoreOpts defines options for creating an IndexerMetadataStore.
 type IndexerMetadataStoreOpts struct {
-	// IndexerStore represents the indexer.Store to query when Init is called.
-	// If undefined, then Init will fail.
+	// IndexerStore represents the indexer.Store to query when MigrateManifests is called.
+	// If undefined, then MigrateManifests will fail.
 	IndexerStore indexer.Store
 }
 
