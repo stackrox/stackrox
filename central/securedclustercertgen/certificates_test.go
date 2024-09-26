@@ -232,14 +232,11 @@ func (s *securedClusterCertgenSuite) TestServiceIssueLocalScannerCerts() {
 
 // TestServiceIssueSecuredClusterCerts checks the issuance of certificates for secured clusters.
 func (s *securedClusterCertgenSuite) TestServiceIssueSecuredClusterCerts() {
-	getServiceTypes := func() set.FrozenSet[string] {
-		serviceTypes := allSupportedServiceTypes
-		serviceTypeNames := make([]string, 0, serviceTypes.Cardinality())
-		for _, serviceType := range serviceTypes.AsSlice() {
-			serviceTypeNames = append(serviceTypeNames, serviceType.String())
-		}
-		return set.NewFrozenSet(serviceTypeNames...)
+	allServiceTypeNames := make([]string, 0, allSupportedServiceTypes.Cardinality())
+	for _, serviceType := range allSupportedServiceTypes.AsSlice() {
+		allServiceTypeNames = append(allServiceTypeNames, serviceType.String())
 	}
+	allServiceTypeNamesSet := set.NewFrozenSet(allServiceTypeNames...)
 
 	testCases := map[string]struct {
 		namespace  string
@@ -274,7 +271,7 @@ func (s *securedClusterCertgenSuite) TestServiceIssueSecuredClusterCerts() {
 			s.Require().NotNil(certs.GetCaPem())
 			s.Require().NotEmpty(certs.GetServiceCerts())
 
-			expectedServiceTypes := getServiceTypes().Unfreeze()
+			expectedServiceTypes := allServiceTypeNamesSet.Unfreeze()
 			for _, cert := range certs.ServiceCerts {
 				certService := cert.GetServiceType().String()
 				s.Contains(expectedServiceTypes, certService, "[%s] unexpected certificate service type %q", tcName, certService)
