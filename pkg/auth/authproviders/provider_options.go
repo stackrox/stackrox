@@ -210,25 +210,6 @@ func WithActive(active bool) ProviderOption {
 	}
 }
 
-// WithConfig sets the config for the provider.
-func WithConfig(config map[string]string) ProviderOption {
-	return func(pr *providerImpl) (RevertOption, error) {
-		if pr.storedInfo == nil {
-			return noOpRevert, errox.InvariantViolation.CausedBy("no storage data for auth provider")
-		}
-		oldConfig := pr.storedInfo.GetConfig()
-		revert := func(pr *providerImpl) error {
-			if pr.storedInfo == nil {
-				return errox.InvariantViolation.CausedBy("no storage data for auth provider")
-			}
-			pr.storedInfo.Config = oldConfig
-			return nil
-		}
-		pr.storedInfo.Config = config
-		return revert, nil
-	}
-}
-
 // WithAttributeVerifier adds an attribute verifier to the provider based on the list of
 // required attributes from the provided auth provider instance.
 func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
@@ -239,7 +220,7 @@ func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
 			return nil
 		}
 		if stored.GetRequiredAttributes() == nil {
-			return revert, nil
+			return noOpRevert, nil
 		}
 		pr.attributeVerifier = user.NewRequiredAttributesVerifier(stored.GetRequiredAttributes())
 		return revert, nil
