@@ -1415,7 +1415,7 @@ type ContainerConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Env             []*ContainerConfig_EnvironmentConfig `protobuf:"bytes,1,rep,name=env,proto3" json:"env,omitempty" sql:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH" search:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH"` // @gotags: sql:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH" search:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH"
+	Env             []*ContainerConfig_EnvironmentConfig `protobuf:"bytes,1,rep,name=env,proto3" json:"env,omitempty"`
 	Command         []string                             `protobuf:"bytes,2,rep,name=command,proto3" json:"command,omitempty"`
 	Args            []string                             `protobuf:"bytes,3,rep,name=args,proto3" json:"args,omitempty"`
 	Directory       string                               `protobuf:"bytes,4,opt,name=directory,proto3" json:"directory,omitempty"`
