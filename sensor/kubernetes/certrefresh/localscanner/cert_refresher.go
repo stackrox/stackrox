@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -20,7 +21,7 @@ var (
 // newCertificatesRefresher returns a new retry ticker that uses `requestCertificates` to fetch certificates,
 // with the timeout and backoff strategy specified, and the specified repository for persistence.
 // Once started, the ticker will periodically refresh the certificates before expiration.
-func newCertificatesRefresher(requestCertificates requestCertificatesFunc, repository serviceCertificatesRepo,
+func newCertificatesRefresher(requestCertificates requestCertificatesFunc, repository certrepo.ServiceCertificatesRepo,
 	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
 
 	return concurrency.NewRetryTicker(func(ctx context.Context) (timeToNextTick time.Duration, err error) {
@@ -31,23 +32,14 @@ func newCertificatesRefresher(requestCertificates requestCertificatesFunc, repos
 type requestCertificatesFunc func(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
 type getCertsRenewalTimeFunc func(certificates *storage.TypedServiceCertificateSet) (time.Time, error)
 
-// serviceCertificatesRepo is in charge of persisting and retrieving a set of service certificates, thus implementing
-// the [repository pattern](https://martinfowler.com/eaaCatalog/repository.html) for *storage.TypedServiceCertificateSet.
-type serviceCertificatesRepo interface {
-	// getServiceCertificates retrieves the certificates from permanent storage.
-	getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error)
-	// ensureServiceCertificates persists the certificates on permanent storage.
-	ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error)
-}
-
 // refreshCertificates refreshes the certificate secrets if needed, and returns the time
 // until the next refresh.
 func refreshCertificates(ctx context.Context, requestCertificates requestCertificatesFunc,
-	getCertsRenewalTime getCertsRenewalTimeFunc, repository serviceCertificatesRepo) (timeToNextRefresh time.Duration, err error) {
+	getCertsRenewalTime getCertsRenewalTimeFunc, repository certrepo.ServiceCertificatesRepo) (timeToNextRefresh time.Duration, err error) {
 
 	timeToNextRefresh, err = ensureCertificatesAreFresh(ctx, requestCertificates, getCertsRenewalTime, repository)
 	if err != nil {
-		if errors.Is(err, ErrUnexpectedSecretsOwner) {
+		if errors.Is(err, certrepo.ErrUnexpectedSecretsOwner) {
 			log.Errorf("non-recoverable error refreshing %s, automatic refresh will be stopped: %s", certsDescription, err)
 			return 0, concurrency.ErrNonRecoverable
 		}
@@ -61,7 +53,7 @@ func refreshCertificates(ctx context.Context, requestCertificates requestCertifi
 }
 
 func ensureCertificatesAreFresh(ctx context.Context, requestCertificates requestCertificatesFunc,
-	getCertsRenewalTime getCertsRenewalTimeFunc, repository serviceCertificatesRepo) (time.Duration, error) {
+	getCertsRenewalTime getCertsRenewalTimeFunc, repository certrepo.ServiceCertificatesRepo) (time.Duration, error) {
 
 	timeToRefresh, getCertsErr := getTimeToRefreshFromRepo(ctx, getCertsRenewalTime, repository)
 	if getCertsErr != nil {
@@ -81,7 +73,7 @@ func ensureCertificatesAreFresh(ctx context.Context, requestCertificates request
 	}
 	certificates := response.GetCertificates()
 
-	persistedCertificates, putErr := repository.ensureServiceCertificates(ctx, certificates)
+	persistedCertificates, putErr := repository.EnsureServiceCertificates(ctx, certificates)
 	if putErr != nil {
 		return 0, putErr
 	}
@@ -105,13 +97,13 @@ func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate)
 }
 
 func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsRenewalTimeFunc,
-	repository serviceCertificatesRepo) (time.Duration, error) {
+	repository certrepo.ServiceCertificatesRepo) (time.Duration, error) {
 
-	certificates, getCertsErr := repository.getServiceCertificates(ctx)
-	if errors.Is(getCertsErr, ErrUnexpectedSecretsOwner) {
+	certificates, getCertsErr := repository.GetServiceCertificates(ctx)
+	if errors.Is(getCertsErr, certrepo.ErrUnexpectedSecretsOwner) {
 		return 0, getCertsErr
 	}
-	if errors.Is(getCertsErr, ErrDifferentCAForDifferentServiceTypes) || errors.Is(getCertsErr, ErrMissingSecretData) {
+	if errors.Is(getCertsErr, certrepo.ErrDifferentCAForDifferentServiceTypes) || errors.Is(getCertsErr, certrepo.ErrMissingSecretData) {
 		log.Errorf("local scanner certificates are in an inconsistent state, "+
 			"will refresh certificates immediately: %s", getCertsErr)
 		return 0, nil

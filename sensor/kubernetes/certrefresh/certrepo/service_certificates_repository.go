@@ -1,4 +1,4 @@
-package localscanner
+package certrepo
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/api/core/v1"
@@ -26,6 +27,8 @@ const (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	// ErrUnexpectedSecretsOwner indicates that this repository should not be updating the certificates in
 	// the secrets they do not have the expected owner.
 	ErrUnexpectedSecretsOwner = errors.New("unexpected owner for certificate secrets")
@@ -39,11 +42,11 @@ var (
 
 	errForServiceFormat = "for service type %q"
 
-	_ serviceCertificatesRepo = (*serviceCertificatesRepoSecretsImpl)(nil)
+	_ ServiceCertificatesRepo = (*ServiceCertificatesRepoSecrets)(nil)
 )
 
-// serviceCertificatesRepoSecretsImpl is a ServiceCertificatesRepo that uses k8s secrets for persistence.
-type serviceCertificatesRepoSecretsImpl struct {
+// ServiceCertificatesRepoSecrets is a ServiceCertificatesRepo that uses k8s secrets for persistence.
+type ServiceCertificatesRepoSecrets struct {
 	secrets        map[storage.ServiceType]serviceCertSecretSpec
 	ownerReference metav1.OwnerReference
 	namespace      string
@@ -69,11 +72,11 @@ func newServiceCertSecretSpec(secretName string) serviceCertSecretSpec {
 	}
 }
 
-// newServiceCertificatesRepo creates a new serviceCertificatesRepoSecretsImpl that persists certificates for
+// NewLocalScannerCertificatesRepo creates a new ServiceCertificatesRepoSecrets that persists certificates for
 // scannerV2, scanner DB, scannerV4 indexer and ScannerV4 DB in k8s secrets.
 // Those secrets have to have ownerReference as the only owner reference.
-func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
-	secretsClient corev1.SecretInterface) serviceCertificatesRepo {
+func NewLocalScannerCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
+	secretsClient corev1.SecretInterface) ServiceCertificatesRepo {
 
 	secretsByServiceType := map[storage.ServiceType]serviceCertSecretSpec{
 		storage.ServiceType_SCANNER_SERVICE:    newServiceCertSecretSpec(scannerSecretName),
@@ -85,7 +88,7 @@ func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 		secretsByServiceType[storage.ServiceType_SCANNER_V4_DB_SERVICE] = newServiceCertSecretSpec(scannerV4DbSecretName)
 	}
 
-	return &serviceCertificatesRepoSecretsImpl{
+	return &ServiceCertificatesRepoSecrets{
 		secrets:        secretsByServiceType,
 		ownerReference: ownerReference,
 		namespace:      namespace,
@@ -93,14 +96,14 @@ func newServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 	}
 }
 
-// getServiceCertificates fails as soon as the context is cancelled. Otherwise it returns a multierror that can contain
+// GetServiceCertificates fails as soon as the context is cancelled. Otherwise it returns a multierror that can contain
 // the following errors:
 // - ErrUnexpectedSecretsOwner in case the owner specified in the constructor is not the sole owner of all secrets.
 // - ErrMissingSecretData in case any secret has no data.
 // - ErrDifferentCAForDifferentServiceTypes in case the CA is not the same in all secrets.
 // If the data for a secret is missing some expecting key then the corresponding field in the TypedServiceCertificate.
 // for that secret will contain a zero value.
-func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
+func (r *ServiceCertificatesRepoSecrets) GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	certificates := &storage.TypedServiceCertificateSet{}
 	certificates.ServiceCerts = make([]*storage.TypedServiceCertificate, 0)
 	var getErr error
@@ -133,7 +136,7 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificates(ctx context.
 	return certificates, nil
 }
 
-func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.Context, serviceType storage.ServiceType,
+func (r *ServiceCertificatesRepoSecrets) getServiceCertificate(ctx context.Context, serviceType storage.ServiceType,
 	secretSpec serviceCertSecretSpec) (cert *storage.TypedServiceCertificate, ca []byte, err error) {
 
 	secret, getErr := r.secretsClient.Get(ctx, secretSpec.secretName, metav1.GetOptions{})
@@ -164,7 +167,7 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 	}, secretData[secretSpec.caCertFileName], nil
 }
 
-// ensureServiceCertificates ensures the services for certificates exists, and that they contain the certificates
+// EnsureServiceCertificates ensures the services for certificates exists, and that they contain the certificates
 // in their data.
 // This operation is idempotent but not atomic in sense that on error some secrets might be created and updated,
 // while others are not.
@@ -172,7 +175,7 @@ func (r *serviceCertificatesRepoSecretsImpl) getServiceCertificate(ctx context.C
 // Each missing secret is created with the owner specified in the constructor as owner.
 // This only creates secrets for the service types that appear in certificates, missing service types are just skipped.
 // Fails for certificates with a service type that doesn't appear in r.secrets, as we don't know where to store them.
-func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificates(ctx context.Context,
+func (r *ServiceCertificatesRepoSecrets) EnsureServiceCertificates(ctx context.Context,
 	certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	caPem := certificates.GetCaPem()
 	persistedCertificates := make([]*storage.TypedServiceCertificate, 0, len(certificates.GetServiceCerts()))
@@ -198,7 +201,7 @@ func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificates(ctx conte
 	return persistedCertificates, serviceErrors
 }
 
-func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificate(ctx context.Context, caPem []byte,
+func (r *ServiceCertificatesRepoSecrets) ensureServiceCertificate(ctx context.Context, caPem []byte,
 	cert *storage.TypedServiceCertificate, secretSpec serviceCertSecretSpec) error {
 	patchErr := r.patchServiceCertificate(ctx, caPem, cert, secretSpec)
 	if k8sErrors.IsNotFound(patchErr) {
@@ -208,7 +211,7 @@ func (r *serviceCertificatesRepoSecretsImpl) ensureServiceCertificate(ctx contex
 	return patchErr
 }
 
-func (r *serviceCertificatesRepoSecretsImpl) patchServiceCertificate(ctx context.Context, caPem []byte,
+func (r *ServiceCertificatesRepoSecrets) patchServiceCertificate(ctx context.Context, caPem []byte,
 	cert *storage.TypedServiceCertificate, secretSpec serviceCertSecretSpec) error {
 	patch := []patchSecretDataByteMap{{
 		Op:    "replace",
@@ -233,7 +236,7 @@ type patchSecretDataByteMap struct {
 	Value map[string][]byte `json:"value"`
 }
 
-func (r *serviceCertificatesRepoSecretsImpl) createSecret(ctx context.Context, caPem []byte,
+func (r *ServiceCertificatesRepoSecrets) createSecret(ctx context.Context, caPem []byte,
 	certificate *storage.TypedServiceCertificate, secretSpec serviceCertSecretSpec) (*v1.Secret, error) {
 
 	return r.secretsClient.Create(ctx, &v1.Secret{
@@ -248,7 +251,7 @@ func (r *serviceCertificatesRepoSecretsImpl) createSecret(ctx context.Context, c
 	}, metav1.CreateOptions{})
 }
 
-func (r *serviceCertificatesRepoSecretsImpl) secretDataForCertificate(secretSpec serviceCertSecretSpec, caPem []byte,
+func (r *ServiceCertificatesRepoSecrets) secretDataForCertificate(secretSpec serviceCertSecretSpec, caPem []byte,
 	cert *storage.TypedServiceCertificate) map[string][]byte {
 
 	return map[string][]byte{
