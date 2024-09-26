@@ -2,6 +2,8 @@ package customresource
 
 import (
 	"bytes"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -9,6 +11,15 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/yaml.v3"
+)
+
+//
+//go:generate policy-as-code-helper-wrapper --type=storage.Policy
+//
+
+var (
+	invalidCRDNameCharPattern = regexp.MustCompile(`[^a-z0-9\.\-]`)
+	consecutivePattern        = regexp.MustCompile(`[.-]{2,}`)
 )
 
 // CustomResource represents the structure for a SecurityPolicy Kubernetes Custom Resource.
@@ -39,4 +50,29 @@ func timestampToFormatRFC3339(ts *timestamppb.Timestamp) string {
 		return ""
 	}
 	return t.Format(time.RFC3339)
+}
+
+// toDNSSubdomainName converts a policy name to a valid DNS subdomain name.
+func toDNSSubdomainName(name string) string {
+	name = strings.ToLower(name)
+	name = strings.ReplaceAll(name, " ", ".")
+
+	// Replace all invalid characters with '-'
+	name = invalidCRDNameCharPattern.ReplaceAllString(name, "-")
+
+	// Remove consecutive dots or hyphens
+	name = consecutivePattern.ReplaceAllString(name, "-")
+
+	// Truncate to 253 characters max, as per DNS subdomain name requirements
+	if len(name) > 253 {
+		name = name[:253]
+	}
+
+	name = strings.Trim(name, "-.")
+
+	// If the result is empty or invalid after processing, return a default value
+	if len(name) == 0 {
+		name = "rhacs.default-policy-name"
+	}
+	return name
 }
