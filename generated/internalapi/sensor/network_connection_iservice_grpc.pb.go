@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	NetworkConnectionInfoService_PushNetworkConnectionInfo_FullMethodName = "/sensor.NetworkConnectionInfoService/PushNetworkConnectionInfo"
+	NetworkConnectionInfoService_Communicate_FullMethodName               = "/sensor.NetworkConnectionInfoService/Communicate"
 )
 
 // NetworkConnectionInfoServiceClient is the client API for NetworkConnectionInfoService service.
@@ -31,6 +32,7 @@ type NetworkConnectionInfoServiceClient interface {
 	// Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
 	// send anything via this stream.
 	PushNetworkConnectionInfo(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[NetworkConnectionInfoMessage, NetworkFlowsControlMessage], error)
+	Communicate(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[NetworkConnectionInfoMessage, MsgToCollector], error)
 }
 
 type networkConnectionInfoServiceClient struct {
@@ -54,6 +56,19 @@ func (c *networkConnectionInfoServiceClient) PushNetworkConnectionInfo(ctx conte
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type NetworkConnectionInfoService_PushNetworkConnectionInfoClient = grpc.BidiStreamingClient[NetworkConnectionInfoMessage, NetworkFlowsControlMessage]
 
+func (c *networkConnectionInfoServiceClient) Communicate(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[NetworkConnectionInfoMessage, MsgToCollector], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &NetworkConnectionInfoService_ServiceDesc.Streams[1], NetworkConnectionInfoService_Communicate_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[NetworkConnectionInfoMessage, MsgToCollector]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NetworkConnectionInfoService_CommunicateClient = grpc.BidiStreamingClient[NetworkConnectionInfoMessage, MsgToCollector]
+
 // NetworkConnectionInfoServiceServer is the server API for NetworkConnectionInfoService service.
 // All implementations should embed UnimplementedNetworkConnectionInfoServiceServer
 // for forward compatibility.
@@ -63,6 +78,7 @@ type NetworkConnectionInfoServiceServer interface {
 	// Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
 	// send anything via this stream.
 	PushNetworkConnectionInfo(grpc.BidiStreamingServer[NetworkConnectionInfoMessage, NetworkFlowsControlMessage]) error
+	Communicate(grpc.BidiStreamingServer[NetworkConnectionInfoMessage, MsgToCollector]) error
 }
 
 // UnimplementedNetworkConnectionInfoServiceServer should be embedded to have
@@ -74,6 +90,9 @@ type UnimplementedNetworkConnectionInfoServiceServer struct{}
 
 func (UnimplementedNetworkConnectionInfoServiceServer) PushNetworkConnectionInfo(grpc.BidiStreamingServer[NetworkConnectionInfoMessage, NetworkFlowsControlMessage]) error {
 	return status.Errorf(codes.Unimplemented, "method PushNetworkConnectionInfo not implemented")
+}
+func (UnimplementedNetworkConnectionInfoServiceServer) Communicate(grpc.BidiStreamingServer[NetworkConnectionInfoMessage, MsgToCollector]) error {
+	return status.Errorf(codes.Unimplemented, "method Communicate not implemented")
 }
 func (UnimplementedNetworkConnectionInfoServiceServer) testEmbeddedByValue() {}
 
@@ -102,6 +121,13 @@ func _NetworkConnectionInfoService_PushNetworkConnectionInfo_Handler(srv interfa
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type NetworkConnectionInfoService_PushNetworkConnectionInfoServer = grpc.BidiStreamingServer[NetworkConnectionInfoMessage, NetworkFlowsControlMessage]
 
+func _NetworkConnectionInfoService_Communicate_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(NetworkConnectionInfoServiceServer).Communicate(&grpc.GenericServerStream[NetworkConnectionInfoMessage, MsgToCollector]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type NetworkConnectionInfoService_CommunicateServer = grpc.BidiStreamingServer[NetworkConnectionInfoMessage, MsgToCollector]
+
 // NetworkConnectionInfoService_ServiceDesc is the grpc.ServiceDesc for NetworkConnectionInfoService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -113,6 +139,12 @@ var NetworkConnectionInfoService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "PushNetworkConnectionInfo",
 			Handler:       _NetworkConnectionInfoService_PushNetworkConnectionInfo_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "Communicate",
+			Handler:       _NetworkConnectionInfoService_Communicate_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
