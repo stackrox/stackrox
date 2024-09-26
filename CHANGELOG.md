@@ -20,6 +20,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Removed Features
 
+- The environment variable `ROX_DEPLOYMENT_SECRET_SEARCH` has been removed.
 - The environment variable `ROX_DEPLOYMENT_VOLUME_SEARCH` has been removed.
 - The environment variable `ROX_SECRET_FILE_SEARCH` has been removed.
 - The Central PVC stackrox-db will be removed. Existing volumes will be released. Flags for configuring Central attached persistent storage have been removed from roxctl:
