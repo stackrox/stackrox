@@ -3,6 +3,7 @@ package scan
 import (
 	"context"
 	"errors"
+	"os"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -541,6 +542,64 @@ func (suite *scanTestSuite) TestMultiplePullSources() {
 
 	// A scan should have occurred via the 2nd mirror.
 	suite.Assert().True(mirror2ScanTriggered, "scan should have been triggered using mirror2")
+}
+
+// TestGetPullSourceIDKeep ensures that an image ID is not lost when pull sources / mirrors
+// are processed. The ID is used when pulling image metadata and layers, if the ID is lost
+// then incorrect metadata or layers may be pulled when image content changes in the
+// registry and an image is referenced by tag.
+func (suite *scanTestSuite) TestGetPullSourceIDKeep() {
+	imgStr := "reg.invalid/repo:tag"
+	imgID := "sha256:fake"
+
+	srcImg, err := utils.GenerateImageFromString(imgStr)
+	suite.Require().NoError(err)
+	srcImg.Id = imgID // Simulate an image ID being set on an image after it has been observed running.
+
+	suite.Run("Ensure image ID is not lost when pull sources not found", func() {
+		mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
+		scan := LocalScan{mirrorStore: mirrorStore}
+
+		mirrorStore.EXPECT().PullSources(gomock.Any()).Return(nil, os.ErrNotExist)
+
+		pullSrcs := scan.getPullSources(srcImg)
+		suite.Require().Len(pullSrcs, 1)
+		suite.Equal(imgID, pullSrcs[0].GetId())
+	})
+
+	suite.Run("Ensure image ID is not lost when mirroring", func() {
+		mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
+		scan := LocalScan{mirrorStore: mirrorStore}
+
+		srcImg, err := utils.GenerateImageFromString(imgStr)
+		suite.Require().NoError(err)
+		srcImg.Id = imgID
+
+		fakeDigest := "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+		mirrorStore.EXPECT().PullSources(gomock.Any()).Return([]string{
+			"reg.mirror1.invalid/repo:tag",
+			// This next returned string should never happen, a pull source would
+			// never be returned from the mirror store with a different digest
+			// than the source image. Also technically the returned mirrors would
+			// not contain a mix of tags and digests like what this test shows, for
+			// testing purposes this is OK because we are testing how the response
+			// from the mirror store is handled, not the mirror store itself.
+			"reg.mirror2.invalid/repo@" + fakeDigest,
+			imgStr,
+		}, nil)
+
+		pullSrcs := scan.getPullSources(srcImg)
+		suite.Require().Len(pullSrcs, 3)
+
+		suite.Equal("reg.mirror1.invalid", pullSrcs[0].GetName().GetRegistry())
+		suite.Equal(srcImg.GetName().GetTag(), pullSrcs[0].GetName().GetTag())
+		suite.Equal(imgID, pullSrcs[0].GetId())
+
+		suite.Equal("reg.mirror2.invalid", pullSrcs[1].GetName().GetRegistry())
+		suite.Equal(fakeDigest, pullSrcs[1].GetId())
+
+		protoassert.Equal(suite.T(), srcImg, pullSrcs[2], "last mirror is expected to be identical to src image")
+	})
 }
 
 func (suite *scanTestSuite) TestNotes() {

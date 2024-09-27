@@ -206,7 +206,7 @@ func (s *FileStore) PullSources(srcImage string) ([]string, error) {
 	}
 
 	if reg == nil {
-		return []string{srcImage}, nil
+		return nil, os.ErrNotExist
 	}
 
 	// ParseNamed assumes srcImage is a fully qualified references (contains a hostname), will produce error
