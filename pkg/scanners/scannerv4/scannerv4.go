@@ -115,6 +115,13 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, err
 	}
 
+	log.Debugf("Scanning %q for digest %q with image ID %q, manifest v2 digest %q, and manifest v1 digest %q",
+		image.GetName().GetFullName(),
+		digest.String(),
+		image.GetId(),
+		image.GetMetadata().GetV2().GetDigest(),
+		image.GetMetadata().GetV1().GetDigest(),
+	)
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: rc.GetInsecure()}
