@@ -95,7 +95,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 //	return s.receiveMessages(stream)
 //}
 
-// PushNetworkConnectionInfo handles the bidirectional gRPC stream with the collector
+// Communicate handles the bidirectional gRPC stream with the collector
 func (s *serviceImpl) Communicate(stream sensor.NetworkConnectionInfoService_CommunicateServer) error {
 	return s.receiveMessages(stream)
 }
