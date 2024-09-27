@@ -1,8 +1,8 @@
+import intersection from 'lodash/intersection';
 import sortBy from 'lodash/sortBy';
 import { ensureExhaustive, isNonEmptyArray, NonEmptyArray } from 'utils/type.utils';
 import { SortAggregate, SortOption } from 'types/table';
 import { FieldOption } from 'hooks/useURLSort';
-import intersection from 'lodash/intersection';
 import { ApiSortOption, SearchFilter } from 'types/search';
 import {
     vulnerabilitySeverityLabels,
@@ -45,7 +45,7 @@ export function getWorkloadSortFields(entityTab: WorkloadEntityTab): (string | s
                 'CVE Created Time',
             ];
         case 'Image':
-            return ['Image', 'Image OS', 'Image created time', 'Image scan time'];
+            return ['Image', 'Image OS', 'Image Created Time', 'Image Scan Time'];
         case 'Deployment':
             return ['Deployment', 'Cluster', 'Namespace', 'Created'];
         default:

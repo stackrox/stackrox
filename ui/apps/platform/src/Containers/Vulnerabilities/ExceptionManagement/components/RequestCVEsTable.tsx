@@ -103,7 +103,7 @@ function RequestCVEsTable({
                                 Images by severity
                             </Th>
                             <Th sort={getSortParams('CVSS', aggregateByCVSS)}>CVSS</Th>
-                            <Th sort={getSortParams('Image sha', aggregateByDistinctCount)}>
+                            <Th sort={getSortParams('Image Sha', aggregateByDistinctCount)}>
                                 Affected images
                             </Th>
                             <Th sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}>

@@ -130,7 +130,7 @@ export type UseURLSortResult = {
  *     <Th sort={getSortParams('CVE')}>CVE</Th>
  *     <Th sort={getSortParams('Top CVSS')}>Top CVSS</Th>
  *     <Th sort={getSortParams('First Discovered')}>First discovered</Th>
- *    <Th sort={getSortParams('Images by severity', [
+ *    <Th sort={getSortParams('Images By Severity', [
  *       { field: 'Critical Severity Count' },
  *       { field: 'Important Severity Count' },
  *    ])}>Images by severity</Th>
