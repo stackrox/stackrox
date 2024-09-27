@@ -19,11 +19,11 @@ import (
 var blacklist = []string{"all", "utils", "validation", "metadatagetter"}
 
 func TestAllPackagesAreImported(t *testing.T) {
-	migrationDirEntries, err := os.ReadDir("..")
-	require.NoError(t, err, "failed to read migrations directory")
+	notifiersDirEntry, err := os.ReadDir("..")
+	require.NoError(t, err, "failed to read notifiers directory")
 
 	existingNotifiers := set.NewStringSet()
-	for _, entry := range migrationDirEntries {
+	for _, entry := range notifiersDirEntry {
 		if !entry.IsDir() {
 			continue
 		}
