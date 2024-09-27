@@ -117,7 +117,7 @@ describe('Exception Management Request Details Page', () => {
         cy.get(selectors.tableColumnSortButton('Affected images')).click();
         cy.location('search').should(
             'contain',
-            'sortOption[field]=Image%20sha&sortOption[aggregateBy][aggregateFunc]=count&sortOption[aggregateBy][distinct]=true&sortOption[direction]=desc'
+            'sortOption[field]=Image%20Sha&sortOption[aggregateBy][aggregateFunc]=count&sortOption[aggregateBy][distinct]=true&sortOption[direction]=desc'
         );
         cy.get(selectors.tableSortColumn('Affected images')).should(
             'have.attr',
@@ -127,7 +127,7 @@ describe('Exception Management Request Details Page', () => {
         cy.get(selectors.tableColumnSortButton('Affected images')).click();
         cy.location('search').should(
             'contain',
-            'sortOption[field]=Image%20sha&sortOption[aggregateBy][aggregateFunc]=count&sortOption[aggregateBy][distinct]=true&sortOption[direction]=asc'
+            'sortOption[field]=Image%20Sha&sortOption[aggregateBy][aggregateFunc]=count&sortOption[aggregateBy][distinct]=true&sortOption[direction]=asc'
         );
         cy.get(selectors.tableSortColumn('Affected images')).should(
             'have.attr',
