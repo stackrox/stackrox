@@ -49,7 +49,6 @@ import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
 import MyActiveJobStatusTh from 'Components/ReportJob/MyActiveJobStatusTh';
 import MyActiveJobStatus from 'Components/ReportJob/MyActiveJobStatus';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import {
@@ -62,6 +61,7 @@ import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapsh
 type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
     isReportJobsEnabled: boolean;
+    isComplianceReportingEnabled: boolean;
 };
 
 const CreateScanConfigButton = () => {
@@ -81,6 +81,7 @@ const defaultSortOption = {
 function ScanConfigsTablePage({
     hasWriteAccessForCompliance,
     isReportJobsEnabled,
+    isComplianceReportingEnabled,
 }: ScanConfigsTablePageProps): React.ReactElement {
     const [scanConfigsToDelete, setScanConfigsToDelete] = useState<
         ComplianceScanConfigurationStatus[]
@@ -99,8 +100,9 @@ function ScanConfigsTablePage({
         [sortOption, page, perPage]
     );
     const { data: listData, isLoading, error, refetch } = useRestQuery(listQuery);
-    const { complianceReportSnapshots, error: reportSnapshotsError } =
-        useWatchLastSnapshotForComplianceReports(listData?.configurations);
+    const { complianceReportSnapshots } = useWatchLastSnapshotForComplianceReports(
+        listData?.configurations
+    );
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 
@@ -214,8 +216,8 @@ function ScanConfigsTablePage({
             });
             const scanConfigSnapshot = complianceReportSnapshots[id];
             const isSnapshotStatusPending =
-                scanConfigSnapshot?.reportStatus.runState === 'PREPARING' ||
-                scanConfigSnapshot?.reportStatus.runState === 'WAITING';
+                scanConfigSnapshot?.reportStatus?.runState === 'PREPARING' ||
+                scanConfigSnapshot?.reportStatus?.runState === 'WAITING';
 
             return (
                 <Tr key={id}>
@@ -252,6 +254,7 @@ function ScanConfigsTablePage({
                                 scanConfigResponse={scanSchedule}
                                 isSnapshotStatusPending={isSnapshotStatusPending}
                                 isReportJobsEnabled={isReportJobsEnabled}
+                                isComplianceReportingEnabled={isComplianceReportingEnabled}
                             />
                         </Td>
                     )}

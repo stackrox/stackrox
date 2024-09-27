@@ -24,7 +24,8 @@ function ScanConfigsPage() {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isReportJobsEnabled = !isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
+    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
+    const isReportJobsEnabled = isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
 
     return (
         <Switch>
@@ -40,6 +41,7 @@ function ScanConfigsPage() {
                             <ScanConfigsTablePage
                                 hasWriteAccessForCompliance={hasWriteAccessForCompliance}
                                 isReportJobsEnabled={isReportJobsEnabled}
+                                isComplianceReportingEnabled={isComplianceReportingEnabled}
                             />
                         );
                     }
@@ -54,6 +56,7 @@ function ScanConfigsPage() {
                         <ScanConfigDetailPage
                             hasWriteAccessForCompliance={hasWriteAccessForCompliance}
                             isReportJobsEnabled={isReportJobsEnabled}
+                            isComplianceReportingEnabled={isComplianceReportingEnabled}
                         />
                     );
                 }}

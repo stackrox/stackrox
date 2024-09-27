@@ -57,9 +57,10 @@ function getConfigName(snapshot: ComplianceReportSnapshot) {
 
 type ReportJobsProps = {
     scanConfig: ComplianceScanConfigurationStatus | undefined;
+    isComplianceReportingEnabled: boolean;
 };
 
-function ReportJobs({ scanConfig }: ReportJobsProps) {
+function ReportJobs({ scanConfig, isComplianceReportingEnabled }: ReportJobsProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [isViewingOnlyMyJobs, setIsViewingOnlyMyJobs] = useURLStringUnion('viewOnlyMyJobs', [
@@ -146,7 +147,10 @@ function ReportJobs({ scanConfig }: ReportJobsProps) {
                                         isDownloadAvailable={snapshot.isDownloadAvailable}
                                     />
                                     <Divider component="div" className="pf-v5-u-my-md" />
-                                    <ConfigDetails scanConfig={snapshot.scanConfig} />
+                                    <ConfigDetails
+                                        scanConfig={snapshot.scanConfig}
+                                        isComplianceReportingEnabled={isComplianceReportingEnabled}
+                                    />
                                 </CardBody>
                             </Card>
                         </>

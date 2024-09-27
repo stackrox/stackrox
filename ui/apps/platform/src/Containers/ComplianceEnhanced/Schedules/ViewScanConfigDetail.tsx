@@ -37,6 +37,7 @@ import ReportJobs from './components/ReportJobs';
 type ViewScanConfigDetailProps = {
     hasWriteAccessForCompliance: boolean;
     isReportJobsEnabled: boolean;
+    isComplianceReportingEnabled: boolean;
     scanConfig?: ComplianceScanConfigurationStatus;
     isLoading: boolean;
     error?: Error | string | null;
@@ -48,6 +49,7 @@ const allReportJobsTabId = 'ComplianceScanConfigReportJobs';
 function ViewScanConfigDetail({
     hasWriteAccessForCompliance,
     isReportJobsEnabled,
+    isComplianceReportingEnabled,
     scanConfig,
     isLoading,
     error = null,
@@ -156,6 +158,7 @@ function ViewScanConfigDetail({
                                         }
                                         scanConfigResponse={scanConfig}
                                         isReportJobsEnabled={isReportJobsEnabled}
+                                        isComplianceReportingEnabled={isComplianceReportingEnabled}
                                     />
                                 </FlexItem>
                             )}
@@ -205,6 +208,7 @@ function ViewScanConfigDetail({
                                 isLoading={isLoading}
                                 error={error}
                                 scanConfig={scanConfig}
+                                isComplianceReportingEnabled={isComplianceReportingEnabled}
                             />
                         </CardBody>
                     </Card>
@@ -212,7 +216,10 @@ function ViewScanConfigDetail({
             )}
             {activeScanConfigTab === 'ALL_REPORT_JOBS' && (
                 <PageSection isCenterAligned id={allReportJobsTabId}>
-                    <ReportJobs scanConfig={scanConfig} />
+                    <ReportJobs
+                        scanConfig={scanConfig}
+                        isComplianceReportingEnabled={isComplianceReportingEnabled}
+                    />
                 </PageSection>
             )}
         </>

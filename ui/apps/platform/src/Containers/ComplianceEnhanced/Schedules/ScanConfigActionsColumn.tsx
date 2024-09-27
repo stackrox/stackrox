@@ -2,7 +2,6 @@ import React, { ReactElement } from 'react';
 import { generatePath, useHistory } from 'react-router-dom';
 import { ActionsColumn } from '@patternfly/react-table';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
@@ -19,6 +18,7 @@ export type ScanConfigActionsColumnProps = {
     scanConfigResponse: ComplianceScanConfigurationStatus;
     isSnapshotStatusPending: boolean;
     isReportJobsEnabled: boolean;
+    isComplianceReportingEnabled: boolean;
 };
 
 function ScanConfigActionsColumn({
@@ -29,10 +29,9 @@ function ScanConfigActionsColumn({
     scanConfigResponse,
     isSnapshotStatusPending,
     isReportJobsEnabled,
+    isComplianceReportingEnabled,
 }: ScanConfigActionsColumnProps): ReactElement {
     const history = useHistory();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
     const { id, /* lastExecutedTime, */ scanConfig } = scanConfigResponse;
     const { notifiers } = scanConfig;

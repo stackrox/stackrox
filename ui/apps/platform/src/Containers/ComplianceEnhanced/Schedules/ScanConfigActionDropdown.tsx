@@ -8,7 +8,6 @@ import {
 } from '@patternfly/react-core/deprecated';
 import { CaretDownIcon } from '@patternfly/react-icons';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
@@ -25,6 +24,7 @@ export type ScanConfigActionDropdownProps = {
     isScanning: boolean;
     scanConfigResponse: ComplianceScanConfigurationStatus;
     isReportJobsEnabled: boolean;
+    isComplianceReportingEnabled: boolean;
 };
 
 function ScanConfigActionDropdown({
@@ -34,10 +34,9 @@ function ScanConfigActionDropdown({
     isScanning,
     scanConfigResponse,
     isReportJobsEnabled,
+    isComplianceReportingEnabled,
 }: ScanConfigActionDropdownProps): ReactElement {
     const history = useHistory();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
 
     const [isOpen, setIsOpen] = useState(false);
 
