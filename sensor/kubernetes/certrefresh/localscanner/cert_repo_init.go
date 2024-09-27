@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	ScannerSecretName          = "scanner-tls"            // #nosec G101 not a hardcoded credentials
-	ScannerDbSecretName        = "scanner-db-tls"         // #nosec G101 not a hardcoded credentials
-	ScannerV4IndexerSecretName = "scanner-v4-indexer-tls" // #nosec G101 not a hardcoded credentials
-	ScannerV4DbSecretName      = "scanner-v4-db-tls"      // #nosec G101 not a hardcoded credentials
+	scannerSecretName          = "scanner-tls"            // #nosec G101 not a hardcoded credentials
+	scannerDbSecretName        = "scanner-db-tls"         // #nosec G101 not a hardcoded credentials
+	scannerV4IndexerSecretName = "scanner-v4-indexer-tls" // #nosec G101 not a hardcoded credentials
+	scannerV4DbSecretName      = "scanner-v4-db-tls"      // #nosec G101 not a hardcoded credentials
 )
 
 // NewServiceCertificatesRepo creates a new ServiceCertificatesRepoSecrets that persists certificates for
@@ -22,13 +22,13 @@ func NewServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo {
 
 	secretsByServiceType := map[storage.ServiceType]certrepo.ServiceCertSecretSpec{
-		storage.ServiceType_SCANNER_SERVICE:    certrepo.NewServiceCertSecretSpec(ScannerSecretName),
-		storage.ServiceType_SCANNER_DB_SERVICE: certrepo.NewServiceCertSecretSpec(ScannerDbSecretName),
+		storage.ServiceType_SCANNER_SERVICE:    certrepo.NewServiceCertSecretSpec(scannerSecretName),
+		storage.ServiceType_SCANNER_DB_SERVICE: certrepo.NewServiceCertSecretSpec(scannerDbSecretName),
 	}
 
 	if features.ScannerV4.Enabled() {
-		secretsByServiceType[storage.ServiceType_SCANNER_V4_INDEXER_SERVICE] = certrepo.NewServiceCertSecretSpec(ScannerV4IndexerSecretName)
-		secretsByServiceType[storage.ServiceType_SCANNER_V4_DB_SERVICE] = certrepo.NewServiceCertSecretSpec(ScannerV4DbSecretName)
+		secretsByServiceType[storage.ServiceType_SCANNER_V4_INDEXER_SERVICE] = certrepo.NewServiceCertSecretSpec(scannerV4IndexerSecretName)
+		secretsByServiceType[storage.ServiceType_SCANNER_V4_DB_SERVICE] = certrepo.NewServiceCertSecretSpec(scannerV4DbSecretName)
 	}
 
 	return &certrepo.ServiceCertificatesRepoSecrets{
