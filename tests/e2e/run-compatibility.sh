@@ -69,6 +69,10 @@ _run_compatibility_tests() {
 
     prepare_for_endpoints_test
 
+    run_roxctl_tests
+    store_test_results "roxctl-test-output" "${compatibility_dir}/roxctl-test-output"
+    [[ ! -f FAIL ]] || die "roxctl compatibility tests failed"
+
     # Give some time for stackrox to be reachable
     wait_for_api
 
@@ -110,6 +114,31 @@ prepare_for_endpoints_test() {
     export SERVICE_CA_FILE="$gencerts_dir/ca.pem"
     export SERVICE_CERT_FILE="$gencerts_dir/sensor-cert.pem"
     export SERVICE_KEY_FILE="$gencerts_dir/sensor-key.pem"
+}
+
+run_roxctl_tests() {
+    info "Run roxctl tests"
+
+    junit_wrap "roxctl-token-file" "roxctl token-file test" "" \
+        "$ROOT/tests/roxctl/token-file.sh"
+
+    junit_wrap "roxctl-slim-collector" "roxctl slim-collector test" "" \
+        "$ROOT/tests/roxctl/slim-collector.sh"
+
+    junit_wrap "roxctl-authz-trace" "roxctl authz-trace test" "" \
+        "$ROOT/tests/roxctl/authz-trace.sh"
+
+    junit_wrap "roxctl-istio-support" "roxctl istio-support test" "" \
+        "$ROOT/tests/roxctl/istio-support.sh"
+
+    junit_wrap "roxctl-k8s-context" "roxctl --use-current-k8s-context test" "" \
+        "$ROOT/tests/roxctl/roxctl-k8s-context.sh"
+
+    junit_wrap "roxctl-helm-chart-generation" "roxctl helm-chart-generation test" "" \
+        "$ROOT/tests/roxctl/helm-chart-generation.sh"
+
+    CA="$SERVICE_CA_FILE" junit_wrap "roxctl-yaml-verification" "roxctl yaml-verification test" "" \
+        "$ROOT/tests/yamls/roxctl_verification.sh"
 }
 
 shorten_tag() {
