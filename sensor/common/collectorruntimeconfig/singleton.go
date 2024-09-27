@@ -21,7 +21,7 @@ func newHandler() *handlerImpl {
 	}
 }
 
-// Singleton returns the singleton instance for the network graph external sources handler.
+// Singleton returns the singleton instance for the collector runtime config handler.
 func Singleton() Handler {
 	once.Do(func() {
 		instance = newHandler()
@@ -29,7 +29,7 @@ func Singleton() Handler {
 	return instance
 }
 
-// StoreInstance returns the singleton instance for the network graph external sources store.
+// StoreInstance returns the singleton instance for the collector runtime config store.
 func StoreInstance() Store {
 	once.Do(func() {
 		instance = newHandler()
