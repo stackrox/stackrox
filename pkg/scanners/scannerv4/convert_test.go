@@ -131,7 +131,7 @@ func TestComponents(t *testing.T) {
 			name: "basic no vulns",
 			metadata: &storage.ImageMetadata{
 				V1: &storage.V1Metadata{
-					Digest: "sha256:809a91adbd71a06ab4513434ec04c8f496f042614a8d12033933e9e433c4c179",
+					Digest: "some V1 digest",
 					Layers: []*storage.ImageLayer{
 						{
 							Empty: true,
@@ -156,12 +156,9 @@ func TestComponents(t *testing.T) {
 					},
 				},
 				V2: &storage.V2Metadata{
-					Digest: "sha256:ac9f0defc3f00ff1459e77b930bbd82870570560b3437b88010514fea79b1808",
+					Digest: "some V2 digest",
 				},
-				LayerShas: []string{
-					"sha256:423c986e97ebd515f172eb484f176107e279ad0ac1db8ead5b21a60a208a8b3c",
-					"sha256:c7212d1c19435c5a25bf5ac9ee9de2bfa66e97684bdc383822b72a934f795545",
-				},
+				LayerShas: []string{"layer1", "layer2"},
 				DataSource: &storage.DataSource{
 					Id:   "dataSourceID",
 					Name: "dataSourceName",
@@ -189,7 +186,7 @@ func TestComponents(t *testing.T) {
 							Environments: []*v4.Environment{
 								{
 									PackageDb:      "sqlite:var/lib/rpm",
-									IntroducedIn:   "sha256:423c986e97ebd515f172eb484f176107e279ad0ac1db8ead5b21a60a208a8b3c",
+									IntroducedIn:   "layer1",
 									DistributionId: "1",
 									RepositoryIds:  []string{"0"},
 								},
@@ -214,7 +211,7 @@ func TestComponents(t *testing.T) {
 			name: "layer mismatch, no layer indexes",
 			metadata: &storage.ImageMetadata{
 				V1: &storage.V1Metadata{
-					Digest: "sha256:809a91adbd71a06ab4513434ec04c8f496f042614a8d12033933e9e433c4c179",
+					Digest: "some V1 digest",
 					Layers: []*storage.ImageLayer{
 						{
 							Empty: true,
@@ -239,12 +236,9 @@ func TestComponents(t *testing.T) {
 					},
 				},
 				V2: &storage.V2Metadata{
-					Digest: "sha256:ac9f0defc3f00ff1459e77b930bbd82870570560b3437b88010514fea79b1808",
+					Digest: "some V2 digest",
 				},
-				LayerShas: []string{
-					"sha256:423c986e97ebd515f172eb484f176107e279ad0ac1db8ead5b21a60a208a8b3c",
-					"sha256:c7212d1c19435c5a25bf5ac9ee9de2bfa66e97684bdc383822b72a934f795545",
-				},
+				LayerShas: []string{"layer1", "layer2"},
 				DataSource: &storage.DataSource{
 					Id:   "dataSourceID",
 					Name: "dataSourceName",
@@ -272,7 +266,7 @@ func TestComponents(t *testing.T) {
 							Environments: []*v4.Environment{
 								{
 									PackageDb:      "sqlite:var/lib/rpm",
-									IntroducedIn:   "sha256:0fa3315a0cca1299566b56c9efd78f83279c1fc50fa6e5b7297565ba6f007253",
+									IntroducedIn:   "some layer which does not exist in the image",
 									DistributionId: "1",
 									RepositoryIds:  []string{"0"},
 								},
