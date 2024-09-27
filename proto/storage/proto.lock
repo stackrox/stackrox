@@ -11109,6 +11109,12 @@
                 "name": "clairify",
                 "type": "ClairifyConfig",
                 "oneof_parent": "IntegrationConfig"
+              },
+              {
+                "id": 5,
+                "name": "scannerv4",
+                "type": "ScannerV4Config",
+                "oneof_parent": "IntegrationConfig"
               }
             ]
           }

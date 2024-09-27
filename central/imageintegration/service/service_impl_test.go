@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -301,6 +302,7 @@ func TestValidateNodeIntegration(t *testing.T) {
 	clairifyIntegrationConfig := &storage.ImageIntegration{
 		Id:                  "id",
 		Name:                "name",
+		Type:                scannerTypes.Clairify,
 		IntegrationConfig:   &storage.ImageIntegration_Clairify{Clairify: clairifyConfig},
 		Categories:          []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER, storage.ImageIntegrationCategory_NODE_SCANNER},
 		SkipTestIntegration: true,
@@ -308,6 +310,7 @@ func TestValidateNodeIntegration(t *testing.T) {
 	clairifyNodeIntegrationConfig := &storage.NodeIntegration{
 		Id:                "id",
 		Name:              "name",
+		Type:              scannerTypes.Clairify,
 		IntegrationConfig: &storage.NodeIntegration_Clairify{Clairify: clairifyConfig},
 	}
 
