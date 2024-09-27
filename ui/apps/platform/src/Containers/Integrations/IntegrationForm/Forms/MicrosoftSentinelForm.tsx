@@ -1,6 +1,15 @@
 /* eslint-disable no-void */
-import React, { ReactElement } from 'react';
-import { Checkbox, Form, FormSection, PageSection, TextInput } from '@patternfly/react-core';
+import React, { useState, ReactElement } from 'react';
+import {
+    Checkbox,
+    Form,
+    FormSection,
+    PageSection,
+    TextArea,
+    TextInput,
+    ToggleGroup,
+    ToggleGroupItem,
+} from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
@@ -23,6 +32,10 @@ export type MicrosoftSentinel = {
         logIngestionEndpoint: string;
         directoryTenantId: string;
         applicationClientId: string;
+        clientCertAuthConfig: {
+            clientCert: string;
+            privateKey: string;
+        };
         secret: string;
         alertDcrConfig: {
             dataCollectionRuleId: string;
@@ -70,6 +83,10 @@ export const defaultValues: MicrosoftSentinelFormValues = {
             logIngestionEndpoint: '',
             directoryTenantId: '',
             applicationClientId: '',
+            clientCertAuthConfig: {
+                clientCert: '',
+                privateKey: '',
+            },
             secret: '',
             alertDcrConfig: {
                 dataCollectionRuleId: '',
@@ -125,17 +142,30 @@ function MicrosoftSentinelForm({
         validationSchema,
     });
     const { isCreating } = usePageState();
+    const [selectedAuthMethod, setSelectedAuthMethod] = useState(
+        values.notifier.microsoftSentinel.clientCertAuthConfig.clientCert
+            ? 'use-client-cert'
+            : 'use-secret'
+    );
 
     function onChange(value, event) {
         return setFieldValue(event.target.id, value);
     }
 
-    function onUpdateCheckboxChange(value, event) {
-        return setFieldValue(event.target.id, value);
+    function onUpdateAuthMethod(event) {
+        const { id } = event.currentTarget;
+        if (id === 'use-client-cert') {
+            setFieldValue('notifier.microsoftSentinel.secret', '');
+        } else {
+            setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.clientCert', '');
+            setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.privateKey', '');
+        }
+        setSelectedAuthMethod(id);
     }
 
     function onUpdateCredentialsChange(value, event) {
         setFieldValue('notifier.microsoftSentinel.secret', '');
+        setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.privateKey', '');
         return setFieldValue(event.target.id, value);
     }
 
@@ -146,6 +176,7 @@ function MicrosoftSentinelForm({
                 isFilled
                 hasOverflowScroll
                 className="microsoft-sentinel-form"
+                aria-label="Microsoft Sentinel Form"
             >
                 <FormMessage message={message} />
                 <Form isWidthLimited>
@@ -221,48 +252,140 @@ function MicrosoftSentinelForm({
                             isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
-                    {!isCreating && isEditable && (
-                        <FormLabelGroup
-                            label=""
-                            fieldId="updatePassword"
-                            helperText="Enable this option to replace currently stored credentials (if any)"
-                            errors={errors}
-                        >
-                            <Checkbox
-                                label="Update secret"
-                                id="updatePassword"
-                                isChecked={values.updatePassword}
-                                onChange={(event, value) => onUpdateCredentialsChange(value, event)}
-                                onBlur={handleBlur}
-                                isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                    )}
-                    <FormLabelGroup
-                        label="Secret"
-                        isRequired={values.updatePassword}
-                        fieldId="notifier.microsoftSentinel.secret"
-                        touched={touched}
-                        errors={errors}
+                    <FormSection
+                        title="Authentication Method"
+                        titleElement="h3"
+                        className="pf-v5-u-mt-0"
                     >
-                        <TextInput
-                            isRequired={values.updatePassword}
-                            type="password"
-                            id="notifier.microsoftSentinel.secret"
-                            value={values.notifier.microsoftSentinel.secret}
-                            onChange={(event, value) => onChange(value, event)}
-                            onBlur={handleBlur}
-                            isDisabled={!isEditable || !values.updatePassword}
-                            placeholder={
-                                values.updatePassword ? '' : 'Currently-stored secret will be used.'
-                            }
-                        />
-                    </FormLabelGroup>
+                        <ToggleGroup aria-label="Default with single selectable">
+                            <ToggleGroupItem
+                                text="Use Secret"
+                                buttonId="use-secret"
+                                isSelected={selectedAuthMethod === 'use-secret'}
+                                onChange={onUpdateAuthMethod}
+                            />
+                            <ToggleGroupItem
+                                text="Use Client Certificate"
+                                buttonId="use-client-cert"
+                                isSelected={selectedAuthMethod === 'use-client-cert'}
+                                onChange={onUpdateAuthMethod}
+                            />
+                        </ToggleGroup>
+                        {!isCreating && isEditable && (
+                            <FormLabelGroup
+                                label=""
+                                fieldId="updatePassword"
+                                helperText="Enable this option to replace currently stored credentials (if any)"
+                                errors={errors}
+                            >
+                                <Checkbox
+                                    label="Update authentication"
+                                    id="updatePassword"
+                                    isChecked={values.updatePassword}
+                                    onChange={(event, value) =>
+                                        onUpdateCredentialsChange(value, event)
+                                    }
+                                    onBlur={handleBlur}
+                                    isDisabled={!isEditable}
+                                />
+                            </FormLabelGroup>
+                        )}
+                        {selectedAuthMethod === 'use-secret' && (
+                            <FormLabelGroup
+                                label="Secret"
+                                isRequired={
+                                    values.updatePassword && selectedAuthMethod === 'use-secret'
+                                }
+                                fieldId="notifier.microsoftSentinel.secret"
+                                touched={touched}
+                                errors={errors}
+                            >
+                                <TextInput
+                                    isRequired={values.updatePassword}
+                                    type="password"
+                                    id="notifier.microsoftSentinel.secret"
+                                    value={values.notifier.microsoftSentinel.secret}
+                                    onChange={(event, value) => onChange(value, event)}
+                                    onBlur={handleBlur}
+                                    isDisabled={!isEditable || !values.updatePassword}
+                                    placeholder={
+                                        values.updatePassword
+                                            ? ''
+                                            : 'Currently-stored secret will be used.'
+                                    }
+                                />
+                            </FormLabelGroup>
+                        )}
+                        {selectedAuthMethod === 'use-client-cert' && (
+                            <>
+                                <FormLabelGroup
+                                    isRequired={selectedAuthMethod === 'use-client-cert'}
+                                    label="Client certificate"
+                                    fieldId="notifier.microsoftSentinel.clientCertAuthConfig.clientCert"
+                                    touched={touched}
+                                    errors={errors}
+                                >
+                                    <TextArea
+                                        autoResize
+                                        resizeOrientation="vertical"
+                                        isRequired
+                                        type="text"
+                                        id="notifier.microsoftSentinel.clientCertAuthConfig.clientCert"
+                                        value={
+                                            values.notifier.microsoftSentinel.clientCertAuthConfig
+                                                .clientCert
+                                        }
+                                        onChange={(event, value) => onChange(value, event)}
+                                        onBlur={handleBlur}
+                                        isDisabled={!isEditable}
+                                    />
+                                </FormLabelGroup>
+                                <FormLabelGroup
+                                    isRequired={
+                                        values.updatePassword &&
+                                        selectedAuthMethod === 'use-client-cert'
+                                    }
+                                    label="Private key"
+                                    fieldId="notifier.microsoftSentinel.clientCertAuthConfig.privateKey"
+                                    touched={touched}
+                                    errors={errors}
+                                >
+                                    <TextArea
+                                        autoResize
+                                        resizeOrientation="vertical"
+                                        isRequired
+                                        type="text"
+                                        id="notifier.microsoftSentinel.clientCertAuthConfig.privateKey"
+                                        value={
+                                            values.notifier.microsoftSentinel.clientCertAuthConfig
+                                                .privateKey
+                                        }
+                                        onChange={(event, value) => onChange(value, event)}
+                                        onBlur={handleBlur}
+                                        isDisabled={!isEditable}
+                                    />
+                                </FormLabelGroup>
+                            </>
+                        )}
+                    </FormSection>
                     <FormSection
                         title="Alert data collection rule configuration"
                         titleElement="h3"
                         className="pf-v5-u-mt-0"
                     >
+                        <FormLabelGroup
+                            label=""
+                            fieldId="notifier.microsoftSentinel.alertDcrConfig.enabled"
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Enable alert DCR"
+                                id="notifier.microsoftSentinel.alertDcrConfig.enabled"
+                                isChecked={values.notifier.microsoftSentinel.alertDcrConfig.enabled}
+                                onChange={(event, isChecked) => onChange(isChecked, event)}
+                                onBlur={handleBlur}
+                            />
+                        </FormLabelGroup>
                         <FormLabelGroup
                             label="Alert data collection rule stream name"
                             fieldId="notifier.microsoftSentinel.alertDcrConfig.streamName"
@@ -300,27 +423,27 @@ function MicrosoftSentinelForm({
                                 isDisabled={!isEditable}
                             />
                         </FormLabelGroup>
-                        <FormLabelGroup
-                            label=""
-                            fieldId="notifier.microsoftSentinel.alertDcrConfig.enabled"
-                            errors={errors}
-                        >
-                            <Checkbox
-                                label="Enabled"
-                                id="notifier.microsoftSentinel.alertDcrConfig.enabled"
-                                isChecked={values.notifier.microsoftSentinel.alertDcrConfig.enabled}
-                                onChange={(event, isChecked) =>
-                                    onUpdateCheckboxChange(isChecked, event)
-                                }
-                                onBlur={handleBlur}
-                            />
-                        </FormLabelGroup>
                     </FormSection>
                     <FormSection
                         title="Audit data collection rule configuration"
                         titleElement="h3"
                         className="pf-v5-u-mt-0"
                     >
+                        <FormLabelGroup
+                            label=""
+                            fieldId="notifier.microsoftSentinel.auditLogDcrConfig.enabled"
+                            errors={errors}
+                        >
+                            <Checkbox
+                                label="Enable audit log DCR"
+                                id="notifier.microsoftSentinel.auditLogDcrConfig.enabled"
+                                isChecked={
+                                    values.notifier.microsoftSentinel.auditLogDcrConfig.enabled
+                                }
+                                onChange={(event, isChecked) => onChange(isChecked, event)}
+                                onBlur={handleBlur}
+                            />
+                        </FormLabelGroup>
                         <FormLabelGroup
                             label="Audit data collection rule stream name"
                             fieldId="notifier.microsoftSentinel.auditLogDcrConfig.streamName"
@@ -358,23 +481,6 @@ function MicrosoftSentinelForm({
                                 onChange={(event, value) => onChange(value, event)}
                                 onBlur={handleBlur}
                                 isDisabled={!isEditable}
-                            />
-                        </FormLabelGroup>
-                        <FormLabelGroup
-                            label=""
-                            fieldId="notifier.microsoftSentinel.auditLogDcrConfig.enabled"
-                            errors={errors}
-                        >
-                            <Checkbox
-                                label="Enabled"
-                                id="notifier.microsoftSentinel.auditLogDcrConfig.enabled"
-                                isChecked={
-                                    values.notifier.microsoftSentinel.auditLogDcrConfig.enabled
-                                }
-                                onChange={(event, isChecked) =>
-                                    onUpdateCheckboxChange(isChecked, event)
-                                }
-                                onBlur={handleBlur}
                             />
                         </FormLabelGroup>
                     </FormSection>
