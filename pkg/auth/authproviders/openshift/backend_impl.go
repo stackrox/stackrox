@@ -66,9 +66,12 @@ type openShiftSettings struct {
 	trustedCertPool *x509.CertPool
 }
 
-var _ authproviders.RefreshTokenEnabledBackend = (*backend)(nil)
+var (
+	_ authproviders.Backend                    = (*backend)(nil)
+	_ authproviders.RefreshTokenEnabledBackend = (*backend)(nil)
+)
 
-func newBackend(id string, callbackURLPath string, _ map[string]string) (authproviders.Backend, error) {
+func newBackend(id string, callbackURLPath string, _ map[string]string) (*backend, error) {
 	openshiftConnector, err := createOpenshiftConnector()
 	if err != nil {
 		return nil, err
@@ -79,11 +82,6 @@ func newBackend(id string, callbackURLPath string, _ map[string]string) (authpro
 		baseRedirectURLPath: callbackURLPath,
 		openshiftConnector:  openshiftConnector,
 	}
-
-	// Start watching the underlying cert pool injected into the openshift connector.
-	// In case the cert pool changes, we re-create the openshift connector so that newly added trusted CAs
-	// are being added included.
-	watchCertPool(b.recreateOpenshiftConnector)
 
 	return b, nil
 }

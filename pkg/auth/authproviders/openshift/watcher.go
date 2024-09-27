@@ -6,28 +6,73 @@ import (
 	"path"
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	log = logging.LoggerForModule()
 
 	_ k8scfgwatch.Handler = (*handler)(nil)
+
+	registeredBackends       map[string]*backend
+	backendRegistrationMutex sync.RWMutex
+
+	once sync.Once
 )
 
-type notifyCertPoolUpdate = func()
+func registerBackend(b *backend) {
+	once.Do(watchCertPool)
+	backendRegistrationMutex.Lock()
+	defer backendRegistrationMutex.Unlock()
 
-func watchCertPool(n notifyCertPoolUpdate) {
+	registeredBackends[b.id] = b
+}
+
+func deregisterBackend(id string) {
+	backendRegistrationMutex.Lock()
+	defer backendRegistrationMutex.Unlock()
+
+	delete(registeredBackends, id)
+}
+
+// GetRegisteredBackendCount gives the number of backend registered
+// in the certificate watcher update loop.
+func GetRegisteredBackendCount() int {
+	backendRegistrationMutex.RLock()
+	defer backendRegistrationMutex.RUnlock()
+
+	return len(registeredBackends)
+}
+
+func handleCertPoolUpdate() {
+	backends := make([]*backend, 0)
+	concurrency.WithRLock(&backendRegistrationMutex, func() {
+		for _, b := range registeredBackends {
+			backends = append(backends, b)
+		}
+	})
+	for _, b := range backends {
+		b.recreateOpenshiftConnector()
+	}
+}
+
+func startWatchCertPool() {
+
+}
+
+func watchCertPool() {
 	opts := k8scfgwatch.Options{
 		Interval: 5 * time.Second,
 		Force:    true,
 	}
 
 	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), path.Dir(serviceOperatorCAPath),
-		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: internalCAs, onCertPoolUpdate: n}), opts)
+		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: internalCAs, onCertPoolUpdate: handleCertPoolUpdate}), opts)
 	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), path.Dir(injectedCAPath),
-		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: injectedCAs, onCertPoolUpdate: n}), opts)
+		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: injectedCAs, onCertPoolUpdate: handleCertPoolUpdate}), opts)
 }
 
 type handler struct {
