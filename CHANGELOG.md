@@ -44,7 +44,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - To revert back to synchronous TLS checks set `ROX_SENSOR_LAZY_TLS_CHECKS` to `false` on Sensor.
 - ROX-23343: The auto-sensing within the Helm charts for detecting OpenShift clusters has been changed to depend on the `project.openshift.io/v1` APIVersion.
 - ROX-22701: Prevent deleting default policies through the API
-- ROX-26422: Central will now include the `id` field in alert notifications. API responses from the violations endpoint include the `id` field too.
+- ROX-26422: Central will now include the `id` field in alert notifications and API responses.
 
 - ROX-20723: Remove monorepo substructure under `ui/` directory and switch from yarn v1 to npm for package management. Use `npm run` in place of `yarn` commands.
 - ROX-26306: Increase minimum Node.js version from `">=18.0.0"` to `"^18.18.0 || >=20.0.0"` for open source community to run `make lint` command in the ui directory.
