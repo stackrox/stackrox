@@ -47,8 +47,7 @@ import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
-import MyActiveJobStatusTh from 'Components/ReportJob/MyActiveJobStatusTh';
-import MyActiveJobStatus from 'Components/ReportJob/MyActiveJobStatus';
+import MyLastJobStatusTh from 'Components/ReportJob/MyLastJobStatusTh';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import {
@@ -240,8 +239,8 @@ function ScanConfigsTablePage({
                         {displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}
                     </Td>
                     {isReportJobsEnabled && (
-                        <Td dataLabel="My active job status">
-                            <MyActiveJobStatus reportStatus={scanConfigSnapshot?.reportStatus} />
+                        <Td dataLabel="My last job status">
+                            {/* TODO: Create the <MyLastComplianceReportJobStatus /> component and add it here */}
                         </Td>
                     )}
                     {hasWriteAccessForCompliance && (
@@ -371,7 +370,7 @@ function ScanConfigsTablePage({
                                 <Th>Last scanned</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
-                                {isReportJobsEnabled && <MyActiveJobStatusTh />}
+                                {isReportJobsEnabled && <MyLastJobStatusTh />}
                                 {hasWriteAccessForCompliance && <Td />}
                             </Tr>
                         </Thead>
