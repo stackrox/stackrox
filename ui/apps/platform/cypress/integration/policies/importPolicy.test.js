@@ -253,4 +253,12 @@ describe('Import policy', () => {
         cy.get(selectors.importUploadModal.renameInput).type('Two are better than one');
         cy.get(selectors.importUploadModal.resumeButton).should('be.enabled');
     });
+
+    it('should have no detectable accessibility violations in the modal', () => {
+        visitPolicies();
+
+        cy.get(selectors.table.importButton).click();
+
+        cy.checkAccessibility(selectors.importUploadModal.modalWrapper);
+    });
 });

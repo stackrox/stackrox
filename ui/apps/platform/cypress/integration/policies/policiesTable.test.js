@@ -297,4 +297,13 @@ describe('Policies table', () => {
         cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("Policies")`);
         cy.get(`${selectors.table.policyLink}:contains("${policyName}")`).should('not.exist');
     });
+
+    it('should have no detectable accessibility violations', () => {
+        visitPolicies();
+
+        cy.get('table .pf-v5-c-table__toggle-icon').first().click();
+        cy.get('table .pf-v5-c-menu-toggle').first().click();
+
+        cy.checkAccessibility();
+    });
 });
