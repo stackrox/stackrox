@@ -26,6 +26,7 @@ import {
     sortCveDistroList,
     getWorkloadSortFields,
     getDefaultWorkloadSortOption,
+    getSeveritySortOptions,
 } from '../../utils/sortUtils';
 import { CVEListQueryResult, cveListQuery } from '../../WorkloadCves/Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
@@ -93,9 +94,16 @@ function RequestCVEsTable({
                                 <span className="pf-v5-screen-reader">Row expansion</span>
                             </Th>
                             <Th sort={getSortParams('CVE')}>CVE</Th>
-                            <Th>Images by severity</Th>
+                            <Th
+                                sort={getSortParams(
+                                    'Images By Severity',
+                                    getSeveritySortOptions([])
+                                )}
+                            >
+                                Images by severity
+                            </Th>
                             <Th sort={getSortParams('CVSS', aggregateByCVSS)}>CVSS</Th>
-                            <Th sort={getSortParams('Image sha', aggregateByDistinctCount)}>
+                            <Th sort={getSortParams('Image Sha', aggregateByDistinctCount)}>
                                 Affected images
                             </Th>
                             <Th sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}>
