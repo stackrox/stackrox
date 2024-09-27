@@ -99,9 +99,8 @@ function ScanConfigsTablePage({
         [sortOption, page, perPage]
     );
     const { data: listData, isLoading, error, refetch } = useRestQuery(listQuery);
-    const { complianceReportSnapshots } = useWatchLastSnapshotForComplianceReports(
-        listData?.configurations
-    );
+    const { complianceReportSnapshots, error: reportSnapshotsError } =
+        useWatchLastSnapshotForComplianceReports(listData?.configurations);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 

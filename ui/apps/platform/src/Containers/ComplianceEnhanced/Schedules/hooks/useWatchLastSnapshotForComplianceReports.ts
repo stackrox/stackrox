@@ -32,7 +32,7 @@ async function fetchLastJobForConfiguration(
     return complianceReportSnapshots[0] ?? null;
 }
 
-type ComplianceReportSnapshotLookup = Record<string, ComplianceReportSnapshot | null>;
+type ComplianceReportSnapshotLookup = Partial<Record<string, ComplianceReportSnapshot>>;
 
 type Result = {
     complianceReportSnapshots: ComplianceReportSnapshotLookup;
@@ -58,7 +58,7 @@ function useWatchLastSnapshotForComplianceReports(
                 ? scanConfigurations
                 : [scanConfigurations];
 
-            Promise.all(configurations.map(({ id }) => fetchLastJobForConfiguration(id)))
+            Promise.allSettled(configurations.map(({ id }) => fetchLastJobForConfiguration(id)))
                 .then((snapshotResults) => {
                     const result: ComplianceReportSnapshotLookup = configurations.reduce(
                         (acc, { id }, index) => ({ ...acc, [id]: snapshotResults[index] }),

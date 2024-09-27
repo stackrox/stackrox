@@ -6,6 +6,7 @@ import { ApiSortOption, SearchFilter } from 'types/search';
 import { SlimUser } from 'types/user.proto';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
+import { getQueryString } from 'utils/queryStringUtils';
 import { ComplianceProfileSummary, complianceV2Url } from './ComplianceCommon';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import { NotifierConfiguration, ReportStatus } from './ReportsService.types';
@@ -266,24 +267,24 @@ export function fetchComplianceReportHistory({
     sortOption,
     showMyHistory,
 }: FetchComplianceReportHistoryServiceProps): Promise<ComplianceReportSnapshot[]> {
-    const params = qs.stringify(
+    const params = getQueryString(
         {
             reportParamQuery: {
                 query,
                 pagination: getPaginationParams({ page, perPage, sortOption }),
             },
         },
-        { arrayFormat: 'repeat', allowDots: true }
+        { arrayFormat: 'repeat', allowDots: true, addQueryPrefix: false }
     );
     return axios
         .get<ReportHistoryResponse>(
             `/v2/compliance/scan/configurations/${id}/reports/${showMyHistory ? 'my-history' : 'history'}?${params}`
         )
         .then((response) => {
-            return response?.data?.complianceReportSnapshots ?? [];
+            return response.data.complianceReportSnapshots;
         })
         .catch((error) => {
             Raven.captureException(error);
-            return [];
+            return Promise.reject(error);
         });
 }
