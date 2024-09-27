@@ -53,6 +53,10 @@ func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []st
 	return newBackend(ctx, id, uiEndpoints, f.callbackURLPath, config, f.providerFactoryFunc, f.oauthExchange, f.noncePool, mappings)
 }
 
+func (f *factory) CleanupBackend(_ string) error {
+	return nil
+}
+
 func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (string, string, error) {
 	if r.URL.Path != f.callbackURLPath {
 		return "", "", httputil.NewError(http.StatusNotFound, "Not Found")

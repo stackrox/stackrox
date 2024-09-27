@@ -21,6 +21,9 @@ type BackendFactory interface {
 	// Note: we only support `mappings` for OIDC auth provider.
 	CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string, mappings map[string]string) (Backend, error)
 
+	// CleanupBackend cleans up the resources allocated at backend creation.
+	CleanupBackend(backendID string) error
+
 	// ProcessHTTPRequest is the dispatcher for HTTP/1.1 requests to `<sso-prefix>/<provider-type>/...`. The envisioned
 	// workflow consists of extracting the specific auth provider ID and clientState from the request, usually via a
 	// `state` parameter, and returning this provider ID and clientState from the function (with the Registry taking
