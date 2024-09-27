@@ -43,6 +43,10 @@ import (
 )
 
 const (
+	// auto-complete sets its pagination to 100, reduces the result set by removing duplicates and will return a list of maxAutocompleteResults.
+	// The number was chosen as a reasonably big set of results to try to return 10 results after removing duplicates.
+	// Ideally the auto-complete would guarantee a result set of 10, but the nature of the search framework and SQL-queries
+	// did not make this possible without more investigations.
 	pagination             = 100
 	maxAutocompleteResults = 10
 )
