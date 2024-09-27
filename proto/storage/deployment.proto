@@ -230,7 +230,7 @@ message ContainerConfig {
       UNKNOWN = 6;
     }
   }
-  repeated EnvironmentConfig env = 1; // @gotags: sql:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH" search:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH"
+  repeated EnvironmentConfig env = 1;
   repeated string command = 2;
   repeated string args = 3;
   string directory = 4;

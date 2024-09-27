@@ -1,4 +1,4 @@
-import { JobContextTab, jobContextTabs } from 'types/reportJob';
+import { JobContextTab, jobContextTabs } from './types';
 
 export function ensureJobContextTab(value: unknown): JobContextTab {
     if (typeof value === 'string' && jobContextTabs.includes(value as JobContextTab)) {
