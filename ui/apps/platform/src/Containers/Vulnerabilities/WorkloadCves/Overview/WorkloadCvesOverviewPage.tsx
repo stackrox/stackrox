@@ -469,6 +469,8 @@ function WorkloadCvesOverviewPage() {
                             </Flex>
                             {activeEntityTabKey === 'CVE' && (
                                 <CVEsTableContainer
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
                                     filterToolbar={filterToolbar}
                                     entityToggleGroup={entityToggleGroup}
                                     rowCount={entityCounts.CVE}
@@ -481,6 +483,8 @@ function WorkloadCvesOverviewPage() {
                             )}
                             {activeEntityTabKey === 'Image' && (
                                 <ImagesTableContainer
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
                                     filterToolbar={filterToolbar}
                                     entityToggleGroup={entityToggleGroup}
                                     rowCount={entityCounts.Image}
@@ -503,6 +507,8 @@ function WorkloadCvesOverviewPage() {
                             )}
                             {activeEntityTabKey === 'Deployment' && (
                                 <DeploymentsTableContainer
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
                                     filterToolbar={filterToolbar}
                                     entityToggleGroup={entityToggleGroup}
                                     rowCount={entityCounts.Deployment}

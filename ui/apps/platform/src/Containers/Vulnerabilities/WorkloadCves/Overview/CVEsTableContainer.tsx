@@ -6,13 +6,13 @@ import { DropdownItem } from '@patternfly/react-core/deprecated';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
 import useMap from 'hooks/useMap';
 import { VulnerabilityState } from 'types/cve.proto';
 
 import { getTableUIState } from 'utils/getTableUIState';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
 import { getPaginationParams } from 'utils/searchUtils';
+import { SearchFilter } from 'types/search';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import CVEsTable, { ImageCVE, cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
@@ -25,6 +25,8 @@ import CompletedExceptionRequestModal from '../../components/ExceptionRequestMod
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 
 export type CVEsTableContainerProps = {
+    searchFilter: SearchFilter;
+    onFilterChange: (searchFilter: SearchFilter) => void;
     filterToolbar: TableEntityToolbarProps['filterToolbar'];
     entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
     rowCount: number;
@@ -36,6 +38,8 @@ export type CVEsTableContainerProps = {
 };
 
 function CVEsTableContainer({
+    searchFilter,
+    onFilterChange,
     filterToolbar,
     entityToggleGroup,
     rowCount,
@@ -45,7 +49,6 @@ function CVEsTableContainer({
     workloadCvesScopedQueryString,
     isFiltered,
 }: CVEsTableContainerProps) {
-    const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
@@ -164,7 +167,7 @@ function CVEsTableContainer({
                     vulnerabilityState={vulnerabilityState}
                     createTableActions={createTableActions}
                     onClearFilters={() => {
-                        setSearchFilter({});
+                        onFilterChange({});
                         pagination.setPage(1);
                     }}
                 />

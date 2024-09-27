@@ -76,10 +76,15 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
 
 export type ViolationsTableSearchFilterProps = {
     searchFilter: SearchFilter;
+    onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
 };
 
-function ViolationsTableSearchFilter({ searchFilter, onSearch }: ViolationsTableSearchFilterProps) {
+function ViolationsTableSearchFilter({
+    searchFilter,
+    onFilterChange,
+    onSearch,
+}: ViolationsTableSearchFilterProps) {
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
     return (
@@ -95,7 +100,11 @@ function ViolationsTableSearchFilter({ searchFilter, onSearch }: ViolationsTable
                     </ToolbarItem>
                 </ToolbarGroup>
                 <ToolbarGroup className="pf-v5-u-w-100">
-                    <SearchFilterChips filterChipGroupDescriptors={filterChipGroupDescriptors} />
+                    <SearchFilterChips
+                        searchFilter={searchFilter}
+                        onFilterChange={onFilterChange}
+                        filterChipGroupDescriptors={filterChipGroupDescriptors}
+                    />
                 </ToolbarGroup>
             </ToolbarContent>
         </Toolbar>

@@ -4,10 +4,10 @@ import { Divider } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
 
 import { getTableUIState } from 'utils/getTableUIState';
 import { getPaginationParams } from 'utils/searchUtils';
+import { SearchFilter } from 'types/search';
 import ImagesTable, { Image, ImagesTableProps, imageListQuery } from '../Tables/ImagesTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
@@ -15,6 +15,8 @@ import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/Ta
 export { imageListQuery } from '../Tables/ImagesTable';
 
 type ImagesTableContainerProps = {
+    searchFilter: SearchFilter;
+    onFilterChange: (searchFilter: SearchFilter) => void;
     filterToolbar: TableEntityToolbarProps['filterToolbar'];
     entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
     rowCount: number;
@@ -29,6 +31,8 @@ type ImagesTableContainerProps = {
 };
 
 function ImagesTableContainer({
+    searchFilter,
+    onFilterChange,
     filterToolbar,
     entityToggleGroup,
     rowCount,
@@ -41,7 +45,6 @@ function ImagesTableContainer({
     onUnwatchImage,
     showCveDetailFields,
 }: ImagesTableContainerProps) {
-    const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
@@ -85,7 +88,10 @@ function ImagesTableContainer({
                     onWatchImage={onWatchImage}
                     onUnwatchImage={onUnwatchImage}
                     showCveDetailFields={showCveDetailFields}
-                    onClearFilters={() => setSearchFilter({})}
+                    onClearFilters={() => {
+                        onFilterChange({});
+                        pagination.setPage(1);
+                    }}
                 />
             </div>
         </>

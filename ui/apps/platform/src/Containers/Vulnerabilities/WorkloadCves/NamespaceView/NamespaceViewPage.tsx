@@ -38,6 +38,7 @@ import {
     clusterSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
+import { SearchFilter } from 'types/search';
 import { getRegexScopedQueryString, parseQuerySearchFilter } from '../../utils/searchUtils';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import DeploymentFilterLink from './DeploymentFilterLink';
@@ -149,12 +150,12 @@ function NamespaceViewPage() {
                     : selectedSearchFilter.filter((oldValue) => value !== oldValue),
         };
 
-        setSearchFilter(newFilter);
-        onFilterChange();
+        onFilterChange(newFilter);
         trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
     }
 
-    function onFilterChange() {
+    function onFilterChange(searchFilter: SearchFilter) {
+        setSearchFilter(searchFilter);
         setPage(1);
     }
 
@@ -209,6 +210,7 @@ function NamespaceViewPage() {
                         </ToolbarItem>
                         <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                             <SearchFilterChips
+                                searchFilter={searchFilter}
                                 onFilterChange={onFilterChange}
                                 filterChipGroupDescriptors={filterChipGroupDescriptors}
                             />
