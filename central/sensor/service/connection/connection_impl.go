@@ -830,7 +830,7 @@ func (c *sensorConnection) ObjectsDeletedByReconciliation() (map[string]int, boo
 
 func (c *sensorConnection) CheckAutoUpgradeSupport() error {
 	if c.sensorHello.GetHelmManagedConfigInit() != nil && !c.sensorHello.GetHelmManagedConfigInit().GetNotHelmManaged() {
-		return errors.New("cluster is Helm-managed and does not support auto upgrades; use 'helm upgrade' or a Helm-aware CD pipeline for upgrades")
+		return errors.New("secured cluster version is managed by external tools (helm, operator)")
 	}
 	return nil
 }
