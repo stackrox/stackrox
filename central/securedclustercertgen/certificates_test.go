@@ -22,19 +22,19 @@ const (
 )
 
 func TestHandler(t *testing.T) {
-	suite.Run(t, new(securedClusterCertgenSuite))
+	suite.Run(t, new(securedClusterCertGenSuite))
 }
 
-type securedClusterCertgenSuite struct {
+type securedClusterCertGenSuite struct {
 	suite.Suite
 }
 
-func (s *securedClusterCertgenSuite) SetupTest() {
+func (s *securedClusterCertGenSuite) SetupTest() {
 	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
 }
 
-func (s *securedClusterCertgenSuite) TestCertMapContainsExpectedFiles() {
+func (s *securedClusterCertGenSuite) TestCertMapContainsExpectedFiles() {
 	testCases := []struct {
 		service     storage.ServiceType
 		expectError bool
@@ -64,7 +64,7 @@ func (s *securedClusterCertgenSuite) TestCertMapContainsExpectedFiles() {
 	}
 }
 
-func (s *securedClusterCertgenSuite) TestValidateServiceCertificate() {
+func (s *securedClusterCertGenSuite) TestValidateServiceCertificate() {
 	testCases := []storage.ServiceType{
 		storage.ServiceType_SCANNER_SERVICE,
 		storage.ServiceType_SCANNER_DB_SERVICE,
@@ -84,7 +84,7 @@ func (s *securedClusterCertgenSuite) TestValidateServiceCertificate() {
 	}
 }
 
-func (s *securedClusterCertgenSuite) TestLocalScannerCertificateGeneration() {
+func (s *securedClusterCertGenSuite) TestLocalScannerCertificateGeneration() {
 	testCases := []struct {
 		service                  storage.ServiceType
 		expectOU                 string
@@ -124,7 +124,7 @@ func (s *securedClusterCertgenSuite) TestLocalScannerCertificateGeneration() {
 	}
 }
 
-func (s *securedClusterCertgenSuite) TestSecuredClusterCertificateGeneration() {
+func (s *securedClusterCertGenSuite) TestSecuredClusterCertificateGeneration() {
 	testCases := []struct {
 		service                  storage.ServiceType
 		expectOU                 string
@@ -162,7 +162,7 @@ func (s *securedClusterCertgenSuite) TestSecuredClusterCertificateGeneration() {
 	}
 }
 
-func (s *securedClusterCertgenSuite) TestServiceIssueLocalScannerCerts() {
+func (s *securedClusterCertGenSuite) TestServiceIssueLocalScannerCerts() {
 	getServiceTypes := func() set.FrozenSet[string] {
 		serviceTypes := scannerV2ServiceTypes
 		if features.ScannerV4.Enabled() {
@@ -231,7 +231,7 @@ func (s *securedClusterCertgenSuite) TestServiceIssueLocalScannerCerts() {
 }
 
 // TestServiceIssueSecuredClusterCerts checks the issuance of certificates for secured clusters.
-func (s *securedClusterCertgenSuite) TestServiceIssueSecuredClusterCerts() {
+func (s *securedClusterCertGenSuite) TestServiceIssueSecuredClusterCerts() {
 	allServiceTypeNames := make([]string, 0, allSupportedServiceTypes.Cardinality())
 	for _, serviceType := range allSupportedServiceTypes.AsSlice() {
 		allServiceTypeNames = append(allServiceTypeNames, serviceType.String())
