@@ -24,8 +24,8 @@ export function getFutureDateByDays(days) {
     return addDays(new Date(), days);
 }
 
-export function visitWorkloadCveOverview({ clearFiltersOnVisit = true } = {}) {
-    visit(basePath);
+export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch = '' } = {}) {
+    visit(basePath + urlSearch);
 
     cy.get('h1:contains("Workload CVEs")');
     cy.location('pathname').should('eq', basePath);
