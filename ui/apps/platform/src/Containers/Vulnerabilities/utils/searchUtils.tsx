@@ -16,7 +16,7 @@ import { getQueryString } from 'utils/queryStringUtils';
 import { searchValueAsArray, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
-import { ensureStringArray } from 'Components/CompoundSearchFilter/utils/utils';
+import { ensureStringArray } from 'utils/ensure';
 import {
     FixableStatus,
     NodeEntityTab,
