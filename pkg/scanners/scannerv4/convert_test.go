@@ -120,6 +120,183 @@ func TestConvert(t *testing.T) {
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)
 }
 
+func TestComponents(t *testing.T) {
+	testcases := []struct {
+		name     string
+		metadata *storage.ImageMetadata
+		report   *v4.VulnerabilityReport
+		expected []*storage.EmbeddedImageScanComponent
+	}{
+		{
+			name: "basic no vulns",
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Digest: "some V1 digest",
+					Layers: []*storage.ImageLayer{
+						{
+							Empty: true,
+						},
+						{
+							Empty: true,
+						},
+						{
+							Empty: true,
+						},
+						{
+							Instruction: "RUN",
+							Value:       "mv -fZ /tmp/ubi.repo /etc/yum.repos.d/ubi.repo || :",
+						},
+						{
+							Instruction: "COPY",
+							Value:       "--chmod=755 ./sleepforever.sh /sleepforever.sh # buildkit",
+						},
+						{
+							Empty: true,
+						},
+					},
+				},
+				V2: &storage.V2Metadata{
+					Digest: "some V2 digest",
+				},
+				LayerShas: []string{"layer1", "layer2"},
+				DataSource: &storage.DataSource{
+					Id:   "dataSourceID",
+					Name: "dataSourceName",
+				},
+			},
+			report: &v4.VulnerabilityReport{
+				HashId: "hashID",
+				Contents: &v4.Contents{
+					Packages: []*v4.Package{
+						{
+							Id:      "1",
+							Name:    "glib2",
+							Version: "2.68.4-14.el9",
+						},
+					},
+					Distributions: []*v4.Distribution{
+						{
+							Id:        "1",
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:      "sqlite:var/lib/rpm",
+									IntroducedIn:   "layer1",
+									DistributionId: "1",
+									RepositoryIds:  []string{"0"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:     "glib2",
+					Version:  "2.68.4-14.el9",
+					Source:   storage.SourceType_OS,
+					Location: "var/lib/rpm",
+					HasLayerIndex: &storage.EmbeddedImageScanComponent_LayerIndex{
+						LayerIndex: 3,
+					},
+				},
+			},
+		},
+		{
+			name: "layer mismatch, no layer indexes",
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Digest: "some V1 digest",
+					Layers: []*storage.ImageLayer{
+						{
+							Empty: true,
+						},
+						{
+							Empty: true,
+						},
+						{
+							Empty: true,
+						},
+						{
+							Instruction: "RUN",
+							Value:       "mv -fZ /tmp/ubi.repo /etc/yum.repos.d/ubi.repo || :",
+						},
+						{
+							Instruction: "COPY",
+							Value:       "--chmod=755 ./sleepforever.sh /sleepforever.sh # buildkit",
+						},
+						{
+							Empty: true,
+						},
+					},
+				},
+				V2: &storage.V2Metadata{
+					Digest: "some V2 digest",
+				},
+				LayerShas: []string{"layer1", "layer2"},
+				DataSource: &storage.DataSource{
+					Id:   "dataSourceID",
+					Name: "dataSourceName",
+				},
+			},
+			report: &v4.VulnerabilityReport{
+				HashId: "hashID",
+				Contents: &v4.Contents{
+					Packages: []*v4.Package{
+						{
+							Id:      "1",
+							Name:    "glib2",
+							Version: "2.68.4-14.el9",
+						},
+					},
+					Distributions: []*v4.Distribution{
+						{
+							Id:        "1",
+							Did:       "rhel",
+							VersionId: "9",
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"1": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:      "sqlite:var/lib/rpm",
+									IntroducedIn:   "some layer which does not exist in the image",
+									DistributionId: "1",
+									RepositoryIds:  []string{"0"},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: []*storage.EmbeddedImageScanComponent{
+				{
+					Name:          "glib2",
+					Version:       "2.68.4-14.el9",
+					Source:        storage.SourceType_OS,
+					Location:      "var/lib/rpm",
+					HasLayerIndex: nil,
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			cs := components(tc.metadata, tc.report)
+			assert.Len(t, cs, len(tc.expected))
+			for i, got := range cs {
+				assert.Truef(t, tc.expected[i].EqualVT(got), "expected: %+#v\ngot: %+#v", tc.expected[i], got)
+			}
+		})
+	}
+}
+
 func TestSetScoresAndScoreVersion(t *testing.T) {
 	testcases := []struct {
 		name     string
