@@ -70,7 +70,7 @@ spec:
           value: "sensor.stackrox.svc"
         [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
         - name: ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED
-          value: "{{ ._rox.collector.runtime_config.enabled }}"
+          value: "{{ ._rox.collector.runtimeConfig.enabled }}"
         [<- end >]
         {{- include "srox.envVars" (list . "daemonset" "collector" "collector") | nindent 8 }}
         resources:
