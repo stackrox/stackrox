@@ -51,7 +51,6 @@ func (h *handlerImpl) Stop(_ error) {
 func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
-	// return []centralsensor.SensorCapability{centralsensor.NetworkGraphExternalSrcsCap}
 	return nil
 }
 
@@ -63,7 +62,7 @@ func getCollectorConfig(msg *central.MsgToSensor) *sensor.CollectorConfig {
 				EnableExternalIps: true,
 			},
 		}
-		// TODO: Once the collector config is a part of cluster config uncomment this
+		// TODO (ROX-26263): Once the collector config is a part of cluster config uncomment this
 		// if config := clusterConfig.GetConfig(); config != nil {
 		//	if collectorConfig := config.GetCollectorConfig(); collectorConfig != nil {
 		//		return collectorConfig

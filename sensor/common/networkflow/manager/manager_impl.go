@@ -237,26 +237,26 @@ func (e *containerEndpoint) String() string {
 
 // NewManager creates a new instance of network flow manager
 func NewManager(
-	clusterEntities EntityStore,
-	externalSrcs externalsrcs.Store,
-	collectorRuntimeConfig collectorruntimeconfig.Store,
+	clusterEntitiesStore EntityStore,
+	externalSrcsStore externalsrcs.Store,
+	collectorRuntimeConfigStore collectorruntimeconfig.Store,
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
 ) Manager {
 	enricherTicker := time.NewTicker(tickerTime)
 	mgr := &networkFlowManager{
-		connectionsByHost:      make(map[string]*hostConnections),
-		clusterEntities:        clusterEntities,
-		publicIPs:              newPublicIPsManager(),
-		externalSrcs:           externalSrcs,
-		collectorRuntimeConfig: collectorRuntimeConfig,
-		policyDetector:         policyDetector,
-		enricherTicker:         enricherTicker,
-		initialSync:            &atomic.Bool{},
-		activeConnections:      make(map[connection]*networkConnIndicator),
-		activeEndpoints:        make(map[containerEndpoint]*containerEndpointIndicator),
-		stopper:                concurrency.NewStopper(),
-		pubSub:                 pubSub,
+		connectionsByHost:           make(map[string]*hostConnections),
+		clusterEntitiesStore:        clusterEntitiesStore,
+		publicIPs:                   newPublicIPsManager(),
+		externalSrcsStore:           externalSrcsStore,
+		collectorRuntimeConfigStore: collectorRuntimeConfigStore,
+		policyDetector:              policyDetector,
+		enricherTicker:              enricherTicker,
+		initialSync:                 &atomic.Bool{},
+		activeConnections:           make(map[connection]*networkConnIndicator),
+		activeEndpoints:             make(map[containerEndpoint]*containerEndpointIndicator),
+		stopper:                     concurrency.NewStopper(),
+		pubSub:                      pubSub,
 	}
 
 	enricherTicker.Stop()
@@ -284,9 +284,9 @@ type networkFlowManager struct {
 	connectionsByHost      map[string]*hostConnections
 	connectionsByHostMutex sync.Mutex
 
-	clusterEntities        EntityStore
-	externalSrcs           externalsrcs.Store
-	collectorRuntimeConfig collectorruntimeconfig.Store
+	clusterEntitiesStore        EntityStore
+	externalSrcsStore           externalsrcs.Store
+	collectorRuntimeConfigStore collectorruntimeconfig.Store
 
 	lastSentStateMutex             sync.RWMutex
 	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS
@@ -320,7 +320,7 @@ func (m *networkFlowManager) ProcessMessage(_ *central.MsgToSensor) error {
 
 func (m *networkFlowManager) Start() error {
 	go m.enrichConnections(m.enricherTicker.C)
-	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntities)
+	go m.publicIPs.Run(m.stopper.LowLevel().GetStopRequestSignal(), m.clusterEntitiesStore)
 	return nil
 }
 
@@ -432,7 +432,7 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 			}
 			m.enrichAndSend()
 			// Measuring number of calls to `enrichAndSend` (ticks) for remembering historical endpoints
-			m.clusterEntities.RecordTick()
+			m.clusterEntitiesStore.RecordTick()
 			if env.ProcessesListeningOnPort.BooleanSetting() {
 				m.enrichAndSendProcesses()
 			}
@@ -514,7 +514,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 
-	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
+	container, ok := m.clusterEntitiesStore.LookupByContainerID(conn.containerID)
 	if !ok {
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
@@ -539,7 +539,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		isFresh = false
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
-		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
+		lookupResults = m.clusterEntitiesStore.LookupByEndpoint(conn.remote)
 	}
 
 	var port uint16
@@ -564,7 +564,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			return
 		}
 
-		extSrc := m.externalSrcs.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
+		extSrc := m.externalSrcsStore.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
 		if extSrc != nil {
 			isFresh = false
 		}
@@ -684,7 +684,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, stat
 		status.used = true
 	}
 
-	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
+	container, ok := m.clusterEntitiesStore.LookupByContainerID(ep.containerID)
 	if !ok {
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
@@ -733,7 +733,7 @@ func (m *networkFlowManager) enrichProcessListening(ep *containerEndpoint, statu
 		status.usedProcess = true
 	}
 
-	container, ok := m.clusterEntities.LookupByContainerID(ep.containerID)
+	container, ok := m.clusterEntitiesStore.LookupByContainerID(ep.containerID)
 	if !ok {
 		// Expire the process if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
@@ -1196,9 +1196,9 @@ func (m *networkFlowManager) PublicIPsValueStream() concurrency.ReadOnlyValueStr
 }
 
 func (m *networkFlowManager) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList] {
-	return m.externalSrcs.ExternalSrcsValueStream()
+	return m.externalSrcsStore.ExternalSrcsValueStream()
 }
 
 func (m *networkFlowManager) CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*sensor.CollectorConfig] {
-	return m.collectorRuntimeConfig.CollectorConfigValueStream()
+	return m.collectorRuntimeConfigStore.CollectorConfigValueStream()
 }

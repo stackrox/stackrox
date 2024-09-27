@@ -23,17 +23,17 @@ func createManager(mockCtrl *gomock.Controller) (*networkFlowManager, *mocksMana
 	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
 	ticker := time.NewTicker(100 * time.Millisecond)
 	mgr := &networkFlowManager{
-		clusterEntities:   mockEntityStore,
-		externalSrcs:      mockExternalStore,
-		policyDetector:    mockDetector,
-		connectionsByHost: make(map[string]*hostConnections),
-		sensorUpdates:     make(chan *message.ExpiringMessage, 5),
-		publicIPs:         newPublicIPsManager(),
-		centralReady:      concurrency.NewSignal(),
-		enricherTicker:    ticker,
-		activeConnections: make(map[connection]*networkConnIndicator),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
-		stopper:           concurrency.NewStopper(),
+		clusterEntitiesStore: mockEntityStore,
+		externalSrcsStore:    mockExternalStore,
+		policyDetector:       mockDetector,
+		connectionsByHost:    make(map[string]*hostConnections),
+		sensorUpdates:        make(chan *message.ExpiringMessage, 5),
+		publicIPs:            newPublicIPsManager(),
+		centralReady:         concurrency.NewSignal(),
+		enricherTicker:       ticker,
+		activeConnections:    make(map[connection]*networkConnIndicator),
+		activeEndpoints:      make(map[containerEndpoint]*containerEndpointIndicator),
+		stopper:              concurrency.NewStopper(),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }

@@ -8,7 +8,7 @@ import "internalapi/sensor/network_connection_info.proto";
 option cc_enable_arenas = true;
 option go_package = "./internalapi/sensor;sensor";
 
-// TODO(ROX-XXXX) In 4.7 rename to collector_iservice.proto
+// TODO(ROX-26433) In 4.7 rename to collector_iservice.proto
 
 message NetworkConnectionInfoMessage {
   oneof msg {
@@ -30,7 +30,7 @@ message MsgToCollector {
   }
 }
 
-// TODO(ROX-XXXX) Uncomment in 4.7 and add more message types to oneof
+// TODO(ROX-26433) Uncomment in 4.7 and add more message types to oneof
 // message MsgFromCollector {
 //   oneof msg {
 //     CollectorRegisterRequest register = 1;
@@ -70,5 +70,5 @@ service NetworkConnectionInfoService {
   // send anything via this stream.
   rpc PushNetworkConnectionInfo(stream NetworkConnectionInfoMessage) returns (stream NetworkFlowsControlMessage);
   rpc Communicate(stream NetworkConnectionInfoMessage) returns (stream MsgToCollector);
-  // rpc Communicate(stream MsgFromCollector) returns (stream MsgToCollector); // TODO(ROX-XXXX) Uncomment in 4.7
+  // rpc Communicate(stream MsgFromCollector) returns (stream MsgToCollector); // TODO(ROX-26433) Uncomment in 4.7
 }
