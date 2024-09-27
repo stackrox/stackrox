@@ -51,8 +51,53 @@ describe('Exception Management Request Details Page', () => {
         cy.get(selectors.tableSortColumn('CVE')).should('have.attr', 'aria-sort', 'ascending');
     });
 
+    it('should be able to sort on the "Images by severity" column', () => {
+        deferAndVisitRequestDetails(deferralProps);
+        cy.get(selectors.tableSortColumn('Images by severity')).should(
+            'have.attr',
+            'aria-sort',
+            'descending'
+        );
+        const severityFields = [
+            'Critical Severity Count',
+            'Important Severity Count',
+            'Moderate Severity Count',
+            'Low Severity Count',
+        ].map((field) => encodeURIComponent(field));
+        cy.get(selectors.tableColumnSortButton('Images by severity')).click();
+        severityFields.forEach((field, index) => {
+            cy.location('search').should(
+                'contain',
+                `sortOption[${index}][field]=${field}&sortOption[${index}][direction]=asc`
+            );
+        });
+        cy.get(selectors.tableSortColumn('Images by severity')).should(
+            'have.attr',
+            'aria-sort',
+            'ascending'
+        );
+        cy.get(selectors.tableColumnSortButton('Images by severity')).click();
+        severityFields.forEach((field, index) => {
+            cy.location('search').should(
+                'contain',
+                `sortOption[${index}][field]=${field}&sortOption[${index}][direction]=desc`
+            );
+        });
+        cy.get(selectors.tableSortColumn('Images by severity')).should(
+            'have.attr',
+            'aria-sort',
+            'descending'
+        );
+    });
+
     it('should be able to sort on the "CVSS" column', () => {
         deferAndVisitRequestDetails(deferralProps);
+        cy.get(selectors.tableSortColumn('CVSS')).should('have.attr', 'aria-sort', 'none');
+        cy.get(selectors.tableColumnSortButton('CVSS')).click();
+        cy.location('search').should(
+            'contain',
+            'sortOption[field]=CVSS&sortOption[aggregateBy][aggregateFunc]=max&sortOption[direction]=desc'
+        );
         cy.get(selectors.tableSortColumn('CVSS')).should('have.attr', 'aria-sort', 'descending');
         cy.get(selectors.tableColumnSortButton('CVSS')).click();
         cy.location('search').should(
@@ -60,12 +105,6 @@ describe('Exception Management Request Details Page', () => {
             'sortOption[field]=CVSS&sortOption[aggregateBy][aggregateFunc]=max&sortOption[direction]=asc'
         );
         cy.get(selectors.tableSortColumn('CVSS')).should('have.attr', 'aria-sort', 'ascending');
-        cy.get(selectors.tableColumnSortButton('CVSS')).click();
-        cy.location('search').should(
-            'contain',
-            'sortOption[field]=CVSS&sortOption[aggregateBy][aggregateFunc]=max&sortOption[direction]=desc'
-        );
-        cy.get(selectors.tableSortColumn('CVSS')).should('have.attr', 'aria-sort', 'descending');
     });
 
     it('should be able to sort on the "Affected images" column', () => {
