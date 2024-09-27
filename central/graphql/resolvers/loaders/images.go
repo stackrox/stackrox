@@ -5,11 +5,17 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore"
+	viewsCommon "github.com/stackrox/rox/central/views/common"
+	imagecveview "github.com/stackrox/rox/central/views/imagecve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -55,6 +61,11 @@ type imageLoaderImpl struct {
 	loaded map[string]*storage.Image
 
 	ds datastore.DataStore
+}
+
+type imageResponse struct {
+	imagecveview.ResourceCountByImageCVESeverity
+	imageID string `db:"image_sha"`
 }
 
 // FromIDs loads a set of images from a set of ids.
@@ -105,11 +116,23 @@ func (idl *imageLoaderImpl) FullImageWithID(ctx context.Context, id string) (*st
 
 // FromQuery loads a set of images that match a query.
 func (idl *imageLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.Image, error) {
-	results, err := idl.ds.Search(ctx, query)
+	if err := viewsCommon.ValidateQuery(query); err != nil {
+		return nil, err
+	}
+
+	var err error
+	query, err = viewsCommon.WithSACFilter(ctx, resources.Image, query)
 	if err != nil {
 		return nil, err
 	}
-	return idl.FromIDs(ctx, search.ResultsToIDs(results))
+	query = withSelectQuery(query)
+
+	var responses []*imageResponse
+	responses, err = pgSearch.RunSelectRequestForSchema[imageResponse](ctx, globaldb.GetPostgres(), schema.ImagesSchema, query)
+	if err != nil {
+		return nil, err
+	}
+	return idl.FromIDs(ctx, responsesToIDs(responses))
 }
 
 func (idl *imageLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
@@ -166,4 +189,30 @@ func (idl *imageLoaderImpl) readAll(ids []string) (images []*storage.Image, miss
 		}
 	}
 	return
+}
+
+func withSelectQuery(query *v1.Query) *v1.Query {
+	cloned := query.CloneVT()
+	cloned.Selects = []*v1.QuerySelect{
+		search.NewQuerySelect(search.ImageSHA).Proto(),
+	}
+	cloned.GroupBy = &v1.QueryGroupBy{
+		Fields: []string{search.ImageSHA.String()},
+	}
+
+	if viewsCommon.IsSortBySeverityCounts(cloned) {
+		cloned.Selects = append(cloned.Selects,
+			viewsCommon.WithCountBySeverityAndFixabilityQuery(query, search.CVE).Selects...,
+		)
+	}
+
+	return cloned
+}
+
+func responsesToIDs(responses []*imageResponse) []string {
+	ids := make([]string, 0, len(responses))
+	for _, r := range responses {
+		ids = append(ids, r.imageID)
+	}
+	return ids
 }

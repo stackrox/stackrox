@@ -33,7 +33,7 @@ func (c *imageCVECoreResponse) GetCVEIDs() []string {
 }
 
 func (c *imageCVECoreResponse) GetImagesBySeverity() common.ResourceCountByCVESeverity {
-	return &resourceCountByImageCVESeverity{
+	return &ResourceCountByImageCVESeverity{
 		CriticalSeverityCount:         c.ImagesWithCriticalSeverity,
 		FixableCriticalSeverityCount:  c.FixableImagesWithCriticalSeverity,
 		ImportantSeverityCount:        c.ImagesWithImportantSeverity,
@@ -82,7 +82,8 @@ func (r *resourceCountByFixability) GetFixable() int {
 	return r.fixable
 }
 
-type resourceCountByImageCVESeverity struct {
+// ResourceCountByImageCVESeverity contains the counts of resources (Images or ImageCVEs) by CVE severity
+type ResourceCountByImageCVESeverity struct {
 	CriticalSeverityCount         int `db:"critical_severity_count"`
 	FixableCriticalSeverityCount  int `db:"fixable_critical_severity_count"`
 	ImportantSeverityCount        int `db:"important_severity_count"`
@@ -93,28 +94,28 @@ type resourceCountByImageCVESeverity struct {
 	FixableLowSeverityCount       int `db:"fixable_low_severity_count"`
 }
 
-func (r *resourceCountByImageCVESeverity) GetCriticalSeverityCount() common.ResourceCountByFixability {
+func (r *ResourceCountByImageCVESeverity) GetCriticalSeverityCount() common.ResourceCountByFixability {
 	return &resourceCountByFixability{
 		total:   r.CriticalSeverityCount,
 		fixable: r.FixableCriticalSeverityCount,
 	}
 }
 
-func (r *resourceCountByImageCVESeverity) GetImportantSeverityCount() common.ResourceCountByFixability {
+func (r *ResourceCountByImageCVESeverity) GetImportantSeverityCount() common.ResourceCountByFixability {
 	return &resourceCountByFixability{
 		total:   r.ImportantSeverityCount,
 		fixable: r.FixableImportantSeverityCount,
 	}
 }
 
-func (r *resourceCountByImageCVESeverity) GetModerateSeverityCount() common.ResourceCountByFixability {
+func (r *ResourceCountByImageCVESeverity) GetModerateSeverityCount() common.ResourceCountByFixability {
 	return &resourceCountByFixability{
 		total:   r.ModerateSeverityCount,
 		fixable: r.FixableModerateSeverityCount,
 	}
 }
 
-func (r *resourceCountByImageCVESeverity) GetLowSeverityCount() common.ResourceCountByFixability {
+func (r *ResourceCountByImageCVESeverity) GetLowSeverityCount() common.ResourceCountByFixability {
 	return &resourceCountByFixability{
 		total:   r.LowSeverityCount,
 		fixable: r.FixableLowSeverityCount,
