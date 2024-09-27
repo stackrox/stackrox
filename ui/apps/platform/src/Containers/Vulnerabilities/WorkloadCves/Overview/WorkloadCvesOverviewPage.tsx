@@ -294,7 +294,7 @@ function WorkloadCvesOverviewPage() {
         // Reset all filters, sorting, and pagination and apply to the current history entry
         setActiveEntityTabKey('CVE');
         setSearchFilter({});
-        sort.setSortOption(getDefaultWorkloadSortOption('CVE', searchFilter));
+        sort.setSortOption(getDefaultWorkloadSortOption('CVE'));
         pagination.setPage(1);
         setObservedCveMode('WITH_CVES');
 
