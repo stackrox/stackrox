@@ -60,14 +60,15 @@ export function getWorkloadSortFields(entityTab: WorkloadEntityTab): (string | s
  * @returns The default sort option
  */
 export function getDefaultWorkloadSortOption(
-    entityTab: WorkloadEntityTab
+    entityTab: WorkloadEntityTab,
+    searchFilter?: SearchFilter
 ): SortOption | NonEmptyArray<SortOption> {
     switch (entityTab) {
         case 'CVE':
             // Array.prototype.map does not currently retain the arity of an input tuple, so
             // we need to cast the return value to a NonEmptyArray<SortOption>. This may be fixed
             // soon in a future version of TypeScript https://github.com/microsoft/TypeScript/issues/29841
-            return getSeveritySortOptions(getAppliedSeverities({})).map((o) => ({
+            return getSeveritySortOptions(getAppliedSeverities(searchFilter ?? {})).map((o) => ({
                 ...o,
                 direction: 'desc',
             })) as NonEmptyArray<SortOption>;

@@ -296,6 +296,16 @@ describe('Workload CVE overview page tests', () => {
                     waitAndYieldRequestBodyVariables().then(
                         expectRequestedSort({ field: 'CVE', reversed: true })
                     );
+
+                    // Check that visiting via a direct link that includes a severity filter maintains
+                    // the correct sort
+                    visitWorkloadCveOverview({
+                        clearFiltersOnVisit: false,
+                        urlSearch: '?s[SEVERITY][0]=Important',
+                    });
+                    waitAndYieldRequestBodyVariables().then(
+                        expectRequestedSort([{ field: 'Important Severity Count', reversed: true }])
+                    );
                 }
             );
         });

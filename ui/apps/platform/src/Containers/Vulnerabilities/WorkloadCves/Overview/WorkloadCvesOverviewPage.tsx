@@ -239,7 +239,7 @@ function WorkloadCvesOverviewPage() {
 
     const sort = useURLSort({
         sortFields: getWorkloadSortFields(activeEntityTabKey),
-        defaultSortOption: getDefaultSortOption(activeEntityTabKey),
+        defaultSortOption: getDefaultSortOption(activeEntityTabKey, searchFilter),
         onSort: () => pagination.setPage(1),
     });
 
@@ -262,7 +262,7 @@ function WorkloadCvesOverviewPage() {
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {
         pagination.setPage(1);
-        sort.setSortOption(getDefaultSortOption(entityTab));
+        sort.setSortOption(getDefaultSortOption(entityTab, searchFilter));
 
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
