@@ -266,7 +266,7 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerability) *storage.ImageCVE {
 	var nvdCvss float32
 	nvdCvss = 0
-	nvdVersion := storage.ScoreVersion_V2
+	nvdVersion := storage.ScoreVersion_UNKNOWN_VERSION
 	for _, score := range from.GetCvssMetrics() {
 		if score.Source == storage.Source_SOURCE_NVD {
 			if score.GetCvssv3() != nil {
@@ -275,6 +275,7 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 
 			} else if score.GetCvssv2() != nil {
 				nvdCvss = score.GetCvssv2().GetScore()
+				nvdVersion = storage.ScoreVersion_V2
 			}
 		}
 	}
