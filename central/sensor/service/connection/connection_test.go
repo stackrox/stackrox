@@ -2,6 +2,8 @@ package connection
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"slices"
 	"testing"
 	"time"
@@ -469,7 +471,7 @@ func (s *testSuite) TestIssueSecuredClusterCerts() {
 				},
 			}
 			ctx := context.Background()
-			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
 			request := &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_IssueSecuredClusterCertsRequest{
@@ -495,17 +497,36 @@ func (s *testSuite) TestIssueSecuredClusterCerts() {
 
 					certificates := response.GetCertificates()
 					s.NotNil(certificates.GetServiceCerts())
-					s.NotNil(certificates.GetCaPem())
+
+					caPem := certificates.GetCaPem()
+					s.NotNil(caPem)
+					certBlock, _ := pem.Decode(caPem)
+					s.NotNil(certBlock, "Failed to decode CA certificate PEM")
+					_, err := x509.ParseCertificate(certBlock.Bytes)
+					s.NoError(err, "Invalid CA certificate")
 
 					serviceCertificates := certificates.GetServiceCerts()
 					expectedCertificates := 7
-					s.Equal(expectedCertificates, len(serviceCertificates))
+					s.Len(serviceCertificates, expectedCertificates, "unexpected number of certificates returned")
 
 					for _, serviceCertificate := range serviceCertificates {
 						cert := serviceCertificate.GetCert()
 
-						s.NotNil(cert.GetCertPem())
-						s.NotNil(cert.GetKeyPem())
+						certPem := cert.GetCertPem()
+						keyPem := cert.GetKeyPem()
+
+						s.NotNil(certPem)
+						s.NotNil(keyPem)
+
+						certBlock, _ := pem.Decode(certPem)
+						s.NotNil(certBlock, "Failed to decode service certificate PEM")
+						_, err := x509.ParseCertificate(certBlock.Bytes)
+						s.NoError(err, "Invalid service certificate")
+
+						keyBlock, _ := pem.Decode(keyPem)
+						s.NotNil(keyBlock, "Failed to decode service key PEM")
+						_, err = x509.ParseECPrivateKey(keyBlock.Bytes)
+						s.NoError(err, "Invalid service private key PEM format")
 					}
 
 				}
