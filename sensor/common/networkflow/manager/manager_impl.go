@@ -28,7 +28,6 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
-	// "github.com/stackrox/rox/sensor/common/collectorruntimeconfig"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
@@ -239,7 +238,6 @@ func (e *containerEndpoint) String() string {
 func NewManager(
 	clusterEntitiesStore EntityStore,
 	externalSrcsStore externalsrcs.Store,
-	// collectorRuntimeConfigStore collectorruntimeconfig.Store,
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
 ) Manager {
@@ -286,7 +284,6 @@ type networkFlowManager struct {
 
 	clusterEntitiesStore EntityStore
 	externalSrcsStore    externalsrcs.Store
-	// collectorRuntimeConfigStore collectorruntimeconfig.Store
 
 	lastSentStateMutex             sync.RWMutex
 	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS
@@ -1200,6 +1197,5 @@ func (m *networkFlowManager) ExternalSrcsValueStream() concurrency.ReadOnlyValue
 }
 
 func (m *networkFlowManager) CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*sensor.CollectorConfig] {
-	// return m.collectorRuntimeConfigStore.CollectorConfigValueStream()
 	return nil
 }
