@@ -28,7 +28,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"github.com/stackrox/rox/sensor/common/collectorruntimeconfig"
+	// "github.com/stackrox/rox/sensor/common/collectorruntimeconfig"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
@@ -239,24 +239,24 @@ func (e *containerEndpoint) String() string {
 func NewManager(
 	clusterEntitiesStore EntityStore,
 	externalSrcsStore externalsrcs.Store,
-	collectorRuntimeConfigStore collectorruntimeconfig.Store,
+	// collectorRuntimeConfigStore collectorruntimeconfig.Store,
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
 ) Manager {
 	enricherTicker := time.NewTicker(tickerTime)
 	mgr := &networkFlowManager{
-		connectionsByHost:           make(map[string]*hostConnections),
-		clusterEntitiesStore:        clusterEntitiesStore,
-		publicIPs:                   newPublicIPsManager(),
-		externalSrcsStore:           externalSrcsStore,
-		collectorRuntimeConfigStore: collectorRuntimeConfigStore,
-		policyDetector:              policyDetector,
-		enricherTicker:              enricherTicker,
-		initialSync:                 &atomic.Bool{},
-		activeConnections:           make(map[connection]*networkConnIndicator),
-		activeEndpoints:             make(map[containerEndpoint]*containerEndpointIndicator),
-		stopper:                     concurrency.NewStopper(),
-		pubSub:                      pubSub,
+		connectionsByHost:    make(map[string]*hostConnections),
+		clusterEntitiesStore: clusterEntitiesStore,
+		publicIPs:            newPublicIPsManager(),
+		externalSrcsStore:    externalSrcsStore,
+		//collectorRuntimeConfigStore: collectorRuntimeConfigStore,
+		policyDetector:    policyDetector,
+		enricherTicker:    enricherTicker,
+		initialSync:       &atomic.Bool{},
+		activeConnections: make(map[connection]*networkConnIndicator),
+		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicator),
+		stopper:           concurrency.NewStopper(),
+		pubSub:            pubSub,
 	}
 
 	enricherTicker.Stop()
@@ -284,9 +284,9 @@ type networkFlowManager struct {
 	connectionsByHost      map[string]*hostConnections
 	connectionsByHostMutex sync.Mutex
 
-	clusterEntitiesStore        EntityStore
-	externalSrcsStore           externalsrcs.Store
-	collectorRuntimeConfigStore collectorruntimeconfig.Store
+	clusterEntitiesStore EntityStore
+	externalSrcsStore    externalsrcs.Store
+	// collectorRuntimeConfigStore collectorruntimeconfig.Store
 
 	lastSentStateMutex             sync.RWMutex
 	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS
@@ -1200,5 +1200,6 @@ func (m *networkFlowManager) ExternalSrcsValueStream() concurrency.ReadOnlyValue
 }
 
 func (m *networkFlowManager) CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*sensor.CollectorConfig] {
-	return m.collectorRuntimeConfigStore.CollectorConfigValueStream()
+	// return m.collectorRuntimeConfigStore.CollectorConfigValueStream()
+	return nil
 }
