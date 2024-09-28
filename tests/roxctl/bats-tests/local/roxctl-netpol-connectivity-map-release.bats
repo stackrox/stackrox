@@ -19,7 +19,6 @@ teardown() {
   rm -f "$ofile"
 }
 
-
 @test "roxctl-release netpol connectivity map should return error on empty or non-existing directory" {
     run roxctl-release netpol connectivity map "$out_dir"
     assert_failure
@@ -428,6 +427,186 @@ payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080'
   assert_output --partial '{ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080
 {ingress-controller} => frontend/webapp[Deployment] : TCP 8080'
   refute_output --partial 'frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080'
+}
+
+@test "roxctl-release netpol connectivity map generates connlist with exposure-analysis for acs-security-demo" {
+  check_acs_security_demos_files
+  run roxctl-release netpol connectivity map "${acs_security_demos_dir}" --exposure
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # normalizing tabs and whitespaces in output so it will be easier to compare with expected
+  output=$(normalize_whitespaces "$output")
+  expected_output='backend/checkout[Deployment] => backend/notification[Deployment] : TCP 8080
+backend/checkout[Deployment] => backend/recommendation[Deployment] : TCP 8080
+backend/checkout[Deployment] => payments/gateway[Deployment] : TCP 8080
+backend/recommendation[Deployment] => backend/catalog[Deployment] : TCP 8080
+backend/reports[Deployment] => backend/catalog[Deployment] : TCP 8080
+backend/reports[Deployment] => backend/recommendation[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/checkout[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/recommendation[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/reports[Deployment] : TCP 8080
+frontend/webapp[Deployment] => backend/shipping[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/mastercard-processor[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080
+{ingress-controller} => frontend/asset-cache[Deployment] : TCP 8080
+{ingress-controller} => frontend/webapp[Deployment] : TCP 8080
+
+Exposure Analysis Result:
+Egress Exposure:
+backend/checkout[Deployment]            =>      entire-cluster : UDP 5353
+backend/recommendation[Deployment]      =>      entire-cluster : UDP 5353
+backend/reports[Deployment]             =>      entire-cluster : UDP 5353
+frontend/webapp[Deployment]             =>      entire-cluster : UDP 5353
+payments/gateway[Deployment]            =>      entire-cluster : UDP 5353
+
+Ingress Exposure:
+frontend/asset-cache[Deployment]        <=      entire-cluster : TCP 8080
+frontend/webapp[Deployment]             <=      entire-cluster : TCP 8080'
+  normalized_expected_output=$(normalize_whitespaces "$expected_output")
+  # partial is used to filter WARN and INFO messages
+  assert_output --partial "$normalized_expected_output"
+}
+
+@test "roxctl-release netpol connectivity map generates connlist with exposure-analysis for acs-security-demo md format" {
+  check_acs_security_demos_files
+  run roxctl-release netpol connectivity map "${acs_security_demos_dir}" --output-format=md --exposure
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # output lines , skipping connlist and WARN and INFO messages
+  assert_output --partial '## Exposure Analysis Result:
+### Egress Exposure:
+| src | dst | conn |
+|-----|-----|------|
+| backend/checkout[Deployment] | entire-cluster | UDP 5353 |
+| backend/recommendation[Deployment] | entire-cluster | UDP 5353 |
+| backend/reports[Deployment] | entire-cluster | UDP 5353 |
+| frontend/webapp[Deployment] | entire-cluster | UDP 5353 |
+| payments/gateway[Deployment] | entire-cluster | UDP 5353 |
+
+### Ingress Exposure:
+| dst | src | conn |
+|-----|-----|------|
+| frontend/asset-cache[Deployment] | entire-cluster | TCP 8080 |
+| frontend/webapp[Deployment] | entire-cluster | TCP 8080 |'
+}
+
+@test "roxctl-release netpol connectivity map generates connlist with exposure-analysis for acs-security-demo dot format" {
+  check_acs_security_demos_files
+  run roxctl-release netpol connectivity map "${acs_security_demos_dir}" --output-format=dot --exposure
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # normalizing tabs and whitespaces in output so it will be easier to compare with expected
+  output=$(normalize_whitespaces "$output")
+  expected_output='digraph {
+        subgraph "cluster_backend" {
+                color="black"
+                fontcolor="black"
+                "backend/catalog[Deployment]" [label="catalog[Deployment]" color="blue" fontcolor="blue"]
+                "backend/checkout[Deployment]" [label="checkout[Deployment]" color="blue" fontcolor="blue"]
+                "backend/notification[Deployment]" [label="notification[Deployment]" color="blue" fontcolor="blue"]
+                "backend/recommendation[Deployment]" [label="recommendation[Deployment]" color="blue" fontcolor="blue"]
+                "backend/reports[Deployment]" [label="reports[Deployment]" color="blue" fontcolor="blue"]
+                "backend/shipping[Deployment]" [label="shipping[Deployment]" color="blue" fontcolor="blue"]
+                label="backend"
+        }
+        subgraph "cluster_frontend" {
+                color="black"
+                fontcolor="black"
+                "frontend/asset-cache[Deployment]" [label="asset-cache[Deployment]" color="blue" fontcolor="blue"]
+                "frontend/webapp[Deployment]" [label="webapp[Deployment]" color="blue" fontcolor="blue"]
+                label="frontend"
+        }
+        subgraph "cluster_payments" {
+                color="black"
+                fontcolor="black"
+                "payments/gateway[Deployment]" [label="gateway[Deployment]" color="blue" fontcolor="blue"]
+                "payments/mastercard-processor[Deployment]" [label="mastercard-processor[Deployment]" color="blue" fontcolor="blue"]
+                "payments/visa-processor[Deployment]" [label="visa-processor[Deployment]" color="blue" fontcolor="blue"]
+                label="payments"
+        }
+        "entire-cluster" [label="entire-cluster" color="red2" fontcolor="red2" shape=diamond]
+        "{ingress-controller}" [label="{ingress-controller}" color="blue" fontcolor="blue"]
+        "backend/checkout[Deployment]" -> "backend/notification[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=0.5]
+        "backend/checkout[Deployment]" -> "backend/recommendation[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=0.5]
+        "backend/checkout[Deployment]" -> "entire-cluster" [label="UDP 5353" color="darkorange4" fontcolor="darkgreen" weight=0.5 style=dashed]
+        "backend/checkout[Deployment]" -> "payments/gateway[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=0.5]
+        "backend/recommendation[Deployment]" -> "backend/catalog[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
+        "backend/recommendation[Deployment]" -> "entire-cluster" [label="UDP 5353" color="darkorange4" fontcolor="darkgreen" weight=0.5 style=dashed]
+        "backend/reports[Deployment]" -> "backend/catalog[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
+        "backend/reports[Deployment]" -> "backend/recommendation[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
+        "backend/reports[Deployment]" -> "entire-cluster" [label="UDP 5353" color="darkorange4" fontcolor="darkgreen" weight=0.5 style=dashed]
+        "entire-cluster" -> "frontend/asset-cache[Deployment]" [label="TCP 8080" color="darkorange2" fontcolor="darkgreen" weight=1 style=dashed]
+        "entire-cluster" -> "frontend/webapp[Deployment]" [label="TCP 8080" color="darkorange2" fontcolor="darkgreen" weight=1 style=dashed]
+        "frontend/webapp[Deployment]" -> "backend/checkout[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
+        "frontend/webapp[Deployment]" -> "backend/recommendation[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
+        "frontend/webapp[Deployment]" -> "backend/reports[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
+        "frontend/webapp[Deployment]" -> "backend/shipping[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
+        "frontend/webapp[Deployment]" -> "entire-cluster" [label="UDP 5353" color="darkorange4" fontcolor="darkgreen" weight=0.5 style=dashed]
+        "payments/gateway[Deployment]" -> "entire-cluster" [label="UDP 5353" color="darkorange4" fontcolor="darkgreen" weight=0.5 style=dashed]
+        "payments/gateway[Deployment]" -> "payments/mastercard-processor[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=0.5]
+        "payments/gateway[Deployment]" -> "payments/visa-processor[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=0.5]
+        "{ingress-controller}" -> "frontend/asset-cache[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
+        "{ingress-controller}" -> "frontend/webapp[Deployment]" [label="TCP 8080" color="gold2" fontcolor="darkgreen" weight=1]
+}'
+  normalized_expected_output=$(normalize_whitespaces "$expected_output")
+  # partial is used to filter WARN and INFO messages
+  assert_output --partial "$normalized_expected_output"
+}
+
+@test "roxctl-release netpol connectivity map generates exposure for acs-security-demo with focus-workload=gateway" {
+  check_acs_security_demos_files
+  run roxctl-release netpol connectivity map "${acs_security_demos_dir}" --focus-workload=gateway --exposure
+  assert_success
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # normalizing tabs and whitespaces in output so it will be easier to compare with expected
+  output=$(normalize_whitespaces "$output")
+  expected_output='backend/checkout[Deployment] => payments/gateway[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/mastercard-processor[Deployment] : TCP 8080
+payments/gateway[Deployment] => payments/visa-processor[Deployment] : TCP 8080
+
+Exposure Analysis Result:
+Egress Exposure:
+payments/gateway[Deployment]    =>      entire-cluster : UDP 5353'
+  normalized_expected_output=$(normalize_whitespaces "$expected_output")
+  # partial is used to filter WARN and INFO messages
+  assert_output --partial "$normalized_expected_output"
+}
+
+@test "roxctl-release netpol connectivity map generates exposure from certain Namespace labels and Pod labels specified" {
+  assert_file_exist "${test_data}/np-guard/exposure-example/netpol.yaml"
+  assert_file_exist "${test_data}/np-guard/exposure-example/ns_and_deployments.yaml"
+  echo "Writing exposure report to ${ofile}" >&3
+  run roxctl-release netpol connectivity map "${test_data}/np-guard/exposure-example" --exposure
+  assert_success
+
+  echo "$output" > "$ofile"
+  assert_file_exist "$ofile"
+  # normalizing tabs and whitespaces in output so it will be easier to compare with expected
+  output=$(normalize_whitespaces "$output")
+  expected_output='hello-world/workload-a[Deployment] => 0.0.0.0-255.255.255.255 : All Connections
+
+Exposure Analysis Result:
+Egress Exposure:
+hello-world/workload-a[Deployment]      =>      0.0.0.0-255.255.255.255 : All Connections
+hello-world/workload-a[Deployment]      =>      entire-cluster : All Connections
+
+Ingress Exposure:
+hello-world/workload-a[Deployment]      <=      [namespace with {effect=NoSchedule}]/[pod with {role=monitoring}] : TCP 8050
+
+Workloads not protected by network policies:
+hello-world/workload-a[Deployment] is not protected on Egress'
+  normalized_expected_output=$(normalize_whitespaces "$expected_output")
+  assert_output "$normalized_expected_output"
+}
+
+normalize_whitespaces() {
+  echo "$1"| sed -e "s/[[:space:]]\+/ /g"
 }
 
 check_acs_security_demos_files() {

@@ -21,6 +21,7 @@ type Cmd struct {
 	outputToFile          bool
 	focusWorkload         string
 	outputFormat          string
+	exposure              bool
 
 	// injected or constructed values
 	env environment.Environment
@@ -84,5 +85,6 @@ func (cmd *Cmd) AddFlags(c *cobra.Command) *cobra.Command {
 	c.Flags().StringVarP(&cmd.outputFilePath, "output-file", "f", "", "Save connections list output into specific file")
 	c.Flags().StringVarP(&cmd.focusWorkload, "focus-workload", "", "", "Focus on connections of specified workload name in the output")
 	c.Flags().StringVarP(&cmd.outputFormat, "output-format", "o", defaultOutputFormat, "Configure the connections list in specific format, supported formats: txt|json|md|dot|csv")
+	c.Flags().BoolVar(&cmd.exposure, "exposure", false, "Enhance the analysis of permitted connectivity with exposure analysis")
 	return c
 }
