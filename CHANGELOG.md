@@ -29,6 +29,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - `roxctl central generate k8s hostpath` and `roxctl central generate openshift hostpath` no longer have the flags `--hostpath`, `--node-selector-key`, and `--node-selector-value`.
 
 ### Deprecated Features
+
 - ROX-25677: The format for specifying durations in JSON requests to
   `v1/nodecves/suppress`, `v1/clustercves/suppress` and `v1/imagecves/suppress`
   will be restricted to a [proto JSON format](https://protobuf.dev/programming-guides/proto3/#json:~:text=are%20also%20accepted.-,Duration,-string).
@@ -40,20 +41,19 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-24169: API token authentication has been deprecated by Red Hat OpenShift Cluster Manager. The corresponding cloud source integration now uses service accounts for authentication.
 
 ### Technical Changes
+
 - ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
   - To revert back to synchronous TLS checks set `ROX_SENSOR_LAZY_TLS_CHECKS` to `false` on Sensor.
 - ROX-23343: The auto-sensing within the Helm charts for detecting OpenShift clusters has been changed to depend on the `project.openshift.io/v1` APIVersion.
-- ROX-22701: Prevent deleting default policies through the API
-
+- ROX-22701: Prevent deleting default policies through the API.
 - ROX-20723: Remove monorepo substructure under `ui/` directory and switch from yarn v1 to npm for package management. Use `npm run` in place of `yarn` commands.
 - ROX-26306: Increase minimum Node.js version from `">=18.0.0"` to `"^18.18.0 || >=20.0.0"` for open source community to run `make lint` command in the ui directory.
-    - Node.js 18.18.0 was released on 2023-09-18
-    - Node.js 18 moves from Maintenance to End-of-Life status on 2025-04-30
-    - Node.js 20 moves from Active to Maintenance status on 2024-10-22
+  - Node.js 18.18.0 was released on 2023-09-18
+  - Node.js 18 moves from Maintenance to End-of-Life status on 2025-04-30
+  - Node.js 20 moves from Active to Maintenance status on 2024-10-22
+- ROX-24500: `roxctl` will fail with an error if central certificate validation fails.
 
 ## [4.5.0]
-
-
 
 ### Added Features
 
