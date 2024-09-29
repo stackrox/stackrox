@@ -463,7 +463,7 @@ function VulnReportsPage() {
                                                 isSeparator: true,
                                             },
                                             {
-                                                title: 'Send report now',
+                                                title: 'Send report',
                                                 description:
                                                     report.notifiers.length === 0
                                                         ? 'No delivery destinations set'
