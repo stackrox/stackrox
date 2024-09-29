@@ -7,6 +7,8 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 )
 
+//go:generate mockgen-wrapper
+
 // Service that the Collector can send network connection info to.
 type Service interface {
 	pkgGRPC.APIService
