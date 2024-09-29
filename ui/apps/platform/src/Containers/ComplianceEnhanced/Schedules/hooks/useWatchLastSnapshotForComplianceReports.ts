@@ -48,7 +48,7 @@ export type FetchLastComplianceReportSnapshotReturn = Result & {
 function useWatchLastSnapshotForComplianceReports(
     scanConfigurations: ComplianceScanConfigurationStatus[] | undefined
 ): FetchLastComplianceReportSnapshotReturn {
-    const fetchSnapshotsCallback = useCallback(async () => {
+    const fetchSnapshotsCallback = useCallback(() => {
         if (!scanConfigurations) {
             const result: ComplianceReportSnapshotLookup = {};
             return Promise.resolve(result);
