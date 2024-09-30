@@ -380,6 +380,8 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 			// If the m.sensorUpdates queue is full, we bounce the Network Flow update.
 			// They will still be processed by the detection engine for newer entities, but
 			// sensor will not keep ordered updates indefinitely in memory.
+
+			log.Infof("Message %+v cannot be enqueued", msg)
 			return false
 		}
 	} else {
@@ -422,6 +424,7 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 		case <-m.stopper.Flow().StopRequested():
 			return
 		case <-tickerC:
+			log.Info("enriching connections tick")
 			if !features.SensorCapturesIntermediateEvents.Enabled() && !m.centralReady.IsDone() {
 				log.Info("Sensor is in offline mode: skipping enriching until connection is back up")
 				continue
@@ -469,15 +472,18 @@ func (m *networkFlowManager) enrichAndSend() {
 		m.policyDetector.ProcessNetworkFlow(detectionContext, flow)
 	}
 
-	log.Debugf("Flow update : %v", protoToSend)
+	log.Infof("Sending flow update to central: %v", protoToSend)
 	if m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
 	}) {
+		log.Info("Flow has been enqueued in sensorUpdates")
 		m.updateConnectionStates(currentConns, currentEndpoints)
 		metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
 		metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
+	} else {
+		log.Info("Flow has NOT been enqueued in sensorUpdates")
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 }
