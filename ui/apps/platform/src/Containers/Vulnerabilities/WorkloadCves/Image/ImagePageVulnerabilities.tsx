@@ -12,7 +12,6 @@ import {
 } from '@patternfly/react-core';
 import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { gql, useQuery } from '@apollo/client';
-import sum from 'lodash/sum';
 
 import useURLSearch from 'hooks/useURLSearch';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
@@ -83,6 +82,7 @@ export const imageVulnerabilitiesQuery = gql`
     ) {
         image(id: $id) {
             ...ImageMetadataContext
+            imageVulnerabilityCount(query: $query)
             imageCVECountBySeverity(query: $query) {
                 ...ResourceCountsByCVESeverityAndStatus
             }
@@ -146,6 +146,7 @@ function ImagePageVulnerabilities({
         {
             image: ImageMetadataContext & {
                 imageCVECountBySeverity: ResourceCountByCveSeverityAndStatus;
+                imageVulnerabilityCount: number;
                 imageVulnerabilities: ImageVulnerability[];
             };
         },
@@ -189,13 +190,7 @@ function ImagePageVulnerabilities({
 
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
-    const severityCounts = data?.image.imageCVECountBySeverity;
-    const totalVulnerabilityCount = sum([
-        severityCounts?.critical.total ?? 0,
-        severityCounts?.important.total ?? 0,
-        severityCounts?.moderate.total ?? 0,
-        severityCounts?.low.total ?? 0,
-    ]);
+    const totalVulnerabilityCount = data?.image?.imageVulnerabilityCount ?? 0;
 
     return (
         <>
