@@ -155,7 +155,7 @@ def parse_args():
                         help='Which SemVer version of the operator to set in the patched CSV, e.g. 3.62.0')
     parser.add_argument("--first-version", required=True, metavar='version',
                         help='The first version of the operator that was published')
-    parser.add_argument("--operator-image", metavar='image',
+    parser.add_argument("--operator-image", required=True, metavar='image',
                         help='Which operator image to use in the patched CSV')
     parser.add_argument("--no-related-images", action='store_true',
                         help='Disable passthrough of related images')
