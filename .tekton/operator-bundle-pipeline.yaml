@@ -110,6 +110,9 @@ spec:
     description: Directory in which to run "make tag" command.
     default: "operator"
     type: string
+  - name: operator-image-repo
+    description: Image repository for the StackRox Operator.
+    type: string
 
   results:
   - description: ""
@@ -130,6 +133,7 @@ spec:
 
   workspaces:
   - name: git-auth
+  - name: quay-auth
 
   tasks:
 
@@ -216,6 +220,30 @@ spec:
         value: task
       resolver: bundles
 
+  - name: wait-for-operator-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.operator-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: determine-operator-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.operator-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-operator-image
+
   - name: build-container
     params:
     - name: IMAGE
@@ -236,6 +264,8 @@ spec:
     - name: BUILD_ARGS
       value:
       - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+      - OPERATOR_IMAGE_DIGEST=$(tasks.determine-operator-image-digest.results.IMAGE_DIGEST)
+      - OPERATOR_IMAGE_REPO=$(params.operator-image-repo)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
