@@ -471,18 +471,19 @@ export function findUpgradeState(
         // Auto upgrades are possible even in the case of SENSOR_VERSION_HIGHER (it's not technically an upgrade,
         // and not really something we ever expect, but eh.) If the backend detects this to be the case, it will not
         // trigger an upgrade unless asked to by the user.
-        case 'SENSOR_VERSION_HIGHER':
-          if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
-            return upgradeStates.DOWNGRADE_POSSIBLE;
-          }
+        case 'SENSOR_VERSION_HIGHER': {
+            if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
+                return upgradeStates.DOWNGRADE_POSSIBLE;
+            }
 
-          const upgradeState = get(
-            upgradeStatus,
-            'mostRecentProcess.progress.upgradeState',
-            'unknown'
-          );
+            const upgradeState = get(
+                upgradeStatus,
+                'mostRecentProcess.progress.upgradeState',
+                'unknown'
+            );
 
-          return upgradeStates[upgradeState] || upgradeStates.unknown;
+            return upgradeStates[upgradeState] || upgradeStates.unknown;
+        }
         case 'AUTO_UPGRADE_POSSIBLE': {
             if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
                 return upgradeStates.UPGRADE_AVAILABLE;
