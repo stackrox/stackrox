@@ -22,6 +22,12 @@ import (
 	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
+// mockDigest is the digest used for annotating any Node Index.
+// The Scanner endpoint requires a digest for each image layer before analyzing it - TODO(ROX-25614)
+// As the Node contents are treated as one big image layer, they also need a bogus digest.
+// This digest is taken from the test of the digest library we're using (go-containerregistry).
+const mockDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
+
 var (
 	_ types.Scanner                  = (*scannerv4)(nil)
 	_ types.ImageVulnerabilityGetter = (*scannerv4)(nil)
@@ -93,7 +99,7 @@ func newScanner(integration *storage.ImageIntegration, activeRegistries registri
 		name:              integration.GetName(),
 		activeRegistries:  activeRegistries,
 		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
-		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans), // TODO: Set custom value
+		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans),
 		scannerClient:     c,
 	}
 
@@ -217,7 +223,7 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 }
 
 func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {
-	nodedigest, err := name.NewDigest("registry/repository@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+	nodeDigest, err := name.NewDigest(mockDigest)
 	if err != nil {
 		log.Errorf("Failed to parse digest from node %q: %v", node.GetName(), err)
 	}
@@ -225,9 +231,8 @@ func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 
-	vr, err := s.scannerClient.GetVulnerabilities(ctx, nodedigest, indexReport.GetContents())
+	vr, err := s.scannerClient.GetVulnerabilities(ctx, nodeDigest, indexReport.GetContents())
 	if err != nil {
-		log.Errorf("Failed to create vulnerability report: %v", err)
 		return nil, errors.Wrap(err, "Failed to create vulnerability report")
 	}
 
@@ -240,7 +245,6 @@ func (s *scannerv4) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeIn
 	}
 	vr, err := s.GetNodeVulnerabilityReport(node, ir)
 	if err != nil {
-		log.Errorf("Failed to create vulnerability report: %v", err)
 		return nil, errors.Wrap(err, "Failed to create vulnerability report")
 	}
 	log.Infof("Received Vulnerability Report with %d packages containing %d vulnerabilities", len(vr.GetContents().GetPackages()), len(vr.Vulnerabilities))
@@ -298,7 +302,7 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 		name:              integration.GetName(),
 		activeRegistries:  nil,
 		ScanSemaphore:     types.NewSemaphoreWithValue(numConcurrentScans),
-		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans), // TODO: Set custom value
+		NodeScanSemaphore: types.NewNodeSemaphoreWithValue(numConcurrentScans),
 		scannerClient:     c,
 	}
 

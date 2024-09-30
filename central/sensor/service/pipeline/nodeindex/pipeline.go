@@ -73,18 +73,15 @@ func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.Ms
 	// Read the node from the database, if not found we fail.
 	node, found, err := p.nodeDatastore.GetNode(ctx, event.GetId())
 	if err != nil {
-		log.Errorf("fetching node %s from the database: %v", event.GetId(), err)
 		return errors.WithMessagef(err, "fetching node: %s", event.GetId())
 	}
 	if !found {
-		log.Errorf("fetching node %s from the database: node does not exist", event.GetId())
 		return errors.WithMessagef(err, "node does not exist: %s", event.GetId())
 	}
 
 	// Send the Node and Index Report to Scanner for enrichment
 	err = p.enricher.EnrichNodeWithInventory(node, nil, cr)
 	if err != nil {
-		log.Errorf("enriching node %s with index report: %v", event.GetId(), err)
 		return errors.WithMessagef(err, "enriching node %s with index report", event.GetId())
 	}
 	log.Infof("Successfully enriched node %s with index report.", node.GetName())
