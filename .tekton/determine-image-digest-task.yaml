@@ -29,6 +29,7 @@ spec:
       set -euo pipefail
       image_ref="docker://$(params.IMAGE_REPOSITORY):$(params.IMAGE_TAG)"
       digest=$(skopeo inspect \
+        --retry-times 10 \
         --override-os linux \
         --override-arch amd64 \
         --format '{{.Digest}}' \
