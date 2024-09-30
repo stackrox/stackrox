@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var blacklist = []string{"all", "utils", "validation", "metadatagetter"}
+var whitelist = []string{"all", "utils", "validation", "metadatagetter"}
 
 func TestAllPackagesAreImported(t *testing.T) {
 	notifiersDirEntry, err := os.ReadDir("..")
@@ -29,7 +29,7 @@ func TestAllPackagesAreImported(t *testing.T) {
 		}
 		baseName := filepath.Base(entry.Name())
 
-		if slices.Contains(blacklist, baseName) {
+		if slices.Contains(whitelist, baseName) {
 			continue
 		}
 		existingNotifiers.Add(baseName)
