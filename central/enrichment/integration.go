@@ -35,7 +35,6 @@ type managerImpl struct {
 // It loops through the categories, which is a very small slice.
 func isNodeIntegration(integration *storage.ImageIntegration) bool {
 	for _, category := range integration.GetCategories() {
-		log.Infof("isNodeintegration for integration %s: Node_Scanner %v", integration.GetName(), category == storage.ImageIntegrationCategory_NODE_SCANNER)
 		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
 			return true
 		}
@@ -47,9 +46,6 @@ func isNodeIntegration(integration *storage.ImageIntegration) bool {
 // Currently, only StackRox Scanner and Scanner v4 are supported node integrations.
 // Assumes integration.GetCategories() includes storage.ImageIntegrationCategory_NODE_SCANNER.
 func ImageIntegrationToNodeIntegration(integration *storage.ImageIntegration) (*storage.NodeIntegration, error) {
-	if integration.GetType() != scannerTypes.Clairify && integration.GetType() != scannerTypes.ScannerV4 {
-		return nil, errors.Errorf("requires a %s or %s config: %q", scannerTypes.Clairify, scannerTypes.ScannerV4, integration.GetName())
-	}
 	i := &storage.NodeIntegration{
 		Id:   integration.GetId(),
 		Name: integration.GetName(),
@@ -66,7 +62,7 @@ func ImageIntegrationToNodeIntegration(integration *storage.ImageIntegration) (*
 			Clairify: integration.GetClairify(),
 		}
 	default:
-		return nil, errors.Errorf("unsupported integration type: %q", integration.GetType())
+		return nil, errors.Errorf("unsupported integration type: %q.", integration.GetType())
 	}
 	log.Debugf("Created Node Integration %s / %s from Image integration", i.GetName(), i.GetType())
 

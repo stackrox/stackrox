@@ -137,28 +137,17 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheHit)
 				}
 			case <-t.C:
-				if !c.nodeScanner.IsActive() {
-					break
+				if c.nodeScanner.IsActive() {
+					inventory := c.runNodeInventoryScan(ctx)
+					if inventory != nil {
+						nodeInventoriesC <- inventory
+					}
 				}
-				log.Infof("Scanning node %q", nodeName)
-				msg, err := c.nodeScanner.ScanNode(ctx)
-				if err != nil {
-					log.Errorf("Error running node scan: %v", err)
-				} else {
-					cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
-					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan)
-					c.umh.ObserveSending()
-					c.cache = msg.CloneVT()
-					nodeInventoriesC <- msg
-				}
+
 				if env.NodeIndexEnabled.BooleanSetting() {
-					log.Infof("Creating v4 Node Index Report")
-					report, err := c.nodeIndexer.IndexNode(ctx)
-					if err != nil {
-						log.Errorf("Error creating node index: %v", err)
-					} else {
-						log.Infof("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages())) // FIXME: Debug level
-						nodeInventoriesC <- c.createIndexMsg(report)
+					index := c.runNodeIndex(ctx)
+					if index != nil {
+						nodeInventoriesC <- index
 					}
 				}
 				interval := i.Next()
@@ -168,6 +157,34 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 		}
 	}()
 	return nodeInventoriesC
+}
+
+func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCompliance {
+	nodeName := c.nodeNameProvider.GetNodeName()
+	log.Infof("Scanning node %q", nodeName)
+	msg, err := c.nodeScanner.ScanNode(ctx)
+	if err != nil {
+		log.Errorf("Error running node scan: %v", err)
+	} else {
+		cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
+		cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan)
+		c.umh.ObserveSending()
+		c.cache = msg.CloneVT()
+		return msg
+	}
+	return nil
+}
+
+func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance {
+	log.Infof("Creating v4 Node Index Report")
+	report, err := c.nodeIndexer.IndexNode(ctx)
+	if err != nil {
+		log.Errorf("Error creating node index: %v", err)
+	} else {
+		log.Debugf("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
+		return c.createIndexMsg(report)
+	}
+	return nil
 }
 
 func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) {

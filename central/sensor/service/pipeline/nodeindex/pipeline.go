@@ -87,6 +87,7 @@ func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.Ms
 		log.Errorf("enriching node %s with index report: %v", event.GetId(), err)
 		return errors.WithMessagef(err, "enriching node %s with index report", event.GetId())
 	}
+	log.Infof("Successfully enriched node %s with index report.", node.GetName())
 
 	// TODO(ROX-26089): Update the whole node in the database with the new and previous information after conversion
 	/*

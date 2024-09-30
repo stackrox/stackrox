@@ -84,7 +84,7 @@ func (e *enricherImpl) EnrichNode(node *storage.Node) error {
 func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning node %s:%s", node.GetClusterName(), node.GetName()))
 
-	log.Debugf("Enriching Node with Inventory: %v / Index: %v", nodeInventory.GetNodeId() != "", indexReport.GetState() != "")
+	log.Debugf("Enriching Node with Inventory: %t / Index: %t", nodeInventory.GetNodeId() != "", indexReport.GetState() != "")
 	log.Debugf("Number of known scanners: %d", len(e.scanners))
 
 	scanners := concurrency.WithRLock1(&e.lock, func() []types.NodeScannerWithDataSource {
@@ -120,15 +120,20 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *
 	var scan *storage.NodeScan
 	var err error
 
+	var scannerVersion int
+
 	scanStartTime := time.Now()
 	if scanner.Type() == types.ScannerV4 {
 		scan, err = scanner.GetNodeInventoryScan(node, nil, indexReport)
+		scannerVersion = 4
 	} else {
 		scan, err = scanner.GetNodeInventoryScan(node, nodeInventory, nil)
+		scannerVersion = 2
 	}
 
 	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
 	e.metrics.SetNodeInventoryNumberComponents(len(nodeInventory.GetComponents().GetRhelComponents()), node.GetClusterName(), node.GetName())
+	e.metrics.SetNodeScanScannerVersion(scannerVersion, node.GetClusterName(), node.GetName())
 	if err != nil {
 		return errors.Wrapf(err, "Error scanning '%s:%s' with scanner %q", node.GetClusterName(), node.GetName(), scanner.Name())
 	}
