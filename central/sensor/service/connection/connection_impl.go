@@ -786,6 +786,14 @@ func (c *sensorConnection) ObjectsDeletedByReconciliation() (map[string]int, boo
 }
 
 func (c *sensorConnection) CheckAutoUpgradeSupport() error {
+	hci := c.sensorHello.GetHelmManagedConfigInit()
+	if hci != nil {
+		log.Infof("Helm Managed Config Init: %+v", hci)
+		log.Infof("NotHelmManaged: %t", hci.GetNotHelmManaged())
+		log.Infof("ManagedBy: %s", hci.GetManagedBy())
+	} else {
+		log.Info("Helm Managed Config Init in nil!")
+	}
 	if c.sensorHello.GetHelmManagedConfigInit() != nil && !c.sensorHello.GetHelmManagedConfigInit().GetNotHelmManaged() {
 		return errors.New("secured cluster version is managed by external tools (helm, operator)")
 	}
