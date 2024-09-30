@@ -182,7 +182,7 @@ function AffectedImagesTable({
                                                 date={getEarliestDiscoveredAtTime(vulnerabilities)}
                                             />
                                         ) : (
-                                            'N/A'
+                                            'Not available'
                                         )}
                                     </Td>
                                 </Tr>
