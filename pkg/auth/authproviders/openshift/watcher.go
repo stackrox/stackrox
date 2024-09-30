@@ -17,7 +17,7 @@ var (
 
 	_ k8scfgwatch.Handler = (*handler)(nil)
 
-	registeredBackends       map[string]*backend
+	registeredBackends       = map[string]*backend{}
 	backendRegistrationMutex sync.RWMutex
 
 	once sync.Once
