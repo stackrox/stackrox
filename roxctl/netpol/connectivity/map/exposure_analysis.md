@@ -58,8 +58,9 @@ The following graph is produced from the output of `$ roxctl netpol connectivity
 - `gold` edges are edges produced by the original connectivity map report
 - `blue` nodes and labels represent input workloads.
 - `black` frames and labels represent namespaces of input manifests
-- `red` nodes and labels are used to represent: - representative entities which are matched by policy rules, but do not exist in the input manifests\
-                                                - external IP addresses
+- `red` nodes and labels are used to represent: 
+    - representative entities which are matched by policy rules, but do not exist in the input manifests
+    - external IP addresses
 - `red` diamond with an `entire-cluster` label inside is used to represent the entire cluster entity
 -  `dashed orange` edges represent ingress connections which are reported by running exposure analysis
 - `dashed dark orange` edges represent egress connections which are reported by running exposure analysis
