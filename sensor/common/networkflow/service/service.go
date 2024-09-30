@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/concurrency"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -15,4 +16,5 @@ type Service interface {
 	sensor.NetworkConnectionInfoServiceServer
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
+	SendCollectorConfig(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.CollectorConfig]) error
 }

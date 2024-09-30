@@ -150,7 +150,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 	if features.CollectorRuntimeConfig.Enabled() {
 		log.Info("CollectorRuntimeConfig is enabled")
 		collectorConfigIterator = s.manager.CollectorConfigValueStream().Iterator(false)
-		if err := s.sendCollectorConfig(stream, collectorConfigIterator); err != nil {
+		if err := s.SendCollectorConfig(stream, collectorConfigIterator); err != nil {
 			return err
 		}
 	}
@@ -208,7 +208,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 			}
 		case <-collectorConfigItrDoneC:
 			collectorConfigIterator = collectorConfigIterator.TryNext()
-			if err := s.sendCollectorConfig(stream, collectorConfigIterator); err != nil {
+			if err := s.SendCollectorConfig(stream, collectorConfigIterator); err != nil {
 				return err
 			}
 		}
@@ -276,12 +276,14 @@ func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoSe
 	return nil
 }
 
-func (s *serviceImpl) sendCollectorConfig(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.CollectorConfig]) error {
+func (s *serviceImpl) SendCollectorConfig(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.CollectorConfig]) error {
+	log.Info("In sendCollectorConfig")
 	collectorConfig := iter.Value()
 	if collectorConfig == nil {
+		log.Info("collectorConfig is nil")
 		return nil
 	}
-
+	log.Info("collectorConfig not nil")
 	controlMsg := &sensor.MsgToCollector{
 		Msg: &sensor.MsgToCollector_CollectorConfig{
 			CollectorConfig: collectorConfig,
