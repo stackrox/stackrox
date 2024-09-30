@@ -70,6 +70,7 @@ _run_compatibility_tests() {
     prepare_for_endpoints_test
 
     run_roxctl_tests
+    run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
     store_test_results "roxctl-test-output" "${compatibility_dir}/roxctl-test-output"
     [[ ! -f FAIL ]] || die "roxctl compatibility tests failed"
 
@@ -114,6 +115,18 @@ prepare_for_endpoints_test() {
     export SERVICE_CA_FILE="$gencerts_dir/ca.pem"
     export SERVICE_CERT_FILE="$gencerts_dir/sensor-cert.pem"
     export SERVICE_KEY_FILE="$gencerts_dir/sensor-key.pem"
+}
+
+run_roxctl_bats_tests() {
+    local output="${1}"
+    local suite="${2}"
+    if (( $# != 2 )); then
+      die "Error: run_roxctl_bats_tests requires 2 arguments: run_roxctl_bats_tests <test_output> <suite>"
+    fi
+    [[ -d "$ROOT/tests/roxctl/bats-tests/$suite" ]] || die "Cannot find directory: $ROOT/tests/roxctl/bats-tests/$suite"
+
+    info "Running Bats e2e tests on development roxctl"
+    "$ROOT/tests/roxctl/bats-runner.sh" "$output" "$ROOT/tests/roxctl/bats-tests/$suite"
 }
 
 run_roxctl_tests() {
