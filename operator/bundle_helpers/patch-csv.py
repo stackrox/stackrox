@@ -80,11 +80,26 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     if replaced_xyz is not None:
         csv_doc["spec"]["replaces"] = f"{raw_name}.v{replaced_xyz}"
 
-    if 'relatedImages' in csv_doc['spec']:
-        # OSBS fills relatedImages therefore we must not provide that ourselves.
-        # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
-        del csv_doc['spec']['relatedImages']
+    if no_related_images:
+        if 'relatedImages' in csv_doc['spec']:
+            # OSBS fills relatedImages therefore we must not provide that ourselves.
+            # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
+            del csv_doc['spec']['relatedImages']
+    else:
+        csv_doc['spec']['relatedImages'] = construct_related_images()
 
+def construct_related_images():
+    related_images = []
+    for name, val in os.environ.items():
+        if name.startswith("RELATED_IMAGE_"):
+            name = name.removeprefix("RELATED_IMAGE_")
+            name = name.lower()
+            related_image = {
+                'name': name,
+                'image': val
+            }
+            related_images.append(related_image)
+    return related_images
 
 def parse_skips(spec, raw_name):
     raw_skips = spec.get("skips", [])
