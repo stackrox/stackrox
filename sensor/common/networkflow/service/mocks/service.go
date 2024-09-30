@@ -15,6 +15,7 @@ import (
 
 	runtime "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	sensor "github.com/stackrox/rox/generated/internalapi/sensor"
+	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
 )
@@ -109,4 +110,18 @@ func (m *MockService) RegisterServiceServer(server *grpc.Server) {
 func (mr *MockServiceMockRecorder) RegisterServiceServer(server any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterServiceServer", reflect.TypeOf((*MockService)(nil).RegisterServiceServer), server)
+}
+
+// SendCollectorConfig mocks base method.
+func (m *MockService) SendCollectorConfig(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.CollectorConfig]) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendCollectorConfig", stream, iter)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SendCollectorConfig indicates an expected call of SendCollectorConfig.
+func (mr *MockServiceMockRecorder) SendCollectorConfig(stream, iter any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendCollectorConfig", reflect.TypeOf((*MockService)(nil).SendCollectorConfig), stream, iter)
 }

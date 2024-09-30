@@ -105,7 +105,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 
 	incomingMD := metautils.ExtractIncoming(stream.Context())
 	hostname = incomingMD.Get("rox-collector-hostname")
-	log.Infof("In recevieMessage hostname= %+v", hostname)
+	log.Infof("In recevieMessage hostname= %+v", hostname) // TODO: Remove before merging
 	if hostname == "" {
 		return errors.New("collector did not transmit a hostname in initial metadata")
 	}
@@ -146,9 +146,9 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 	}
 
 	var collectorConfigIterator concurrency.ValueStreamIter[*sensor.CollectorConfig]
-	log.Infof("CollectorRuntimeConfig.Enabled()= %+v", features.CollectorRuntimeConfig.Enabled())
+	log.Infof("CollectorRuntimeConfig.Enabled()= %+v", features.CollectorRuntimeConfig.Enabled()) // TODO: Remove before merging
 	if features.CollectorRuntimeConfig.Enabled() {
-		log.Info("CollectorRuntimeConfig is enabled")
+		log.Info("CollectorRuntimeConfig is enabled") // TODO: Remove before merging
 		collectorConfigIterator = s.manager.CollectorConfigValueStream().Iterator(false)
 		if err := s.SendCollectorConfig(stream, collectorConfigIterator); err != nil {
 			return err
