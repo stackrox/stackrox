@@ -9,25 +9,21 @@ import (
 	"github.com/stackrox/rox/central/notifiers/acscsemail/message"
 	"github.com/stackrox/rox/central/notifiers/email"
 	"github.com/stackrox/rox/central/notifiers/metadatagetter"
-	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/administration/events/option"
-	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	mitreDS "github.com/stackrox/rox/pkg/mitre/datastore"
 	"github.com/stackrox/rox/pkg/notifiers"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
 	log = logging.LoggerForModule(option.EnableAdministrationEvents())
 )
 
-func newACSCSEmail(notifier *storage.Notifier, client Client, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore,
-	cryptoCodec cryptocodec.CryptoCodec, cryptoKey string) (*acscsEmail, error) {
+func newACSCSEmail(notifier *storage.Notifier, client Client, metadataGetter notifiers.MetadataGetter, mitreStore mitreDS.AttackReadOnlyDataStore) (*acscsEmail, error) {
 	return &acscsEmail{
 		notifier:       notifier,
 		client:         client,
@@ -137,17 +133,8 @@ func init() {
 		return
 	}
 
-	cryptoKey := ""
-	var err error
-	if env.EncNotifierCreds.BooleanSetting() {
-		cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
-		if err != nil {
-			utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
-		}
-	}
-
 	notifiers.Add(notifiers.ACSCSEmailType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		g, err := newACSCSEmail(notifier, ClientSingleton(), metadatagetter.Singleton(), mitreDS.Singleton(), cryptocodec.Singleton(), cryptoKey)
+		g, err := newACSCSEmail(notifier, ClientSingleton(), metadatagetter.Singleton(), mitreDS.Singleton())
 		return g, err
 	})
 }
