@@ -145,7 +145,6 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub)
-		// manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), collectorruntimeconfig.StoreInstance(), policyDetector, pubSub)
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,

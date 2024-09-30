@@ -247,7 +247,6 @@ func NewManager(
 		clusterEntitiesStore: clusterEntitiesStore,
 		publicIPs:            newPublicIPsManager(),
 		externalSrcsStore:    externalSrcsStore,
-		//collectorRuntimeConfigStore: collectorRuntimeConfigStore,
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
 		initialSync:       &atomic.Bool{},
