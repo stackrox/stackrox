@@ -54,6 +54,7 @@ test_e2e() {
         echo "Running e2e tests in release mode"
         export GOTAGS=release
     fi
+    kubectl -n stackrox get pods
     make -C tests || touch FAIL
     store_test_results "tests/all-tests-results" "all-tests-results"
     [[ ! -f FAIL ]] || die "e2e API tests failed"
