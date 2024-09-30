@@ -65,8 +65,17 @@ func NewProvider(options ...ProviderOption) (Provider, error) {
 
 // Input provider must be locked when run.
 func applyOptions(provider *providerImpl, options ...ProviderOption) error {
+	revertActions := make([]RevertOption, 0, len(options))
 	for _, option := range options {
-		if err := option(provider); err != nil {
+		optionRevert, err := option(provider)
+		revertActions = append([]RevertOption{optionRevert}, revertActions...)
+		if err != nil {
+			for _, revert := range revertActions {
+				revertErr := revert(provider)
+				if revertErr != nil {
+					log.Errorf("error reverting option to provider: %s", revertErr)
+				}
+			}
 			return err
 		}
 	}

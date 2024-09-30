@@ -114,5 +114,5 @@ func (s *authProviderServiceTestSuite) TestPostDuplicateAuthProvider() {
 	// in a follow-up PR.
 	_, err = s.service.PostAuthProvider(ctx, postRequest)
 	s.Error(err)
-	s.Equal(3, openshiftAuth.GetRegisteredBackendCount())
+	s.Equal(2, openshiftAuth.GetRegisteredBackendCount())
 }
