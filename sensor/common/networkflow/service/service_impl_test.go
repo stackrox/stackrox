@@ -47,9 +47,7 @@ func (m *MockStream) SetHeader(md metadata.MD) error {
 	return nil
 }
 
-func (m *MockStream) SetTrailer(md metadata.MD) {
-	return
-}
+func (m *MockStream) SetTrailer(md metadata.MD) {}
 
 func (m *MockStream) Recv() (*sensor.NetworkConnectionInfoMessage, error) {
 	return nil, nil
@@ -73,38 +71,38 @@ func (s *networkflowServiceSuite) TestSendCollectorConfig() {
 			EnableExternalIps: true,
 		},
 	}
-	
+
 	collectorConfigIterator := s.CollectorConfigValueStream().Iterator(false)
-	
+
 	s.collectorConfigProtoStream.Push(collectorConfig)
 	collectorConfigIterator = collectorConfigIterator.TryNext()
-	
+
 	mockStream := new(MockStream)
-	
+
 	mockStream.On("Send", mock.AnythingOfType("*sensor.MsgToCollector")).Return(nil).Once()
-	
+
 	service := &serviceImpl{}
-	
+
 	err := service.SendCollectorConfig(mockStream, collectorConfigIterator)
-	
+
 	require.NoError(s.T(), err)
-	
+
 	mockStream.AssertExpectations(s.T())
 }
 
 func (s *networkflowServiceSuite) TestSendCollectorConfigNoConfig() {
 
-    collectorConfigIterator := s.CollectorConfigValueStream().Iterator(false)
+	collectorConfigIterator := s.CollectorConfigValueStream().Iterator(false)
 
-    mockStream := new(MockStream)
+	mockStream := new(MockStream)
 
-    service := &serviceImpl{}
+	service := &serviceImpl{}
 
-    err := service.SendCollectorConfig(mockStream, collectorConfigIterator)
+	err := service.SendCollectorConfig(mockStream, collectorConfigIterator)
 
-    require.NoError(s.T(), err)
+	require.NoError(s.T(), err)
 
-    mockStream.AssertNotCalled(s.T(), "Send", mock.AnythingOfType("*sensor.MsgToCollector"))
+	mockStream.AssertNotCalled(s.T(), "Send", mock.AnythingOfType("*sensor.MsgToCollector"))
 }
 
 func (s *networkflowServiceSuite) TestSendCollectorConfigErr() {
@@ -115,20 +113,20 @@ func (s *networkflowServiceSuite) TestSendCollectorConfigErr() {
 	}
 
 	collectorConfigIterator := s.CollectorConfigValueStream().Iterator(false)
-	
+
 	s.collectorConfigProtoStream.Push(collectorConfig)
 	collectorConfigIterator = collectorConfigIterator.TryNext()
-	
+
 	mockStream := new(MockStream)
-	
+
 	sendError := errors.New("failed to send collector config")
 	mockStream.On("Send", mock.AnythingOfType("*sensor.MsgToCollector")).Return(sendError).Once()
-	
+
 	service := &serviceImpl{}
-	
+
 	err := service.SendCollectorConfig(mockStream, collectorConfigIterator)
-	
+
 	require.Error(s.T(), err)
-	
+
 	mockStream.AssertExpectations(s.T())
 }

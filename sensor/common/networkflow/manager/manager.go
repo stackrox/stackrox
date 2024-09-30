@@ -12,7 +12,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-//go:generate mockgen-wrapper
 // Manager processes network connections coming in from collector, enriches them and sends them to Central
 type Manager interface {
 	UnregisterCollector(hostname string, sequenceID int64)
