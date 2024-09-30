@@ -29,8 +29,6 @@ const (
 //
 // A Sensor service that allows Collector to send NetworkConnectionInfo messages
 type NetworkConnectionInfoServiceClient interface {
-	// Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
-	// send anything via this stream.
 	PushNetworkConnectionInfo(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[NetworkConnectionInfoMessage, NetworkFlowsControlMessage], error)
 	Communicate(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[NetworkConnectionInfoMessage, MsgToCollector], error)
 }
@@ -75,8 +73,6 @@ type NetworkConnectionInfoService_CommunicateClient = grpc.BidiStreamingClient[N
 //
 // A Sensor service that allows Collector to send NetworkConnectionInfo messages
 type NetworkConnectionInfoServiceServer interface {
-	// Note: the response is a stream due to a bug in the C++ GRPC client library. The server is not expected to
-	// send anything via this stream.
 	PushNetworkConnectionInfo(grpc.BidiStreamingServer[NetworkConnectionInfoMessage, NetworkFlowsControlMessage]) error
 	Communicate(grpc.BidiStreamingServer[NetworkConnectionInfoMessage, MsgToCollector]) error
 }
