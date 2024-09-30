@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
+set -e
 
 # Asserts that scanner v2 is running and ready in the supplied namespace
 
 # shellcheck source=../../tests/e2e/lib.sh
-source "$ROOT/tests/e2e/lib.sh"
+source "../../tests/e2e/lib.sh"
 
 verify_scannerV2_deployed_and_ready() {
     if [[ "$#" -ne 1 ]]; then
