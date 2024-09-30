@@ -98,7 +98,8 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 	return nil
 }
 
-// IsNotifierSecured returns true if the given notifier is already secured
+// IsNotifierSecured returns true if the given notifier is already secured. This is determined if a notifier
+// secret fields are empty but the NotifierSecret field in the storage.Notifier proto contains the encrypted key, thus is not empty.
 func IsNotifierSecured(notifier *storage.Notifier) (bool, error) {
 	if !env.EncNotifierCreds.BooleanSetting() {
 		return false, nil
@@ -113,8 +114,8 @@ func IsNotifierSecured(notifier *storage.Notifier) (bool, error) {
 		return false, nil
 	}
 	if notifier.GetType() == pkgNotifiers.AWSSecurityHubType {
-		creds := notifier.GetAwsSecurityHub().GetCredentials()
-		return notifier.GetNotifierSecret() != "" && creds.GetAccessKeyId() == "" && creds.GetSecretAccessKey() == "", nil
+		awsCreds := notifier.GetAwsSecurityHub().GetCredentials()
+		return notifier.GetNotifierSecret() != "" && awsCreds.GetAccessKeyId() == "" && awsCreds.GetSecretAccessKey() == "", nil
 	}
 	return notifier.GetNotifierSecret() != "" && creds == "", nil
 }
@@ -170,10 +171,12 @@ func getCredentials(notifier *storage.Notifier) (string, error) {
 	return "", nil
 }
 
+// cleanup credentials cleans up the credentials in a notifier after the encrypted key was set in the NotifierSecret field.
 func cleanupCredentials(notifier *storage.Notifier) {
 	if notifier.GetConfig() == nil {
 		return
 	}
+
 	switch notifier.GetType() {
 	case pkgNotifiers.JiraType:
 		jira := notifier.GetJira()
