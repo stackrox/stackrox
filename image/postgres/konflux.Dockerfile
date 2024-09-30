@@ -1,4 +1,4 @@
-FROM registry.redhat.io/rhel8/postgresql-13:latest AS final
+FROM registry.redhat.io/rhel8/postgresql-15:latest AS final
 
 USER root
 
@@ -52,7 +52,8 @@ ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 5432
 # Note that postgresql.conf should be mounted from ConfigMap
-CMD ["postgres", "-c", "config_file=/etc/stackrox.d/config/postgresql.conf"]
+#CMD ["postgres", "-c", "config_file=/etc/stackrox.d/config/postgresql.conf"]
+CMD ["run-postgresql"]
 
 HEALTHCHECK --interval=10s --timeout=5s CMD pg_isready
 
