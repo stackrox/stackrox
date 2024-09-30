@@ -85,6 +85,7 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
         # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
         del csv_doc['spec']['relatedImages']
 
+    # Add SecurityPolicy CRD to ACS operator CSV
     policy_crd = {
         "name": "securitypolicies.config.stackrox.io",
         "version": "v1alpha1",
@@ -99,6 +100,13 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     }
 
     csv_doc["spec"]["customresourcedefinitions"]["owned"].append(policy_crd)
+
+    # Apply policy-as-code feature flag to operator
+    env = csv_doc["spec"]["install"]["spec"]["deployments"][0]["spec"]["template"]["spec"]["containers"][0]["env"]
+    env.append({
+        "name": "ROX_POLICY_AS_CODE",
+        "value": "true",
+    })
 
 
 def parse_skips(spec, raw_name):
