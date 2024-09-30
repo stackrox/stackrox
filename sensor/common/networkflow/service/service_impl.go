@@ -277,13 +277,11 @@ func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoSe
 }
 
 func (s *serviceImpl) SendCollectorConfig(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.CollectorConfig]) error {
-	log.Info("In sendCollectorConfig")
 	collectorConfig := iter.Value()
 	if collectorConfig == nil {
-		log.Info("collectorConfig is nil")
 		return nil
 	}
-	log.Info("collectorConfig not nil")
+
 	controlMsg := &sensor.MsgToCollector{
 		Msg: &sensor.MsgToCollector_CollectorConfig{
 			CollectorConfig: collectorConfig,
