@@ -4,7 +4,7 @@ The goal of exposure analysis, is to provide additional information of potential
 
 The report can give hints to where network policies may be tightened, or help validate that no unexpected exposure is present due to policies misconfiguration.
 
-Exposure-analysis is supported with `txt, md, csv, json, dot` output formats 
+Exposure-analysis is supported with `txt, md, csv, json, dot` output formats.
 
 ### Textual Output Example
 
