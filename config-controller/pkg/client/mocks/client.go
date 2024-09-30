@@ -55,6 +55,20 @@ func (mr *MockCachedPolicyClientMockRecorder) CreatePolicy(arg0, arg1 any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePolicy", reflect.TypeOf((*MockCachedPolicyClient)(nil).CreatePolicy), arg0, arg1)
 }
 
+// DeletePolicy mocks base method.
+func (m *MockCachedPolicyClient) DeletePolicy(arg0 context.Context, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePolicy", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePolicy indicates an expected call of DeletePolicy.
+func (mr *MockCachedPolicyClientMockRecorder) DeletePolicy(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicy", reflect.TypeOf((*MockCachedPolicyClient)(nil).DeletePolicy), arg0, arg1)
+}
+
 // EnsureFresh mocks base method.
 func (m *MockCachedPolicyClient) EnsureFresh(arg0 context.Context) error {
 	m.ctrl.T.Helper()
@@ -149,6 +163,20 @@ func NewMockPolicyClient(ctrl *gomock.Controller) *MockPolicyClient {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPolicyClient) EXPECT() *MockPolicyClientMockRecorder {
 	return m.recorder
+}
+
+// DeletePolicy mocks base method.
+func (m *MockPolicyClient) DeletePolicy(arg0 context.Context, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePolicy", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePolicy indicates an expected call of DeletePolicy.
+func (mr *MockPolicyClientMockRecorder) DeletePolicy(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicy", reflect.TypeOf((*MockPolicyClient)(nil).DeletePolicy), arg0, arg1)
 }
 
 // GetPolicy mocks base method.

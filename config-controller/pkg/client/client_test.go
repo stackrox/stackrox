@@ -128,6 +128,75 @@ func TestCachedClientGet(t *testing.T) {
 	assert.False(t, exists, "Policy exists when it should not")
 }
 
+// TestCachedClientDelete validates that the cached client deletes policies as expected
+func TestCachedClientDelete(t *testing.T) {
+	newPolicyDeclarative := storage.Policy{
+		Name:            "This is a new declarative policy",
+		Description:     "A really good description",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+		Severity:        storage.Severity_CRITICAL_SEVERITY,
+		PolicySections: []*storage.PolicySection{{
+			SectionName: "Section A",
+			PolicyGroups: []*storage.PolicyGroup{{
+				FieldName: "Image",
+				Values: []*storage.PolicyValue{{
+					Value: "hello",
+				}},
+			}},
+		}},
+	}
+
+	mockDecPolicyToReturn := newPolicyDeclarative.CloneVT()
+	mockDecPolicyToReturn.Id = "dec123"
+	mockDecPolicyToReturn.Source = storage.PolicySource_DECLARATIVE
+
+	newPolicyImperative := storage.Policy{
+		Name:            "This is a new imperative policy",
+		Description:     "A really good description",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+		Severity:        storage.Severity_CRITICAL_SEVERITY,
+		PolicySections: []*storage.PolicySection{{
+			SectionName: "Section A",
+			PolicyGroups: []*storage.PolicyGroup{{
+				FieldName: "Image",
+				Values: []*storage.PolicyValue{{
+					Value: "hello",
+				}},
+			}},
+		}},
+	}
+
+	mockImpPolicyToReturn := newPolicyImperative.CloneVT()
+	mockImpPolicyToReturn.Id = "imp123"
+
+	clientTest := setUp(t, func(mockClient *mocks.MockPolicyClient, policies []*storage.Policy) {
+		mockClient.EXPECT().ListPolicies(gomock.Any()).Return(createListPolicies(policies), nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[0].Id).Return(policies[0], nil).Times(1)
+		mockClient.EXPECT().GetPolicy(gomock.Any(), policies[1].Id).Return(policies[1], nil).Times(1)
+		mockClient.EXPECT().PostPolicy(gomock.Any(), &newPolicyDeclarative).Return(mockDecPolicyToReturn, nil).Times(1)
+		mockClient.EXPECT().PostPolicy(gomock.Any(), &newPolicyImperative).Return(mockImpPolicyToReturn, nil).Times(1)
+		mockClient.EXPECT().DeletePolicy(gomock.Any(), mockDecPolicyToReturn.Id).Return(nil).Times(1)
+		mockClient.EXPECT().TokenExchange(gomock.Any()).Return(nil).Times(1)
+	})
+	defer clientTest.controller.Finish()
+
+	createdDecPolicy, err := clientTest.client.CreatePolicy(clientTest.ctx, &newPolicyDeclarative)
+
+	assert.NoError(t, err, "Unexpected error creating a policy")
+	assert.Equal(t, "dec123", createdDecPolicy.Id)
+
+	err = clientTest.client.DeletePolicy(clientTest.ctx, newPolicyDeclarative.Name)
+	assert.NoError(t, err, "Unexpected error deleting the policy")
+
+	createdImpPolicy, err := clientTest.client.CreatePolicy(clientTest.ctx, &newPolicyImperative)
+
+	assert.NoError(t, err, "Unexpected error creating a policy")
+	assert.Equal(t, "imp123", createdImpPolicy.Id)
+
+	err = clientTest.client.DeletePolicy(clientTest.ctx, newPolicyImperative.Name)
+	assert.Error(t, err, "Did not receive expected error while deleting non declarative/externally managed policy")
+}
+
 // TestCachedClientCreate validates that the cached client creates policies as expected
 func TestCachedClientCreate(t *testing.T) {
 	newPolicy := storage.Policy{

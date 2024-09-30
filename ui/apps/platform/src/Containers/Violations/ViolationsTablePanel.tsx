@@ -56,6 +56,7 @@ type ViolationsTablePanelProps = {
     getSortParams: GetSortParams;
     columns: TableColumn[];
     searchFilter: SearchFilter;
+    onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
 };
 
@@ -71,6 +72,7 @@ function ViolationsTablePanel({
     getSortParams,
     columns,
     searchFilter,
+    onFilterChange,
     onSearch,
 }: ViolationsTablePanelProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
@@ -194,7 +196,11 @@ function ViolationsTablePanel({
                     </Alert>
                 ))}
             </AlertGroup>
-            <ViolationsTableSearchFilter searchFilter={searchFilter} onSearch={onSearch} />
+            <ViolationsTableSearchFilter
+                searchFilter={searchFilter}
+                onFilterChange={onFilterChange}
+                onSearch={onSearch}
+            />
             <Divider component="div" />
             <Toolbar>
                 <ToolbarContent>

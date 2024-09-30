@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package central;
+
+import "storage/service_identity.proto";
+
+option go_package = "./internalapi/central;central";
+
+message SecuredClusterCertsIssueError {
+  string message = 1;
+}
+
+message IssueSecuredClusterCertsRequest {
+  string request_id = 1;
+}
+
+message IssueSecuredClusterCertsResponse {
+  string request_id = 1;
+  oneof response {
+    storage.TypedServiceCertificateSet certificates = 2;
+    SecuredClusterCertsIssueError error = 3;
+  }
+}
