@@ -205,7 +205,7 @@ function ScanConfigsTablePage({
                         <Link to={scanConfigUrl}>{scanName}</Link>
                     </Td>
                     <Td dataLabel="Schedule">{formatScanSchedule(scanConfig.scanSchedule)}</Td>
-                    <Td dataLabel="Last run">
+                    <Td dataLabel="Last scanned">
                         {lastExecutedTime
                             ? getTimeWithHourMinuteFromISO8601(lastExecutedTime)
                             : 'Scanning now'}
@@ -340,7 +340,7 @@ function ScanConfigsTablePage({
                             <Tr>
                                 <Th sort={getSortParams('Compliance Scan Config Name')}>Name</Th>
                                 <Th>Schedule</Th>
-                                <Th>Last run</Th>
+                                <Th>Last scanned</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
                                 {hasWriteAccessForCompliance && <Td />}

@@ -215,7 +215,7 @@ function ViewVulnReportPage() {
                                     </DropdownItem>,
                                     <DropdownSeparator key="separator" />,
                                     <DropdownItem
-                                        key="Send report now"
+                                        key="Send report"
                                         component="button"
                                         onClick={() => runReport(reportId, 'EMAIL')}
                                         isDisabled={
@@ -229,7 +229,7 @@ function ViewVulnReportPage() {
                                                 : ''
                                         }
                                     >
-                                        Send report now
+                                        Send report
                                     </DropdownItem>,
                                     <DropdownItem
                                         key="Generate download"
