@@ -13,10 +13,12 @@ import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
 import ExpandRowTh from 'Components/ExpandRowTh';
+import { isNonEmptyArray } from 'utils/type.utils';
 import {
     getIsSomeVulnerabilityFixable,
     getHighestCvssScore,
     getHighestVulnerabilitySeverity,
+    getEarliestDiscoveredAtTime,
 } from '../../utils/vulnerabilityUtils';
 import ImageNameLink from '../components/ImageNameLink';
 
@@ -45,9 +47,9 @@ export type ImageForCve = {
     } | null;
     operatingSystem: string;
     watchStatus: WatchStatus;
-    scanTime: string | null;
     imageComponents: (ImageComponentVulnerability & {
         imageVulnerabilities: (ImageComponentVulnerability['imageVulnerabilities'][number] & {
+            discoveredAtImage: string;
             cvss: number;
             scoreVersion: string;
         })[];
@@ -62,10 +64,9 @@ export const imagesForCveFragment = gql`
 
         operatingSystem
         watchStatus
-        scanTime
-
         imageComponents(query: $query) {
             imageVulnerabilities(query: $query) {
+                discoveredAtImage
                 cvss
                 scoreVersion
             }
@@ -120,7 +121,7 @@ function AffectedImagesTable({
                 filteredEmptyProps={{ onClearFilters }}
                 renderer={({ data }) =>
                     data.map((image, rowIndex) => {
-                        const { id, name, operatingSystem, scanTime, imageComponents } = image;
+                        const { id, name, operatingSystem, imageComponents } = image;
                         const vulnerabilities = imageComponents.flatMap(
                             (imageComponent) => imageComponent.imageVulnerabilities
                         );
@@ -176,7 +177,13 @@ function AffectedImagesTable({
                                             : `${imageComponents.length} components`}
                                     </Td>
                                     <Td dataLabel="First discovered">
-                                        <DateDistance date={scanTime} />
+                                        {isNonEmptyArray(vulnerabilities) ? (
+                                            <DateDistance
+                                                date={getEarliestDiscoveredAtTime(vulnerabilities)}
+                                            />
+                                        ) : (
+                                            'N/A'
+                                        )}
                                     </Td>
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
