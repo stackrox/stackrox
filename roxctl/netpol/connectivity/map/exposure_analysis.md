@@ -2,7 +2,7 @@
 
 The goal of exposure analysis, is to provide additional information of potential permitted connectivity to the output of `roxctl netpol connectivity map` command.
 
-The report can give hints to where network policies may be tightened, or help validate that no unexpected exposure is present due to policies misconfiguration.
+The report contains hints to where network policies may be tightened, or help validate that no unexpected exposure is present due to policies misconfiguration.
 
 Exposure-analysis is supported with `txt, md, csv, json, dot` output formats.
 
