@@ -56,6 +56,8 @@ var (
 	// extract their name according to their updater.
 
 	awsVulnNamePattern = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
+	// TODO(ROX-21539): Remove once scanner/updater/rhel is deleted.
+	rhelVulnNamePattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`)
 
 	// vulnNamePatterns is a default prioritized list of regexes to match
 	// vulnerability names.
