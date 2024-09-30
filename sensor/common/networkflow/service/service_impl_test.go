@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
@@ -10,7 +11,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	//"go.uber.org/mock/gomock"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -87,8 +87,7 @@ func (s *networkflowServiceSuite) TestSendCollectorConfig() {
         },
     }
 
-    collectorValueStream := s.CollectorConfigValueStream()
-    collectorConfigIterator := collectorValueStream.Iterator(false)
+    collectorConfigIterator := s.CollectorConfigValueStream().Iterator(false)
 
     s.collectorConfigProtoStream.Push(collectorConfig)
     collectorConfigIterator = collectorConfigIterator.TryNext()
@@ -102,6 +101,47 @@ func (s *networkflowServiceSuite) TestSendCollectorConfig() {
     err := service.SendCollectorConfig(mockStream, collectorConfigIterator)
 
     require.NoError(s.T(), err)
+
+    mockStream.AssertExpectations(s.T())
+}
+
+func (s *networkflowServiceSuite) TestSendCollectorConfigNoConfig() {
+
+    collectorConfigIterator := s.CollectorConfigValueStream().Iterator(false)
+
+    mockStream := new(MockStream)
+
+    service := NewService(s.mockNetworkflowManager)
+
+    err := service.SendCollectorConfig(mockStream, collectorConfigIterator)
+
+    require.NoError(s.T(), err)
+
+    mockStream.AssertNotCalled(s.T(), "Send", mock.AnythingOfType("*sensor.MsgToCollector"))
+}
+
+func (s *networkflowServiceSuite) TestSendCollectorConfigErr() {
+    collectorConfig := &sensor.CollectorConfig{
+        NetworkConnectionConfig: &sensor.NetworkConnectionConfig{
+            EnableExternalIps: true,
+        },
+    }
+
+    collectorConfigIterator := s.CollectorConfigValueStream().Iterator(false)
+
+    s.collectorConfigProtoStream.Push(collectorConfig)
+    collectorConfigIterator = collectorConfigIterator.TryNext()
+
+    mockStream := new(MockStream)
+
+    sendError := errors.New("failed to send collector config")
+    mockStream.On("Send", mock.AnythingOfType("*sensor.MsgToCollector")).Return(sendError).Once()
+
+    service := NewService(s.mockNetworkflowManager)
+
+    err := service.SendCollectorConfig(mockStream, collectorConfigIterator)
+
+    require.Error(s.T(), err)
 
     mockStream.AssertExpectations(s.T())
 }
