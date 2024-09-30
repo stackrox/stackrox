@@ -5,17 +5,11 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore"
-	viewsCommon "github.com/stackrox/rox/central/views/common"
-	imagecveview "github.com/stackrox/rox/central/views/imagecve"
+	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/search"
-	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -23,15 +17,16 @@ var imageLoaderType = reflect.TypeOf(storage.Image{})
 
 func init() {
 	RegisterTypeFactory(reflect.TypeOf(storage.Image{}), func() interface{} {
-		return NewImageLoader(datastore.Singleton())
+		return NewImageLoader(datastore.Singleton(), imagesView.Singleton())
 	})
 }
 
 // NewImageLoader creates a new loader for image data. If postgres is enabled, this loader holds images without scan data—components and vulns.
-func NewImageLoader(ds datastore.DataStore) ImageLoader {
+func NewImageLoader(ds datastore.DataStore, imageView imagesView.ImageView) ImageLoader {
 	return &imageLoaderImpl{
-		loaded: make(map[string]*storage.Image),
-		ds:     ds,
+		loaded:    make(map[string]*storage.Image),
+		ds:        ds,
+		imageView: imageView,
 	}
 }
 
@@ -60,12 +55,8 @@ type imageLoaderImpl struct {
 	lock   sync.RWMutex
 	loaded map[string]*storage.Image
 
-	ds datastore.DataStore
-}
-
-type imageResponse struct {
-	imagecveview.ResourceCountByImageCVESeverity
-	imageID string `db:"image_sha"`
+	ds        datastore.DataStore
+	imageView imagesView.ImageView
 }
 
 // FromIDs loads a set of images from a set of ids.
@@ -116,19 +107,7 @@ func (idl *imageLoaderImpl) FullImageWithID(ctx context.Context, id string) (*st
 
 // FromQuery loads a set of images that match a query.
 func (idl *imageLoaderImpl) FromQuery(ctx context.Context, query *v1.Query) ([]*storage.Image, error) {
-	if err := viewsCommon.ValidateQuery(query); err != nil {
-		return nil, err
-	}
-
-	var err error
-	query, err = viewsCommon.WithSACFilter(ctx, resources.Image, query)
-	if err != nil {
-		return nil, err
-	}
-	query = withSelectQuery(query)
-
-	var responses []*imageResponse
-	responses, err = pgSearch.RunSelectRequestForSchema[imageResponse](ctx, globaldb.GetPostgres(), schema.ImagesSchema, query)
+	responses, err := idl.imageView.Get(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -191,28 +170,10 @@ func (idl *imageLoaderImpl) readAll(ids []string) (images []*storage.Image, miss
 	return
 }
 
-func withSelectQuery(query *v1.Query) *v1.Query {
-	cloned := query.CloneVT()
-	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.ImageSHA).Proto(),
-	}
-	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.ImageSHA.String()},
-	}
-
-	if viewsCommon.IsSortBySeverityCounts(cloned) {
-		cloned.Selects = append(cloned.Selects,
-			viewsCommon.WithCountBySeverityAndFixabilityQuery(query, search.CVE).Selects...,
-		)
-	}
-
-	return cloned
-}
-
-func responsesToIDs(responses []*imageResponse) []string {
+func responsesToIDs(responses []imagesView.ImageCore) []string {
 	ids := make([]string, 0, len(responses))
 	for _, r := range responses {
-		ids = append(ids, r.imageID)
+		ids = append(ids, r.GetImageID())
 	}
 	return ids
 }

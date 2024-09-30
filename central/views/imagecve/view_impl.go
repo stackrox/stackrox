@@ -72,21 +72,21 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*ResourceCountByImageCVESeverity
-	results, err = pgSearch.RunSelectRequestForSchema[ResourceCountByImageCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
+	var results []*common.ResourceCountByImageCVESeverity
+	results, err = pgSearch.RunSelectRequestForSchema[common.ResourceCountByImageCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
 	if err != nil {
 		return nil, err
 	}
 	if len(results) == 0 {
-		return &ResourceCountByImageCVESeverity{}, nil
+		return &common.ResourceCountByImageCVESeverity{}, nil
 	}
 	if len(results) > 1 {
 		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
 		utils.Should(err)
-		return &ResourceCountByImageCVESeverity{}, err
+		return &common.ResourceCountByImageCVESeverity{}, err
 	}
 
-	return &ResourceCountByImageCVESeverity{
+	return &common.ResourceCountByImageCVESeverity{
 		CriticalSeverityCount:        results[0].CriticalSeverityCount,
 		FixableCriticalSeverityCount: results[0].FixableCriticalSeverityCount,
 
