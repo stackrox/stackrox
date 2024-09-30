@@ -48,7 +48,9 @@ var (
 
 	awsUpdaterPrefix = `aws-`
 	osvUpdaterPrefix = `osv/`
-	rhelUpdaterName  = (*vex.Updater)(nil).Name()
+	// TODO(ROX-21539): Remove once scanner/updater/rhel is deleted.
+	rhelUpdaterPattern = regexp.MustCompile(`^RHEL\d+-`)
+	rhelUpdaterName    = (*vex.Updater)(nil).Name()
 
 	// Name patterns are regexes to match against vulnerability fields to
 	// extract their name according to their updater.

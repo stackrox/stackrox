@@ -9,6 +9,8 @@ import (
 	"github.com/quay/zlog"
 )
 
+// rhelCPE represents the expected pattern to identify a CPE which indicates a RHEL major version.
+// The purpose of this is to identify the major version represented by this CPE.
 var rhelCPE = regexp.MustCompile(`cpe:2\.3:o:redhat:enterprise_linux:(\d+):\*:\*:\*:\*:\*:\*:\*`)
 
 // Distributions retrieves the currently known distributions from the database.
@@ -17,6 +19,9 @@ var rhelCPE = regexp.MustCompile(`cpe:2\.3:o:redhat:enterprise_linux:(\d+):\*:\*
 func (m *matcherStore) Distributions(ctx context.Context) ([]claircore.Distribution, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/distributions/Distributions")
 
+	// As of ClairCore v1.5.29, all distributions may be identified by dist_id, dist_version_id, and dist_version except for RHEL.
+	// As of this version of ClairCore, RHEL vulnerabilities are not associated with a specific RHEL version, but rather just the CPE(s).
+	// So, to capture all RHEL distributions, we must also search for rows with column repo_name matching the expected RHEL-major-version-identifying CPE.
 	const selectDists = `SELECT DISTINCT dist_id, dist_version_id, dist_version, repo_name FROM vuln WHERE repo_name = '' OR repo_name LIKE 'cpe:2.3:o:redhat:enterprise_linux:%:*:*:*:*:*:*:*'`
 
 	rows, err := m.pool.Query(ctx, selectDists)
@@ -39,7 +44,7 @@ func (m *matcherStore) Distributions(ctx context.Context) ([]claircore.Distribut
 		if repoName != "" {
 			dist, err := rhelDist(repoName)
 			if err != nil {
-				zlog.Warn(ctx).Err(err).Msg("failed to fetch distribution; skipping...")
+				zlog.Warn(ctx).Err(err).Msg("failed to parse repo_name; skipping...")
 				continue
 			}
 			dists = append(dists, dist)

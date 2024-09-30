@@ -1034,7 +1034,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 							Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
 						},
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
-						Url: "https://access.redhat.com/security/cve/CVE-2013-12342",
+						Url:    "https://access.redhat.com/security/cve/CVE-2013-12342",
 					},
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
 						{
@@ -1043,7 +1043,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 								Vector:    "AV:N/AC:L/Au:N/C:P/I:P/A:P",
 							},
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
-							Url: "https://access.redhat.com/security/cve/CVE-2013-12342",
+							Url:    "https://access.redhat.com/security/cve/CVE-2013-12342",
 						},
 					},
 				},
