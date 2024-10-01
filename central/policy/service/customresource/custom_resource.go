@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
@@ -76,7 +77,13 @@ func toDNSSubdomainName(name string) string {
 	if len(name) == 0 {
 		// Get a random alphanumeric string from the first segment of a uuid
 		randAlphaNumerics := strings.Split(uuid.NewV4().String(), "-")
-		name = fmt.Sprintf("rhacs.%s", randAlphaNumerics[0])
+		if len(randAlphaNumerics) > 0 && len(randAlphaNumerics[0]) > 0 {
+			name = fmt.Sprintf("rhacs-%s", randAlphaNumerics[0])
+		} else {
+			// This should not happen but we just add this as a proof for codes from external package.
+			utils.Should(errors.Errorf("Unexpected error: failed to create a name for policy from uuid: %+v", randAlphaNumerics))
+			return "rhacs-default-policy"
+		}
 	}
 	return name
 }

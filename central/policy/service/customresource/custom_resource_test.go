@@ -112,22 +112,22 @@ func TestToDNSSubdomainName(t *testing.T) {
 		{
 			description: "Empty input should return default value",
 			input:       "",
-			prefix:      "rhacs.",
+			prefix:      "rhacs-",
 		},
 		{
 			description: "All invalid input should return default value",
 			input:       "@!@#$%^&*()",
-			prefix:      "rhacs.",
+			prefix:      "rhacs-",
 		},
 		{
 			description: "Leading and trailing invalid characters should be trimmed",
-			input:       "-leading.trailing-",
+			input:       "-leading.trailing.",
 			expected:    "leading.trailing",
 		},
 		{
 			description: "A comprehensive test case",
 			input:       " 这是一个严肃的 @-@ セキュリティポリシ ",
-			prefix:      "rhacs.",
+			prefix:      "rhacs-",
 		},
 	}
 
