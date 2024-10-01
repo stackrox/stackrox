@@ -9,9 +9,9 @@ import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import { CloudSourceIntegration } from 'services/CloudSourceService';
 import merge from 'lodash/merge';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
-import IntegrationFormActions from '../IntegrationFormActions';
-import useIntegrationForm from '../useIntegrationForm';
-import { IntegrationFormProps } from '../integrationFormTypes';
+import IntegrationFormActions from '../../IntegrationFormActions';
+import useIntegrationForm from '../../useIntegrationForm';
+import { IntegrationFormProps } from '../../integrationFormTypes';
 
 export const validationSchema = yup.object().shape({
     cloudSource: yup.object().shape({
@@ -43,16 +43,20 @@ export const validationSchema = yup.object().shape({
 });
 
 export type CloudSourceIntegrationFormValues = {
+    id: string;
     cloudSource: CloudSourceIntegration;
     updateCredentials: boolean;
 };
 export const defaultValues: CloudSourceIntegrationFormValues = {
+    id: '',
     cloudSource: {
         id: '',
         name: '',
         type: 'TYPE_PALADIN_CLOUD',
         credentials: {
             secret: '',
+            clientId: '',
+            clientSecret: '',
         },
         skipTestIntegration: true,
         paladinCloud: {
@@ -66,9 +70,10 @@ function PaladinCloudIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<CloudSourceIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.cloudSource = merge({}, formInitialValues.cloudSource, initialValues);
+        merge(formInitialValues.cloudSource, initialValues);
+        formInitialValues.id = formInitialValues.cloudSource.id;
         formInitialValues.cloudSource.credentials.secret = '';
         formInitialValues.updateCredentials = false;
     }
