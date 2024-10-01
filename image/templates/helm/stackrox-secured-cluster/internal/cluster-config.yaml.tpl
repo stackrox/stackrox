@@ -29,5 +29,8 @@ clusterConfig:
       disableBypass: {{ ._rox.admissionControl.dynamic.disableBypass }}
       enforceOnUpdates: {{ ._rox.admissionControl.dynamic.enforceOnUpdates }}
     registryOverride: {{ ._rox.registryOverride }}
+    collectorConfig:
+      networkEndpointConfig:
+        enableExternalIps: {{ ._rox.networkConnectionConfig.enableExternalIps }}
   configFingerprint: {{ ._rox._configFP }}
   clusterLabels: {{- toYaml ._rox.clusterLabels | nindent 4 }}
