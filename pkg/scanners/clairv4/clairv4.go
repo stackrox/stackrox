@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -313,9 +312,5 @@ func (c *clairv4) Name() string {
 }
 
 func (c *clairv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
-	return nil, nil
-}
-
-func (c *clairv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {
 	return nil, nil
 }

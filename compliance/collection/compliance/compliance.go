@@ -165,14 +165,13 @@ func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCo
 	msg, err := c.nodeScanner.ScanNode(ctx)
 	if err != nil {
 		log.Errorf("Error running node scan: %v", err)
-	} else {
-		cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
-		cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan)
-		c.umh.ObserveSending()
-		c.cache = msg.CloneVT()
-		return msg
+		return nil
 	}
-	return nil
+	cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
+	cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan)
+	c.umh.ObserveSending()
+	c.cache = msg.CloneVT()
+	return msg
 }
 
 func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance {
@@ -180,11 +179,10 @@ func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance
 	report, err := c.nodeIndexer.IndexNode(ctx)
 	if err != nil {
 		log.Errorf("Error creating node index: %v", err)
-	} else {
-		log.Debugf("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
-		return c.createIndexMsg(report)
+		return nil
 	}
-	return nil
+	log.Debugf("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
+	return c.createIndexMsg(report)
 }
 
 func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) {
