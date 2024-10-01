@@ -10631,6 +10631,22 @@
               {
                 "name": "CERTIFIED_RHEL_CVES_UNAVAILABLE",
                 "integer": 3
+              },
+              {
+                "name": "UNSUPPORTED_NODE_INDEXER",
+                "integer": 4
+              }
+            ]
+          },
+          {
+            "name": "NodeScan.Scanner",
+            "enum_fields": [
+              {
+                "name": "SCANNER"
+              },
+              {
+                "name": "SCANNER_V4",
+                "integer": 1
               }
             ]
           },
@@ -10842,6 +10858,11 @@
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "scanner_version",
+                "type": "Scanner"
               }
             ]
           },

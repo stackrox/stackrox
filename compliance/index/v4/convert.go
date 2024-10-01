@@ -1,97 +1,105 @@
 package v4
 
 import (
-	"strconv"
-
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/clair"
+	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
-func ToNodeInventory(r *v4.VulnerabilityReport) *storage.NodeInventory {
-	return &storage.NodeInventory{
-		NodeId:         uuid.Nil.String(), // FIXME
-		NodeName:       "",                // FIXME
+func ToNodeScan(r *v4.VulnerabilityReport) *storage.NodeScan {
+	return &storage.NodeScan{
 		ScanTime:       protocompat.TimestampNow(),
-		Components:     toStorageComponents(r.GetContents()),
-		Notes:          toStorageNotes(r.GetNotes()),
-		ScannerVersion: storage.NodeInventory_SCANNER_V4,
+		Components:     toStorageComponents(r),
+		Notes:          toStorageNotes(r.Notes),
+		ScannerVersion: storage.NodeScan_SCANNER_V4,
 	}
 }
 
-func toStorageComponents(c *v4.Contents) *storage.NodeInventory_Components {
-	if c == nil {
-		return nil
-	}
+func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {
+	result := make([]*storage.EmbeddedNodeScanComponent, 0)
+	vulnerabilities := r.GetVulnerabilities()
+	packages := r.GetContents().GetPackages()
 
-	return &storage.NodeInventory_Components{
-		Namespace:       "",
-		RhelComponents:  toRhelComponents(c.GetPackages()),
-		RhelContentSets: nil,
-	}
-}
-
-func toRhelComponents(packages []*v4.Package) []*storage.NodeInventory_Components_RHELComponent {
-	if packages == nil {
-		return nil
-	}
-	convertedComponents := make([]*storage.NodeInventory_Components_RHELComponent, 0, len(packages))
-	for _, p := range packages {
-		cp := &storage.NodeInventory_Components_RHELComponent{
-			Id:          convertID(p.GetId()),
-			Name:        p.GetName(),
-			Namespace:   "", // Skip?
-			Version:     p.GetVersion(),
-			Arch:        p.GetArch(),
-			Module:      p.GetModule(),
-			AddedBy:     "", // ?
-			Executables: convertExecutables(p.GetSource()),
+	for pkgID, pkgvuln := range r.GetPackageVulnerabilities() {
+		pkg := findPackage(packages, pkgID)
+		if pkg == nil {
+			log.Warnf("Unable to find package for id %s in %d packages. Skipping", pkg, len(packages))
+			continue
 		}
-		convertedComponents = append(convertedComponents, cp)
+		vulns := make([]*storage.EmbeddedVulnerability, 0)
+		for _, vulnID := range pkgvuln.GetValues() {
+			vuln := vulnerabilities[vulnID]
+			log.Info(vuln.Name)
+			vulns = append(vulns, convertVulnerability(vuln))
+		}
+		result = append(result, createEmbeddedComponent(pkg, vulns))
 	}
-	return convertedComponents
+	return result
 }
 
-func convertID(id string) int64 {
-	iid, err := strconv.ParseInt(id, 10, 64)
-	if err != nil {
-		log.Warnf("Failed to convert component ID (%s) to integer: %s", id, err)
-		return 0
+func convertVulnerability(v *v4.VulnerabilityReport_Vulnerability) *storage.EmbeddedVulnerability {
+	converted := &storage.EmbeddedVulnerability{
+		Cve:               v.GetName(),
+		Summary:           v.GetDescription(),
+		Link:              v.GetLink(),
+		SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: v.GetFixedInVersion()},
+		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+		Severity:          clair.SeverityToStorageSeverity(v.GetSeverity()),
 	}
-	return iid
+
+	if v.GetCvss() == nil || v.GetCvss().GetV3() == nil || v.GetCvss().GetV3().GetVector() == "" { // VEX-RPM provides only CVSS v3 data
+		log.Warnf("unable to convert CVSS v3 vector information for vulnerability %s", v.GetName())
+		return converted
+	}
+
+	if cvssV3, err := cvssv3.ParseCVSSV3(v.GetCvss().GetV3().GetVector()); err == nil {
+		cvssV3.Score = v.GetCvss().GetV3().GetBaseScore()
+
+		converted.CvssV3 = cvssV3
+		converted.Cvss = cvssV3.GetScore()
+		converted.ScoreVersion = storage.EmbeddedVulnerability_V3
+		converted.CvssV3.Severity = cvssv3.Severity(converted.GetCvss())
+	} else {
+		log.Errorf("converting v4.VulnerabilityReport CVSSv3: %v", err)
+	}
+
+	return converted
 }
 
-func convertExecutables(p *v4.Package) []*storage.NodeInventory_Components_RHELComponent_Executable {
-	if p == nil {
-		return nil
-	}
-	cExecutables := []*storage.NodeInventory_Components_RHELComponent_Executable{
-		{
-			Path:             "", // We don't have a path anymore
-			RequiredFeatures: convertRequiredFeatures(p),
-		},
-	}
-	return cExecutables
-}
-
-func convertRequiredFeatures(p *v4.Package) []*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion {
-	return []*storage.NodeInventory_Components_RHELComponent_Executable_FeatureNameVersion{
-		{
-			Name:    p.GetName(),
-			Version: p.GetVersion(),
-		},
+func createEmbeddedComponent(pkg *v4.Package, vulns []*storage.EmbeddedVulnerability) *storage.EmbeddedNodeScanComponent {
+	return &storage.EmbeddedNodeScanComponent{
+		Name:    pkg.GetName(),
+		Version: pkg.GetVersion(),
+		Vulns:   vulns,
 	}
 }
 
-func toStorageNotes(notes []v4.VulnerabilityReport_Note) []storage.NodeInventory_Note {
+func findPackage(packages []*v4.Package, targetID string) *v4.Package {
+	for _, pkg := range packages {
+		if pkg.GetId() == targetID {
+			return pkg
+		}
+	}
+	return nil
+}
+
+func toStorageNotes(notes []v4.VulnerabilityReport_Note) []storage.NodeScan_Note {
 	if notes == nil {
 		return nil
 	}
-	convertedNotes := make([]storage.NodeInventory_Note, 0, len(notes))
+	convertedNotes := make([]storage.NodeScan_Note, 0, len(notes))
 	for _, n := range notes {
-		if n == v4.VulnerabilityReport_NOTE_OS_UNKNOWN || n == v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED {
-			convertedNotes = append(convertedNotes, storage.NodeInventory_CERTIFIED_RHEL_SCAN_UNAVAILABLE)
+		switch n {
+		case v4.VulnerabilityReport_NOTE_OS_UNKNOWN:
+			fallthrough
+		case v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED:
+			convertedNotes = append(convertedNotes, storage.NodeScan_UNSUPPORTED)
+		case v4.VulnerabilityReport_NOTE_UNSPECIFIED:
+			convertedNotes = append(convertedNotes, storage.NodeScan_UNSET)
+		default:
+			log.Warnf("encountered unknown Vulnerability Report Note type while converting")
 		}
 	}
 	return convertedNotes

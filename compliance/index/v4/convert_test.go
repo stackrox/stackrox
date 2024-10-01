@@ -19,20 +19,38 @@ type indexReportConvertSuite struct {
 func (s *indexReportConvertSuite) TestToNodeInventory() {
 	r := createVulnerabilityReport()
 
-	actual := ToNodeInventory(r)
+	actual := ToNodeScan(r)
 
-	s.Equal(storage.NodeInventory_SCANNER_V4, actual.GetScannerVersion())
-	s.Equal(int64(1), actual.GetComponents().GetRhelComponents()[1].GetId())
-	s.Equal(2, len(actual.GetComponents().GetRhelComponents()))
-	s.Equal(1, len(actual.GetComponents().GetRhelComponents()[0].GetExecutables()))
-	s.Equal([]storage.NodeInventory_Note{storage.NodeInventory_CERTIFIED_RHEL_SCAN_UNAVAILABLE}, actual.GetNotes())
+	s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
+	s.Equal(1, len(actual.GetComponents()))
+	s.Equal("openssh-clients", actual.GetComponents()[0].GetName())
+	s.Equal("8.7p1-38.el9", actual.GetComponents()[0].GetVersion())
+	s.Equal("RHSA-2024:4616", actual.GetComponents()[0].GetVulns()[0].GetCve())
+	s.Equal([]storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED}, actual.GetNotes())
 }
 
 func createVulnerabilityReport() *v4.VulnerabilityReport {
 	return &v4.VulnerabilityReport{
-		HashId:                 "",
-		Vulnerabilities:        nil,
-		PackageVulnerabilities: nil,
+		HashId: "",
+		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+			"7401229": {
+				Id:                 "7401229",
+				Name:               "RHSA-2024:4616",
+				Description:        "Sample Description",
+				Severity:           "Moderate",
+				NormalizedSeverity: 2,
+				FixedInVersion:     "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9",
+				Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 7.5,
+						Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+					},
+				},
+			},
+		},
+		PackageVulnerabilities: map[string]*v4.StringList{
+			"0": {Values: []string{"7401229"}},
+		},
 		Contents: &v4.Contents{
 			Packages: []*v4.Package{
 				{
