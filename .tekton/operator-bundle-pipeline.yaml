@@ -106,10 +106,6 @@ spec:
     description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
     name: oci-artifact-expires-after
     type: string
-  - name: image-tag-makefile-directory
-    description: Directory in which to run "make tag" command.
-    default: "operator"
-    type: string
   - name: operator-image-repo
     description: Image repository for the StackRox Operator.
     type: string
@@ -196,7 +192,7 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: MAKEFILE_DIRECTORY
-      value: $(params.image-tag-makefile-directory)
+      value: "."
     taskRef:
       name: determine-image-tag
 
