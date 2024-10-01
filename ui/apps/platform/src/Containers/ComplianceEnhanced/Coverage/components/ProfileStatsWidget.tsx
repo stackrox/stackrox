@@ -7,6 +7,7 @@ import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useResizeObserver from 'hooks/useResizeObserver';
 import { ComplianceProfileScanStats } from 'services/ComplianceResultsStatsService';
 import { defaultChartHeight, defaultChartBarWidth } from 'utils/chartUtils';
+import { getPercentage } from 'utils/mathUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import {
@@ -65,25 +66,48 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
             profileScanStats.checkStats
         );
 
+        let roundedPassPercent = getPercentage(passCount, totalCount);
+        let roundedFailPercent = getPercentage(failCount, totalCount);
+        let roundedManualPercent = getPercentage(manualCount, totalCount);
+        let roundedOtherPercent = getPercentage(otherCount, totalCount);
+
+        const totalRoundedPercent =
+            roundedPassPercent + roundedFailPercent + roundedManualPercent + roundedOtherPercent;
+
+        // if the total percentage does not add up to 100%, make adjustments
+        // adjust based on the least priority status
+        if (totalRoundedPercent !== 100) {
+            const adjustment = 100 - totalRoundedPercent;
+            if (roundedManualPercent >= 1) {
+                roundedManualPercent += adjustment;
+            } else if (roundedOtherPercent >= 1) {
+                roundedOtherPercent += adjustment;
+            } else if (roundedPassPercent >= 1) {
+                roundedPassPercent += adjustment;
+            } else {
+                roundedFailPercent += adjustment;
+            }
+        }
+
         const data: ChartData[] = [
             {
                 x: 'Passing',
-                y: passCount / totalCount,
+                y: roundedPassPercent,
                 color: PASSING_VAR_COLOR,
             },
             {
                 x: 'Failing',
-                y: failCount / totalCount,
+                y: roundedFailPercent,
                 color: FAILING_VAR_COLOR,
             },
             {
                 x: 'Manual',
-                y: manualCount / totalCount,
+                y: roundedManualPercent,
                 color: MANUAL_VAR_COLOR,
             },
             {
                 x: 'Other',
-                y: otherCount / totalCount,
+                y: roundedOtherPercent,
                 color: OTHER_VAR_COLOR,
             },
         ];
@@ -101,8 +125,8 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
                 >
                     <ChartAxis label="Check status" />
                     <ChartAxis
-                        tickFormat={(t) => `${Math.round(t * 100)}%`}
-                        domain={[0, 1]}
+                        tickFormat={(t) => `${t}%`}
+                        domain={[0, 100]}
                         dependentAxis
                         showGrid
                     />
@@ -115,9 +139,7 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
                                     datum ? datum.color : OTHER_VAR_COLOR,
                             },
                         }}
-                        labels={({ datum }: DatumArgs) =>
-                            datum ? `${Math.round(datum.y * 100)}%` : ''
-                        }
+                        labels={({ datum }: DatumArgs) => (datum ? `${datum.y}%` : '')}
                         labelComponent={<ChartLabel dy={-10} />}
                     />
                 </Chart>
