@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/facebookincubator/nvdtools/cvefeed/nvd/schema"
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
@@ -236,9 +238,12 @@ func NodeCVEToNodeVulnerability(protoCVE *storage.NodeCVE) *storage.NodeVulnerab
 
 // EmbeddedCVEToProtoCVE converts *storage.EmbeddedVulnerability object to *storage.CVE object
 func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *storage.CVE {
+	hash, _ := hashstructure.Hash(from, hashstructure.FormatV2,
+		&hashstructure.HashOptions{ZeroNil: true})
+
 	ret := &storage.CVE{
 		Type:               embeddedVulnTypeToProtoType(from.GetVulnerabilityType()),
-		Id:                 cve.ID(from.GetCve(), os),
+		Id:                 cve.ID(from.GetCve(), os, strconv.FormatUint(hash, 10)),
 		Cvss:               from.GetCvss(),
 		Summary:            from.GetSummary(),
 		Link:               from.GetLink(),
@@ -275,8 +280,11 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 			}
 		}
 	}
+	hash, _ := hashstructure.Hash(from, hashstructure.FormatV2,
+		&hashstructure.HashOptions{ZeroNil: true})
+
 	ret := &storage.ImageCVE{
-		Id:              cve.ID(from.GetCve(), os),
+		Id:              cve.ID(from.GetCve(), os, strconv.FormatUint(hash, 10)),
 		OperatingSystem: os,
 		CveBaseInfo: &storage.CVEInfo{
 			Cve:          from.GetCve(),
@@ -308,8 +316,11 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 
 // EmbeddedVulnerabilityToClusterCVE converts *storage.EmbeddedVulnerability object to *storage.ClusterCVE object
 func EmbeddedVulnerabilityToClusterCVE(cveType storage.CVE_CVEType, from *storage.EmbeddedVulnerability) *storage.ClusterCVE {
+	hash, _ := hashstructure.Hash(from, hashstructure.FormatV2,
+		&hashstructure.HashOptions{ZeroNil: true})
+
 	ret := &storage.ClusterCVE{
-		Id: cve.ID(from.GetCve(), cveType.String()),
+		Id: cve.ID(from.GetCve(), cveType.String(), strconv.FormatUint(hash, 10)),
 		CveBaseInfo: &storage.CVEInfo{
 			Cve:          from.GetCve(),
 			Summary:      from.GetSummary(),
@@ -339,8 +350,11 @@ func EmbeddedVulnerabilityToClusterCVE(cveType storage.CVE_CVEType, from *storag
 
 // NodeVulnerabilityToNodeCVE converts *storage.NodeVulnerability object to *storage.NodeCVE object
 func NodeVulnerabilityToNodeCVE(os string, from *storage.NodeVulnerability) *storage.NodeCVE {
+	hash, _ := hashstructure.Hash(from, hashstructure.FormatV2,
+		&hashstructure.HashOptions{ZeroNil: true})
+
 	ret := &storage.NodeCVE{
-		Id:              cve.ID(from.GetCveBaseInfo().GetCve(), os),
+		Id:              cve.ID(from.GetCveBaseInfo().GetCve(), os, strconv.FormatUint(hash, 10)),
 		CveBaseInfo:     from.GetCveBaseInfo(),
 		Cvss:            from.GetCvss(),
 		OperatingSystem: os,
