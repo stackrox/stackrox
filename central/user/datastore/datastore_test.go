@@ -111,7 +111,7 @@ func (s *userDataStoreTestSuite) TestAllowsUpsert() {
 func TestGetTestDataStore(t *testing.T) {
 	userDS := GetTestDataStore(t)
 	assert.NotNil(t, userDS)
-	
+
 	userDSImpl, ok := userDS.(*dataStoreImpl)
 	assert.NotNil(t, userDSImpl)
 	assert.True(t, ok)
