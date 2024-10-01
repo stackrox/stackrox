@@ -110,6 +110,61 @@ spec:
     description: Image repository for the StackRox Operator.
     type: string
 
+  - name: main-image-repo
+    description: Image repository for the main image.
+    type: string
+    default: "quay.io/rhacs-eng/main"
+
+  - name: scanner-image-repo
+    description: Image repository for the Scanner V2 image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner"
+
+  - name: scanner-db-image-repo
+    description: Image repository for the Scanner V2 DB image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner-db"
+
+  - name: scanner-slim-image-repo
+    description: Image repository for the Scanner V2 slim image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner-slim"
+
+  - name: scanner-db-slim-image-repo
+    description: Image repository for the Scanner V2 DB slim image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner-db-slim"
+
+  - name: scanner-v4-image-repo
+    description: Image repository for the Scanner V4 image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner-v4"
+
+  - name: scanner-v4-db-image-repo
+    description: Image repository for the Scanner V4 DB image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner-v4-db"
+
+  - name: collector-slim-image-repo
+    description: Image repository for the collector slim image.
+    type: string
+    default: "quay.io/rhacs-eng/collector-slim"
+
+  - name: collector-full-image-repo
+    description: Image repository for the collector full image.
+    type: string
+    default: "quay.io/rhacs-eng/collector"
+
+  - name: roxctl-image-repo
+    description: Image repository for the roxctl image.
+    type: string
+    default: "quay.io/rhacs-eng/roxctl"
+
+  - name: central-db-image-repo
+    description: Image repository for the Central DB image.
+    type: string
+    default: "quay.io/rhacs-eng/central-db"
+
   results:
   - description: ""
     name: IMAGE_URL
