@@ -58,20 +58,6 @@ func (mr *MockServiceMockRecorder) AuthFuncOverride(ctx, fullMethodName any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthFuncOverride", reflect.TypeOf((*MockService)(nil).AuthFuncOverride), ctx, fullMethodName)
 }
 
-// Communicate mocks base method.
-func (m *MockService) Communicate(arg0 grpc.BidiStreamingServer[sensor.NetworkConnectionInfoMessage, sensor.MsgToCollector]) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Communicate", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Communicate indicates an expected call of Communicate.
-func (mr *MockServiceMockRecorder) Communicate(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Communicate", reflect.TypeOf((*MockService)(nil).Communicate), arg0)
-}
-
 // PushNetworkConnectionInfo mocks base method.
 func (m *MockService) PushNetworkConnectionInfo(arg0 grpc.BidiStreamingServer[sensor.NetworkConnectionInfoMessage, sensor.NetworkFlowsControlMessage]) error {
 	m.ctrl.T.Helper()
@@ -113,7 +99,7 @@ func (mr *MockServiceMockRecorder) RegisterServiceServer(server any) *gomock.Cal
 }
 
 // SendCollectorConfig mocks base method.
-func (m *MockService) SendCollectorConfig(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.CollectorConfig]) error {
+func (m *MockService) SendCollectorConfig(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter[*sensor.CollectorConfig]) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendCollectorConfig", stream, iter)
 	ret0, _ := ret[0].(error)

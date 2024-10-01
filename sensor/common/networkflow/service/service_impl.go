@@ -89,18 +89,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return s.authFuncOverride(ctx, fullMethodName)
 }
 
-// Leaving this commented out for now. Will not merge like this
-//// PushNetworkConnectionInfo handles the bidirectional gRPC stream with the collector
-// func (s *serviceImpl) PushNetworkConnectionInfo(stream sensor.NetworkConnectionInfoService_CommunicateServer) error {
-//	return s.receiveMessages(stream)
-//}
-
-// Communicate handles the bidirectional gRPC stream with the collector
-func (s *serviceImpl) Communicate(stream sensor.NetworkConnectionInfoService_CommunicateServer) error {
+// PushNetworkConnectionInfo handles the bidirectional gRPC stream with the collector
+func (s *serviceImpl) PushNetworkConnectionInfo(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
 	return s.receiveMessages(stream)
 }
 
-func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService_CommunicateServer) error {
+func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
 	var hostname string
 
 	incomingMD := metautils.ExtractIncoming(stream.Context())
@@ -215,7 +209,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 	}
 }
 
-func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_CommunicateServer, msgC chan<- *sensor.NetworkConnectionInfoMessage, errC chan<- error) {
+func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, msgC chan<- *sensor.NetworkConnectionInfoMessage, errC chan<- error) {
 	for {
 		msg, err := stream.Recv()
 		if err != nil {
@@ -240,15 +234,15 @@ func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_Communi
 	}
 }
 
-func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.IPAddressList]) error {
+func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter[*sensor.IPAddressList]) error {
 	listProto := iter.Value()
 	if listProto == nil {
 		return nil
 	}
 
-	controlMsg := &sensor.MsgToCollector{
-		Msg: &sensor.MsgToCollector_PublicIpAddresses{
-			PublicIpAddresses: listProto,
+	controlMsg := &sensor.NetworkFlowsControlMessage{
+		Msg: &sensor.NetworkFlowsControlMessage_PublicIpAddr{
+			PublicIpAddr: listProto,
 		},
 	}
 
@@ -258,15 +252,15 @@ func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoServic
 	return nil
 }
 
-func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.IPNetworkList]) error {
+func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter[*sensor.IPNetworkList]) error {
 	listProto := iter.Value()
 	if listProto == nil {
 		return nil
 	}
 
-	controlMsg := &sensor.MsgToCollector{
-		Msg: &sensor.MsgToCollector_IpNetworks{
-			IpNetworks: listProto,
+	controlMsg := &sensor.NetworkFlowsControlMessage{
+		Msg: &sensor.NetworkFlowsControlMessage_CidrBlocks{
+			CidrBlocks: listProto,
 		},
 	}
 
@@ -276,14 +270,14 @@ func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoSe
 	return nil
 }
 
-func (s *serviceImpl) SendCollectorConfig(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.CollectorConfig]) error {
+func (s *serviceImpl) SendCollectorConfig(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter[*sensor.CollectorConfig]) error {
 	collectorConfig := iter.Value()
 	if collectorConfig == nil {
 		return nil
 	}
 
-	controlMsg := &sensor.MsgToCollector{
-		Msg: &sensor.MsgToCollector_CollectorConfig{
+	controlMsg := &sensor.NetworkFlowsControlMessage{
+		Msg: &sensor.NetworkFlowsControlMessage_CollectorConfig{
 			CollectorConfig: collectorConfig,
 		},
 	}

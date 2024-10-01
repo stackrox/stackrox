@@ -66,6 +66,11 @@ func (m *NetworkFlowsControlMessage) CloneVT() *NetworkFlowsControlMessage {
 	r := new(NetworkFlowsControlMessage)
 	r.PublicIpAddresses = m.PublicIpAddresses.CloneVT()
 	r.IpNetworks = m.IpNetworks.CloneVT()
+	if m.Msg != nil {
+		r.Msg = m.Msg.(interface {
+			CloneVT() isNetworkFlowsControlMessage_Msg
+		}).CloneVT()
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -77,49 +82,30 @@ func (m *NetworkFlowsControlMessage) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *MsgToCollector) CloneVT() *MsgToCollector {
+func (m *NetworkFlowsControlMessage_PublicIpAddr) CloneVT() isNetworkFlowsControlMessage_Msg {
 	if m == nil {
-		return (*MsgToCollector)(nil)
+		return (*NetworkFlowsControlMessage_PublicIpAddr)(nil)
 	}
-	r := new(MsgToCollector)
-	if m.Msg != nil {
-		r.Msg = m.Msg.(interface{ CloneVT() isMsgToCollector_Msg }).CloneVT()
-	}
-	if len(m.unknownFields) > 0 {
-		r.unknownFields = make([]byte, len(m.unknownFields))
-		copy(r.unknownFields, m.unknownFields)
-	}
+	r := new(NetworkFlowsControlMessage_PublicIpAddr)
+	r.PublicIpAddr = m.PublicIpAddr.CloneVT()
 	return r
 }
 
-func (m *MsgToCollector) CloneMessageVT() proto.Message {
-	return m.CloneVT()
+func (m *NetworkFlowsControlMessage_CidrBlocks) CloneVT() isNetworkFlowsControlMessage_Msg {
+	if m == nil {
+		return (*NetworkFlowsControlMessage_CidrBlocks)(nil)
+	}
+	r := new(NetworkFlowsControlMessage_CidrBlocks)
+	r.CidrBlocks = m.CidrBlocks.CloneVT()
+	return r
 }
 
-func (m *MsgToCollector_CollectorConfig) CloneVT() isMsgToCollector_Msg {
+func (m *NetworkFlowsControlMessage_CollectorConfig) CloneVT() isNetworkFlowsControlMessage_Msg {
 	if m == nil {
-		return (*MsgToCollector_CollectorConfig)(nil)
+		return (*NetworkFlowsControlMessage_CollectorConfig)(nil)
 	}
-	r := new(MsgToCollector_CollectorConfig)
+	r := new(NetworkFlowsControlMessage_CollectorConfig)
 	r.CollectorConfig = m.CollectorConfig.CloneVT()
-	return r
-}
-
-func (m *MsgToCollector_PublicIpAddresses) CloneVT() isMsgToCollector_Msg {
-	if m == nil {
-		return (*MsgToCollector_PublicIpAddresses)(nil)
-	}
-	r := new(MsgToCollector_PublicIpAddresses)
-	r.PublicIpAddresses = m.PublicIpAddresses.CloneVT()
-	return r
-}
-
-func (m *MsgToCollector_IpNetworks) CloneVT() isMsgToCollector_Msg {
-	if m == nil {
-		return (*MsgToCollector_IpNetworks)(nil)
-	}
-	r := new(MsgToCollector_IpNetworks)
-	r.IpNetworks = m.IpNetworks.CloneVT()
 	return r
 }
 
@@ -259,6 +245,18 @@ func (this *NetworkFlowsControlMessage) EqualVT(that *NetworkFlowsControlMessage
 	} else if this == nil || that == nil {
 		return false
 	}
+	if this.Msg == nil && that.Msg != nil {
+		return false
+	} else if this.Msg != nil {
+		if that.Msg == nil {
+			return false
+		}
+		if !this.Msg.(interface {
+			EqualVT(isNetworkFlowsControlMessage_Msg) bool
+		}).EqualVT(that.Msg) {
+			return false
+		}
+	}
 	if !this.PublicIpAddresses.EqualVT(that.PublicIpAddresses) {
 		return false
 	}
@@ -275,36 +273,58 @@ func (this *NetworkFlowsControlMessage) EqualMessageVT(thatMsg proto.Message) bo
 	}
 	return this.EqualVT(that)
 }
-func (this *MsgToCollector) EqualVT(that *MsgToCollector) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	if this.Msg == nil && that.Msg != nil {
-		return false
-	} else if this.Msg != nil {
-		if that.Msg == nil {
-			return false
-		}
-		if !this.Msg.(interface {
-			EqualVT(isMsgToCollector_Msg) bool
-		}).EqualVT(that.Msg) {
-			return false
-		}
-	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *MsgToCollector) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*MsgToCollector)
+func (this *NetworkFlowsControlMessage_PublicIpAddr) EqualVT(thatIface isNetworkFlowsControlMessage_Msg) bool {
+	that, ok := thatIface.(*NetworkFlowsControlMessage_PublicIpAddr)
 	if !ok {
 		return false
 	}
-	return this.EqualVT(that)
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.PublicIpAddr, that.PublicIpAddr; p != q {
+		if p == nil {
+			p = &IPAddressList{}
+		}
+		if q == nil {
+			q = &IPAddressList{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
 }
-func (this *MsgToCollector_CollectorConfig) EqualVT(thatIface isMsgToCollector_Msg) bool {
-	that, ok := thatIface.(*MsgToCollector_CollectorConfig)
+
+func (this *NetworkFlowsControlMessage_CidrBlocks) EqualVT(thatIface isNetworkFlowsControlMessage_Msg) bool {
+	that, ok := thatIface.(*NetworkFlowsControlMessage_CidrBlocks)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.CidrBlocks, that.CidrBlocks; p != q {
+		if p == nil {
+			p = &IPNetworkList{}
+		}
+		if q == nil {
+			q = &IPNetworkList{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *NetworkFlowsControlMessage_CollectorConfig) EqualVT(thatIface isNetworkFlowsControlMessage_Msg) bool {
+	that, ok := thatIface.(*NetworkFlowsControlMessage_CollectorConfig)
 	if !ok {
 		return false
 	}
@@ -320,56 +340,6 @@ func (this *MsgToCollector_CollectorConfig) EqualVT(thatIface isMsgToCollector_M
 		}
 		if q == nil {
 			q = &CollectorConfig{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
-func (this *MsgToCollector_PublicIpAddresses) EqualVT(thatIface isMsgToCollector_Msg) bool {
-	that, ok := thatIface.(*MsgToCollector_PublicIpAddresses)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.PublicIpAddresses, that.PublicIpAddresses; p != q {
-		if p == nil {
-			p = &IPAddressList{}
-		}
-		if q == nil {
-			q = &IPAddressList{}
-		}
-		if !p.EqualVT(q) {
-			return false
-		}
-	}
-	return true
-}
-
-func (this *MsgToCollector_IpNetworks) EqualVT(thatIface isMsgToCollector_Msg) bool {
-	that, ok := thatIface.(*MsgToCollector_IpNetworks)
-	if !ok {
-		return false
-	}
-	if this == that {
-		return true
-	}
-	if this == nil && that != nil || this != nil && that == nil {
-		return false
-	}
-	if p, q := this.IpNetworks, that.IpNetworks; p != q {
-		if p == nil {
-			p = &IPNetworkList{}
-		}
-		if q == nil {
-			q = &IPNetworkList{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -544,59 +514,6 @@ func (m *NetworkFlowsControlMessage) MarshalToSizedBufferVT(dAtA []byte) (int, e
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.IpNetworks != nil {
-		size, err := m.IpNetworks.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x12
-	}
-	if m.PublicIpAddresses != nil {
-		size, err := m.PublicIpAddresses.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgToCollector) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *MsgToCollector) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *MsgToCollector) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
 	if vtmsg, ok := m.Msg.(interface {
 		MarshalToSizedBufferVT([]byte) (int, error)
 	}); ok {
@@ -606,18 +523,18 @@ func (m *MsgToCollector) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
-	return len(dAtA) - i, nil
-}
-
-func (m *MsgToCollector_CollectorConfig) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *MsgToCollector_CollectorConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.CollectorConfig != nil {
-		size, err := m.CollectorConfig.MarshalToSizedBufferVT(dAtA[:i])
+	if m.IpNetworks != nil {
+		size, err := m.IpNetworks.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.PublicIpAddresses != nil {
+		size, err := m.PublicIpAddresses.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -628,34 +545,16 @@ func (m *MsgToCollector_CollectorConfig) MarshalToSizedBufferVT(dAtA []byte) (in
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToCollector_PublicIpAddresses) MarshalToVT(dAtA []byte) (int, error) {
+
+func (m *NetworkFlowsControlMessage_PublicIpAddr) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *MsgToCollector_PublicIpAddresses) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *NetworkFlowsControlMessage_PublicIpAddr) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.PublicIpAddresses != nil {
-		size, err := m.PublicIpAddresses.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x12
-	}
-	return len(dAtA) - i, nil
-}
-func (m *MsgToCollector_IpNetworks) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *MsgToCollector_IpNetworks) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	if m.IpNetworks != nil {
-		size, err := m.IpNetworks.MarshalToSizedBufferVT(dAtA[:i])
+	if m.PublicIpAddr != nil {
+		size, err := m.PublicIpAddr.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -663,6 +562,44 @@ func (m *MsgToCollector_IpNetworks) MarshalToSizedBufferVT(dAtA []byte) (int, er
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x1a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *NetworkFlowsControlMessage_CidrBlocks) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *NetworkFlowsControlMessage_CidrBlocks) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.CidrBlocks != nil {
+		size, err := m.CidrBlocks.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x22
+	}
+	return len(dAtA) - i, nil
+}
+func (m *NetworkFlowsControlMessage_CollectorConfig) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *NetworkFlowsControlMessage_CollectorConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.CollectorConfig != nil {
+		size, err := m.CollectorConfig.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x2a
 	}
 	return len(dAtA) - i, nil
 }
@@ -815,16 +752,6 @@ func (m *NetworkFlowsControlMessage) SizeVT() (n int) {
 		l = m.IpNetworks.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	n += len(m.unknownFields)
-	return n
-}
-
-func (m *MsgToCollector) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
 	if vtmsg, ok := m.Msg.(interface{ SizeVT() int }); ok {
 		n += vtmsg.SizeVT()
 	}
@@ -832,7 +759,31 @@ func (m *MsgToCollector) SizeVT() (n int) {
 	return n
 }
 
-func (m *MsgToCollector_CollectorConfig) SizeVT() (n int) {
+func (m *NetworkFlowsControlMessage_PublicIpAddr) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.PublicIpAddr != nil {
+		l = m.PublicIpAddr.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *NetworkFlowsControlMessage_CidrBlocks) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.CidrBlocks != nil {
+		l = m.CidrBlocks.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *NetworkFlowsControlMessage_CollectorConfig) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -840,30 +791,6 @@ func (m *MsgToCollector_CollectorConfig) SizeVT() (n int) {
 	_ = l
 	if m.CollectorConfig != nil {
 		l = m.CollectorConfig.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	return n
-}
-func (m *MsgToCollector_PublicIpAddresses) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.PublicIpAddresses != nil {
-		l = m.PublicIpAddresses.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	return n
-}
-func (m *MsgToCollector_IpNetworks) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.IpNetworks != nil {
-		l = m.IpNetworks.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -1136,58 +1063,89 @@ func (m *NetworkFlowsControlMessage) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PublicIpAddr", wireType)
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
 				return protohelpers.ErrInvalidLength
 			}
-			if (iNdEx + skippy) > l {
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgToCollector) UnmarshalVT(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
+			if oneof, ok := m.Msg.(*NetworkFlowsControlMessage_PublicIpAddr); ok {
+				if err := oneof.PublicIpAddr.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &IPAddressList{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &NetworkFlowsControlMessage_PublicIpAddr{PublicIpAddr: v}
 			}
-			if iNdEx >= l {
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CidrBlocks", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
+			if oneof, ok := m.Msg.(*NetworkFlowsControlMessage_CidrBlocks); ok {
+				if err := oneof.CidrBlocks.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &IPNetworkList{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &NetworkFlowsControlMessage_CidrBlocks{CidrBlocks: v}
 			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgToCollector: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgToCollector: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
+			iNdEx = postIndex
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CollectorConfig", wireType)
 			}
@@ -1216,7 +1174,7 @@ func (m *MsgToCollector) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Msg.(*MsgToCollector_CollectorConfig); ok {
+			if oneof, ok := m.Msg.(*NetworkFlowsControlMessage_CollectorConfig); ok {
 				if err := oneof.CollectorConfig.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -1225,89 +1183,7 @@ func (m *MsgToCollector) UnmarshalVT(dAtA []byte) error {
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Msg = &MsgToCollector_CollectorConfig{CollectorConfig: v}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PublicIpAddresses", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgToCollector_PublicIpAddresses); ok {
-				if err := oneof.PublicIpAddresses.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &IPAddressList{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgToCollector_PublicIpAddresses{PublicIpAddresses: v}
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IpNetworks", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgToCollector_IpNetworks); ok {
-				if err := oneof.IpNetworks.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &IPNetworkList{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgToCollector_IpNetworks{IpNetworks: v}
+				m.Msg = &NetworkFlowsControlMessage_CollectorConfig{CollectorConfig: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -1840,58 +1716,89 @@ func (m *NetworkFlowsControlMessage) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PublicIpAddr", wireType)
 			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
 				return protohelpers.ErrInvalidLength
 			}
-			if (iNdEx + skippy) > l {
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *MsgToCollector) UnmarshalVTUnsafe(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
+			if oneof, ok := m.Msg.(*NetworkFlowsControlMessage_PublicIpAddr); ok {
+				if err := oneof.PublicIpAddr.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &IPAddressList{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &NetworkFlowsControlMessage_PublicIpAddr{PublicIpAddr: v}
 			}
-			if iNdEx >= l {
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CidrBlocks", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
+			if oneof, ok := m.Msg.(*NetworkFlowsControlMessage_CidrBlocks); ok {
+				if err := oneof.CidrBlocks.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &IPNetworkList{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &NetworkFlowsControlMessage_CidrBlocks{CidrBlocks: v}
 			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: MsgToCollector: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: MsgToCollector: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
+			iNdEx = postIndex
+		case 5:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field CollectorConfig", wireType)
 			}
@@ -1920,7 +1827,7 @@ func (m *MsgToCollector) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Msg.(*MsgToCollector_CollectorConfig); ok {
+			if oneof, ok := m.Msg.(*NetworkFlowsControlMessage_CollectorConfig); ok {
 				if err := oneof.CollectorConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
@@ -1929,89 +1836,7 @@ func (m *MsgToCollector) UnmarshalVTUnsafe(dAtA []byte) error {
 				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Msg = &MsgToCollector_CollectorConfig{CollectorConfig: v}
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field PublicIpAddresses", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgToCollector_PublicIpAddresses); ok {
-				if err := oneof.PublicIpAddresses.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &IPAddressList{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgToCollector_PublicIpAddresses{PublicIpAddresses: v}
-			}
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IpNetworks", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Msg.(*MsgToCollector_IpNetworks); ok {
-				if err := oneof.IpNetworks.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &IPNetworkList{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Msg = &MsgToCollector_IpNetworks{IpNetworks: v}
+				m.Msg = &NetworkFlowsControlMessage_CollectorConfig{CollectorConfig: v}
 			}
 			iNdEx = postIndex
 		default:
