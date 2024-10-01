@@ -4070,7 +4070,7 @@ func (m *CVEInfo) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.ScoreVersion |= ScoreVersion(b&0x7F) << shift
+				m.ScoreVersion |= CVEInfo_ScoreVersion(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -4566,7 +4566,7 @@ func (m *ImageCVE) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.NvdScoreVersion |= ScoreVersion(b&0x7F) << shift
+				m.NvdScoreVersion |= CvssScoreVersion(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

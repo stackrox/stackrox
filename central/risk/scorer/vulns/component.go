@@ -84,7 +84,7 @@ func ProcessComponent(component scancomponent.ScanComponent) (min, max Component
 func vulnScore(vuln cvss.VulnI) float32 {
 	severity := cvss.VulnToSeverity(vuln)
 
-	if vuln.GetScoreVersion() == storage.ScoreVersion_V2 {
+	if vuln.GetScoreVersion() == storage.CVEInfo_V2 {
 		return cvss2Score(severity)
 	}
 	return cvss3Score(severity)

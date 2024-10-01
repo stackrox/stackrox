@@ -5159,7 +5159,7 @@
             ]
           },
           {
-            "name": "ScoreVersion",
+            "name": "CvssScoreVersion",
             "enum_fields": [
               {
                 "name": "V2"
@@ -5204,6 +5204,22 @@
           },
           {
             "name": "CVE.ScoreVersion",
+            "enum_fields": [
+              {
+                "name": "V2"
+              },
+              {
+                "name": "V3",
+                "integer": 1
+              },
+              {
+                "name": "UNKNOWN",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CVEInfo.ScoreVersion",
             "enum_fields": [
               {
                 "name": "V2"
@@ -5739,7 +5755,7 @@
               {
                 "id": 12,
                 "name": "nvd_score_version",
-                "type": "ScoreVersion"
+                "type": "CvssScoreVersion"
               }
             ]
           },

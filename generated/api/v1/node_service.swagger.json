@@ -240,7 +240,7 @@
           "format": "date-time"
         },
         "scoreVersion": {
-          "$ref": "#/definitions/storageScoreVersion"
+          "$ref": "#/definitions/storageCVEInfoScoreVersion"
         },
         "cvssV2": {
           "$ref": "#/definitions/storageCVSSV2",
@@ -279,6 +279,17 @@
           }
         }
       }
+    },
+    "storageCVEInfoScoreVersion": {
+      "type": "string",
+      "enum": [
+        "V2",
+        "V3",
+        "UNKNOWN"
+      ],
+      "default": "V2",
+      "description": "- V2: No unset for automatic backwards compatibility",
+      "title": "ScoreVersion can be deprecated ROX-26066"
     },
     "storageCVSSScore": {
       "type": "object",
@@ -795,17 +806,6 @@
           "format": "date-time"
         }
       }
-    },
-    "storageScoreVersion": {
-      "type": "string",
-      "enum": [
-        "V2",
-        "V3",
-        "UNKNOWN_VERSION"
-      ],
-      "default": "V2",
-      "description": "- V2: No unset for automatic backwards compatibility",
-      "title": "ScoreVersion can be deprecated ROX-26066"
     },
     "storageSource": {
       "type": "string",

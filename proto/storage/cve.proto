@@ -29,8 +29,8 @@ enum Source {
   SOURCE_NVD = 3;
 }
 
-// ScoreVersion can be deprecated ROX-26066
-enum ScoreVersion {
+//Added this score version for nvd cvss score. moving out and re using score version from cveinfo will cause backward compatibility issue
+enum CvssScoreVersion {
   V2 = 0; // No unset for automatic backwards compatibility
   V3 = 1;
   UNKNOWN_VERSION = 2;
@@ -111,6 +111,12 @@ message CVEInfo {
     string URI = 1;
     repeated string tags = 2;
   }
+  // ScoreVersion can be deprecated ROX-26066
+  enum ScoreVersion {
+    V2 = 0; // No unset for automatic backwards compatibility
+    V3 = 1;
+    UNKNOWN = 2;
+  }
   string cve = 1; // @gotags: search:"CVE,store" sql:"index=hash"
   string summary = 2;
   string link = 3;
@@ -145,7 +151,7 @@ message ImageCVE {
   float nvdcvss = 10; // @gotags: search:"NVD CVSS",store"
   // cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
   repeated CVSSScore cvss_metrics = 11;
-  ScoreVersion nvd_score_version = 12;
+  CvssScoreVersion nvd_score_version = 12;
 }
 
 message NodeCVE {

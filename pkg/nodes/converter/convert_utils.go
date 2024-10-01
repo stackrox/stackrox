@@ -50,13 +50,13 @@ func EmbeddedVulnerabilityToNodeVulnerability(vuln *storage.EmbeddedVulnerabilit
 	return ret
 }
 
-func cveInfoScoreVersion(scoreVersion storage.EmbeddedVulnerability_ScoreVersion) storage.ScoreVersion {
+func cveInfoScoreVersion(scoreVersion storage.EmbeddedVulnerability_ScoreVersion) storage.CVEInfo_ScoreVersion {
 	switch scoreVersion {
 	case storage.EmbeddedVulnerability_V3:
-		return storage.ScoreVersion_V3
+		return storage.CVEInfo_V3
 	case storage.EmbeddedVulnerability_V2:
-		return storage.ScoreVersion_V2
+		return storage.CVEInfo_V2
 	default:
-		return storage.ScoreVersion_UNKNOWN_VERSION
+		return storage.CVEInfo_UNKNOWN
 	}
 }

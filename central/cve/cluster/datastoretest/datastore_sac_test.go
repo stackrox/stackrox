@@ -432,10 +432,10 @@ func embeddedVulnerabilityToClusterCVE(from *storage.EmbeddedVulnerability) *sto
 		SnoozeExpiry: from.GetSuppressExpiry(),
 	}
 	if ret.GetCveBaseInfo().GetCvssV3() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.ScoreVersion_V3
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
 		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
 	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
-		ret.CveBaseInfo.ScoreVersion = storage.ScoreVersion_V2
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
 		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
 	}
 	return ret

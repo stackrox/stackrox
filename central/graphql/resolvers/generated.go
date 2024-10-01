@@ -176,13 +176,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"link: String!",
 		"publishedOn: Time",
 		"references: [CVEInfo_Reference]!",
-		"scoreVersion: ScoreVersion!",
+		"scoreVersion: CVEInfo_ScoreVersion!",
 		"summary: String!",
 	}))
 	utils.Must(builder.AddType("CVEInfo_Reference", []string{
 		"tags: [String!]!",
 		"uRI: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVEInfo_ScoreVersion(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVE_CVEType(0)))
 	utils.Must(builder.AddType("CVE_Reference", []string{
 		"tags: [String!]!",
@@ -546,6 +547,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("CosignSignature", []string{
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CvssScoreVersion(0)))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
 		"mirror: String!",
@@ -685,7 +687,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cvssMetrics: [CVSSScore]!",
 		"id: ID!",
 		"impactScore: Float!",
-		"nvdScoreVersion: ScoreVersion!",
+		"nvdScoreVersion: CvssScoreVersion!",
 		"nvdcvss: Float!",
 		"operatingSystem: String!",
 		"severity: VulnerabilitySeverity!",
@@ -1217,7 +1219,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"key: String!",
 		"value: String!",
 	}))
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ScoreVersion(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.SearchCategory(0)))
 	utils.Must(builder.AddType("SearchResult", []string{
 		"category: SearchCategory!",
@@ -3123,6 +3124,24 @@ func (resolver *cVEInfo_ReferenceResolver) Tags(ctx context.Context) []string {
 func (resolver *cVEInfo_ReferenceResolver) URI(ctx context.Context) string {
 	value := resolver.data.GetURI()
 	return value
+}
+
+func toCVEInfo_ScoreVersion(value *string) storage.CVEInfo_ScoreVersion {
+	if value != nil {
+		return storage.CVEInfo_ScoreVersion(storage.CVEInfo_ScoreVersion_value[*value])
+	}
+	return storage.CVEInfo_ScoreVersion(0)
+}
+
+func toCVEInfo_ScoreVersions(values *[]string) []storage.CVEInfo_ScoreVersion {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CVEInfo_ScoreVersion, len(*values))
+	for i, v := range *values {
+		output[i] = toCVEInfo_ScoreVersion(&v)
+	}
+	return output
 }
 
 func toCVE_CVEType(value *string) storage.CVE_CVEType {
@@ -6720,6 +6739,24 @@ func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) []byt
 func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) []byte {
 	value := resolver.data.GetSignaturePayload()
 	return value
+}
+
+func toCvssScoreVersion(value *string) storage.CvssScoreVersion {
+	if value != nil {
+		return storage.CvssScoreVersion(storage.CvssScoreVersion_value[*value])
+	}
+	return storage.CvssScoreVersion(0)
+}
+
+func toCvssScoreVersions(values *[]string) []storage.CvssScoreVersion {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CvssScoreVersion, len(*values))
+	for i, v := range *values {
+		output[i] = toCvssScoreVersion(&v)
+	}
+	return output
 }
 
 type dataSourceResolver struct {
@@ -13228,24 +13265,6 @@ func (resolver *scope_LabelResolver) Key(ctx context.Context) string {
 func (resolver *scope_LabelResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
-}
-
-func toScoreVersion(value *string) storage.ScoreVersion {
-	if value != nil {
-		return storage.ScoreVersion(storage.ScoreVersion_value[*value])
-	}
-	return storage.ScoreVersion(0)
-}
-
-func toScoreVersions(values *[]string) []storage.ScoreVersion {
-	if values == nil {
-		return nil
-	}
-	output := make([]storage.ScoreVersion, len(*values))
-	for i, v := range *values {
-		output[i] = toScoreVersion(&v)
-	}
-	return output
 }
 
 func toSearchCategory(value *string) v1.SearchCategory {
