@@ -1,4 +1,3 @@
-import * as api from '../../constants/apiEndpoints';
 import { selectors } from '../../constants/PoliciesPage';
 import { hasFeatureFlag } from '../../helpers/features';
 import withAuth from '../../helpers/basicAuth';
@@ -10,8 +9,10 @@ import {
 } from '../../helpers/policies';
 import { interceptAndWatchRequests } from '../../helpers/request';
 
+const saveAsUrl = '/v1/policies/save-as';
+
 const routeMatcherMapForPolicySaveAs = {
-    [api.policies.saveAs]: { method: 'post', url: api.policies.saveAs },
+    [saveAsUrl]: { method: 'POST', url: saveAsUrl },
 };
 
 const firstTableRowSelector = 'tbody:nth-child(2) tr:nth-child(1)';
@@ -87,7 +88,7 @@ describe('Save policies as Custom Resource', () => {
             visitPolicies();
 
             interceptAndWatchRequests(routeMatcherMapForPolicySaveAs, {
-                [api.policies.saveAs]: { statusCode: 400 },
+                [saveAsUrl]: { statusCode: 400 },
             }).then(({ waitForRequests }) => {
                 doPolicyRowAction(firstTableRowSelector, 'Save as Custom Resource');
 
@@ -126,7 +127,7 @@ describe('Save policies as Custom Resource', () => {
                 visitPolicy(policyId);
 
                 interceptAndWatchRequests(routeMatcherMapForPolicySaveAs, {
-                    [api.policies.saveAs]: { statusCode: 400 },
+                    [saveAsUrl]: { statusCode: 400 },
                 }).then(({ waitForRequests }) => {
                     doPolicyPageAction('Save as Custom Resource');
 
