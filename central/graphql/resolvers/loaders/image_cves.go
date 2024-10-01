@@ -9,11 +9,15 @@ import (
 	ImageCVEDataStore "github.com/stackrox/rox/central/cve/image/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var imageCveLoaderType = reflect.TypeOf(storage.ImageCVE{})
+var (
+	imageCveLoaderType = reflect.TypeOf(storage.ImageCVE{})
+	log                = logging.LoggerForModule()
+)
 
 func init() {
 	RegisterTypeFactory(reflect.TypeOf(storage.ImageCVE{}), func() interface{} {
@@ -92,6 +96,7 @@ func (idl *imageCveLoaderImpl) GetIDs(ctx context.Context, query *v1.Query) ([]s
 }
 
 func (idl *imageCveLoaderImpl) CountFromQuery(ctx context.Context, query *v1.Query) (int32, error) {
+	log.Infof("SHREWS -- image_cves.go.CountFromQuery")
 	count, err := idl.ds.Count(ctx, query)
 	if err != nil {
 		return 0, err
