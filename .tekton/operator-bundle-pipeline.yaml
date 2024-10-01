@@ -603,6 +603,18 @@ spec:
       - OPERATOR_IMAGE_TAG=$(tasks.determine-operator-image-tag.results.IMAGE_TAG)
       - OPERATOR_IMAGE_DIGEST=$(tasks.determine-operator-image-digest.results.IMAGE_DIGEST)
       - OPERATOR_IMAGE_REPO=$(params.operator-image-repo)
+      - RELATED_IMAGE_MAIN="$(params.main-image-repo):$(tasks.determine-main-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER="$(params.scanner-image-repo):$(tasks.determine-scanner-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER_DB="$(params.scanner-db-image-repo):$(tasks.determine-scanner-db-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER_SLIM="$(params.scanner-slim-image-repo):$(tasks.determine-scanner-slim-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER_DB_SLIM="$(params.scanner-db-slim-image-repo):$(tasks.determine-scanner-db-slim-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER_V4="$(params.scanner-v4-image-repo):$(tasks.determine-scanner-v4-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER_V4_DB="$(params.scanner-v4-db-image-repo):$(tasks.determine-scanner-v4-db-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_COLLECTOR_SLIM="$(params.collector-slim-image-repo):$(tasks.determine-collector-slim-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_COLLECTOR_FULL="$(params.collector-full-image-repo):$(tasks.determine-collector-full-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_ROXCTL="$(params.roxctl-image-repo):$(tasks.determine-roxctl-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_CENTRAL_DB="$(params.central-db-image-repo):$(tasks.determine-central-db-image-digest.results.IMAGE_DIGEST)"
+
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
