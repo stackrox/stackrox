@@ -45,6 +45,7 @@ type ImageVulnerability struct {
 	DiscoveredAtImage *graphql.Time `json:"discoveredAtImage,omitempty"`
 	Link              string        `json:"link,omitempty"`
 	Cvss              float64       `json:"cvss,omitempty"`
+	Nvdcvss           float64       `json:"nvdcvss,omitempty"`
 }
 
 // ImageComponent data for vuln report
@@ -89,8 +90,12 @@ type ZippedCSVResult struct {
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
 // a flag if the report is empty or not. For v1 config pass an empty string.
-func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult, configName string) (*ZippedCSVResult, error) {
-	csvWriter := csv.NewGenericWriter(csvHeader, true)
+func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult, configName string, includeNvd bool) (*ZippedCSVResult, error) {
+	csvHeaderRep := csvHeader
+	if includeNvd == true {
+		csvHeaderRep = append(csvHeader, "NVDCVSS")
+	}
+	csvWriter := csv.NewGenericWriter(csvHeaderRep, true)
 	numDeployedImageCVEs := 0
 	for _, r := range deployedImagesResults {
 		for _, d := range r.Deployments {
@@ -102,7 +107,7 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 						if v.DiscoveredAtImage != nil {
 							discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
 						}
-						csvWriter.AddValue(csv.Value{
+						row := csv.Value{
 							d.GetClusterName(),
 							d.Namespace,
 							d.DeploymentName,
@@ -115,7 +120,11 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 							strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 							discoveredTs,
 							v.Link,
-						})
+						}
+						if includeNvd == true {
+							row = append(row, strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64))
+						}
+						csvWriter.AddValue(row)
 					}
 				}
 			}
@@ -143,6 +152,7 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 						v.FixedByVersion,
 						strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
 						strconv.FormatFloat(v.Cvss, 'f', 2, 64),
+						strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64),
 						discoveredTs,
 						v.Link,
 					})
