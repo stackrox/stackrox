@@ -314,8 +314,8 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 		// by tag (e.g. latest) and the registry contents for that tag change after the pod was
 		// created. We want to ensure that we pull metadata and layers based on the
 		// ID (digest) of the running image instead of what the tag currently represents.
-		// This condition will only be true for mirrors setup via the ImageTagMirrorSet (ITMS) CR,
-		// the other supported CRs, ImageContentSourcePolicy (ICSP) and ImageDigestMirrorSet (IDMS),
+		// This condition will only be true for mirrors setup via the ImageTagMirrorSet (ITMS) CR.
+		// The other supported CRs, ImageContentSourcePolicy (ICSP) and ImageDigestMirrorSet (IDMS),
 		// will only match IF the podspec references the image by digest, in which case ID
 		// would be populated and this condition never true.
 		if img.GetId() == "" && srcImage.GetId() != "" {
