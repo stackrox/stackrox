@@ -1,3 +1,4 @@
+import Raven from 'raven-js';
 import axios from 'services/instance';
 import qs from 'qs';
 
@@ -5,6 +6,7 @@ import { ApiSortOption, SearchFilter } from 'types/search';
 import { SlimUser } from 'types/user.proto';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
+import { getQueryString } from 'utils/queryStringUtils';
 import { ComplianceProfileSummary, complianceV2Url } from './ComplianceCommon';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
 import { NotifierConfiguration, ReportStatus } from './ReportsService.types';
@@ -80,7 +82,7 @@ export type ComplianceScanConfigurationStatus = {
 };
 
 // @TODO: This may change and be moved around depending on how backend implements it.
-export type ComplianceScanSnapshot = {
+export type ComplianceReportSnapshot = {
     reportJobId: string;
     reportStatus: ReportStatus;
     user: SlimUser;
@@ -238,4 +240,51 @@ export function listComplianceScanConfigClusterProfiles(
             `${complianceScanConfigBaseUrl}/clusters/${clusterId}/profiles/collection?${params}`
         )
         .then((response) => response.data);
+}
+
+/*
+ *  Fetches a list of snapshots (scan executions) from a given scan config
+ */
+
+export type FetchComplianceReportHistoryServiceProps = {
+    id: string;
+    query: string;
+    page: number;
+    perPage: number;
+    sortOption: ApiSortOption;
+    showMyHistory: boolean;
+};
+
+export type ReportHistoryResponse = {
+    complianceReportSnapshots: ComplianceReportSnapshot[];
+};
+
+export function fetchComplianceReportHistory({
+    id,
+    query,
+    page,
+    perPage,
+    sortOption,
+    showMyHistory,
+}: FetchComplianceReportHistoryServiceProps): Promise<ComplianceReportSnapshot[]> {
+    const params = getQueryString(
+        {
+            reportParamQuery: {
+                query,
+                pagination: getPaginationParams({ page, perPage, sortOption }),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true, addQueryPrefix: false }
+    );
+    return axios
+        .get<ReportHistoryResponse>(
+            `/v2/compliance/scan/configurations/${id}/reports/${showMyHistory ? 'my-history' : 'history'}?${params}`
+        )
+        .then((response) => {
+            return response.data.complianceReportSnapshots;
+        })
+        .catch((error) => {
+            Raven.captureException(error);
+            return Promise.reject(error);
+        });
 }
