@@ -59,6 +59,7 @@ type ComplianceOperatorScanV2 struct {
 	ClusterID           string     `gorm:"column:clusterid;type:uuid;index:complianceoperatorscanv2_sac_filter,type:hash"`
 	ProfileProfileRefID string     `gorm:"column:profile_profilerefid;type:uuid"`
 	StatusResult        string     `gorm:"column:status_result;type:varchar"`
+	LastStartedTime     *time.Time `gorm:"column:laststartedtime;type:timestamp"`
 	LastExecutedTime    *time.Time `gorm:"column:lastexecutedtime;type:timestamp"`
 	ScanName            string     `gorm:"column:scanname;type:varchar"`
 	ScanRefID           string     `gorm:"column:scanrefid;type:uuid"`

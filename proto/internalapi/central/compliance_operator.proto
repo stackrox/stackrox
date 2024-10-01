@@ -235,6 +235,7 @@ message ComplianceOperatorScanStatusV2 {
   int64 current_index = 4;
   string warnings = 5;
   int64 remaining_retries = 6;
+  google.protobuf.Timestamp create_time = 9;
   google.protobuf.Timestamp start_time = 7;
   google.protobuf.Timestamp end_time = 8;
 }
