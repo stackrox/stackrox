@@ -243,7 +243,7 @@ function PolicyDetail({
                                                       Save as Custom Resource
                                                   </DropdownItem>
                                               ) : (
-                                                  <> </>
+                                                  <React.Fragment key="Save as Custom Resource"></React.Fragment>
                                               ),
                                               <DropdownItem
                                                   key="Enable/Disable policy"
@@ -281,7 +281,7 @@ function PolicyDetail({
                                                       Save as Custom Resource
                                                   </DropdownItem>
                                               ) : (
-                                                  <> </>
+                                                  <React.Fragment key="Save as Custom Resource"></React.Fragment>
                                               ),
                                           ]
                                 }

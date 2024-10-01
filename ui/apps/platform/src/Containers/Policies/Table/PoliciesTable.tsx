@@ -287,7 +287,7 @@ function PoliciesTable({
                                                     {`Save as Custom Resource (${selectedPolicies.length})`}
                                                 </DropdownItem>
                                             ) : (
-                                                <></>
+                                                <React.Fragment key="Save as Custom Resource"></React.Fragment>
                                             ),
                                             <DropdownSeparator key="Separator" />,
                                             <DropdownItem
