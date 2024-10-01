@@ -52,7 +52,7 @@ jobs:
 
     - name: Generate offline bundle
       run: |
-        .github/workflows/scripts/scanner-update-offline-bundle.sh \
+        .github/workflows/scripts/scanner-offline-bundle-generate.sh \
             bundle \
             "$VULNERABILITY_VERSION" \
             "$SUPPORTED_RELEASES"
@@ -81,7 +81,7 @@ jobs:
         credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
     - name: Authenticate with Google Cloud (pull request)
-      if: github.event_name != 'schedule'
+      if: github.event_name == 'pull_request'
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
@@ -89,27 +89,31 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Upload bundles (release)
+    - name: Set GCS bucket (release)
       if: github.event_name == 'schedule'
       run: |
-        cd bundles
-        gsutil cp scanner-v4-defs-*.zip "gs://definitions.stackrox.io/v4/offline-bundles/"
+        bucket="gs://definitions.stackrox.io/v4/offline-bundles/"
+        echo "BUCKET=$bucket" >> "$GITHUB_ENV"
 
-    - name: Upload bundles (pull request)
-      if: github.event_name != 'schedule'
+    - name: Set GCS bucket (pull request)
+      if: github.event_name == 'pull_request'
       run: |
-        branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
-        # Replace / with -, so the branch name isn't truncated when pushed to GCS.
-        dir=${branch////-}
+        branch="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+        dir="${branch////-}"
         case $dir in
         dev|1.0.0)
           echo "Branch $dir is disallowed"
           exit 1
         esac
+        bucket="gs://scanner-v4-test/offline-bundles/$dir"
+        echo "BUCKET=$bucket" >> "$GITHUB_ENV"
 
+    - name: Upload bundles
+      run: |
         cd bundles
-        ls -lh
-        gsutil cp -r . "gs://scanner-v4-test/offline-bundles/$dir"
+        echo "uploading files to $BUCKET"
+        ls -lh .
+        gsutil cp -r . "$BUCKET"
 
   offline-bundle-notification:
     needs:
