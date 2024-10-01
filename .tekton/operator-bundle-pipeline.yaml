@@ -427,6 +427,160 @@ spec:
     runAfter:
       - wait-for-operator-image
 
+  - name: determine-main-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.main-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-main-image
+
+  - name: determine-scanner-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-image
+
+  - name: determine-scanner-db-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-db-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-db-image
+
+  - name: determine-scanner-slim-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-slim-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-slim-image
+
+  - name: determine-scanner-db-slim-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-db-slim-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-db-slim-image
+
+  - name: determine-scanner-v4-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-v4-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-v4-image
+
+  - name: determine-scanner-v4-db-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-v4-db-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-v4-db-image
+
+  - name: determine-collector-slim-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.collector-slim-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-collector-slim-image
+
+  - name: determine-collector-full-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.collector-full-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-collector-full-image
+
+  - name: determine-roxctl-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.roxctl-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-roxctl-image
+
+  - name: determine-central-db-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.central-db-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-central-db-image
+
   - name: build-container
     params:
     - name: IMAGE
