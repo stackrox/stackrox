@@ -78,7 +78,7 @@ func Test_ImageIntegrationToNodeIntegration(t *testing.T) {
 				Name: "Quay",
 				Type: scannerTypes.Quay,
 			},
-			expectedErrorMsg: fmt.Sprintf("requires a %s or %s config: ", scannerTypes.Clairify, scannerTypes.ScannerV4),
+			expectedErrorMsg: fmt.Sprintf("unsupported integration type: %q.", scannerTypes.Quay),
 		},
 	}
 

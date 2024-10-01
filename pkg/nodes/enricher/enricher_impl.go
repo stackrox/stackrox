@@ -101,6 +101,11 @@ func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage
 	}
 
 	for _, scanner := range scanners {
+		// Prevent unnecessary scanner calls - v4 only works on indexReports, v2/Clairify only on nodeInventory.
+		if (scanner.GetNodeScanner().Type() == types.ScannerV4 && nodeInventory != nil) ||
+			(scanner.GetNodeScanner().Type() == types.Clairify && indexReport != nil) {
+			continue
+		}
 		log.Debugf("Enriching Node with Scanner %s / %s", scanner.GetNodeScanner().Type(), scanner.GetNodeScanner().Name())
 		if err := e.enrichNodeWithScanner(node, nodeInventory, indexReport, scanner.GetNodeScanner()); err != nil {
 			errorList.AddError(err)
