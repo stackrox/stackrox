@@ -59,10 +59,6 @@ func handleCertPoolUpdate() {
 	}
 }
 
-func startWatchCertPool() {
-
-}
-
 func watchCertPool() {
 	opts := k8scfgwatch.Options{
 		Interval: 5 * time.Second,
