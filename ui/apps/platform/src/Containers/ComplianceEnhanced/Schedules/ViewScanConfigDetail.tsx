@@ -19,7 +19,6 @@ import {
 
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import useAlert from 'hooks/useAlert';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import {
     ComplianceScanConfigurationStatus,
@@ -37,6 +36,8 @@ import ReportJobs from './components/ReportJobs';
 
 type ViewScanConfigDetailProps = {
     hasWriteAccessForCompliance: boolean;
+    isReportJobsEnabled: boolean;
+    isComplianceReportingEnabled: boolean;
     scanConfig?: ComplianceScanConfigurationStatus;
     isLoading: boolean;
     error?: Error | string | null;
@@ -47,13 +48,12 @@ const allReportJobsTabId = 'ComplianceScanConfigReportJobs';
 
 function ViewScanConfigDetail({
     hasWriteAccessForCompliance,
+    isReportJobsEnabled,
+    isComplianceReportingEnabled,
     scanConfig,
     isLoading,
     error = null,
 }: ViewScanConfigDetailProps): React.ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isReportJobsEnabled = isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
-
     const [activeScanConfigTab, setActiveScanConfigTab] = useURLStringUnion(
         'scanConfigTab',
         jobContextTabs
@@ -157,6 +157,8 @@ function ViewScanConfigDetail({
                                             scanConfig.lastExecutedTime === null */
                                         }
                                         scanConfigResponse={scanConfig}
+                                        isReportJobsEnabled={isReportJobsEnabled}
+                                        isComplianceReportingEnabled={isComplianceReportingEnabled}
                                     />
                                 </FlexItem>
                             )}
@@ -206,6 +208,7 @@ function ViewScanConfigDetail({
                                 isLoading={isLoading}
                                 error={error}
                                 scanConfig={scanConfig}
+                                isComplianceReportingEnabled={isComplianceReportingEnabled}
                             />
                         </CardBody>
                     </Card>
@@ -213,7 +216,10 @@ function ViewScanConfigDetail({
             )}
             {activeScanConfigTab === 'ALL_REPORT_JOBS' && (
                 <PageSection isCenterAligned id={allReportJobsTabId}>
-                    <ReportJobs scanConfig={scanConfig} />
+                    <ReportJobs
+                        scanConfig={scanConfig}
+                        isComplianceReportingEnabled={isComplianceReportingEnabled}
+                    />
                 </PageSection>
             )}
         </>

@@ -9,7 +9,6 @@ import {
     Spinner,
 } from '@patternfly/react-core';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
@@ -26,14 +25,17 @@ export type ConfigDetailsProps = {
     scanConfig?: ComplianceScanConfigurationStatus;
     isLoading?: boolean;
     error?: Error | string | null;
+    isComplianceReportingEnabled: boolean;
 };
 
 const headingLevel = 'h2';
 
-function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
-
+function ConfigDetails({
+    isLoading,
+    error,
+    scanConfig,
+    isComplianceReportingEnabled,
+}: ConfigDetailsProps) {
     if (isLoading) {
         return (
             <Bullseye>

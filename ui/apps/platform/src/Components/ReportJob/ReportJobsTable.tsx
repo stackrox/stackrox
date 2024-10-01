@@ -17,7 +17,7 @@ import { ReportSnapshot } from 'services/ReportsService.types';
 import { saveFile } from 'services/DownloadService';
 import { getDateTime } from 'utils/dateUtils';
 import ReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobStatus';
-import { ComplianceScanSnapshot } from 'services/ComplianceScanConfigurationService';
+import { ComplianceReportSnapshot } from 'services/ComplianceScanConfigurationService';
 import EmptyStateTemplate from '../EmptyStateTemplate';
 
 export type ReportJobsTableProps<T> = {
@@ -29,7 +29,7 @@ export type ReportJobsTableProps<T> = {
     renderExpandableRowContent: (snapshot: T) => React.ReactNode;
 };
 
-type Snapshot = ReportSnapshot | ComplianceScanSnapshot;
+type Snapshot = ReportSnapshot | ComplianceReportSnapshot;
 
 const filenameSanitizerRegex = new RegExp('(:)|(/)|(\\s)', 'gi');
 

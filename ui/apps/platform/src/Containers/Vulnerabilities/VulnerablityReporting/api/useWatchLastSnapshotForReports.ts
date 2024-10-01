@@ -27,7 +27,7 @@ async function fetchLastReportJobForConfiguration(
     return reportSnapshot[0] ?? null;
 }
 
-type ReportSnapshotLookup = Record<string, ReportSnapshot | null>;
+type ReportSnapshotLookup = Partial<Record<string, ReportSnapshot>>;
 
 type Result = {
     reportSnapshots: ReportSnapshotLookup;
@@ -42,7 +42,7 @@ export type FetchLastSnapshotReturn = Result & {
 export function useWatchLastSnapshotForReports(
     reportConfigurations: ReportConfiguration | ReportConfiguration[] | null
 ): FetchLastSnapshotReturn {
-    const fetchSnapshotsCallback = useCallback(async () => {
+    const fetchSnapshotsCallback = useCallback(() => {
         if (!reportConfigurations) {
             const result: ReportSnapshotLookup = {};
             return Promise.resolve(result);
