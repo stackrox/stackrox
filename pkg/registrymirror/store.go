@@ -2,6 +2,7 @@ package registrymirror
 
 import (
 	"bytes"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"time"
@@ -199,14 +200,12 @@ func (s *FileStore) updateConfigNow() error {
 func (s *FileStore) PullSources(srcImage string) ([]string, error) {
 	// FindRegistry will parse the registries config file and cache it for future usage.
 	reg, err := sysregistriesv2.FindRegistry(s.systemContext, srcImage)
-	// Using errors.Is instead of os.IsNotExist because the return from FindRegistry
-	// wraps the error in a type that os.IsNotExist ignores.
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return nil, errors.Wrap(err, "failed finding registry")
+	if err != nil {
+		return nil, err
 	}
 
 	if reg == nil {
-		return nil, os.ErrNotExist
+		return nil, fs.ErrNotExist
 	}
 
 	// ParseNamed assumes srcImage is a fully qualified references (contains a hostname), will produce error

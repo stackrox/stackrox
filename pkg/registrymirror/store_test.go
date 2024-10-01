@@ -2,6 +2,7 @@ package registrymirror
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -219,7 +220,7 @@ func TestPullSources(t *testing.T) {
 		s := NewFileStore(WithConfigPath(path))
 
 		srcs, err := s.PullSources(icspImageWithDigest)
-		require.ErrorIs(t, err, os.ErrNotExist)
+		require.ErrorIs(t, err, fs.ErrNotExist)
 		assert.Zero(t, srcs)
 	})
 
@@ -232,7 +233,7 @@ func TestPullSources(t *testing.T) {
 		s := NewFileStore(WithConfigPath(path))
 
 		srcs, err := s.PullSources(icspImageWithDigest)
-		require.ErrorIs(t, err, os.ErrNotExist)
+		require.ErrorIs(t, err, fs.ErrNotExist)
 		assert.Zero(t, srcs)
 	})
 
@@ -355,7 +356,7 @@ func TestPullSources(t *testing.T) {
 
 		src := "nginx:latest"
 		srcs, err := s.PullSources(src)
-		require.ErrorIs(t, err, os.ErrNotExist)
+		require.ErrorIs(t, err, fs.ErrNotExist)
 		assert.Zero(t, srcs)
 	})
 }

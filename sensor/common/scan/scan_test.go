@@ -3,7 +3,7 @@ package scan
 import (
 	"context"
 	"errors"
-	"os"
+	"io/fs"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -560,7 +560,7 @@ func (suite *scanTestSuite) TestGetPullSourceIDKeep() {
 		mirrorStore := mirrorStoreMocks.NewMockStore(gomock.NewController(suite.T()))
 		scan := LocalScan{mirrorStore: mirrorStore}
 
-		mirrorStore.EXPECT().PullSources(gomock.Any()).Return(nil, os.ErrNotExist)
+		mirrorStore.EXPECT().PullSources(gomock.Any()).Return(nil, fs.ErrNotExist)
 
 		pullSrcs := scan.getPullSources(srcImg)
 		suite.Require().Len(pullSrcs, 1)

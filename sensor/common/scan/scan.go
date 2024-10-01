@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"io/fs"
 	"time"
 
 	pkgErrors "github.com/pkg/errors"
@@ -290,7 +290,7 @@ func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName
 func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.ContainerImage {
 	pullSources, err := s.mirrorStore.PullSources(srcImage.GetName().GetFullName())
 	// A not exist error is expected when mirroring is not setup, therefore we do not log it.
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Warnf("Error obtaining pull sources: %v", err)
 	}
 
