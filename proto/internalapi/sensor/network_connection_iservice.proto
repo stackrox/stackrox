@@ -19,7 +19,7 @@ message NetworkFlowsControlMessage {
   IPAddressList public_ip_addresses = 1 [deprecated = true];
   IPNetworkList ip_networks = 2 [deprecated = true];
   oneof msg {
-    IPAddressList public_ip_addr= 3;
+    IPAddressList public_ip_addr = 3;
     IPNetworkList cidr_blocks = 4;
     CollectorConfig collector_config = 5;
   }
