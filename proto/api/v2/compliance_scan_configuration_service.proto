@@ -181,7 +181,7 @@ service ComplianceScanConfigurationService {
   // RunReport runs an on demand compliance report for the scan configuration
   rpc RunReport(ComplianceRunReportRequest) returns (ComplianceRunReportResponse) {
     option (google.api.http) = {
-      put: "/v2/compliance/scan/configurations/reports/run"
+      post: "/v2/compliance/scan/configurations/reports/run"
       body: "*"
     };
   }

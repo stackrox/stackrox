@@ -738,7 +738,7 @@ func RegisterComplianceScanConfigurationServiceHandlerServer(ctx context.Context
 
 	})
 
-	mux.Handle("PUT", pattern_ComplianceScanConfigurationService_RunReport_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_ComplianceScanConfigurationService_RunReport_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -1036,7 +1036,7 @@ func RegisterComplianceScanConfigurationServiceHandlerClient(ctx context.Context
 
 	})
 
-	mux.Handle("PUT", pattern_ComplianceScanConfigurationService_RunReport_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_ComplianceScanConfigurationService_RunReport_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)

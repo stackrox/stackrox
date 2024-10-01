@@ -446,7 +446,7 @@
       }
     },
     "/v2/compliance/scan/configurations/reports/run": {
-      "put": {
+      "post": {
         "summary": "RunReport runs an on demand compliance report for the scan configuration",
         "operationId": "ComplianceScanConfigurationService_RunReport",
         "responses": {
