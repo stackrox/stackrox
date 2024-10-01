@@ -2,6 +2,7 @@ package customresource
 
 import (
 	"bytes"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"gopkg.in/yaml.v3"
 )
@@ -55,7 +57,7 @@ func timestampToFormatRFC3339(ts *timestamppb.Timestamp) string {
 // toDNSSubdomainName converts a policy name to a valid DNS subdomain name.
 func toDNSSubdomainName(name string) string {
 	name = strings.ToLower(name)
-	name = strings.ReplaceAll(name, " ", ".")
+	name = strings.ReplaceAll(name, " ", "-")
 
 	// Replace all invalid characters with '-'
 	name = invalidCRDNameCharPattern.ReplaceAllString(name, "-")
@@ -72,7 +74,9 @@ func toDNSSubdomainName(name string) string {
 
 	// If the result is empty or invalid after processing, return a default value
 	if len(name) == 0 {
-		name = "rhacs.default-policy-name"
+		// Get a random alphanumeric string from the first segment of a uuid
+		randAlphaNumerics := strings.Split(uuid.NewV4().String(), "-")
+		name = fmt.Sprintf("rhacs.%s", randAlphaNumerics[0])
 	}
 	return name
 }

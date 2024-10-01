@@ -2,7 +2,6 @@ package customresource
 
 import (
 	_ "embed"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -20,7 +19,6 @@ func TestConvertToCR(t *testing.T) {
 	policy := getTestPolicy()
 	converted, err := GenerateCustomResource(policy)
 	require.NoError(t, err)
-	fmt.Println(converted)
 	assert.YAMLEq(t, templateFile, converted)
 }
 
@@ -79,6 +77,7 @@ func TestToDNSSubdomainName(t *testing.T) {
 		description string
 		input       string
 		expected    string
+		prefix      string
 	}{
 		{
 			description: "Valid name, unchanged",
@@ -93,7 +92,7 @@ func TestToDNSSubdomainName(t *testing.T) {
 		{
 			description: "Spaces replaced by dots",
 			input:       "some name with spaces",
-			expected:    "some.name.with.spaces",
+			expected:    "some-name-with-spaces",
 		},
 		{
 			description: "Special characters replaced by hyphens",
@@ -113,12 +112,12 @@ func TestToDNSSubdomainName(t *testing.T) {
 		{
 			description: "Empty input should return default value",
 			input:       "",
-			expected:    "rhacs.default-policy-name",
+			prefix:      "rhacs.",
 		},
 		{
 			description: "All invalid input should return default value",
 			input:       "@!@#$%^&*()",
-			expected:    "rhacs.default-policy-name",
+			prefix:      "rhacs.",
 		},
 		{
 			description: "Leading and trailing invalid characters should be trimmed",
@@ -128,15 +127,18 @@ func TestToDNSSubdomainName(t *testing.T) {
 		{
 			description: "A comprehensive test case",
 			input:       " 这是一个严肃的 @-@ セキュリティポリシ ",
-			expected:    "rhacs.default-policy-name",
+			prefix:      "rhacs.",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
 			result := toDNSSubdomainName(test.input)
-			if result != test.expected {
-				t.Errorf("For input %q, expected %q, but got %q", test.input, test.expected, result)
+			if len(test.expected) > 0 {
+				assert.Equal(t, test.expected, result, "For input %q, expected %q, but got %q", test.input, test.expected, result)
+			}
+			if len(test.prefix) > 0 {
+				assert.True(t, strings.HasPrefix(result, test.prefix) && len(result) > len(test.prefix))
 			}
 		})
 	}
