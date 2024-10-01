@@ -16,13 +16,36 @@ FROM builder-runner AS builder
 COPY . /stackrox
 WORKDIR /stackrox/operator
 
-ARG MAIN_IMAGE_TAG
+ARG OPERATOR_IMAGE_TAG
 ARG OPERATOR_IMAGE_DIGEST
 ARG OPERATOR_IMAGE_REPO
 
-RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
+ARG RELATED_IMAGE_MAIN
+ENV RELATED_IMAGE_MAIN=$RELATED_IMAGE_MAIN
+ARG RELATED_IMAGE_SCANNER
+ENV RELATED_IMAGE_SCANNER=$RELATED_IMAGE_SCANNER
+ARG RELATED_IMAGE_SCANNER_DB
+ENV RELATED_IMAGE_SCANNER_DB=$RELATED_IMAGE_SCANNER_DB
+ARG RELATED_IMAGE_SCANNER_SLIM
+ENV RELATED_IMAGE_SCANNER_SLIM=$RELATED_IMAGE_SCANNER_SLIM
+ARG RELATED_IMAGE_SCANNER_DB_SLIM
+ENV RELATED_IMAGE_SCANNER_DB_SLIM=$RELATED_IMAGE_SCANNER_DB_SLIM
+ARG RELATED_IMAGE_SCANNER_V4
+ENV RELATED_IMAGE_SCANNER_V4=$RELATED_IMAGE_SCANNER_V4
+ARG RELATED_IMAGE_SCANNER_V4_DB
+ENV RELATED_IMAGE_SCANNER_V4_DB=$RELATED_IMAGE_SCANNER_V4_DB
+ARG RELATED_IMAGE_COLLECTOR_SLIM
+ENV RELATED_IMAGE_COLLECTOR_SLIM=$RELATED_IMAGE_COLLECTOR_SLIM
+ARG RELATED_IMAGE_COLLECTOR_FULL
+ENV RELATED_IMAGE_COLLECTOR_FULL=$RELATED_IMAGE_COLLECTOR_FULL
+ARG RELATED_IMAGE_ROXCTL
+ENV RELATED_IMAGE_ROXCTL=$RELATED_IMAGE_ROXCTL
+ARG RELATED_IMAGE_CENTRAL_DB
+ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 
-ENV VERSION=$MAIN_IMAGE_TAG
+RUN if [[ "$OPERATOR_IMAGE_TAG" == "" ]]; then >&2 echo "error: required OPERATOR_IMAGE_TAG arg is unset"; exit 6; fi
+
+ENV VERSION=$OPERATOR_IMAGE_TAG
 ENV ROX_PRODUCT_BRANDING=RHACS_BRANDING
 
 # Reset GOFLAGS='-mod=vendor' value which comes by default in openshift-golang-builder and causes build errors like
@@ -37,7 +60,6 @@ RUN mkdir -p build/ && \
       --use-version "${VERSION}" \
       --first-version 3.62.0 \
       --operator-image "${OPERATOR_IMAGE_REPO}:${OPERATOR_IMAGE_DIGEST}" \
-      --no-related-images \
       --add-supported-arch amd64 \
       --add-supported-arch arm64 \
       --add-supported-arch ppc64le \
@@ -47,7 +69,7 @@ RUN mkdir -p build/ && \
 
 FROM scratch
 
-ARG MAIN_IMAGE_TAG
+ARG OPERATOR_IMAGE_TAG
 
 # Enterprise Contract labels.
 LABEL com.redhat.component="rhacs-operator-bundle-container"
@@ -64,7 +86,7 @@ LABEL summary="Operator Bundle Image for Red Hat Advanced Cluster Security for K
 LABEL url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c"
 LABEL vendor="Red Hat, Inc."
 # We must set version label to prevent inheriting value set in the base stage.
-LABEL version="${MAIN_IMAGE_TAG}"
+LABEL version="${OPERATOR_IMAGE_TAG}"
 # Release label is required by EC although has no practical semantics.
 # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
 LABEL release="1"
