@@ -112,6 +112,30 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 }
 
 func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.GetExternalNetworkFlowsRequest) (*v1.GetExternalNetworkFlowsResponse, error) {
+	// verify SAC for the requested deployment.
+	// elevate to get the deployment, then verify the provided
+	// context has access.
+
+	elevatedCtx := sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment),
+		),
+	)
+
+	deployment, found, err := s.deployments.GetDeployment(elevatedCtx, request.GetDeploymentId())
+	if err != nil || !found {
+		return nil, err
+	}
+
+	allowed, err := networkGraphSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...)
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	// confirmed access, proceed to access flows for the given deployment
+
 	flowStore, err := s.getFlowStore(ctx, request.GetClusterId())
 	if err != nil {
 		return nil, err
