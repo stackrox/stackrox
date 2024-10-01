@@ -84,10 +84,13 @@ export type ComplianceScanConfigurationStatus = {
 // @TODO: This may change and be moved around depending on how backend implements it.
 export type ComplianceReportSnapshot = {
     reportJobId: string;
+    scanConfigId: string;
+    name: string;
+    description?: string;
     reportStatus: ReportStatus;
+    reportData: ComplianceScanConfigurationStatus;
     user: SlimUser;
     isDownloadAvailable: boolean;
-    scanConfig: ComplianceScanConfigurationStatus;
 };
 
 export type ListComplianceScanConfigurationsResponse = {

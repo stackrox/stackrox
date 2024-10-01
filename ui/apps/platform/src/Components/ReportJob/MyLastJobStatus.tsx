@@ -4,44 +4,44 @@ import { Spinner } from '@patternfly/react-core';
 import { ReportSnapshot } from 'services/ReportsService.types';
 import ReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobStatus';
 import { onDownloadReport } from 'Components/ReportJob/utils';
+import { ComplianceReportSnapshot } from 'services/ComplianceScanConfigurationService';
 
-type MyLastReportJobStatusProps = {
-    reportSnapshot: ReportSnapshot | null | undefined;
-    isLoadingReportSnapshots: boolean;
+type MyLastJobStatusProps = {
+    snapshot: ReportSnapshot | ComplianceReportSnapshot | null | undefined;
+    isLoadingSnapshots: boolean;
     currentUserId: string;
     baseDownloadURL: string;
 };
 
-function MyLastReportJobStatus({
-    reportSnapshot,
-    isLoadingReportSnapshots,
+function MyLastJobStatus({
+    snapshot,
+    isLoadingSnapshots,
     currentUserId,
     baseDownloadURL,
-}: MyLastReportJobStatusProps) {
+}: MyLastJobStatusProps) {
     // reportSnapshot is undefined when initially fetching reportSnapshots
-    if (isLoadingReportSnapshots && reportSnapshot === undefined) {
+    if (isLoadingSnapshots && snapshot === undefined) {
         return <Spinner size="md" aria-label="Fetching my last job status" />;
     }
 
-    if (!reportSnapshot) {
+    if (!snapshot) {
         return 'None';
     }
 
     const onDownloadHandler = () => {
-        const { completedAt } = reportSnapshot.reportStatus;
-        const { name } = reportSnapshot;
-        const { reportJobId } = reportSnapshot;
+        const { completedAt } = snapshot.reportStatus;
+        const { reportJobId, name } = snapshot;
         return onDownloadReport({ reportJobId, name, completedAt, baseDownloadURL });
     };
 
     return (
         <ReportJobStatus
-            reportStatus={reportSnapshot.reportStatus}
-            isDownloadAvailable={reportSnapshot.isDownloadAvailable}
-            areDownloadActionsDisabled={currentUserId !== reportSnapshot.user.id}
+            reportStatus={snapshot.reportStatus}
+            isDownloadAvailable={snapshot.isDownloadAvailable}
+            areDownloadActionsDisabled={currentUserId !== snapshot.user.id}
             onDownload={onDownloadHandler}
         />
     );
 }
 
-export default MyLastReportJobStatus;
+export default MyLastJobStatus;

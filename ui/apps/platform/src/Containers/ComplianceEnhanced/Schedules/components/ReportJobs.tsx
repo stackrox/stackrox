@@ -28,6 +28,9 @@ function createMockData(scanConfig: ComplianceScanConfigurationStatus) {
     const snapshots: ComplianceReportSnapshot[] = [
         {
             reportJobId: 'ab1c03ae-9707-43d1-932d-f948afb67b53',
+            scanConfigId: scanConfig.id,
+            name: scanConfig.scanName,
+            description: scanConfig.scanConfig.description,
             reportStatus: {
                 completedAt: '2024-08-27T00:01:40.569402380Z',
                 errorMsg:
@@ -36,23 +39,23 @@ function createMockData(scanConfig: ComplianceScanConfigurationStatus) {
                 reportRequestType: 'SCHEDULED',
                 runState: 'FAILURE',
             },
+            reportData: scanConfig,
             user: {
                 id: 'sso:3e30efee-45f0-49d3-aec1-2861fcb3faf6:c02da449-f1c9-4302-afc7-3cbf450f2e0c',
                 name: 'Test User',
             },
             isDownloadAvailable: false,
-            scanConfig,
         },
     ];
     return snapshots;
 }
 
 function getJobId(snapshot: ComplianceReportSnapshot) {
-    return snapshot.scanConfig.id;
+    return snapshot.scanConfigId;
 }
 
 function getConfigName(snapshot: ComplianceReportSnapshot) {
-    return snapshot.scanConfig.scanName;
+    return snapshot.name;
 }
 
 type ReportJobsProps = {
@@ -148,7 +151,7 @@ function ReportJobs({ scanConfig, isComplianceReportingEnabled }: ReportJobsProp
                                     />
                                     <Divider component="div" className="pf-v5-u-my-md" />
                                     <ConfigDetails
-                                        scanConfig={snapshot.scanConfig}
+                                        scanConfig={snapshot.reportData}
                                         isComplianceReportingEnabled={isComplianceReportingEnabled}
                                     />
                                 </CardBody>
