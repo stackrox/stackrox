@@ -17,6 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/protocompat"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -47,7 +50,6 @@ type SecurityPolicySpec struct {
 	Severity           string               `json:"severity,omitempty"`
 	EnforcementActions []EnforcementAction  `json:"enforcementActions,omitempty"`
 	Notifiers          []string             `json:"notifiers,omitempty"`
-	PolicyVersion      string               `json:"policyVersion,omitempty"`
 	PolicySections     []PolicySection      `json:"policySections,omitempty"`
 	MitreAttackVectors []MitreAttackVectors `json:"mitreAttackVectors,omitempty"`
 	CriteriaLocked     bool                 `json:"criteriaLocked,omitempty"`
@@ -55,6 +57,15 @@ type SecurityPolicySpec struct {
 	IsDefault          bool                 `json:"isDefault,omitempty"`
 }
 
+// IsValid runs validation checks against the SecurityPolicy spec
+func (p SecurityPolicySpec) IsValid() (bool, error) {
+	if p.IsDefault {
+		return false, errors.New("isDefault must be false")
+	}
+	return true, nil
+}
+
+// ToProtobuf converts the SecurityPolicy spec into policy proto
 func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 	proto := storage.Policy{
 		Description:        p.Description,
@@ -63,7 +74,7 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		Disabled:           p.Disabled,
 		Categories:         p.Categories,
 		Notifiers:          p.Notifiers,
-		PolicyVersion:      p.PolicyVersion,
+		PolicyVersion:      policyversion.CurrentVersion().String(),
 		CriteriaLocked:     p.CriteriaLocked,
 		MitreVectorsLocked: p.MitreVectorsLocked,
 		IsDefault:          p.IsDefault,
@@ -79,6 +90,10 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 	for _, exclusion := range p.Exclusions {
 		protoExclusion := storage.Exclusion{
 			Name: exclusion.Name,
+		}
+
+		if protoTS, err := protocompat.ParseRFC3339NanoTimestamp(exclusion.Expiration); err == nil {
+			protoExclusion.Expiration = protoTS
 		}
 
 		if exclusion.Deployment != (Deployment{}) {
@@ -100,6 +115,7 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 					Value: scope.Label.Value,
 				}
 			}
+
 		}
 
 		proto.Exclusions = append(proto.Exclusions, &protoExclusion)
@@ -181,7 +197,7 @@ type Exclusion struct {
 	Name       string     `json:"name,omitempty"`
 	Deployment Deployment `json:"deployment,omitempty"`
 	Image      Image      `json:"image,omitempty"`
-	//TODO: Expiration
+	Expiration string     `json:"expiration,omitempty"`
 }
 
 type Deployment struct {

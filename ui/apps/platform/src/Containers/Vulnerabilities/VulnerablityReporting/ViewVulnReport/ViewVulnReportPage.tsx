@@ -45,9 +45,9 @@ import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import usePermissions from 'hooks/usePermissions';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 
-import ReportJobsHelpAction from 'Components/ReportJobsHelpAction';
-import { JobContextTab } from 'types/reportJob';
-import { ensureJobContextTab } from 'utils/reportJob';
+import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
+import { JobContextTab } from 'Components/ReportJob/types';
+import { ensureJobContextTab } from 'Components/ReportJob/utils';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
@@ -215,7 +215,7 @@ function ViewVulnReportPage() {
                                     </DropdownItem>,
                                     <DropdownSeparator key="separator" />,
                                     <DropdownItem
-                                        key="Send report now"
+                                        key="Send report"
                                         component="button"
                                         onClick={() => runReport(reportId, 'EMAIL')}
                                         isDisabled={
@@ -229,7 +229,7 @@ function ViewVulnReportPage() {
                                                 : ''
                                         }
                                     >
-                                        Send report now
+                                        Send report
                                     </DropdownItem>,
                                     <DropdownItem
                                         key="Generate download"

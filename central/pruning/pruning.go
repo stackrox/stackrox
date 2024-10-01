@@ -50,8 +50,6 @@ import (
 )
 
 const (
-	pruneInterval      = 1 * time.Hour
-	orphanWindow       = 30 * time.Minute
 	baselineBatchLimit = 10000
 	clusterGCFreq      = 24 * time.Hour
 	logImbueGCFreq     = 24 * time.Hour
@@ -75,6 +73,9 @@ var (
 	lastClusterPruneTime  time.Time
 	lastLogImbuePruneTime time.Time
 	pruningTimeout        = env.PostgresDefaultPruningStatementTimeout.DurationSetting()
+
+	pruneInterval = env.PruneInterval.DurationSetting()
+	orphanWindow  = env.PruneOrphanedWindow.DurationSetting()
 )
 
 // GarbageCollector implements a generic garbage collection mechanism.

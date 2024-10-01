@@ -23,13 +23,15 @@ function PlatformCvesPage() {
         <>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Switch>
-                <Route path={vulnerabilitiesPlatformCveSinglePath} component={PlatformCvePage} />
-                <Route path={vulnerabilitiesPlatformClusterSinglePath} component={ClusterPage} />
-                <Route
-                    exact
-                    path={vulnerabilitiesPlatformCvesPath}
-                    component={PlatformCvesOverviewPage}
-                />
+                <Route path={vulnerabilitiesPlatformCveSinglePath}>
+                    <PlatformCvePage />
+                </Route>
+                <Route path={vulnerabilitiesPlatformClusterSinglePath}>
+                    <ClusterPage />
+                </Route>
+                <Route exact path={vulnerabilitiesPlatformCvesPath}>
+                    <PlatformCvesOverviewPage />
+                </Route>
                 <Route>
                     <PageSection variant="light">
                         <PageTitle title="Platform CVEs - Not Found" />

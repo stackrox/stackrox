@@ -47,6 +47,16 @@ func (rp *RequestParams) HasPathIn(patterns []string) bool {
 	return false
 }
 
+// HasUserAgentWith returns true if UserAgent contains any of the sub-strings.
+func (rp *RequestParams) HasUserAgentWith(substrings []string) bool {
+	for _, pattern := range substrings {
+		if strings.Contains(rp.UserAgent, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
 // Is checks wether the request targets the service method: either gRPC or HTTP.
 func (rp *RequestParams) Is(s *ServiceMethod) bool {
 	return rp.Method == s.GRPCMethod || (rp.Method == s.HTTPMethod && rp.PathMatches(s.HTTPPath))

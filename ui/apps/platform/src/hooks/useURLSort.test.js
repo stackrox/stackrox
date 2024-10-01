@@ -6,14 +6,6 @@ import cloneDeep from 'lodash/cloneDeep';
 
 import useURLSort from './useURLSort';
 
-const params = {
-    sortFields: ['Name', 'Status'],
-    defaultSortOption: {
-        field: 'Name',
-        direction: 'desc',
-    },
-};
-
 const wrapper = ({ children }) => {
     const history = createMemoryHistory();
 
@@ -33,6 +25,14 @@ function actAndRunTicks(callback) {
 
 describe('useURLSort', () => {
     describe('when using URL sort with single sort options', () => {
+        const params = {
+            sortFields: ['Name', 'Status'],
+            defaultSortOption: {
+                field: 'Name',
+                direction: 'desc',
+            },
+        };
+
         it('should get the sort options from URL by default', () => {
             const { result } = renderHook(() => useURLSort(params), { wrapper });
 
@@ -109,7 +109,7 @@ describe('useURLSort', () => {
 
         it('should retain the passed `aggregateBy` value when sorting', () => {
             const sortParams = cloneDeep(params);
-            const aggregateBy = { distinct: true, aggregateFunc: 'count' };
+            const aggregateBy = { distinct: 'true', aggregateFunc: 'count' };
             sortParams.defaultSortOption.aggregateBy = aggregateBy;
             const { result } = renderHook(() => useURLSort(sortParams), { wrapper });
 
@@ -125,6 +125,16 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.field).toEqual('Name');
             expect(result.current.sortOption.reversed).toEqual(false);
             expect(result.current.sortOption.aggregateBy.distinct).toEqual(true);
+            expect(result.current.sortOption.aggregateBy.aggregateFunc).toEqual('count');
+
+            actAndRunTicks(() => {
+                result.current
+                    .getSortParams('Name', { distinct: 'false', aggregateFunc: 'count' })
+                    .onSort(null, null, 'asc');
+            });
+            expect(result.current.sortOption.field).toEqual('Name');
+            expect(result.current.sortOption.reversed).toEqual(false);
+            expect(result.current.sortOption.aggregateBy.distinct).toEqual(false);
             expect(result.current.sortOption.aggregateBy.aggregateFunc).toEqual('count');
 
             actAndRunTicks(() => {
@@ -149,7 +159,7 @@ describe('useURLSort', () => {
             expect(result.current.getSortParams('Status').columnIndex).toEqual(1);
             expect(result.current.getSortParams('Status').sortBy.index).toEqual(0);
             expect(result.current.getSortParams('Status').sortBy.direction).toEqual('desc');
-            expect(result.current.getSortParams('Bogus').columnIndex).toEqual(undefined);
+            expect(result.current.getSortParams('Bogus').columnIndex).toEqual(-1);
             expect(result.current.getSortParams('Bogus').sortBy.index).toEqual(0);
             expect(result.current.getSortParams('Bogus').sortBy.direction).toEqual('desc');
 
@@ -165,7 +175,7 @@ describe('useURLSort', () => {
             expect(result.current.getSortParams('Status').columnIndex).toEqual(1);
             expect(result.current.getSortParams('Status').sortBy.index).toEqual(1);
             expect(result.current.getSortParams('Status').sortBy.direction).toEqual('desc');
-            expect(result.current.getSortParams('Bogus').columnIndex).toEqual(undefined);
+            expect(result.current.getSortParams('Bogus').columnIndex).toEqual(-1);
             expect(result.current.getSortParams('Bogus').sortBy.index).toEqual(1);
             expect(result.current.getSortParams('Bogus').sortBy.direction).toEqual('desc');
 
@@ -176,14 +186,204 @@ describe('useURLSort', () => {
             expect(result.current.sortOption.field).toEqual('Bogus');
             expect(result.current.sortOption.reversed).toEqual(false);
             expect(result.current.getSortParams('Name').columnIndex).toEqual(0);
-            expect(result.current.getSortParams('Name').sortBy.index).toEqual(undefined);
+            expect(result.current.getSortParams('Name').sortBy.index).toEqual(-1);
             expect(result.current.getSortParams('Name').sortBy.direction).toEqual('asc');
             expect(result.current.getSortParams('Status').columnIndex).toEqual(1);
-            expect(result.current.getSortParams('Status').sortBy.index).toEqual(undefined);
+            expect(result.current.getSortParams('Status').sortBy.index).toEqual(-1);
             expect(result.current.getSortParams('Status').sortBy.direction).toEqual('asc');
-            expect(result.current.getSortParams('Bogus').columnIndex).toEqual(undefined);
-            expect(result.current.getSortParams('Bogus').sortBy.index).toEqual(undefined);
+            expect(result.current.getSortParams('Bogus').columnIndex).toEqual(-1);
+            expect(result.current.getSortParams('Bogus').sortBy.index).toEqual(-1);
             expect(result.current.getSortParams('Bogus').sortBy.direction).toEqual('asc');
+        });
+    });
+
+    describe('when using URL sort with multiple sort options', () => {
+        const params = {
+            sortFields: [
+                'Name',
+                'Status',
+                ['Critical severity count', 'Low severity count'],
+                'Created date',
+            ],
+            defaultSortOption: {
+                field: 'Name',
+                direction: 'desc',
+            },
+        };
+
+        it('should get the sort options from URL by default', () => {
+            const { result } = renderHook(() => useURLSort(params), { wrapper });
+
+            expect(result.current.sortOption.field).toEqual('Name');
+            expect(result.current.sortOption.reversed).toEqual(true);
+        });
+
+        it('should return the default sort option when an empty multi field sort option is provided', () => {
+            const { result } = renderHook(() => useURLSort(params), { wrapper });
+
+            expect(result.current.sortOption.field).toEqual('Name');
+            expect(result.current.sortOption.reversed).toEqual(true);
+
+            actAndRunTicks(() => {
+                result.current.getSortParams('Severity', []).onSort(null, null, 'asc');
+            });
+
+            expect(result.current.sortOption.field).toEqual('Name');
+            expect(result.current.sortOption.reversed).toEqual(true);
+        });
+
+        it('should change sorting fields and directions', () => {
+            const { result } = renderHook(() => useURLSort(params), { wrapper });
+
+            expect(result.current.sortOption.field).toEqual('Name');
+            expect(result.current.sortOption.reversed).toEqual(true);
+
+            // Change to single field sort
+            actAndRunTicks(() => {
+                result.current.getSortParams('Status').onSort(null, null, 'desc');
+            });
+
+            expect(result.current.sortOption.field).toEqual('Status');
+            expect(result.current.sortOption.reversed).toEqual(true);
+
+            // Change to subset of multi field sort
+            actAndRunTicks(() => {
+                result.current
+                    .getSortParams('Severity', [{ field: 'Critical severity count' }])
+                    .onSort(null, null, 'asc');
+            });
+
+            expect(result.current.sortOption.length).toEqual(1);
+            expect(result.current.sortOption[0].field).toEqual('Critical severity count');
+            expect(result.current.sortOption[0].reversed).toEqual(false);
+
+            // A multi field sort option that matches a single field sort field will match
+            // and return the sort option in array form
+            actAndRunTicks(() => {
+                result.current.getSortParams('Name', [{ field: 'Name' }]).onSort(null, null, 'asc');
+            });
+
+            expect(result.current.sortOption.length).toEqual(1);
+            expect(result.current.sortOption[0].field).toEqual('Name');
+            expect(result.current.sortOption[0].reversed).toEqual(false);
+
+            // Change to multi field sort with aggregateBy using multi sort function parameters
+            actAndRunTicks(() => {
+                result.current
+                    .getSortParams('Severity', [
+                        {
+                            field: 'Critical severity count',
+                            aggregateBy: { distinct: 'true', aggregateFunc: 'max' },
+                        },
+                        {
+                            field: 'Low severity count',
+                            aggregateBy: { distinct: 'true', aggregateFunc: 'max' },
+                        },
+                    ])
+                    .onSort(null, null, 'asc');
+            });
+
+            expect(result.current.sortOption.length).toEqual(2);
+            expect(result.current.sortOption[0].field).toEqual('Critical severity count');
+            expect(result.current.sortOption[0].reversed).toEqual(false);
+            expect(result.current.sortOption[0].aggregateBy.distinct).toEqual(true);
+            expect(result.current.sortOption[0].aggregateBy.aggregateFunc).toEqual('max');
+            expect(result.current.sortOption[1].field).toEqual('Low severity count');
+            expect(result.current.sortOption[1].reversed).toEqual(false);
+            expect(result.current.sortOption[1].aggregateBy.distinct).toEqual(true);
+            expect(result.current.sortOption[1].aggregateBy.aggregateFunc).toEqual('max');
+        });
+
+        it('should return the correct PatternFly sort parameters via the `getSortParams` function', () => {
+            const { result } = renderHook(() => useURLSort(params), { wrapper });
+
+            // Test handling of both provided fields, and a bogus fields that do not exist in the sortFields array
+
+            expect(result.current.sortOption.field).toEqual('Name');
+            expect(result.current.sortOption.reversed).toEqual(true);
+            expect(result.current.getSortParams('Name').columnIndex).toEqual(0);
+            expect(result.current.getSortParams('Name').sortBy.index).toEqual(0);
+            expect(result.current.getSortParams('Name').sortBy.direction).toEqual('desc');
+            expect(result.current.getSortParams('Status').columnIndex).toEqual(1);
+            expect(result.current.getSortParams('Status').sortBy.index).toEqual(0);
+            expect(result.current.getSortParams('Status').sortBy.direction).toEqual('desc');
+            expect(result.current.getSortParams('Bogus').columnIndex).toEqual(-1);
+            expect(result.current.getSortParams('Bogus').sortBy.index).toEqual(0);
+            expect(result.current.getSortParams('Bogus').sortBy.direction).toEqual('desc');
+            const criticalSeveritySortParams = result.current.getSortParams('Severity', [
+                { field: 'Critical severity count' },
+            ]);
+            expect(criticalSeveritySortParams.columnIndex).toEqual(2);
+            expect(criticalSeveritySortParams.sortBy.index).toEqual(0);
+            expect(criticalSeveritySortParams.sortBy.direction).toEqual('desc');
+            const bogusSeveritySortParams = result.current.getSortParams('Severity', [
+                { field: 'Bogus severity count' },
+            ]);
+            expect(bogusSeveritySortParams.columnIndex).toEqual(-1);
+            expect(bogusSeveritySortParams.sortBy.index).toEqual(0);
+            expect(bogusSeveritySortParams.sortBy.direction).toEqual('desc');
+
+            actAndRunTicks(() => {
+                result.current
+                    .getSortParams('Severity', [{ field: 'Critical severity count' }])
+                    .onSort(null, null, 'asc');
+            });
+
+            expect(result.current.sortOption.length).toEqual(1);
+            expect(result.current.sortOption[0].field).toEqual('Critical severity count');
+            expect(result.current.sortOption[0].reversed).toEqual(false);
+            expect(result.current.getSortParams('Name').columnIndex).toEqual(0);
+            expect(result.current.getSortParams('Name').sortBy.index).toEqual(2);
+            expect(result.current.getSortParams('Name').sortBy.direction).toEqual('asc');
+            expect(result.current.getSortParams('Status').columnIndex).toEqual(1);
+            expect(result.current.getSortParams('Status').sortBy.index).toEqual(2);
+            expect(result.current.getSortParams('Status').sortBy.direction).toEqual('asc');
+            expect(result.current.getSortParams('Bogus').columnIndex).toEqual(-1);
+            expect(result.current.getSortParams('Bogus').sortBy.index).toEqual(2);
+            expect(result.current.getSortParams('Bogus').sortBy.direction).toEqual('asc');
+            expect(
+                result.current.getSortParams('Severity', [{ field: 'Critical severity count' }])
+                    .columnIndex
+            ).toEqual(2);
+            expect(
+                result.current.getSortParams('Severity', [{ field: 'Critical severity count' }])
+                    .sortBy.index
+            ).toEqual(2);
+            expect(
+                result.current.getSortParams('Severity', [{ field: 'Critical severity count' }])
+                    .sortBy.direction
+            ).toEqual('asc');
+
+            actAndRunTicks(() => {
+                result.current
+                    .getSortParams('Bogus', [{ field: 'Bogus severity count' }])
+                    .onSort(null, null, 'asc');
+            });
+
+            expect(result.current.sortOption.length).toEqual(1);
+            expect(result.current.sortOption[0].field).toEqual('Bogus severity count');
+            expect(result.current.sortOption[0].reversed).toEqual(false);
+            expect(result.current.getSortParams('Name').columnIndex).toEqual(0);
+            expect(result.current.getSortParams('Name').sortBy.index).toEqual(-1);
+            expect(result.current.getSortParams('Name').sortBy.direction).toEqual('asc');
+            expect(result.current.getSortParams('Status').columnIndex).toEqual(1);
+            expect(result.current.getSortParams('Status').sortBy.index).toEqual(-1);
+            expect(result.current.getSortParams('Status').sortBy.direction).toEqual('asc');
+            expect(result.current.getSortParams('Bogus').columnIndex).toEqual(-1);
+            expect(result.current.getSortParams('Bogus').sortBy.index).toEqual(-1);
+            expect(result.current.getSortParams('Bogus').sortBy.direction).toEqual('asc');
+            expect(
+                result.current.getSortParams('Severity', [{ field: 'Critical severity count' }])
+                    .columnIndex
+            ).toEqual(2);
+            expect(
+                result.current.getSortParams('Severity', [{ field: 'Critical severity count' }])
+                    .sortBy.index
+            ).toEqual(-1);
+            expect(
+                result.current.getSortParams('Severity', [{ field: 'Critical severity count' }])
+                    .sortBy.direction
+            ).toEqual('asc');
         });
     });
 });

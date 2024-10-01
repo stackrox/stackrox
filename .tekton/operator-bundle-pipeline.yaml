@@ -106,10 +106,64 @@ spec:
     description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
     name: oci-artifact-expires-after
     type: string
-  - name: image-tag-makefile-directory
-    description: Directory in which to run "make tag" command.
-    default: "operator"
+  - name: operator-image-repo
+    description: Image repository for the StackRox Operator.
     type: string
+
+  - name: main-image-repo
+    description: Image repository for the main image.
+    type: string
+    default: "quay.io/rhacs-eng/main"
+
+  - name: scanner-image-repo
+    description: Image repository for the Scanner V2 image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner"
+
+  - name: scanner-db-image-repo
+    description: Image repository for the Scanner V2 DB image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner-db"
+
+  - name: scanner-slim-image-repo
+    description: Image repository for the Scanner V2 slim image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner-slim"
+
+  - name: scanner-db-slim-image-repo
+    description: Image repository for the Scanner V2 DB slim image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner-db-slim"
+
+  - name: scanner-v4-image-repo
+    description: Image repository for the Scanner V4 image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner-v4"
+
+  - name: scanner-v4-db-image-repo
+    description: Image repository for the Scanner V4 DB image.
+    type: string
+    default: "quay.io/rhacs-eng/scanner-v4-db"
+
+  - name: collector-slim-image-repo
+    description: Image repository for the collector slim image.
+    type: string
+    default: "quay.io/rhacs-eng/collector-slim"
+
+  - name: collector-full-image-repo
+    description: Image repository for the collector full image.
+    type: string
+    default: "quay.io/rhacs-eng/collector"
+
+  - name: roxctl-image-repo
+    description: Image repository for the roxctl image.
+    type: string
+    default: "quay.io/rhacs-eng/roxctl"
+
+  - name: central-db-image-repo
+    description: Image repository for the Central DB image.
+    type: string
+    default: "quay.io/rhacs-eng/central-db"
 
   results:
   - description: ""
@@ -130,6 +184,7 @@ spec:
 
   workspaces:
   - name: git-auth
+  - name: quay-auth
 
   tasks:
 
@@ -185,16 +240,53 @@ spec:
     - name: basic-auth
       workspace: git-auth
 
-  - name: determine-image-tag
+  - name: determine-operator-image-tag
     params:
     - name: TAG_SUFFIX
       value: $(params.output-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: MAKEFILE_DIRECTORY
-      value: $(params.image-tag-makefile-directory)
+      value: ./operator
     taskRef:
       name: determine-image-tag
+
+  # TODO(ROX-26471): This is currently needed, since some images do not
+  # seem to be available with the "-fast" suffix added.
+  # Once they are pushed with the currect suffix, we can remove this step
+  # and reuse the results of the `determine-main-image-tag` task everywhere.
+  - name: determine-main-image-tag-unsuffixed
+    params:
+    - name: TAG_SUFFIX
+      value: ""
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: MAKEFILE_DIRECTORY
+      value: "."
+    taskRef:
+      name: determine-image-tag
+
+  - name: determine-main-image-tag
+    params:
+    - name: TAG_SUFFIX
+      value: $(params.output-tag-suffix)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: MAKEFILE_DIRECTORY
+      value: "."
+    taskRef:
+      name: determine-image-tag
+
+  - name: determine-scanner-image-tag
+    params:
+    - name: TAG_SUFFIX
+      value: $(params.output-tag-suffix)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: FILE_PATH
+      value: "./SCANNER_VERSION"
+    taskRef:
+      name: retrieve-image-tag-from-file
 
   - name: prefetch-dependencies
     params:
@@ -216,11 +308,299 @@ spec:
         value: task
       resolver: bundles
 
+  - name: wait-for-operator-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.operator-image-repo):$(tasks.determine-operator-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: wait-for-main-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.main-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: wait-for-scanner-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.scanner-image-repo):$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: wait-for-scanner-db-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.scanner-db-image-repo):$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: wait-for-scanner-slim-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.scanner-slim-image-repo):$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: wait-for-scanner-db-slim-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.scanner-db-slim-image-repo):$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: wait-for-scanner-v4-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.scanner-v4-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: wait-for-scanner-v4-db-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.scanner-v4-db-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: wait-for-collector-slim-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.collector-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: wait-for-collector-full-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.collector-full-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: wait-for-roxctl-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.roxctl-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: wait-for-central-db-image
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE
+      value: "$(params.central-db-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: wait-for-image
+
+  - name: determine-operator-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.operator-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-operator-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-operator-image
+
+  - name: determine-main-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.main-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-main-image
+
+  - name: determine-scanner-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-image
+
+  - name: determine-scanner-db-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-db-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-db-image
+
+  - name: determine-scanner-slim-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-slim-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-slim-image
+
+  - name: determine-scanner-db-slim-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-db-slim-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-db-slim-image
+
+  - name: determine-scanner-v4-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-v4-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-v4-image
+
+  - name: determine-scanner-v4-db-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.scanner-v4-db-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-scanner-v4-db-image
+
+  - name: determine-collector-slim-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.collector-slim-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-collector-slim-image
+
+  - name: determine-collector-full-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.collector-full-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-collector-full-image
+
+  - name: determine-roxctl-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.roxctl-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-roxctl-image
+
+  - name: determine-central-db-image-digest
+    workspaces:
+    - name: pull-secret
+      workspace: quay-auth
+    params:
+    - name: IMAGE_REPOSITORY
+      value: "$(params.central-db-image-repo)"
+    - name: IMAGE_TAG
+      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+    taskRef:
+      name: determine-image-digest
+    runAfter:
+      - wait-for-central-db-image
+
   - name: build-container
     params:
     - name: IMAGE
       # Note the operator bundle tag is prefixed with "v".
-      value: $(params.output-image-repo):v$(tasks.determine-image-tag.results.IMAGE_TAG)
+      value: $(params.output-image-repo):v$(tasks.determine-operator-image-tag.results.IMAGE_TAG)
     - name: DOCKERFILE
       value: $(params.dockerfile)
     - name: CONTEXT
@@ -235,7 +615,21 @@ spec:
       value: $(tasks.clone-repository.results.commit)
     - name: BUILD_ARGS
       value:
-      - MAIN_IMAGE_TAG=$(tasks.determine-image-tag.results.IMAGE_TAG)
+      - OPERATOR_IMAGE_TAG=$(tasks.determine-operator-image-tag.results.IMAGE_TAG)
+      - OPERATOR_IMAGE_DIGEST=$(tasks.determine-operator-image-digest.results.IMAGE_DIGEST)
+      - OPERATOR_IMAGE_REPO=$(params.operator-image-repo)
+      - RELATED_IMAGE_MAIN="$(params.main-image-repo):$(tasks.determine-main-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER="$(params.scanner-image-repo):$(tasks.determine-scanner-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER_DB="$(params.scanner-db-image-repo):$(tasks.determine-scanner-db-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER_SLIM="$(params.scanner-slim-image-repo):$(tasks.determine-scanner-slim-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER_DB_SLIM="$(params.scanner-db-slim-image-repo):$(tasks.determine-scanner-db-slim-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER_V4="$(params.scanner-v4-image-repo):$(tasks.determine-scanner-v4-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_SCANNER_V4_DB="$(params.scanner-v4-db-image-repo):$(tasks.determine-scanner-v4-db-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_COLLECTOR_SLIM="$(params.collector-slim-image-repo):$(tasks.determine-collector-slim-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_COLLECTOR_FULL="$(params.collector-full-image-repo):$(tasks.determine-collector-full-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_ROXCTL="$(params.roxctl-image-repo):$(tasks.determine-roxctl-image-digest.results.IMAGE_DIGEST)"
+      - RELATED_IMAGE_CENTRAL_DB="$(params.central-db-image-repo):$(tasks.determine-central-db-image-digest.results.IMAGE_DIGEST)"
+
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT

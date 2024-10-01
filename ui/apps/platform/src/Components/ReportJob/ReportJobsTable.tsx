@@ -18,7 +18,7 @@ import { saveFile } from 'services/DownloadService';
 import { getDateTime } from 'utils/dateUtils';
 import ReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobStatus';
 import { ComplianceScanSnapshot } from 'services/ComplianceScanConfigurationService';
-import EmptyStateTemplate from './EmptyStateTemplate';
+import EmptyStateTemplate from '../EmptyStateTemplate';
 
 export type ReportJobsTableProps<T> = {
     snapshots: T[];

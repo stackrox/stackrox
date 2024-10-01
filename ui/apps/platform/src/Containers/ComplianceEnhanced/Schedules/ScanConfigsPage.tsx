@@ -32,7 +32,7 @@ function ScanConfigsPage() {
                     if (pageAction === 'create' && hasWriteAccessForCompliance) {
                         return <CreateScanConfigPage />;
                     }
-                    if (pageAction === undefined) {
+                    if (!pageAction) {
                         return (
                             <ScanConfigsTablePage
                                 hasWriteAccessForCompliance={hasWriteAccessForCompliance}
@@ -42,17 +42,9 @@ function ScanConfigsPage() {
                     return <Redirect to={complianceEnhancedSchedulesPath} />;
                 }}
             />
-            <Route
-                exact
-                path={scanConfigDetailsPath}
-                render={() => {
-                    return (
-                        <ScanConfigDetailPage
-                            hasWriteAccessForCompliance={hasWriteAccessForCompliance}
-                        />
-                    );
-                }}
-            />
+            <Route exact path={scanConfigDetailsPath}>
+                <ScanConfigDetailPage hasWriteAccessForCompliance={hasWriteAccessForCompliance} />
+            </Route>
         </Switch>
     );
 }

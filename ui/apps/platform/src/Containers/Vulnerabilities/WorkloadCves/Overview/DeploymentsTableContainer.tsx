@@ -4,15 +4,17 @@ import { Divider } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
 
 import { getTableUIState } from 'utils/getTableUIState';
 import { getPaginationParams } from 'utils/searchUtils';
+import { SearchFilter } from 'types/search';
 import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { VulnerabilitySeverityLabel } from '../../types';
 
 type DeploymentsTableContainerProps = {
+    searchFilter: SearchFilter;
+    onFilterChange: (searchFilter: SearchFilter) => void;
     filterToolbar: TableEntityToolbarProps['filterToolbar'];
     entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
     rowCount: number;
@@ -24,6 +26,8 @@ type DeploymentsTableContainerProps = {
 };
 
 function DeploymentsTableContainer({
+    searchFilter,
+    onFilterChange,
     filterToolbar,
     entityToggleGroup,
     rowCount,
@@ -33,7 +37,6 @@ function DeploymentsTableContainer({
     isFiltered,
     showCveDetailFields,
 }: DeploymentsTableContainerProps) {
-    const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
@@ -75,7 +78,7 @@ function DeploymentsTableContainer({
                     filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
                     showCveDetailFields={showCveDetailFields}
                     onClearFilters={() => {
-                        setSearchFilter({});
+                        onFilterChange({});
                         pagination.setPage(1);
                     }}
                 />

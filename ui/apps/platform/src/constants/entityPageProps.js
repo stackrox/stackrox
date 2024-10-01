@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
 
 export const entityPagePropTypes = {
     entityId: PropTypes.string.isRequired,
@@ -32,8 +31,6 @@ export const entityListPropTypes = {
     className: PropTypes.string,
     selectedRowId: PropTypes.string,
     query: PropTypes.shape({}),
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
     data: PropTypes.arrayOf(PropTypes.shape({})),
 };
 

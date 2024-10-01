@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import startCase from 'lodash/startCase';
 
 import { searchParams, sortParams, pagingParams } from 'constants/searchParams';
@@ -22,7 +23,8 @@ import WorkflowSidePanel from '../WorkflowSidePanel';
 import EntityComponent from '../Entity/VulnMgmtEntity';
 import ListComponent from './VulnMgmtList';
 
-const WorkflowListPageLayout = ({ location }) => {
+const WorkflowListPageLayout = () => {
+    const location = useLocation();
     const [isExporting, setIsExporting] = useState(false);
 
     const { isDarkMode } = useTheme();

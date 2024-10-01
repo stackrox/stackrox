@@ -230,6 +230,7 @@ function ViolationsTablePage(): ReactElement {
                             getSortParams={getSortParams}
                             columns={columns}
                             searchFilter={searchFilter}
+                            onFilterChange={setSearchFilter}
                             onSearch={onSearch}
                         />
                     </PageSection>

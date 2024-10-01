@@ -60,7 +60,7 @@ function ConfigDetails({ isLoading, error, scanConfig }: ConfigDetailsProps) {
                     scanSchedule={scanConfig.scanConfig.scanSchedule}
                 >
                     <DescriptionListGroup>
-                        <DescriptionListTerm>Last run</DescriptionListTerm>
+                        <DescriptionListTerm>Last scanned</DescriptionListTerm>
                         <DescriptionListDescription>
                             {scanConfig.lastExecutedTime
                                 ? getTimeWithHourMinuteFromISO8601(scanConfig.lastExecutedTime)

@@ -7,7 +7,6 @@ package central
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
-	common "github.com/stackrox/rox/generated/internalapi/common"
 	storage "github.com/stackrox/rox/generated/storage"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -176,6 +175,15 @@ func (m *MsgFromSensor_DeploymentEnhancementResponse) CloneVT() isMsgFromSensor_
 	}
 	r := new(MsgFromSensor_DeploymentEnhancementResponse)
 	r.DeploymentEnhancementResponse = m.DeploymentEnhancementResponse.CloneVT()
+	return r
+}
+
+func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) CloneVT() isMsgFromSensor_Msg {
+	if m == nil {
+		return (*MsgFromSensor_IssueSecuredClusterCertsRequest)(nil)
+	}
+	r := new(MsgFromSensor_IssueSecuredClusterCertsRequest)
+	r.IssueSecuredClusterCertsRequest = m.IssueSecuredClusterCertsRequest.CloneVT()
 	return r
 }
 
@@ -479,20 +487,12 @@ func (m *MsgToSensor_DeploymentEnhancementRequest) CloneVT() isMsgToSensor_Msg {
 	return r
 }
 
-func (m *MsgToSensor_CollectorRuntimeConfig) CloneVT() isMsgToSensor_Msg {
+func (m *MsgToSensor_IssueSecuredClusterCertsResponse) CloneVT() isMsgToSensor_Msg {
 	if m == nil {
-		return (*MsgToSensor_CollectorRuntimeConfig)(nil)
+		return (*MsgToSensor_IssueSecuredClusterCertsResponse)(nil)
 	}
-	r := new(MsgToSensor_CollectorRuntimeConfig)
-	if rhs := m.CollectorRuntimeConfig; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
-			CloneVT() *common.CollectorRuntimeConfig
-		}); ok {
-			r.CollectorRuntimeConfig = vtpb.CloneVT()
-		} else {
-			r.CollectorRuntimeConfig = proto.Clone(rhs).(*common.CollectorRuntimeConfig)
-		}
-	}
+	r := new(MsgToSensor_IssueSecuredClusterCertsResponse)
+	r.IssueSecuredClusterCertsResponse = m.IssueSecuredClusterCertsResponse.CloneVT()
 	return r
 }
 
@@ -1064,6 +1064,31 @@ func (this *MsgFromSensor_DeploymentEnhancementResponse) EqualVT(thatIface isMsg
 		}
 		if q == nil {
 			q = &DeploymentEnhancementResponse{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *MsgFromSensor_IssueSecuredClusterCertsRequest) EqualVT(thatIface isMsgFromSensor_Msg) bool {
+	that, ok := thatIface.(*MsgFromSensor_IssueSecuredClusterCertsRequest)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.IssueSecuredClusterCertsRequest, that.IssueSecuredClusterCertsRequest; p != q {
+		if p == nil {
+			p = &IssueSecuredClusterCertsRequest{}
+		}
+		if q == nil {
+			q = &IssueSecuredClusterCertsRequest{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1809,8 +1834,8 @@ func (this *MsgToSensor_DeploymentEnhancementRequest) EqualVT(thatIface isMsgToS
 	return true
 }
 
-func (this *MsgToSensor_CollectorRuntimeConfig) EqualVT(thatIface isMsgToSensor_Msg) bool {
-	that, ok := thatIface.(*MsgToSensor_CollectorRuntimeConfig)
+func (this *MsgToSensor_IssueSecuredClusterCertsResponse) EqualVT(thatIface isMsgToSensor_Msg) bool {
+	that, ok := thatIface.(*MsgToSensor_IssueSecuredClusterCertsResponse)
 	if !ok {
 		return false
 	}
@@ -1820,20 +1845,14 @@ func (this *MsgToSensor_CollectorRuntimeConfig) EqualVT(thatIface isMsgToSensor_
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.CollectorRuntimeConfig, that.CollectorRuntimeConfig; p != q {
+	if p, q := this.IssueSecuredClusterCertsResponse, that.IssueSecuredClusterCertsResponse; p != q {
 		if p == nil {
-			p = &common.CollectorRuntimeConfig{}
+			p = &IssueSecuredClusterCertsResponse{}
 		}
 		if q == nil {
-			q = &common.CollectorRuntimeConfig{}
+			q = &IssueSecuredClusterCertsResponse{}
 		}
-		if equal, ok := interface{}(p).(interface {
-			EqualVT(*common.CollectorRuntimeConfig) bool
-		}); ok {
-			if !equal.EqualVT(q) {
-				return false
-			}
-		} else if !proto.Equal(p, q) {
+		if !p.EqualVT(q) {
 			return false
 		}
 	}
@@ -2412,6 +2431,27 @@ func (m *MsgFromSensor_DeploymentEnhancementResponse) MarshalToSizedBufferVT(dAt
 		dAtA[i] = 0x1
 		i--
 		dAtA[i] = 0x92
+	}
+	return len(dAtA) - i, nil
+}
+func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.IssueSecuredClusterCertsRequest != nil {
+		size, err := m.IssueSecuredClusterCertsRequest.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x9a
 	}
 	return len(dAtA) - i, nil
 }
@@ -3072,32 +3112,20 @@ func (m *MsgToSensor_DeploymentEnhancementRequest) MarshalToSizedBufferVT(dAtA [
 	}
 	return len(dAtA) - i, nil
 }
-func (m *MsgToSensor_CollectorRuntimeConfig) MarshalToVT(dAtA []byte) (int, error) {
+func (m *MsgToSensor_IssueSecuredClusterCertsResponse) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *MsgToSensor_CollectorRuntimeConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *MsgToSensor_IssueSecuredClusterCertsResponse) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.CollectorRuntimeConfig != nil {
-		if vtmsg, ok := interface{}(m.CollectorRuntimeConfig).(interface {
-			MarshalToSizedBufferVT([]byte) (int, error)
-		}); ok {
-			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
-			if err != nil {
-				return 0, err
-			}
-			i -= size
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		} else {
-			encoded, err := proto.Marshal(m.CollectorRuntimeConfig)
-			if err != nil {
-				return 0, err
-			}
-			i -= len(encoded)
-			copy(dAtA[i:], encoded)
-			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+	if m.IssueSecuredClusterCertsResponse != nil {
+		size, err := m.IssueSecuredClusterCertsResponse.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
 		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0x1
 		i--
@@ -3689,6 +3717,18 @@ func (m *MsgFromSensor_DeploymentEnhancementResponse) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *MsgFromSensor_IssueSecuredClusterCertsRequest) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.IssueSecuredClusterCertsRequest != nil {
+		l = m.IssueSecuredClusterCertsRequest.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
 func (m *ReassessPolicies) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -4052,20 +4092,14 @@ func (m *MsgToSensor_DeploymentEnhancementRequest) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *MsgToSensor_CollectorRuntimeConfig) SizeVT() (n int) {
+func (m *MsgToSensor_IssueSecuredClusterCertsResponse) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.CollectorRuntimeConfig != nil {
-		if size, ok := interface{}(m.CollectorRuntimeConfig).(interface {
-			SizeVT() int
-		}); ok {
-			l = size.SizeVT()
-		} else {
-			l = proto.Size(m.CollectorRuntimeConfig)
-		}
+	if m.IssueSecuredClusterCertsResponse != nil {
+		l = m.IssueSecuredClusterCertsResponse.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -4948,6 +4982,47 @@ func (m *MsgFromSensor) UnmarshalVT(dAtA []byte) error {
 					return err
 				}
 				m.Msg = &MsgFromSensor_DeploymentEnhancementResponse{DeploymentEnhancementResponse: v}
+			}
+			iNdEx = postIndex
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IssueSecuredClusterCertsRequest", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgFromSensor_IssueSecuredClusterCertsRequest); ok {
+				if err := oneof.IssueSecuredClusterCertsRequest.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &IssueSecuredClusterCertsRequest{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgFromSensor_IssueSecuredClusterCertsRequest{IssueSecuredClusterCertsRequest: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -6228,7 +6303,7 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 28:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CollectorRuntimeConfig", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field IssueSecuredClusterCertsResponse", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6255,32 +6330,16 @@ func (m *MsgToSensor) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Msg.(*MsgToSensor_CollectorRuntimeConfig); ok {
-				if unmarshal, ok := interface{}(oneof.CollectorRuntimeConfig).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.CollectorRuntimeConfig); err != nil {
-						return err
-					}
+			if oneof, ok := m.Msg.(*MsgToSensor_IssueSecuredClusterCertsResponse); ok {
+				if err := oneof.IssueSecuredClusterCertsResponse.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
 			} else {
-				v := &common.CollectorRuntimeConfig{}
-				if unmarshal, ok := interface{}(v).(interface {
-					UnmarshalVT([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
-						return err
-					}
+				v := &IssueSecuredClusterCertsResponse{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
-				m.Msg = &MsgToSensor_CollectorRuntimeConfig{CollectorRuntimeConfig: v}
+				m.Msg = &MsgToSensor_IssueSecuredClusterCertsResponse{IssueSecuredClusterCertsResponse: v}
 			}
 			iNdEx = postIndex
 		default:
@@ -8035,6 +8094,47 @@ func (m *MsgFromSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.Msg = &MsgFromSensor_DeploymentEnhancementResponse{DeploymentEnhancementResponse: v}
 			}
 			iNdEx = postIndex
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IssueSecuredClusterCertsRequest", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Msg.(*MsgFromSensor_IssueSecuredClusterCertsRequest); ok {
+				if err := oneof.IssueSecuredClusterCertsRequest.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &IssueSecuredClusterCertsRequest{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Msg = &MsgFromSensor_IssueSecuredClusterCertsRequest{IssueSecuredClusterCertsRequest: v}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -9313,7 +9413,7 @@ func (m *MsgToSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 28:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CollectorRuntimeConfig", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field IssueSecuredClusterCertsResponse", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -9340,32 +9440,16 @@ func (m *MsgToSensor) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Msg.(*MsgToSensor_CollectorRuntimeConfig); ok {
-				if unmarshal, ok := interface{}(oneof.CollectorRuntimeConfig).(interface {
-					UnmarshalVTUnsafe([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], oneof.CollectorRuntimeConfig); err != nil {
-						return err
-					}
+			if oneof, ok := m.Msg.(*MsgToSensor_IssueSecuredClusterCertsResponse); ok {
+				if err := oneof.IssueSecuredClusterCertsResponse.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
 			} else {
-				v := &common.CollectorRuntimeConfig{}
-				if unmarshal, ok := interface{}(v).(interface {
-					UnmarshalVTUnsafe([]byte) error
-				}); ok {
-					if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-						return err
-					}
-				} else {
-					if err := proto.Unmarshal(dAtA[iNdEx:postIndex], v); err != nil {
-						return err
-					}
+				v := &IssueSecuredClusterCertsResponse{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
 				}
-				m.Msg = &MsgToSensor_CollectorRuntimeConfig{CollectorRuntimeConfig: v}
+				m.Msg = &MsgToSensor_IssueSecuredClusterCertsResponse{IssueSecuredClusterCertsResponse: v}
 			}
 			iNdEx = postIndex
 		default:

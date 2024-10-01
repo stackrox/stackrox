@@ -600,9 +600,9 @@ type Container struct {
 	Config          *ContainerConfig  `protobuf:"bytes,2,opt,name=config,proto3" json:"config,omitempty"`
 	Image           *ContainerImage   `protobuf:"bytes,3,opt,name=image,proto3" json:"image,omitempty"`
 	SecurityContext *SecurityContext  `protobuf:"bytes,4,opt,name=security_context,json=securityContext,proto3" json:"security_context,omitempty"`
-	Volumes         []*Volume         `protobuf:"bytes,5,rep,name=volumes,proto3" json:"volumes,omitempty" sql:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH" search:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH"` // @gotags: sql:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH" search:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH"
-	Ports           []*PortConfig     `protobuf:"bytes,6,rep,name=ports,proto3" json:"ports,omitempty" policy:",ignore" search:"-"`     // Policies use the port config on the top-level deployment. // @gotags: policy:",ignore" search:"-"
-	Secrets         []*EmbeddedSecret `protobuf:"bytes,7,rep,name=secrets,proto3" json:"secrets,omitempty" sql:"flag=ROX_DEPLOYMENT_SECRET_SEARCH" search:"flag=ROX_DEPLOYMENT_SECRET_SEARCH"` // @gotags: sql:"flag=ROX_DEPLOYMENT_SECRET_SEARCH" search:"flag=ROX_DEPLOYMENT_SECRET_SEARCH"
+	Volumes         []*Volume         `protobuf:"bytes,5,rep,name=volumes,proto3" json:"volumes,omitempty"`
+	Ports           []*PortConfig     `protobuf:"bytes,6,rep,name=ports,proto3" json:"ports,omitempty" policy:",ignore" search:"-"` // Policies use the port config on the top-level deployment. // @gotags: policy:",ignore" search:"-"
+	Secrets         []*EmbeddedSecret `protobuf:"bytes,7,rep,name=secrets,proto3" json:"secrets,omitempty"`
 	Resources       *Resources        `protobuf:"bytes,8,opt,name=resources,proto3" json:"resources,omitempty"`
 	Name            string            `protobuf:"bytes,10,opt,name=name,proto3" json:"name,omitempty" policy:"Container Name"` // @gotags: policy:"Container Name"
 	LivenessProbe   *LivenessProbe    `protobuf:"bytes,11,opt,name=liveness_probe,json=livenessProbe,proto3" json:"liveness_probe,omitempty"`
@@ -1415,7 +1415,7 @@ type ContainerConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Env             []*ContainerConfig_EnvironmentConfig `protobuf:"bytes,1,rep,name=env,proto3" json:"env,omitempty" sql:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH" search:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH"` // @gotags: sql:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH" search:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH"
+	Env             []*ContainerConfig_EnvironmentConfig `protobuf:"bytes,1,rep,name=env,proto3" json:"env,omitempty"`
 	Command         []string                             `protobuf:"bytes,2,rep,name=command,proto3" json:"command,omitempty"`
 	Args            []string                             `protobuf:"bytes,3,rep,name=args,proto3" json:"args,omitempty"`
 	Directory       string                               `protobuf:"bytes,4,opt,name=directory,proto3" json:"directory,omitempty"`

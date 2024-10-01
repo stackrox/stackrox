@@ -11,6 +11,8 @@ var (
 	trackedPaths []string
 	ignoredPaths = []string{"/v1/ping", "/v1.PingService/Ping", "/v1/metadata", "/static/*"}
 
+	trackedUserAgents []string
+
 	interceptors = map[string][]phonehome.Interceptor{
 		"API Call": {apiCall, addDefaultProps},
 		"roxctl":   {roxctl, addDefaultProps},
@@ -35,10 +37,12 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 }
 
 // apiCall enables API Call events for the API paths specified in the
-// trackedPaths ("*" value enables all paths) and have no match in the
-// ignoredPaths list.
+// trackedPaths ("*" value enables all paths) or for the calls with the
+// User-Agent containing the substrings specified in the trackedUserAgents, and
+// have no match in the ignoredPaths list.
 func apiCall(rp *phonehome.RequestParams, _ map[string]any) bool {
-	return !rp.HasPathIn(ignoredPaths) && rp.HasPathIn(trackedPaths)
+	return !rp.HasPathIn(ignoredPaths) && (rp.HasPathIn(trackedPaths) ||
+		rp.HasUserAgentWith(trackedUserAgents))
 }
 
 // roxctl enables the roxctl event.

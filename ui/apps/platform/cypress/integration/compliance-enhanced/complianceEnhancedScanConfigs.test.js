@@ -32,7 +32,7 @@ describe('Compliance Schedules', () => {
 
         cy.get('th[scope="col"]:contains("Name")');
         cy.get('th[scope="col"]:contains("Schedule")');
-        cy.get('th[scope="col"]:contains("Last run")');
+        cy.get('th[scope="col"]:contains("Last scanned")');
         cy.get('th[scope="col"]:contains("Clusters")');
         cy.get('th[scope="col"]:contains("Profiles")');
 

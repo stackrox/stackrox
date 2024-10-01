@@ -1098,6 +1098,9 @@
         "sinceStartDate": {
           "type": "string",
           "format": "date-time"
+        },
+        "includeNvdCvss": {
+          "type": "boolean"
         }
       }
     }

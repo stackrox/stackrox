@@ -1,12 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
 
 import VIOLATIONS from 'queries/violation';
 import resolvePath from 'object-resolve-path';
 import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
-import { withRouter } from 'react-router-dom';
 import uniq from 'lodash/uniq';
 import CollapsibleRow from 'Components/CollapsibleRow';
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -17,6 +15,7 @@ import { entityViolationsColumns } from 'constants/listColumns';
 
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import Table, { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
+import { useHistory, useLocation, useRouteMatch } from 'react-router-dom';
 import TableWidget from './TableWidget';
 
 const getDeploymentsGroupedByPolicies = (data) => {
@@ -36,9 +35,13 @@ const getDeploymentsGroupedByPolicies = (data) => {
     return Object.values(groups);
 };
 
-const Deployments = ({ original: policy, match, location, history, entityContext }) => {
+const Deployments = ({ original: policy, entityContext }) => {
     const { deployments } = policy;
     const columns = entityViolationsColumns[entityTypes.DEPLOYMENT](entityContext);
+    const history = useHistory();
+    const location = useLocation();
+    const match = useRouteMatch();
+
     function onRowClick(row) {
         const id = resolvePath(row, 'id');
         const url = URLService.getURL(match, location).push(entityTypes.DEPLOYMENT, id).url();
@@ -57,17 +60,12 @@ const Deployments = ({ original: policy, match, location, history, entityContext
 
 Deployments.propTypes = {
     original: PropTypes.shape({ deployments: PropTypes.arrayOf(PropTypes.shape({})) }).isRequired,
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    history: ReactRouterPropTypes.history.isRequired,
     entityContext: PropTypes.shape({}),
 };
 
 Deployments.defaultProps = {
     entityContext: {},
 };
-
-const DeploymentsWithRouter = withRouter(Deployments);
 
 const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
     <Query query={VIOLATIONS} variables={{ query }}>
@@ -119,10 +117,7 @@ const DeploymentsWithFailedPolicies = ({ query, message, entityContext }) => (
                                 className="z-20"
                                 hasTitleBorder={false}
                             >
-                                <DeploymentsWithRouter
-                                    original={original}
-                                    entityContext={entityContext}
-                                />
+                                <Deployments original={original} entityContext={entityContext} />
                             </CollapsibleRow>
                         );
                         return group;

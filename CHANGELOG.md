@@ -20,6 +20,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Removed Features
 
+- The environment variable `ROX_DEPLOYMENT_ENVVAR_SEARCH` has been removed.
+- The environment variable `ROX_DEPLOYMENT_SECRET_SEARCH` has been removed.
+- The environment variable `ROX_DEPLOYMENT_VOLUME_SEARCH` has been removed.
+- The environment variable `ROX_SECRET_FILE_SEARCH` has been removed.
 - The Central PVC stackrox-db will be removed. Existing volumes will be released. Flags for configuring Central attached persistent storage have been removed from roxctl:
   - `roxctl central generate k8s pvc` and `roxctl central generate openshift pvc` no longer have the flags `--name`, `--size`, and `--storage-class`.
   - `roxctl central generate k8s hostpath` and `roxctl central generate openshift hostpath` no longer have the flags `--hostpath`, `--node-selector-key`, and `--node-selector-value`.
@@ -40,6 +44,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - To revert back to synchronous TLS checks set `ROX_SENSOR_LAZY_TLS_CHECKS` to `false` on Sensor.
 - ROX-23343: The auto-sensing within the Helm charts for detecting OpenShift clusters has been changed to depend on the `project.openshift.io/v1` APIVersion.
 - ROX-22701: Prevent deleting default policies through the API
+- ROX-26422: Central will now include the `id` field in alert notifications and API responses.
 
 - ROX-20723: Remove monorepo substructure under `ui/` directory and switch from yarn v1 to npm for package management. Use `npm run` in place of `yarn` commands.
 - ROX-26306: Increase minimum Node.js version from `">=18.0.0"` to `"^18.18.0 || >=20.0.0"` for open source community to run `make lint` command in the ui directory.
@@ -198,7 +203,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Secret terms that can be removed by setting ROX_DEPLOYMENT_SECRET_SEARCH=false:
     - Secret, Secret Path
 - The following search terms will be disabled in the next release and removed from the secret context in 2 releases. They can be removed in the current release by setting ROX_SECRET_FILE_SEARCH=false:
-  - Secret Type, Cert Expiration,Image Pull Secret Registry
+  - Secret Type, Cert Expiration, Image Pull Secret Registry
 - The `/v1/availableAuthProviders` endpoint will in a future release require authentication and at least READ permission on the `Access` resource.
   Ensure that any flow interacting with it is authenticated and has the proper permissions going forward.
 - The `/v1/tls-challenge` will  require authentication, ensure that all interactions with these endpoints include proper authentication going forward.
