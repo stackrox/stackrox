@@ -25,7 +25,7 @@ describe('Cloud Source Integrations', () => {
         visitIntegrationsTable(integrationSource, integrationType);
         clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
-        // Check inital state.
+        // Check initial state.
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // // Check empty values are not accepted.
@@ -65,23 +65,35 @@ describe('Cloud Source Integrations', () => {
         visitIntegrationsTable(integrationSource, integrationType);
         clickCreateNewIntegrationInTable(integrationSource, integrationType);
 
-        // Check inital state.
+        // Check initial state.
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // // Check empty values are not accepted.
         getInputByLabel('Integration name').type(' ');
         getInputByLabel('Endpoint').clear().type(' ');
+        getInputByLabel('Client ID').clear().type(' ');
+        getInputByLabel('Client secret').clear().type(' ').blur();
         getInputByLabel('API token').clear().type(' ').blur();
 
         getHelperElementByLabel('Integration name').contains('Integration name is required');
         getHelperElementByLabel('Endpoint').contains('Endpoint is required');
+        getHelperElementByLabel('Client ID').contains('Client ID is required');
+        getHelperElementByLabel('Client secret').contains('Client secret is required');
         getHelperElementByLabel('API token').contains('Token is required');
         cy.get(selectors.buttons.save).should('be.disabled');
 
         // Save integration.
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('https://stackrox.io');
-        getInputByLabel('API token').clear().type('tokenvalue');
+
+        // // Check that entering the API token enables the save button.
+        getInputByLabel('API token').clear().type('api_token');
+        cy.get(selectors.buttons.save).should('be.enabled');
+
+        // // Clear API token again and save the integration with client credentials.
+        getInputByLabel('API token').clear();
+        getInputByLabel('Client ID').clear().type('client_id');
+        getInputByLabel('Client secret').clear().type('client_secret');
 
         saveCreatedIntegrationInForm(integrationSource, integrationType);
 
