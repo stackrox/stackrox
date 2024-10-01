@@ -104,6 +104,9 @@ const (
 		(SELECT 1 from deployments parent WHERE child.Props_DstEntity_Id = parent.id::text AND parent.clusterid = $1)
 		AND Props_DstEntity_Type = 1
 		AND LastSeenTimestamp < $2`
+
+	pruneOrphanExternalNetworkEntitiesStmt = `DELETE FROM network_entities entity WHERE NOT EXISTS
+		(SELECT 1 FROM %s flow WHERE (flow.Props_SrcEntity_Type = 4 OR flow.Props_DstEntity_Type = 4) AND (flow.Props_DstEntity_Id = entity.Info_Id OR flow.Props_SrcEntity_Id = entity.Info_Id) AND entity.Info_ExternalSource_Learned = true);`
 )
 
 var (
@@ -139,6 +142,10 @@ type FlowStore interface {
 
 	// RemoveOrphanedFlows remove flows that have been orphaned by deployments
 	RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error
+
+	// RemoveOrphanedExternalEntities removes external entities that are no longer associated
+	// with a flow
+	RemoveOrphanedExternalEntities(ctx context.Context) error
 }
 
 type flowStoreImpl struct {
@@ -600,6 +607,25 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 
 	pruneStmt = fmt.Sprintf(pruneNetworkFlowsDestStmt, s.partitionName)
 	return s.pruneFlows(ctx, pruneStmt, orphanWindow)
+}
+
+func (s *flowStoreImpl) RemoveOrphanedExternalEntities(ctx context.Context) error {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlow")
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName)
+
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "NetworkFlow")
+	if err != nil {
+		return err
+	}
+	defer release()
+
+	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
+	defer cancel()
+	_, err = conn.Exec(ctx, pruneStmt)
+	return err
 }
 
 func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orphanWindow *time.Time) error {

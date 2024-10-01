@@ -145,3 +145,13 @@ func (fds *flowDataStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWin
 
 	return fds.storage.RemoveOrphanedFlows(ctx, orphanWindow)
 }
+
+func (fds *flowDataStoreImpl) RemoveOrphanedExternalEntities(ctx context.Context) error {
+	if ok, err := networkGraphSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	return fds.storage.RemoveOrphanedExternalEntities(ctx)
+}
