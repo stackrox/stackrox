@@ -581,6 +581,11 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 			if err != nil {
 				log.Errorf("error removing orphaned flows for cluster %q: %v", c, err)
 			}
+
+			err = store.RemoveOrphanedExternalEntities(pruningCtx)
+			if err != nil {
+				log.Errorf("error removing orphaned external entities for cluster %q: %v", c, err)
+			}
 		}(c)
 	}
 	wg.Wait()
