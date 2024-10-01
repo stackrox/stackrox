@@ -40,6 +40,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-24169: API token authentication has been deprecated by Red Hat OpenShift Cluster Manager. The corresponding cloud source integration now uses service accounts for authentication.
 
 ### Technical Changes
+- ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
 - ROX-23343: The auto-sensing within the Helm charts for detecting OpenShift clusters has been changed to depend on the `project.openshift.io/v1` APIVersion.
 - ROX-22701: Prevent deleting default policies through the API
 - ROX-26422: Central will now include the `id` field in alert notifications and API responses.

@@ -601,9 +601,6 @@ func (rs *Store) getPullSecretRegistriesNoLock(secretNameToHost secretNameToHost
 
 // getAllPullSecretRegistriesNoLock returns all registries within a namespace that match image.
 func (rs *Store) getAllPullSecretRegistriesNoLock(secretNameToHost secretNameToHostname, image *storage.ImageName) []types.ImageRegistry {
-	var regs []types.ImageRegistry
-	registryHostname := image.GetRegistry()
-
 	secretNames := make([]string, 0, len(secretNameToHost))
 	for secretName := range secretNameToHost {
 		secretNames = append(secretNames, secretName)
@@ -612,13 +609,5 @@ func (rs *Store) getAllPullSecretRegistriesNoLock(secretNameToHost secretNameToH
 	// To make the output deterministic sort the secret names.
 	slices.Sort(secretNames)
 
-	for _, secretName := range secretNames {
-		hostToRegistry := secretNameToHost[secretName]
-		for host, reg := range hostToRegistry {
-			if host == registryHostname {
-				regs = append(regs, reg)
-			}
-		}
-	}
-	return regs
+	return rs.getPullSecretRegistriesNoLock(secretNameToHost, image, secretNames)
 }
