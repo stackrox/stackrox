@@ -480,9 +480,6 @@ func TestWithStorageView(t *testing.T) {
 func TestWithID(t *testing.T) {
 	option := WithID(testProviderID)
 
-	extractID := func(provider *providerImpl) interface{} {
-		return provider.storedInfo.GetId()
-	}
 	testNoStoredInfoProvider(t, option, errox.InvariantViolation, extractID)
 
 	testCases := map[string]*storage.AuthProvider{
@@ -546,9 +543,6 @@ func TestWithName(t *testing.T) {
 func TestWithEnabled(t *testing.T) {
 	for _, enabled := range []bool{true, false} {
 		option := WithEnabled(enabled)
-		extractEnabled := func(provider *providerImpl) interface{} {
-			return provider.storedInfo.GetEnabled()
-		}
 		t.Run(fmt.Sprintf("New Enabled %t", enabled), func(it *testing.T) {
 			testNoStoredInfoProvider(it, option, errox.InvariantViolation, extractEnabled)
 			testCases := map[string]*storage.AuthProvider{
@@ -574,12 +568,6 @@ func TestWithEnabled(t *testing.T) {
 func TestWithActive(t *testing.T) {
 	for _, activate := range []bool{true, false} {
 		option := WithActive(activate)
-		extractActive := func(provider *providerImpl) interface{} {
-			return provider.storedInfo.GetActive()
-		}
-		extractValidated := func(provider *providerImpl) interface{} {
-			return provider.storedInfo.GetValidated()
-		}
 		t.Run(fmt.Sprintf("New Active %t", activate), func(it *testing.T) {
 			testNoStoredInfoProvider(it, option, errox.InvariantViolation, extractActive, extractValidated)
 			testCases := map[string]*storage.AuthProvider{
@@ -629,9 +617,6 @@ func TestWithVisibility(t *testing.T) {
 		storage.Traits_VISIBLE, storage.Traits_HIDDEN,
 	} {
 		option := WithVisibility(visibility)
-		extractVisibility := func(provider *providerImpl) interface{} {
-			return provider.storedInfo.GetTraits().GetVisibility()
-		}
 		t.Run(fmt.Sprintf("New Visibility %s", visibility.String()), func(it *testing.T) {
 			testNoStoredInfoProvider(it, option, errox.InvariantViolation, extractVisibility)
 			testCases := map[string]*storage.AuthProvider{
@@ -795,6 +780,22 @@ func extractType(provider *providerImpl) interface{} {
 
 func extractName(provider *providerImpl) interface{} {
 	return provider.storedInfo.GetName()
+}
+
+func extractEnabled(provider *providerImpl) interface{} {
+	return provider.storedInfo.GetEnabled()
+}
+
+func extractActive(provider *providerImpl) interface{} {
+	return provider.storedInfo.GetActive()
+}
+
+func extractValidated(provider *providerImpl) interface{} {
+	return provider.storedInfo.GetValidated()
+}
+
+func extractVisibility(provider *providerImpl) interface{} {
+	return provider.storedInfo.GetTraits().GetVisibility()
 }
 
 // endregion field extractors
