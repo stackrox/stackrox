@@ -187,7 +187,7 @@ const upgradeStates: UpgradeStates = {
         type: 'current',
     },
     MANUAL_UPGRADE_REQUIRED: {
-        displayValue: 'Version not managed by ACS',
+        displayValue: 'Version not managed by RHACS',
         type: 'intervention',
     },
     UPGRADE_AVAILABLE: {

@@ -338,14 +338,14 @@ describe('cluster helpers', () => {
             expect(received).toEqual(expected);
         });
 
-        it('should return "Version not managed by ACS" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED', () => {
+        it('should return "Version not managed by RHACS" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED', () => {
             const testUpgradeStatus = {
                 upgradability: 'MANUAL_UPGRADE_REQUIRED',
             };
 
             const received = findUpgradeState(testUpgradeStatus);
 
-            const expected = { displayValue: 'Version not managed by ACS', type: 'intervention' };
+            const expected = { displayValue: 'Version not managed by RHACS', type: 'intervention' };
             expect(received).toEqual(expected);
         });
 
