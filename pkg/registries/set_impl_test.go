@@ -146,3 +146,33 @@ func TestSetImpl_Clear(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, set.Len())
 }
+
+func TestUpdateImageIntegration(t *testing.T) {
+	integration := func(id string) *storage.ImageIntegration {
+		return &storage.ImageIntegration{
+			Id:                id,
+			Name:              id,
+			Type:              types.DockerType,
+			IntegrationConfig: &storage.ImageIntegration_Docker{},
+		}
+	}
+
+	t.Run("bool return correctly indicates if entry existed in set", func(t *testing.T) {
+		factory := NewFactory(FactoryOptions{})
+		set := NewSet(factory)
+
+		fresh, err := set.UpdateImageIntegration(integration("a"))
+		require.NoError(t, err)
+		assert.True(t, fresh)
+
+		// Repeat the same upsert, this time a prior entry should exist.
+		fresh, err = set.UpdateImageIntegration(integration("a"))
+		require.NoError(t, err)
+		assert.False(t, fresh)
+
+		// A different ID should yield a fresh insert.
+		fresh, err = set.UpdateImageIntegration(integration("b"))
+		require.NoError(t, err)
+		assert.True(t, fresh)
+	})
+}
