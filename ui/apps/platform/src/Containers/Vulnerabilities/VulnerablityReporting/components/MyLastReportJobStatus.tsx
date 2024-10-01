@@ -5,18 +5,18 @@ import { ReportSnapshot } from 'services/ReportsService.types';
 import ReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobStatus';
 import { onDownloadReport } from 'Components/ReportJob/utils';
 
-const downloadURL = '/api/reports/jobs/download';
-
 type MyLastReportJobStatusProps = {
     reportSnapshot: ReportSnapshot | null | undefined;
     isLoadingReportSnapshots: boolean;
     currentUserId: string;
+    baseDownloadURL: string;
 };
 
 function MyLastReportJobStatus({
     reportSnapshot,
     isLoadingReportSnapshots,
     currentUserId,
+    baseDownloadURL,
 }: MyLastReportJobStatusProps) {
     // reportSnapshot is undefined when initially fetching reportSnapshots
     if (isLoadingReportSnapshots && reportSnapshot === undefined) {
@@ -31,7 +31,7 @@ function MyLastReportJobStatus({
         const { completedAt } = reportSnapshot.reportStatus;
         const { name } = reportSnapshot;
         const { reportJobId } = reportSnapshot;
-        return onDownloadReport({ reportJobId, name, completedAt, baseDownloadURL: downloadURL });
+        return onDownloadReport({ reportJobId, name, completedAt, baseDownloadURL });
     };
 
     return (

@@ -57,6 +57,7 @@ import pluralize from 'pluralize';
 import MyLastJobStatusTh from 'Components/ReportJob/MyLastJobStatusTh';
 import MyLastReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/components/MyLastReportJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
+import { reportDownloadURL } from 'services/ReportsService';
 import HelpIconTh from './HelpIconTh';
 
 const CreateReportsButton = () => {
@@ -525,6 +526,7 @@ function VulnReportsPage() {
                                                                 isLoadingReportSnapshots
                                                             }
                                                             currentUserId={currentUser.userId}
+                                                            baseDownloadURL={reportDownloadURL}
                                                         />
                                                     </Td>
                                                     {hasWriteAccessForReport && (

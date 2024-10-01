@@ -44,6 +44,7 @@ describe('MyLastReportJobStatus', () => {
                 reportSnapshot={reportSnapshot}
                 isLoadingReportSnapshots={false}
                 currentUserId="test-user-1"
+                baseDownloadURL="/api/test"
             />
         );
 
@@ -92,6 +93,7 @@ describe('MyLastReportJobStatus', () => {
                 reportSnapshot={reportSnapshot}
                 isLoadingReportSnapshots={false}
                 currentUserId="test-user-1"
+                baseDownloadURL="/api/test"
             />
         );
 
@@ -140,6 +142,7 @@ describe('MyLastReportJobStatus', () => {
                 reportSnapshot={reportSnapshot}
                 isLoadingReportSnapshots={false}
                 currentUserId="test-user-1"
+                baseDownloadURL="/api/test"
             />
         );
 
@@ -188,6 +191,7 @@ describe('MyLastReportJobStatus', () => {
                 reportSnapshot={reportSnapshot}
                 isLoadingReportSnapshots={false}
                 currentUserId="test-user-1"
+                baseDownloadURL="/api/test"
             />
         );
 
