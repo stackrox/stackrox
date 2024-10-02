@@ -284,7 +284,7 @@ func (c *Compliance) manageSendToSensor(ctx context.Context, cli sensor.Complian
 func (c *Compliance) initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 30 * time.Second
-	eb.MaxElapsedTime = 3 * time.Minute
+	eb.MaxElapsedTime = 15 * time.Minute
 
 	var client sensor.ComplianceService_CommunicateClient
 	var config *sensor.MsgToCompliance_ScrapeConfig
