@@ -7,10 +7,10 @@ set -euo pipefail
 
 TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. && pwd)"
 
-EARLIER_TAG="4.1.3"
-EARLIER_SHA="8a4677e3d45ebc4f065ec052d1d66d6ead2084bb"
+EARLIER_TAG="4.3.8"
+EARLIER_SHA="a1a05fa6a7a8e6878ba63f7b96540f5bf3831e9a"
 CURRENT_TAG="$(make --quiet --no-print-directory tag)"
-PREVIOUS_RELEASES=("4.1.3" "4.2.5" "4.3.8" "4.4.5" "4.5.3")
+PREVIOUS_RELEASES=("4.3.8" "4.4.5" "4.5.3")
 
 # shellcheck source=../../scripts/lib.sh
 source "$TEST_ROOT/scripts/lib.sh"
@@ -75,8 +75,8 @@ test_upgrade_paths() {
 
     local log_output_dir="$1"
 
-    # To test we remain backwards compatible rollback to 4.1.x
-    FORCE_ROLLBACK_VERSION="4.1.3"
+    # To test we remain backwards compatible rollback to 4.3.x
+    FORCE_ROLLBACK_VERSION="4.3.8"
 
     cd "$REPO_FOR_TIME_TRAVEL"
     git checkout "$EARLIER_SHA"
