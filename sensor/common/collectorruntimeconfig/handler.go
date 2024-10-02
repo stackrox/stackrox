@@ -22,6 +22,7 @@ var (
 //go:generate mockgen-wrapper
 type Store interface {
 	CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*sensor.CollectorConfig]
+	SetCollectorConfigFromHelmConfig(helmManagedConfig *central.HelmManagedConfigInit)
 }
 
 // Handler forwards the collector runtime config received from Central to Collectors.
@@ -40,6 +41,9 @@ type handlerImpl struct {
 }
 
 func (h *handlerImpl) Start() error {
+	if h.collectorConfig != nil {
+		h.pushConfigToValueStream()
+	}
 	go h.run()
 	return nil
 }
@@ -117,6 +121,16 @@ func (h *handlerImpl) pushConfigToValueStream() {
 
 	log.Info("In pushConfigToValueStream")
 	h.collectorConfigProtoStream.Push(h.collectorConfig)
+}
+
+func (h *handlerImpl) SetCollectorConfigFromHelmConfig(helmManagedConfig *central.HelmManagedConfigInit) {
+	if helmManagedConfig != nil {
+		h.collectorConfig = &sensor.CollectorConfig{
+			NetworkConnectionConfig: &sensor.NetworkConnectionConfig{
+				EnableExternalIps: true,
+			},
+		}
+	}
 }
 
 func (h *handlerImpl) CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*sensor.CollectorConfig] {

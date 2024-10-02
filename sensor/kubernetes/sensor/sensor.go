@@ -145,8 +145,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	} else {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
+
+	collectorRuntimeConfigHandler := collectorruntimeconfig.StoreInstance()
+	collectorRuntimeConfigHandler.SetCollectorConfigFromHelmConfig(helmManagedConfig)
+
 	networkFlowManager :=
-		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), collectorruntimeconfig.StoreInstance(), policyDetector, pubSub)
+		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), collectorRuntimeConfigHandler, policyDetector, pubSub)
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
