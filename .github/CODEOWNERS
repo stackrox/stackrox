@@ -40,7 +40,7 @@ tests/roxctl/bats-tests/test-data/np-guard/    @stackrox/ibm-research @stackrox/
 
 sensor/**/*                                    @stackrox/maple
 
-operator/**/* @stackrox/draco
+operator/**/* @stackrox/install
 
 # Scanner team's responsibilities include anything related to the scanner itself and scanning utilities
 # such as vulnerability uploading and image integrations.
