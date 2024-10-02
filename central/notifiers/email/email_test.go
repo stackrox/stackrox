@@ -14,6 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	dateEmailHeaderValidator = regexp.MustCompile(`Date: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}`)
+)
+
 func TestBuildReportMessage(t *testing.T) {
 	recipients := []string{"scooby@stackrox.com", "shaggy@stackrox.com"}
 	from := "velma@stackrox.com"
@@ -42,14 +46,13 @@ func TestBuildReportMessage(t *testing.T) {
 
 	assert.Contains(t, msgStr, "From: velma@stackrox.com\r\n")
 	assert.Contains(t, msgStr, "To: scooby@stackrox.com,shaggy@stackrox.com\r\n")
+	assert.Regexp(t, dateEmailHeaderValidator, msgStr, "must have a valid Date header in RFC3339 format")
 	assert.Contains(t, msgStr, expectedSubjectHeader)
-	// assert.Contains(t, msgStr, expectedSubjectHeader)
 	assert.Contains(t, msgStr, "MIME-Version: 1.0\r\n")
 	assert.Contains(t, msgStr, "Content-Type: multipart/mixed;")
 	assert.Contains(t, msgStr, "Content-Type: application/zip\r\n")
 	assert.Contains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
 	assert.Contains(t, msgStr, expectedReportAttachmentHeader)
-	// assert.Contains(t, msgStr, expectedReportAttachmentHeader)
 
 	assert.Contains(t, msgStr, "Content-Type: image/png; name=logo.png\r\n")
 	assert.Contains(t, msgStr, "Content-Transfer-Encoding: base64\r\n")
@@ -153,6 +156,7 @@ func TestEmailMsgWithMultipleAttachments(t *testing.T) {
 
 	assert.Contains(t, msgStr, "From: xyz@stackrox.com\r\n")
 	assert.Contains(t, msgStr, "To: foo@stackrox.com,bar@stackrox.com\r\n")
+	assert.Regexp(t, dateEmailHeaderValidator, msgStr, "must have a valid Date header in RFC3339 format")
 	assert.Contains(t, msgStr, "Subject: Test Email\r\n")
 	assert.Contains(t, msgStr, "MIME-Version: 1.0\r\n")
 	assert.Contains(t, msgStr, "Content-Type: multipart/mixed;")
@@ -189,6 +193,7 @@ func TestEmailMsgNoAttachmentsWithLogo(t *testing.T) {
 
 	assert.Contains(t, msgStr, "From: xyz@stackrox.com\r\n")
 	assert.Contains(t, msgStr, "To: foo@stackrox.com,bar@stackrox.com\r\n")
+	assert.Regexp(t, dateEmailHeaderValidator, msgStr, "must have a valid Date header in RFC3339 format")
 	assert.Contains(t, msgStr, "Subject: Test Email\r\n")
 	assert.Contains(t, msgStr, "MIME-Version: 1.0\r\n")
 	assert.Contains(t, msgStr, "Content-Type: text/html; charset=\"utf-8\"\r\n\r\n")
@@ -218,6 +223,7 @@ func TestEmailMsgNoAttachments(t *testing.T) {
 
 	assert.Contains(t, msgStr, "From: xyz@stackrox.com\r\n")
 	assert.Contains(t, msgStr, "To: foo@stackrox.com,bar@stackrox.com\r\n")
+	assert.Regexp(t, dateEmailHeaderValidator, msgStr, "must have a valid Date header in RFC3339 format")
 	assert.Contains(t, msgStr, "Subject: Test Email\r\n")
 	assert.Contains(t, msgStr, "MIME-Version: 1.0\r\n")
 	assert.Contains(t, msgStr, "Content-Type: text/plain; charset=\"utf-8\"\r\n\r\n")
