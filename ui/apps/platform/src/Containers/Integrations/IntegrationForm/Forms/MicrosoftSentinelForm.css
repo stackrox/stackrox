@@ -1,8 +1,0 @@
-.microsoft-sentinel-form .pf-v5-c-form__section {
-    box-shadow: var(--pf-v5-global--BoxShadow--md);
-    padding: var(--pf-v5-global--spacer--md);
-}
-
-.microsoft-sentinel-form .pf-v5-c-form__section-title {
-    --pf-v5-c-form__section-title--FontSize: var(--pf-v5-global--FontSize--lg);
-}

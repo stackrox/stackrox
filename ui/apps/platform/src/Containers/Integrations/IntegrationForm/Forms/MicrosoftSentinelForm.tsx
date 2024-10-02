@@ -27,8 +27,6 @@ import { IntegrationFormProps } from '../integrationFormTypes';
 import IntegrationFormActions from '../IntegrationFormActions';
 import FormLabelGroup from '../FormLabelGroup';
 
-import './MicrosoftSentinelForm.css';
-
 export type MicrosoftSentinel = {
     microsoftSentinel: {
         logIngestionEndpoint: string;
@@ -71,7 +69,11 @@ export const validationSchema = yup.object().shape({
                 .string()
                 .trim()
                 .required('A application client ID is required'),
-            secret: yup.string(),
+            secret: yup.string().trim(),
+            clientCertAuthConfig: yup.object().shape({
+                clientCert: yup.string().trim(),
+                privateKey: yup.string().trim(),
+            }),
         }),
     }),
     updatePassword: yup.bool(),
@@ -156,12 +158,7 @@ function MicrosoftSentinelForm({
 
     function onUpdateAuthMethod(event) {
         const { id } = event.currentTarget;
-        if (id === 'use-client-cert') {
-            setFieldValue('notifier.microsoftSentinel.secret', '');
-        } else {
-            setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.clientCert', '');
-            setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.privateKey', '');
-        }
+
         setSelectedAuthMethod(id);
     }
 
@@ -169,6 +166,18 @@ function MicrosoftSentinelForm({
         setFieldValue('notifier.microsoftSentinel.secret', '');
         setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.privateKey', '');
         return setFieldValue(event.target.id, value);
+    }
+
+    function preOnSaveHook() {
+        // use only the auth method selected by the user
+        if (selectedAuthMethod === 'use-client-cert') {
+            setFieldValue('notifier.microsoftSentinel.secret', '');
+        } else {
+            setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.clientCert', '');
+            setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.privateKey', '');
+        }
+
+        onSave();
     }
 
     return (
@@ -263,12 +272,14 @@ function MicrosoftSentinelForm({
                                     buttonId="use-secret"
                                     isSelected={selectedAuthMethod === 'use-secret'}
                                     onChange={onUpdateAuthMethod}
+                                    isDisabled={!isEditable}
                                 />
                                 <ToggleGroupItem
                                     text="Use Client Certificate"
                                     buttonId="use-client-cert"
                                     isSelected={selectedAuthMethod === 'use-client-cert'}
                                     onChange={onUpdateAuthMethod}
+                                    isDisabled={!isEditable}
                                 />
                             </ToggleGroup>
                             {!isCreating && isEditable && (
@@ -493,7 +504,7 @@ function MicrosoftSentinelForm({
             {isEditable && (
                 <IntegrationFormActions>
                     <FormSaveButton
-                        onSave={onSave}
+                        onSave={preOnSaveHook}
                         isSubmitting={isSubmitting}
                         isTesting={isTesting}
                         isDisabled={!dirty || !isValid}
