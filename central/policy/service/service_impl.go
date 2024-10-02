@@ -1143,7 +1143,7 @@ func (s *serviceImpl) SaveAsCustomResources(ctx context.Context, request *v1.Sav
 		log.Warnf("A policy error occurred for id %s: not found", policyID)
 	}
 	if len(missingIndices) > 0 {
-		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be retrieved. Check the error details for a list of policies that could not be found").WithDetails(errDetails)
+		statusMsg, err := status.New(codes.InvalidArgument, "Failed to retrieve all policies. Check error details for a list of policies that could not be retrieved.").WithDetails(errDetails)
 		if err != nil {
 			return nil, utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
 		}
@@ -1165,7 +1165,7 @@ func (s *serviceImpl) SaveAsCustomResources(ctx context.Context, request *v1.Sav
 		resp.CustomResources = append(resp.CustomResources, cr)
 	}
 	if len(errDetails.GetErrors()) > 0 {
-		statusMsg, err := status.New(codes.InvalidArgument, "Some policies could not be marshal to custom resources. Check the error details for the list of policies").WithDetails(errDetails)
+		statusMsg, err := status.New(codes.InvalidArgument, "Failed to retrieve all policies. Check error details for a list of policies that could not be retrieved.").WithDetails(errDetails)
 		if err != nil {
 			return resp, utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
 		}
