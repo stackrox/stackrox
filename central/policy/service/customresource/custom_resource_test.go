@@ -2,7 +2,7 @@ package customresource
 
 import (
 	_ "embed"
-	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -19,7 +19,6 @@ func TestConvertToCR(t *testing.T) {
 	policy := getTestPolicy()
 	converted, err := GenerateCustomResource(policy)
 	require.NoError(t, err)
-	fmt.Println(converted)
 	assert.YAMLEq(t, templateFile, converted)
 }
 
@@ -71,4 +70,76 @@ func getTestPolicy() *storage.Policy {
 		},
 	}
 	return p
+}
+
+func TestToDNSSubdomainName(t *testing.T) {
+	tests := []struct {
+		description string
+		input       string
+		expected    string
+		prefix      string
+	}{
+		{
+			description: "Valid name, unchanged",
+			input:       "valid-name",
+			expected:    "valid-name",
+		},
+		{
+			description: "Uppercase converted to lowercase",
+			input:       "Valid-Name",
+			expected:    "valid-name",
+		},
+		{
+			description: "Spaces replaced by dots",
+			input:       "some name with spaces",
+			expected:    "some-name-with-spaces",
+		},
+		{
+			description: "Special characters replaced by hyphens",
+			input:       "invalid@name#with$.special&characters",
+			expected:    "invalid-name-with-special-characters",
+		},
+		{
+			description: "Consecutive dots or hyphens reduced to single hyphen",
+			input:       "multiple--dots..and-hyphens",
+			expected:    "multiple-dots-and-hyphens",
+		},
+		{
+			description: "Name longer than 253 characters should be truncated",
+			input:       strings.Repeat("a", 300),
+			expected:    strings.Repeat("a", 253),
+		},
+		{
+			description: "Empty input should return default value",
+			input:       "",
+			prefix:      "rhacs-",
+		},
+		{
+			description: "All invalid input should return default value",
+			input:       "@!@#$%^&*()",
+			prefix:      "rhacs-",
+		},
+		{
+			description: "Leading and trailing invalid characters should be trimmed",
+			input:       "-leading.trailing.",
+			expected:    "leading.trailing",
+		},
+		{
+			description: "A comprehensive test case",
+			input:       " 这是一个严肃的 @-@ セキュリティポリシ ",
+			prefix:      "rhacs-",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			result := toDNSSubdomainName(test.input)
+			if len(test.expected) > 0 {
+				assert.Equal(t, test.expected, result, "For input %q, expected %q, but got %q", test.input, test.expected, result)
+			}
+			if len(test.prefix) > 0 {
+				assert.True(t, strings.HasPrefix(result, test.prefix) && len(result) > len(test.prefix))
+			}
+		})
+	}
 }

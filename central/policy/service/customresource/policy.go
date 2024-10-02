@@ -9,8 +9,8 @@ import (
 
 // Scope represents storage.Scope in the Custom Resource.
 type Scope struct {
-	Cluster   string
-	Namespace string
+	Cluster   string               `yaml:",omitempty"`
+	Namespace string               `yaml:",omitempty"`
 	Label     *storage.Scope_Label `yaml:",omitempty"`
 }
 
@@ -29,8 +29,8 @@ func convertScope(p *storage.Scope) *Scope {
 
 // Exclusion_Deployment represents storage.Exclusion_Deployment in the Custom Resource.
 type Exclusion_Deployment struct {
-	Name  string
-	Scope *Scope
+	Name  string `yaml:",omitempty"`
+	Scope *Scope `yaml:",omitempty"`
 }
 
 // convertExclusion_Deployment Converts storage.Exclusion_Deployment to *Exclusion_Deployment
@@ -47,7 +47,7 @@ func convertExclusion_Deployment(p *storage.Exclusion_Deployment) *Exclusion_Dep
 
 // Exclusion represents storage.Exclusion in the Custom Resource.
 type Exclusion struct {
-	Name       string
+	Name       string                   `yaml:",omitempty"`
 	Deployment *Exclusion_Deployment    `yaml:",omitempty"`
 	Image      *storage.Exclusion_Image `yaml:",omitempty"`
 	Expiration string                   `yaml:",omitempty"`
@@ -69,10 +69,10 @@ func convertExclusion(p *storage.Exclusion) *Exclusion {
 
 // PolicyGroup represents storage.PolicyGroup in the Custom Resource.
 type PolicyGroup struct {
-	FieldName       string `yaml:"fieldName"`
-	BooleanOperator string `yaml:"booleanOperator"`
-	Negate          bool
-	Values          []*storage.PolicyValue
+	FieldName       string                 `yaml:"fieldName"`
+	BooleanOperator string                 `yaml:"booleanOperator"`
+	Negate          bool                   `yaml:",omitempty"`
+	Values          []*storage.PolicyValue `yaml:",omitempty"`
 }
 
 // convertPolicyGroup Converts storage.PolicyGroup to *PolicyGroup
@@ -91,7 +91,7 @@ func convertPolicyGroup(p *storage.PolicyGroup) *PolicyGroup {
 
 // PolicySection represents storage.PolicySection in the Custom Resource.
 type PolicySection struct {
-	SectionName  string         `yaml:"sectionName"`
+	SectionName  string         `yaml:"sectionName,omitempty"`
 	PolicyGroups []*PolicyGroup `yaml:"policyGroups,omitempty"`
 }
 
@@ -109,6 +109,7 @@ func convertPolicySection(p *storage.PolicySection) *PolicySection {
 
 // Policy represents storage.Policy in the Custom Resource.
 type Policy struct {
+	Name               string `yaml:"policyName"`
 	Description        string `yaml:",omitempty"`
 	Rationale          string `yaml:",omitempty"`
 	Remediation        string `yaml:",omitempty"`
@@ -135,6 +136,7 @@ func convertPolicy(p *storage.Policy) *Policy {
 	}
 
 	return &Policy{
+		Name:               p.Name,
 		Description:        p.Description,
 		Rationale:          p.Rationale,
 		Remediation:        p.Remediation,
@@ -163,7 +165,7 @@ func ConvertPolicyToCustomResource(p *storage.Policy) *CustomResource {
 	return &CustomResource{
 		APIVersion:         "config.stackrox.io/v1alpha1",
 		Kind:               "SecurityPolicy",
-		Metadata:           map[string]interface{}{"name": p.GetName()},
+		Metadata:           map[string]interface{}{"name": toDNSSubdomainName(p.GetName())},
 		SecurityPolicySpec: convertPolicy(p),
 	}
 }
