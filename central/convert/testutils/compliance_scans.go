@@ -38,7 +38,7 @@ func GetScanV2SensorMsg(_ *testing.T) *central.ComplianceOperatorScanV2 {
 			Warnings:         "",
 			RemainingRetries: 0,
 			LastStartTime:    startTime,
-			StartTime:        startTime,
+			StartTime:        createTime,
 			EndTime:          endTime,
 		},
 	}
