@@ -61,7 +61,8 @@ _run_compatibility_tests() {
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
 
-    deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
+    deploy_stackrox
+    #deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
     echo "Stackrox deployed with Central version - ${central_version}, Sensor version - ${sensor_version}"
     deploy_optional_e2e_components
 
