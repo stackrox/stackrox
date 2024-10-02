@@ -33,9 +33,12 @@ tests/performance           @stackrox/merlin
 
 /ui/**/* @stackrox/ui
 
-pkg/images/defaults/**/*    @stackrox/maple
-roxctl/netpol/**/*          @stackrox/maple
-sensor/**/*                 @stackrox/maple
+pkg/images/defaults/**/*                       @stackrox/maple
+roxctl/netpol/**/*                             @stackrox/ibm-research @stackrox/maple
+tests/roxctl/bats-tests/local/roxctl-netpol-*  @stackrox/ibm-research @stackrox/maple
+tests/roxctl/bats-tests/test-data/np-guard/    @stackrox/ibm-research @stackrox/maple
+
+sensor/**/*                                    @stackrox/maple
 
 operator/**/* @stackrox/draco
 
