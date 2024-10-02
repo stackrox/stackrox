@@ -26,7 +26,4 @@ type FlowDataStore interface {
 	RemoveStaleFlows(ctx context.Context) error
 	// RemoveOrphanedFlows - remove flows that have been orphaned by deployments
 	RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error
-	// RemoveOrphanedExternalEntities removes external entities that are no longer associated
-	// with a flow
-	RemoveOrphanedExternalEntities(ctx context.Context) error
 }
