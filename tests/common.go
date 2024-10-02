@@ -48,7 +48,7 @@ const (
 	nginxDeploymentName     = `nginx`
 	expectedLatestTagPolicy = `Latest tag`
 
-	waitTimeout = 10 * time.Minute
+	waitTimeout = 5 * time.Minute
 	timeout     = 30 * time.Second
 )
 
