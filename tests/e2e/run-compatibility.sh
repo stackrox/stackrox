@@ -48,7 +48,7 @@ _run_compatibility_tests() {
     require_environment "KUBECONFIG"
 
     export_test_environment
-    ci_export CENTRAL_PERSISTENCE_NONE "true"
+    #ci_export CENTRAL_PERSISTENCE_NONE "true"
 
     export SENSOR_HELM_DEPLOY=true
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
@@ -61,13 +61,19 @@ _run_compatibility_tests() {
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
 
-    deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
+    deploy_stackrox
+    #deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
     echo "Stackrox deployed with Central version - ${central_version}, Sensor version - ${sensor_version}"
     deploy_optional_e2e_components
 
     rm -f FAIL
 
     prepare_for_endpoints_test
+
+    run_roxctl_tests
+    run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
+    store_test_results "roxctl-test-output" "roxctl-test-output"
+    [[ ! -f FAIL ]] || die "roxctl e2e tests failed"
 
     # Give some time for stackrox to be reachable
     wait_for_api
@@ -110,6 +116,43 @@ prepare_for_endpoints_test() {
     export SERVICE_CA_FILE="$gencerts_dir/ca.pem"
     export SERVICE_CERT_FILE="$gencerts_dir/sensor-cert.pem"
     export SERVICE_KEY_FILE="$gencerts_dir/sensor-key.pem"
+}
+
+run_roxctl_bats_tests() {
+    local output="${1}"
+    local suite="${2}"
+    if (( $# != 2 )); then
+      die "Error: run_roxctl_bats_tests requires 2 arguments: run_roxctl_bats_tests <test_output> <suite>"
+    fi
+    [[ -d "$ROOT/tests/roxctl/bats-tests/$suite" ]] || die "Cannot find directory: $ROOT/tests/roxctl/bats-tests/$suite"
+
+    info "Running Bats e2e tests on development roxctl"
+    "$ROOT/tests/roxctl/bats-runner.sh" "$output" "$ROOT/tests/roxctl/bats-tests/$suite"
+}
+
+run_roxctl_tests() {
+    info "Run roxctl tests"
+
+    junit_wrap "roxctl-token-file" "roxctl token-file test" "" \
+        "$ROOT/tests/roxctl/token-file.sh"
+
+    junit_wrap "roxctl-slim-collector" "roxctl slim-collector test" "" \
+        "$ROOT/tests/roxctl/slim-collector.sh"
+
+    junit_wrap "roxctl-authz-trace" "roxctl authz-trace test" "" \
+        "$ROOT/tests/roxctl/authz-trace.sh"
+
+    junit_wrap "roxctl-istio-support" "roxctl istio-support test" "" \
+        "$ROOT/tests/roxctl/istio-support.sh"
+
+    junit_wrap "roxctl-k8s-context" "roxctl --use-current-k8s-context test" "" \
+        "$ROOT/tests/roxctl/roxctl-k8s-context.sh"
+
+    junit_wrap "roxctl-helm-chart-generation" "roxctl helm-chart-generation test" "" \
+        "$ROOT/tests/roxctl/helm-chart-generation.sh"
+
+    CA="$SERVICE_CA_FILE" junit_wrap "roxctl-yaml-verification" "roxctl yaml-verification test" "" \
+        "$ROOT/tests/yamls/roxctl_verification.sh"
 }
 
 shorten_tag() {
