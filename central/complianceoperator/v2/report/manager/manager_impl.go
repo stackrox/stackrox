@@ -8,12 +8,15 @@ import (
 
 	"github.com/pkg/errors"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
+	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/sync/semaphore"
 )
@@ -44,6 +47,12 @@ type managerImpl struct {
 	mu             sync.Mutex
 	concurrencySem *semaphore.Weighted
 	reportGen      reportGen.ComplianceReportGenerator
+
+	watchingScansLock sync.Mutex
+	// watchingScans a map holding the ScanWatchers
+	watchingScans map[string]watcher.ScanWatcher
+	// readyQueue holds the scan that are ready to be reported
+	readyQueue *queue.Queue[*watcher.ScanWatcherResults]
 }
 
 func New(scanConfigDS scanConfigurationDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
@@ -54,6 +63,8 @@ func New(scanConfigDS scanConfigurationDS.DataStore, reportGen reportGen.Complia
 		reportRequests:       make(chan *reportRequest, maxRequests),
 		concurrencySem:       semaphore.NewWeighted(int64(env.ReportExecutionMaxConcurrency.IntegerSetting())),
 		reportGen:            reportGen,
+		watchingScans:        make(map[string]watcher.ScanWatcher),
+		readyQueue:           queue.NewQueue[*watcher.ScanWatcherResults](),
 	}
 }
 
@@ -97,6 +108,7 @@ func (m *managerImpl) Start() {
 	}
 	log.Info("Starting compliance report manager")
 	go m.runReports()
+	go m.handleReadyScan()
 }
 
 func (m *managerImpl) Stop() {
@@ -110,6 +122,11 @@ func (m *managerImpl) Stop() {
 		return
 	}
 	logging.Info("Stopping compliance report manager")
+	concurrency.WithLock(&m.watchingScansLock, func() {
+		for _, scanWatcher := range m.watchingScans {
+			scanWatcher.Stop()
+		}
+	})
 	m.stopper.Client().Stop()
 	err := m.stopper.Client().Stopped().Wait()
 	if err != nil {
@@ -161,6 +178,74 @@ func (m *managerImpl) runReports() {
 			}
 			logging.Infof("Executing report %q at %v", req.scanConfig.GetId(), time.Now().Format(time.RFC822))
 			go m.generateReport(req)
+		}
+	}
+}
+
+// HandleScan starts a new ScanWatcher if needed and pushes the scan to it
+func (m *managerImpl) HandleScan(scan *storage.ComplianceOperatorScanV2) error {
+	if !features.ComplianceReporting.Enabled() {
+		return nil
+	}
+	id, err := watcher.GetWatcherIDFromScan(scan)
+	if err != nil {
+		return err
+	}
+	if id == "" {
+		return nil
+	}
+	concurrency.WithLock(&m.watchingScansLock, func() {
+		var scanWatcher watcher.ScanWatcher
+		var found bool
+		if scanWatcher, found = m.watchingScans[id]; !found {
+			scanWatcher = watcher.NewScanWatcher(context.Background(), id, m.readyQueue)
+			m.watchingScans[id] = scanWatcher
+		}
+		err = scanWatcher.PushScan(scan)
+	})
+	return err
+}
+
+// HandleResult starts a new ScanWatcher if needed and pushes the checkResult to it
+func (m *managerImpl) HandleResult(result *storage.ComplianceOperatorCheckResultV2) error {
+	if !features.ComplianceReporting.Enabled() {
+		return nil
+	}
+	id, err := watcher.GetWatcherIDFromCheckResult(result, scanDS.Singleton())
+	if err != nil {
+		return err
+	}
+	if id == "" {
+		return nil
+	}
+	concurrency.WithLock(&m.watchingScansLock, func() {
+		var scanWatcher watcher.ScanWatcher
+		var found bool
+		if scanWatcher, found = m.watchingScans[id]; !found {
+			scanWatcher = watcher.NewScanWatcher(context.Background(), id, m.readyQueue)
+			m.watchingScans[id] = scanWatcher
+		}
+		err = scanWatcher.PushCheckResult(result)
+	})
+	return err
+}
+
+// handleReadyScan pulls scans that are ready to be reported
+func (m *managerImpl) handleReadyScan() {
+	if !features.ComplianceReporting.Enabled() {
+		return
+	}
+	for {
+		select {
+		case <-m.stopper.Flow().StopRequested():
+			return
+		default:
+			if scanResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanResult != nil {
+				log.Infof("Scan %s done with %d checks", scanResult.Scan.GetScanName(), len(scanResult.CheckResults))
+				concurrency.WithLock(&m.watchingScansLock, func() {
+					delete(m.watchingScans, scanResult.ID)
+				})
+			}
 		}
 	}
 }

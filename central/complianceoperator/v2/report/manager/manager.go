@@ -17,4 +17,7 @@ type Manager interface {
 	Start()
 	// Stop scheduler
 	Stop()
+
+	HandleScan(scan *storage.ComplianceOperatorScanV2) error
+	HandleResult(result *storage.ComplianceOperatorCheckResultV2) error
 }
