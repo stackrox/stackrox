@@ -49,6 +49,8 @@ message Deployment {
   float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore"
 
   reserved 30; // was tags
+
+  bool platform_component = 35; // @gotags: search:"Platform Component"
 }
 
 // Next tag: 12
