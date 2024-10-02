@@ -181,9 +181,10 @@ func (gc *grpcClient) TokenExchange(ctx context.Context) error {
 }
 
 type client struct {
-	svc         PolicyClient
-	cache       map[string]*storage.Policy // policy name to policy
-	lastUpdated time.Time
+	svc                 PolicyClient
+	policyObjectCache   map[string]*storage.Policy // policy ID to policy
+	policyNameToIDCache map[string]string          // policy name to policy ID
+	lastUpdated         time.Time
 }
 
 type clientOptions interface {
@@ -225,17 +226,17 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 	return &c, nil
 }
 
-func (c *client) ListPolicies(ctx context.Context) ([]*storage.Policy, error) {
-	policies := make([]*storage.Policy, 0, len(c.cache))
-	for _, value := range c.cache {
+func (c *client) ListPolicies(_ context.Context) ([]*storage.Policy, error) {
+	policies := make([]*storage.Policy, 0, len(c.policyObjectCache))
+	for _, value := range c.policyObjectCache {
 		policies = append(policies, value)
 	}
 	return policies, nil
 }
 
-func (c *client) GetPolicy(ctx context.Context, name string) (*storage.Policy, bool, error) {
-	policy, exists := c.cache[name]
-	return policy, exists, nil
+func (c *client) GetPolicy(_ context.Context, name string) (*storage.Policy, bool, error) {
+	id, exists := c.policyNameToIDCache[name]
+	return c.policyObjectCache[id], exists, nil
 }
 
 func (c *client) CreatePolicy(ctx context.Context, policy *storage.Policy) (*storage.Policy, error) {
@@ -246,36 +247,50 @@ func (c *client) CreatePolicy(ctx context.Context, policy *storage.Policy) (*sto
 		return nil, errors.Wrap(err, fmt.Sprintf("Failed to POST policy '%s'", policy.Name))
 	}
 
-	c.cache[createdPolicy.Name] = createdPolicy
+	c.policyObjectCache[createdPolicy.GetId()] = createdPolicy
+	c.policyNameToIDCache[createdPolicy.GetName()] = createdPolicy.GetId()
 
 	return createdPolicy, nil
 }
 
 func (c *client) UpdatePolicy(ctx context.Context, policy *storage.Policy) error {
 	getLogger(ctx).Info("PUT", "policyName", policy.Name)
-	err := c.svc.PutPolicy(ctx, policy)
 
+	var existingPolicyName string
+	if id, ok := c.policyNameToIDCache[policy.GetName()]; ok {
+		existingPolicyName = c.policyObjectCache[id].GetName()
+	}
+
+	// update policy on central
+	err := c.svc.PutPolicy(ctx, policy)
 	if err != nil {
 		return errors.Wrap(err, "Failed to PUT policy")
 	}
-
-	c.cache[policy.Name] = policy
-
+	// update caches, taking care of the legit rename a declarative policy case
+	c.policyObjectCache[policy.GetId()] = policy
+	if existingPolicyName != policy.GetName() {
+		delete(c.policyNameToIDCache, existingPolicyName)
+	}
+	c.policyNameToIDCache[policy.GetName()] = policy.GetId()
 	return nil
 }
 
 func (c *client) DeletePolicy(ctx context.Context, name string) error {
 	getLogger(ctx).Info("DELETE", "policyName", name)
-	policy := c.cache[name]
-
+	policyID, ok := c.policyNameToIDCache[name]
+	if !ok {
+		return nil
+	}
+	policy := c.policyObjectCache[policyID]
 	if policy.GetSource() != storage.PolicySource_DECLARATIVE {
 		return errors.New(fmt.Sprintf("policy %q is not externally managed and can be deleted only from central", name))
 	}
 
-	if err := c.svc.DeletePolicy(ctx, policy.GetId()); err != nil {
+	if err := c.svc.DeletePolicy(ctx, policyID); err != nil {
 		return errors.Wrapf(err, "Failed to DELETE policy %q in central", name)
 	}
-	delete(c.cache, policy.Name)
+	delete(c.policyObjectCache, policyID)
+	delete(c.policyNameToIDCache, policy.GetName())
 	return nil
 }
 
@@ -293,7 +308,8 @@ func (c *client) FlushCache(ctx context.Context) error {
 		return errors.Wrap(err, "Failed to list policies")
 	}
 
-	newCache := make(map[string]*storage.Policy, len(allPolicies))
+	newPolicyObjectCache := make(map[string]*storage.Policy, len(allPolicies))
+	newPolicyNameToIDCache := make(map[string]string, len(allPolicies))
 
 	for _, listPolicy := range allPolicies {
 		getLogger(ctx).Info("GET", "ID", listPolicy.Id)
@@ -301,9 +317,11 @@ func (c *client) FlushCache(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrapf(err, "Failed to fetch policy %s", listPolicy.Id)
 		}
-		newCache[policy.Name] = policy
+		newPolicyObjectCache[policy.GetId()] = policy
+		newPolicyNameToIDCache[policy.GetName()] = policy.GetId()
 	}
-	c.cache = newCache
+	c.policyObjectCache = newPolicyObjectCache
+	c.policyNameToIDCache = newPolicyNameToIDCache
 	c.lastUpdated = time.Now()
 
 	return nil

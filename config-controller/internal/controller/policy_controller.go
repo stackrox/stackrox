@@ -23,7 +23,6 @@ import (
 	"github.com/pkg/errors"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/config-controller/pkg/client"
-	"github.com/stackrox/rox/generated/storage"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -69,6 +68,31 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrap(err, "Failed to refresh")
 	}
 
+	desiredState := policyCR.Spec.ToProtobuf()
+
+	existingPolicy, exists, err := r.PolicyClient.GetPolicy(ctx, desiredState.GetName())
+	if err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "Failed to fetch policy")
+	}
+
+	// We do not want this reconcile request to be requeued since it has  a name collision
+	// with an existing default policy, hence return a terminal error.
+	if exists && existingPolicy.IsDefault {
+		retErr := errors.New(fmt.Sprintf("Failed to reconcile: existing default policy with the same name '%s' exists", desiredState.GetName()))
+		policyCR.Status.Accepted = false
+		policyCR.Status.Message = retErr.Error()
+
+		return r.UpdateCRStatus(ctx, policyCR)
+	}
+
+	// If the policy in CR is being renamed or does not exist on central, exists will be false, and we will update the policy ID
+	// to the one in CR status. The policy ID in the CR status is expected to be blank if this is the first time policy is being reconciled.
+	if exists {
+		desiredState.Id = existingPolicy.GetId()
+	} else {
+		desiredState.Id = policyCR.Status.PolicyId
+	}
+
 	// Ensure a finalizer is added to each policy custom resource if it is not being deleted
 	if policyCR.ObjectMeta.DeletionTimestamp.IsZero() {
 		// The policy is not being deleted, so if it does not have our finalizer,
@@ -76,9 +100,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// to registering our finalizer in preparation for a future delete.
 		if !controllerutil.ContainsFinalizer(policyCR, policyFinalizer) {
 			controllerutil.AddFinalizer(policyCR, policyFinalizer)
-			if err := r.K8sClient.Update(ctx, policyCR); err != nil {
-				return ctrl.Result{}, errors.Wrapf(err, "unable to add finalizer to policy %q", policyCR.GetName())
-			}
+			return r.UpdateCRStatus(ctx, policyCR)
 		}
 	} else {
 		// The policy is being deleted since k8s set the deletion timestamp
@@ -92,59 +114,45 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 			// remove our finalizer from the list and update it.
 			controllerutil.RemoveFinalizer(policyCR, policyFinalizer)
-			if err := r.K8sClient.Update(ctx, policyCR); err != nil {
-				return ctrl.Result{}, errors.Wrapf(err, "failed to remove finalizer from policy CR %q", policyCR.GetName())
-			}
+			return r.UpdateCRStatus(ctx, policyCR)
 		}
 
 		// Stop reconciliation as the item has been deleted
 		return ctrl.Result{}, nil
 	}
 
-	// Non deletion case, so either an update or create of a policy
-	desiredState := policyCR.Spec.ToProtobuf()
-	desiredState.Name = policyCR.GetName()
-	desiredState.Source = storage.PolicySource_DECLARATIVE
-
-	existingPolicy, exists, err := r.PolicyClient.GetPolicy(ctx, req.Name)
-	if err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "Failed to fetch policy")
-	}
-
 	var retErr error
-	if exists {
-		desiredState.Id = existingPolicy.Id
-		if err = r.PolicyClient.UpdatePolicy(ctx, desiredState); err != nil {
-			desiredState.Id = existingPolicy.Id
-			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy %s", req.Name))
+	if desiredState.GetId() != "" {
+		if err := r.PolicyClient.UpdatePolicy(ctx, desiredState); err != nil {
+			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy '%s'", desiredState.GetName()))
 			policyCR.Status.Accepted = false
 			policyCR.Status.Message = retErr.Error()
 		} else {
 			policyCR.Status.Accepted = true
 			policyCR.Status.Message = "Successfully updated policy"
+			policyCR.Status.PolicyId = desiredState.GetId()
 		}
 	} else {
-		if _, err = r.PolicyClient.CreatePolicy(ctx, desiredState); err != nil {
-			retErr := errors.Wrap(err, fmt.Sprintf("Failed to create policy %s", req.Name))
+		if createdPolicy, err := r.PolicyClient.CreatePolicy(ctx, desiredState); err != nil {
+			retErr := errors.Wrap(err, fmt.Sprintf("Failed to create policy '%s'", desiredState.GetName()))
 			policyCR.Status.Accepted = false
 			policyCR.Status.Message = retErr.Error()
 		} else {
+			// Create was successful so persist the policy ID received from Central
 			policyCR.Status.Accepted = true
 			policyCR.Status.Message = "Successfully created policy"
+			policyCR.Status.PolicyId = createdPolicy.GetId()
 		}
 	}
 
-	if err = r.K8sClient.Status().Update(ctx, policyCR); err != nil {
-		return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on policy %s", req.Name))
-	}
+	r.UpdateCRStatus(ctx, policyCR)
 
 	if retErr != nil {
 		// Perhaps the cache is stale
-		if err = r.PolicyClient.FlushCache(ctx); err != nil {
+		if err := r.PolicyClient.FlushCache(ctx); err != nil {
 			return ctrl.Result{}, errors.Wrap(err, "Failed to flush cache")
 		}
 	}
-
 	return ctrl.Result{}, retErr
 }
 
@@ -159,4 +167,11 @@ func (r *SecurityPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	return nil
+}
+
+func (r *SecurityPolicyReconciler) UpdateCRStatus(ctx context.Context, policyCR *configstackroxiov1alpha1.SecurityPolicy) (ctrl.Result, error) {
+	if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on policy '%s'", policyCR.Spec.PolicyName))
+	}
+	return ctrl.Result{}, nil
 }
