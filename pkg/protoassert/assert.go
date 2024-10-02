@@ -4,11 +4,13 @@
 package protoassert
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/pmezard/go-difflib/difflib"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/exp/maps"
 	"google.golang.org/protobuf/proto"
@@ -33,12 +35,14 @@ var spewConfig = spew.ConfigState{
 // Equal mimics [assert.Equal].
 func Equal[T message[V], V any](t testing.TB, expected, actual T, msgAndArgs ...any) bool {
 	t.Helper()
-	if !actual.EqualVT(expected) {
-		return assert.Fail(t, fmt.Sprintf("Not equal: \n"+
-			"expected: %s\n"+
-			"actual  : %s", expected, actual), msgAndArgs...)
+	if actual.EqualVT(expected) {
+		return true
 	}
-	return true
+	diff := diff(expected, actual)
+	e, a := formatUnequalValues(expected, actual)
+	return assert.Fail(t, fmt.Sprintf("Not equal: \n"+
+		"expected: %s\n"+
+		"actual  : %s%s", e, a, diff), msgAndArgs...)
 }
 
 // NotEqual mimics [assert.NotEqual].
@@ -57,7 +61,7 @@ func SlicesEqual[S ~[]T, T message[V], V any](t testing.TB, expected, actual S, 
 		return false
 	}
 	for i := range expected {
-		if !Equal(t, expected[i], actual[i], msgAndArgs...) {
+		if !Equal(t, expected[i], actual[i], append([]any{fmt.Sprintf("index: %d", i)}, msgAndArgs...)...) {
 			return false
 		}
 	}
@@ -79,10 +83,10 @@ func SliceContains[S ~[]T, T message[V], V any](t testing.TB, s S, contains T, m
 // SliceNotContains mimics [assert.NotContains].
 func SliceNotContains[S ~[]T, T message[V], V any](t testing.TB, s S, contains T, msgAndArgs ...any) bool {
 	t.Helper()
-	for _, e := range s {
+	for i, e := range s {
 		// Do not use [Equal] here, as it will unnecessarily log unequal elements.
 		if e.EqualVT(contains) {
-			return assert.Fail(t, fmt.Sprintf("%#v should not contain %#v", s, contains), msgAndArgs...)
+			return assert.Fail(t, fmt.Sprintf("index: %d\n%#v should not contain %#v", i, s, contains), msgAndArgs...)
 		}
 	}
 	return true
@@ -133,6 +137,58 @@ func MapEqual[M ~map[K]T, K comparable, T message[V], V any](t testing.TB, expec
 		}
 	}
 	return true
+}
+
+// diff is based on [assert.diff]. The doc for it is copied below:
+//
+// diff returns a diff of both values as long as both are of the same type and
+// are a struct, map, slice, array or string. Otherwise it returns an empty string.
+func diff[T message[V], V any](expected, actual T) string {
+	if expected == nil || actual == nil {
+		return ""
+	}
+
+	e := spewConfig.Sdump(expected)
+	a := spewConfig.Sdump(actual)
+
+	diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:        difflib.SplitLines(e),
+		B:        difflib.SplitLines(a),
+		FromFile: "Expected",
+		FromDate: "",
+		ToFile:   "Actual",
+		ToDate:   "",
+		Context:  1,
+	})
+
+	return "\n\nDiff:\n" + diff
+}
+
+// formatUnequalValues mimics [assert.formatUnequalValues]. The doc for it is copied below:
+//
+// formatUnequalValues takes two values of arbitrary types and returns string
+// representations appropriate to be presented to the user.
+//
+// If the values are not of like type, the returned strings will be prefixed
+// with the type name, and the value will be enclosed in parentheses similar
+// to a type conversion in the Go grammar.
+func formatUnequalValues[T message[V], V any](expected, actual T) (string, string) {
+	return truncatingFormat(expected), truncatingFormat(actual)
+}
+
+// truncatingFormat mimics [assert.truncatingFormat]. The doc for it is copied below:
+//
+// truncatingFormat formats the data and truncates it if it's too long.
+//
+// This helps keep formatted error messages lines from exceeding the
+// bufio.MaxScanTokenSize max line length that the go testing framework imposes.
+func truncatingFormat(data any) string {
+	value := fmt.Sprintf("%#v", data)
+	max := bufio.MaxScanTokenSize - 100 // Give us some space the type info too if needed.
+	if len(value) > max {
+		value = value[0:max] + "<... truncated>"
+	}
+	return value
 }
 
 // diffSlices is based on [assert.diffLists]. The doc for it is copied below:
