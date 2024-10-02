@@ -23,11 +23,17 @@ import (
 	"github.com/pkg/errors"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/config-controller/pkg/client"
+	"github.com/stackrox/rox/generated/storage"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+const (
+	policyFinalizer = "securitypolicies.config.stackrox.io/finalizer"
 )
 
 // SecurityPolicyReconciler reconciles a SecurityPolicy object
@@ -45,10 +51,6 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	rlog := log.FromContext(ctx)
 	rlog.Info("Reconciling", "namespace", req.Namespace, "name", req.Name)
 
-	if err := r.PolicyClient.EnsureFresh(ctx); err != nil {
-		return ctrl.Result{}, errors.Wrap(err, "Failed to refresh")
-	}
-
 	// Get the policy CR
 	policyCR := &configstackroxiov1alpha1.SecurityPolicy{}
 	if err := r.K8sClient.Get(ctx, req.NamespacedName, policyCR); err != nil {
@@ -59,8 +61,50 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, fmt.Errorf("Failed to get policy: namespace=%s, name=%s", req.Namespace, req.Name)
 	}
 
+	if ok, err := policyCR.Spec.IsValid(); !ok {
+		return ctrl.Result{}, errors.Wrapf(err, "Invalid policy resource: namespace=%s, name=%s", req.Namespace, req.Name)
+	}
+
+	if err := r.PolicyClient.EnsureFresh(ctx); err != nil {
+		return ctrl.Result{}, errors.Wrap(err, "Failed to refresh")
+	}
+
+	// Ensure a finalizer is added to each policy custom resource if it is not being deleted
+	if policyCR.ObjectMeta.DeletionTimestamp.IsZero() {
+		// The policy is not being deleted, so if it does not have our finalizer,
+		// then lets update the policy to add the finalizer. This is equivalent
+		// to registering our finalizer in preparation for a future delete.
+		if !controllerutil.ContainsFinalizer(policyCR, policyFinalizer) {
+			controllerutil.AddFinalizer(policyCR, policyFinalizer)
+			if err := r.K8sClient.Update(ctx, policyCR); err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "unable to add finalizer to policy %q", policyCR.GetName())
+			}
+		}
+	} else {
+		// The policy is being deleted since k8s set the deletion timestamp
+		if controllerutil.ContainsFinalizer(policyCR, policyFinalizer) {
+			// finalizer is present, so lets handle the external dependency of deleting policy in central
+			if err := r.PolicyClient.DeletePolicy(ctx, policyCR.GetName()); err != nil {
+				// if we failed to delete the policy in central, return with error
+				// so that it can be retried.
+				return ctrl.Result{}, errors.Wrapf(err, "failed to delete policy %q", policyCR.GetName())
+			}
+
+			// remove our finalizer from the list and update it.
+			controllerutil.RemoveFinalizer(policyCR, policyFinalizer)
+			if err := r.K8sClient.Update(ctx, policyCR); err != nil {
+				return ctrl.Result{}, errors.Wrapf(err, "failed to remove finalizer from policy CR %q", policyCR.GetName())
+			}
+		}
+
+		// Stop reconciliation as the item has been deleted
+		return ctrl.Result{}, nil
+	}
+
+	// Non deletion case, so either an update or create of a policy
 	desiredState := policyCR.Spec.ToProtobuf()
 	desiredState.Name = policyCR.GetName()
+	desiredState.Source = storage.PolicySource_DECLARATIVE
 
 	existingPolicy, exists, err := r.PolicyClient.GetPolicy(ctx, req.Name)
 	if err != nil {

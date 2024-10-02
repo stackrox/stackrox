@@ -21,9 +21,15 @@ const complianceEntityPath = `${mainPath}/:context/:pageEntityType(${pageEntityT
 const Page = () => (
     <searchContext.Provider value="s">
         <Switch>
-            <Route exact path={complianceDashboardPath} component={Dashboard} />
-            <Route path={complianceListPath} component={List} />
-            <Route path={complianceEntityPath} component={Entity} />
+            <Route exact path={complianceDashboardPath}>
+                <Dashboard />
+            </Route>
+            <Route path={complianceListPath}>
+                <List />
+            </Route>
+            <Route path={complianceEntityPath}>
+                <Entity />
+            </Route>
             <Route>
                 <PageNotFound useCase="compliance" />
             </Route>

@@ -25,7 +25,8 @@ import (
 )
 
 var (
-	apiWhiteList = env.RegisterSetting("ROX_TELEMETRY_API_WHITELIST", env.AllowEmpty())
+	apiWhiteList   = env.RegisterSetting("ROX_TELEMETRY_API_WHITELIST", env.AllowEmpty())
+	userAgentsList = env.RegisterSetting("ROX_TELEMETRY_USERAGENT_LIST", env.WithDefault("ServiceNow"), env.AllowEmpty())
 
 	config *phonehome.Config
 	once   sync.Once
@@ -58,6 +59,7 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 	}
 
 	trackedPaths = strings.Split(apiWhiteList.Setting(), ",")
+	trackedUserAgents = strings.Split(userAgentsList.Setting(), ",")
 
 	orchestrator := storage.ClusterType_KUBERNETES_CLUSTER.String()
 	if env.Openshift.BooleanSetting() {
@@ -124,6 +126,7 @@ func InstanceConfig() *phonehome.Config {
 		log.Info("Central ID: ", config.ClientID)
 		log.Info("Tenant ID: ", config.GroupID)
 		log.Info("API path telemetry enabled for: ", trackedPaths)
+		log.Info("API User-Agent telemetry enabled for: ", trackedUserAgents)
 
 		config.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
 			return props, nil

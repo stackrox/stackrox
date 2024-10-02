@@ -134,7 +134,11 @@ function DiscoveredClustersToolbar({
                     </ToolbarItem>
                 </ToolbarGroup>
                 <ToolbarGroup className="pf-v5-u-w-100">
-                    <SearchFilterChips filterChipGroupDescriptors={searchFilterChipDescriptors} />
+                    <SearchFilterChips
+                        searchFilter={searchFilter}
+                        onFilterChange={setSearchFilter}
+                        filterChipGroupDescriptors={searchFilterChipDescriptors}
+                    />
                 </ToolbarGroup>
             </ToolbarContent>
         </Toolbar>

@@ -170,7 +170,8 @@ function WorkloadCveFilterToolbar({
                 )}
                 <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
                     <SearchFilterChips
-                        onFilterChange={onFilterChange}
+                        searchFilter={searchFilter}
+                        onFilterChange={setSearchFilter}
                         filterChipGroupDescriptors={filterChipGroupDescriptors}
                     />
                 </ToolbarGroup>

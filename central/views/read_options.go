@@ -6,6 +6,7 @@ type ReadOptions struct {
 	SkipGetTopCVSS                 bool
 	SkipGetAffectedImages          bool
 	SkipGetFirstDiscoveredInSystem bool
+	SkipPublishedDate              bool
 }
 
 // IsDefault returns true if all readoptions are set to default/false.

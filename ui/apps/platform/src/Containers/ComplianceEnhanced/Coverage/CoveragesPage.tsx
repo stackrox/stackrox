@@ -178,6 +178,8 @@ function CoveragesPage() {
                                     </ToolbarGroup>
                                     <ToolbarGroup className="pf-v5-u-w-100">
                                         <SearchFilterChips
+                                            searchFilter={searchFilter}
+                                            onFilterChange={setSearchFilter}
                                             filterChipGroupDescriptors={[
                                                 {
                                                     displayName: 'Profile Check',
@@ -194,16 +196,12 @@ function CoveragesPage() {
                             </Toolbar>
                             <Divider />
                             <Switch>
-                                <Route
-                                    exact
-                                    path={coverageProfileChecksPath}
-                                    render={() => <ProfileChecksPage />}
-                                />
-                                <Route
-                                    exact
-                                    path={coverageProfileClustersPath}
-                                    render={() => <ProfileClustersPage />}
-                                />
+                                <Route exact path={coverageProfileChecksPath}>
+                                    <ProfileChecksPage />
+                                </Route>
+                                <Route exact path={coverageProfileClustersPath}>
+                                    <ProfileClustersPage />
+                                </Route>
                             </Switch>
                         </PageSection>
                     </>

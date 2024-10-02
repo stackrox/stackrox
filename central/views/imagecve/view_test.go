@@ -789,12 +789,15 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 
 				vulnTime, _ := protocompat.ConvertTimestampToTimeOrError(vuln.GetFirstSystemOccurrence())
 				vulnTime = vulnTime.Round(time.Microsecond)
+				vulnPublishDate, _ := protocompat.ConvertTimestampToTimeOrError(vuln.GetPublishedOn())
+				vulnPublishDate = vulnPublishDate.Round(time.Microsecond)
 				val := cveMap[vuln.GetCve()]
 				if val == nil {
 					val = &imageCVECoreResponse{
 						CVE:                     vuln.GetCve(),
 						TopCVSS:                 vuln.GetCvss(),
 						FirstDiscoveredInSystem: &vulnTime,
+						Published:               &vulnPublishDate,
 					}
 					cveMap[val.CVE] = val
 				}
@@ -815,6 +818,9 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 				}
 				if val.GetFirstDiscoveredInSystem().After(vulnTime) {
 					val.FirstDiscoveredInSystem = &vulnTime
+				}
+				if val.GetPublishDate().After(vulnPublishDate) {
+					val.Published = &vulnPublishDate
 				}
 
 				if !seenForImage.Add(val.CVE) {

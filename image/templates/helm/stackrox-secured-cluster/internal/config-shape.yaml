@@ -136,7 +136,7 @@ collector:
     enabled: null # bool
   crio:
     enabled: null # bool
-  runtime_config:
+  runtimeConfig:
     enabled: null # bool
 auditLogs:
   disableCollection: null # bool

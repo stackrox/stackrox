@@ -2,9 +2,11 @@ package central
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/roxctl/central/backup"
 	"github.com/stackrox/rox/roxctl/central/cert"
+	"github.com/stackrox/rox/roxctl/central/crs"
 	"github.com/stackrox/rox/roxctl/central/db"
 	"github.com/stackrox/rox/roxctl/central/debug"
 	"github.com/stackrox/rox/roxctl/central/export"
@@ -36,5 +38,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		export.Command(cliEnvironment),
 		m2m.Command(cliEnvironment),
 	)
+	if features.ClusterRegistrationSecrets.Enabled() {
+		c.AddCommand(crs.Command(cliEnvironment))
+	}
 	return c
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     Card,
     CardBody,
@@ -11,18 +11,21 @@ import {
 
 import {
     ComplianceScanConfigurationStatus,
-    ComplianceScanSnapshot,
+    ComplianceReportSnapshot,
 } from 'services/ComplianceScanConfigurationService';
 import JobDetails from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/JobDetails';
-import ReportJobsTable from 'Components/ReportJobsTable';
+import ReportJobsTable from 'Components/ReportJob/ReportJobsTable';
 import { RunState } from 'services/ReportsService.types';
 import useURLPagination from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
+import { ensureBoolean, ensureStringArray } from 'utils/ensure';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import ConfigDetails from './ConfigDetails';
-import ReportStatusFilter from './ReportStatusFilter';
+import ReportRunStatesFilter, { ensureReportRunStates } from './ReportRunStatesFilter';
 import MyJobsFilter from './MyJobsFilter';
 
 function createMockData(scanConfig: ComplianceScanConfigurationStatus) {
-    const snapshots: ComplianceScanSnapshot[] = [
+    const snapshots: ComplianceReportSnapshot[] = [
         {
             reportJobId: 'ab1c03ae-9707-43d1-932d-f948afb67b53',
             reportStatus: {
@@ -44,36 +47,49 @@ function createMockData(scanConfig: ComplianceScanConfigurationStatus) {
     return snapshots;
 }
 
-function getJobId(snapshot: ComplianceScanSnapshot) {
+function getJobId(snapshot: ComplianceReportSnapshot) {
     return snapshot.scanConfig.id;
 }
 
-function getConfigName(snapshot: ComplianceScanSnapshot) {
+function getConfigName(snapshot: ComplianceReportSnapshot) {
     return snapshot.scanConfig.scanName;
 }
 
 type ReportJobsProps = {
     scanConfig: ComplianceScanConfigurationStatus | undefined;
+    isComplianceReportingEnabled: boolean;
 };
 
-function ReportJobs({ scanConfig }: ReportJobsProps) {
+function ReportJobs({ scanConfig, isComplianceReportingEnabled }: ReportJobsProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
-    const [filteredStatuses, setFilteredStatuses] = useState<RunState[]>([]);
-    const [showOnlyMyJobs, setShowOnlyMyJobs] = React.useState<boolean>(false);
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const [isViewingOnlyMyJobs, setIsViewingOnlyMyJobs] = useURLStringUnion('viewOnlyMyJobs', [
+        'false',
+        'true',
+    ]);
 
-    const onReportStatusFilterChange = (_checked: boolean, selectedStatus: RunState) => {
-        setFilteredStatuses((prevFilteredStatuses) => {
-            const isStatusIncluded = prevFilteredStatuses.includes(selectedStatus);
-            if (isStatusIncluded) {
-                return prevFilteredStatuses.filter((status) => status !== selectedStatus);
-            }
-            return [...prevFilteredStatuses, selectedStatus];
-        });
+    const filteredReportRunStates = ensureStringArray(searchFilter['Report State']);
+
+    const onReportStatesFilterChange = (_checked: boolean, selectedStatus: RunState) => {
+        const isStatusIncluded = filteredReportRunStates.includes(selectedStatus);
+        if (isStatusIncluded) {
+            setSearchFilter({
+                ...searchFilter,
+                'Report State': filteredReportRunStates.filter(
+                    (status) => status !== selectedStatus
+                ),
+            });
+        } else {
+            setSearchFilter({
+                ...searchFilter,
+                'Report State': [...filteredReportRunStates, selectedStatus],
+            });
+        }
         setPage(1);
     };
 
     const onMyJobsFilterChange = (checked: boolean) => {
-        setShowOnlyMyJobs(checked);
+        setIsViewingOnlyMyJobs(String(checked));
         setPage(1);
     };
 
@@ -85,14 +101,14 @@ function ReportJobs({ scanConfig }: ReportJobsProps) {
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem alignItems="center">
-                        <ReportStatusFilter
-                            selection={filteredStatuses}
-                            onChange={onReportStatusFilterChange}
+                        <ReportRunStatesFilter
+                            reportRunStates={ensureReportRunStates(filteredReportRunStates)}
+                            onChange={onReportStatesFilterChange}
                         />
                     </ToolbarItem>
                     <ToolbarItem className="pf-v5-u-flex-grow-1" alignSelf="center">
                         <MyJobsFilter
-                            showOnlyMyJobs={showOnlyMyJobs}
+                            isViewingOnlyMyJobs={ensureBoolean(isViewingOnlyMyJobs)}
                             onMyJobsFilterChange={onMyJobsFilterChange}
                         />
                     </ToolbarItem>
@@ -121,7 +137,7 @@ function ReportJobs({ scanConfig }: ReportJobsProps) {
                 getConfigName={getConfigName}
                 onClearFilters={() => {}}
                 onDeleteDownload={() => {}}
-                renderExpandableRowContent={(snapshot: ComplianceScanSnapshot) => {
+                renderExpandableRowContent={(snapshot: ComplianceReportSnapshot) => {
                     return (
                         <>
                             <Card isFlat>
@@ -131,7 +147,10 @@ function ReportJobs({ scanConfig }: ReportJobsProps) {
                                         isDownloadAvailable={snapshot.isDownloadAvailable}
                                     />
                                     <Divider component="div" className="pf-v5-u-my-md" />
-                                    <ConfigDetails scanConfig={snapshot.scanConfig} />
+                                    <ConfigDetails
+                                        scanConfig={snapshot.scanConfig}
+                                        isComplianceReportingEnabled={isComplianceReportingEnabled}
+                                    />
                                 </CardBody>
                             </Card>
                         </>

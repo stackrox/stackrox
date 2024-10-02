@@ -10,10 +10,10 @@ import (
 	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
-	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/scrape"
+	"github.com/stackrox/rox/central/securedclustercertgen"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -291,6 +291,8 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 		return c.telemetryCtrl.ProcessTelemetryDataResponse(ctx, m.TelemetryDataResponse)
 	case *central.MsgFromSensor_IssueLocalScannerCertsRequest:
 		return c.processIssueLocalScannerCertsRequest(ctx, m.IssueLocalScannerCertsRequest)
+	case *central.MsgFromSensor_IssueSecuredClusterCertsRequest:
+		return c.processIssueSecuredClusterCertsRequest(ctx, m.IssueSecuredClusterCertsRequest)
 	case *central.MsgFromSensor_ComplianceResponse:
 		return c.processComplianceResponse(ctx, msg.GetComplianceResponse())
 	case *central.MsgFromSensor_Event:
@@ -339,7 +341,7 @@ func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Cont
 		err = errors.New("requestID is required to issue the certificates for the local scanner")
 	} else {
 		var certificates *storage.TypedServiceCertificateSet
-		certificates, err = localscanner.IssueLocalScannerCerts(namespace, clusterID)
+		certificates, err = securedclustercertgen.IssueLocalScannerCerts(namespace, clusterID)
 		response = &central.IssueLocalScannerCertsResponse{
 			RequestId: requestID,
 			Response: &central.IssueLocalScannerCertsResponse_Certificates{
@@ -359,6 +361,47 @@ func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Cont
 	}
 	err = c.InjectMessage(ctx, &central.MsgToSensor{
 		Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{IssueLocalScannerCertsResponse: response},
+	})
+	if err != nil {
+		return errors.Wrap(err, errMsg)
+	}
+	return nil
+}
+
+func (c *sensorConnection) processIssueSecuredClusterCertsRequest(ctx context.Context, request *central.IssueSecuredClusterCertsRequest) error {
+	requestID := request.GetRequestId()
+	clusterID := c.clusterID
+	namespace := c.sensorHello.GetDeploymentIdentification().GetAppNamespace()
+	errMsg := fmt.Sprintf("issuing Secured Cluster certificates for request ID %q, cluster ID %q and namespace %q",
+		requestID, clusterID, namespace)
+	var (
+		err      error
+		response *central.IssueSecuredClusterCertsResponse
+	)
+	if requestID == "" {
+		err = errors.New("requestID is required to issue the certificates for a Secured Cluster")
+	} else {
+		var certificates *storage.TypedServiceCertificateSet
+		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID)
+		response = &central.IssueSecuredClusterCertsResponse{
+			RequestId: requestID,
+			Response: &central.IssueSecuredClusterCertsResponse_Certificates{
+				Certificates: certificates,
+			},
+		}
+	}
+	if err != nil {
+		response = &central.IssueSecuredClusterCertsResponse{
+			RequestId: requestID,
+			Response: &central.IssueSecuredClusterCertsResponse_Error{
+				Error: &central.SecuredClusterCertsIssueError{
+					Message: fmt.Sprintf("%s: %s", errMsg, err.Error()),
+				},
+			},
+		}
+	}
+	err = c.InjectMessage(ctx, &central.MsgToSensor{
+		Msg: &central.MsgToSensor_IssueSecuredClusterCertsResponse{IssueSecuredClusterCertsResponse: response},
 	})
 	if err != nil {
 		return errors.Wrap(err, errMsg)

@@ -3,7 +3,7 @@ import entityTypes from 'constants/entityTypes';
 import pluralize from 'pluralize';
 import entityLabels from 'messages/entity';
 import URLService from 'utils/URLService';
-import { withRouter } from 'react-router-dom';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 
 import DashboardMenu from 'Components/DashboardMenu';
 
@@ -18,7 +18,7 @@ const createOptions = (urlBuilder, types) => {
     });
 };
 
-const AppMenu = ({ match, location }) => {
+const AppMenu = () => {
     const types = [
         entityTypes.CLUSTER,
         entityTypes.NAMESPACE,
@@ -28,10 +28,12 @@ const AppMenu = ({ match, location }) => {
         entityTypes.SECRET,
     ];
 
+    const match = useRouteMatch();
+    const location = useLocation();
     const urlBuilder = URLService.getURL(match, location);
     const options = createOptions(urlBuilder, types);
 
     return <DashboardMenu text="Application & Infrastructure" options={options} />;
 };
 
-export default withRouter(AppMenu);
+export default AppMenu;

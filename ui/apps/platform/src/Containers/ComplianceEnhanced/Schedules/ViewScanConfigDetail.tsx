@@ -18,26 +18,26 @@ import {
 } from '@patternfly/react-core';
 
 import { complianceEnhancedSchedulesPath } from 'routePaths';
-import PageTitle from 'Components/PageTitle';
-import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useAlert from 'hooks/useAlert';
+import useURLStringUnion from 'hooks/useURLStringUnion';
 import {
     ComplianceScanConfigurationStatus,
     runComplianceReport,
     runComplianceScanConfiguration,
 } from 'services/ComplianceScanConfigurationService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import { JobContextTab } from 'types/reportJob';
-import { ensureJobContextTab } from 'utils/reportJob';
+import PageTitle from 'Components/PageTitle';
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
+import { jobContextTabs } from 'Components/ReportJob/types';
 import ScanConfigActionDropdown from './ScanConfigActionDropdown';
 import ConfigDetails from './components/ConfigDetails';
 import ReportJobs from './components/ReportJobs';
-import ReportJobsHelpAction from '../../../Components/ReportJobsHelpAction';
 
 type ViewScanConfigDetailProps = {
     hasWriteAccessForCompliance: boolean;
+    isReportJobsEnabled: boolean;
+    isComplianceReportingEnabled: boolean;
     scanConfig?: ComplianceScanConfigurationStatus;
     isLoading: boolean;
     error?: Error | string | null;
@@ -48,14 +48,16 @@ const allReportJobsTabId = 'ComplianceScanConfigReportJobs';
 
 function ViewScanConfigDetail({
     hasWriteAccessForCompliance,
+    isReportJobsEnabled,
+    isComplianceReportingEnabled,
     scanConfig,
     isLoading,
     error = null,
 }: ViewScanConfigDetailProps): React.ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isReportJobsEnabled = isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
-
-    const [selectedTab, setSelectedTab] = useState<JobContextTab>('CONFIGURATION_DETAILS');
+    const [activeScanConfigTab, setActiveScanConfigTab] = useURLStringUnion(
+        'scanConfigTab',
+        jobContextTabs
+    );
     const [isTriggeringRescan, setIsTriggeringRescan] = useState(false);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
@@ -155,6 +157,8 @@ function ViewScanConfigDetail({
                                             scanConfig.lastExecutedTime === null */
                                         }
                                         scanConfigResponse={scanConfig}
+                                        isReportJobsEnabled={isReportJobsEnabled}
+                                        isComplianceReportingEnabled={isComplianceReportingEnabled}
                                     />
                                 </FlexItem>
                             )}
@@ -176,9 +180,9 @@ function ViewScanConfigDetail({
             {isReportJobsEnabled && (
                 <PageSection variant="light" className="pf-v5-u-py-0">
                     <Tabs
-                        activeKey={selectedTab}
+                        activeKey={activeScanConfigTab}
                         onSelect={(_e, tab) => {
-                            setSelectedTab(ensureJobContextTab(tab));
+                            setActiveScanConfigTab(tab);
                         }}
                         aria-label="Scan schedule details tabs"
                     >
@@ -196,7 +200,7 @@ function ViewScanConfigDetail({
                     </Tabs>
                 </PageSection>
             )}
-            {selectedTab === 'CONFIGURATION_DETAILS' && (
+            {activeScanConfigTab === 'CONFIGURATION_DETAILS' && (
                 <PageSection isCenterAligned id={configDetailsTabId}>
                     <Card isFlat>
                         <CardBody>
@@ -204,14 +208,18 @@ function ViewScanConfigDetail({
                                 isLoading={isLoading}
                                 error={error}
                                 scanConfig={scanConfig}
+                                isComplianceReportingEnabled={isComplianceReportingEnabled}
                             />
                         </CardBody>
                     </Card>
                 </PageSection>
             )}
-            {selectedTab === 'ALL_REPORT_JOBS' && (
+            {activeScanConfigTab === 'ALL_REPORT_JOBS' && (
                 <PageSection isCenterAligned id={allReportJobsTabId}>
-                    <ReportJobs scanConfig={scanConfig} />
+                    <ReportJobs
+                        scanConfig={scanConfig}
+                        isComplianceReportingEnabled={isComplianceReportingEnabled}
+                    />
                 </PageSection>
             )}
         </>

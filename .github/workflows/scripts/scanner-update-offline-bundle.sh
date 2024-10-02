@@ -2,32 +2,63 @@
 
 set -eu
 
-SCANNER_V4_DEFS_BUCKET="https://storage.googleapis.com/definitions.stackrox.io"
-ROX_PRODUCT_VERSION="$1"
-PRODUCT_VERSION="${ROX_PRODUCT_VERSION}.0"
-VULNS_FILE_NAME="$2"
+output_dir="${1?:missing positional argument 'output_dir'}"
+vulnerability_version="${2?:missing positional argument 'vulnerability_version'}"
+supported_releases="${3?:missing positional argument 'supported_releases'}"
+
+mkdir -p "$output_dir"
+
+# Build the URL for vulnerabilities and mapping definitions.
+
+filename=vulnerabilities.zip
+filename_version="$vulnerability_version"
+
+# Backward compatibility with previous releases where vulnerability version is a
+# release number, and in 4.4 the file is the single bundle.
+case "$vulnerability_version" in
+    4.4.*)
+        filename=vulns.json.zst
+        filename_version="v1"
+        ;;
+    4.5.*)
+        filename_version="v1"
+        ;;
+esac
+
+tmpdir=$(mktemp -d)
 
 declare -A files_to_download=(
-    ["v4/$VULNS_FILE_NAME"]="${SCANNER_V4_DEFS_BUCKET}/v4/vulnerability-bundles/${PRODUCT_VERSION}/$VULNS_FILE_NAME"
-    ["v4/mapping.zip"]="https://definitions.stackrox.io/v4/redhat-repository-mappings/mapping.zip"
+    ["$tmpdir/$filename"]="https://storage.googleapis.com/definitions.stackrox.io/v4/vulnerability-bundles/$filename_version/$filename"
+    ["$tmpdir/mapping.zip"]="https://definitions.stackrox.io/v4/redhat-repository-mappings/mapping.zip"
 )
 
 # Download the files
 for f in "${!files_to_download[@]}"; do
     curl --fail --silent --show-error --max-time 60 --retry 3 --create-dirs -o "$f" "${files_to_download[$f]}"
 done
+unzip -j "$tmpdir/mapping.zip" "repomapping/*" -d "$tmpdir" && rm "$tmpdir/mapping.zip"
 
-unzip -j "v4/mapping.zip" "repomapping/*" -d v4 && rm v4/mapping.zip
+# Manifest contains:
+#
+# - version: The vulnerability schema version, or the Y-stream-based version tag
+#   for bundles prior to 4.6.
+#
+# - release_versions: The list of Z-stream versions this bundle supports.
+#
+# - created: The creation timestamp.
+version=$(echo "$vulnerability_version" | grep -oE '^[0-9]+\.[0-9]+' || echo "$vulnerability_version")
+cat >"$tmpdir/manifest.json" <<EOF
+{
+  "version": "$version",
+  "created": "$(date -u -Iseconds)",
+  "release_versions": "$supported_releases"
+}
+EOF
 
-for f in v4/*.json; do
-  jq empty "$f" || echo "jq processing failed for $f"
+# Sanity check.
+for f in "$tmpdir"/*.json; do
+    jq empty "$f" || echo "jq processing failed for $f"
 done
 
-dir=out
-mkdir -p $dir
-jq -n \
-    --arg version "$ROX_PRODUCT_VERSION" \
-    --arg date "$(date -u -Iseconds)" \
-    '{"version": $version, "created": $date}' > v4/manifest.json
-zip -j "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" v4/*
-gsutil cp "$dir/scanner-v4-defs-${ROX_PRODUCT_VERSION}.zip" "gs://definitions.stackrox.io/v4/offline-bundles/"
+# Bundle creation.
+zip -j "$output_dir/scanner-v4-defs-$version.zip" "$tmpdir"/*

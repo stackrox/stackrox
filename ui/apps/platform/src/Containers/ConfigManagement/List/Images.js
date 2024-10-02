@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation, useRouteMatch } from 'react-router-dom';
 import pluralize from 'pluralize';
 import { format } from 'date-fns';
 
@@ -101,12 +102,12 @@ const Images = ({
     selectedRowId,
     onRowClick,
     query,
-    match,
-    location,
     data,
     totalResults,
     entityContext,
 }) => {
+    const location = useLocation();
+    const match = useRouteMatch();
     const autoFocusSearchInput = !selectedRowId;
     const queryText = queryService.objectToWhereClause(query);
     const variables = queryText ? { query: queryText } : null;

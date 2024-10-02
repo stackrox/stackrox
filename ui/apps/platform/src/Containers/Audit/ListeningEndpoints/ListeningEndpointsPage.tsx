@@ -213,6 +213,8 @@ function ListeningEndpointsPage() {
 
                         <ToolbarGroup className="pf-v5-u-w-100">
                             <SearchFilterChips
+                                searchFilter={searchFilter}
+                                onFilterChange={setSearchFilter}
                                 filterChipGroupDescriptors={[
                                     { displayName: 'Deployment', searchFilterName: 'Deployment' },
                                     { displayName: 'Namespace', searchFilterName: 'Namespace' },

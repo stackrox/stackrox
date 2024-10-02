@@ -42,10 +42,12 @@ spec:
               categories:
                 items:
                   type: string
+                minItems: 1
                 type: array
               criteriaLocked:
                 type: boolean
               description:
+                pattern: ^[^\$]{0,800}$
                 type: string
               disabled:
                 type: boolean
@@ -90,6 +92,9 @@ spec:
                               type: string
                           type: object
                       type: object
+                    expiration:
+                      format: date-time
+                      type: string
                     image:
                       properties:
                         name:
@@ -123,6 +128,9 @@ spec:
                 type: array
               mitreVectorsLocked:
                 type: boolean
+              name:
+                pattern: ^[^\n\r\$]{5,128}$
+                type: string
               notifiers:
                 items:
                   type: string
@@ -154,9 +162,8 @@ spec:
                     sectionName:
                       type: string
                   type: object
+                minItems: 1
                 type: array
-              policyVersion:
-                type: string
               rationale:
                 type: string
               remediation:

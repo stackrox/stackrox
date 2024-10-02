@@ -82,6 +82,7 @@ func (s *serviceImpl) convertV2VulnReportFiltersToProto(filters *apiV2.Vulnerabi
 	ret := &storage.VulnerabilityReportFilters{
 		Fixability:       storage.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
 		AccessScopeRules: accessScopeRules,
+		IncludeNvdCvss:   filters.GetIncludeNvdCvss(),
 	}
 
 	for _, severity := range filters.GetSeverities() {
@@ -219,7 +220,8 @@ func (s *serviceImpl) convertProtoVulnReportFiltersToV2(filters *storage.Vulnera
 	}
 
 	ret := &apiV2.VulnerabilityReportFilters{
-		Fixability: apiV2.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
+		Fixability:     apiV2.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
+		IncludeNvdCvss: filters.GetIncludeNvdCvss(),
 	}
 
 	for _, severity := range filters.GetSeverities() {

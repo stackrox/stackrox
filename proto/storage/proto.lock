@@ -1444,6 +1444,16 @@
                     "id": 1,
                     "name": "secret",
                     "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "client_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "client_secret",
+                    "type": "string"
                   }
                 ]
               }
@@ -13789,6 +13799,11 @@
                 "name": "access_scope_rules",
                 "type": "SimpleAccessScope.Rules",
                 "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "include_nvd_cvss",
+                "type": "bool"
               }
             ]
           },

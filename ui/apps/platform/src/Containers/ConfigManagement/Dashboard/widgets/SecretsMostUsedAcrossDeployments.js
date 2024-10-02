@@ -1,6 +1,5 @@
 import React from 'react';
-import { Link, withRouter } from 'react-router-dom';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import { Link, useRouteMatch, useLocation } from 'react-router-dom';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import dateFns from 'date-fns';
@@ -66,7 +65,10 @@ const getCertificateStatus = (files) => {
     return `has ${status} certs`;
 };
 
-const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
+const SecretsMostUsedAcrossDeployments = () => {
+    const match = useRouteMatch();
+    const location = useLocation();
+
     function processData(data) {
         if (!data || !data.secrets) {
             return [];
@@ -77,6 +79,7 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
             .sort((a, b) => b.deploymentCount - a.deploymentCount)
             .slice(0, 10);
     }
+
     return (
         <Query query={QUERY}>
             {({ loading, data }) => {
@@ -149,9 +152,4 @@ const SecretsMostUsedAcrossDeployments = ({ match, location }) => {
     );
 };
 
-SecretsMostUsedAcrossDeployments.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-};
-
-export default withRouter(SecretsMostUsedAcrossDeployments);
+export default SecretsMostUsedAcrossDeployments;

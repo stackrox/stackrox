@@ -8,17 +8,20 @@ export type IntegrationHelpIconProps = {
     helpTitle: string;
     helpText: React.ReactElement;
     ariaLabel: string;
+    hasAutoWidth?: boolean;
 };
 
 function IntegrationHelpIcon({
     helpTitle,
     helpText,
     ariaLabel,
+    hasAutoWidth,
 }: IntegrationHelpIconProps): ReactElement {
     return (
         <Popover
             aria-label={helpTitle}
             bodyContent={<PopoverBodyContent headerContent={helpTitle} bodyContent={helpText} />}
+            hasAutoWidth={hasAutoWidth}
         >
             <button
                 type="button"

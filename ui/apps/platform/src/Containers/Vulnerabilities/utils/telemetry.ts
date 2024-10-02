@@ -13,13 +13,12 @@ type FilterAppliedEvent =
     | typeof PLATFORM_CVE_FILTER_APPLIED;
 
 export function createFilterTracker(analyticsTrack: (analyticsEvent: AnalyticsEvent) => void) {
-    return function trackAppliedFilter(event: FilterAppliedEvent, payload: OnSearchPayload) {
-        const { action, category, value: filter } = payload;
-
-        if (action !== 'ADD') {
+    return function trackAppliedFilter(event: FilterAppliedEvent, payload?: OnSearchPayload) {
+        if (!payload || payload.action !== 'ADD') {
             // Only track when a filter is applied, not removed
             return;
         }
+        const { category, value: filter } = payload;
 
         const telemetryEvent = isSearchCategoryWithFilter(category)
             ? { event, properties: { category, filter } }

@@ -5,6 +5,7 @@ import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import { PageActions } from './compliance.scanConfigs.utils';
 import CreateScanConfigPage from './CreateScanConfigPage';
@@ -22,6 +23,9 @@ function ScanConfigsPage() {
 
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
+    const isReportJobsEnabled = isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
 
     return (
         <Switch>
@@ -32,10 +36,12 @@ function ScanConfigsPage() {
                     if (pageAction === 'create' && hasWriteAccessForCompliance) {
                         return <CreateScanConfigPage />;
                     }
-                    if (pageAction === undefined) {
+                    if (!pageAction) {
                         return (
                             <ScanConfigsTablePage
                                 hasWriteAccessForCompliance={hasWriteAccessForCompliance}
+                                isReportJobsEnabled={isReportJobsEnabled}
+                                isComplianceReportingEnabled={isComplianceReportingEnabled}
                             />
                         );
                     }
@@ -49,6 +55,8 @@ function ScanConfigsPage() {
                     return (
                         <ScanConfigDetailPage
                             hasWriteAccessForCompliance={hasWriteAccessForCompliance}
+                            isReportJobsEnabled={isReportJobsEnabled}
+                            isComplianceReportingEnabled={isComplianceReportingEnabled}
                         />
                     );
                 }}

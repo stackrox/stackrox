@@ -1,4 +1,5 @@
 {
+  "name": "This is a test policy",
   "description": "This is a test description",
   "rationale": "This is a test rationale",
   "remediation": "This is a test remediation",
@@ -19,7 +20,8 @@
           "cluster": "test",
           "namespace": "stackrox"
         }
-      }
+      },
+      "expiration": "2006-01-02T15:04:05Z"
     }
   ],
   "severity": "LOW_SEVERITY",

@@ -11,8 +11,11 @@ import (
 )
 
 //go:embed test.json
-
 var files embed.FS
+
+const (
+	expirationTS = "2006-01-02T15:04:05Z"
+)
 
 func TestMarshalJSON(t *testing.T) {
 
@@ -25,34 +28,41 @@ func TestMarshalJSON(t *testing.T) {
 	assert.NoError(t, json.Unmarshal(bytes, &policyCRSpec), "Failed to unmarshal policy spec CR JSON")
 
 	expected := SecurityPolicySpec{
+		PolicyName:      "This is a test policy",
 		Description:     "This is a test description",
 		Rationale:       "This is a test rationale",
 		Remediation:     "This is a test remediation",
 		Categories:      []string{"Security Best Practices"},
 		LifecycleStages: []LifecycleStage{"BUILD", "DEPLOY"},
-		Exclusions: []Exclusion{{
-			Name: "Don't alert on deployment collector in namespace stackrox",
-			Deployment: Deployment{
-				Name: "collector",
-				Scope: Scope{
-					Namespace: "stackrox",
-					Cluster:   "test",
+		Exclusions: []Exclusion{
+			{
+				Name: "Don't alert on deployment collector in namespace stackrox",
+				Deployment: Deployment{
+					Name: "collector",
+					Scope: Scope{
+						Namespace: "stackrox",
+						Cluster:   "test",
+					},
 				},
-			}},
+				Expiration: expirationTS,
+			},
 		},
 		Severity:           "LOW_SEVERITY",
 		EventSource:        "DEPLOYMENT_EVENT",
 		EnforcementActions: []EnforcementAction{"SCALE_TO_ZERO_ENFORCEMENT"},
-		PolicyVersion:      "1.1",
-		PolicySections: []PolicySection{{
-			SectionName: "Section name",
-			PolicyGroups: []PolicyGroup{{
-				FieldName: "Image Component",
-				Values: []PolicyValue{{
-					Value: "rpm|microdnf|dnf|yum=",
-				}},
-			}},
-		}},
+		PolicySections: []PolicySection{
+			{
+				SectionName: "Section name",
+				PolicyGroups: []PolicyGroup{
+					{
+						FieldName: "Image Component",
+						Values: []PolicyValue{{
+							Value: "rpm|microdnf|dnf|yum=",
+						}},
+					},
+				},
+			},
+		},
 		CriteriaLocked:     true,
 		MitreVectorsLocked: true,
 		IsDefault:          false,
@@ -67,6 +77,5 @@ func TestMarshalJSON(t *testing.T) {
 	}.Marshal(protoPolicy)
 
 	assert.NoError(t, err, "Failed to marshal protobuf")
-
 	assert.Equal(t, string(bytes), strings.ReplaceAll(string(protoBytes), ":  ", ": ")+"\n")
 }
