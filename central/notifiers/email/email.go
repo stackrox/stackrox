@@ -240,6 +240,7 @@ func (m Message) Bytes() []byte {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString(fmt.Sprintf("From: %s\r\n", m.From))
 	buf.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(m.To, ",")))
+	buf.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC3339)))
 
 	m.writeContentBytes(buf)
 	return buf.Bytes()
