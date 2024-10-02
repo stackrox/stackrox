@@ -16,11 +16,12 @@ import spock.lang.Tag
 // skip if executed in a test environment with just secured-cluster deployed in the test cluster
 // i.e. central is deployed elsewhere
 @IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
+// skip if executed on any platform other than OpenShift - Node Inventory is an OpenShift-exclusive feature
+@IgnoreIf({ !ClusterService.isOpenShift4() })
 @Tag("PZ")
 class NodeInventoryTest extends BaseSpecification {
     @Shared
     private String clusterId
-
     def setupSpec() {
         BaseService.useBasicAuth()
 
