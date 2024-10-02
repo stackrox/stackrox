@@ -209,6 +209,11 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 		DeploymentId: "mydeployment",
 	}
 
+	s.deployments.EXPECT().GetDeployment(gomock.Any(), gomock.Any()).Return(&storage.Deployment{
+		Namespace: "foo",
+		ClusterId: "mycluster",
+	}, true, nil)
+
 	mockFlowStore := nfDSMocks.NewMockFlowDataStore(s.mockCtrl)
 	s.flows.EXPECT().GetFlowStore(ctx, gomock.Any()).Return(mockFlowStore, nil)
 
