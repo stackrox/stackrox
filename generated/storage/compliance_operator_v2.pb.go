@@ -1329,24 +1329,25 @@ func (x *ScanStatus) GetWarnings() string {
 	return ""
 }
 
-// Next Tag: 17
+// Next Tag: 18
 // Scan object per cluster
 type ComplianceOperatorScanV2 struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                                 // @gotags: sql:"pk"
-	ScanConfigName   string                 `protobuf:"bytes,2,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty" search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"` // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
-	ClusterId        string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                  // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
-	Errors           string                 `protobuf:"bytes,4,opt,name=errors,proto3" json:"errors,omitempty"`
-	Profile          *ProfileShim           `protobuf:"bytes,5,opt,name=profile,proto3" json:"profile,omitempty"`
-	Labels           map[string]string      `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Annotations      map[string]string      `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	ScanType         ScanType               `protobuf:"varint,8,opt,name=scan_type,json=scanType,proto3,enum=storage.ScanType" json:"scan_type,omitempty"`
-	NodeSelector     NodeRole               `protobuf:"varint,9,opt,name=node_selector,json=nodeSelector,proto3,enum=storage.NodeRole" json:"node_selector,omitempty"`
-	Status           *ScanStatus            `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
-	CreatedTime      *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`                                                 // @gotags: sql:"pk"
+	ScanConfigName string                 `protobuf:"bytes,2,opt,name=scan_config_name,json=scanConfigName,proto3" json:"scan_config_name,omitempty" search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"` // @gotags: search:"Compliance Scan Config Name" sql:"fk(ComplianceOperatorScanConfigurationV2:scan_config_name),no-fk-constraint"
+	ClusterId      string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden" sql:"type(uuid)"`                  // @gotags: search:"Cluster ID,hidden" sql:"type(uuid)"
+	Errors         string                 `protobuf:"bytes,4,opt,name=errors,proto3" json:"errors,omitempty"`
+	Profile        *ProfileShim           `protobuf:"bytes,5,opt,name=profile,proto3" json:"profile,omitempty"`
+	Labels         map[string]string      `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Annotations    map[string]string      `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	ScanType       ScanType               `protobuf:"varint,8,opt,name=scan_type,json=scanType,proto3,enum=storage.ScanType" json:"scan_type,omitempty"`
+	NodeSelector   NodeRole               `protobuf:"varint,9,opt,name=node_selector,json=nodeSelector,proto3,enum=storage.NodeRole" json:"node_selector,omitempty"`
+	Status         *ScanStatus            `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedTime    *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_time,json=createdTime,proto3" json:"created_time,omitempty"`
+	// last_started_time is the last time the Scan resource was triggered
 	LastStartedTime  *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=last_started_time,json=lastStartedTime,proto3" json:"last_started_time,omitempty" search:"Compliance Scan Last Started Time,hidden"`    // @gotags: search:"Compliance Scan Last Started Time,hidden"
 	LastExecutedTime *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=last_executed_time,json=lastExecutedTime,proto3" json:"last_executed_time,omitempty" search:"Compliance Scan Last Executed Time,hidden"` // @gotags: search:"Compliance Scan Last Executed Time,hidden"
 	ScanName         string                 `protobuf:"bytes,13,opt,name=scan_name,json=scanName,proto3" json:"scan_name,omitempty" search:"Compliance Scan Name,hidden"`                           // @gotags: search:"Compliance Scan Name,hidden"

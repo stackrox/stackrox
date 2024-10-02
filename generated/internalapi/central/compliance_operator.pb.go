@@ -1379,15 +1379,17 @@ type ComplianceOperatorScanStatusV2 struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Phase            string                 `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
-	Result           string                 `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
-	ErrorMessage     string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	CurrentIndex     int64                  `protobuf:"varint,4,opt,name=current_index,json=currentIndex,proto3" json:"current_index,omitempty"`
-	Warnings         string                 `protobuf:"bytes,5,opt,name=warnings,proto3" json:"warnings,omitempty"`
-	RemainingRetries int64                  `protobuf:"varint,6,opt,name=remaining_retries,json=remainingRetries,proto3" json:"remaining_retries,omitempty"`
-	LastStartTime    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_start_time,json=lastStartTime,proto3" json:"last_start_time,omitempty"`
-	StartTime        *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	EndTime          *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	Phase            string `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
+	Result           string `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
+	ErrorMessage     string `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	CurrentIndex     int64  `protobuf:"varint,4,opt,name=current_index,json=currentIndex,proto3" json:"current_index,omitempty"`
+	Warnings         string `protobuf:"bytes,5,opt,name=warnings,proto3" json:"warnings,omitempty"`
+	RemainingRetries int64  `protobuf:"varint,6,opt,name=remaining_retries,json=remainingRetries,proto3" json:"remaining_retries,omitempty"`
+	// last_start_time is the last time the Scan resource was triggered
+	LastStartTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_start_time,json=lastStartTime,proto3" json:"last_start_time,omitempty"`
+	// start_time is the creation time of the Scan resource
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	EndTime   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 }
 
 func (x *ComplianceOperatorScanStatusV2) Reset() {

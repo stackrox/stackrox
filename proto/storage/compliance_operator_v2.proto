@@ -199,7 +199,7 @@ message ScanStatus {
   string warnings = 3;
 }
 
-// Next Tag: 17
+// Next Tag: 18
 // Scan object per cluster
 message ComplianceOperatorScanV2 {
   string id = 1; // @gotags: sql:"pk"
@@ -213,6 +213,7 @@ message ComplianceOperatorScanV2 {
   NodeRole node_selector = 9;
   ScanStatus status = 10;
   google.protobuf.Timestamp created_time = 11;
+  // last_started_time is the last time the Scan resource was triggered
   google.protobuf.Timestamp last_started_time = 17; // @gotags: search:"Compliance Scan Last Started Time,hidden"
   google.protobuf.Timestamp last_executed_time = 12; // @gotags: search:"Compliance Scan Last Executed Time,hidden"
   string scan_name = 13; // @gotags: search:"Compliance Scan Name,hidden"
