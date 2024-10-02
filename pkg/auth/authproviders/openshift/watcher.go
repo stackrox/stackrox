@@ -24,6 +24,7 @@ var (
 )
 
 func registerBackend(b *backend) {
+	log.Info("Registering backend ", b.id)
 	once.Do(watchCertPool)
 	backendRegistrationMutex.Lock()
 	defer backendRegistrationMutex.Unlock()
@@ -32,6 +33,7 @@ func registerBackend(b *backend) {
 }
 
 func deregisterBackend(id string) {
+	log.Info("DeRegistering backend ", id)
 	backendRegistrationMutex.Lock()
 	defer backendRegistrationMutex.Unlock()
 
