@@ -30,7 +30,7 @@ type MockStream struct {
 	mock.Mock
 }
 
-func (m *MockStream) Send(msg *sensor.MsgToCollector) error {
+func (m *MockStream) Send(msg *sensor.NetworkFlowsControlMessage) error {
 	args := m.Called(msg)
 	return args.Error(0)
 }
@@ -79,7 +79,7 @@ func (s *networkflowServiceSuite) TestSendCollectorConfig() {
 
 	mockStream := new(MockStream)
 
-	mockStream.On("Send", mock.AnythingOfType("*sensor.MsgToCollector")).Return(nil).Once()
+	mockStream.On("Send", mock.AnythingOfType("*sensor.NetworkFlowsControlMessage")).Return(nil).Once()
 
 	service := &serviceImpl{}
 
@@ -102,7 +102,7 @@ func (s *networkflowServiceSuite) TestSendCollectorConfigNoConfig() {
 
 	require.NoError(s.T(), err)
 
-	mockStream.AssertNotCalled(s.T(), "Send", mock.AnythingOfType("*sensor.MsgToCollector"))
+	mockStream.AssertNotCalled(s.T(), "Send", mock.AnythingOfType("*sensor.NetworkFlowsControlMessage"))
 }
 
 func (s *networkflowServiceSuite) TestSendCollectorConfigErr() {
@@ -120,7 +120,7 @@ func (s *networkflowServiceSuite) TestSendCollectorConfigErr() {
 	mockStream := new(MockStream)
 
 	sendError := errors.New("failed to send collector config")
-	mockStream.On("Send", mock.AnythingOfType("*sensor.MsgToCollector")).Return(sendError).Once()
+	mockStream.On("Send", mock.AnythingOfType("*sensor.NetworkFlowsControlMessage")).Return(sendError).Once()
 
 	service := &serviceImpl{}
 
