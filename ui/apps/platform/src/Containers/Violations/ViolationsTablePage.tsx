@@ -30,7 +30,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import FilteredWorkflowSelector from 'Components/FilteredWorkflowSelector/FilteredWorkflowSelector';
-import useFilteredWorkflowState from 'Components/FilteredWorkflowSelector/useFilteredWorkflowState';
+import useFilteredWorkflowURLState from 'Components/FilteredWorkflowSelector/useFilteredWorkflowURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
 import { violationStateTabs } from './types';
@@ -48,7 +48,7 @@ function ViolationsTablePage(): ReactElement {
         'violationState',
         violationStateTabs
     );
-    const { filteredWorkflowState, setFilteredWorkflowState } = useFilteredWorkflowState();
+    const { filteredWorkflowState, setFilteredWorkflowState } = useFilteredWorkflowURLState();
 
     const hasExecutableFilter =
         Object.keys(searchFilter).length &&

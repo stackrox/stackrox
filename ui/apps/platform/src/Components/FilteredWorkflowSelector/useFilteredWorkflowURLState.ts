@@ -1,12 +1,12 @@
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { FilteredWorkflowState, filteredWorkflowStates, SetFilteredWorkflowState } from './types';
 
-export type FilteredWorkflowStateResult = {
+export type FilteredWorkflowURLStateResult = {
     filteredWorkflowState: FilteredWorkflowState;
     setFilteredWorkflowState: SetFilteredWorkflowState;
 };
 
-function useFilteredWorkflowState(): FilteredWorkflowStateResult {
+function useFilteredWorkflowURLState(): FilteredWorkflowURLStateResult {
     const [filteredWorkflowState, setFilteredWorkflowState] = useURLStringUnion(
         'filteredWorkflowState',
         filteredWorkflowStates,
@@ -16,4 +16,4 @@ function useFilteredWorkflowState(): FilteredWorkflowStateResult {
     return { filteredWorkflowState, setFilteredWorkflowState };
 }
 
-export default useFilteredWorkflowState;
+export default useFilteredWorkflowURLState;
