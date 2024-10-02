@@ -14,6 +14,7 @@ import {
 
 import { Cluster, ClusterProviderMetadata } from 'types/cluster.proto';
 import { getDate } from 'utils/dateUtils';
+import { getProductBranding } from 'constants/productBranding';
 import { CertExpiryStatus } from './clusterTypes';
 
 export const runtimeOptions = [
@@ -187,7 +188,7 @@ const upgradeStates: UpgradeStates = {
         type: 'current',
     },
     MANUAL_UPGRADE_REQUIRED: {
-        displayValue: 'Version not managed by RHACS',
+        displayValue: `Version not managed by ${getProductBranding().reportName}`,
         type: 'intervention',
     },
     UPGRADE_AVAILABLE: {

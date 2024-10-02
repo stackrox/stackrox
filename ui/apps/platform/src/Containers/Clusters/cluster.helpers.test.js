@@ -8,6 +8,8 @@ import {
     getUpgradeableClusters,
 } from './cluster.helpers';
 
+import { getProductBranding } from 'constants/productBranding';
+
 describe('cluster helpers', () => {
     describe('formatKubernetesVersion', () => {
         it('should return version of Kubernetes from the orchestrator metadata response', () => {
@@ -338,14 +340,31 @@ describe('cluster helpers', () => {
             expect(received).toEqual(expected);
         });
 
-        it('should return "Version not managed by RHACS" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED', () => {
+        it(`should return "Version not managed by ${getProductBranding().reportName}" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED`, () => {
             const testUpgradeStatus = {
                 upgradability: 'MANUAL_UPGRADE_REQUIRED',
             };
 
             const received = findUpgradeState(testUpgradeStatus);
 
-            const expected = { displayValue: 'Version not managed by RHACS', type: 'intervention' };
+            const expected = {
+                displayValue: `Version not managed by ${getProductBranding().reportName}`,
+                type: 'intervention',
+            };
+            expect(received).toEqual(expected);
+        });
+
+        it('should return "Downgrade possible" if there is no mostRecentProcess', () => {
+            const testUpgradeStatus = {
+                upgradability: 'SENSOR_VERSION_HIGHER',
+            };
+
+            const received = findUpgradeState(testUpgradeStatus);
+
+            const expected = {
+                type: 'download',
+                actionText: 'Downgrade possible',
+            };
             expect(received).toEqual(expected);
         });
 
