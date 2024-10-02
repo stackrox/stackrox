@@ -27,8 +27,6 @@ run_compatibility_tests() {
     local central_version="$1"
     local sensor_version="$2"
 
-    require_environment "KUBECONFIG"
-
     short_central_tag="$(shorten_tag "${central_version}")"
     short_sensor_tag="$(shorten_tag "${sensor_version}")"
 
@@ -47,6 +45,8 @@ _run_compatibility_tests() {
 
     info "Starting test (go compatibility test Central v${short_central_tag}, Sensor v${short_sensor_tag})"
 
+    require_environment "KUBECONFIG"
+
     export_test_environment
     ci_export CENTRAL_PERSISTENCE_NONE "true"
 
@@ -61,8 +61,7 @@ _run_compatibility_tests() {
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
 
-    deploy_stackrox
-    #deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
+    deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
     echo "Stackrox deployed with Central version - ${central_version}, Sensor version - ${sensor_version}"
     deploy_optional_e2e_components
 
@@ -85,7 +84,7 @@ _run_compatibility_tests() {
 
     cd "$ROOT"
 
-    collect_and_check_stackrox_logs "/tmp/e2e-test-logs" "${compatibility_dir}/initial_tests"
+    collect_and_check_stackrox_logs "/tmp/compatibility-test-logs" "${compatibility_dir}/initial_tests"
 }
 
 test_preamble() {
