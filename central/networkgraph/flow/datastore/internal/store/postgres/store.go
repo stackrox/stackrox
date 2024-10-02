@@ -99,18 +99,18 @@ const (
 		(SELECT 1 from deployments parent WHERE child.Props_SrcEntity_Id = parent.id::text AND parent.clusterid = $1)
 		AND Props_SrcEntity_Type = 1
 		AND LastSeenTimestamp < $2
-		RETURNS child.Props_SrcEntity_Type, child.Props_SrcEntity_Id, child.Props_DstEntity_Type,
+		RETURNING child.Props_SrcEntity_Type, child.Props_SrcEntity_Id, child.Props_DstEntity_Type,
 			child.Props_DstEntity_Id, child.Props_DstPort, child.Props_L4Protocol, child.LastSeenTimestamp, child.ClusterId::text;`
 
 	pruneNetworkFlowsDestStmt = `DELETE FROM %s child WHERE NOT EXISTS
 		(SELECT 1 from deployments parent WHERE child.Props_DstEntity_Id = parent.id::text AND parent.clusterid = $1)
 		AND Props_DstEntity_Type = 1
 		AND LastSeenTimestamp < $2
-		RETURNS child.Props_SrcEntity_Type, child.Props_SrcEntity_Id, child.Props_DstEntity_Type,
+		RETURNING child.Props_SrcEntity_Type, child.Props_SrcEntity_Id, child.Props_DstEntity_Type,
 			child.Props_DstEntity_Id, child.Props_DstPort, child.Props_L4Protocol, child.LastSeenTimestamp, child.ClusterId::text;`
 
 	pruneOrphanExternalNetworkEntitiesStmt = `DELETE FROM network_entities entity
-	WHERE (entity.Info_Id in $1) AND
+	WHERE (entity.Info_Id = ANY($1)) AND
 	NOT EXISTS
 		(SELECT 1 FROM %s flow
 			WHERE (flow.Props_SrcEntity_Type = 4 OR flow.Props_DstEntity_Type = 4)
@@ -631,7 +631,8 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 		return nil
 	}
 
-	return s.pruneEntities(ctx, pruneOrphanExternalNetworkEntitiesStmt, entityIds)
+	pruneStmt = fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName)
+	return s.pruneEntities(ctx, pruneStmt, entityIds)
 }
 
 func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orphanWindow *time.Time) ([]*storage.NetworkFlow, error) {
