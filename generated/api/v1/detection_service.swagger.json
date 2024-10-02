@@ -139,6 +139,15 @@
         }
       }
     },
+    "AlertEntityType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYMENT",
+        "CONTAINER_IMAGE",
+        "RESOURCE"
+      ],
+      "default": "DEPLOYMENT"
+    },
     "AlertProcessViolation": {
       "type": "object",
       "properties": {
@@ -527,6 +536,12 @@
         "snoozeTill": {
           "type": "string",
           "format": "date-time"
+        },
+        "platformComponent": {
+          "type": "boolean"
+        },
+        "entityType": {
+          "$ref": "#/definitions/AlertEntityType"
         }
       }
     },
@@ -845,6 +860,9 @@
         "riskScore": {
           "type": "number",
           "format": "float"
+        },
+        "platformComponent": {
+          "type": "boolean"
         }
       },
       "title": "Next available tag: 35"

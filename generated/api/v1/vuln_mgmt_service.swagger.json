@@ -714,6 +714,9 @@
         "riskScore": {
           "type": "number",
           "format": "float"
+        },
+        "platformComponent": {
+          "type": "boolean"
         }
       },
       "title": "Next available tag: 35"

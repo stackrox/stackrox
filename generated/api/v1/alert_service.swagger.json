@@ -653,6 +653,15 @@
         }
       }
     },
+    "AlertEntityType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYMENT",
+        "CONTAINER_IMAGE",
+        "RESOURCE"
+      ],
+      "default": "DEPLOYMENT"
+    },
     "AlertGroupAlertCounts": {
       "type": "object",
       "properties": {
@@ -1019,6 +1028,12 @@
         "snoozeTill": {
           "type": "string",
           "format": "date-time"
+        },
+        "platformComponent": {
+          "type": "boolean"
+        },
+        "entityType": {
+          "$ref": "#/definitions/AlertEntityType"
         }
       }
     },

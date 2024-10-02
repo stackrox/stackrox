@@ -328,6 +328,22 @@
             ]
           },
           {
+            "name": "Alert.EntityType",
+            "enum_fields": [
+              {
+                "name": "DEPLOYMENT"
+              },
+              {
+                "name": "CONTAINER_IMAGE",
+                "integer": 1
+              },
+              {
+                "name": "RESOURCE",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "ListAlert.ResourceType",
             "enum_fields": [
               {
@@ -481,6 +497,16 @@
                 "id": 12,
                 "name": "snooze_till",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 22,
+                "name": "platform_component",
+                "type": "bool"
+              },
+              {
+                "id": 23,
+                "name": "entity_type",
+                "type": "EntityType"
               }
             ],
             "reserved_ids": [
@@ -6452,6 +6478,11 @@
                 "id": 29,
                 "name": "risk_score",
                 "type": "float"
+              },
+              {
+                "id": 35,
+                "name": "platform_component",
+                "type": "bool"
               }
             ],
             "maps": [
