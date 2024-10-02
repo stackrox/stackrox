@@ -76,7 +76,7 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			CurrentIndex:     complianceScan.Status.CurrentIndex,
 			Warnings:         complianceScan.Status.Warnings,
 			RemainingRetries: int64(complianceScan.Status.RemainingRetries),
-			CreateTime:       creationTime,
+			StartTime:        creationTime,
 		}
 
 		if complianceScan.Status.EndTimestamp != nil {
@@ -93,7 +93,7 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 			if err != nil {
 				log.Warnf("unable to convert start time %v", err)
 			} else {
-				protoStatus.StartTime = startTime
+				protoStatus.LastStartTime = startTime
 			}
 		}
 

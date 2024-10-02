@@ -818,7 +818,7 @@ func (m *ComplianceOperatorScanStatusV2) CloneVT() *ComplianceOperatorScanStatus
 	r.CurrentIndex = m.CurrentIndex
 	r.Warnings = m.Warnings
 	r.RemainingRetries = m.RemainingRetries
-	r.CreateTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.CreateTime).CloneVT())
+	r.LastStartTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastStartTime).CloneVT())
 	r.StartTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.StartTime).CloneVT())
 	r.EndTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.EndTime).CloneVT())
 	if len(m.unknownFields) > 0 {
@@ -2322,7 +2322,7 @@ func (this *ComplianceOperatorScanStatusV2) EqualVT(that *ComplianceOperatorScan
 	if !(*timestamppb1.Timestamp)(this.EndTime).EqualVT((*timestamppb1.Timestamp)(that.EndTime)) {
 		return false
 	}
-	if !(*timestamppb1.Timestamp)(this.CreateTime).EqualVT((*timestamppb1.Timestamp)(that.CreateTime)) {
+	if !(*timestamppb1.Timestamp)(this.LastStartTime).EqualVT((*timestamppb1.Timestamp)(that.LastStartTime)) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -4508,8 +4508,8 @@ func (m *ComplianceOperatorScanStatusV2) MarshalToSizedBufferVT(dAtA []byte) (in
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.CreateTime != nil {
-		size, err := (*timestamppb1.Timestamp)(m.CreateTime).MarshalToSizedBufferVT(dAtA[:i])
+	if m.LastStartTime != nil {
+		size, err := (*timestamppb1.Timestamp)(m.LastStartTime).MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -5858,8 +5858,8 @@ func (m *ComplianceOperatorScanStatusV2) SizeVT() (n int) {
 		l = (*timestamppb1.Timestamp)(m.EndTime).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.CreateTime != nil {
-		l = (*timestamppb1.Timestamp)(m.CreateTime).SizeVT()
+	if m.LastStartTime != nil {
+		l = (*timestamppb1.Timestamp)(m.LastStartTime).SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -11500,7 +11500,7 @@ func (m *ComplianceOperatorScanStatusV2) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 9:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CreateTime", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field LastStartTime", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -11527,10 +11527,10 @@ func (m *ComplianceOperatorScanStatusV2) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.CreateTime == nil {
-				m.CreateTime = &timestamppb.Timestamp{}
+			if m.LastStartTime == nil {
+				m.LastStartTime = &timestamppb.Timestamp{}
 			}
-			if err := (*timestamppb1.Timestamp)(m.CreateTime).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*timestamppb1.Timestamp)(m.LastStartTime).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -18616,7 +18616,7 @@ func (m *ComplianceOperatorScanStatusV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 9:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CreateTime", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field LastStartTime", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -18643,10 +18643,10 @@ func (m *ComplianceOperatorScanStatusV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.CreateTime == nil {
-				m.CreateTime = &timestamppb.Timestamp{}
+			if m.LastStartTime == nil {
+				m.LastStartTime = &timestamppb.Timestamp{}
 			}
-			if err := (*timestamppb1.Timestamp)(m.CreateTime).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := (*timestamppb1.Timestamp)(m.LastStartTime).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
