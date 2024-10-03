@@ -1,24 +1,7 @@
 import React from 'react';
-import { createStore } from 'redux';
 
 import ComponentTestProviders from 'test-utils/ComponentProviders';
 import AffectedNodesTable from './AffectedNodesTable';
-
-const readOnlyReduxStore = createStore((s) => s, {
-    app: {
-        featureFlags: {
-            featureFlags: [
-                {
-                    name: 'Display NVD CVSS score in UI',
-                    envVar: 'ROX_NVD_CVSS_UI',
-                    enabled: true,
-                },
-            ],
-            loading: false,
-            error: null,
-        },
-    },
-});
 
 function mockNodeVulnerability(fields) {
     return {
@@ -59,7 +42,7 @@ function mockNode(fields) {
 
 function setup(tableState) {
     cy.mount(
-        <ComponentTestProviders reduxStore={readOnlyReduxStore}>
+        <ComponentTestProviders>
             <AffectedNodesTable
                 tableState={tableState}
                 getSortParams={() => {}}

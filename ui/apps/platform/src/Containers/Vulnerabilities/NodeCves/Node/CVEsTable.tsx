@@ -8,7 +8,6 @@ import CvssFormatted from 'Components/CvssFormatted';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 import { TableUIState } from 'utils/getTableUIState';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
@@ -69,12 +68,8 @@ export type CVEsTableProps = {
 };
 
 function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps) {
+    const COL_SPAN = 6;
     const expandedRowSet = useSet<string>();
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
-
-    const COL_SPAN = isNvdCvssEnabled ? 7 : 6;
 
     return (
         <Table
@@ -90,7 +85,6 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
                     <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>Top severity</Th>
                     <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>
                     <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
-                    {isNvdCvssEnabled && <Th>NVD CVSS</Th>}
                     <Th>Affected components</Th>
                 </Tr>
             </Thead>
@@ -132,11 +126,6 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
                                     <Td dataLabel="CVSS">
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
-                                    {isNvdCvssEnabled && (
-                                        <Td dataLabel="NVD CVSS">
-                                            <CvssFormatted cvss={0.0} scoreVersion="V3" />
-                                        </Td>
-                                    )}
                                     <Td dataLabel="Affected components">
                                         {nodeComponents.length === 1
                                             ? nodeComponents[0].name

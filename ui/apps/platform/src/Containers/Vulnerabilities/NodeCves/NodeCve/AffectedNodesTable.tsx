@@ -6,7 +6,6 @@ import { Link } from 'react-router-dom';
 
 import { TableUIState } from 'utils/getTableUIState';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
@@ -99,12 +98,8 @@ function AffectedNodesTable({
     getSortParams,
     onClearFilters,
 }: AffectedNodesTableProps) {
+    const colSpan = 8;
     const expandedRowSet = useSet<string>();
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
-
-    const colSpan = isNvdCvssEnabled ? 9 : 8;
 
     return (
         <Table
@@ -122,7 +117,6 @@ function AffectedNodesTable({
                     <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>CVE severity</Th>
                     <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>
                     <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
-                    {isNvdCvssEnabled && <Th>NVD CVSS</Th>}
                     <Th sort={getSortParams(CLUSTER_SORT_FIELD)}>Cluster</Th>
                     <Th sort={getSortParams(OPERATING_SYSTEM_SORT_FIELD)}>Operating system</Th>
                     <Th>Affected components</Th>
@@ -172,11 +166,6 @@ function AffectedNodesTable({
                                     <Td dataLabel="CVSS" modifier="nowrap">
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
-                                    {isNvdCvssEnabled && (
-                                        <Td dataLabel="NVD CVSS" modifier="nowrap">
-                                            <CvssFormatted cvss={0.0} scoreVersion="V3" />
-                                        </Td>
-                                    )}
                                     <Td dataLabel="Cluster">
                                         <Truncate position="middle" content={node.cluster.name} />
                                     </Td>
