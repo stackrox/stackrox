@@ -26,7 +26,7 @@ spec:
   source: stackrox-operator-test-index
   sourceNamespace: ${NAMESPACE}
   installPlanApproval: ${INSTALL_PLAN_APPROVAL}
-  startingCSV: rhacs-operator.v${OPERATOR_VERSION}
+  startingCSV: ${STARTING_CSV}
   config:
     env:
     # use a test value for NO_PROXY. This will not have any impact
