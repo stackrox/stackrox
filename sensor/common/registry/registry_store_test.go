@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -18,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stackrox/rox/sensor/common/registry/metrics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -701,5 +703,233 @@ func TestRegistryStore_SecretDelete(t *testing.T) {
 		regs, err = regStore.GetPullSecretRegistries(fakeImgName, fakeNamespace, imagePullSecrets)
 		require.NoError(t, err)
 		assert.Len(t, regs, 0)
+	})
+}
+
+// TestRegistyStore_Metrics ensures that metrics are calculated as expected
+// as data is added/removed from the store.
+func TestRegistyStore_Metrics(t *testing.T) {
+	dce := config.DockerConfigEntry{Username: "username", Password: "password"}
+	dc := config.DockerConfig{"example.com": dce}
+	dcTwo := config.DockerConfig{"example.com": dce, "example.net": dce}
+
+	t.Run("global registries count", func(t *testing.T) {
+		c := metrics.GlobalSecretEntriesCount
+		metrics.ResetRegistryMetrics()
+
+		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+
+		regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dc, "")
+		assert.Equal(t, 1.0, testutil.ToFloat64(c))
+
+		// repeat with same input, gauge should NOT increase
+		regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dc, "")
+		assert.Equal(t, 1.0, testutil.ToFloat64(c))
+
+		regStore.UpsertSecret(openshiftConfigNamespace, openshiftConfigPullSecret, dcTwo, "")
+		assert.Equal(t, 2.0, testutil.ToFloat64(c))
+
+		regStore.Cleanup()
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+	})
+
+	t.Run("cluster local host count", func(t *testing.T) {
+		c := metrics.ClusterLocalHostsCount
+		metrics.ResetRegistryMetrics()
+
+		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dc, defaultSA)
+		assert.Equal(t, 1.0, testutil.ToFloat64(c))
+
+		// repeat with same input, gauge should NOT increase
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dc, defaultSA)
+		assert.Equal(t, 1.0, testutil.ToFloat64(c))
+
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dcTwo, defaultSA)
+		assert.Equal(t, 2.0, testutil.ToFloat64(c))
+
+		regStore.Cleanup()
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+	})
+
+	t.Run("central integration count", func(t *testing.T) {
+		c := metrics.CentralIntegrationsCount
+		metrics.ResetRegistryMetrics()
+
+		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+
+		iis := []*storage.ImageIntegration{
+			createImageIntegration("http://example.com/1", config.DockerConfigEntry{}, ""),
+			createImageIntegration("http://example.com/2", config.DockerConfigEntry{}, ""),
+		}
+		regStore.UpsertCentralRegistryIntegrations(iis)
+		assert.Equal(t, 2.0, testutil.ToFloat64(c))
+
+		// Repeat with same input, gauge should NOT increase.
+		regStore.UpsertCentralRegistryIntegrations(iis)
+		assert.Equal(t, 2.0, testutil.ToFloat64(c))
+
+		regStore.DeleteCentralRegistryIntegrations([]string{"http://example.com/1"})
+		assert.Equal(t, 1.0, testutil.ToFloat64(c))
+
+		regStore.Cleanup()
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+	})
+
+	t.Run("SecretsByHost: pull secret count", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+		c := metrics.PullSecretEntriesCount
+		metrics.ResetRegistryMetrics()
+
+		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dcTwo, "")
+		assert.Equal(t, 2.0, testutil.ToFloat64(c))
+
+		// Repeat with same input, gauge should NOT increase.
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dcTwo, "")
+		assert.Equal(t, 2.0, testutil.ToFloat64(c))
+
+		// Repeat with one less entry but still an existing entry, gauge should NOT change.
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dc, "")
+		assert.Equal(t, 2.0, testutil.ToFloat64(c))
+
+		// Delete secret should do nothing when secrets are stored by host.
+		regStore.DeleteSecret(fakeNamespace, fakeSecretName)
+		assert.Equal(t, 2.0, testutil.ToFloat64(c))
+
+		regStore.Cleanup()
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+	})
+
+	t.Run("SecretsByHost: pull secret size", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, false)
+		c := metrics.PullSecretEntriesSize
+		metrics.ResetRegistryMetrics()
+
+		name := genIntegrationName(pullSecretNamePrefix, fakeNamespace, "", "example.com")
+		entrySize := float64(createImageIntegration("example.com", dce, name).SizeVT())
+
+		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dcTwo, "")
+		assert.Equal(t, entrySize*2, testutil.ToFloat64(c))
+
+		// Repeat with same input, gauge should NOT increase.
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dcTwo, "")
+		assert.Equal(t, entrySize*2, testutil.ToFloat64(c))
+
+		// Repeat with one less entry but still an existing entry, gauge should NOT change.
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dc, "")
+		assert.Equal(t, entrySize*2, testutil.ToFloat64(c))
+
+		// Delete secret should do nothing when secrets are stored by host.
+		regStore.DeleteSecret(fakeNamespace, fakeSecretName)
+		assert.Equal(t, entrySize*2, testutil.ToFloat64(c))
+
+		regStore.Cleanup()
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+	})
+
+	t.Run("SecretsByName: pull secret count", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
+		c := metrics.PullSecretEntriesCount
+		metrics.ResetRegistryMetrics()
+
+		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dcTwo, "")
+		assert.Equal(t, 2.0, testutil.ToFloat64(c))
+
+		// Repeat with same input, gauge should NOT increase.
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dcTwo, "")
+		assert.Equal(t, 2.0, testutil.ToFloat64(c))
+
+		// Add a new secret with single entry, gauge SHOULD increase.
+		regStore.UpsertSecret(fakeNamespace, "fake-thingy-name", dc, "")
+		assert.Equal(t, 3.0, testutil.ToFloat64(c))
+
+		regStore.DeleteSecret(fakeNamespace, fakeSecretName)
+		assert.Equal(t, 1.0, testutil.ToFloat64(c))
+
+		regStore.Cleanup()
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+	})
+
+	t.Run("SecretsByName: pull secret size", func(t *testing.T) {
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
+		c := metrics.PullSecretEntriesSize
+		metrics.ResetRegistryMetrics()
+
+		name := genIntegrationName(pullSecretNamePrefix, fakeNamespace, fakeSecretName, "example.com")
+		entrySize := float64(createImageIntegration("example.com", dce, name).SizeVT())
+		t.Logf("entrySize: %v", entrySize)
+
+		regStore := NewRegistryStore(alwaysInsecureCheckTLS)
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dcTwo, "")
+		assert.Equal(t, entrySize*2, testutil.ToFloat64(c))
+
+		// Repeat with same input, gauge should NOT increase.
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dcTwo, "")
+		assert.Equal(t, entrySize*2, testutil.ToFloat64(c))
+
+		// Add a new secret with single entry, gauge SHOULD increase.
+		regStore.UpsertSecret(fakeNamespace, "fake-thingy-name", dc, "")
+		assert.Equal(t, entrySize*3, testutil.ToFloat64(c))
+
+		// Update an existing secret with larger size entry, gauge should increase by diff.
+		dceNew := config.DockerConfigEntry{
+			Username: dce.Username + "123", // add 3 bytes
+			Password: dce.Password,
+		}
+		dcNew := config.DockerConfig{"example.com": dceNew}
+
+		regStore.UpsertSecret(fakeNamespace, "fake-thingy-name", dcNew, "")
+		assert.Equal(t, (entrySize*3)+3, testutil.ToFloat64(c))
+
+		regStore.UpsertSecret(fakeNamespace, "fake-thingy-name", dc, "")
+		assert.Equal(t, entrySize*3, testutil.ToFloat64(c))
+
+		regStore.DeleteSecret(fakeNamespace, fakeSecretName)
+		assert.Equal(t, entrySize, testutil.ToFloat64(c))
+
+		regStore.Cleanup()
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+	})
+
+	t.Run("No crash on negative gauge", func(t *testing.T) {
+		// The size in bytes of an image integration is calculated when it is inserted into
+		// the store. It's possible that the integration changes internally after insertion.
+		// When the integration is deleted its size may be different creating a skew in the
+		// size metric. This should be OK as the number of bytes is only a rough estimate and
+		// not the actual amount of 'memory consumed'. The byte count should still be
+		// 'statistically' relevant and provide a meaningful relative size for comparison.
+		// This test ensures that if the gauge goes into a 'negative value' nothing will break.
+		testutils.MustUpdateFeature(t, features.SensorPullSecretsByName, true)
+		c := metrics.PullSecretEntriesSize
+		metrics.ResetRegistryMetrics()
+
+		regStore := NewRegistryStore(alwaysSecureCheckTLS)
+		assert.Equal(t, 0.0, testutil.ToFloat64(c))
+
+		regStore.UpsertSecret(fakeNamespace, fakeSecretName, dc, "")
+		regs, err := regStore.GetPullSecretRegistries(fakeImgName, fakeNamespace, nil)
+		require.NoError(t, err)
+		require.Len(t, regs, 1)
+
+		ii := regs[0].Source()
+		ii.Name = ii.Name + "1234567890" // Add 10 'bytes' to the integration name
+
+		regStore.DeleteSecret(fakeNamespace, fakeSecretName)
+		assert.Equal(t, -10.0, testutil.ToFloat64(c))
 	})
 }
