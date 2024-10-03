@@ -162,7 +162,7 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkEntities() {
 
 	req := v1.GetExternalNetworkEntitiesRequest{
 		ClusterId: "mycluster",
-		Query:     "Learned External Entity:false",
+		Query:     "Discovered External Entity:false",
 	}
 
 	es1aID, _ := externalsrcs.NewClusterScopedID("mycluster", "35.187.144.0/20")
