@@ -295,6 +295,291 @@ func TestComponents(t *testing.T) {
 	}
 }
 
+func TestSetScoresAndScoreVersionList(t *testing.T) {
+	testcases := []struct {
+		name        string
+		cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS
+		expected    *storage.EmbeddedVulnerability
+		wantErr     bool
+	}{
+		{
+			name: "Both CVSS 2 and CVSS 3.1",
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+						BaseScore: 6.4,
+						Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+					Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+				},
+				{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 5.0,
+						Vector:    "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+					Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+				},
+			},
+			expected: &storage.EmbeddedVulnerability{
+				CvssMetrics: []*storage.CVSSScore{
+					{
+						CvssScore: &storage.CVSSScore_Cvssv2{
+							Cvssv2: &storage.CVSSV2{
+								Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+								AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+								AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+								Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
+								Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
+								Integrity:           storage.CVSSV2_IMPACT_NONE,
+								Availability:        storage.CVSSV2_IMPACT_PARTIAL,
+								ExploitabilityScore: 5.5,
+								ImpactScore:         7.8,
+								Score:               6.4,
+								Severity:            storage.CVSSV2_MEDIUM,
+							},
+						},
+						Source: storage.Source_SOURCE_NVD, // Updated to match the correct source
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+					{
+						CvssScore: &storage.CVSSScore_Cvssv3{
+							Cvssv3: &storage.CVSSV3{
+								Vector:              "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N",
+								ExploitabilityScore: 2.8,
+								ImpactScore:         1.4,
+								AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+								AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+								PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+								UserInteraction:     storage.CVSSV3_UI_NONE,
+								Scope:               storage.CVSSV3_UNCHANGED,
+								Confidentiality:     storage.CVSSV3_IMPACT_NONE,
+								Integrity:           storage.CVSSV3_IMPACT_LOW,
+								Availability:        storage.CVSSV3_IMPACT_NONE,
+								Score:               5.0,
+								Severity:            storage.CVSSV3_MEDIUM,
+							},
+						},
+						Source: storage.Source_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+					},
+				},
+			},
+		},
+		{
+			name: "CVSS 2 parse error",
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 8.2,
+						Vector:    "CVSS:2.0/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:Q",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+					Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "CVSS 3.1 parse error",
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 8.2,
+						Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:Q",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+					Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "CVSS 2 only",
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+						BaseScore: 6.4,
+						Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
+					Url:    "https://osv.dev/vulnerability/CVE-1234-567",
+				},
+			},
+			expected: &storage.EmbeddedVulnerability{
+				CvssMetrics: []*storage.CVSSScore{
+					{
+						CvssScore: &storage.CVSSScore_Cvssv2{
+							Cvssv2: &storage.CVSSV2{
+								Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+								AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+								AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+								Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
+								Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
+								Integrity:           storage.CVSSV2_IMPACT_NONE,
+								Availability:        storage.CVSSV2_IMPACT_PARTIAL,
+								ExploitabilityScore: 5.5,
+								ImpactScore:         7.8,
+								Score:               6.4,
+								Severity:            storage.CVSSV2_MEDIUM,
+							},
+						},
+						Source: storage.Source_SOURCE_OSV, // Updated to match the correct source
+						Url:    "https://osv.dev/vulnerability/CVE-1234-567",
+					},
+				},
+			},
+		},
+		{
+			name: "CVSS 3.0 only",
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 8.2,
+						Vector:    "CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+					Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+				},
+				{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 5.0,
+						Vector:    "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+					Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+				},
+			},
+			expected: &storage.EmbeddedVulnerability{
+				CvssMetrics: []*storage.CVSSScore{
+					{
+						CvssScore: &storage.CVSSScore_Cvssv3{
+							Cvssv3: &storage.CVSSV3{
+								Vector:              "CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+								ExploitabilityScore: 2.8,
+								ImpactScore:         4.7,
+								AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+								AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+								PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+								UserInteraction:     storage.CVSSV3_UI_NONE,
+								Scope:               storage.CVSSV3_CHANGED,
+								Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+								Integrity:           storage.CVSSV3_IMPACT_NONE,
+								Availability:        storage.CVSSV3_IMPACT_HIGH,
+								Score:               8.2,
+								Severity:            storage.CVSSV3_HIGH,
+							},
+						},
+						Source: storage.Source_SOURCE_RED_HAT, // Updated to match the correct source
+						Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+					},
+					{
+						CvssScore: &storage.CVSSScore_Cvssv3{
+							Cvssv3: &storage.CVSSV3{
+								Vector:              "CVSS:3.0/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N",
+								ExploitabilityScore: 2.8,
+								ImpactScore:         1.4,
+								AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+								AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+								PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+								UserInteraction:     storage.CVSSV3_UI_NONE,
+								Scope:               storage.CVSSV3_UNCHANGED,
+								Confidentiality:     storage.CVSSV3_IMPACT_NONE,
+								Integrity:           storage.CVSSV3_IMPACT_LOW,
+								Availability:        storage.CVSSV3_IMPACT_NONE,
+								Score:               5.0,
+								Severity:            storage.CVSSV3_MEDIUM,
+							},
+						},
+						Source: storage.Source_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+				},
+			},
+		},
+		{
+			name: "CVSS 3.1 only",
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 8.2,
+						Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
+					Url:    "https://osv.dev/vulnerability/CVE-1234-567",
+				},
+				{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 5.0,
+						Vector:    "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+					Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+				},
+			},
+			expected: &storage.EmbeddedVulnerability{
+				CvssMetrics: []*storage.CVSSScore{
+					{
+						CvssScore: &storage.CVSSScore_Cvssv3{
+							Cvssv3: &storage.CVSSV3{
+								Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+								ExploitabilityScore: 2.8,
+								ImpactScore:         4.7,
+								AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+								AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+								PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+								UserInteraction:     storage.CVSSV3_UI_NONE,
+								Scope:               storage.CVSSV3_CHANGED,
+								Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+								Integrity:           storage.CVSSV3_IMPACT_NONE,
+								Availability:        storage.CVSSV3_IMPACT_HIGH,
+								Score:               8.2,
+								Severity:            storage.CVSSV3_HIGH,
+							},
+						},
+						Source: storage.Source_SOURCE_OSV, // Updated to match the correct source
+						Url:    "https://osv.dev/vulnerability/CVE-1234-567",
+					},
+					{
+						CvssScore: &storage.CVSSScore_Cvssv3{
+							Cvssv3: &storage.CVSSV3{
+								Vector:              "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N",
+								ExploitabilityScore: 2.8,
+								ImpactScore:         1.4,
+								AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+								AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+								PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+								UserInteraction:     storage.CVSSV3_UI_NONE,
+								Scope:               storage.CVSSV3_UNCHANGED,
+								Confidentiality:     storage.CVSSV3_IMPACT_NONE,
+								Integrity:           storage.CVSSV3_IMPACT_LOW,
+								Availability:        storage.CVSSV3_IMPACT_NONE,
+								Score:               5.0,
+								Severity:            storage.CVSSV3_MEDIUM,
+							},
+						},
+						Source: storage.Source_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+				},
+			},
+		}}
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			vuln := &storage.EmbeddedVulnerability{}
+			err := setScoresAndScoreVersions(vuln, testcase.cvssMetrics)
+			if testcase.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			protoassert.Equal(t, testcase.expected, vuln)
+		})
+	}
+}
+
 func TestSetScoresAndScoreVersion(t *testing.T) {
 	testcases := []struct {
 		name     string
