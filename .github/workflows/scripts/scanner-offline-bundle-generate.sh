@@ -12,16 +12,20 @@ mkdir -p "$output_dir"
 
 filename=vulnerabilities.zip
 filename_version="$vulnerability_version"
+bundle_prefix=v4-definitions-
 
 # Backward compatibility with previous releases where vulnerability version is a
-# release number, and in 4.4 the file is the single bundle.
+# release number, in 4.4 the file is the single bundle, and bundle prefix is
+# different.
 case "$vulnerability_version" in
     4.4.*)
         filename=vulns.json.zst
         filename_version="v1"
+        bundle_prefix=scanner-v4-defs-
         ;;
     4.5.*)
         filename_version="v1"
+        bundle_prefix=scanner-v4-defs-
         ;;
 esac
 
@@ -61,4 +65,4 @@ for f in "$tmpdir"/*.json; do
 done
 
 # Bundle creation.
-zip -j "$output_dir/scanner-v4-defs-$version.zip" "$tmpdir"/*
+zip -j "$output_dir/$bundle_prefix$version.zip" "$tmpdir"/*
