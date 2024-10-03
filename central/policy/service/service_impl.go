@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	_ "embed"
 	"slices"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ import (
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/policy/datastore"
+	"github.com/stackrox/rox/central/policy/service/customresource"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -68,6 +70,7 @@ var (
 			"/v1.PolicyService/ExportPolicies",
 			"/v1.PolicyService/PolicyFromSearch",
 			"/v1.PolicyService/GetPolicyMitreVectors",
+			"/v1.PolicyService/SaveAsCustomResources",
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			"/v1.PolicyService/PostPolicy",
@@ -717,10 +720,10 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 	if err != nil {
 		return nil, err
 	}
-	errDetails := &v1.ExportPoliciesErrorList{}
+	errDetails := &v1.PolicyOperationErrorList{}
 	for _, missingIndex := range missingIndices {
 		policyID := request.PolicyIds[missingIndex]
-		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+		errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
 			PolicyId: policyID,
 			Error: &v1.PolicyError{
 				Error: "not found",
@@ -1121,4 +1124,53 @@ func combineStrings(toCombine [][]string) []string {
 		}
 	}
 	return nil
+}
+
+func (s *serviceImpl) SaveAsCustomResources(ctx context.Context, request *v1.SaveAsCustomResourcesRequest) (*v1.SaveAsCustomResourcesResponse, error) {
+	policyList, missingIndices, err := s.policies.GetPolicies(ctx, request.GetPolicyIds())
+	if err != nil {
+		return nil, err
+	}
+	errDetails := &v1.PolicyOperationErrorList{}
+	for _, missingIndex := range missingIndices {
+		policyID := request.GetPolicyIds()[missingIndex]
+		errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
+			PolicyId: policyID,
+			Error: &v1.PolicyError{
+				Error: "not found",
+			},
+		})
+		log.Warnf("A policy error occurred for id %s: not found", policyID)
+	}
+	if len(missingIndices) > 0 {
+		statusMsg, err := status.New(codes.InvalidArgument, "Failed to retrieve all policies. Check error details for a list of policies that could not be retrieved.").WithDetails(errDetails)
+		if err != nil {
+			return nil, utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
+		}
+		return nil, statusMsg.Err()
+	}
+
+	errDetails = &v1.PolicyOperationErrorList{}
+	resp := new(v1.SaveAsCustomResourcesResponse)
+	for _, policy := range policyList {
+		cr, err := customresource.GenerateCustomResource(policy)
+		if err != nil {
+			errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
+				PolicyId: policy.GetId(),
+				Error: &v1.PolicyError{
+					Error: errors.Wrap(err, "Failed to marshal policy to custom resource").Error(),
+				},
+			})
+		}
+		resp.CustomResources = append(resp.CustomResources, cr)
+	}
+	if len(errDetails.GetErrors()) > 0 {
+		statusMsg, err := status.New(codes.InvalidArgument, "Failed to retrieve all policies. Check error details for a list of policies that could not be retrieved.").WithDetails(errDetails)
+		if err != nil {
+			return resp, utils.ShouldErr(errors.Errorf("unexpected error creating status proto: %v", err))
+		}
+		return nil, statusMsg.Err()
+
+	}
+	return resp, nil
 }
