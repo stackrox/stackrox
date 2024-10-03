@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 
 import useInterval from 'hooks/useInterval';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import {
     ComplianceReportSnapshot,
@@ -13,13 +12,9 @@ import useRestQuery from 'hooks/useRestQuery';
 async function fetchLastJobForConfiguration(
     scanConfigId: string
 ): Promise<ComplianceReportSnapshot | null> {
-    const query = getRequestQueryStringForSearchFilter({
-        'Report state': ['PREPARING', 'WAITING'],
-    });
-
     const complianceReportSnapshots = await fetchComplianceReportHistory({
         id: scanConfigId,
-        query,
+        query: '',
         page: 1,
         perPage: 1,
         showMyHistory: true,
@@ -32,7 +27,7 @@ async function fetchLastJobForConfiguration(
     return complianceReportSnapshots[0] ?? null;
 }
 
-type ComplianceReportSnapshotLookup = Partial<Record<string, ComplianceReportSnapshot>>;
+type ComplianceReportSnapshotLookup = Partial<Record<string, ComplianceReportSnapshot | null>>;
 
 type Result = {
     complianceReportSnapshots: ComplianceReportSnapshotLookup;

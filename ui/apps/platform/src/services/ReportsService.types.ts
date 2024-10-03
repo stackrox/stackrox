@@ -123,7 +123,7 @@ export type ReportSnapshot = {
     description: string;
     vulnReportFilters: VulnerabilityReportFilters;
     collectionSnapshot: CollectionSnapshot;
-    schedule: Schedule;
+    schedule: Schedule | null;
     reportStatus: ReportStatus;
     notifiers: NotifierConfiguration[];
     user: SlimUser;

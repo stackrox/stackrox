@@ -54,7 +54,10 @@ import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import pluralize from 'pluralize';
-import MyActiveJobStatus from 'Components/ReportJob/MyActiveJobStatus';
+import MyLastJobStatusTh from 'Components/ReportJob/MyLastJobStatusTh';
+import MyLastReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/components/MyLastReportJobStatus';
+import useAuthStatus from 'hooks/useAuthStatus';
+import { reportDownloadURL } from 'services/ReportsService';
 import HelpIconTh from './HelpIconTh';
 
 const CreateReportsButton = () => {
@@ -76,6 +79,7 @@ const emptyReportArray = [];
 
 function VulnReportsPage() {
     const history = useHistory();
+    const { currentUser } = useAuthStatus();
 
     const { hasReadWriteAccess, hasReadAccess } = usePermissions();
     const hasWriteAccessForReport =
@@ -108,7 +112,8 @@ function VulnReportsPage() {
         perPage,
         sortOption,
     });
-    const { reportSnapshots } = useWatchLastSnapshotForReports(reportConfigurations);
+    const { reportSnapshots, isLoading: isLoadingReportSnapshots } =
+        useWatchLastSnapshotForReports(reportConfigurations);
     const { isRunning, runError, runReport } = useRunReport({
         onCompleted: ({ reportNotificationMethod }) => {
             if (reportNotificationMethod === 'EMAIL') {
@@ -311,49 +316,7 @@ function VulnReportsPage() {
                                                 Collection
                                             </HelpIconTh>
                                             <Th>Description</Th>
-                                            <HelpIconTh
-                                                popoverContent={
-                                                    <Flex
-                                                        direction={{ default: 'column' }}
-                                                        spaceItems={{ default: 'spaceItemsMd' }}
-                                                    >
-                                                        <FlexItem>
-                                                            <p>
-                                                                The status of your last requested
-                                                                job from the{' '}
-                                                                <strong>active job queue</strong>.
-                                                                An <strong>active job queue</strong>{' '}
-                                                                includes any requested job with the
-                                                                status of <strong>preparing</strong>{' '}
-                                                                or <strong>waiting</strong> until
-                                                                completed.
-                                                            </p>
-                                                        </FlexItem>
-                                                        <FlexItem>
-                                                            <p>
-                                                                <strong>Preparing:</strong>
-                                                            </p>
-                                                            <p>
-                                                                Your last requested job is still
-                                                                being processed.
-                                                            </p>
-                                                        </FlexItem>
-                                                        <FlexItem>
-                                                            <p>
-                                                                <strong>Waiting:</strong>
-                                                            </p>
-                                                            <p>
-                                                                Your last requested job is in the
-                                                                queue and waiting to be processed
-                                                                since other requested jobs are being
-                                                                processed.
-                                                            </p>
-                                                        </FlexItem>
-                                                    </Flex>
-                                                }
-                                            >
-                                                My active job status
-                                            </HelpIconTh>
+                                            <MyLastJobStatusTh />
                                             {hasWriteAccessForReport && <Td />}
                                         </Tr>
                                     </Thead>
@@ -515,6 +478,7 @@ function VulnReportsPage() {
                                         ];
                                         const { collectionName, collectionId } =
                                             report.resourceScope.collectionScope;
+
                                         return (
                                             <Tbody
                                                 key={report.id}
@@ -556,10 +520,13 @@ function VulnReportsPage() {
                                                     </Td>
                                                     <Td>{report.description || '-'}</Td>
                                                     <Td>
-                                                        <MyActiveJobStatus
-                                                            reportStatus={
-                                                                reportSnapshot?.reportStatus
+                                                        <MyLastReportJobStatus
+                                                            reportSnapshot={reportSnapshot}
+                                                            isLoadingReportSnapshots={
+                                                                isLoadingReportSnapshots
                                                             }
+                                                            currentUserId={currentUser.userId}
+                                                            baseDownloadURL={reportDownloadURL}
                                                         />
                                                     </Td>
                                                     {hasWriteAccessForReport && (
