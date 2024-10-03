@@ -24,3 +24,10 @@ spec:
   source: stackrox-operator-test-index
   sourceNamespace: ${NAMESPACE}
   installPlanApproval: Automatic
+  config:
+    env:
+    # use a test value for NO_PROXY. This will not have any impact
+    # on the services at runtime, but we can test if it gets piped
+    # through correctly.
+    - name: NO_PROXY
+      value: "127.1.2.3/8"
