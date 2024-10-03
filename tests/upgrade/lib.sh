@@ -93,7 +93,7 @@ deploy_earlier_postgres_central() {
     ls -l "bin/$TEST_HOST_PLATFORM/"
     curl "https://mirror.openshift.com/pub/rhacs/assets/4.3.8/bin/Linux/roxctl" --output roxctl1
     curl "https://mirror.openshift.com/pub/rhacs/assets/4.3.8/bin/linux/roxctl" --output roxctl2
-    sudo wget "https://mirror.openshift.com/pub/rhacs/assets/4.3.8/bin/linux/roxctl" -O roxctl3
+    wget "https://mirror.openshift.com/pub/rhacs/assets/4.3.8/bin/linux/roxctl" -O roxctl3
     ls -l roxctl*
 #    gsutil cp "gs://rhacs-openshift-mirror-src/assets/${EARLIER_TAG}/bin/linux/roxctl" "bin/$TEST_HOST_PLATFORM/"
     ls -l "bin/$TEST_HOST_PLATFORM/"
