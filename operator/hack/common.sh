@@ -21,7 +21,7 @@ function create_namespace() {
 function apply_operator_manifests() {
   log "Applying operator manifests..."
   local -r operator_ns="$1"
-  local -r image_tag_base="$2"
+  local -r index_image_repo="$2"
   local -r index_version="$3"
   local -r operator_version="$4"
 
@@ -59,7 +59,7 @@ function apply_operator_manifests() {
   fi
   env -i PATH="${PATH}" \
     INDEX_IMAGE_TAG="${index_image_tag}" STARTING_CSV="${starting_csv}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
-    IMAGE_TAG_BASE="${image_tag_base}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
+    INDEX_IMAGE_REPO="${index_image_repo}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
     INSTALL_PLAN_APPROVAL="${install_plan_approval}" \
     envsubst < "${operator_envsubst_yaml}" \
     | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -

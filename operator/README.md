@@ -288,7 +288,7 @@ ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm TEST_NAMESPACE=my-favori
 If you'd rather put in a custom image spec, you can use the install script directly:
 
 ```bash
-hack/olm-operator-install.sh stackrox-operator quay.io/rhacs-eng/stackrox-operator 3.74.0-588-ge99fe7b316
+hack/olm-operator-install.sh stackrox-operator quay.io/rhacs-eng/stackrox-operator-index 3.74.0-588-ge99fe7b316
 ```
 
 ### Removal

@@ -16,7 +16,7 @@ function main() {
   esac
 
   local -r operator_ns="${1:-}"
-  local -r image_tag_base="${2:-}"
+  local -r index_image_repo="${2:-}"
 
   case $# in
   3)
@@ -28,8 +28,8 @@ function main() {
     local -r operator_version="${4:-}"
     ;;
   *)
-    echo -e "Usage:\n\t$0 [--allow-dirty-tag | -d] <operator_ns> <image_tag_base> <index-version> [<install-version>]" >&2
-    echo -e "Example:\n\t$0 -d index-test quay.io/rhacs-eng/stackrox-operator 3.70.1 3.70.1" >&2
+    echo -e "Usage:\n\t$0 [--allow-dirty-tag | -d] <operator_ns> <index-image-repo> <index-version> [<install-version>]" >&2
+    echo -e "Example:\n\t$0 -d index-test quay.io/rhacs-eng/stackrox-operator-index 3.70.1 3.70.1" >&2
     echo -e "Note that KUTTL environment variable must be defined and point to a kuttl executable." >&2
     exit 1
     ;;
@@ -37,7 +37,7 @@ function main() {
 
   check_version_tag "${operator_version}" "${allow_dirty_tag}"
   create_namespace "${operator_ns}"
-  apply_operator_manifests "${operator_ns}" "${image_tag_base}" "${index_version}" "${operator_version}"
+  apply_operator_manifests "${operator_ns}" "${index_image_repo}" "${index_version}" "${operator_version}"
 
   if ! [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
     approve_install_plan "${operator_ns}" "${operator_version}"

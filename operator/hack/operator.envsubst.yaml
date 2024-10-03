@@ -6,7 +6,7 @@ spec:
   sourceType: grpc
   secrets:
   - operator-pull-secret
-  image: ${IMAGE_TAG_BASE}-index:${INDEX_IMAGE_TAG}
+  image: ${INDEX_IMAGE_REPO}:${INDEX_IMAGE_TAG}
   displayName: StackRox Operator Test index
   grpcPodConfig:
     ${DISABLE_SECURITY_CONTEXT_CONFIG}securityContextConfig: restricted
