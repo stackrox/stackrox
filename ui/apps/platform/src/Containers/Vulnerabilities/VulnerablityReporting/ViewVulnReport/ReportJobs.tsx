@@ -243,7 +243,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                         const reportConfiguration: ReportConfiguration = {
                             id: reportConfigId,
                             name,
-                            description: description || '',
+                            description: description ?? '',
                             type: 'VULNERABILITY',
                             vulnReportFilters,
                             notifiers,
