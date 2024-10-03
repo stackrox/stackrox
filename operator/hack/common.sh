@@ -1,7 +1,7 @@
+# shellcheck shell=bash
 # A library of bash functions useful for installing operator using OLM.
 
 declare -r KUTTL="${KUTTL:-kubectl-kuttl}"
-declare -r pull_secret="operator-pull-secret"
 declare -r USE_MIDSTREAM_IMAGES=${USE_MIDSTREAM_IMAGES:-false}
 # `declare` ignores `errexit`: http://mywiki.wooledge.org/BashFAQ/105
 ROOT_DIR="$(dirname "${BASH_SOURCE[0]}")/../.."
@@ -109,7 +109,7 @@ function approve_install_plan() {
   current_csv=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.currentCSV}")
   readonly current_csv
   local -r expected_csv="rhacs-operator.v${version_tag}"
-  if [[ $current_csv != $expected_csv ]]; then
+  if [[ $current_csv != "$expected_csv" ]]; then
     log "Subscription is progressing to unexpected CSV '${current_csv}', expected '${expected_csv}'"
     return 1
   fi
