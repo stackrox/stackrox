@@ -32,6 +32,7 @@ import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import {
     getScoreVersionsForTopCVSS,
+    getScoreVersionsForTopNvdCVSS,
     sortCveDistroList,
     aggregateByCVSS,
     aggregateByCreatedTime,
@@ -71,11 +72,14 @@ export const cveListQuery = gql`
             topCVSS
             affectedImageCount
             firstDiscoveredInSystem
+            topNvdCVSS
             distroTuples {
                 summary
                 operatingSystem
                 cvss
                 scoreVersion
+                nvdCvss
+                nvdScoreVersion
             }
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
@@ -103,11 +107,14 @@ export type ImageCVE = {
     topCVSS: number;
     affectedImageCount: number;
     firstDiscoveredInSystem: string | null;
+    topNvdCVSS: number;
     distroTuples: {
         summary: string;
         operatingSystem: string;
         cvss: number;
         scoreVersion: string;
+        nvdCvss: number;
+        nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
     }[];
     pendingExceptionCount: number;
 };
@@ -177,10 +184,7 @@ function CVEsTable({
                         Top CVSS
                     </TooltipTh>
                     {isNvdCvssEnabled && (
-                        <TooltipTh
-                            // sort={getSortParams('TODO', aggregateByTODO)}
-                            tooltip="Highest CVSS score (from National Vulnerability Database) of this CVE across images"
-                        >
+                        <TooltipTh tooltip="Highest CVSS score (from National Vulnerability Database) of this CVE across images">
                             Top NVD CVSS
                         </TooltipTh>
                     )}
@@ -222,6 +226,7 @@ function CVEsTable({
                                 cve,
                                 affectedImageCountBySeverity,
                                 topCVSS,
+                                topNvdCVSS,
                                 affectedImageCount,
                                 firstDiscoveredInSystem,
                                 distroTuples,
@@ -237,6 +242,10 @@ function CVEsTable({
 
                             const prioritizedDistros = sortCveDistroList(distroTuples);
                             const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
+                            const nvdScoreVersions = getScoreVersionsForTopNvdCVSS(
+                                topNvdCVSS,
+                                distroTuples
+                            );
                             const summary =
                                 prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
@@ -306,13 +315,8 @@ function CVEsTable({
                                         {isNvdCvssEnabled && (
                                             <Td dataLabel="Top NVD CVSS">
                                                 <CvssFormatted
-                                                    cvss={0.0}
-                                                    // scoreVersion={
-                                                    //     scoreVersions.length > 0
-                                                    //         ? scoreVersions.join('/')
-                                                    //         : undefined
-                                                    // }
-                                                    scoreVersion="V3"
+                                                    cvss={topNvdCVSS ?? 0}
+                                                    scoreVersion={nvdScoreVersions.join('/')}
                                                 />
                                             </Td>
                                         )}
