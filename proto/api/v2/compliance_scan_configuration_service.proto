@@ -97,7 +97,7 @@ message ComplianceReportHistoryResponse {
 }
 
 message ComplianceReportSnapshot {
-  string snapshot_id = 1;
+  string report_job_id = 1;
   string scan_config_id = 2;
   string name = 3;
   string description = 4;

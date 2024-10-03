@@ -811,7 +811,7 @@
     "v2ComplianceReportSnapshot": {
       "type": "object",
       "properties": {
-        "snapshotId": {
+        "reportJobId": {
           "type": "string"
         },
         "scanConfigId": {

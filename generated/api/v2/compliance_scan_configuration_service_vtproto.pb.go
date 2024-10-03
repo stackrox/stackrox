@@ -276,7 +276,7 @@ func (m *ComplianceReportSnapshot) CloneVT() *ComplianceReportSnapshot {
 		return (*ComplianceReportSnapshot)(nil)
 	}
 	r := new(ComplianceReportSnapshot)
-	r.SnapshotId = m.SnapshotId
+	r.ReportJobId = m.ReportJobId
 	r.ScanConfigId = m.ScanConfigId
 	r.Name = m.Name
 	r.Description = m.Description
@@ -734,7 +734,7 @@ func (this *ComplianceReportSnapshot) EqualVT(that *ComplianceReportSnapshot) bo
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.SnapshotId != that.SnapshotId {
+	if this.ReportJobId != that.ReportJobId {
 		return false
 	}
 	if this.ScanConfigId != that.ScanConfigId {
@@ -1652,10 +1652,10 @@ func (m *ComplianceReportSnapshot) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(m.SnapshotId) > 0 {
-		i -= len(m.SnapshotId)
-		copy(dAtA[i:], m.SnapshotId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.SnapshotId)))
+	if len(m.ReportJobId) > 0 {
+		i -= len(m.ReportJobId)
+		copy(dAtA[i:], m.ReportJobId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ReportJobId)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -2125,7 +2125,7 @@ func (m *ComplianceReportSnapshot) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.SnapshotId)
+	l = len(m.ReportJobId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -4086,7 +4086,7 @@ func (m *ComplianceReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SnapshotId", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ReportJobId", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -4118,7 +4118,7 @@ func (m *ComplianceReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.SnapshotId = stringValue
+			m.ReportJobId = stringValue
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
