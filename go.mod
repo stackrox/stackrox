@@ -140,6 +140,7 @@ require (
 	golang.org/x/oauth2 v0.22.0
 	golang.org/x/sync v0.9.0
 	golang.org/x/sys v0.27.0
+	golang.org/x/term v0.26.0
 	golang.org/x/text v0.20.0
 	golang.org/x/time v0.8.0
 	golang.org/x/tools v0.26.0
@@ -469,7 +470,6 @@ require (
 	go.starlark.net v0.0.0-20230612165344-9532f5667272 // indirect
 	go.step.sm/crypto v0.44.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/term v0.26.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
