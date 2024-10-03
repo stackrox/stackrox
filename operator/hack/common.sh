@@ -24,6 +24,7 @@ function apply_operator_manifests() {
   local -r index_image_repo="$2"
   local -r index_version="$3"
   local -r operator_version="$4"
+  local -r operator_channel="$5"
 
   # OCP starting from v4.14 requires either spec.grpcPodConfig.securityContextConfig attribute to be set on the
   # CatalogSource resource or the namespace of the CatalogSource to have relaxed PSA enforcement, otherwise the
@@ -44,12 +45,10 @@ function apply_operator_manifests() {
 
   if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
     # Get Operator channel from json for midstream
-    operator_channel=$(< midstream/iib.json jq -r '.operator.channel')
     install_plan_approval="Automatic"
     starting_csv="null"
     index_image_tag="${index_version}"
   else
-    operator_channel="latest"
     install_plan_approval="Manual"
     starting_csv="rhacs-operator.v${operator_version}"
     index_image_tag="v${index_version}"

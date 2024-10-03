@@ -7,8 +7,9 @@
 # dropped (e.g. 3.0.61.1 -> 3.61.1) and development version ".x" is changed to ".0" (e.g. 3.0.61.x-123 -> 3.0.61.0-123).
 VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g' | sed -E 's@^3.0.([[:digit:]]+\.[[:digit:]]+)(-)?@3.\1\2@g')
 
-# Operator version to install, used by deploy-(dirty-tag-)via-olm targets.
+# Operator version to install and channel to install from, used by deploy-(dirty-tag-)via-olm targets.
 INSTALL_VERSION ?= $(VERSION)
+INSTALL_CHANNEL ?= latest
 
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
@@ -364,12 +365,12 @@ undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s clust
 deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(VERSION) $(INSTALL_VERSION)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(VERSION) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
 
 .PHONY: deploy-dirty-tag-via-olm
 deploy-dirty-tag-via-olm: ## Deploy operator dirty tagged image to the cluster using OLM.
 # This target ignores filter for dirty tagged images.
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(VERSION)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(VERSION) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
 
 .PHONY: deploy-previous-via-olm
 deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLM.
@@ -377,7 +378,7 @@ deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
 	$(SILENT)replaced_version_no_v=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.v(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
 	set -x ;\
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(VERSION) $${replaced_version_no_v}
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(VERSION) $${replaced_version_no_v} $(INSTALL_CHANNEL)
 
 .PHONY: upgrade-via-olm
 upgrade-via-olm: kuttl
