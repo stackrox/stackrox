@@ -34,6 +34,8 @@ function apply_operator_manifests() {
   catalog_source_crd="$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get customresourcedefinitions.apiextensions.k8s.io catalogsources.operators.coreos.com -o yaml)"
   local disable_security_context_config="# "
   local has_scc_key
+  local operator_channel
+  local operator_envsubst_yaml
   has_scc_key="$(yq eval '[.. | select(key == "grpcPodConfig")].[].properties | has("securityContextConfig")' - <<< "$catalog_source_crd")"
   if [[ "$has_scc_key" == "true" ]]; then
       disable_security_context_config=""
@@ -42,18 +44,16 @@ function apply_operator_manifests() {
   if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
     # Get Operator channel from json for midstream
     operator_channel=$(< midstream/iib.json jq -r '.operator.channel')
+    operator_envsubst_yaml="${ROOT_DIR}/operator/hack/operator-midstream.envsubst.yaml"
+  else
+    operator_envsubst_yaml="${ROOT_DIR}/operator/hack/operator.envsubst.yaml"
+    operator_channel="latest"
+  fi
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
     IMAGE_TAG_BASE="${image_tag_base}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
-    envsubst < "${ROOT_DIR}/operator/hack/operator-midstream.envsubst.yaml" \
+    envsubst < "${operator_envsubst_yaml}" \
     | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
-  else
-  env -i PATH="${PATH}" \
-    INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
-    IMAGE_TAG_BASE="${image_tag_base}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
-    envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
-    | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
-  fi
 }
 
 function retry() {
