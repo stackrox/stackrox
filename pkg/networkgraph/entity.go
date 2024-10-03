@@ -36,20 +36,20 @@ type Entity struct {
 
 	// Specific to ExternalSource entities
 	ExternalEntityAddress net.IPNetwork
-	Learned               bool
+	Discovered            bool
 }
 
 // ToProto converts the Entity struct to a storage.NetworkEntityInfo proto.
 func (e Entity) ToProto() *storage.NetworkEntityInfo {
-	if e.Learned && e.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+	if e.Discovered && e.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
 		return &storage.NetworkEntityInfo{
 			Type: e.Type,
 			Id:   e.ID,
 			Desc: &storage.NetworkEntityInfo_ExternalSource_{
 				ExternalSource: &storage.NetworkEntityInfo_ExternalSource{
-					Name:    e.ExternalEntityAddress.IP().String(),
-					Default: false,
-					Learned: true,
+					Name:       e.ExternalEntityAddress.IP().String(),
+					Default:    false,
+					Discovered: true,
 					Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
 						Cidr: e.ExternalEntityAddress.String(),
 					},
@@ -65,13 +65,13 @@ func (e Entity) ToProto() *storage.NetworkEntityInfo {
 
 // EntityFromProto converts a storage.NetworkEntityInfo proto to an Entity struct.
 func EntityFromProto(protoEnt *storage.NetworkEntityInfo) Entity {
-	if protoEnt.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE && protoEnt.GetExternalSource().GetLearned() {
-		return LearnedExternalEntity(net.IPNetworkFromCIDR(protoEnt.GetExternalSource().GetCidr()))
+	if protoEnt.Type == storage.NetworkEntityInfo_EXTERNAL_SOURCE && protoEnt.GetExternalSource().GetDiscovered() {
+		return DiscoveredExternalEntity(net.IPNetworkFromCIDR(protoEnt.GetExternalSource().GetCidr()))
 	}
 	return Entity{
-		Type:    protoEnt.GetType(),
-		ID:      protoEnt.GetId(),
-		Learned: false,
+		Type:       protoEnt.GetType(),
+		ID:         protoEnt.GetId(),
+		Discovered: false,
 	}
 }
 
@@ -99,9 +99,9 @@ func InternalEntities() Entity {
 	}
 }
 
-// LearnedExternalEntity returns an EXTERNAL_SOURCE entity refering to the provided network address.
-// It is marked as "Learned" to constrast with Entities defined by the user or the default ones.
-func LearnedExternalEntity(address net.IPNetwork) Entity {
+// DiscoveredExternalEntity returns an EXTERNAL_SOURCE entity refering to the provided network address.
+// It is marked as "Discovered" to constrast with Entities defined by the user or the default ones.
+func DiscoveredExternalEntity(address net.IPNetwork) Entity {
 	id, err := externalsrcs.NewGlobalScopedScopedID(address.String())
 	utils.Should(errors.Wrapf(err, "generating id for network %s", address.String()))
 
@@ -109,7 +109,7 @@ func LearnedExternalEntity(address net.IPNetwork) Entity {
 		Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 		ID:                    id.String(),
 		ExternalEntityAddress: address,
-		Learned:               true,
+		Discovered:            true,
 	}
 }
 

@@ -38,7 +38,7 @@ type pipelineImpl struct {
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
 	return []centralsensor.CentralCapability{
 		centralsensor.NetworkGraphInternalEntitiesSupported,
-		centralsensor.NetworkGraphLearnedExternalEntitiesSupported,
+		centralsensor.NetworkGraphDiscoveredExternalEntitiesSupported,
 	}
 }
 

@@ -114,7 +114,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateNoExternalIPs() {
 		{
 			Props: &storage.NetworkFlowProperties{
 				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  networkgraph.LearnedExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
+				DstEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
@@ -122,7 +122,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateNoExternalIPs() {
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  networkgraph.LearnedExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
+				SrcEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
 				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
 				DstPort:    4,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -275,7 +275,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 		{
 			Props: &storage.NetworkFlowProperties{
 				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  networkgraph.LearnedExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
+				DstEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
@@ -283,7 +283,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  networkgraph.LearnedExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
+				SrcEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
 				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
 				DstPort:    4,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -296,12 +296,12 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 	expectedUpdateProps := []*storage.NetworkFlowProperties{
 		{
 			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-			DstEntity:  networkgraph.LearnedExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
+			DstEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
 			DstPort:    3,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		{
-			SrcEntity:  networkgraph.LearnedExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
+			SrcEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
 			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
 			DstPort:    4,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -322,7 +322,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 					Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 					ID:                    "__MS4yLjMuNC8zMg",
 					ExternalEntityAddress: net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32}),
-					Learned:               true,
+					Discovered:            true,
 				},
 				DstPort:  3,
 				Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -332,7 +332,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 					Type:                  storage.NetworkEntityInfo_EXTERNAL_SOURCE,
 					ID:                    "__Mi4zLjQuNS8zMg",
 					ExternalEntityAddress: net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32}),
-					Learned:               true,
+					Discovered:            true,
 				},
 				DstEntity: networkgraph.Entity{
 					Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -388,8 +388,8 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 
 	suite.mockEntities.EXPECT().UpdateExternalNetworkEntity(suite.hasWriteCtx, testutils.PredMatcher("matches an external entity", func(updatedEntity *storage.NetworkEntity) bool {
 		expectedEntities := []storage.NetworkEntityInfo{
-			*networkgraph.LearnedExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
-			*networkgraph.LearnedExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
+			*networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
+			*networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
 		}
 
 		for i := range expectedEntities {

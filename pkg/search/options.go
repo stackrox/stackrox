@@ -344,9 +344,9 @@ var (
 	ComplianceLastScanMax = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
 
 	// External network sources fields
-	DefaultExternalSource = newFieldLabel("Default External Source")
-	LearnedExternalSource = newFieldLabel("Learned External Source")
-	ExternalSourceAddress = newFieldLabel("External Source Address")
+	DefaultExternalSource    = newFieldLabel("Default External Source")
+	DiscoveredExternalSource = newFieldLabel("Discovered External Source")
+	ExternalSourceAddress    = newFieldLabel("External Source Address")
 
 	// Report configurations search fields
 	ReportName     = newFieldLabel("Report Name")

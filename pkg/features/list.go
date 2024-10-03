@@ -126,6 +126,6 @@ var (
 	// registry host.
 	SensorPullSecretsByName = registerFeature("Sensor will capture pull secrets by name and registry host instead of just registry host", "ROX_SENSOR_PULL_SECRETS_BY_NAME", enabled)
 
-	// ExternalIPs enables storing detailed learned external IPs
-	ExternalIPs = registerFeature("Central will work with learned external IPs", "ROX_EXTERNAL_IPS")
+	// ExternalIPs enables storing detailed discovered external IPs
+	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
 )

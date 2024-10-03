@@ -28,24 +28,24 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 	if features.ExternalIPs.Enabled() {
 		// Sensor may have forwarded unknown NetworkEntities that we want to learn
 		for _, newFlow := range newFlows {
-			err := s.updateExternalNetworkEntityIfLearned(ctx, newFlow.GetProps().DstEntity)
+			err := s.updateExternalNetworkEntityIfDiscovered(ctx, newFlow.GetProps().DstEntity)
 			if err != nil {
 				return err
 			}
-			err = s.updateExternalNetworkEntityIfLearned(ctx, newFlow.GetProps().SrcEntity)
+			err = s.updateExternalNetworkEntityIfDiscovered(ctx, newFlow.GetProps().SrcEntity)
 			if err != nil {
 				return err
 			}
 		}
 	} else {
-		// We are not storing the learned entities. Let net-flows point to INTERNET instead.
+		// We are not storing the discovered entities. Let net-flows point to INTERNET instead.
 		internetEntity := networkgraph.InternetEntity().ToProto()
 		for _, newFlow := range newFlows {
-			if newFlow.GetProps().GetSrcEntity().GetExternalSource().GetLearned() {
+			if newFlow.GetProps().GetSrcEntity().GetExternalSource().GetDiscovered() {
 				newFlow.GetProps().SrcEntity = internetEntity
 			}
 
-			if newFlow.GetProps().GetDstEntity().GetExternalSource().GetLearned() {
+			if newFlow.GetProps().GetDstEntity().GetExternalSource().GetDiscovered() {
 				newFlow.GetProps().DstEntity = internetEntity
 			}
 		}
@@ -129,8 +129,8 @@ func convertToFlows(updatedFlows map[networkgraph.NetworkConnIndicator]timestamp
 	return flowsToBeUpserted
 }
 
-func (s *flowPersisterImpl) updateExternalNetworkEntityIfLearned(ctx context.Context, entityInfo *storage.NetworkEntityInfo) error {
-	if !entityInfo.GetExternalSource().GetLearned() {
+func (s *flowPersisterImpl) updateExternalNetworkEntityIfDiscovered(ctx context.Context, entityInfo *storage.NetworkEntityInfo) error {
+	if !entityInfo.GetExternalSource().GetDiscovered() {
 		return nil
 	}
 
