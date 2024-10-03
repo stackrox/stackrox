@@ -44,6 +44,9 @@ func (cmd *Cmd) construct(args []string) (netpolAnalyzer, error) {
 	if cmd.outputFilePath != "" {
 		cmd.outputToFile = true
 	}
+	if cmd.exposure {
+		opts = append(opts, npguard.WithExposureAnalysis())
+	}
 	return npguard.NewConnlistAnalyzer(opts...), nil
 }
 
