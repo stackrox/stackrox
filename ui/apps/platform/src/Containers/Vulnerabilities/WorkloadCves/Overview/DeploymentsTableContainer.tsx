@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Divider } from '@patternfly/react-core';
+import { Divider, ToolbarItem } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
@@ -8,7 +8,14 @@ import useURLPagination from 'hooks/useURLPagination';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
-import DeploymentsTable, { Deployment, deploymentListQuery } from '../Tables/DeploymentsTable';
+import { useManagedColumns } from 'hooks/useManagedColumns';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
+import DeploymentsTable, {
+    defaultColumns,
+    Deployment,
+    deploymentListQuery,
+    tableId,
+} from '../Tables/DeploymentsTable';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { VulnerabilitySeverityLabel } from '../../types';
 
@@ -56,6 +63,8 @@ function DeploymentsTableContainer({
         searchFilter,
     });
 
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+
     return (
         <>
             <TableEntityToolbar
@@ -64,7 +73,11 @@ function DeploymentsTableContainer({
                 pagination={pagination}
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
-            />
+            >
+                <ToolbarItem align={{ default: 'alignRight' }}>
+                    <ColumnManagementButton managedColumnState={managedColumnState} />
+                </ToolbarItem>
+            </TableEntityToolbar>
             <Divider component="div" />
             <div
                 className="workload-cves-table-container"
@@ -81,6 +94,7 @@ function DeploymentsTableContainer({
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
+                    tableConfig={managedColumnState.columns}
                 />
             </div>
         </>

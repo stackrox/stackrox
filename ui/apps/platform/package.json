@@ -17,6 +17,7 @@
         "@lifeomic/axios-fetch": "^3.0.1",
         "@patternfly/react-charts": "^7.2.2",
         "@patternfly/react-code-editor": "^5.2.2",
+        "@patternfly/react-component-groups": "^5.2.0",
         "@patternfly/react-core": "^5.2.2",
         "@patternfly/react-icons": "^5.2.1",
         "@patternfly/react-styles": "^5.2.1",

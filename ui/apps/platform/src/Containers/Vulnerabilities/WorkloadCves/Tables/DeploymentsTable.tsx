@@ -11,10 +11,40 @@ import TooltipTh from 'Components/TooltipTh';
 import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
+import {
+    generateVisibilityFor,
+    getHiddenColumnCount,
+    ManagedColumns,
+} from 'hooks/useManagedColumns';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
+
+export const tableId = 'workloadCvesDeploymentOverviewTable';
+
+export const defaultColumns = {
+    cvesBySeverity: {
+        title: 'CVEs by severity',
+        isShownByDefault: true,
+    },
+    cluster: {
+        title: 'Cluster',
+        isShownByDefault: true,
+    },
+    namespace: {
+        title: 'Namespace',
+        isShownByDefault: true,
+    },
+    images: {
+        title: 'Images',
+        isShownByDefault: true,
+    },
+    firstDiscovered: {
+        title: 'First discovered',
+        isShownByDefault: true,
+    },
+} as const;
 
 export const deploymentListQuery = gql`
     query getDeploymentList($query: String, $pagination: Pagination) {
@@ -65,6 +95,7 @@ type DeploymentsTableProps = {
     filteredSeverities?: VulnerabilitySeverityLabel[];
     showCveDetailFields: boolean;
     onClearFilters: () => void;
+    tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
 
 function DeploymentsTable({
@@ -74,28 +105,46 @@ function DeploymentsTable({
     filteredSeverities,
     showCveDetailFields,
     onClearFilters,
+    tableConfig,
 }: DeploymentsTableProps) {
     const vulnerabilityState = useVulnerabilityState();
-    const colSpan = showCveDetailFields ? 6 : 5;
+    const getVisibilityClass = generateVisibilityFor(tableConfig);
+    const hiddenColumnCount = getHiddenColumnCount(tableConfig);
+    const colSpan = 5 + (showCveDetailFields ? 1 : 0) + -hiddenColumnCount;
+
     return (
         <Table borders={false} variant="compact">
             <Thead noWrap>
-                {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
                     {showCveDetailFields && (
-                        <TooltipTh tooltip="CVEs by severity across this deployment">
+                        <TooltipTh
+                            className={getVisibilityClass('cvesBySeverity')}
+                            tooltip="CVEs by severity across this deployment"
+                        >
                             CVEs by severity
                             {isFiltered && <DynamicColumnIcon />}
                         </TooltipTh>
                     )}
-                    <Th sort={getSortParams('Cluster')}>Cluster</Th>
-                    <Th sort={getSortParams('Namespace')}>Namespace</Th>
-                    <Th>
+                    <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
+                        Cluster
+                    </Th>
+                    <Th
+                        className={getVisibilityClass('namespace')}
+                        sort={getSortParams('Namespace')}
+                    >
+                        Namespace
+                    </Th>
+                    <Th className={getVisibilityClass('images')}>
                         Images
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams('Created')}>First discovered</Th>
+                    <Th
+                        className={getVisibilityClass('firstDiscovered')}
+                        sort={getSortParams('Created')}
+                    >
+                        First discovered
+                    </Th>
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -138,7 +187,7 @@ function DeploymentsTable({
                                         </Link>
                                     </Td>
                                     {showCveDetailFields && (
-                                        <Td>
+                                        <Td className={getVisibilityClass('cvesBySeverity')}>
                                             <SeverityCountLabels
                                                 criticalCount={criticalCount}
                                                 importantCount={importantCount}
@@ -149,14 +198,14 @@ function DeploymentsTable({
                                             />
                                         </Td>
                                     )}
-                                    <Td>{clusterName}</Td>
-                                    <Td>{namespace}</Td>
-                                    <Td>
+                                    <Td className={getVisibilityClass('cluster')}>{clusterName}</Td>
+                                    <Td className={getVisibilityClass('namespace')}>{namespace}</Td>
+                                    <Td className={getVisibilityClass('images')}>
                                         <>
                                             {imageCount} {pluralize('image', imageCount)}
                                         </>
                                     </Td>
-                                    <Td>
+                                    <Td className={getVisibilityClass('firstDiscovered')}>
                                         <DateDistance date={created} />
                                     </Td>
                                 </Tr>

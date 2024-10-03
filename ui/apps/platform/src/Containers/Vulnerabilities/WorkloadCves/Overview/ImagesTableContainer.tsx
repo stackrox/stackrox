@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Divider } from '@patternfly/react-core';
+import { Divider, ToolbarItem } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
@@ -8,7 +8,15 @@ import useURLPagination from 'hooks/useURLPagination';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
-import ImagesTable, { Image, ImagesTableProps, imageListQuery } from '../Tables/ImagesTable';
+import { useManagedColumns } from 'hooks/useManagedColumns';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
+import ImagesTable, {
+    Image,
+    ImagesTableProps,
+    defaultColumns,
+    imageListQuery,
+    tableId,
+} from '../Tables/ImagesTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 
@@ -64,6 +72,8 @@ function ImagesTableContainer({
         searchFilter,
     });
 
+    const managedColumns = useManagedColumns(tableId, defaultColumns);
+
     return (
         <>
             <TableEntityToolbar
@@ -72,7 +82,11 @@ function ImagesTableContainer({
                 pagination={pagination}
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
-            />
+            >
+                <ToolbarItem align={{ default: 'alignRight' }}>
+                    <ColumnManagementButton managedColumnState={managedColumns} />
+                </ToolbarItem>
+            </TableEntityToolbar>
             <Divider component="div" />
             <div
                 className="workload-cves-table-container"
@@ -92,6 +106,7 @@ function ImagesTableContainer({
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
+                    tableConfig={managedColumns.columns}
                 />
             </div>
         </>

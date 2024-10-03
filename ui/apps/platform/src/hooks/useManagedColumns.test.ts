@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 
-import { useManagedColumns } from './useManagedColumns';
+import { generateVisibilityFor, useManagedColumns } from './useManagedColumns';
 
 beforeEach(() => {
     window.localStorage.clear();
@@ -461,4 +461,22 @@ test('should create local storage object if top level key is invalid value', () 
     const { result: result2 } = renderHook(() => useManagedColumns('test', defaultColumnConfig));
 
     expect(result2.current.columns.Name.isShown).toEqual(false);
+});
+
+test('should correctly generate visibility classes', () => {
+    const { result } = renderHook(() => useManagedColumns('test', defaultColumnConfig));
+
+    act(() => {
+        result.current.toggleVisibility('Name');
+    });
+
+    const getVisibilityClass = generateVisibilityFor(result.current.columns);
+
+    expect(getVisibilityClass('Name')).toEqual('pf-v5-u-display-none');
+    expect(getVisibilityClass('CVSS')).toEqual('');
+    expect(getVisibilityClass('NVD CVSS')).toEqual('pf-v5-u-display-none');
+    // Check that a column that doesn't exist returns an empty string and that attempting call the function
+    // with an invalid key is not permitted when using TypeScript with a correctly inferred type
+    // @ts-expect-error Should see a type error here when using an invalid key
+    expect(getVisibilityClass('Bogus')).toEqual('');
 });

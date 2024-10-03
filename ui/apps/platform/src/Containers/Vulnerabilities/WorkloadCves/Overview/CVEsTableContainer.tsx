@@ -13,8 +13,16 @@ import { getTableUIState } from 'utils/getTableUIState';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
 import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
+import { useManagedColumns } from 'hooks/useManagedColumns';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
-import CVEsTable, { ImageCVE, cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
+import CVEsTable, {
+    ImageCVE,
+    cveListQuery,
+    defaultColumns,
+    tableId,
+    unfilteredImageCountQuery,
+} from '../Tables/CVEsTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import { getStatusesForExceptionCount } from '../../utils/searchUtils';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
@@ -68,6 +76,8 @@ function CVEsTableContainer({
 
     const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
 
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+
     const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
     const {
         exceptionRequestModalOptions,
@@ -116,9 +126,12 @@ function CVEsTableContainer({
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
             >
+                <ToolbarItem align={{ default: 'alignRight' }}>
+                    <ColumnManagementButton managedColumnState={managedColumnState} />
+                </ToolbarItem>
                 {canSelectRows && (
                     <>
-                        <ToolbarItem align={{ default: 'alignRight' }}>
+                        <ToolbarItem>
                             <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
                                 <DropdownItem
                                     key="bulk-defer-cve"
@@ -146,7 +159,7 @@ function CVEsTableContainer({
                                 </DropdownItem>
                             </BulkActionsDropdown>
                         </ToolbarItem>
-                        <ToolbarItem align={{ default: 'alignRight' }} variant="separator" />
+                        <ToolbarItem variant="separator" />
                     </>
                 )}
             </TableEntityToolbar>
@@ -170,6 +183,7 @@ function CVEsTableContainer({
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
+                    tableConfig={managedColumnState.columns}
                 />
             </div>
         </>
