@@ -10143,7 +10143,7 @@
                   },
                   {
                     "id": 4,
-                    "name": "learned",
+                    "name": "discovered",
                     "type": "bool"
                   }
                 ]
