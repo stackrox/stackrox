@@ -15,11 +15,11 @@ import {
 } from 'services/ComplianceScanConfigurationService';
 import JobDetails from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/JobDetails';
 import ReportJobsTable from 'Components/ReportJob/ReportJobsTable';
-import { RunState } from 'services/ReportsService.types';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { ensureBoolean, ensureStringArray } from 'utils/ensure';
 import useURLStringUnion from 'hooks/useURLStringUnion';
+import { RunState } from 'types/reportJob';
 import ConfigDetails from './ConfigDetails';
 import ReportRunStatesFilter, { ensureReportRunStates } from './ReportRunStatesFilter';
 import MyJobsFilter from './MyJobsFilter';

@@ -216,10 +216,10 @@ function ScanConfigsTablePage({
             const scanConfigUrl = generatePath(scanConfigDetailsPath, {
                 scanConfigId: id,
             });
-            const complianceReportSnapshot = complianceReportSnapshots[id];
+            const snapshot = complianceReportSnapshots[id];
             const isSnapshotStatusPending =
-                complianceReportSnapshot?.reportStatus?.runState === 'PREPARING' ||
-                complianceReportSnapshot?.reportStatus?.runState === 'WAITING';
+                snapshot?.reportStatus?.runState === 'PREPARING' ||
+                snapshot?.reportStatus?.runState === 'WAITING';
 
             return (
                 <Tr key={id}>
@@ -244,7 +244,7 @@ function ScanConfigsTablePage({
                     {isReportJobsEnabled && (
                         <Td dataLabel="My last job status">
                             <MyLastJobStatus
-                                snapshot={complianceReportSnapshot}
+                                snapshot={snapshot}
                                 isLoadingSnapshots={isLoadingSnapshots}
                                 currentUserId={currentUser.userId}
                                 baseDownloadURL="" // TODO: Put the correct URL here

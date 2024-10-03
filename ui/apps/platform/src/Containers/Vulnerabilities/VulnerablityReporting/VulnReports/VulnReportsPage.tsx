@@ -409,10 +409,10 @@ function VulnReportsPage() {
                                                 reportId: report.id,
                                             }
                                         ) as string;
-                                        const reportSnapshot = reportSnapshots[report.id];
+                                        const snapshot = reportSnapshots[report.id];
                                         const isReportStatusPending =
-                                            reportSnapshot?.reportStatus.runState === 'PREPARING' ||
-                                            reportSnapshot?.reportStatus.runState === 'WAITING';
+                                            snapshot?.reportStatus.runState === 'PREPARING' ||
+                                            snapshot?.reportStatus.runState === 'WAITING';
                                         const rowActions = [
                                             {
                                                 title: 'Edit report',
@@ -521,7 +521,7 @@ function VulnReportsPage() {
                                                     <Td>{report.description || '-'}</Td>
                                                     <Td>
                                                         <MyLastJobStatus
-                                                            snapshot={reportSnapshot}
+                                                            snapshot={snapshot}
                                                             isLoadingSnapshots={
                                                                 isLoadingReportSnapshots
                                                             }

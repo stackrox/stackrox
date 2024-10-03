@@ -7,9 +7,10 @@ import { SlimUser } from 'types/user.proto';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import { getQueryString } from 'utils/queryStringUtils';
+import { Snapshot } from 'types/reportJob';
 import { ComplianceProfileSummary, complianceV2Url } from './ComplianceCommon';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
-import { NotifierConfiguration, ReportStatus } from './ReportsService.types';
+import { NotifierConfiguration } from './ReportsService.types';
 import { Empty } from './types';
 
 const complianceScanConfigBaseUrl = `${complianceV2Url}/scan/configurations`;
@@ -81,16 +82,9 @@ export type ComplianceScanConfigurationStatus = {
     lastExecutedTime: string | null; // either ISO 8601 date string or null when scan is in progress
 };
 
-// @TODO: This may change and be moved around depending on how backend implements it.
-export type ComplianceReportSnapshot = {
-    reportJobId: string;
+export type ComplianceReportSnapshot = Snapshot & {
     scanConfigId: string;
-    name: string;
-    description?: string;
-    reportStatus: ReportStatus;
     reportData: ComplianceScanConfigurationStatus;
-    user: SlimUser;
-    isDownloadAvailable: boolean;
 };
 
 export type ListComplianceScanConfigurationsResponse = {
@@ -281,7 +275,7 @@ export function fetchComplianceReportHistory({
     );
     return axios
         .get<ReportHistoryResponse>(
-            `/v2/compliance/scan/configurations/${id}/reports/${showMyHistory ? 'my-history' : 'history'}?${params}`
+            `/v2/compliance/scan/configuration/${id}/reports/${showMyHistory ? 'my-history' : 'history'}?${params}`
         )
         .then((response) => {
             return response.data.complianceReportSnapshots;

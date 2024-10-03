@@ -1,4 +1,4 @@
-import { ReportStatus } from 'services/ReportsService.types';
+import { ReportStatus } from 'types/reportJob';
 import { getReportStatusText, getCVEsDiscoveredSinceText } from './utils';
 import { ReportParametersFormValues } from './forms/useReportFormValues';
 

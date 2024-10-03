@@ -2,7 +2,8 @@ import React, { render, screen } from '@testing-library/react';
 import { cloneDeep } from 'lodash';
 import '@testing-library/jest-dom';
 
-import { ReportSnapshot, ReportStatus } from 'services/ReportsService.types';
+import { ReportSnapshot } from 'services/ReportsService.types';
+import { ReportStatus } from 'types/reportJob';
 
 import MyLastJobStatus from './MyLastJobStatus';
 

@@ -2,13 +2,13 @@ import {
     Fixability,
     ImageType,
     ReportConfiguration,
-    ReportStatus,
     Schedule,
     VulnerabilityReportFilters,
     VulnerabilityReportFiltersBase,
 } from 'services/ReportsService.types';
 import { DayOfMonth, DayOfWeek } from 'Components/PatternFly/DayPickerDropdown';
 import { getDate } from 'utils/dateUtils';
+import { ReportStatus } from 'types/reportJob';
 import {
     CVESDiscoveredSince,
     CVESDiscoveredStartDate,

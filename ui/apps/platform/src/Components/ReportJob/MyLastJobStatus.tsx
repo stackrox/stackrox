@@ -1,13 +1,12 @@
 import React from 'react';
 import { Spinner } from '@patternfly/react-core';
 
-import { ReportSnapshot } from 'services/ReportsService.types';
 import ReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobStatus';
 import { onDownloadReport } from 'Components/ReportJob/utils';
-import { ComplianceReportSnapshot } from 'services/ComplianceScanConfigurationService';
+import { Snapshot } from 'types/reportJob';
 
 type MyLastJobStatusProps = {
-    snapshot: ReportSnapshot | ComplianceReportSnapshot | null | undefined;
+    snapshot: Snapshot | null | undefined;
     isLoadingSnapshots: boolean;
     currentUserId: string;
     baseDownloadURL: string;
