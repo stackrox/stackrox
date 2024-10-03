@@ -721,10 +721,8 @@ spec:
         path: central.defaultTLSSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: |-
-          Deprecated field. This field exists solely for backward compatibility starting from version v4.6.0.
-          Configures how Central should store its persistent data. You can choose between using a persistent
-          volume claim (recommended default), and a host path.
+      - description: Unused field. This field exists solely for backward compatibility
+          starting from version v4.6.0.
         displayName: Persistence
         path: central.persistence
         x-descriptors:

@@ -29,7 +29,6 @@ type pvcReconciliationTestCase struct {
 	Target       PVCTarget
 	DefaultClaim string
 	ExistingPVCs []*corev1.PersistentVolumeClaim
-	Delete       bool
 
 	ExpectedPVCs  map[string]pvcVerifyFunc
 	ExpectedError string
@@ -82,8 +81,6 @@ func notOwnedBy(central *platform.Central) pvcVerifyFunc {
 
 func TestReconcilePVCExtension(t *testing.T) {
 	emptyCentral := makeCentral(nil)
-	emptyCentralWithDB := makeCentral(nil)
-	emptyCentralWithDB.Spec.Central.DB = &platform.CentralDBSpec{}
 
 	pvcObsoletedAnnotation := map[string]string{
 		common.CentralPVCObsoleteAnnotation: "true",
@@ -92,7 +89,6 @@ func TestReconcilePVCExtension(t *testing.T) {
 	emptyCentralWithPvcObsoletedAnnotation.Annotations = pvcObsoletedAnnotation
 
 	externalCentralWithDB := makeCentral(nil)
-	externalCentralWithDB.Spec.Central.DB = &platform.CentralDBSpec{}
 	externalCentralWithDB.Spec.Central.DB.ConnectionStringOverride = pointer.String("foobar")
 
 	changedPVCNameCentral := makeCentral(&platform.DBPersistence{
@@ -124,6 +120,10 @@ func TestReconcilePVCExtension(t *testing.T) {
 		},
 	}
 
+	deletedCentral := makeCentral(nil)
+	deleteTime := metav1.Now()
+	deletedCentral.DeletionTimestamp = &deleteTime
+
 	cases := map[string]pvcReconciliationTestCase{
 		"empty-state-not-create-new-default-central-pvc": {
 			Central:      emptyCentral,
@@ -151,12 +151,12 @@ func TestReconcilePVCExtension(t *testing.T) {
 			},
 		},
 		"central-pvc-should-lose-owner-refs": {
-			Central:      emptyCentralWithDB,
+			Central:      emptyCentral,
 			DefaultClaim: DefaultCentralPVCName,
 			Target:       PVCTargetCentral,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentralWithDB, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, centralTargetLabels)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, centralTargetLabels)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralPVCName: notOwnedBy(emptyCentralWithDB),
+				DefaultCentralPVCName: notOwnedBy(emptyCentral),
 			},
 		},
 		"given-hostpath-should-not-create-default-central-db-pvc": {
@@ -249,13 +249,12 @@ func TestReconcilePVCExtension(t *testing.T) {
 		},
 
 		"delete-central-should-remove-owner-reference": {
-			Central:      emptyCentral,
+			Central:      deletedCentral,
 			DefaultClaim: DefaultCentralDBPVCName,
 			Target:       PVCTargetCentralDB,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentral, DefaultCentralDBPVCName, defaultPVCSize, emptyStorageClass, centralDBTargetLabels)},
-			Delete:       true,
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(deletedCentral, DefaultCentralDBPVCName, defaultPVCSize, emptyStorageClass, centralDBTargetLabels)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralDBPVCName: verifyMultiple(notOwnedBy(emptyCentral)),
+				DefaultCentralDBPVCName: verifyMultiple(notOwnedBy(deletedCentral)),
 			},
 		},
 
@@ -267,38 +266,38 @@ func TestReconcilePVCExtension(t *testing.T) {
 			ExpectedPVCs: nil,
 		},
 		"central-db-empty-state-create-new-default-central-db-pvc": {
-			Central:      emptyCentralWithDB,
+			Central:      emptyCentral,
 			DefaultClaim: DefaultCentralDBPVCName,
 			Target:       PVCTargetCentralDB,
 			ExistingPVCs: nil,
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentralWithDB), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
 			},
 		},
 
 		"central-db-empty-state-create-new-default-pvc-no-labels-pvc": {
-			Central:      emptyCentralWithDB,
+			Central:      emptyCentral,
 			DefaultClaim: DefaultCentralDBPVCName,
 			Target:       PVCTargetCentralDB,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{
-				makePVC(emptyCentralWithDB, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, nil),
+				makePVC(emptyCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, nil),
 			},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralPVCName:   verifyMultiple(ownedBy(emptyCentralWithDB), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
-				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentralWithDB), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralPVCName:   verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
 			},
 		},
 
 		"central-db-empty-state-create-new-default-pvc-with-central-annotation-pvc": {
-			Central:      emptyCentralWithDB,
+			Central:      emptyCentral,
 			DefaultClaim: DefaultCentralDBPVCName,
 			Target:       PVCTargetCentralDB,
 			ExistingPVCs: []*corev1.PersistentVolumeClaim{
-				makePVC(emptyCentralWithDB, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, centralTargetLabels),
+				makePVC(emptyCentral, DefaultCentralPVCName, defaultPVCSize, emptyStorageClass, centralTargetLabels),
 			},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralPVCName:   verifyMultiple(ownedBy(emptyCentralWithDB), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
-				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentralWithDB), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralPVCName:   verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
 			},
 		},
 		"central-db-existing-pvc-should-be-reconciled-with-labels": {
@@ -311,13 +310,13 @@ func TestReconcilePVCExtension(t *testing.T) {
 			},
 		},
 		"central-pvc-should-not-lose-owner-refs": {
-			Central:      emptyCentralWithDB,
+			Central:      emptyCentral,
 			DefaultClaim: DefaultCentralDBPVCName,
 			Target:       PVCTargetCentralDB,
-			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentralWithDB, testPVCName, defaultPVCSize, emptyStorageClass, nil)},
+			ExistingPVCs: []*corev1.PersistentVolumeClaim{makePVC(emptyCentral, testPVCName, defaultPVCSize, emptyStorageClass, nil)},
 			ExpectedPVCs: map[string]pvcVerifyFunc{
-				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentralWithDB), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
-				testPVCName:             ownedBy(emptyCentralWithDB),
+				DefaultCentralDBPVCName: verifyMultiple(ownedBy(emptyCentral), withSize(defaultPVCSize), withStorageClass(emptyStorageClass)),
+				testPVCName:             ownedBy(emptyCentral),
 			},
 		},
 	}
@@ -326,11 +325,6 @@ func TestReconcilePVCExtension(t *testing.T) {
 		testCase := tc
 
 		t.Run(name, func(t *testing.T) {
-			if testCase.Delete {
-				time := metav1.Now()
-				testCase.Central.DeletionTimestamp = &time
-			}
-
 			var allExisting []ctrlClient.Object
 			for _, existingPVC := range testCase.ExistingPVCs {
 				allExisting = append(allExisting, existingPVC)
