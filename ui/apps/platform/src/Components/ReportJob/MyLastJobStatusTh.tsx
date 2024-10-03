@@ -3,7 +3,7 @@ import { Flex, FlexItem } from '@patternfly/react-core';
 
 import HelpIconTh from 'Containers/Vulnerabilities/VulnerablityReporting/VulnReports/HelpIconTh';
 
-function MyActiveJobStatusTh() {
+function MyLastJobStatusTh() {
     return (
         <HelpIconTh
             popoverContent={
@@ -34,9 +34,9 @@ function MyActiveJobStatusTh() {
                 </Flex>
             }
         >
-            My active job status
+            My last job status
         </HelpIconTh>
     );
 }
 
-export default MyActiveJobStatusTh;
+export default MyLastJobStatusTh;
