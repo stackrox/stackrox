@@ -187,13 +187,14 @@ deploy_stackrox_operator() {
         # Retrieving values from json map for operator and iib
         ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
 
-        make -C operator kuttl deploy-via-olm-midstream \
+        make -C operator kuttl deploy-via-olm \
           INDEX_IMAGE_REPO="brew.registry.redhat.io/rh-osbs/iib" \
           VERSION="$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')" \
-          OPERATOR_VERSION="$(< operator/midstream/iib.json jq -r '.operator.version')"
+          INSTALL_VERSION="$(< operator/midstream/iib.json jq -r '.operator.version')"
     else
         info "Deploying ACS operator"
-        ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator kuttl deploy-via-olm
+        make -C operator kuttl deploy-via-olm \
+          ROX_PRODUCT_BRANDING=RHACS_BRANDING
     fi
 }
 
