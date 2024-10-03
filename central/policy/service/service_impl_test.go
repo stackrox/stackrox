@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"reflect"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
+	"github.com/stackrox/rox/central/policy/service/customresource"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,6 +35,13 @@ var (
 	}
 	mockRequestTwoIDs = &v1.ExportPoliciesRequest{
 		PolicyIds: []string{"Joseph Rules", "abcd"},
+	}
+
+	mockSaveAsRequestOneID = &v1.SaveAsCustomResourcesRequest{
+		PolicyIds: []string{"id1"},
+	}
+	mockSaveAsRequestTwoIDs = &v1.SaveAsCustomResourcesRequest{
+		PolicyIds: []string{"id1", "id2"},
 	}
 )
 
@@ -83,12 +92,12 @@ func (s *PolicyServiceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *PolicyServiceTestSuite) compareErrorsToExpected(expectedErrors []*v1.ExportPolicyError, apiError error) {
+func (s *PolicyServiceTestSuite) compareErrorsToExpected(expectedErrors []*v1.PolicyOperationError, apiError error) {
 	apiStatus, ok := status.FromError(apiError)
 	s.Require().True(ok)
 	details := apiStatus.Details()
 	s.Len(details, 1)
-	exportErrors, ok := details[0].(*v1.ExportPoliciesErrorList)
+	exportErrors, ok := details[0].(*v1.PolicyOperationErrorList)
 	s.Require().True(ok)
 	// actual errors == expected errors ignoring order
 	s.Len(exportErrors.GetErrors(), len(expectedErrors))
@@ -97,8 +106,8 @@ func (s *PolicyServiceTestSuite) compareErrorsToExpected(expectedErrors []*v1.Ex
 	}
 }
 
-func makeError(errorID, errorString string) *v1.ExportPolicyError {
-	return &v1.ExportPolicyError{
+func makeError(errorID, errorString string) *v1.PolicyOperationError {
+	return &v1.PolicyOperationError{
 		PolicyId: errorID,
 		Error: &v1.PolicyError{
 			Error: errorString,
@@ -108,7 +117,7 @@ func makeError(errorID, errorString string) *v1.ExportPolicyError {
 
 func (s *PolicyServiceTestSuite) TestExportInvalidIDFails() {
 	ctx := context.Background()
-	mockErrors := []*v1.ExportPolicyError{
+	mockErrors := []*v1.PolicyOperationError{
 		makeError(mockRequestOneID.PolicyIds[0], "not found"),
 	}
 	s.policies.EXPECT().GetPolicies(ctx, mockRequestOneID.PolicyIds).Return(make([]*storage.Policy, 0), []int{0}, nil)
@@ -136,7 +145,7 @@ func (s *PolicyServiceTestSuite) TestExportMixedSuccessAndMissing() {
 	mockPolicy := &storage.Policy{
 		Id: mockRequestTwoIDs.PolicyIds[0],
 	}
-	mockErrors := []*v1.ExportPolicyError{
+	mockErrors := []*v1.PolicyOperationError{
 		makeError(mockRequestTwoIDs.PolicyIds[1], "not found"),
 	}
 	s.policies.EXPECT().GetPolicies(ctx, mockRequestTwoIDs.PolicyIds).Return([]*storage.Policy{mockPolicy}, []int{1}, nil)
@@ -148,7 +157,7 @@ func (s *PolicyServiceTestSuite) TestExportMixedSuccessAndMissing() {
 
 func (s *PolicyServiceTestSuite) TestExportMultipleFailures() {
 	ctx := context.Background()
-	mockErrors := []*v1.ExportPolicyError{
+	mockErrors := []*v1.PolicyOperationError{
 		makeError(mockRequestTwoIDs.PolicyIds[0], "not found"),
 		makeError(mockRequestTwoIDs.PolicyIds[1], "not found"),
 	}
@@ -952,4 +961,89 @@ func (s *PolicyServiceTestSuite) TestDeletingPolicyErrOnDbError() {
 	// assert
 	s.Require().Error(err, expectedErr)
 	s.Require().Nil(resp)
+}
+
+func (s *PolicyServiceTestSuite) TestSaveAsInvalidIDFails() {
+	ctx := context.Background()
+	mockErrors := []*v1.PolicyOperationError{
+		makeError(mockSaveAsRequestOneID.PolicyIds[0], "not found"),
+	}
+	s.policies.EXPECT().GetPolicies(ctx, mockSaveAsRequestOneID.PolicyIds).Return(make([]*storage.Policy, 0), []int{0}, nil)
+
+	resp, err := s.tested.SaveAsCustomResources(ctx, mockSaveAsRequestOneID)
+	s.Nil(resp)
+	s.Error(err)
+	s.compareErrorsToExpected(mockErrors, err)
+}
+
+func (s *PolicyServiceTestSuite) TestSaveAsValidIDSucceeds() {
+	ctx := context.Background()
+	policy := &storage.Policy{
+		Id:   mockSaveAsRequestOneID.PolicyIds[0],
+		Name: "A name",
+	}
+	customResource, err := customresource.GenerateCustomResource(policy)
+	s.NoError(err)
+	s.policies.EXPECT().GetPolicies(ctx, mockSaveAsRequestOneID.PolicyIds).Return([]*storage.Policy{policy}, nil, nil)
+	resp, err := s.tested.SaveAsCustomResources(ctx, mockSaveAsRequestOneID)
+	s.NoError(err)
+	s.NotNil(resp)
+	s.Len(resp.GetCustomResources(), 1)
+	s.Equal(customResource, resp.CustomResources[0])
+}
+
+func (s *PolicyServiceTestSuite) TestSaveAsMultipleValidIDSucceeds() {
+	ctx := context.Background()
+	policies := []*storage.Policy{
+		{
+			Id:   mockSaveAsRequestTwoIDs.PolicyIds[0],
+			Name: "name 1",
+		},
+		{
+			Id:   mockSaveAsRequestTwoIDs.PolicyIds[1],
+			Name: "name 2",
+		},
+	}
+	var customResources []string
+	for _, policy := range policies {
+
+		cr, err := customresource.GenerateCustomResource(policy)
+		s.NoError(err)
+		customResources = append(customResources, cr)
+	}
+	s.policies.EXPECT().GetPolicies(ctx, mockSaveAsRequestTwoIDs.PolicyIds).Return(policies, nil, nil)
+	resp, err := s.tested.SaveAsCustomResources(ctx, mockSaveAsRequestTwoIDs)
+	s.NoError(err)
+	s.NotNil(resp)
+	s.Len(resp.GetCustomResources(), 2)
+	s.Equal(customResources, resp.CustomResources)
+}
+
+func (s *PolicyServiceTestSuite) TestSaveAsMixedSuccessAndMissing() {
+	ctx := context.Background()
+	mockPolicy := &storage.Policy{
+		Id:   mockSaveAsRequestTwoIDs.PolicyIds[0],
+		Name: "A name",
+	}
+	mockErrors := []*v1.PolicyOperationError{
+		makeError(mockSaveAsRequestTwoIDs.PolicyIds[1], "not found"),
+	}
+	s.policies.EXPECT().GetPolicies(ctx, mockSaveAsRequestTwoIDs.PolicyIds).Return([]*storage.Policy{mockPolicy}, []int{1}, nil)
+	resp, err := s.tested.SaveAsCustomResources(ctx, mockSaveAsRequestTwoIDs)
+	s.Nil(resp)
+	s.Error(err)
+	s.compareErrorsToExpected(mockErrors, err)
+}
+
+func (s *PolicyServiceTestSuite) TestSaveAsMultipleFailures() {
+	ctx := context.Background()
+	mockErrors := []*v1.PolicyOperationError{
+		makeError(mockSaveAsRequestTwoIDs.PolicyIds[0], "not found"),
+		makeError(mockSaveAsRequestTwoIDs.PolicyIds[1], "not found"),
+	}
+	s.policies.EXPECT().GetPolicies(ctx, mockSaveAsRequestTwoIDs.PolicyIds).Return(make([]*storage.Policy, 0), []int{0, 1}, nil)
+	resp, err := s.tested.SaveAsCustomResources(ctx, mockSaveAsRequestTwoIDs)
+	s.Nil(resp)
+	s.Error(err)
+	s.compareErrorsToExpected(mockErrors, err)
 }
