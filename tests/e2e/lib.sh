@@ -189,9 +189,9 @@ deploy_stackrox_operator() {
 
         make -C operator kuttl deploy-via-olm \
           INDEX_IMAGE_REPO="brew.registry.redhat.io/rh-osbs/iib" \
-          VERSION="$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')" \
+          CSV_VERSION="$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')" \
           INSTALL_CHANNEL="$(< operator/midstream/iib.json jq -r '.operator.channel')" \
-          INSTALL_VERSION="$(< operator/midstream/iib.json jq -r '.operator.version')"
+          INSTALL_VERSION="v$(< operator/midstream/iib.json jq -r '.operator.version')"
     else
         info "Deploying ACS operator"
         make -C operator kuttl deploy-via-olm \

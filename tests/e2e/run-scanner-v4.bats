@@ -373,7 +373,7 @@ EOF
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_V4_SUPPORT=true
 
-    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
+    CSV_VERSION="v${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox
 
     verify_scannerV2_deployed "stackrox"
@@ -398,7 +398,7 @@ EOF
     export SENSOR_SCANNER_SUPPORT=true
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_V4_SUPPORT=true
-    VERSION="${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
+    CSV_VERSION="v${OPERATOR_VERSION_TAG}" deploy_stackrox_operator
     _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
@@ -425,9 +425,9 @@ EOF
 
     # Install old version of the operator & deploy StackRox.
     (
-      VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
+      CSV_VERSION="v${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
       #  cd operator
-      #  ./hack/olm-operator-install.sh stackrox-operator quay.io/rhacs-eng/stackrox-operator-index 4.3.0 4.3.0
+      #  ./hack/olm-operator-install.sh stackrox-operator quay.io/rhacs-eng/stackrox-operator-index v4.3.0
     )
     ROX_SCANNER_V4="false" _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
@@ -436,7 +436,7 @@ EOF
 
     # Upgrade operator
     info "Upgrading StackRox Operator to version ${OPERATOR_VERSION_TAG}..."
-    VERSION="${OPERATOR_VERSION_TAG}" make -C operator upgrade-via-olm
+    CSV_VERSION="v${OPERATOR_VERSION_TAG}" make -C operator upgrade-via-olm
     info "Waiting for new rhacs-operator pods to become ready"
     # Give the old pods some time to terminate, otherwise we can end up
     # in a situation where the old pods are just about to terminate and this
