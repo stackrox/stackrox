@@ -140,6 +140,7 @@ func severity(ctx context.Context, def oval.Definition) string {
 
 	// For CVEs, there will only be 1 item in this slice.
 	// For RHSAs, RHBAs, etc., there will typically be 1 or more.
+	var cveId string
 	for _, cve := range def.Advisory.Cves {
 		ctx := zlog.ContextWithValues(ctx, "title", def.Title)
 		if cve.Cvss3 != "" {
@@ -161,6 +162,7 @@ func severity(ctx context.Context, def oval.Definition) string {
 			if parsedScore > cvss3.score {
 				cvss3.score = parsedScore
 				cvss3.vector = vector
+				cveId = cve.CveID
 			}
 		}
 		if cve.Cvss2 != "" {
@@ -182,6 +184,7 @@ func severity(ctx context.Context, def oval.Definition) string {
 			if parsedScore > cvss2.score {
 				cvss2.score = parsedScore
 				cvss2.vector = vector
+				cveId = cve.CveID
 			}
 		}
 	}
@@ -196,6 +199,9 @@ func severity(ctx context.Context, def oval.Definition) string {
 	if cvss2.score > 0 && cvss2.vector != "" {
 		severity.Add("cvss2_score", fmt.Sprintf("%.1f", cvss2.score))
 		severity.Add("cvss2_vector", cvss2.vector)
+	}
+	if cveId != "" {
+		severity.Add("cve", cveId)
 	}
 	return severity.Encode()
 }
