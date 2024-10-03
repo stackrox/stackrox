@@ -186,53 +186,89 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 	return vulns
 }
 
+func toStorageV2Scores(vulnCVSS *v4.VulnerabilityReport_Vulnerability_CVSS, cve string) (float32, storage.EmbeddedVulnerability_ScoreVersion, *storage.CVSSV2, error) {
+	errList := errorhelpers.NewErrorList("failed to parse to CVSS V2 scores")
+	v2 := vulnCVSS.GetV2()
+	if c, err := cvssv2.ParseCVSSV2(v2.GetVector()); err == nil {
+		err = cvssv2.CalculateScores(c)
+		if err != nil {
+			errList.AddError(fmt.Errorf("calculating CVSS v2 scores: %w", err))
+		}
+		// Use the report's score if it exists.
+		if baseScore := v2.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
+			log.Debugf("Calculated CVSSv2 score does not match given base score (%f != %f) for %s. Using given score...", c.Score, baseScore, cve)
+			c.Score = baseScore
+		}
+		c.Severity = cvssv2.Severity(c.Score)
+		return c.Score,storage.EmbeddedVulnerability_V2, c, nil
+	} else {
+		errList.AddError(fmt.Errorf("v2: %w", err))
+	}
+	return 0, 0, nil, errList.ToError()
+}
+
+func toStorageV3Scores(vulnCVSS *v4.VulnerabilityReport_Vulnerability_CVSS, cve string) (float32,storage.EmbeddedVulnerability_ScoreVersion, *storage.CVSSV3, error) {
+	errList := errorhelpers.NewErrorList("failed to parse to CVSS V3 scores")
+	v3 := vulnCVSS.GetV3()
+	if c, err := cvssv3.ParseCVSSV3(v3.GetVector()); err == nil {
+		err = cvssv3.CalculateScores(c)
+		if err != nil {
+			errList.AddError(fmt.Errorf("calculating CVSS v3 scores: %w", err))
+		}
+		// Use the report's score if it exists.
+		if baseScore := v3.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
+			log.Debugf("Calculated CVSSv3 score does not match given base score (%f != %f) for %s. Using given score...", c.Score, baseScore, cve)
+			c.Score = baseScore
+		}
+		c.Severity = cvssv3.Severity(c.Score)
+		return c.Score, storage.EmbeddedVulnerability_V3, c, nil
+	}
+	return 0, 0, nil, errList.ToError()
+}
+
 func setScoresAndScoreVersion(vuln *storage.EmbeddedVulnerability, vulnCVSS *v4.VulnerabilityReport_Vulnerability_CVSS) error {
 	if vulnCVSS == nil {
 		return nil
 	}
 	errList := errorhelpers.NewErrorList("failed to parse vector")
 	if v2 := vulnCVSS.GetV2(); v2 != nil {
-		if c, err := cvssv2.ParseCVSSV2(v2.GetVector()); err == nil {
-			err = cvssv2.CalculateScores(c)
+			score, sv, cvssV2, err := toStorageV2Scores(vulnCVSS, vuln.GetCve())
 			if err != nil {
-				errList.AddError(fmt.Errorf("calculating CVSS v2 scores: %w", err))
+				errList.AddError(err)
+			}else{
+				// This sets the top level score for use in policies.
+				// It will be overwritten if v3 exists.
+				vuln.ScoreVersion = sv
+				vuln.Cvss = score
+				vuln.CvssV2 = cvssV2
 			}
-			// Use the report's score if it exists.
-			if baseScore := v2.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
-				log.Debugf("Calculated CVSSv2 score does not match given base score (%f != %f) for %s. Using given score...", c.Score, baseScore, vuln.GetCve())
-				c.Score = baseScore
-			}
-			c.Severity = cvssv2.Severity(c.Score)
-			vuln.CvssV2 = c
-			// This sets the top level score for use in policies.
-			// It will be overwritten if v3 exists.
-			vuln.ScoreVersion = storage.EmbeddedVulnerability_V2
-			vuln.Cvss = c.Score
-		} else {
-			errList.AddError(fmt.Errorf("v2: %w", err))
-		}
 	}
 	if v3 := vulnCVSS.GetV3(); v3 != nil {
-		if c, err := cvssv3.ParseCVSSV3(v3.GetVector()); err == nil {
-			err = cvssv3.CalculateScores(c)
+			score, sv, cvssV3, err := toStorageV3Scores(vulnCVSS, vuln.GetCve())
 			if err != nil {
-				errList.AddError(fmt.Errorf("calculating CVSS v3 scores: %w", err))
+				errList.AddError(err)
+			}else{
+				vuln.CvssV3 = cvssV3
+				// Overwrite v2, if set.
+				vuln.ScoreVersion = sv
+				vuln.Cvss = score
 			}
-			// Use the report's score if it exists.
-			if baseScore := v3.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
-				log.Debugf("Calculated CVSSv3 score does not match given base score (%f != %f) for %s. Using given score...", c.Score, baseScore, vuln.GetCve())
-				c.Score = baseScore
-			}
-			c.Severity = cvssv3.Severity(c.Score)
-			vuln.CvssV3 = c
-			// Overwrite v2, if set.
-			vuln.ScoreVersion = storage.EmbeddedVulnerability_V3
-			vuln.Cvss = c.Score
-		} else {
-			errList.AddError(fmt.Errorf("v3: %w", err))
-		}
 	}
+
 	return errList.ToError()
+}
+
+func setScoresAndScoreVersionList(vuln *storage.EmbeddedVulnerability, v4Vuln *v4.VulnerabilityReport_Vulnerability) error {
+	errList := errorhelpers.NewErrorList("failed to get CVSS Metrics")
+	if v4Vuln == nil || v4Vuln.CvssMetrics == nil || len(v4Vuln.CvssMetrics) == 0 {
+		return errList.ToError()
+	}
+	var scores []*storage.CVSSScore
+	for i, metric := range v4Vuln.CvssMetrics {
+		scores[i].Source = storage.Source(metric.Source.Number())
+		scores[i].Url = metric.Url
+		scores[i].CvssScore =
+	}
 }
 
 // link returns the first link from space separated list of links (which is how ClairCore provides links).
