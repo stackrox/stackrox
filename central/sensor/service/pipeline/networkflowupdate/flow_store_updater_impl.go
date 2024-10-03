@@ -20,10 +20,37 @@ type flowPersisterImpl struct {
 	baselines       networkBaselineManager.Manager
 	flowStore       flowDataStore.FlowDataStore
 	firstUpdateSeen bool
+	entityStore     entityDataStore.EntityDataStore
 }
 
 // update updates the FlowStore with the given network flow updates.
 func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *time.Time) error {
+	if features.ExternalIPs.Enabled() {
+		// Sensor may have forwarded unknown NetworkEntities that we want to learn
+		for _, newFlow := range newFlows {
+			err := s.updateExternalNetworkEntityIfLearned(ctx, newFlow.GetProps().DstEntity)
+			if err != nil {
+				return err
+			}
+			err = s.updateExternalNetworkEntityIfLearned(ctx, newFlow.GetProps().SrcEntity)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		// We are not storing the learned entities. Let net-flows point to INTERNET instead.
+		internetEntity := networkgraph.InternetEntity().ToProto()
+		for _, newFlow := range newFlows {
+			if newFlow.GetProps().GetSrcEntity().GetExternalSource().GetLearned() {
+				newFlow.GetProps().SrcEntity = internetEntity
+			}
+
+			if newFlow.GetProps().GetDstEntity().GetExternalSource().GetLearned() {
+				newFlow.GetProps().DstEntity = internetEntity
+			}
+		}
+	}
+
 	now := timestamp.Now()
 	var updateMicroTS timestamp.MicroTS
 	if updateTS != nil {
@@ -41,31 +68,6 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 			return err
 		}
 		s.firstUpdateSeen = true
-	}
-
-	if features.ExternalIPs.Enabled() {
-		// Sensor may have forwarded unknown NetworkEntities that we want to learn
-		for _, newFlow := range newFlows {
-			err := s.updateExternalNetworkEntityIfLearned(ctx, newFlow.GetProps().DstEntity)
-			if err != nil {
-				return err
-			}
-			err = s.updateExternalNetworkEntityIfLearned(ctx, newFlow.GetProps().SrcEntity)
-			if err != nil {
-				return err
-			}
-		}
-	} else {
-		// We are not storing the learned entities. Let net-flows point to INTERNET instead.
-		for newFlow := range flowsByIndicator {
-			if newFlow.SrcEntity.Learned {
-				newFlow.SrcEntity = networkgraph.InternetEntity()
-			}
-
-			if newFlow.DstEntity.Learned {
-				newFlow.DstEntity = networkgraph.InternetEntity()
-			}
-		}
 	}
 
 	return s.flowStore.UpsertFlows(ctx, convertToFlows(flowsByIndicator), now)
