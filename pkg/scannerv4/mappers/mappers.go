@@ -49,7 +49,7 @@ var (
 	awsUpdaterPrefix = `aws-`
 	osvUpdaterPrefix = `osv/`
 	// TODO(ROX-21539): Remove once scanner/updater/rhel is deleted.
-	rhelUpdaterPattern = regexp.MustCompile(`^RHEL\d+-`)
+	rhelUpdaterPattern = regexp.MustCompile(`^RHEL\d+-`) //nolint:unused
 	rhelUpdaterName    = (*vex.Updater)(nil).Name()
 
 	// Name patterns are regexes to match against vulnerability fields to
@@ -57,7 +57,7 @@ var (
 
 	awsVulnNamePattern = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
 	// TODO(ROX-21539): Remove once scanner/updater/rhel is deleted.
-	rhelVulnNamePattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`)
+	rhelVulnNamePattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`) //nolint:unused
 
 	// vulnNamePatterns is a default prioritized list of regexes to match
 	// vulnerability names.
