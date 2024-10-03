@@ -109,6 +109,11 @@ const (
 		RETURNING child.Props_SrcEntity_Type, child.Props_SrcEntity_Id, child.Props_DstEntity_Type,
 			child.Props_DstEntity_Id, child.Props_DstPort, child.Props_L4Protocol, child.LastSeenTimestamp, child.ClusterId::text;`
 
+	// The idea behind this statement is to prune orphan external (learned)
+	// entities from the entities table. When flows are pruned using the above
+	// statements, the returned deleted flows are used to construct a list of
+	// deletion candidates for the external entities table, and then if any of
+	// those are no longer referenced by a network flow, they are deleted.
 	pruneOrphanExternalNetworkEntitiesStmt = `DELETE FROM network_entities entity
 	WHERE (entity.Info_Id = ANY($1)) AND
 	NOT EXISTS
@@ -619,11 +624,11 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 
 	entityIds := make([]string, 0)
 	for _, flow := range srcFlows {
-		entityIds = append(entityIds, flow.GetProps().GetSrcEntity().GetId())
+		entityIds = append(entityIds, flow.GetProps().GetDstEntity().GetId())
 	}
 
 	for _, flow := range dstFlows {
-		entityIds = append(entityIds, flow.GetProps().GetDstEntity().GetId())
+		entityIds = append(entityIds, flow.GetProps().GetSrcEntity().GetId())
 	}
 
 	if len(entityIds) == 0 {
