@@ -2,7 +2,6 @@ package registrymirror
 
 import (
 	"bytes"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"time"
@@ -205,7 +204,7 @@ func (s *FileStore) PullSources(srcImage string) ([]string, error) {
 	}
 
 	if reg == nil {
-		return nil, fs.ErrNotExist
+		return nil, nil
 	}
 
 	// ParseNamed assumes srcImage is a fully qualified references (contains a hostname), will produce error
