@@ -4,8 +4,6 @@ metadata:
   name: stackrox-operator-test-index
 spec:
   sourceType: grpc
-  secrets:
-  - operator-pull-secret
   image: ${INDEX_IMAGE_REPO}:${INDEX_IMAGE_TAG}
   displayName: StackRox Operator Test index
   grpcPodConfig:
