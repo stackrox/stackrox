@@ -7,7 +7,6 @@ import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import useResizeObserver from 'hooks/useResizeObserver';
 import { ComplianceProfileScanStats } from 'services/ComplianceResultsStatsService';
 import { defaultChartHeight, defaultChartBarWidth } from 'utils/chartUtils';
-import { getPercentage } from 'utils/mathUtils';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 import {
@@ -16,7 +15,7 @@ import {
     OTHER_VAR_COLOR,
     PASSING_VAR_COLOR,
 } from '../compliance.coverage.constants';
-import { getStatusCounts } from '../compliance.coverage.utils';
+import { getStatusPercentages } from '../compliance.coverage.utils';
 
 type ChartData = {
     x: string;
@@ -62,52 +61,47 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
     }
 
     if (profileScanStats) {
-        const { passCount, failCount, manualCount, otherCount, totalCount } = getStatusCounts(
-            profileScanStats.checkStats
-        );
-
-        let roundedPassPercent = getPercentage(passCount, totalCount);
-        let roundedFailPercent = getPercentage(failCount, totalCount);
-        let roundedManualPercent = getPercentage(manualCount, totalCount);
-        let roundedOtherPercent = getPercentage(otherCount, totalCount);
+        let { passPercentage, failPercentage, manualPercentage, otherPercentage } =
+            getStatusPercentages(profileScanStats.checkStats);
 
         const totalRoundedPercent =
-            roundedPassPercent + roundedFailPercent + roundedManualPercent + roundedOtherPercent;
+            passPercentage + failPercentage + manualPercentage + otherPercentage;
 
-        // if the total percentage does not add up to 100%, make adjustments
-        // adjust based on the least priority status
+        // If the total percentage does not equal 100%, adjust based on the lowest priority status.
+        // The maximum rounding deviation is +/- 0.5% per value, so with 4 statuses, the total deviation can be up to 2%.
+        // We adjust only when a status percentage is >= 2% to avoid overcompensating.
         if (totalRoundedPercent !== 100) {
             const adjustment = 100 - totalRoundedPercent;
-            if (roundedManualPercent >= 1) {
-                roundedManualPercent += adjustment;
-            } else if (roundedOtherPercent >= 1) {
-                roundedOtherPercent += adjustment;
-            } else if (roundedPassPercent >= 1) {
-                roundedPassPercent += adjustment;
+            if (manualPercentage >= 2) {
+                manualPercentage += adjustment;
+            } else if (otherPercentage >= 2) {
+                otherPercentage += adjustment;
+            } else if (passPercentage >= 2) {
+                passPercentage += adjustment;
             } else {
-                roundedFailPercent += adjustment;
+                failPercentage += adjustment;
             }
         }
 
         const data: ChartData[] = [
             {
                 x: 'Passing',
-                y: roundedPassPercent,
+                y: passPercentage,
                 color: PASSING_VAR_COLOR,
             },
             {
                 x: 'Failing',
-                y: roundedFailPercent,
+                y: failPercentage,
                 color: FAILING_VAR_COLOR,
             },
             {
                 x: 'Manual',
-                y: roundedManualPercent,
+                y: manualPercentage,
                 color: MANUAL_VAR_COLOR,
             },
             {
                 x: 'Other',
-                y: roundedOtherPercent,
+                y: otherPercentage,
                 color: OTHER_VAR_COLOR,
             },
         ];
