@@ -20,6 +20,7 @@ import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
 import useURLSort from 'hooks/useURLSort';
@@ -28,6 +29,8 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import FilteredWorkflowSelector from 'Components/FilteredWorkflowSelector/FilteredWorkflowSelector';
+import useFilteredWorkflowURLState from 'Components/FilteredWorkflowSelector/useFilteredWorkflowURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
 import { violationStateTabs } from './types';
@@ -38,11 +41,14 @@ const tabContentId = 'ViolationsTable';
 
 function ViolationsTablePage(): ReactElement {
     const { searchFilter, setSearchFilter } = useURLSearch();
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isPlatformComponentsEnabled = isFeatureFlagEnabled('ROX_PLATFORM_COMPONENTS');
 
     const [activeViolationStateTab, setActiveViolationStateTab] = useURLStringUnion(
         'violationState',
         violationStateTabs
     );
+    const { filteredWorkflowState, setFilteredWorkflowState } = useFilteredWorkflowURLState();
 
     const hasExecutableFilter =
         Object.keys(searchFilter).length &&
@@ -201,6 +207,14 @@ function ViolationsTablePage(): ReactElement {
                     />
                 </Tabs>
             </PageSection>
+            {isPlatformComponentsEnabled && (
+                <PageSection className="pf-v5-u-py-md" component="div" variant="light">
+                    <FilteredWorkflowSelector
+                        filteredWorkflowState={filteredWorkflowState}
+                        setFilteredWorkflowState={setFilteredWorkflowState}
+                    />
+                </PageSection>
+            )}
             <PageSection variant="default" id={tabContentId}>
                 {isLoadingAlerts && (
                     <Bullseye>
