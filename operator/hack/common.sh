@@ -35,7 +35,6 @@ function apply_operator_manifests() {
   local disable_security_context_config="# "
   local has_scc_key
   local operator_channel
-  local operator_envsubst_yaml
   local install_plan_approval
   local starting_csv
   has_scc_key="$(yq eval '[.. | select(key == "grpcPodConfig")].[].properties | has("securityContextConfig")' - <<< "$catalog_source_crd")"
@@ -46,12 +45,10 @@ function apply_operator_manifests() {
   if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
     # Get Operator channel from json for midstream
     operator_channel=$(< midstream/iib.json jq -r '.operator.channel')
-    operator_envsubst_yaml="${ROOT_DIR}/operator/hack/operator-midstream.envsubst.yaml"
     install_plan_approval="Automatic"
     starting_csv="null"
     index_image_tag="${index_version}"
   else
-    operator_envsubst_yaml="${ROOT_DIR}/operator/hack/operator.envsubst.yaml"
     operator_channel="latest"
     install_plan_approval="Manual"
     starting_csv="rhacs-operator.v${operator_version}"
@@ -61,7 +58,7 @@ function apply_operator_manifests() {
     INDEX_IMAGE_TAG="${index_image_tag}" STARTING_CSV="${starting_csv}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
     INDEX_IMAGE_REPO="${index_image_repo}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
     INSTALL_PLAN_APPROVAL="${install_plan_approval}" \
-    envsubst < "${operator_envsubst_yaml}" \
+    envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
 }
 
