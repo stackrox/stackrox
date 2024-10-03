@@ -669,6 +669,7 @@ func cvssMetrics(ctx context.Context, vuln *claircore.Vulnerability, nvdVuln *nv
 	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix) && !isOSVDBSpecificSeverity(vuln.Severity):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV)
 	case strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
+		// It is expected manually added vulnerabilities only have a single link.
 		preferredCVSS, preferredErr = vulnCVSS(vuln, sourceFromLinks(vuln.Links))
 	}
 	if preferredCVSS != nil {
