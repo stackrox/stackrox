@@ -818,9 +818,9 @@ func (m *ComplianceOperatorScanStatusV2) CloneVT() *ComplianceOperatorScanStatus
 	r.CurrentIndex = m.CurrentIndex
 	r.Warnings = m.Warnings
 	r.RemainingRetries = m.RemainingRetries
-	r.LastStartTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastStartTime).CloneVT())
 	r.StartTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.StartTime).CloneVT())
 	r.EndTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.EndTime).CloneVT())
+	r.LastStartTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastStartTime).CloneVT())
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)

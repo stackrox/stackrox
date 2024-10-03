@@ -213,13 +213,13 @@ message ComplianceOperatorScanV2 {
   NodeRole node_selector = 9;
   ScanStatus status = 10;
   google.protobuf.Timestamp created_time = 11;
-  // last_started_time is the last time the Scan resource was triggered
-  google.protobuf.Timestamp last_started_time = 17; // @gotags: search:"Compliance Scan Last Started Time,hidden"
   google.protobuf.Timestamp last_executed_time = 12; // @gotags: search:"Compliance Scan Last Executed Time,hidden"
   string scan_name = 13; // @gotags: search:"Compliance Scan Name,hidden"
   string warnings = 14;
   string product_type = 15;
   string scan_ref_id = 16; // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"
+  // last_started_time is the last time the Scan resource was triggered
+  google.protobuf.Timestamp last_started_time = 17; // @gotags: search:"Compliance Scan Last Started Time,hidden"
 }
 
 // ComplianceOperatorScanSettingBindingV2 associates a scan setting with one or more compliance profiles

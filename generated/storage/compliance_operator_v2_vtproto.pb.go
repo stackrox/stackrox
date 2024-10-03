@@ -470,12 +470,12 @@ func (m *ComplianceOperatorScanV2) CloneVT() *ComplianceOperatorScanV2 {
 	r.NodeSelector = m.NodeSelector
 	r.Status = m.Status.CloneVT()
 	r.CreatedTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.CreatedTime).CloneVT())
-	r.LastStartedTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastStartedTime).CloneVT())
 	r.LastExecutedTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastExecutedTime).CloneVT())
 	r.ScanName = m.ScanName
 	r.Warnings = m.Warnings
 	r.ProductType = m.ProductType
 	r.ScanRefId = m.ScanRefId
+	r.LastStartedTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastStartedTime).CloneVT())
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
