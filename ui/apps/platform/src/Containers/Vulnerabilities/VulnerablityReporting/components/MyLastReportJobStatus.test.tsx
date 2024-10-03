@@ -1,9 +1,33 @@
 import React, { render, screen } from '@testing-library/react';
+import { cloneDeep } from 'lodash';
 import '@testing-library/jest-dom';
 
 import { ReportSnapshot, ReportStatus } from 'services/ReportsService.types';
 
 import MyLastReportJobStatus from './MyLastReportJobStatus';
+
+const baseReportSnapshot: Omit<ReportSnapshot, 'reportStatus' | 'isDownloadAvailable'> = {
+    reportConfigId: 'report-config-id-1',
+    reportJobId: 'report-job-id-1',
+    name: 'test-name-1',
+    description: 'test-description-1',
+    vulnReportFilters: {
+        fixability: 'FIXABLE',
+        severities: ['LOW_VULNERABILITY_SEVERITY'],
+        imageTypes: ['DEPLOYED'],
+        allVuln: true,
+    },
+    collectionSnapshot: {
+        id: 'test-collection-id-1',
+        name: 'test-collection-name-1',
+    },
+    schedule: null,
+    user: {
+        id: 'test-user-1',
+        name: 'test-user-name-1',
+    },
+    notifiers: [],
+};
 
 describe('MyLastReportJobStatus', () => {
     test('should show "PREPARING" when your last job status is preparing', async () => {
@@ -14,30 +38,11 @@ describe('MyLastReportJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const reportSnapshot: ReportSnapshot = {
-            reportConfigId: 'report-config-id-1',
-            reportJobId: 'report-job-id-1',
-            name: 'test-name-1',
-            description: 'test-description-1',
-            vulnReportFilters: {
-                fixability: 'FIXABLE',
-                severities: ['LOW_VULNERABILITY_SEVERITY'],
-                imageTypes: ['DEPLOYED'],
-                allVuln: true,
-            },
-            collectionSnapshot: {
-                id: 'test-collection-id-1',
-                name: 'test-collection-name-1',
-            },
-            schedule: null,
-            user: {
-                id: 'test-user-1',
-                name: 'test-user-name-1',
-            },
+        const reportSnapshot: ReportSnapshot = cloneDeep({
+            ...baseReportSnapshot,
             reportStatus,
-            notifiers: [],
             isDownloadAvailable: false,
-        };
+        });
 
         render(
             <MyLastReportJobStatus
@@ -63,30 +68,11 @@ describe('MyLastReportJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const reportSnapshot: ReportSnapshot = {
-            reportConfigId: 'report-config-id-1',
-            reportJobId: 'report-job-id-1',
-            name: 'test-name-1',
-            description: 'test-description-1',
-            vulnReportFilters: {
-                fixability: 'FIXABLE',
-                severities: ['LOW_VULNERABILITY_SEVERITY'],
-                imageTypes: ['DEPLOYED'],
-                allVuln: true,
-            },
-            collectionSnapshot: {
-                id: 'test-collection-id-1',
-                name: 'test-collection-name-1',
-            },
-            schedule: null,
-            user: {
-                id: 'test-user-1',
-                name: 'test-user-name-1',
-            },
+        const reportSnapshot: ReportSnapshot = cloneDeep({
+            ...baseReportSnapshot,
             reportStatus,
-            notifiers: [],
             isDownloadAvailable: false,
-        };
+        });
 
         render(
             <MyLastReportJobStatus
@@ -112,30 +98,11 @@ describe('MyLastReportJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const reportSnapshot: ReportSnapshot = {
-            reportConfigId: 'report-config-id-1',
-            reportJobId: 'report-job-id-1',
-            name: 'test-name-1',
-            description: 'test-description-1',
-            vulnReportFilters: {
-                fixability: 'FIXABLE',
-                severities: ['LOW_VULNERABILITY_SEVERITY'],
-                imageTypes: ['DEPLOYED'],
-                allVuln: true,
-            },
-            collectionSnapshot: {
-                id: 'test-collection-id-1',
-                name: 'test-collection-name-1',
-            },
-            schedule: null,
-            user: {
-                id: 'test-user-1',
-                name: 'test-user-name-1',
-            },
+        const reportSnapshot: ReportSnapshot = cloneDeep({
+            ...baseReportSnapshot,
             reportStatus,
-            notifiers: [],
             isDownloadAvailable: true,
-        };
+        });
 
         render(
             <MyLastReportJobStatus
@@ -161,30 +128,11 @@ describe('MyLastReportJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const reportSnapshot: ReportSnapshot = {
-            reportConfigId: 'report-config-id-1',
-            reportJobId: 'report-job-id-1',
-            name: 'test-name-1',
-            description: 'test-description-1',
-            vulnReportFilters: {
-                fixability: 'FIXABLE',
-                severities: ['LOW_VULNERABILITY_SEVERITY'],
-                imageTypes: ['DEPLOYED'],
-                allVuln: true,
-            },
-            collectionSnapshot: {
-                id: 'test-collection-id-1',
-                name: 'test-collection-name-1',
-            },
-            schedule: null,
-            user: {
-                id: 'test-user-1',
-                name: 'test-user-name-1',
-            },
+        const reportSnapshot: ReportSnapshot = cloneDeep({
+            ...baseReportSnapshot,
             reportStatus,
-            notifiers: [],
             isDownloadAvailable: true,
-        };
+        });
 
         render(
             <MyLastReportJobStatus
