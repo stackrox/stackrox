@@ -128,9 +128,7 @@ type CentralComponentSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Monitoring *Monitoring `json:"monitoring,omitempty"`
 
-	// Deprecated field. This field exists solely for backward compatibility starting from version v4.6.0.
-	// Configures how Central should store its persistent data. You can choose between using a persistent
-	// volume claim (recommended default), and a host path.
+	// Unused field. This field exists solely for backward compatibility starting from version v4.6.0.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Persistence *Persistence `json:"persistence,omitempty"`
 
