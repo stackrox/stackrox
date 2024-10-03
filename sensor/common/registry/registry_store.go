@@ -132,6 +132,8 @@ func (rs *Store) Cleanup() {
 	rs.cleanupClusterLocalRegistryHosts()
 	rs.cleanupDelegatedRegistryConfig()
 	rs.tlsCheckCache.Cleanup()
+
+	metrics.ResetRegistryMetrics()
 }
 
 func (rs *Store) cleanupRegistries() {
@@ -220,12 +222,20 @@ func (rs *Store) upsertRegistry(namespace, registry string, dce config.DockerCon
 	// the appropriate prefix
 	registry = urlfmt.TrimHTTPPrefixes(registry)
 	name := genIntegrationName(pullSecretNamePrefix, namespace, "", registry)
-	err := regs.UpdateImageIntegration(createImageIntegration(registry, dce, name))
+
+	ii := createImageIntegration(registry, dce, name)
+	inserted, err := regs.UpdateImageIntegration(ii)
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
 
 	log.Debugf("Upserted registry %q for namespace %q into store", registry, namespace)
+
+	if inserted {
+		// A new entry was inserted (not updated).
+		metrics.IncrementPullSecretEntriesCount(1)
+		metrics.IncrementPullSecretEntriesSize(ii.SizeVT())
+	}
 
 	return nil
 }
@@ -260,12 +270,14 @@ func (rs *Store) getRegistryForImageInNamespace(image *storage.ImageName, namesp
 func (rs *Store) upsertGlobalRegistry(registry string, dce config.DockerConfigEntry) error {
 	var err error
 	name := genIntegrationName(globalRegNamePrefix, "", "", registry)
-	err = rs.globalRegistries.UpdateImageIntegration(createImageIntegration(registry, dce, name))
+	_, err = rs.globalRegistries.UpdateImageIntegration(createImageIntegration(registry, dce, name))
 	if err != nil {
 		return errors.Wrapf(err, "updating registry store with registry %q", registry)
 	}
 
 	log.Debugf("Upserted global registry %q into store", registry)
+
+	metrics.SetGlobalSecretEntriesCount(rs.globalRegistries.Len())
 
 	return nil
 }
@@ -344,6 +356,8 @@ func (rs *Store) addClusterLocalRegistryHost(host string) {
 
 	if rs.clusterLocalRegistryHosts.Add(trimmed) {
 		log.Infof("Added cluster local registry host %q", trimmed)
+
+		metrics.SetClusterLocalHostsCount(len(rs.clusterLocalRegistryHosts))
 	}
 }
 
@@ -359,13 +373,15 @@ func (rs *Store) hasClusterLocalRegistryHost(host string) bool {
 // UpsertCentralRegistryIntegrations upserts registry integrations from Central into the store.
 func (rs *Store) UpsertCentralRegistryIntegrations(iis []*storage.ImageIntegration) {
 	for _, ii := range iis {
-		err := rs.centralRegistryIntegrations.UpdateImageIntegration(ii)
+		_, err := rs.centralRegistryIntegrations.UpdateImageIntegration(ii)
 		if err != nil {
 			log.Errorf("Failed to upsert registry integration %q: %v", ii.GetId(), err)
 		} else {
 			log.Debugf("Upserted registry integration %q (%q)", ii.GetName(), ii.GetId())
 		}
 	}
+
+	metrics.SetCentralIntegrationCount(rs.centralRegistryIntegrations.Len())
 }
 
 // DeleteCentralRegistryIntegrations deletes registry integrations from the store.
@@ -378,6 +394,8 @@ func (rs *Store) DeleteCentralRegistryIntegrations(ids []string) {
 			log.Debugf("Deleted registry integration %q", id)
 		}
 	}
+
+	metrics.SetCentralIntegrationCount(rs.centralRegistryIntegrations.Len())
 }
 
 // GetCentralRegistries returns registry integrations sync'd from Central that match the
@@ -516,6 +534,15 @@ func (rs *Store) upsertPullSecretByNameNoLock(namespace, secretName, registryAdd
 		secretNameToHost[secretName] = hostToRegistry
 	}
 
+	oldreg, ok := hostToRegistry[registryAddr]
+	if !ok {
+		metrics.IncrementPullSecretEntriesCount(1)
+		metrics.IncrementPullSecretEntriesSize(reg.Source().SizeVT())
+	} else {
+		// Adjust the the size based on the diff between the old and the new entry.
+		metrics.IncrementPullSecretEntriesSize(reg.Source().SizeVT() - oldreg.Source().SizeVT())
+	}
+
 	hostToRegistry[registryAddr] = reg
 }
 
@@ -534,7 +561,12 @@ func (rs *Store) DeleteSecret(namespace, secretName string) bool {
 		return false
 	}
 
-	if _, ok := secretNameToHost[secretName]; ok {
+	if hostToRegistry, ok := secretNameToHost[secretName]; ok {
+		var deletedBytes int
+		for _, reg := range hostToRegistry {
+			deletedBytes += reg.Source().SizeVT()
+		}
+
 		delete(secretNameToHost, secretName)
 
 		if len(secretNameToHost) == 0 {
@@ -543,6 +575,8 @@ func (rs *Store) DeleteSecret(namespace, secretName string) bool {
 		}
 
 		log.Debugf("Deleted secret %q from namespace %q", secretName, namespace)
+		metrics.DecrementPullSecretEntriesCount(len(hostToRegistry))
+		metrics.DecrementPullSecretEntriesSize(deletedBytes)
 		return true
 	}
 
@@ -572,7 +606,6 @@ func (rs *Store) GetPullSecretRegistries(image *storage.ImageName, namespace str
 	if len(imagePullSecrets) > 0 {
 		// Return matching registries referenced by the image pull secrets.
 		return rs.getPullSecretRegistriesNoLock(secretNameToHost, image, imagePullSecrets), nil
-
 	}
 
 	// If no pull secrets were provided, we assume that all matching registries
