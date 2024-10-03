@@ -995,11 +995,11 @@ func (s *PolicyServiceTestSuite) TestSaveAsValidIDSucceeds() {
 func (s *PolicyServiceTestSuite) TestSaveAsMultipleValidIDSucceeds() {
 	ctx := context.Background()
 	policies := []*storage.Policy{
-		&storage.Policy{
+		{
 			Id:   mockSaveAsRequestTwoIDs.PolicyIds[0],
 			Name: "name 1",
 		},
-		&storage.Policy{
+		{
 			Id:   mockSaveAsRequestTwoIDs.PolicyIds[1],
 			Name: "name 2",
 		},
