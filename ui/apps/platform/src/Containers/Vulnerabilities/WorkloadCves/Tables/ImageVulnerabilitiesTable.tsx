@@ -51,6 +51,8 @@ export const imageVulnerabilitiesFragment = gql`
         summary
         cvss
         scoreVersion
+        nvdCvss
+        nvdScoreVersion
         discoveredAtImage
         pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         imageComponents(query: $query) {
@@ -65,6 +67,8 @@ export type ImageVulnerability = {
     summary: string;
     cvss: number;
     scoreVersion: string;
+    nvdCvss: number;
+    nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
     discoveredAtImage: string | null;
     pendingExceptionCount: number;
     imageComponents: ImageComponentVulnerability[];
@@ -122,7 +126,7 @@ function ImageVulnerabilitiesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th sort={getSortParams('CVSS')}>CVSS</Th>
-                    {isNvdCvssEnabled && <Th /* sort={getSortParams('TODO')} */>NVD CVSS</Th>}
+                    {isNvdCvssEnabled && <Th>NVD CVSS</Th>}
                     <Th>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
@@ -153,6 +157,8 @@ function ImageVulnerabilitiesTable({
                             summary,
                             cvss,
                             scoreVersion,
+                            nvdCvss,
+                            nvdScoreVersion,
                             imageComponents,
                             discoveredAtImage,
                             pendingExceptionCount,
@@ -212,7 +218,10 @@ function ImageVulnerabilitiesTable({
                                     </Td>
                                     {isNvdCvssEnabled && (
                                         <Td modifier="nowrap" dataLabel="NVD CVSS">
-                                            <CvssFormatted cvss={0.0} scoreVersion="V3" />
+                                            <CvssFormatted
+                                                cvss={nvdCvss ?? 0}
+                                                scoreVersion={nvdScoreVersion ?? 'UNKNOWN_VERSION'}
+                                            />
                                         </Td>
                                     )}
                                     <Td dataLabel="Affected components">
