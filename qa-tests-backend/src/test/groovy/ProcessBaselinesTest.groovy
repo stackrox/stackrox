@@ -21,9 +21,11 @@ import services.ProcessBaselineService
 import spock.lang.Shared
 import spock.lang.Tag
 import spock.lang.Unroll
+import spock.lang.IgnoreIf
 
 @Tag("Parallel")
 @Tag("PZ")
+@IgnoreIf({ Env.COLLECTION_METHOD == "NO_COLLECTION"  })
 class ProcessBaselinesTest extends BaseSpecification {
     @Shared
     private String clusterId
