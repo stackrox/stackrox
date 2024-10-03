@@ -2,7 +2,6 @@ import React from 'react';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSort from 'hooks/patternfly/useTableSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilityState } from 'types/cve.proto';
@@ -61,9 +60,6 @@ function DeploymentComponentVulnerabilitiesTable({
 }: DeploymentComponentVulnerabilitiesTableProps) {
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
-
     const componentVulns = images.flatMap(({ imageMetadataContext, componentVulnerabilities }) =>
         flattenDeploymentComponentVulns(imageMetadataContext, componentVulnerabilities)
     );
@@ -81,7 +77,6 @@ function DeploymentComponentVulnerabilitiesTable({
                     <Th sort={getSortParams('Image')}>Image</Th>
                     <Th>CVE severity</Th>
                     <Th>CVSS</Th>
-                    {isNvdCvssEnabled && <Th>NVD CVSS</Th>}
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
                     <Th>CVE fixed in</Th>
@@ -133,11 +128,6 @@ function DeploymentComponentVulnerabilitiesTable({
                             <Td modifier="nowrap">
                                 <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
-                            {isNvdCvssEnabled && (
-                                <Td modifier="nowrap">
-                                    <CvssFormatted cvss={0.0} scoreVersion="V3" />
-                                </Td>
-                            )}
                             <Td>{name}</Td>
                             <Td>{version}</Td>
                             <Td modifier="nowrap">
