@@ -18,6 +18,7 @@ import { isNonEmptyArray } from 'utils/type.utils';
 import {
     getIsSomeVulnerabilityFixable,
     getHighestCvssScore,
+    getHighestNvdCvssScore,
     getHighestVulnerabilitySeverity,
     getEarliestDiscoveredAtTime,
 } from '../../utils/vulnerabilityUtils';
@@ -53,6 +54,8 @@ export type ImageForCve = {
             discoveredAtImage: string;
             cvss: number;
             scoreVersion: string;
+            nvdCvss: number;
+            nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
         })[];
     })[];
 };
@@ -70,6 +73,8 @@ export const imagesForCveFragment = gql`
                 discoveredAtImage
                 cvss
                 scoreVersion
+                nvdCvss
+                nvdScoreVersion
             }
             ...ImageComponentVulnerabilities
         }
@@ -133,6 +138,8 @@ function AffectedImagesTable({
                         const topSeverity = getHighestVulnerabilitySeverity(vulnerabilities);
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
                         const { cvss, scoreVersion } = getHighestCvssScore(vulnerabilities);
+                        const { nvdCvss, nvdScoreVersion } =
+                            getHighestNvdCvssScore(vulnerabilities);
                         const hasPendingException = imageComponents.some((imageComponent) =>
                             imageComponent.imageVulnerabilities.some(
                                 (imageVulnerability) => imageVulnerability.pendingExceptionCount > 0
@@ -177,7 +184,10 @@ function AffectedImagesTable({
                                     </Td>
                                     {isNvdCvssEnabled && (
                                         <Td dataLabel="NVD CVSS" modifier="nowrap">
-                                            <CvssFormatted cvss={0.0} scoreVersion="V3" />
+                                            <CvssFormatted
+                                                cvss={nvdCvss}
+                                                scoreVersion={nvdScoreVersion}
+                                            />
                                         </Td>
                                     )}
                                     <Td dataLabel="Operating system">{operatingSystem}</Td>
