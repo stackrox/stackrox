@@ -60,12 +60,11 @@ func SlicesEqual[S ~[]T, T message[V], V any](t testing.TB, expected, actual S, 
 	if !assert.Len(t, actual, len(expected), msgAndArgs...) {
 		return false
 	}
+	pass := true
 	for i := range expected {
-		if !Equal(t, expected[i], actual[i], append([]any{fmt.Sprintf("index: %d", i)}, msgAndArgs...)...) {
-			return false
-		}
+		pass = Equal(t, expected[i], actual[i], append([]any{fmt.Sprintf("index: %d\n", i)}, msgAndArgs...)...) && pass
 	}
-	return true
+	return pass
 }
 
 // SliceContains mimics [assert.Contains].
@@ -110,16 +109,15 @@ func MapSliceEqual[M ~map[K][]T, K comparable, T message[V], V any](t testing.TB
 	t.Helper()
 	expectedKeys := maps.Keys(expected)
 	actualKeys := maps.Keys(actual)
-	if !assert.ElementsMatch(t, expectedKeys, actualKeys, msgAndArgs...) {
+	if !assert.ElementsMatch(t, expectedKeys, actualKeys, append([]any{"keys differ:\n"}, msgAndArgs...)...) {
 		return false
 	}
+	pass := true
 	for key, expectedV := range expected {
 		actualV := actual[key]
-		if !SlicesEqual(t, expectedV, actualV, msgAndArgs...) {
-			return false
-		}
+		pass = SlicesEqual(t, expectedV, actualV, append([]any{fmt.Sprintf("key: %v\n", key)}, msgAndArgs...)...) && pass
 	}
-	return true
+	return pass
 }
 
 // MapEqual determines if the expected and actual maps are equal.
@@ -127,16 +125,15 @@ func MapEqual[M ~map[K]T, K comparable, T message[V], V any](t testing.TB, expec
 	t.Helper()
 	expectedKeys := maps.Keys(expected)
 	actualKeys := maps.Keys(actual)
-	if !assert.ElementsMatch(t, expectedKeys, actualKeys, msgAndArgs...) {
+	if !assert.ElementsMatch(t, expectedKeys, actualKeys, append([]any{"keys differ:\n"}, msgAndArgs...)...) {
 		return false
 	}
+	pass := true
 	for key, expectedV := range expected {
 		actualV := actual[key]
-		if !Equal(t, expectedV, actualV, msgAndArgs...) {
-			return false
-		}
+		pass = Equal(t, expectedV, actualV, append([]any{fmt.Sprintf("key: %v\n", key)}, msgAndArgs...)...) && pass
 	}
-	return true
+	return pass
 }
 
 // diff is based on [assert.diff]. The doc for it is copied below:
