@@ -137,5 +137,5 @@ func (s *flowPersisterImpl) updateExternalNetworkEntityIfLearned(ctx context.Con
 		// Scope.ClusterId defaults to "", which is the default cluster
 	}
 
-	return entityDataStore.Singleton().UpdateExternalNetworkEntity(ctx, entity, true)
+	return s.entityStore.UpdateExternalNetworkEntity(ctx, entity, true)
 }
