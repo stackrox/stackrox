@@ -23,7 +23,7 @@ spec:
   name: rhacs-operator
   source: stackrox-operator-test-index
   sourceNamespace: ${NAMESPACE}
-  installPlanApproval: Automatic
+  installPlanApproval: ${INSTALL_PLAN_APPROVAL}
   config:
     env:
     # use a test value for NO_PROXY. This will not have any impact

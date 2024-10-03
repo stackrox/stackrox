@@ -36,6 +36,7 @@ function apply_operator_manifests() {
   local has_scc_key
   local operator_channel
   local operator_envsubst_yaml
+  local install_plan_approval
   has_scc_key="$(yq eval '[.. | select(key == "grpcPodConfig")].[].properties | has("securityContextConfig")' - <<< "$catalog_source_crd")"
   if [[ "$has_scc_key" == "true" ]]; then
       disable_security_context_config=""
@@ -45,13 +46,16 @@ function apply_operator_manifests() {
     # Get Operator channel from json for midstream
     operator_channel=$(< midstream/iib.json jq -r '.operator.channel')
     operator_envsubst_yaml="${ROOT_DIR}/operator/hack/operator-midstream.envsubst.yaml"
+    install_plan_approval="Automatic"
   else
     operator_envsubst_yaml="${ROOT_DIR}/operator/hack/operator.envsubst.yaml"
     operator_channel="latest"
+    install_plan_approval="Manual"
   fi
   env -i PATH="${PATH}" \
     INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
     IMAGE_TAG_BASE="${image_tag_base}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
+    INSTALL_PLAN_APPROVAL="${install_plan_approval}" \
     envsubst < "${operator_envsubst_yaml}" \
     | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
 }
