@@ -239,7 +239,7 @@ func (SecurityContext_SeccompProfile_ProfileType) EnumDescriptor() ([]byte, []in
 	return file_storage_deployment_proto_rawDescGZIP(), []int{13, 1, 0}
 }
 
-// Next available tag: 35
+// Next available tag: 36
 type Deployment struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
