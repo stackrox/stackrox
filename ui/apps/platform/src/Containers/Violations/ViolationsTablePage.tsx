@@ -19,7 +19,8 @@ import VIOLATION_STATES from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-
+import { FilteredWorkflowState } from 'Components/FilteredWorkflowSelector/types';
+import { SearchFilter } from 'types/search';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useEffectAfterFirstRender from 'hooks/useEffectAfterFirstRender';
@@ -38,6 +39,26 @@ import { violationStateTabs } from './types';
 import './ViolationsTablePage.css';
 
 const tabContentId = 'ViolationsTable';
+
+function getFilteredWorkflowSearchFilter(
+    filteredWorkflowState: FilteredWorkflowState
+): SearchFilter {
+    switch (filteredWorkflowState) {
+        case 'Application view':
+            return {
+                'Platform Component': 'false',
+                'Entity Type': 'DEPLOYMENT',
+            };
+        case 'Platform view':
+            return {
+                'Platform Component': 'true',
+                'Entity Type': 'DEPLOYMENT',
+            };
+        case 'Full view':
+        default:
+            return {};
+    }
+}
 
 function ViolationsTablePage(): ReactElement {
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -114,22 +135,22 @@ function ViolationsTablePage(): ReactElement {
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
-        const searchFilterWithViolationState = {
+        const alertSearchFilter: SearchFilter = {
             ...searchFilter,
+            ...getFilteredWorkflowSearchFilter(filteredWorkflowState),
             'Violation State': activeViolationStateTab,
         };
 
-        const { request: alertRequest, cancel: cancelAlertRequest } = fetchAlerts(
-            searchFilterWithViolationState,
+        const { request: alertRequest, cancel: cancelAlertRequest } = fetchAlerts({
+            alertSearchFilter,
             sortOption,
             page,
-            perPage
-        );
+            perPage,
+        });
 
         // Get the total count of alerts that match the search request.
-        const { request: countRequest, cancel: cancelCountRequest } = fetchAlertCount(
-            searchFilterWithViolationState
-        );
+        const { request: countRequest, cancel: cancelCountRequest } =
+            fetchAlertCount(alertSearchFilter);
 
         Promise.all([alertRequest, countRequest])
             .then(([alerts, counts]) => {
@@ -163,6 +184,7 @@ function ViolationsTablePage(): ReactElement {
         setAlertCount,
         perPage,
         activeViolationStateTab,
+        filteredWorkflowState,
     ]);
 
     // We need to be able to identify which alerts are runtime or attempted, and which are not by id.

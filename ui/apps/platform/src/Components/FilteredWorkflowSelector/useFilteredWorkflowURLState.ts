@@ -9,8 +9,7 @@ export type FilteredWorkflowURLStateResult = {
 function useFilteredWorkflowURLState(): FilteredWorkflowURLStateResult {
     const [filteredWorkflowState, setFilteredWorkflowState] = useURLStringUnion(
         'filteredWorkflowState',
-        filteredWorkflowStates,
-        filteredWorkflowStates[2] // @TODO: Remove this once we can show the Application and Platform views
+        filteredWorkflowStates
     );
 
     return { filteredWorkflowState, setFilteredWorkflowState };

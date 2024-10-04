@@ -57,14 +57,12 @@ function FilteredWorkflowSelector({
                 <SelectOption
                     value="Application view"
                     description="Display findings for application workloads."
-                    isDisabled
                 >
                     Application view
                 </SelectOption>
                 <SelectOption
                     value="Platform view"
                     description="Display findings for platform components in OpenShift and layered services."
-                    isDisabled
                 >
                     Platform view
                 </SelectOption>
