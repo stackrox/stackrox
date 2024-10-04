@@ -897,6 +897,9 @@ func RunGetQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context,
 
 func retryableRunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, query *query, db postgres.DB) ([]*T, error) {
 	queryStr := query.AsSQL()
+	if query.Schema == pkgSchema.AlertsSchema {
+		log.Infof("ROX-25993: SQL query is '%s', values are '%v'", queryStr, query.Data)
+	}
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
 		return nil, err
