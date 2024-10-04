@@ -119,6 +119,9 @@ func newSentinelNotifier(notifier *storage.Notifier, cryptoCodec cryptocodec.Cry
 			log.Errorf("PEM was not valid, could not parse all data: %s", string(rest))
 			return nil, errors.Errorf("PEM was not valid, could not parse all data: %s", string(rest))
 		}
+		if keyBlock == nil {
+			return nil, errors.New("Could not parse empty key")
+		}
 		privateKey, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
 		if err != nil {
 			return nil, errors.Wrap(err, "could not parse azure sentinel private key")

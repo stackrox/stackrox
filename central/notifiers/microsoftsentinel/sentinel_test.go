@@ -5,6 +5,7 @@ import (
 	"context"
 	_ "embed"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -299,6 +301,8 @@ func (suite *SentinelTestSuite) TestNewSentinelNotifier() {
 		PrivateKey: sentinelCaKey,
 	}
 
+	sentinel := config.GetMicrosoftSentinel()
+	fmt.Println(sentinel.ClientCertAuthConfig.ClientCert)
 	notifier, err := newSentinelNotifier(config, nil, "")
 
 	suite.Require().NoError(err)
@@ -331,6 +335,7 @@ func (suite *SentinelTestSuite) TestEncryption() {
 func getNotifierConfig() *storage.Notifier {
 	return &storage.Notifier{
 		Name: "microsoft-sentinel",
+		Type: pkgNotifiers.MicrosoftSentinelType,
 		Config: &storage.Notifier_MicrosoftSentinel{
 			MicrosoftSentinel: &storage.MicrosoftSentinel{
 				LogIngestionEndpoint: "portal.azure.com",
