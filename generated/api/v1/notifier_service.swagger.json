@@ -308,8 +308,7 @@
           "description": "PEM encoded ASN.1 DER format."
         },
         "privateKey": {
-          "type": "string",
-          "description": "PEM encoded PKCS #8, ASN.1 DER format."
+          "type": "string"
         }
       },
       "title": "client certificate which is used for authentication"
