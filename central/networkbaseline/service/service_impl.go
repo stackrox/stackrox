@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sac/resources"
-	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 )
 
@@ -192,10 +191,6 @@ func (s *serviceImpl) getBaselinePeerByEntityID(
 	}
 
 	return result
-}
-
-func getMaskedDeploymentID(id string, name string) string {
-	return uuid.NewV5FromNonUUIDs(id, name).String()
 }
 
 func (s *serviceImpl) ModifyBaselineStatusForPeers(ctx context.Context, request *v1.ModifyBaselineStatusForPeersRequest) (*v1.Empty, error) {
