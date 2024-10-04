@@ -91,6 +91,9 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateNoExternalIPs() {
 		},
 	}
 
+	discoveredEntity1 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto()
+	discoveredEntity2 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto()
+
 	secondTimestamp := time.Now()
 	newFlows := []*storage.NetworkFlow{
 		{
@@ -114,7 +117,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateNoExternalIPs() {
 		{
 			Props: &storage.NetworkFlowProperties{
 				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
+				DstEntity:  discoveredEntity1,
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
@@ -122,7 +125,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateNoExternalIPs() {
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
+				SrcEntity:  discoveredEntity2,
 				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
 				DstPort:    4,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -270,12 +273,15 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 	firstTimestamp := time.Now()
 	storedFlows := []*storage.NetworkFlow{}
 
+	discoveredEntity1 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto()
+	discoveredEntity2 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto()
+
 	secondTimestamp := time.Now()
 	newFlows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
 				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
+				DstEntity:  discoveredEntity1,
 				DstPort:    3,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
@@ -283,7 +289,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
-				SrcEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
+				SrcEntity:  discoveredEntity2,
 				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
 				DstPort:    4,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -296,12 +302,12 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 	expectedUpdateProps := []*storage.NetworkFlowProperties{
 		{
 			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-			DstEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
+			DstEntity:  discoveredEntity1,
 			DstPort:    3,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		{
-			SrcEntity:  networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
+			SrcEntity:  discoveredEntity2,
 			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
 			DstPort:    4,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
@@ -387,13 +393,13 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdateWithExternalIPs() {
 	}), gomock.Any()).Return(nil)
 
 	suite.mockEntities.EXPECT().UpdateExternalNetworkEntity(suite.hasWriteCtx, testutils.PredMatcher("matches an external entity", func(updatedEntity *storage.NetworkEntity) bool {
-		expectedEntities := []storage.NetworkEntityInfo{
-			*networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto(),
-			*networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto(),
+		expectedEntities := []*storage.NetworkEntityInfo{
+			discoveredEntity1,
+			discoveredEntity2,
 		}
 
 		for i := range expectedEntities {
-			if updatedEntity.GetInfo().EqualVT(&expectedEntities[i]) {
+			if updatedEntity.GetInfo().EqualVT(expectedEntities[i]) {
 				return true
 			}
 		}
