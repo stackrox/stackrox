@@ -176,11 +176,8 @@ func waitForDeployment(t testutils.T, deploymentName string) {
 				continue
 			}
 			for i, deployment := range deployments {
-				log.Infof("Deployment %s: %s in namespace %s", string(i), deployment.Name, deployment.Namespace)
+				log.Infof("Deployment %s: %s in namespace %s, id: ", string(i), deployment.Name, deployment.Namespace, deployment.GetContainers()[0].GetImage().GetId())
 			}
-				
-		}
-			log.Infof("Retrieved deployments: ", deployments[0].Name)
 
 			if len(deployments) > 0 {
 				d := deployments[0]
