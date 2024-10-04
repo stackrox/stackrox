@@ -128,4 +128,7 @@ var (
 
 	// ExternalIPs enables storing detailed discovered external IPs
 	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
+
+	// NetworkGraphExternalIPs enables displaying external (discovered) entities in the network graph
+	NetworkGraphExternalIPs = registerFeature("Enables display of external IPs in the network graph UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS")
 )
