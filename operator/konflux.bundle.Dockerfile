@@ -45,8 +45,6 @@ ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 
 RUN if [[ "$OPERATOR_IMAGE_TAG" == "" ]]; then >&2 echo "error: required OPERATOR_IMAGE_TAG arg is unset"; exit 6; fi
 
-ENV ROX_PRODUCT_BRANDING=RHACS_BRANDING
-
 # Reset GOFLAGS='-mod=vendor' value which comes by default in openshift-golang-builder and causes build errors like
 #  go: inconsistent vendoring in /stackrox/operator/tools/operator-sdk:
 #      github.com/operator-framework/operator-lifecycle-manager@v0.27.0: is explicitly required in go.mod, but not marked as explicit in vendor/modules.txt
