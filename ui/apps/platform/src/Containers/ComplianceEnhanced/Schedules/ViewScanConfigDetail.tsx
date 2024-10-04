@@ -16,6 +16,7 @@ import {
     TabTitleText,
     Title,
 } from '@patternfly/react-core';
+import { useParams } from 'react-router-dom';
 
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import useAlert from 'hooks/useAlert';
@@ -33,6 +34,7 @@ import { jobContextTabs } from 'Components/ReportJob/types';
 import ScanConfigActionDropdown from './ScanConfigActionDropdown';
 import ConfigDetails from './components/ConfigDetails';
 import ReportJobs from './components/ReportJobs';
+import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapshotForComplianceReports';
 
 type ViewScanConfigDetailProps = {
     hasWriteAccessForCompliance: boolean;
@@ -54,6 +56,7 @@ function ViewScanConfigDetail({
     isLoading,
     error = null,
 }: ViewScanConfigDetailProps): React.ReactElement {
+    const { scanConfigId } = useParams();
     const [activeScanConfigTab, setActiveScanConfigTab] = useURLStringUnion(
         'scanConfigTab',
         jobContextTabs
@@ -61,6 +64,12 @@ function ViewScanConfigDetail({
     const [isTriggeringRescan, setIsTriggeringRescan] = useState(false);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
+    const { complianceReportSnapshots } = useWatchLastSnapshotForComplianceReports(scanConfig);
+    const lastSnapshot = complianceReportSnapshots[scanConfigId];
+
+    const isReportStatusPending =
+        lastSnapshot?.reportStatus.runState === 'PREPARING' ||
+        lastSnapshot?.reportStatus.runState === 'WAITING';
 
     function handleRunScanConfig(scanConfigResponse: ComplianceScanConfigurationStatus) {
         clearAlertObj();
@@ -152,10 +161,8 @@ function ViewScanConfigDetail({
                                         handleRunScanConfig={handleRunScanConfig}
                                         handleSendReport={handleSendReport}
                                         handleGenerateDownload={handleGenerateDownload}
-                                        isScanning={
-                                            isTriggeringRescan /* ||
-                                            scanConfig.lastExecutedTime === null */
-                                        }
+                                        isScanning={isTriggeringRescan}
+                                        isReportStatusPending={isReportStatusPending}
                                         scanConfigResponse={scanConfig}
                                         isReportJobsEnabled={isReportJobsEnabled}
                                         isComplianceReportingEnabled={isComplianceReportingEnabled}
