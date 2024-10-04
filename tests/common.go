@@ -143,6 +143,8 @@ func waitForDeploymentCount(t testutils.T, query string, count int) {
 func waitForDeployment(t testutils.T, deploymentName string) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
+	log.Infof("Connection state: %s", conn.GetState().String())
+
 	service := v1.NewDeploymentServiceClient(conn)
 
 	ticker := time.NewTicker(time.Second)
@@ -161,6 +163,7 @@ func waitForDeployment(t testutils.T, deploymentName string) {
 				Query: qb.Query(),
 			},
 			)
+			log.Infof("ListDeployments: %s", listDeployments.String())
 			cancel()
 			if err != nil {
 				log.Errorf("Error listing deployments: %s", err)
@@ -172,6 +175,12 @@ func waitForDeployment(t testutils.T, deploymentName string) {
 				log.Errorf("Error retrieving deployments: %s", err)
 				continue
 			}
+			for i, deployment := range deployments {
+				log.Infof("Deployment %s: %s in namespace %s", string(i), deployment.Name, deployment.Namespace)
+			}
+				
+		}
+			log.Infof("Retrieved deployments: ", deployments[0].Name)
 
 			if len(deployments) > 0 {
 				d := deployments[0]
