@@ -98,12 +98,42 @@ const (
 	pruneNetworkFlowsSrcStmt = `DELETE FROM %s child WHERE NOT EXISTS
 		(SELECT 1 from deployments parent WHERE child.Props_SrcEntity_Id = parent.id::text AND parent.clusterid = $1)
 		AND Props_SrcEntity_Type = 1
-		AND LastSeenTimestamp < $2`
+		AND LastSeenTimestamp < $2
+		RETURNING child.Props_SrcEntity_Type, child.Props_SrcEntity_Id, child.Props_DstEntity_Type,
+			child.Props_DstEntity_Id, child.Props_DstPort, child.Props_L4Protocol, child.LastSeenTimestamp, child.ClusterId::text;`
 
 	pruneNetworkFlowsDestStmt = `DELETE FROM %s child WHERE NOT EXISTS
 		(SELECT 1 from deployments parent WHERE child.Props_DstEntity_Id = parent.id::text AND parent.clusterid = $1)
 		AND Props_DstEntity_Type = 1
-		AND LastSeenTimestamp < $2`
+		AND LastSeenTimestamp < $2
+		RETURNING child.Props_SrcEntity_Type, child.Props_SrcEntity_Id, child.Props_DstEntity_Type,
+			child.Props_DstEntity_Id, child.Props_DstPort, child.Props_L4Protocol, child.LastSeenTimestamp, child.ClusterId::text;`
+
+	// The idea behind this statement is to prune orphan external (learned)
+	// entities from the entities table. When flows are pruned using the above
+	// statements, the returned deleted flows are used to construct a list of
+	// deletion candidates for the external entities table, and then if any of
+	// those are no longer referenced by a network flow, they are deleted.
+	//
+	// As with flow pruning, this is performed in two queries (for src and dst entities)
+	// to improve query performance
+	pruneOrphanExternalNetworkEntitiesSrcStmt = `DELETE FROM network_entities entity
+	WHERE (entity.Info_Id = ANY($1)) AND
+	NOT EXISTS
+		(SELECT 1 FROM %s flow
+			WHERE flow.Props_SrcEntity_Type = 4
+			AND flow.Props_SrcEntity_Id = entity.Info_Id
+			AND entity.Info_ExternalSource_Discovered = true
+		);`
+
+	pruneOrphanExternalNetworkEntitiesDstStmt = `DELETE FROM network_entities entity
+	WHERE (entity.Info_Id = ANY($1)) AND
+	NOT EXISTS
+		(SELECT 1 FROM %s flow
+			WHERE flow.Props_DstEntity_Type = 4
+			AND flow.Props_DstEntity_Id = entity.Info_Id
+			AND entity.Info_ExternalSource_Discovered = true
+		);`
 )
 
 var (
@@ -593,16 +623,70 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 
 	// To avoid a full scan with an OR delete source and destination flows separately
 	pruneStmt := fmt.Sprintf(pruneNetworkFlowsSrcStmt, s.partitionName)
-	err := s.pruneFlows(ctx, pruneStmt, orphanWindow)
+	srcFlows, err := s.pruneFlows(ctx, pruneStmt, orphanWindow)
 	if err != nil {
 		return err
 	}
 
 	pruneStmt = fmt.Sprintf(pruneNetworkFlowsDestStmt, s.partitionName)
-	return s.pruneFlows(ctx, pruneStmt, orphanWindow)
+	dstFlows, err := s.pruneFlows(ctx, pruneStmt, orphanWindow)
+	if err != nil {
+		return err
+	}
+
+	return s.pruneOrphanExternalEntities(ctx, srcFlows, dstFlows)
 }
 
-func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orphanWindow *time.Time) error {
+func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlows []*storage.NetworkFlow, dstFlows []*storage.NetworkFlow) error {
+	// srcFlows contains flows where src is the deployment,
+	// so prune external flows based on the dst entity
+	if len(srcFlows) != 0 {
+		entities := make([]string, 0, len(srcFlows))
+		for _, flow := range srcFlows {
+			entities = append(entities, flow.GetProps().GetDstEntity().GetId())
+		}
+
+		pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesSrcStmt, s.partitionName)
+		err := s.pruneEntities(ctx, pruneStmt, entities)
+		if err != nil {
+			return nil
+		}
+	}
+
+	// dstFlows contains flows where dst is the deployment,
+	// so prune external flows based on the src entity
+	if len(dstFlows) == 0 {
+		entities := make([]string, 0, len(dstFlows))
+		for _, flow := range dstFlows {
+			entities = append(entities, flow.GetProps().GetSrcEntity().GetId())
+		}
+
+		pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesDstStmt, s.partitionName)
+		return s.pruneEntities(ctx, pruneStmt, entities)
+	}
+
+	return nil
+}
+
+func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orphanWindow *time.Time) ([]*storage.NetworkFlow, error) {
+	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+
+	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
+	defer cancel()
+
+	rows, err := conn.Query(ctx, deleteStmt, s.clusterID, orphanWindow)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.readRows(rows, nil)
+}
+
+func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, entityIds []string) error {
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return err
@@ -612,7 +696,7 @@ func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orpha
 	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
 	defer cancel()
 
-	if _, err := conn.Exec(ctx, deleteStmt, s.clusterID, orphanWindow); err != nil {
+	if _, err := conn.Exec(ctx, deleteStmt, entityIds); err != nil {
 		return err
 	}
 
