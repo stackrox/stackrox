@@ -75,8 +75,8 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrap(err, "Failed to fetch policy")
 	}
 
-	// We do not want this reconcile request to be requeued since it has  a name collision
-	// with an existing default policy, hence return a terminal error.
+	// We do not want this reconcile request to be requeued since it has a name collision
+	// with an existing default policy hence return nil error.
 	if exists && existingPolicy.IsDefault {
 		retErr := errors.New(fmt.Sprintf("Failed to reconcile: existing default policy with the same name '%s' exists", desiredState.GetName()))
 		policyCR.Status.Accepted = false
@@ -145,15 +145,13 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	}
 
-	r.UpdateCRStatus(ctx, policyCR)
-
 	if retErr != nil {
-		// Perhaps the cache is stale
-		if err := r.PolicyClient.FlushCache(ctx); err != nil {
-			return ctrl.Result{}, errors.Wrap(err, "Failed to flush cache")
-		}
+		// Perhaps the cache is stale, ignore errors since this is best effort
+		_ = r.PolicyClient.FlushCache(ctx)
 	}
-	return ctrl.Result{}, retErr
+
+	return r.UpdateCRStatus(ctx, policyCR)
+
 }
 
 // SetupWithManager sets up the controller with the Manager.
