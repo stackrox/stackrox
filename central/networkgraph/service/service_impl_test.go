@@ -9,6 +9,7 @@ import (
 
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	deploymentUtils "github.com/stackrox/rox/central/deployment/utils"
 	graphConfigDSMocks "github.com/stackrox/rox/central/networkgraph/config/datastore/mocks"
 	entityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	networkTreeMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
@@ -761,9 +762,9 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 		"depD",
 		"depE",
 		"depF",
-		getMaskedDeploymentID("depW", "depW"),
-		getMaskedDeploymentID("depX", "depX"),
-		getMaskedDeploymentID("depZ", "depZ"),
+		deploymentUtils.GetMaskedDeploymentID("depW", "depW"),
+		deploymentUtils.GetMaskedDeploymentID("depX", "depX"),
+		deploymentUtils.GetMaskedDeploymentID("depZ", "depZ"),
 		"mycluster__net1",
 		es2ID.String(),
 		es3ID.String(),

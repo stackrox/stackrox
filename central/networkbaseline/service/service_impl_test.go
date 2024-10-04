@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	deploymentUtils "github.com/stackrox/rox/central/deployment/utils"
 	networkBaselineDSMocks "github.com/stackrox/rox/central/networkbaseline/datastore/mocks"
 	networkBaselineMocks "github.com/stackrox/rox/central/networkbaseline/manager/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -113,7 +114,7 @@ func (s *NetworkBaselineServiceTestSuite) TestGetNetworkBaselineStatusForFlows()
 	}
 	otherRequest := request.CloneVT()
 	s.Require().NotEmpty(otherRequest.Peers)
-	otherRequest.Peers[0].Entity.Id = getMaskedDeploymentID(entityID, testPeerDeploymentName)
+	otherRequest.Peers[0].Entity.Id = deploymentUtils.GetMaskedDeploymentID(entityID, testPeerDeploymentName)
 
 	// If we don't have any baseline, then it is in observation and not created yet, so we will create
 	// one

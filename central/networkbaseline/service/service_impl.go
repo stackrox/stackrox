@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	deploymentUtils "github.com/stackrox/rox/central/deployment/utils"
 	"github.com/stackrox/rox/central/networkbaseline/datastore"
 	"github.com/stackrox/rox/central/networkbaseline/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -184,7 +185,7 @@ func (s *serviceImpl) getBaselinePeerByEntityID(
 			deploymentName := peer.GetEntity().GetInfo().GetDeployment().GetName()
 			maskedKey := networkgraph.Entity{
 				Type: peerType,
-				ID:   getMaskedDeploymentID(peerId, deploymentName),
+				ID:   deploymentUtils.GetMaskedDeploymentID(peerId, deploymentName),
 			}
 			result[maskedKey] = peer
 		}
