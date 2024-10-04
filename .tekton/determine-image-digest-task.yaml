@@ -20,7 +20,7 @@ spec:
     readOnly: true
   steps:
   - name: determine-image-digest
-    image: registry.access.redhat.com/ubi9/skopeo@sha256:a096332b3a6665b1f1e0b34980406649920cf4babba80aff24a715b76f3f62f3
+    image: registry.access.redhat.com/ubi9/skopeo@sha256:030d3600f0a0de0486d93b52e82fdc3ef9ceb70ca0696d499547d76705cd277b
     env:
     - name: REGISTRY_AUTH_FILE
       value: "$(workspaces.pull-secret.path)/.dockerconfigjson"
