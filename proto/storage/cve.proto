@@ -29,6 +29,13 @@ enum Source {
   SOURCE_NVD = 3;
 }
 
+//Added this score version for nvd cvss score. moving out and re using score version from cveinfo will cause backward compatibility issue
+enum CvssScoreVersion {
+  UNKNOWN_VERSION = 0;
+  V2 = 1; // No unset for automatic backwards compatibility
+  V3 = 2;
+}
+
 // ******************************
 // This proto is deprecated.
 // ******************************
@@ -144,6 +151,7 @@ message ImageCVE {
   float nvdcvss = 10; // @gotags: search:"NVD CVSS",store"
   // cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
   repeated CVSSScore cvss_metrics = 11;
+  CvssScoreVersion nvd_score_version = 12;
 }
 
 message NodeCVE {

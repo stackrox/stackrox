@@ -142,6 +142,20 @@ func (mr *MockCveCoreMockRecorder) GetTopCVSS() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopCVSS", reflect.TypeOf((*MockCveCore)(nil).GetTopCVSS))
 }
 
+// GetTopNVDCVSS mocks base method.
+func (m *MockCveCore) GetTopNVDCVSS() float32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTopNVDCVSS")
+	ret0, _ := ret[0].(float32)
+	return ret0
+}
+
+// GetTopNVDCVSS indicates an expected call of GetTopNVDCVSS.
+func (mr *MockCveCoreMockRecorder) GetTopNVDCVSS() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopNVDCVSS", reflect.TypeOf((*MockCveCore)(nil).GetTopNVDCVSS))
+}
+
 // MockCveView is a mock of CveView interface.
 type MockCveView struct {
 	ctrl     *gomock.Controller
