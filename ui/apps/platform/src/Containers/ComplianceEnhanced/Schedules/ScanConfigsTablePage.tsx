@@ -48,6 +48,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
 import MyLastJobStatusTh from 'Components/ReportJob/MyLastJobStatusTh';
+import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
+import useAuthStatus from 'hooks/useAuthStatus';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import {
@@ -82,6 +84,8 @@ function ScanConfigsTablePage({
     isReportJobsEnabled,
     isComplianceReportingEnabled,
 }: ScanConfigsTablePageProps): React.ReactElement {
+    const { currentUser } = useAuthStatus();
+
     const [scanConfigsToDelete, setScanConfigsToDelete] = useState<
         ComplianceScanConfigurationStatus[]
     >([]);
@@ -99,9 +103,8 @@ function ScanConfigsTablePage({
         [sortOption, page, perPage]
     );
     const { data: listData, isLoading, error, refetch } = useRestQuery(listQuery);
-    const { complianceReportSnapshots } = useWatchLastSnapshotForComplianceReports(
-        listData?.configurations
-    );
+    const { complianceReportSnapshots, isLoading: isLoadingSnapshots } =
+        useWatchLastSnapshotForComplianceReports(listData?.configurations);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 
@@ -213,10 +216,10 @@ function ScanConfigsTablePage({
             const scanConfigUrl = generatePath(scanConfigDetailsPath, {
                 scanConfigId: id,
             });
-            const scanConfigSnapshot = complianceReportSnapshots[id];
+            const snapshot = complianceReportSnapshots[id];
             const isSnapshotStatusPending =
-                scanConfigSnapshot?.reportStatus?.runState === 'PREPARING' ||
-                scanConfigSnapshot?.reportStatus?.runState === 'WAITING';
+                snapshot?.reportStatus?.runState === 'PREPARING' ||
+                snapshot?.reportStatus?.runState === 'WAITING';
 
             return (
                 <Tr key={id}>
@@ -240,7 +243,12 @@ function ScanConfigsTablePage({
                     </Td>
                     {isReportJobsEnabled && (
                         <Td dataLabel="My last job status">
-                            {/* TODO: Create the <MyLastComplianceReportJobStatus /> component and add it here */}
+                            <MyLastJobStatus
+                                snapshot={snapshot}
+                                isLoadingSnapshots={isLoadingSnapshots}
+                                currentUserId={currentUser.userId}
+                                baseDownloadURL="" // TODO: Put the correct URL here
+                            />
                         </Td>
                     )}
                     {hasWriteAccessForCompliance && (

@@ -2,9 +2,10 @@ import React, { render, screen } from '@testing-library/react';
 import { cloneDeep } from 'lodash';
 import '@testing-library/jest-dom';
 
-import { ReportSnapshot, ReportStatus } from 'services/ReportsService.types';
+import { ReportSnapshot } from 'services/ReportsService.types';
+import { ReportStatus } from 'types/reportJob';
 
-import MyLastReportJobStatus from './MyLastReportJobStatus';
+import MyLastJobStatus from './MyLastJobStatus';
 
 const baseReportSnapshot: Omit<ReportSnapshot, 'reportStatus' | 'isDownloadAvailable'> = {
     reportConfigId: 'report-config-id-1',
@@ -29,7 +30,7 @@ const baseReportSnapshot: Omit<ReportSnapshot, 'reportStatus' | 'isDownloadAvail
     notifiers: [],
 };
 
-describe('MyLastReportJobStatus', () => {
+describe('MyLastJobStatus', () => {
     test('should show "PREPARING" when your last job status is preparing', async () => {
         const reportStatus: ReportStatus = {
             runState: 'PREPARING',
@@ -38,16 +39,16 @@ describe('MyLastReportJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const reportSnapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: false,
         });
 
         render(
-            <MyLastReportJobStatus
-                reportSnapshot={reportSnapshot}
-                isLoadingReportSnapshots={false}
+            <MyLastJobStatus
+                snapshot={snapshot}
+                isLoadingSnapshots={false}
                 currentUserId="test-user-1"
                 baseDownloadURL="/api/test"
             />
@@ -68,16 +69,16 @@ describe('MyLastReportJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const reportSnapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: false,
         });
 
         render(
-            <MyLastReportJobStatus
-                reportSnapshot={reportSnapshot}
-                isLoadingReportSnapshots={false}
+            <MyLastJobStatus
+                snapshot={snapshot}
+                isLoadingSnapshots={false}
                 currentUserId="test-user-1"
                 baseDownloadURL="/api/test"
             />
@@ -98,16 +99,16 @@ describe('MyLastReportJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const reportSnapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: true,
         });
 
         render(
-            <MyLastReportJobStatus
-                reportSnapshot={reportSnapshot}
-                isLoadingReportSnapshots={false}
+            <MyLastJobStatus
+                snapshot={snapshot}
+                isLoadingSnapshots={false}
                 currentUserId="test-user-1"
                 baseDownloadURL="/api/test"
             />
@@ -128,16 +129,16 @@ describe('MyLastReportJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const reportSnapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: true,
         });
 
         render(
-            <MyLastReportJobStatus
-                reportSnapshot={reportSnapshot}
-                isLoadingReportSnapshots={false}
+            <MyLastJobStatus
+                snapshot={snapshot}
+                isLoadingSnapshots={false}
                 currentUserId="test-user-1"
                 baseDownloadURL="/api/test"
             />
