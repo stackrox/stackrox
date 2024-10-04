@@ -5,7 +5,6 @@ import (
 	"context"
 	_ "embed"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -311,7 +310,6 @@ func (suite *SentinelTestSuite) TestEncryption() {
 
 	var exampleKey = []byte("key-string-12345")
 	b64EncodedKey := base64.StdEncoding.EncodeToString(exampleKey)
-	fmt.Println(b64EncodedKey)
 	encryptedSecret, err := cryptocodec.NewGCMCryptoCodec().Encrypt(b64EncodedKey, "secret-for-sentinel")
 	suite.Require().NoError(err)
 
