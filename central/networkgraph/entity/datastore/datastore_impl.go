@@ -175,6 +175,10 @@ func (ds *dataStoreImpl) GetAllEntitiesForCluster(ctx context.Context, clusterID
 		if entity.GetScope().GetClusterId() != "" && entity.GetScope().GetClusterId() != clusterID {
 			return false
 		}
+		// Send only the CIDR-blocks used to aggregate entities.
+		if entity.GetInfo().GetExternalSource().GetDiscovered() {
+			return false
+		}
 
 		return !excludeEntityForGraphConfig(graphConfig, entity)
 	})
