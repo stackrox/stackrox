@@ -21,13 +21,13 @@ Each notifier must implement the interfaces of the notifications it wants to sup
 
 To write a notifier you have to follow these steps:
 
-1. Create a new pkg for your notifier in `central/notifiers`.
-2. Create a new Go file and add a struct which implements one of the interfaces above, e.g. the `AlertNotifier` interface.
+1. Create a new pkg for your notifier in `central/notifiers`, e.g. `externalsystem`.
+2. Create a new Go file, `externalsystem/my_notifier.go` and add a struct which implements one of the interfaces above, e.g. the `AlertNotifier` interface.
 3. Import the new package in `central/notifiers/all/all.go`.
 4. Depending on your needs of custom data, create a new configuration in the [Notifier](https://github.com/stackrox/stackrox/blob/master/proto/storage/notifier.proto#L20-L31) message for your notifier.
-5. Register the notifier in the `init` func of the Go file by using the `notifiers.Add` function. You can find several examples of this in other notifier implementations.
-6. Implement the functions of the interface, construct the client for the external service and try to send a message.
-7. Implement a test function with example data to trigger an alert with a simple HTTP call.
+5. Register the notifier in the `init` func of the `externalsystem/my_notifier.go` Go file by using the `notifiers.Add` function. You can find several examples of this in other notifier implementations.
+6. Implement the functions of the interface, create the client for the external service and try to send a message.
+7. Implement the `Test` function with example data to trigger an alert with a simple HTTP call. This can be called via sending the config to `/v1/notifiers/test -X POST --data $notifier -H "Content-Type: application/json".
 8. Implement encryption, see next `Encryption` chapter.
 9. Use the admin events logger, see `Admin Events Logger` chapter.
 
