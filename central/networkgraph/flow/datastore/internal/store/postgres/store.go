@@ -123,7 +123,7 @@ const (
 		(SELECT 1 FROM %s flow
 			WHERE flow.Props_SrcEntity_Type = 4
 			AND flow.Props_SrcEntity_Id = entity.Info_Id
-			AND entity.Info_ExternalSource_Learned = true
+			AND entity.Info_ExternalSource_Discovered = true
 		);`
 
 	pruneOrphanExternalNetworkEntitiesDstStmt = `DELETE FROM network_entities entity
@@ -132,7 +132,7 @@ const (
 		(SELECT 1 FROM %s flow
 			WHERE flow.Props_DstEntity_Type = 4
 			AND flow.Props_DstEntity_Id = entity.Info_Id
-			AND entity.Info_ExternalSource_Learned = true
+			AND entity.Info_ExternalSource_Discovered = true
 		);`
 )
 
@@ -639,7 +639,7 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 
 func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlows []*storage.NetworkFlow, dstFlows []*storage.NetworkFlow) error {
 	// srcFlows contains flows where src is the deployment,
-	// do prune external flows based on the dst entity
+	// so prune external flows based on the dst entity
 	if len(srcFlows) != 0 {
 		entities := make([]string, 0, len(srcFlows))
 		for _, flow := range srcFlows {
@@ -654,7 +654,7 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 	}
 
 	// dstFlows contains flows where dst is the deployment,
-	// do prune external flows based on the src entity
+	// so prune external flows based on the src entity
 	if len(dstFlows) == 0 {
 		entities := make([]string, 0, len(dstFlows))
 		for _, flow := range dstFlows {
