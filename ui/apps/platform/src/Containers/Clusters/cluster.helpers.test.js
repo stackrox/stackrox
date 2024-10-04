@@ -1,3 +1,5 @@
+import { getProductBranding } from 'constants/productBranding';
+
 import {
     findUpgradeState,
     formatSensorVersion,
@@ -7,8 +9,6 @@ import {
     getCredentialExpirationStatus,
     getUpgradeableClusters,
 } from './cluster.helpers';
-
-import { getProductBranding } from 'constants/productBranding';
 
 describe('cluster helpers', () => {
     describe('formatKubernetesVersion', () => {
