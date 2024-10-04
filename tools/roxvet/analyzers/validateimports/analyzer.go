@@ -135,7 +135,7 @@ type allowedPackage struct {
 
 func appendPackage(list []*allowedPackage, excludeChildren bool, pkgs ...string) []*allowedPackage {
 	if list == nil {
-		list = make([]*allowedPackage, len(pkgs))
+		list = make([]*allowedPackage, 0, len(pkgs))
 	}
 
 	for _, pkg := range pkgs {
