@@ -253,7 +253,7 @@ spec:
 
   # TODO(ROX-26471): This is currently needed, since some images do not
   # seem to be available with the "-fast" suffix added.
-  # Once they are pushed with the currect suffix, we can remove this step
+  # Once they are pushed with the correct suffix, we can remove this step
   # and reuse the results of the `determine-main-image-tag` task everywhere.
   - name: determine-main-image-tag-unsuffixed
     params:
