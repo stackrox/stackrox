@@ -6,12 +6,14 @@ import (
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	v2 "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
@@ -32,12 +34,18 @@ func NewPipeline(v2Datastore v2.DataStore, clusterDatastore clusterDatastore.Dat
 	return &pipelineImpl{
 		v2Datastore:      v2Datastore,
 		clusterDatastore: clusterDatastore,
+		reportManager:    manager.Singleton(),
 	}
+}
+
+type ReportManager interface {
+	UpsertResult(*storage.ComplianceOperatorCheckResultV2) error
 }
 
 type pipelineImpl struct {
 	v2Datastore      v2.DataStore
 	clusterDatastore clusterDatastore.DataStore
+	reportManager    ReportManager
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -78,7 +86,11 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		if !found {
 			return errox.NotFound.Newf("cluster with id %q does not exist", clusterID)
 		}
-		return s.v2Datastore.UpsertResult(ctx, internaltov2storage.ComplianceOperatorCheckResult(checkResult, clusterID, clusterName))
+		results := internaltov2storage.ComplianceOperatorCheckResult(checkResult, clusterID, clusterName)
+		if err := s.reportManager.UpsertResult(results); err != nil {
+			return err
+		}
+		return s.v2Datastore.UpsertResult(ctx, results)
 	}
 }
 

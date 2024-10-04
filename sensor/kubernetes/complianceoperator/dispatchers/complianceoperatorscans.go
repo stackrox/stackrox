@@ -64,7 +64,8 @@ func (c *ScanDispatcher) ProcessEvent(obj, _ interface{}, action central.Resourc
 
 	// Build a V2 event if central is capable of receiving it
 	if centralcaps.Has(centralsensor.ComplianceV2Integrations) {
-		startTime, err := protocompat.ConvertTimeToTimestampOrError(complianceScan.CreationTimestamp.Time)
+		// startTime, err := protocompat.ConvertTimeToTimestampOrError(complianceScan.CreationTimestamp.Time)
+		startTime, err := protocompat.ConvertTimeToTimestampOrError(complianceScan.Status.StartTimestamp.Time)
 		if err != nil {
 			log.Warnf("unable to convert start time %v", err)
 		}
