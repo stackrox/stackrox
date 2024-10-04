@@ -17,8 +17,8 @@ COPY . /stackrox
 WORKDIR /stackrox/operator
 
 ARG OPERATOR_IMAGE_TAG
-ARG OPERATOR_IMAGE_DIGEST
-ARG OPERATOR_IMAGE_REPO
+
+ARG OPERATOR_IMAGE_REF
 
 ARG RELATED_IMAGE_MAIN
 ENV RELATED_IMAGE_MAIN=$RELATED_IMAGE_MAIN
@@ -56,7 +56,7 @@ RUN mkdir -p build/ && \
     ./bundle_helpers/patch-csv.py \
       --use-version "${OPERATOR_IMAGE_TAG}" \
       --first-version 3.62.0 \
-      --operator-image "${OPERATOR_IMAGE_REPO}:${OPERATOR_IMAGE_DIGEST}" \
+      --operator-image "${OPERATOR_IMAGE_REF}" \
       --add-supported-arch amd64 \
       --add-supported-arch arm64 \
       --add-supported-arch ppc64le \
