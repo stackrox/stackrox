@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -694,6 +695,59 @@ type cvssValues struct {
 	v3Score  float32
 	source   v4.VulnerabilityReport_Vulnerability_CVSS_Source
 	url      string
+}
+
+// TODO(ROX-21539): Remove once scanner/updater/rhel is deleted.
+//
+//nolint:unused
+func rhelCVSS(vuln *claircore.Vulnerability) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+	if vuln.Severity == "" {
+		return nil, errors.New("severity is empty")
+	}
+
+	q, err := url.ParseQuery(vuln.Severity)
+	if err != nil {
+		return nil, fmt.Errorf("parsing severity: %w", err)
+	}
+
+	values := cvssValues{
+		source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+	}
+
+	if v := q.Get("cvss2_vector"); v != "" {
+		if _, err := cvss2.VectorFromString(v); err != nil {
+			return nil, fmt.Errorf("parsing CVSS v2 vector: %w", err)
+		}
+
+		s := q.Get("cvss2_score")
+		f, err := strconv.ParseFloat(s, 32)
+		if err != nil {
+			return nil, fmt.Errorf("parsing CVSS v2 score: %w", err)
+		}
+
+		values.v2Vector = v
+		values.v2Score = float32(f)
+	}
+
+	if v := q.Get("cvss3_vector"); v != "" {
+		if _, err := cvss3.VectorFromString(v); err != nil {
+			return nil, fmt.Errorf("parsing CVSS v3 vector: %w", err)
+		}
+
+		s := q.Get("cvss3_score")
+		f, err := strconv.ParseFloat(s, 32)
+		if err != nil {
+			return nil, fmt.Errorf("parsing CVSS v3 score: %w", err)
+		}
+		values.v3Vector = v
+		values.v3Score = float32(f)
+	}
+	if cveId := q.Get("cve"); cveId != "" {
+		values.url = redhatCVEURLPrefix + cveId
+	}
+
+	cvss := toCVSS(values)
+	return cvss, nil
 }
 
 // vulnCVSS returns CVSS metrics based on the given vulnerability and its source.
