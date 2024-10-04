@@ -5,7 +5,6 @@ import (
 	"context"
 	_ "embed"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -301,8 +300,6 @@ func (suite *SentinelTestSuite) TestNewSentinelNotifier() {
 		PrivateKey: sentinelCaKey,
 	}
 
-	sentinel := config.GetMicrosoftSentinel()
-	fmt.Println(sentinel.ClientCertAuthConfig.ClientCert)
 	notifier, err := newSentinelNotifier(config, nil, "")
 
 	suite.Require().NoError(err)
