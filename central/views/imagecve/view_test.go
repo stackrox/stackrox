@@ -813,7 +813,6 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 						FirstDiscoveredInSystem: &vulnTime,
 						Published:               &vulnPublishDate,
 					}
-					cveMap[val.CVE] = val
 					for _, metric := range vuln.CvssMetrics {
 						if metric.Source == storage.Source_SOURCE_NVD {
 							if metric.GetCvssv2() != nil {
@@ -823,6 +822,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 							}
 						}
 					}
+					cveMap[val.CVE] = val
 				}
 
 				val.TopCVSS = max(val.GetTopCVSS(), vuln.GetCvss())

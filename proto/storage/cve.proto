@@ -31,9 +31,9 @@ enum Source {
 
 //Added this score version for nvd cvss score. moving out and re using score version from cveinfo will cause backward compatibility issue
 enum CvssScoreVersion {
-  V2 = 0; // No unset for automatic backwards compatibility
-  V3 = 1;
-  UNKNOWN_VERSION = 2;
+  UNKNOWN_VERSION = 0;
+  V2 = 1; // No unset for automatic backwards compatibility
+  V3 = 2;
 }
 
 // ******************************

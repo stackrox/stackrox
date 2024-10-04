@@ -5162,14 +5162,14 @@
             "name": "CvssScoreVersion",
             "enum_fields": [
               {
-                "name": "V2"
+                "name": "UNKNOWN_VERSION"
               },
               {
-                "name": "V3",
+                "name": "V2",
                 "integer": 1
               },
               {
-                "name": "UNKNOWN_VERSION",
+                "name": "V3",
                 "integer": 2
               }
             ]
