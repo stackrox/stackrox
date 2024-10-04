@@ -101,5 +101,5 @@ func TestToProtobuf(t *testing.T) {
 	// Hack: Reset the source field for us to be able to a Equals compare on line 81
 	protoPolicy.Source = storage.PolicySource_IMPERATIVE
 
-	assert.Equal(t, expectedProto, protoPolicy)
+	assert.EqualValues(t, expectedProto, protoPolicy)
 }
