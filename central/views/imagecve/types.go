@@ -17,6 +17,7 @@ type CveCore interface {
 	GetCVEIDs() []string
 	GetImagesBySeverity() common.ResourceCountByCVESeverity
 	GetTopCVSS() float32
+	GetTopNVDCVSS() float32
 	GetAffectedImageCount() int
 	GetFirstDiscoveredInSystem() *time.Time
 	GetPublishDate() *time.Time

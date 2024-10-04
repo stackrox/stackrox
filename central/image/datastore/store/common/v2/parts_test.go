@@ -170,6 +170,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							CveBaseInfo: &storage.CVEInfo{
 								Cve: "cve1",
 							},
+							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
 						},
 						Edge: &storage.ComponentCVEEdge{
 							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve1", "")}),
@@ -183,6 +184,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							CveBaseInfo: &storage.CVEInfo{
 								Cve: "cve2",
 							},
+							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
 						},
 						Edge: &storage.ComponentCVEEdge{
 							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp1", "ver2", ""), cve.ID("cve2", "")}),
@@ -217,6 +219,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							CveBaseInfo: &storage.CVEInfo{
 								Cve: "cve1",
 							},
+							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
 						},
 						Edge: &storage.ComponentCVEEdge{
 							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve1", "")}),
@@ -234,6 +237,7 @@ func TestSplitAndMergeImage(t *testing.T) {
 							CveBaseInfo: &storage.CVEInfo{
 								Cve: "cve2",
 							},
+							NvdScoreVersion: storage.CvssScoreVersion_UNKNOWN_VERSION,
 						},
 						Edge: &storage.ComponentCVEEdge{
 							Id:               pgSearch.IDFromPks([]string{scancomponent.ComponentID("comp2", "ver1", ""), cve.ID("cve2", "")}),

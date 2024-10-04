@@ -39,6 +39,8 @@ func init() {
 				"images(query: String, pagination: Pagination): [Image!]!",
 				"operatingSystem: String!",
 				"vulnerabilityState: String!",
+				"nvdCvss: Float!",
+				"nvdScoreVersion: String!",
 			)),
 		schema.AddQuery("imageVulnerability(id: ID): ImageVulnerability"),
 		schema.AddQuery("imageVulnerabilities(query: String, scopeQuery: String, pagination: Pagination): [ImageVulnerability!]!"),
@@ -64,6 +66,8 @@ type ImageVulnerabilityResolver interface {
 	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
 	OperatingSystem(ctx context.Context) string
 	VulnerabilityState(ctx context.Context) string
+	Nvdcvss(ctx context.Context) float64
+	NvdScoreVersion(ctx context.Context) string
 }
 
 // ImageVulnerability returns a vulnerability of the given id
