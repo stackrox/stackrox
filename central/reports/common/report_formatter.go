@@ -121,10 +121,11 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 							discoveredTs,
 							v.Link,
 						}
-						if includeNvd == true {
-							row = append(row, strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64))
-						}
 						csvWriter.AddValue(row)
+						if includeNvd == true {
+							csvWriter.AppendValue(row, strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64))
+						}
+
 					}
 				}
 			}

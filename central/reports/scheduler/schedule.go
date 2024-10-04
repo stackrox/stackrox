@@ -278,8 +278,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return err
 	}
 	// Format results into CSV
-	includeNvd := rc.GetVulnReportFilters().GetIncludeNvdCvss()
-	zippedCSVResult, err := common.Format(reportData, nil, "", includeNvd)
+	zippedCSVResult, err := common.Format(reportData, nil, "", false)
 	if err != nil {
 		return errors.Wrap(err, "error formatting the report data")
 	}
