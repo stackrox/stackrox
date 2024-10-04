@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/tree"
@@ -218,6 +219,12 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 func updateDupNameExtSrcTracker(entity *storage.NetworkEntityInfo, dupNameExtSrcTracker map[string]string) {
 	if !networkgraph.IsKnownExternalSrc(entity) {
 		return
+	}
+
+	if networkgraph.IsExternalDiscovered(entity) && !features.NetworkGraphExternalIPs.Enabled() {
+		// If this is a discovered entity, but network graph display is disabled
+		// we aggregate into the internet entity
+		*entity = *networkgraph.InternetEntity().ToProto()
 	}
 
 	val, ok := dupNameExtSrcTracker[entity.GetExternalSource().GetName()]
