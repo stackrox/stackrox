@@ -307,6 +307,7 @@ func (ListAlert_ResourceType) EnumDescriptor() ([]byte, []int) {
 	return file_storage_alert_proto_rawDescGZIP(), []int{1, 0}
 }
 
+// Next available tag: 24
 type Alert struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

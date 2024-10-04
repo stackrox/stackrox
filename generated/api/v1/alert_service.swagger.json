@@ -1036,7 +1036,8 @@
         "entityType": {
           "$ref": "#/definitions/AlertEntityType"
         }
-      }
+      },
+      "title": "Next available tag: 24"
     },
     "storageAlertDeployment": {
       "type": "object",

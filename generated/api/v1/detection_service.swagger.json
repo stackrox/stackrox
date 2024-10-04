@@ -544,7 +544,8 @@
         "entityType": {
           "$ref": "#/definitions/AlertEntityType"
         }
-      }
+      },
+      "title": "Next available tag: 24"
     },
     "storageAlertDeployment": {
       "type": "object",
@@ -866,7 +867,7 @@
           "type": "boolean"
         }
       },
-      "title": "Next available tag: 35"
+      "title": "Next available tag: 36"
     },
     "storageEmbeddedSecret": {
       "type": "object",

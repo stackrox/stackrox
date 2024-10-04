@@ -12,7 +12,7 @@ import "storage/taints.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 35
+// Next available tag: 36
 message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,store,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment,store"
