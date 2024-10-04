@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
@@ -88,16 +89,23 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return s.authFuncOverride(ctx, fullMethodName)
 }
 
-// PushNetworkConnectionInfo handles the bidirectional gRPC stream with the collector
-func (s *serviceImpl) PushNetworkConnectionInfo(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
+// Leaving this commented out for now. Will not merge like this
+//// PushNetworkConnectionInfo handles the bidirectional gRPC stream with the collector
+// func (s *serviceImpl) PushNetworkConnectionInfo(stream sensor.NetworkConnectionInfoService_CommunicateServer) error {
+//	return s.receiveMessages(stream)
+//}
+
+// Communicate handles the bidirectional gRPC stream with the collector
+func (s *serviceImpl) Communicate(stream sensor.NetworkConnectionInfoService_CommunicateServer) error {
 	return s.receiveMessages(stream)
 }
 
-func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer) error {
+func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService_CommunicateServer) error {
 	var hostname string
 
 	incomingMD := metautils.ExtractIncoming(stream.Context())
 	hostname = incomingMD.Get("rox-collector-hostname")
+	log.Infof("In recevieMessage hostname= %+v", hostname) // TODO: Remove before merging
 	if hostname == "" {
 		return errors.New("collector did not transmit a hostname in initial metadata")
 	}
@@ -137,6 +145,16 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 		}
 	}
 
+	var collectorConfigIterator concurrency.ValueStreamIter[*sensor.CollectorConfig]
+	log.Infof("CollectorRuntimeConfig.Enabled()= %+v", features.CollectorRuntimeConfig.Enabled()) // TODO: Remove before merging
+	if features.CollectorRuntimeConfig.Enabled() {
+		log.Info("CollectorRuntimeConfig is enabled") // TODO: Remove before merging
+		collectorConfigIterator = s.manager.CollectorConfigValueStream().Iterator(false)
+		if err := s.SendCollectorConfig(stream, collectorConfigIterator); err != nil {
+			return err
+		}
+	}
+
 	for {
 		// If the publicIPsIterator is nil (i.e., Sensor does not support receive public IP list updates), leave this
 		// as nil, which means the respective select branch will never be taken.
@@ -148,6 +166,11 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 		var externalSrcsItrDoneC <-chan struct{}
 		if externalSrcsIterator != nil {
 			externalSrcsItrDoneC = externalSrcsIterator.Done()
+		}
+
+		var collectorConfigItrDoneC <-chan struct{}
+		if collectorConfigIterator != nil {
+			collectorConfigItrDoneC = collectorConfigIterator.Done()
 		}
 
 		select {
@@ -183,11 +206,16 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 			if err := s.sendExternalSrcsList(stream, externalSrcsIterator); err != nil {
 				return err
 			}
+		case <-collectorConfigItrDoneC:
+			collectorConfigIterator = collectorConfigIterator.TryNext()
+			if err := s.SendCollectorConfig(stream, collectorConfigIterator); err != nil {
+				return err
+			}
 		}
 	}
 }
 
-func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, msgC chan<- *sensor.NetworkConnectionInfoMessage, errC chan<- error) {
+func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_CommunicateServer, msgC chan<- *sensor.NetworkConnectionInfoMessage, errC chan<- error) {
 	for {
 		msg, err := stream.Recv()
 		if err != nil {
@@ -212,14 +240,16 @@ func (s *serviceImpl) runRecv(stream sensor.NetworkConnectionInfoService_PushNet
 	}
 }
 
-func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter[*sensor.IPAddressList]) error {
+func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.IPAddressList]) error {
 	listProto := iter.Value()
 	if listProto == nil {
 		return nil
 	}
 
-	controlMsg := &sensor.NetworkFlowsControlMessage{
-		PublicIpAddresses: listProto,
+	controlMsg := &sensor.MsgToCollector{
+		Msg: &sensor.MsgToCollector_PublicIpAddresses{
+			PublicIpAddresses: listProto,
+		},
 	}
 
 	if err := stream.Send(controlMsg); err != nil {
@@ -228,18 +258,40 @@ func (s *serviceImpl) sendPublicIPList(stream sensor.NetworkConnectionInfoServic
 	return nil
 }
 
-func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoService_PushNetworkConnectionInfoServer, iter concurrency.ValueStreamIter[*sensor.IPNetworkList]) error {
+func (s *serviceImpl) sendExternalSrcsList(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.IPNetworkList]) error {
 	listProto := iter.Value()
 	if listProto == nil {
 		return nil
 	}
 
-	controlMsg := &sensor.NetworkFlowsControlMessage{
-		IpNetworks: listProto,
+	controlMsg := &sensor.MsgToCollector{
+		Msg: &sensor.MsgToCollector_IpNetworks{
+			IpNetworks: listProto,
+		},
 	}
 
 	if err := stream.Send(controlMsg); err != nil {
 		return errors.Wrap(err, "sending external sources (IP Network) list")
+	}
+	return nil
+}
+
+func (s *serviceImpl) SendCollectorConfig(stream sensor.NetworkConnectionInfoService_CommunicateServer, iter concurrency.ValueStreamIter[*sensor.CollectorConfig]) error {
+	collectorConfig := iter.Value()
+	if collectorConfig == nil {
+		return nil
+	}
+
+	controlMsg := &sensor.MsgToCollector{
+		Msg: &sensor.MsgToCollector_CollectorConfig{
+			CollectorConfig: collectorConfig,
+		},
+	}
+
+	log.Infof("Sending collector config %+v", controlMsg)
+
+	if err := stream.Send(controlMsg); err != nil {
+		return errors.Wrap(err, "sending collector config")
 	}
 	return nil
 }

@@ -19,6 +19,7 @@ type Manager interface {
 
 	PublicIPsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPAddressList]
 	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList]
+	CollectorConfigValueStream() concurrency.ReadOnlyValueStream[*sensor.CollectorConfig]
 
 	common.SensorComponent
 }
