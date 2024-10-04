@@ -230,8 +230,10 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	query = search.NewQueryBuilder().AddStrings(search.ExternalSourceAddress, "192.0.2.0/29").ProtoQuery()
 	entities, err = suite.ds.GetEntityByQuery(suite.globalReadAccessCtx, query)
 	suite.NoError(err)
+	// Expect 192.0.2.0/29 and 192.0.2.0/30 - the latter is a subset of the former
 	suite.Len(entities, 2)
 
+	// Expect no matching CIDRs for this query
 	query = search.NewQueryBuilder().AddStrings(search.ExternalSourceAddress, "255.255.255.0/24").ProtoQuery()
 	entities, err = suite.ds.GetEntityByQuery(suite.globalReadAccessCtx, query)
 	suite.NoError(err)
