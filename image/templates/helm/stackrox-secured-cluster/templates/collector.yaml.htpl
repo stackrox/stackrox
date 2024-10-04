@@ -117,6 +117,9 @@ spec:
           mountPropagation: HostToContainer
         {{- end }}
         [<- end >]
+        - mountPath: "/run/collector_runtime_config"
+          name: runtime_config
+          readOnly: true
       {{- end }}
       - command:
         - stackrox/compliance
@@ -276,3 +279,6 @@ spec:
           path: /run/crio/crio.sock
       {{- end }}
       [<- end >]
+      - name: runtime_config
+        configMap:
+          name: runtime_configmap
