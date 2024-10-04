@@ -9,10 +9,10 @@ This may be for various reasons, such as:
 
 ## Adding a vulnerability
 
-This is not typically required (typically only for the reasons listed above), but when adding a vulnerability,
-be sure to do the following:
+Be sure to do the following:
 
-* Leave a comment directly above the vulnerability following the following format:
+* Leave a comment directly above the vulnerability following the following format,
+  so readers understand what this is and why it's here:
   * Vuln: <name or names>
   * Reason: <why are you adding this?>
   * Source: <what are the sources of this data?>

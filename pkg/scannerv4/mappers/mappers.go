@@ -682,7 +682,7 @@ func cvssMetrics(ctx context.Context, vuln *claircore.Vulnerability, nvdVuln *nv
 	// especially since there is a reason the manual entry exists in the first place.
 	if preferredCVSS.GetSource() != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
 		var cvss *v4.VulnerabilityReport_Vulnerability_CVSS
-		cvss, nvdErr = nvdCVSS(vuln, nvdVuln)
+		cvss, nvdErr = nvdCVSS(nvdVuln)
 		if cvss != nil {
 			metrics = append(metrics, cvss)
 		}
@@ -848,7 +848,7 @@ func sourceFromLinks(links string) v4.VulnerabilityReport_Vulnerability_CVSS_Sou
 }
 
 // nvdCVSS returns cvssValues based on the given vulnerability and the associated NVD item.
-func nvdCVSS(vuln *claircore.Vulnerability, v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	// Sanity check the NVD data.
 	if v.Metrics == nil || (v.Metrics.CvssMetricV31 == nil && v.Metrics.CvssMetricV30 == nil && v.Metrics.CvssMetricV2 == nil) {
 		return nil, errors.New("no NVD CVSS metrics")
