@@ -45,7 +45,6 @@ ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 
 RUN if [[ "$OPERATOR_IMAGE_TAG" == "" ]]; then >&2 echo "error: required OPERATOR_IMAGE_TAG arg is unset"; exit 6; fi
 
-ENV VERSION=$OPERATOR_IMAGE_TAG
 ENV ROX_PRODUCT_BRANDING=RHACS_BRANDING
 
 # Reset GOFLAGS='-mod=vendor' value which comes by default in openshift-golang-builder and causes build errors like
@@ -57,7 +56,7 @@ RUN mkdir -p build/ && \
     rm -rf build/bundle && \
     cp -a bundle build/ && \
     ./bundle_helpers/patch-csv.py \
-      --use-version "${VERSION}" \
+      --use-version "${OPERATOR_IMAGE_TAG}" \
       --first-version 3.62.0 \
       --operator-image "${OPERATOR_IMAGE_REPO}:${OPERATOR_IMAGE_DIGEST}" \
       --add-supported-arch amd64 \
