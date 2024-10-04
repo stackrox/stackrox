@@ -57,7 +57,13 @@ function useWatchLastSnapshotForComplianceReports(
             Promise.allSettled(configurations.map(({ id }) => fetchLastJobForConfiguration(id)))
                 .then((snapshotResults) => {
                     const result: ComplianceReportSnapshotLookup = configurations.reduce(
-                        (acc, { id }, index) => ({ ...acc, [id]: snapshotResults[index] }),
+                        (acc, { id }, index) => {
+                            const result = snapshotResults[index];
+                            if (result.status === 'fulfilled') {
+                                return { ...acc, [id]: result.value };
+                            }
+                            return { ...acc, [id]: null };
+                        },
                         {}
                     );
                     resolve(result);

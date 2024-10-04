@@ -13,11 +13,10 @@ import {
 
 import useSet from 'hooks/useSet';
 import useAuthStatus from 'hooks/useAuthStatus';
-import { ReportSnapshot } from 'services/ReportsService.types';
+import { Snapshot } from 'types/reportJob';
 import { saveFile } from 'services/DownloadService';
 import { getDateTime } from 'utils/dateUtils';
 import ReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/ReportJobStatus';
-import { ComplianceReportSnapshot } from 'services/ComplianceScanConfigurationService';
 import EmptyStateTemplate from '../EmptyStateTemplate';
 
 export type ReportJobsTableProps<T> = {
@@ -28,8 +27,6 @@ export type ReportJobsTableProps<T> = {
     onDeleteDownload: (reportId) => void;
     renderExpandableRowContent: (snapshot: T) => React.ReactNode;
 };
-
-type Snapshot = ReportSnapshot | ComplianceReportSnapshot;
 
 const filenameSanitizerRegex = new RegExp('(:)|(/)|(\\s)', 'gi');
 

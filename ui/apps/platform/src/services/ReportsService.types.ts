@@ -1,4 +1,4 @@
-import { SlimUser } from 'types/user.proto';
+import { Snapshot } from 'types/reportJob';
 import { VulnerabilitySeverity } from '../types/cve.proto';
 
 // Report configuration types
@@ -86,48 +86,18 @@ export type ResourceScope = {
     };
 };
 
-// Report status types
-
-export type ReportStatus = {
-    runState: RunState;
-    completedAt: string; // google.protobuf.Timestamp
-    errorMsg: string;
-    reportRequestType: ReportRequestType;
-    reportNotificationMethod: ReportNotificationMethod;
-};
-
-export const runStates = {
-    WAITING: 'WAITING',
-    PREPARING: 'PREPARING',
-    GENERATED: 'GENERATED',
-    DELIVERED: 'DELIVERED',
-    FAILURE: 'FAILURE',
-} as const;
-
-export type RunState = (typeof runStates)[keyof typeof runStates];
-
-export type ReportRequestType = 'ON_DEMAND' | 'SCHEDULED';
-
-export type ReportNotificationMethod = 'UNSET' | 'EMAIL' | 'DOWNLOAD';
-
 // Report history
 
 export type ReportHistoryResponse = {
     reportSnapshots: ReportSnapshot[];
 };
 
-export type ReportSnapshot = {
+export type ReportSnapshot = Snapshot & {
     reportConfigId: string;
-    reportJobId: string;
-    name: string;
-    description: string;
     vulnReportFilters: VulnerabilityReportFilters;
     collectionSnapshot: CollectionSnapshot;
     schedule: Schedule | null;
-    reportStatus: ReportStatus;
     notifiers: NotifierConfiguration[];
-    user: SlimUser;
-    isDownloadAvailable: boolean;
 };
 
 export type CollectionSnapshot = {
