@@ -650,14 +650,7 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 // An error is returned when there is a failure to collect CVSS metrics from all sources;
 // however, the returned slice of metrics will still be populated with any successfully gathered metrics.
 // It is up to the caller to ensure the returned slice is populated prior to using it.
-func cvssMetrics(ctx context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
-	// Add context values for consistent logging
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "mappers/cvssMetrics",
-		"updater", vuln.Updater,
-		"vuln_id", vuln.ID,
-		"vuln_name", vuln.Name,
-	)
+func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 
 	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
 
