@@ -22,7 +22,7 @@ type BackendFactory interface {
 	CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string, mappings map[string]string) (Backend, error)
 
 	// CleanupBackend cleans up the resources allocated at backend creation.
-	CleanupBackend(backendID string) error
+	CleanupBackend(backendID string)
 
 	// ProcessHTTPRequest is the dispatcher for HTTP/1.1 requests to `<sso-prefix>/<provider-type>/...`. The envisioned
 	// workflow consists of extracting the specific auth provider ID and clientState from the request, usually via a

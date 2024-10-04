@@ -45,9 +45,7 @@ func (f *factory) CreateBackend(ctx context.Context, id string, _ []string, _ ma
 	return be, nil
 }
 
-func (f *factory) CleanupBackend(_ string) error {
-	return nil
-}
+func (f *factory) CleanupBackend(_ string) {}
 
 func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (string, string, error) {
 	restPath := strings.TrimPrefix(r.URL.Path, f.urlPathPrefix)

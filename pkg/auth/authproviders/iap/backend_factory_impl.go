@@ -33,9 +33,7 @@ func (f *factory) CreateBackend(_ context.Context, id string, _ []string, config
 	return newBackend(audience, loginURL)
 }
 
-func (f *factory) CleanupBackend(_ string) error {
-	return nil
-}
+func (f *factory) CleanupBackend(_ string) {}
 
 func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (string, string, error) {
 	if r.Method != http.MethodGet {
