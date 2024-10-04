@@ -199,7 +199,7 @@ message ScanStatus {
   string warnings = 3;
 }
 
-// Next Tag: 16
+// Next Tag: 18
 // Scan object per cluster
 message ComplianceOperatorScanV2 {
   string id = 1; // @gotags: sql:"pk"
@@ -218,6 +218,8 @@ message ComplianceOperatorScanV2 {
   string warnings = 14;
   string product_type = 15;
   string scan_ref_id = 16; // @gotags: search:"Scan Ref ID,hidden" sql:"type(uuid)"
+  // last_started_time is the last time the Scan resource was triggered
+  google.protobuf.Timestamp last_started_time = 17; // @gotags: search:"Compliance Scan Last Started Time,hidden"
 }
 
 // ComplianceOperatorScanSettingBindingV2 associates a scan setting with one or more compliance profiles

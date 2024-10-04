@@ -475,6 +475,7 @@ func (m *ComplianceOperatorScanV2) CloneVT() *ComplianceOperatorScanV2 {
 	r.Warnings = m.Warnings
 	r.ProductType = m.ProductType
 	r.ScanRefId = m.ScanRefId
+	r.LastStartedTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastStartedTime).CloneVT())
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -1419,6 +1420,9 @@ func (this *ComplianceOperatorScanV2) EqualVT(that *ComplianceOperatorScanV2) bo
 		return false
 	}
 	if this.ScanRefId != that.ScanRefId {
+		return false
+	}
+	if !(*timestamppb1.Timestamp)(this.LastStartedTime).EqualVT((*timestamppb1.Timestamp)(that.LastStartedTime)) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2995,6 +2999,18 @@ func (m *ComplianceOperatorScanV2) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.LastStartedTime != nil {
+		size, err := (*timestamppb1.Timestamp)(m.LastStartedTime).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x8a
+	}
 	if len(m.ScanRefId) > 0 {
 		i -= len(m.ScanRefId)
 		copy(dAtA[i:], m.ScanRefId)
@@ -4205,6 +4221,10 @@ func (m *ComplianceOperatorScanV2) SizeVT() (n int) {
 	}
 	l = len(m.ScanRefId)
 	if l > 0 {
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.LastStartedTime != nil {
+		l = (*timestamppb1.Timestamp)(m.LastStartedTime).SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -9642,6 +9662,42 @@ func (m *ComplianceOperatorScanV2) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.ScanRefId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastStartedTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastStartedTime == nil {
+				m.LastStartedTime = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.LastStartedTime).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -16674,6 +16730,42 @@ func (m *ComplianceOperatorScanV2) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.ScanRefId = stringValue
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastStartedTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastStartedTime == nil {
+				m.LastStartedTime = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.LastStartedTime).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
