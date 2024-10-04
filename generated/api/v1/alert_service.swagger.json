@@ -656,11 +656,12 @@
     "AlertEntityType": {
       "type": "string",
       "enum": [
+        "UNSET",
         "DEPLOYMENT",
         "CONTAINER_IMAGE",
         "RESOURCE"
       ],
-      "default": "DEPLOYMENT"
+      "default": "UNSET"
     },
     "AlertGroupAlertCounts": {
       "type": "object",

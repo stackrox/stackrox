@@ -115,9 +115,10 @@ message Alert {
   string namespace_id = 21; // @gotags: search:"Namespace ID" sql:"type(uuid)"
 
   enum EntityType {
-    DEPLOYMENT = 0;
-    CONTAINER_IMAGE = 1;
-    RESOURCE = 2;
+    UNSET = 0;
+    DEPLOYMENT = 1;
+    CONTAINER_IMAGE = 2;
+    RESOURCE = 3;
   }
 
   oneof Entity {
