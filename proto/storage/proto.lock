@@ -4462,6 +4462,11 @@
                 "id": 16,
                 "name": "scan_ref_id",
                 "type": "string"
+              },
+              {
+                "id": 17,
+                "name": "last_started_time",
+                "type": "google.protobuf.Timestamp"
               }
             ],
             "maps": [
