@@ -43,12 +43,10 @@ export const validationSchema = yup.object().shape({
 });
 
 export type CloudSourceIntegrationFormValues = {
-    id: string;
     cloudSource: CloudSourceIntegration;
     updateCredentials: boolean;
 };
 export const defaultValues: CloudSourceIntegrationFormValues = {
-    id: '',
     cloudSource: {
         id: '',
         name: '',
@@ -73,7 +71,6 @@ function PaladinCloudIntegrationForm({
     const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
         merge(formInitialValues.cloudSource, initialValues);
-        formInitialValues.id = formInitialValues.cloudSource.id;
         formInitialValues.cloudSource.credentials.secret = '';
         formInitialValues.updateCredentials = false;
     }
