@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/scannerv4/constants"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -995,7 +996,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
 					Issued:   protoNow,
-					Severity: "sample severity",
+					Severity: "cve=CVE-1234-567&cvss3_score=9.9&cvss3_vector=CVSS%3A3.0%2FAV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH&severity=sample+severity",
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
 							BaseScore: 9.9,
@@ -1033,7 +1034,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
 					Issued:   protoNow,
-					Severity: "sample severity",
+					Severity: "cve=CVE-1234-567&cvss2_score=1.1&cvss2_vector=AV%3AN%2FAC%3AL%2FAu%3AN%2FC%3AP%2FI%3AP%2FA%3AP&severity=sample+severity",
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
 							BaseScore: 1.1,
@@ -1072,7 +1073,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
 					Issued:   protoNow,
-					Severity: "sample severity",
+					Severity: "cvss2_score=1.1&cvss2_vector=AV%3AN%2FAC%3AL%2FAu%3AN%2FC%3AP%2FI%3AP%2FA%3AP&cvss3_score=9.9&cvss3_vector=CVSS%3A3.0%2FAV%3AN%2FAC%3AL%2FPR%3AN%2FUI%3AN%2FS%3AU%2FC%3AH%2FI%3AH%2FA%3AH&severity=sample+severity",
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
 							BaseScore: 9.9,
@@ -1114,7 +1115,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
 					Issued:   protoNow,
-					Severity: "sample severity",
+					Severity: "cvss2_vector=invalid+cvss2+vector&severity=sample+severity",
 				},
 			},
 		},
@@ -1132,13 +1133,14 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
 					Issued:   protoNow,
-					Severity: "sample severity",
+					Severity: "cvss3_vector=invalid+cvss3+vector&severity=sample+severity",
 				},
 			},
 		},
 		"when OSV and severity with CVSSv3 then return": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
+					Name:     "CVE-2024-1234",
 					Issued:   now,
 					Severity: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 					Updater:  "osv/sample-updater",
@@ -1146,20 +1148,25 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			},
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
+					Name:     "CVE-2024-1234",
 					Issued:   protoNow,
 					Severity: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							BaseScore: 10,
 						},
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
+						Url:    "https://osv.dev/vulnerability/CVE-2024-1234",
 					},
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
 						{
 							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+								BaseScore: 10,
 							},
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV,
+							Url:    "https://osv.dev/vulnerability/CVE-2024-1234",
 						},
 					},
 				},
@@ -1292,7 +1299,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					ID:      "foo",
-					Name:    "NOT-A-CVE",
+					Name:    "CVE-1234-567",
 					Issued:  now,
 					Updater: "unknown updater",
 				},
@@ -1317,7 +1324,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 			want: map[string]*v4.VulnerabilityReport_Vulnerability{
 				"foo": {
 					Id:     "foo",
-					Name:   "NOT-A-CVE",
+					Name:   "CVE-1234-567",
 					Issued: protoNow,
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
@@ -1359,6 +1366,62 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Id:     "foo",
 					Name:   "CVE-2021-44228",
 					Issued: proto2021,
+				},
+			},
+		},
+		"when manual vulnerability with NVD link, do not get NVD data again": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:       "foo",
+					Name:     "CVE-2021-44228",
+					Links:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+					Updater:  constants.ManualUpdaterName,
+					Severity: "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+					Issued:   now,
+				},
+			},
+			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
+				"foo": {
+					"CVE-2021-44228": {
+						ID: "CVE-2021-44228",
+						Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+							CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+								{
+									CvssData: &nvdschema.CVSSV31{
+										Version:      "3.1",
+										VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Id:       "foo",
+					Name:     "CVE-2021-44228",
+					Link:     "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+					Issued:   protoNow,
+					Severity: "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 9.3,
+							Vector:    "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 9.3,
+								Vector:    "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+							Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+						},
+					},
 				},
 			},
 		},
