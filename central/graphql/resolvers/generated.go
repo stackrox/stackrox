@@ -896,6 +896,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("NetworkEntityInfo_ExternalSource", []string{
 		"default: Boolean!",
+		"discovered: Boolean!",
 		"name: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
@@ -10373,6 +10374,11 @@ func (resolver *Resolver) wrapNetworkEntityInfo_ExternalSourcesWithContext(ctx c
 
 func (resolver *networkEntityInfo_ExternalSourceResolver) Default(ctx context.Context) bool {
 	value := resolver.data.GetDefault()
+	return value
+}
+
+func (resolver *networkEntityInfo_ExternalSourceResolver) Discovered(ctx context.Context) bool {
+	value := resolver.data.GetDiscovered()
 	return value
 }
 

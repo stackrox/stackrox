@@ -23,7 +23,7 @@ func IsExternal(entity *storage.NetworkEntityInfo) bool {
 // IsKnownDefaultExternal returns true if the network entity is known system-generated network source.
 // Note: INTERNET is not treated as system-generated but rather a fallback when exact data is unavailable.
 func IsKnownDefaultExternal(entity *storage.NetworkEntityInfo) bool {
-	if !IsKnownExternalSrc(entity) {
+	if !IsKnownExternalSrc(entity) || !entity.GetExternalSource().GetDefault() {
 		return false
 	}
 

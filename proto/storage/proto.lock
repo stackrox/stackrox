@@ -10140,6 +10140,11 @@
                     "id": 3,
                     "name": "default",
                     "type": "bool"
+                  },
+                  {
+                    "id": 4,
+                    "name": "discovered",
+                    "type": "bool"
                   }
                 ]
               }
