@@ -29,7 +29,7 @@ To write a notifier you have to follow these steps:
 6. Implement the functions of the interface, construct the client for the external service and try to send a message.
 7. Implement a test function with example data to trigger an alert with a simple HTTP call.
 8. Implement encryption, see next `Encryption` chapter.
-9. Use the admin events logger
+9. Use the admin events logger, see `Admin Events Logger` chapter.
 
 ### Admin Events Logger
 
@@ -52,4 +52,4 @@ For this you need to:
 2. Add test cases to `central/notifiers/utils/encryption_test.go`.
 3. Load the encryption keys in the notifier's `init` function and protect it by the env setting `env.EncNotifierCreds.BooleanSetting()`, `ROX_ENC_NOTIFIER_CREDS`.
 4. Test it by enabling notifier secrets in StackRox by running `./../../dev-tools/setup-notifier-encryption.sh`.
-5. Create a new notifier with a secret and output check that data doesn't contain unencrypted data: `go run tools/deserialize-proto/main.go --type storage.Notifier --id <UUID>`
+5. Create a new notifier with a secret and check that data doesn't contain unencrypted data by running: `go run tools/deserialize-proto/main.go --type storage.Notifier --id <UUID>`
