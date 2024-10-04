@@ -463,10 +463,10 @@ export function applyNetworkPolicyModification(clusterId, modification) {
  * @returns {Promise<Object, Error>}
  */
 export function fetchCIDRBlocks(clusterId) {
-    // UI must always hide the default and learned external sources.
+    // UI must always hide the default and discovered external sources.
     // TODO: Update this to search options pattern.
     const params = queryString.stringify(
-        { query: 'Default External Source:false+Learned External Source:false' },
+        { query: 'Default External Source:false+Discovered External Source:false' },
         { arrayFormat: 'repeat', allowDots: true }
     );
     return axios
