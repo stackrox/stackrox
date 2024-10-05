@@ -387,7 +387,8 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.\nFor example, CVE-2021-44832."
         }
       }
     },
@@ -532,14 +533,17 @@
       "type": "object",
       "properties": {
         "expiresWhenFixed": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Indicates that this request expires when the associated vulnerability is fixed."
         },
         "expiresOn": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Indicates the timestamp when this request expires."
         },
         "expiryType": {
-          "$ref": "#/definitions/RequestExpiryExpiryType"
+          "$ref": "#/definitions/RequestExpiryExpiryType",
+          "description": "This field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.\nThis field can be used only for deferral requests.\nThis field indicates the type of expiry set for the request.\n`TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.\n`ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.\n`ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable."
         }
       }
     },
@@ -586,13 +590,16 @@
           "type": "string"
         },
         "targetState": {
-          "$ref": "#/definitions/storageVulnerabilityState"
+          "$ref": "#/definitions/storageVulnerabilityState",
+          "description": "Indicates the state the vulnerabilities will move to once the request is complete."
         },
         "status": {
-          "$ref": "#/definitions/storageRequestStatus"
+          "$ref": "#/definitions/storageRequestStatus",
+          "description": "Indicates the status of a request."
         },
         "expired": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Indicates if this request is a historical request that is no longer in effect\ndue to deferral expiry, cancellation, or restarting cve observation."
         },
         "requestor": {
           "$ref": "#/definitions/storageSlimUser"

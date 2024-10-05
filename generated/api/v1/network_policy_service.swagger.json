@@ -640,7 +640,8 @@
           "type": "string"
         },
         "default": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "`default` indicates whether the external source is user-generated or system-generated."
         }
       },
       "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
