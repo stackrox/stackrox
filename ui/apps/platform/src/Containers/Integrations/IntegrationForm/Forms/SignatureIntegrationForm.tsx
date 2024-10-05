@@ -133,7 +133,7 @@ function SignatureIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<SignatureIntegration>): ReactElement {
-    const formInitialValues = merge({}, defaultValues, initialValues);
+    const formInitialValues: SignatureIntegration = merge({}, defaultValues, initialValues);
     const formik = useIntegrationForm<SignatureIntegration>({
         initialValues: formInitialValues,
         validationSchema,

@@ -82,7 +82,7 @@ function SyslogIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<SyslogIntegration>): ReactElement {
-    const formInitialValues = merge({}, defaultValues, initialValues) as SyslogIntegration;
+    const formInitialValues: SyslogIntegration = merge({}, defaultValues, initialValues);
     const formik = useIntegrationForm<SyslogIntegration>({
         initialValues: formInitialValues,
         validationSchema,

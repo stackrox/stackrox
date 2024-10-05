@@ -46,11 +46,11 @@ function EmailIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ACSCSEmailIntegration>): ReactElement {
-    const formInitialValues = merge(
+    const formInitialValues: ACSCSEmailIntegrationFormValues = merge(
         {},
         defaultValues,
         initialValues
-    ) as ACSCSEmailIntegrationFormValues;
+    );
     const {
         values,
         touched,

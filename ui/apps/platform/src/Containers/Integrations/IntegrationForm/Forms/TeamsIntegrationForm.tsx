@@ -42,7 +42,7 @@ function TeamsIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<TeamsIntegration>): ReactElement {
-    const formInitialValues = merge({}, defaultValues, initialValues) as TeamsIntegration;
+    const formInitialValues: TeamsIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,

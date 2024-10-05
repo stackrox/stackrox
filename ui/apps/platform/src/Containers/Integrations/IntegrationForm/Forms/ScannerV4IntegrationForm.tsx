@@ -55,7 +55,7 @@ function ScannerV4IntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ScannerV4ImageIntegration>): ReactElement {
-    const formInitialValues = merge({}, defaultValues, initialValues) as ScannerV4ImageIntegration;
+    const formInitialValues: ScannerV4ImageIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,

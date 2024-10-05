@@ -39,7 +39,7 @@ export const validationSchema = yup.object().shape({
         }),
         skipTestIntegration: yup.bool(),
     }),
-    updatePassword: yup.bool(),
+    updateCredentials: yup.bool(),
 });
 
 export type CloudSourceIntegrationFormValues = {

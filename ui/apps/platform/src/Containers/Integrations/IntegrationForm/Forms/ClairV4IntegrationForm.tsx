@@ -47,7 +47,7 @@ function ClairV4IntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ClairV4ImageIntegration>): ReactElement {
-    const formInitialValues = merge({}, defaultValues, initialValues) as ClairV4ImageIntegration;
+    const formInitialValues: ClairV4ImageIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,

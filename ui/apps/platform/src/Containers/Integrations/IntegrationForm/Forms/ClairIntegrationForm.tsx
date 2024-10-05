@@ -65,7 +65,7 @@ function ClairIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ClairIntegration>): ReactElement {
-    const formInitialValues = merge({}, defaultValues, initialValues) as ClairIntegration;
+    const formInitialValues: ClairIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,

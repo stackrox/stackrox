@@ -76,7 +76,7 @@ function MachineAccessIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<MachineAccessConfig>): ReactElement {
-    const formInitialValues = merge({}, defaultValues, initialValues);
+    const formInitialValues: MachineAccessConfig = merge({}, defaultValues, initialValues);
     const formik = useIntegrationForm<MachineAccessConfig>({
         initialValues: formInitialValues,
         validationSchema,

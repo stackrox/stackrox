@@ -54,7 +54,7 @@ function ClairifyIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ClairifyImageIntegration>): ReactElement {
-    const formInitialValues = merge({}, defaultValues, initialValues) as ClairifyImageIntegration;
+    const formInitialValues: ClairifyImageIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,

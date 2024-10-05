@@ -49,7 +49,7 @@ function SlackIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<SlackIntegration>): ReactElement {
-    const formInitialValues = merge({}, defaultValues, initialValues) as SlackIntegration;
+    const formInitialValues: SlackIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,
