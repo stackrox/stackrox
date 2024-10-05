@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -100,6 +101,5 @@ func TestToProtobuf(t *testing.T) {
 	protoPolicy := policyCRSpec.ToProtobuf()
 	// Hack: Reset the source field for us to be able to a Equals compare on line 81
 	protoPolicy.Source = storage.PolicySource_IMPERATIVE
-
-	assert.EqualValues(t, expectedProto, protoPolicy)
+	assert.True(t, reflect.DeepEqual(expectedProto, protoPolicy))
 }

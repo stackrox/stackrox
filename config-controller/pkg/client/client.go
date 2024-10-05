@@ -312,7 +312,7 @@ func (c *client) FlushCache(ctx context.Context) error {
 	newPolicyNameToIDCache := make(map[string]string, len(allPolicies))
 
 	for _, listPolicy := range allPolicies {
-		getLogger(ctx).Info("GET", "ID", listPolicy.Id)
+		getLogger(ctx).Info("GET", "Name", listPolicy.GetName())
 		policy, err := c.svc.GetPolicy(ctx, listPolicy.Id)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to fetch policy %s", listPolicy.Id)
