@@ -58,7 +58,7 @@ var (
 		allowlist   set.StringSet
 	}{
 		"io/ioutil": {
-			replacement: "https://golang.org/doc/go1.18#ioutil",
+			replacement: "https://golang.org/doc/go1.16#ioutil",
 		},
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",
@@ -85,6 +85,9 @@ var (
 				"github.com/stackrox/rox/pkg/protoconv/resources",
 				"github.com/stackrox/rox/pkg/protoutils",
 			),
+		},
+		"github.com/golang/mock": {
+			replacement: "go.uber.org/mock",
 		},
 		"github.com/magiconair/properties/assert": {
 			replacement: "github.com/stretchr/testify/assert",

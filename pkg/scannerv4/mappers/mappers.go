@@ -15,7 +15,8 @@ import (
 	"github.com/facebookincubator/nvdtools/cvss2"
 	"github.com/facebookincubator/nvdtools/cvss3"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/rhel/vex"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
@@ -46,15 +47,18 @@ var (
 	// Updater patterns are used to determine the security updater the
 	// vulnerability was detected.
 
-	awsUpdaterPrefix   = `aws-`
-	osvUpdaterPrefix   = `osv/`
-	rhelUpdaterPattern = regexp.MustCompile(`^RHEL\d+-`)
+	awsUpdaterPrefix = `aws-`
+	osvUpdaterPrefix = `osv/`
+	// TODO(ROX-21539): Remove once scanner/updater/rhel is deleted.
+	rhelUpdaterPattern = regexp.MustCompile(`^RHEL\d+-`) //nolint:unused
+	rhelUpdaterName    = (*vex.Updater)(nil).Name()
 
 	// Name patterns are regexes to match against vulnerability fields to
 	// extract their name according to their updater.
 
-	awsVulnNamePattern  = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
-	rhelVulnNamePattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`)
+	awsVulnNamePattern = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
+	// TODO(ROX-21539): Remove once scanner/updater/rhel is deleted.
+	rhelVulnNamePattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`) //nolint:unused
 
 	// vulnNamePatterns is a default prioritized list of regexes to match
 	// vulnerability names.
@@ -427,7 +431,7 @@ func toDigestString(digest claircore.Digest) string {
 }
 
 func toClairCoreCPE(s string) (cpe.WFN, error) {
-	c, err := cpe.UnbindFS(s)
+	c, err := cpe.Unbind(s)
 	if err != nil {
 		return c, fmt.Errorf("%q: %s", s, strings.TrimPrefix(err.Error(), "cpe: "))
 	}
@@ -651,14 +655,13 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 // however, the returned slice of metrics will still be populated with any successfully gathered metrics.
 // It is up to the caller to ensure the returned slice is populated prior to using it.
 func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
-
 	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
 
 	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
 	var preferredErr error
 	switch {
-	case rhelUpdaterPattern.MatchString(vuln.Updater):
-		preferredCVSS, preferredErr = rhelCVSS(vuln)
+	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
+		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
 	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix) && !isOSVDBSpecificSeverity(vuln.Severity):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV)
 	case strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
@@ -694,6 +697,9 @@ type cvssValues struct {
 	url      string
 }
 
+// TODO(ROX-21539): Remove once scanner/updater/rhel is deleted.
+//
+//nolint:unused
 func rhelCVSS(vuln *claircore.Vulnerability) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	if vuln.Severity == "" {
 		return nil, errors.New("severity is empty")
@@ -882,10 +888,6 @@ func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerab
 func vulnerabilityName(vuln *claircore.Vulnerability) string {
 	// Attempt per-updater patterns.
 	switch {
-	case rhelUpdaterPattern.MatchString(vuln.Updater):
-		if v, ok := findName(vuln, rhelVulnNamePattern); ok {
-			return v
-		}
 	case strings.HasPrefix(vuln.Updater, awsUpdaterPrefix):
 		if v, ok := findName(vuln, awsVulnNamePattern); ok {
 			return v

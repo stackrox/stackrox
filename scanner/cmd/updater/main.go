@@ -33,7 +33,7 @@ func main() {
 		Use:          "updater",
 		Version:      version.Version,
 		SilenceUsage: true,
-		Short:        "Stackrox Scanner vulnerability updater",
+		Short:        "StackRox Scanner vulnerability updater",
 	}
 
 	var exportCmd = &cobra.Command{
