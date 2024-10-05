@@ -47,14 +47,12 @@ func GetRateLimitedLogger() *RateLimitedLogger {
 	return commonLogger
 }
 
-var (
-	onEvict = func(key string, evictedLog *rateLimitedLog) {
-		if evictedLog == nil {
-			return
-		}
-		evictedLog.log()
+var onEvict = func(key string, evictedLog *rateLimitedLog) {
+	if evictedLog == nil {
+		return
 	}
-)
+	evictedLog.log()
+}
 
 func newRateLimitLogger(l Logger, logCache pkgCacheLRU.LRU[string, *rateLimitedLog]) *RateLimitedLogger {
 	logger := &RateLimitedLogger{
@@ -65,9 +63,29 @@ func newRateLimitLogger(l Logger, logCache pkgCacheLRU.LRU[string, *rateLimitedL
 	return logger
 }
 
+type KeyFunc func(limiter string, level zapcore.Level, payload string) string
+
+func DefaultKey(limiter string, level zapcore.Level, payload string) string {
+	_, file, line, ok := runtime.Caller(2)
+	if !ok {
+		file, line = "", 0
+	}
+	file = getTrimmedFilePath(file)
+	return getLogKey(limiter, level, file, line, payload)
+}
+
+func NoPayloadKey(limiter string, level zapcore.Level, payload string) string {
+	_, file, line, ok := runtime.Caller(2)
+	if !ok {
+		file, line = "", 0
+	}
+	file = getTrimmedFilePath(file)
+	return getLogKey(limiter, level, file, line, "")
+}
+
 // ErrorL logs a templated error message if allowed by the rate limiter corresponding to the identifier
-func (rl *RateLimitedLogger) ErrorL(limiter string, template string, args ...interface{}) {
-	rl.logf(zapcore.ErrorLevel, limiter, template, args...)
+func (rl *RateLimitedLogger) ErrorL(limiter string, keyFn KeyFunc, template string, args ...interface{}) {
+	rl.logf(zapcore.ErrorLevel, limiter, keyFn, template, args...)
 }
 
 // Error logs the consecutive interfaces
@@ -87,7 +105,7 @@ func (rl *RateLimitedLogger) Errorw(msg string, keysAndValues ...interface{}) {
 
 // WarnL logs a templated warn message if allowed by the rate limiter corresponding to the identifier
 func (rl *RateLimitedLogger) WarnL(limiter string, template string, args ...interface{}) {
-	rl.logf(zapcore.WarnLevel, limiter, template, args...)
+	rl.logf(zapcore.WarnLevel, limiter, DefaultKey, template, args...)
 }
 
 // Warn logs the consecutive interfaces
@@ -107,7 +125,7 @@ func (rl *RateLimitedLogger) Warnw(msg string, keysAndValues ...interface{}) {
 
 // InfoL logs a templated info message if allowed by the rate limiter corresponding to the identifier
 func (rl *RateLimitedLogger) InfoL(limiter string, template string, args ...interface{}) {
-	rl.logf(zapcore.InfoLevel, limiter, template, args...)
+	rl.logf(zapcore.InfoLevel, limiter, DefaultKey, template, args...)
 }
 
 // Info logs the consecutive interfaces
@@ -127,7 +145,7 @@ func (rl *RateLimitedLogger) Infow(msg string, keysAndValues ...interface{}) {
 
 // DebugL logs a templated debug message if allowed by the rate limiter corresponding to the identifier
 func (rl *RateLimitedLogger) DebugL(limiter string, template string, args ...interface{}) {
-	rl.logf(zapcore.DebugLevel, limiter, template, args...)
+	rl.logf(zapcore.DebugLevel, limiter, DefaultKey, template, args...)
 }
 
 // Debug logs the consecutive interfaces
@@ -197,14 +215,11 @@ func (rl *RateLimitedLogger) registerTraceAndLog(
 	log.log()
 }
 
-func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template string, args ...interface{}) {
+func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string,
+	keyFn KeyFunc, template string, args ...interface{},
+) {
 	payload := fmt.Sprintf(template, args...)
-	_, file, line, ok := runtime.Caller(2)
-	if !ok {
-		file, line = "", 0
-	}
-	file = getTrimmedFilePath(file)
-	key := getLogKey(limiter, level, file, line, payload)
+	key := keyFn(limiter, level, payload)
 	if throttledLog, found := rl.rateLimitedLogs.Get(key); found && throttledLog != nil {
 		throttledLog.count.Add(1)
 		// In case the log were evicted between cache lookup and count increase,
@@ -216,9 +231,9 @@ func (rl *RateLimitedLogger) logf(level zapcore.Level, limiter string, template 
 	} else if found && throttledLog == nil {
 		// There is something wrong in the cache. Clean up.
 		rl.rateLimitedLogs.Remove(key)
-		rl.registerTraceAndLog(level, limiter, key, payload, file, line)
+		rl.registerTraceAndLog(level, limiter, key, payload, "", 0)
 	} else {
-		rl.registerTraceAndLog(level, limiter, key, payload, file, line)
+		rl.registerTraceAndLog(level, limiter, key, payload, "", 0)
 	}
 }
 
