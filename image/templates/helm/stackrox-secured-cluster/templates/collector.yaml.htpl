@@ -282,3 +282,4 @@ spec:
       - name: runtime-config
         configMap:
           name: runtime-configmap
+          optional: true
