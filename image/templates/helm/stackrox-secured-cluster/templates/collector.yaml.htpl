@@ -118,7 +118,7 @@ spec:
         {{- end }}
         [<- end >]
         - mountPath: "/run/collector_runtime_config"
-          name: runtime-config
+          name: collector-config
           readOnly: true
       {{- end }}
       - command:
@@ -279,7 +279,7 @@ spec:
           path: /run/crio/crio.sock
       {{- end }}
       [<- end >]
-      - name: runtime-config
+      - name: collector-config
         configMap:
-          name: runtime-configmap
+          name: collector-config
           optional: true
