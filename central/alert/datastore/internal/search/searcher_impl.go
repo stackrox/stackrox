@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,7 +34,9 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 
 // SearchListAlerts retrieves list alerts from the storage
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error) {
+	log.Infof("ROX-25993: Before apply default state, query is '%s'", q.String())
 	q = applyDefaultState(q)
+	log.Infof("ROX-25993: After apply default state, query is '%s'", q.String())
 	alerts, err := ds.storage.GetByQuery(ctx, q)
 	if err != nil {
 		return nil, err

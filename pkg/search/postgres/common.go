@@ -923,6 +923,10 @@ func RunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Cont
 		return nil, emptyQueryErr
 	}
 
+	if schema == pkgSchema.AlertsSchema {
+		log.Infof("ROX-25993: Before running SQL query, query is '%s'", q.String())
+	}
+	
 	return pgutils.Retry2(ctx, func() ([]*T, error) {
 
 		return retryableRunGetManyQueryForSchema[T, PT](ctx, query, db)
