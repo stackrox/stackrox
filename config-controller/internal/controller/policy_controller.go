@@ -79,9 +79,10 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// with an existing default policy hence return nil error.
 	if exists && existingPolicy.IsDefault {
 		retErr := errors.New(fmt.Sprintf("Failed to reconcile: existing default policy with the same name '%s' exists", desiredState.GetName()))
-		policyCR.Status.Accepted = false
-		policyCR.Status.Message = retErr.Error()
-
+		policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
+			Accepted: false,
+			Message:  retErr.Error(),
+		}
 		return r.UpdateCRStatus(ctx, policyCR)
 	}
 
@@ -131,23 +132,31 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	if desiredState.GetId() != "" {
 		if err := r.PolicyClient.UpdatePolicy(ctx, desiredState); err != nil {
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy '%s'", desiredState.GetName()))
-			policyCR.Status.Accepted = false
-			policyCR.Status.Message = retErr.Error()
+			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
+				Accepted: false,
+				Message:  retErr.Error(),
+			}
 		} else {
-			policyCR.Status.Accepted = true
-			policyCR.Status.Message = "Successfully updated policy"
-			policyCR.Status.PolicyId = desiredState.GetId()
+			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
+				Accepted: true,
+				Message:  "Successfully updated policy",
+				PolicyId: desiredState.GetId(),
+			}
 		}
 	} else {
 		if createdPolicy, err := r.PolicyClient.CreatePolicy(ctx, desiredState); err != nil {
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to create policy '%s'", desiredState.GetName()))
-			policyCR.Status.Accepted = false
-			policyCR.Status.Message = retErr.Error()
+			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
+				Accepted: false,
+				Message:  retErr.Error(),
+			}
 		} else {
 			// Create was successful so persist the policy ID received from Central
-			policyCR.Status.Accepted = true
-			policyCR.Status.Message = "Successfully created policy"
-			policyCR.Status.PolicyId = createdPolicy.GetId()
+			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
+				Accepted: true,
+				Message:  "Successfully created policy",
+				PolicyId: createdPolicy.GetId(),
+			}
 		}
 	}
 
