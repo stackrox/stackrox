@@ -102,7 +102,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			controllerutil.AddFinalizer(policyCR, policyFinalizer)
 			if err := r.K8sClient.Update(ctx, policyCR); err != nil {
 				return ctrl.Result{},
-					errors.Wrapf(err, "unable to add finalizer to policy %q", policyCR.GetName())
+					errors.Wrapf(err, "failed to add finalizer to policy %q", policyCR.GetName())
 			}
 		}
 	} else {
@@ -111,22 +111,22 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			// finalizer is present, so lets handle the external dependency of deleting policy in central
 			if err := r.PolicyClient.DeletePolicy(ctx, policyCR.GetName()); err != nil {
 				// if we failed to delete the policy in central, return with error
-				// so that it can be retried.
+				// so that reconciliation can be retried.
 				return ctrl.Result{}, errors.Wrapf(err, "failed to delete policy %q", policyCR.GetName())
 			}
 
-			// remove our finalizer from the list and update it.
+			// delete on central was successful, so remove our finalizer from the list and update the resource.
 			controllerutil.RemoveFinalizer(policyCR, policyFinalizer)
-			if r.K8sClient.Update(ctx, policyCR); err != nil {
+			if err := r.K8sClient.Update(ctx, policyCR); err != nil {
 				return ctrl.Result{},
 					errors.Wrapf(err, "failed to remove finalizer from policy %q", policyCR.GetName())
 			}
 		}
-
-		// Stop reconciliation as the item has been deleted
+		// Stop reconciliation as the policy has been deleted
 		return ctrl.Result{}, nil
 	}
 
+	// policy create or update flow
 	var retErr error
 	if desiredState.GetId() != "" {
 		if err := r.PolicyClient.UpdatePolicy(ctx, desiredState); err != nil {
@@ -140,7 +140,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 	} else {
 		if createdPolicy, err := r.PolicyClient.CreatePolicy(ctx, desiredState); err != nil {
-			retErr := errors.Wrap(err, fmt.Sprintf("Failed to create policy '%s'", desiredState.GetName()))
+			retErr = errors.Wrap(err, fmt.Sprintf("Failed to create policy '%s'", desiredState.GetName()))
 			policyCR.Status.Accepted = false
 			policyCR.Status.Message = retErr.Error()
 		} else {
@@ -155,9 +155,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// Perhaps the cache is stale, ignore errors since this is best effort
 		_ = r.PolicyClient.FlushCache(ctx)
 	}
-
 	return r.UpdateCRStatus(ctx, policyCR)
-
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -169,13 +167,13 @@ func (r *SecurityPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err != nil {
 		return errors.Wrap(err, "Failed to set up reconciler")
 	}
-
 	return nil
 }
 
 func (r *SecurityPolicyReconciler) UpdateCRStatus(ctx context.Context, policyCR *configstackroxiov1alpha1.SecurityPolicy) (ctrl.Result, error) {
 	if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
-		return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on policy '%s'", policyCR.Spec.PolicyName))
+		log.FromContext(ctx).Error(err, "error updating status for securitypolicy '%s'", policyCR.GetName())
+		return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on security policy resource '%s'", policyCR.GetName()))
 	}
 	return ctrl.Result{}, nil
 }
