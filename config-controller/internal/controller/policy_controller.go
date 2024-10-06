@@ -117,7 +117,10 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 			// remove our finalizer from the list and update it.
 			controllerutil.RemoveFinalizer(policyCR, policyFinalizer)
-			return r.UpdateCRStatus(ctx, policyCR)
+			if r.K8sClient.Update(ctx, policyCR); err != nil {
+				return ctrl.Result{},
+					errors.Wrapf(err, "failed to remove finalizer from policy %q", policyCR.GetName())
+			}
 		}
 
 		// Stop reconciliation as the item has been deleted
