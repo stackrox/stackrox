@@ -35,6 +35,8 @@ import useIntegrationForm from 'Containers/Integrations/IntegrationForm/useInteg
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
 import IntegrationFormActions from 'Containers/Integrations/IntegrationForm/IntegrationFormActions';
 
+import './MachineAccessIntegrationForm.css';
+
 export type MachineAccessConfig = {
     id: string;
     type: MachineConfigType;
