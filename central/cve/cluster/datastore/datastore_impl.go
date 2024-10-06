@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/search"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
-	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -15,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
@@ -25,7 +23,8 @@ var (
 	)
 	clusterSAC = sac.ForResource(resources.Cluster)
 
-	accessAllCtx = sac.WithAllAccess(context.Background())
+	// TODO: uncomment if cluster CVE suppression cache gets used.
+	// accessAllCtx = sac.WithAllAccess(context.Background())
 
 	errNilSuppressionStart = errors.New("suppression start time is nil")
 
@@ -36,8 +35,9 @@ type datastoreImpl struct {
 	storage  store.Store
 	searcher search.Searcher
 
-	cveSuppressionLock  sync.RWMutex
-	cveSuppressionCache common.CVESuppressionCache
+	// TODO: uncomment if cluster CVE suppression cache gets used.
+	// cveSuppressionLock  sync.RWMutex
+	// cveSuppressionCache common.CVESuppressionCache
 }
 
 func (ds *datastoreImpl) UpsertClusterCVEsInternal(ctx context.Context, cveType storage.CVE_CVEType, cveParts ...converter.ClusterCVEParts) error {
@@ -58,6 +58,8 @@ func (ds *datastoreImpl) DeleteClusterCVEsInternal(ctx context.Context, clusterI
 	return ds.storage.DeleteClusterCVEsForCluster(ctx, clusterID)
 }
 
+// TODO: uncomment if cluster CVE suppression cache gets used.
+/*
 func getSuppressionCacheEntry(cve *storage.ClusterCVE) common.SuppressionCacheEntry {
 	cacheEntry := common.SuppressionCacheEntry{}
 	cacheEntry.SuppressActivation = protocompat.ConvertTimestampToTimeOrNil(cve.GetSnoozeStart())
@@ -71,7 +73,10 @@ func getSuppressionCacheEntry(cve *storage.ClusterCVE) common.SuppressionCacheEn
 	}
 	return cacheEntry
 }
+*/
 
+// TODO: uncomment if cluster CVE suppression cache gets used.
+/*
 func (ds *datastoreImpl) buildSuppressedCache() error {
 	query := pkgSearch.NewQueryBuilder().AddBools(pkgSearch.CVESuppressed, true).ProtoQuery()
 	suppressedCVEs, err := ds.searcher.SearchRawClusterCVEs(accessAllCtx, query)
@@ -86,6 +91,7 @@ func (ds *datastoreImpl) buildSuppressedCache() error {
 	}
 	return nil
 }
+*/
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
 	return ds.searcher.Search(ctx, q)
@@ -160,7 +166,8 @@ func (ds *datastoreImpl) Suppress(ctx context.Context, start *time.Time, duratio
 		return err
 	}
 
-	ds.updateCache(vulns...)
+	// TODO: uncomment if cluster CVE suppression cache gets used.
+	// ds.updateCache(vulns...)
 	return nil
 }
 
@@ -185,7 +192,8 @@ func (ds *datastoreImpl) Unsuppress(ctx context.Context, cves ...string) error {
 		return err
 	}
 
-	ds.deleteFromCache(vulns...)
+	// TODO: uncomment if cluster CVE suppression cache gets used.
+	// ds.deleteFromCache(vulns...)
 	return nil
 }
 
@@ -200,6 +208,8 @@ func getSuppressExpiry(start *time.Time, duration *time.Duration) (*time.Time, e
 	return &expiry, nil
 }
 
+// TODO: uncomment if cluster CVE suppression cache gets used.
+/*
 func (ds *datastoreImpl) updateCache(cves ...*storage.ClusterCVE) {
 	ds.cveSuppressionLock.Lock()
 	defer ds.cveSuppressionLock.Unlock()
@@ -209,7 +219,10 @@ func (ds *datastoreImpl) updateCache(cves ...*storage.ClusterCVE) {
 		ds.cveSuppressionCache[cve.GetCveBaseInfo().GetCve()] = getSuppressionCacheEntry(cve)
 	}
 }
+*/
 
+// TODO: uncomment if cluster CVE suppression cache gets used.
+/*
 func (ds *datastoreImpl) deleteFromCache(cves ...*storage.ClusterCVE) {
 	ds.cveSuppressionLock.Lock()
 	defer ds.cveSuppressionLock.Unlock()
@@ -218,3 +231,4 @@ func (ds *datastoreImpl) deleteFromCache(cves ...*storage.ClusterCVE) {
 		delete(ds.cveSuppressionCache, cve.GetCveBaseInfo().GetCve())
 	}
 }
+*/
