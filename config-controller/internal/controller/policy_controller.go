@@ -114,7 +114,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// The policy is being deleted since k8s set the deletion timestamp
 		if controllerutil.ContainsFinalizer(policyCR, policyFinalizer) {
 			// finalizer is present, so lets handle the external dependency of deleting policy in central
-			if err := r.PolicyClient.DeletePolicy(ctx, policyCR.GetName()); err != nil {
+			if err := r.PolicyClient.DeletePolicy(ctx, policyCR.Spec.PolicyName); err != nil {
 				// if we failed to delete the policy in central, return with error
 				// so that reconciliation can be retried.
 				return ctrl.Result{}, errors.Wrapf(err, "failed to delete policy %q", policyCR.GetName())
