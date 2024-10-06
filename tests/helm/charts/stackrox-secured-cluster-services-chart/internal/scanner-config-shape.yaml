@@ -1,0 +1,44 @@
+scanner:
+  mode: null # string
+  disable: null # bool
+  replicas: null # int
+  logLevel: null # string
+  nodeSelector: null # string | dict
+  dbNodeSelector: null # string | dict
+  tolerations: null # [dict]
+  dbTolerations: null # [dict]
+  hostAliases: null # [dict]
+  dbHostAliases: null # [dict]
+  autoscaling:
+    disable: null # bool
+    minReplicas: null # int
+    maxReplicas: null # int
+  affinity: null # dict
+  priorityClassName: null # string
+  dbPriorityClassName: null # string
+  resources: null # string | dict
+  image:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
+  dbImage:
+    registry: null # string
+    name: null # string
+    tag: null # string
+    fullRef: null # string
+  dbResources: null # string | dict
+  dbPassword:
+    value: null # string
+    generate: null # bool
+  serviceTLS:
+    cert: null # string
+    key: null # string
+    generate: null # bool
+  dbServiceTLS:
+    cert: null # string
+    key: null # string
+    generate: null # bool
+  exposeMonitoring: null # bool
+system:
+  enablePodSecurityPolicies: null # bool
