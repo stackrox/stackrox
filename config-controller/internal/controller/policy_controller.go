@@ -100,7 +100,10 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// to registering our finalizer in preparation for a future delete.
 		if !controllerutil.ContainsFinalizer(policyCR, policyFinalizer) {
 			controllerutil.AddFinalizer(policyCR, policyFinalizer)
-			return r.UpdateCRStatus(ctx, policyCR)
+			if err := r.K8sClient.Update(ctx, policyCR); err != nil {
+				return ctrl.Result{},
+					errors.Wrapf(err, "unable to add finalizer to policy %q", policyCR.GetName())
+			}
 		}
 	} else {
 		// The policy is being deleted since k8s set the deletion timestamp
