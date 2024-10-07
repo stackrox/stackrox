@@ -15,6 +15,8 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	remediationDS "github.com/stackrox/rox/central/complianceoperator/v2/remediations/datastore"
+	snapshotDataStore "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
+	reportUtils "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/utils"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -74,6 +77,7 @@ type complianceReportGeneratorImpl struct {
 	remediationDS         remediationDS.DataStore
 	benchmarkDS           benchmarksDS.DataStore
 	complianceRuleDS      complianceRuleDS.DataStore
+	snapshotDS            snapshotDataStore.DataStore
 }
 
 // struct which hold all columns of a row
@@ -99,11 +103,33 @@ type ResultEmail struct {
 func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceReportRequest) {
 
 	log.Infof("Processing report request %s", req)
+
+	snapshot, found, err := rg.snapshotDS.GetSnapshot(req.Ctx, req.SnapshotID)
+	if err != nil {
+		log.Errorf("Unable to retrieve snapshot from the store: %v", err)
+		return
+	}
+	if !found {
+		log.Error("Unable to find snapshot in the store")
+		return
+	}
+
 	data := rg.getDataforReport(req)
 
 	zipData, err := format(data.ResultCSVs)
 	if err != nil {
 		log.Errorf("Error zipping compliance reports for scan config %s:%s", req.ScanConfigName, err)
+		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
+		snapshot.GetReportStatus().ErrorMsg = reportUtils.ErrReportGeneration.Error()
+		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
+		if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
+			log.Errorf("Unable to update snapshot: %v", err)
+		}
+		return
+	}
+	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_GENERATED
+	if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
+		log.Errorf("Unable to update snapshot: %v", err)
 		return
 	}
 
@@ -124,7 +150,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceRep
 	reportName := req.ScanConfigName
 
 	log.Infof("Sending email for scan config %s", reportName)
-	go rg.sendEmail(req.Ctx, zipData, formatEmailBody, formatEmailSub, req.Notifiers, reportName)
+	go rg.sendEmail(req.Ctx, zipData, formatEmailBody, formatEmailSub, req.Notifiers, reportName, req.SnapshotID)
 }
 
 // getDataforReport returns map of cluster id and slice of ResultRow
@@ -225,7 +251,17 @@ func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportR
 	return resultEmailComplianceReport
 }
 
-func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration, reportName string) {
+func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration, reportName string, snapshotID string) {
+
+	snapshot, found, err := rg.snapshotDS.GetSnapshot(ctx, snapshotID)
+	if err != nil {
+		log.Errorf("Unable to retrieve snapshot from the store: %v", err)
+		return
+	}
+	if !found {
+		log.Error("Unable to find snapshot in the store")
+		return
+	}
 
 	errorList := errorhelpers.NewErrorList("Error sending compliance report email notifications")
 	for _, repNotifier := range notifiersList {
@@ -265,6 +301,18 @@ func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData 
 
 	if !errorList.Empty() {
 		log.Errorf("Error in sending email to notifiers %s", errorList)
+		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
+		snapshot.GetReportStatus().ErrorMsg = reportUtils.ErrSendingEmail.Error()
+		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
+		if err := rg.snapshotDS.UpsertSnapshot(ctx, snapshot); err != nil {
+			log.Errorf("Unable to update snapshot: %v", err)
+		}
+		return
+	}
+	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
+	snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
+	if err := rg.snapshotDS.UpsertSnapshot(ctx, snapshot); err != nil {
+		log.Errorf("Unable to update snapshot: %v", err)
 	}
 }
 
