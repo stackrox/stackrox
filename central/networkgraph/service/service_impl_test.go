@@ -9,6 +9,7 @@ import (
 
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	deploymentUtils "github.com/stackrox/rox/central/deployment/utils"
 	graphConfigDSMocks "github.com/stackrox/rox/central/networkgraph/config/datastore/mocks"
 	entityMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	networkTreeMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
@@ -754,7 +755,22 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 
 	protoassert.ElementsMatch(s.T(), flowsOrdered, flowsShuffled)
 
-	expected := []string{
+	expectedNodeIDs := []string{
+		"depA",
+		"depB",
+		"depC",
+		"depD",
+		"depE",
+		"depF",
+		deploymentUtils.GetMaskedDeploymentID("depW", "depW"),
+		deploymentUtils.GetMaskedDeploymentID("depX", "depX"),
+		deploymentUtils.GetMaskedDeploymentID("depZ", "depZ"),
+		"mycluster__net1",
+		es2ID.String(),
+		es3ID.String(),
+		networkgraph.InternetExternalSourceID,
+	}
+	expectedFlowStrings := []string{
 		"foo/depA <- foo/depB",
 		"foo/depA <- bar/depD",
 		"foo/depA <- bar/depE",
@@ -775,7 +791,7 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 		"baz/depF <- foo/depB",
 		"mycluster__net1 <- foo/depA",
 	}
-	slices.Sort(expected)
+	slices.Sort(expectedFlowStrings)
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
@@ -834,7 +850,9 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 	s.Require().NoError(err)
 
 	var flowStrings []string
+	var nodeIDs []string
 	for _, node := range graph.GetNodes() {
+		nodeIDs = append(nodeIDs, node.GetEntity().GetId())
 		for succIdx := range node.GetOutEdges() {
 			succ := graph.GetNodes()[succIdx]
 			src, dst := node.GetEntity(), succ.GetEntity()
@@ -844,7 +862,8 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 	}
 
 	slices.Sort(flowStrings)
-	s.Equal(expected, flowStrings)
+	s.Equal(expectedFlowStrings, flowStrings)
+	s.ElementsMatch(expectedNodeIDs, nodeIDs)
 
 	// Second run, change only the order of the elements in SearchListDeployments
 	// and ...
@@ -875,7 +894,9 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 	s.Require().NoError(err)
 
 	var flowStringsSecondPass []string
+	var nodeIDsSecondPass []string
 	for _, node := range graph.GetNodes() {
+		nodeIDsSecondPass = append(nodeIDsSecondPass, node.GetEntity().GetId())
 		for succIdx := range node.GetOutEdges() {
 			succ := graph.GetNodes()[succIdx]
 			src, dst := node.GetEntity(), succ.GetEntity()
@@ -884,7 +905,8 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithSACDeterminis
 		}
 	}
 	slices.Sort(flowStringsSecondPass)
-	s.Equal(expected, flowStringsSecondPass)
+	s.Equal(expectedFlowStrings, flowStringsSecondPass)
+	s.ElementsMatch(expectedNodeIDs, nodeIDsSecondPass)
 }
 
 func (s *NetworkGraphServiceTestSuite) testGenerateNetworkGraphAllAccess(withListenPorts bool) {
