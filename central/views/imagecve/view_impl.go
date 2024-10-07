@@ -286,16 +286,13 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 }
 
 func (v *imageCVECoreViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query) ([]string, error) {
-	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
-	defer cancel()
-
 	var cveIDsToFilter []string
 
 	// TODO(@charmik) : Update the SQL query generator to not include 'ORDER BY' and 'GROUP BY' fields in the select clause (before where).
 	//  SQL syntax does not need those fields in the select clause. The below query for example would work fine
 	//  "SELECT JSONB_AGG(DISTINCT(image_cves.Id)) AS cve_id FROM image_cves GROUP BY image_cves.CveBaseInfo_Cve ORDER BY MAX(image_cves.Cvss) DESC LIMIT 20;"
 	var identifiersList []*imageCVECoreResponse
-	identifiersList, err := pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q))
+	identifiersList, err := pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](ctx, v.db, v.schema, withSelectCVEIdentifiersQuery(q))
 	if err != nil {
 		return nil, err
 	}
