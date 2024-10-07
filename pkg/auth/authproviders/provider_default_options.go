@@ -118,9 +118,9 @@ func DefaultBackend(ctx context.Context, backendFactoryPool map[string]BackendFa
 			}
 			pr.backend = oldBackend
 			backendID := pr.storedInfo.GetId()
-			err := pr.backendFactory.CleanupBackend(backendID)
+			pr.backendFactory.CleanupBackend(backendID)
 			pr.backendFactory = oldBackendFactory
-			return err
+			return nil
 		}
 		// Get the backend factory for the type of provider.
 		backendFactory := backendFactoryPool[pr.storedInfo.GetType()]

@@ -3,6 +3,7 @@ package authproviders
 import (
 	"context"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -13,6 +14,8 @@ import (
 
 var (
 	internalUpdateProviderCtx = sac.WithAllAccess(context.Background())
+
+	noStoredInfoErrox = errox.InvariantViolation.CausedBy("no storage data for auth provider")
 )
 
 // RevertOption is a function that modifies a providerImpl, undoing the work of a ProviderOption.
@@ -40,9 +43,9 @@ func WithBackendFromFactory(ctx context.Context, factory BackendFactory) Provide
 			}
 			pr.backend = oldBackend
 			backendID := pr.storedInfo.GetId()
-			err := pr.backendFactory.CleanupBackend(backendID)
+			pr.backendFactory.CleanupBackend(backendID)
 			pr.backendFactory = oldBackendFactory
-			return err
+			return nil
 		}
 		pr.backendFactory = factory
 
@@ -255,3 +258,22 @@ func WithVisibility(visibility storage.Traits_Visibility) ProviderOption {
 }
 
 func noOpRevert(_ *providerImpl) error { return nil }
+
+func composeRevertOptions(revertActions ...RevertOption) RevertOption {
+	if len(revertActions) == 0 {
+		return noOpRevert
+	}
+	if len(revertActions) == 1 {
+		return revertActions[0]
+	}
+	return func(pr *providerImpl) error {
+		var err *multierror.Error
+		for _, revertAction := range revertActions {
+			actionErr := revertAction(pr)
+			if actionErr != nil {
+				err = multierror.Append(err, actionErr)
+			}
+		}
+		return err.ErrorOrNil()
+	}
+}
