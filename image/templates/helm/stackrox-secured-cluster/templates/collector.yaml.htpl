@@ -117,7 +117,7 @@ spec:
           mountPropagation: HostToContainer
         {{- end }}
         [<- end >]
-        - mountPath: "/run/collector_runtime_config"
+        - mountPath: "/etc/stackrox"
           name: collector-config
           readOnly: true
       {{- end }}
