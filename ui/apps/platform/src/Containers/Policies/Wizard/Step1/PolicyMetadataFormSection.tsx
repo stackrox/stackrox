@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Flex, TextInput, Radio, TextArea, Form, Checkbox } from '@patternfly/react-core';
+import { Flex, TextInput, Radio, TextArea, Form } from '@patternfly/react-core';
 import { FormikContextType, useFormikContext } from 'formik';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
@@ -23,14 +23,6 @@ function PolicyMetadataFormSection(): ReactElement {
 
     return (
         <Form>
-            <Checkbox
-                label="Disable policy"
-                isChecked={values.disabled}
-                onChange={handleChange}
-                description="When checked, this policy will be disabled, stopping enforcement and alerts. By default, the policy is enabled to ensure continuous monitoring and protection."
-                id="disable-policy-checkbox"
-                name="disabled"
-            />
             <FormLabelGroup
                 isRequired
                 label="Name"
