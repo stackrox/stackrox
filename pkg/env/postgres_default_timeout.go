@@ -47,4 +47,7 @@ var (
 	// Thus it has to be configured if needed, when pruner performance issues
 	// are observed.
 	PruneOrphanedWindow = registerDurationSetting("ROX_PRUNE_ORPHANED_WINDOW", 30*time.Minute)
+
+	// PostgresVMStatementTimeout sets the statement timeout for VM
+	PostgresVMStatementTimeout = registerDurationSetting("ROX_POSTGRES_VM_STATEMENT_TIMEOUT", 3*time.Minute)
 )
