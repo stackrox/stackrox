@@ -78,6 +78,7 @@ func TestDeleteAuthProvider(t *testing.T) {
 	}
 
 	providerStore.EXPECT().AddAuthProvider(gomock.Any(), gomock.Any()).Times(1).Return(nil)
+	providerStore.EXPECT().GetAuthProvider(gomock.Any(), gomock.Any()).Times(1).Return(testProvider, true, nil)
 
 	provider, err := registry.CreateProvider(ctx, authproviders.WithStorageView(testProvider))
 	assert.NoError(t, err)
