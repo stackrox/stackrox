@@ -14,6 +14,7 @@ import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternf
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
+import useURLSearch from 'hooks/useURLSearch';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceClusterOverallStats } from 'services/ComplianceCommon';
 import { TableUIState } from 'utils/getTableUIState';
@@ -45,7 +46,19 @@ function ProfileClustersTable({
     onClearFilters,
 }: ProfileClustersTableProps) {
     const { generatePathWithScanConfig } = useScanConfigRouter();
+    const { searchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = pagination;
+
+    function isComplianceStatusFiltered() {
+        return Array.isArray(searchFilter['Compliance Check Status']);
+    }
+
+    function shouldDisableIcon(statuses) {
+        const statusFilter = searchFilter['Compliance Check Status'];
+        return (
+            Array.isArray(statusFilter) && !statuses.some((status) => statusFilter.includes(status))
+        );
+    }
 
     return (
         <>
@@ -78,7 +91,14 @@ function ProfileClustersTable({
                             <Th modifier="fitContent">Fail status</Th>
                             <Th modifier="fitContent">Manual status</Th>
                             <Th modifier="fitContent">Other status</Th>
-                            <Th modifier="fitContent" width={10}>
+                            <Th
+                                modifier="fitContent"
+                                width={10}
+                                info={{
+                                    tooltip:
+                                        'Compliance is calculated as the percentage of passing checks out of the total checks. Compliance cannot be calculated when status filters are applied.',
+                                }}
+                            >
                                 Compliance
                             </Th>
                         </Tr>
@@ -139,6 +159,7 @@ function ProfileClustersTable({
                                                     text="check"
                                                     status="pass"
                                                     count={passCount}
+                                                    disabled={shouldDisableIcon(['Pass'])}
                                                 />
                                             </Td>
                                             <Td dataLabel="Fail status" modifier="fitContent">
@@ -146,6 +167,7 @@ function ProfileClustersTable({
                                                     text="check"
                                                     status="fail"
                                                     count={failCount}
+                                                    disabled={shouldDisableIcon(['Fail'])}
                                                 />
                                             </Td>
                                             <Td dataLabel="Manual status" modifier="fitContent">
@@ -153,6 +175,7 @@ function ProfileClustersTable({
                                                     text="check"
                                                     status="manual"
                                                     count={manualCount}
+                                                    disabled={shouldDisableIcon(['Manual'])}
                                                 />
                                             </Td>
                                             <Td dataLabel="Other status" modifier="fitContent">
@@ -160,29 +183,42 @@ function ProfileClustersTable({
                                                     text="check"
                                                     status="other"
                                                     count={otherCount}
+                                                    disabled={shouldDisableIcon([
+                                                        'Error',
+                                                        'Info',
+                                                        'Not Applicable',
+                                                        'Inconsistent',
+                                                        'Unset Check Status',
+                                                    ])}
                                                 />
                                             </Td>
                                             <Td dataLabel="Compliance">
-                                                <Progress
-                                                    id={progressBarId}
-                                                    value={passPercentage}
-                                                    measureLocation={
-                                                        ProgressMeasureLocation.outside
-                                                    }
-                                                    aria-label={`${clusterName} compliance percentage`}
-                                                />
-                                                <Tooltip
-                                                    content={
-                                                        <div>
-                                                            {`${passCount} / ${totalCount} checks are passing for this cluster`}
-                                                        </div>
-                                                    }
-                                                    triggerRef={() =>
-                                                        document.getElementById(
-                                                            progressBarId
-                                                        ) as HTMLButtonElement
-                                                    }
-                                                />
+                                                {isComplianceStatusFiltered() ? (
+                                                    <div>—</div>
+                                                ) : (
+                                                    <>
+                                                        <Progress
+                                                            id={progressBarId}
+                                                            value={passPercentage}
+                                                            measureLocation={
+                                                                ProgressMeasureLocation.outside
+                                                            }
+                                                            aria-label={`${clusterName} compliance percentage`}
+                                                        />
+                                                        <Tooltip
+                                                            content={
+                                                                <div>
+                                                                    {`${passCount} / ${totalCount} checks are passing for this cluster`}
+                                                                </div>
+                                                            }
+                                                            triggerRef={() =>
+                                                                document.getElementById(
+                                                                    progressBarId
+                                                                ) as HTMLButtonElement
+                                                            }
+                                                        />
+                                                    </>
+                                                )}
                                             </Td>
                                         </Tr>
                                     );
