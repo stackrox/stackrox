@@ -326,7 +326,8 @@ func (suite *SentinelTestSuite) TestEncryption() {
 	config.NotifierSecret = ""
 
 	sentinelNotifier, err = newSentinelNotifier(config, cryptocodec.Singleton(), b64EncodedKey)
-	require.ErrorContains(suite.T(), err, "Error decrypting notifier secret for notifier \"microsoft-sentinel\"")
+	suite.ErrorContains(err, "Error decrypting notifier secret for notifier \"microsoft-sentinel\"")
+	suite.Nil(sentinelNotifier)
 }
 
 func getNotifierConfig() *storage.Notifier {
