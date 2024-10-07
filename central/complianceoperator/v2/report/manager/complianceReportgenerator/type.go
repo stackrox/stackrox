@@ -13,4 +13,5 @@ type ComplianceReportRequest struct {
 	Profiles       []string
 	ScanConfigName string
 	Ctx            context.Context
+	SnapshotID     string
 }

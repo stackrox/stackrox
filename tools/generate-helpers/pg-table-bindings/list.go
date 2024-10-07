@@ -37,6 +37,7 @@ func init() {
 		&storage.ComplianceOperatorProfile{}:                    resources.ComplianceOperator,
 		&storage.ComplianceOperatorProfileV2{}:                  resources.Compliance,
 		&storage.ComplianceOperatorRemediationV2{}:              resources.Compliance,
+		&storage.ComplianceOperatorReportSnapshotV2{}:           resources.Compliance,
 		&storage.ComplianceOperatorRule{}:                       resources.ComplianceOperator,
 		&storage.ComplianceOperatorRuleV2{}:                     resources.Compliance,
 		&storage.ComplianceOperatorScan{}:                       resources.ComplianceOperator,
