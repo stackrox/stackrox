@@ -13,6 +13,7 @@ import (
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
@@ -36,9 +37,10 @@ var (
 // export APIs (takes over the data injection).
 type ExportServicePostgresTestHelper struct {
 	Ctx         context.Context
-	pool        *pgtest.TestPostgres
+	Pool        *pgtest.TestPostgres
 	Deployments deploymentDataStore.DataStore
 	Images      imageDataStore.DataStore
+	ImageView   imagesView.ImageView
 }
 
 // SetupTest prepares the ExportServicePostgresTestHelper struct for testing.
@@ -50,20 +52,21 @@ func (h *ExportServicePostgresTestHelper) SetupTest(tb testing.TB) error {
 			sac.ResourceScopeKeys(resources.Deployment, resources.Image),
 		),
 	)
-	h.pool = pgtest.ForT(tb)
-	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(tb, h.pool)
+	h.Pool = pgtest.ForT(tb)
+	deploymentStore, err := deploymentDataStore.GetTestPostgresDataStore(tb, h.Pool)
 	if err != nil {
 		return err
 	}
 	h.Deployments = deploymentStore
-	h.Images = imageDataStore.GetTestPostgresDataStore(tb, h.pool)
+	h.Images = imageDataStore.GetTestPostgresDataStore(tb, h.Pool.DB)
+	h.ImageView = imagesView.NewImageView(h.Pool)
 	return nil
 }
 
 // TearDownTest cleans up the ExportServicePostgresTestHelper resources after testing.
 func (h *ExportServicePostgresTestHelper) TearDownTest(tb testing.TB) {
-	h.pool.Teardown(tb)
-	h.pool.Close()
+	h.Pool.Teardown(tb)
+	h.Pool.Close()
 }
 
 func getImageSetPath() (string, error) {

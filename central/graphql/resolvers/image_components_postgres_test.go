@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/features"
@@ -53,6 +54,7 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 	s.testDB = SetupTestPostgresConn(s.T())
 	imageDataStore := CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
 	resolver, _ := SetupTestResolver(s.T(),
+		imagesView.NewImageView(s.testDB.DB),
 		imageDataStore,
 		CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
 		CreateTestImageComponentEdgeDatastore(s.T(), s.testDB),
