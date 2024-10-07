@@ -49,7 +49,7 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, unreleased=None):
+def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, inject_related_images, extra_supported_arches, unreleased=None):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -80,25 +80,23 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     if replaced_xyz is not None:
         csv_doc["spec"]["replaces"] = f"{raw_name}.v{replaced_xyz}"
 
-    if no_related_images:
-        if 'relatedImages' in csv_doc['spec']:
-            # OSBS fills relatedImages therefore we must not provide that ourselves.
-            # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
-            del csv_doc['spec']['relatedImages']
-    else:
-        csv_doc['spec']['relatedImages'] = construct_related_images()
+    if inject_related_images:
+        csv_doc['spec']['relatedImages'] = construct_related_images(operator_image)
+    elif 'relatedImages' in csv_doc['spec']:
+        # OSBS fills relatedImages therefore we must not provide that ourselves.
+        # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
+        del csv_doc['spec']['relatedImages']
 
-def construct_related_images():
+def construct_related_images(manager_image):
     related_images = []
-    for name, val in os.environ.items():
+    for name, image in os.environ.items():
         if name.startswith("RELATED_IMAGE_"):
             name = name.removeprefix("RELATED_IMAGE_")
             name = name.lower()
-            related_image = {
-                'name': name,
-                'image': val
-            }
-            related_images.append(related_image)
+            related_images.append({'name': name, 'image': image})
+    # Also inject the "manager" related image, which should be listed in `relatedImages` for the purpose of
+    # air-gapped installation, but has no reason to appear in operator manager's environment.
+    related_images.append({'name': 'manager', 'image': manager_image})
     return related_images
 
 def parse_skips(spec, raw_name):
@@ -173,7 +171,9 @@ def parse_args():
     parser.add_argument("--operator-image", required=True, metavar='image',
                         help='Which operator image to use in the patched CSV')
     parser.add_argument("--no-related-images", action='store_true',
-                        help='Disable passthrough of related images')
+                        help='Disable passthrough of RELATED_IMAGE_* environment variables')
+    parser.add_argument("--inject-related-images", action='store_true',
+                        help='Create spec.relatedImages list, based on RELATED_IMAGE_* variables in the current environment.')
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
@@ -202,6 +202,7 @@ def main():
               first_version=args.first_version,
               unreleased=args.unreleased,
               no_related_images=args.no_related_images,
+              inject_related_images=args.inject_related_images,
               extra_supported_arches=args.add_supported_arch)
     print(yaml.safe_dump(doc))
 
