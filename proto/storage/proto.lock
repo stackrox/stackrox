@@ -331,15 +331,19 @@
             "name": "Alert.EntityType",
             "enum_fields": [
               {
-                "name": "DEPLOYMENT"
+                "name": "UNSET"
               },
               {
-                "name": "CONTAINER_IMAGE",
+                "name": "DEPLOYMENT",
                 "integer": 1
               },
               {
-                "name": "RESOURCE",
+                "name": "CONTAINER_IMAGE",
                 "integer": 2
+              },
+              {
+                "name": "RESOURCE",
+                "integer": 3
               }
             ]
           },
