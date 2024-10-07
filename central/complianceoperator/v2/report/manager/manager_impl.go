@@ -32,7 +32,9 @@ type reportRequest struct {
 }
 
 type managerImpl struct {
-	datastore            scanConfigurationDS.DataStore
+	datastore     scanConfigurationDS.DataStore
+	scanDataStore scanDS.DataStore
+
 	runningReportConfigs map[string]*reportRequest
 	// channel for report job requests
 	reportRequests chan *reportRequest
@@ -55,9 +57,10 @@ type managerImpl struct {
 	readyQueue *queue.Queue[*watcher.ScanWatcherResults]
 }
 
-func New(scanConfigDS scanConfigurationDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
+func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
 	return &managerImpl{
 		datastore:            scanConfigDS,
+		scanDataStore:        scanDataStore,
 		stopper:              concurrency.NewStopper(),
 		runningReportConfigs: make(map[string]*reportRequest, maxRequests),
 		reportRequests:       make(chan *reportRequest, maxRequests),
@@ -211,7 +214,7 @@ func (m *managerImpl) HandleResult(result *storage.ComplianceOperatorCheckResult
 	if !features.ComplianceReporting.Enabled() {
 		return nil
 	}
-	id, err := watcher.GetWatcherIDFromCheckResult(result, scanDS.Singleton())
+	id, err := watcher.GetWatcherIDFromCheckResult(result, m.scanDataStore)
 	if err != nil {
 		return err
 	}
