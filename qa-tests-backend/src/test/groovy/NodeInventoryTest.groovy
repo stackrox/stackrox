@@ -8,7 +8,6 @@ import services.BaseService
 import services.ClusterService
 import services.NodeService
 import util.Env
-import static org.junit.Assume.assumeTrue
 
 import spock.lang.IgnoreIf
 import spock.lang.Shared
@@ -36,8 +35,6 @@ class NodeInventoryTest extends BaseSpecification {
         "given a non-empty list of nodes on an OpenShift 4 cluster"
         List<Node> nodes = NodeService.getNodes()
         assert nodes.size() > 0
-        // skip if executed on any platform other than OpenShift - Node Inventory is an OpenShift-exclusive feature
-        assumeTrue(ClusterService.isOpenShift4())
 
         when:
         boolean nodeInventoryContainerAvailable =
