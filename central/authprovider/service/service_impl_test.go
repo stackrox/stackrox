@@ -59,11 +59,12 @@ func (s *authProviderServiceTestSuite) SetupSuite() {
 	)
 
 	ctx := sac.WithAllAccess(context.Background())
-	providerRegistry.RegisterBackendFactory(
+	err = providerRegistry.RegisterBackendFactory(
 		ctx,
 		openshiftAuth.TypeName,
 		openshiftAuth.NewTestFactoryCreator(t),
 	)
+	s.Require().NoError(err)
 
 	s.service = New(providerRegistry, groupDS)
 }
