@@ -13,7 +13,7 @@ all: test
 .PHONY: compatibility-tests
 compatibility-tests:
 	@echo "+ $@"
-	@GOTAGS=$(GOTAGS),test,test_compatibility ../scripts/go-test.sh -cover $(TESTFLAGS) 2>&1 | tee test.log
+	@GOTAGS=$(GOTAGS),test,test_compatibility ../scripts/go-test.sh $(TESTFLAGS) 2>&1 | tee test.log
 	@$(MAKE) report JUNIT_OUT=compatibility-tests-results
 
 .PHONY: destructive-tests
