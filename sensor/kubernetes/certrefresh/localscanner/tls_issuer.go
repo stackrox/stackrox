@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -59,7 +60,7 @@ func NewLocalScannerTLSIssuer(
 		msgFromCentralC:              msgFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
-		getServiceCertificatesRepoFn: newServiceCertificatesRepo,
+		getServiceCertificatesRepoFn: NewServiceCertificatesRepo,
 		certRequester:                NewCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
 }
@@ -84,11 +85,11 @@ type CertificateRequester interface {
 	RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
 }
 
-type certificateRefresherGetter func(requestCertificates requestCertificatesFunc, repository serviceCertificatesRepo,
+type certificateRefresherGetter func(requestCertificates requestCertificatesFunc, repository certrepo.ServiceCertificatesRepo,
 	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
 
 type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
-	secretsClient corev1.SecretInterface) serviceCertificatesRepo
+	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo
 
 // Start starts the sensor component and launches a certificate refresher that immediately checks the certificates, and
 // that keeps them updated.

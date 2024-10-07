@@ -9,7 +9,10 @@ set -eo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-"$DIR/roxctl.sh" helm output central-services --image-defaults=development_build --remove --debug
-"$DIR/roxctl.sh" helm output secured-cluster-services --image-defaults=development_build --remove --debug
+# Set $IMAGE_DEFAULTS to change the image defaults. Use opensource to use the stackrox-io images.
+image_defaults=${IMAGE_DEFAULTS:-"development_build"}
+
+"$DIR/roxctl.sh" helm output central-services --image-defaults="$image_defaults" --remove --debug
+"$DIR/roxctl.sh" helm output secured-cluster-services --image-defaults="$image_defaults" --remove --debug
 
 helm "$@"

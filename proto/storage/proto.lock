@@ -4462,6 +4462,11 @@
                 "id": 16,
                 "name": "scan_ref_id",
                 "type": "string"
+              },
+              {
+                "id": 17,
+                "name": "last_started_time",
+                "type": "google.protobuf.Timestamp"
               }
             ],
             "maps": [
@@ -5154,6 +5159,22 @@
             ]
           },
           {
+            "name": "CvssScoreVersion",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN_VERSION"
+              },
+              {
+                "name": "V2",
+                "integer": 1
+              },
+              {
+                "name": "V3",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "CVE.CVEType",
             "enum_fields": [
               {
@@ -5730,6 +5751,11 @@
                 "name": "cvss_metrics",
                 "type": "CVSSScore",
                 "is_repeated": true
+              },
+              {
+                "id": 12,
+                "name": "nvd_score_version",
+                "type": "CvssScoreVersion"
               }
             ]
           },
@@ -10134,6 +10160,11 @@
                   {
                     "id": 3,
                     "name": "default",
+                    "type": "bool"
+                  },
+                  {
+                    "id": 4,
+                    "name": "discovered",
                     "type": "bool"
                   }
                 ]

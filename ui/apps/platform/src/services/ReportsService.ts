@@ -4,12 +4,11 @@ import {
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
-    ReportNotificationMethod,
-    ReportStatus,
     RunReportResponse,
 } from 'services/ReportsService.types';
 import { ApiSortOption } from 'types/search';
 import { getPaginationParams } from 'utils/searchUtils';
+import { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
 import axios from './instance';
 import { Empty } from './types';
 

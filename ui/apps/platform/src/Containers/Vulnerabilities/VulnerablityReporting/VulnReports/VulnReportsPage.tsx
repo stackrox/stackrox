@@ -55,7 +55,7 @@ import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import pluralize from 'pluralize';
 import MyLastJobStatusTh from 'Components/ReportJob/MyLastJobStatusTh';
-import MyLastReportJobStatus from 'Containers/Vulnerabilities/VulnerablityReporting/components/MyLastReportJobStatus';
+import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { reportDownloadURL } from 'services/ReportsService';
 import HelpIconTh from './HelpIconTh';
@@ -409,10 +409,10 @@ function VulnReportsPage() {
                                                 reportId: report.id,
                                             }
                                         ) as string;
-                                        const reportSnapshot = reportSnapshots[report.id];
+                                        const snapshot = reportSnapshots[report.id];
                                         const isReportStatusPending =
-                                            reportSnapshot?.reportStatus.runState === 'PREPARING' ||
-                                            reportSnapshot?.reportStatus.runState === 'WAITING';
+                                            snapshot?.reportStatus.runState === 'PREPARING' ||
+                                            snapshot?.reportStatus.runState === 'WAITING';
                                         const rowActions = [
                                             {
                                                 title: 'Edit report',
@@ -520,9 +520,9 @@ function VulnReportsPage() {
                                                     </Td>
                                                     <Td>{report.description || '-'}</Td>
                                                     <Td>
-                                                        <MyLastReportJobStatus
-                                                            reportSnapshot={reportSnapshot}
-                                                            isLoadingReportSnapshots={
+                                                        <MyLastJobStatus
+                                                            snapshot={snapshot}
+                                                            isLoadingSnapshots={
                                                                 isLoadingReportSnapshots
                                                             }
                                                             currentUserId={currentUser.userId}

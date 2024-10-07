@@ -9,8 +9,7 @@ import {
     PendingIcon,
 } from '@patternfly/react-icons';
 import { Button, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
-
-import { ReportStatus } from 'services/ReportsService.types';
+import { ReportStatus } from 'types/reportJob';
 
 export type ReportJobStatusProps = {
     reportStatus: ReportStatus;

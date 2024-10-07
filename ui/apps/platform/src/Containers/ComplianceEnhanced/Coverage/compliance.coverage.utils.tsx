@@ -15,6 +15,7 @@ import { ComplianceCheckStatus, ComplianceCheckStatusCount } from 'services/Comp
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 import { SearchFilter } from 'types/search';
 import { getDistanceStrictAsPhrase } from 'utils/dateUtils';
+import { getPercentage } from 'utils/mathUtils';
 
 import { SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import {
@@ -76,8 +77,26 @@ export function getStatusCounts(checkStats: ComplianceCheckStatusCount[]): {
     return { passCount, failCount, manualCount, otherCount, totalCount };
 }
 
-export function calculateCompliancePercentage(passCount: number, totalCount: number): number {
-    return totalCount > 0 ? Math.round((passCount / totalCount) * 100) : 0;
+export function getStatusPercentages(checkStats: ComplianceCheckStatusCount[]): {
+    passPercentage: number;
+    failPercentage: number;
+    manualPercentage: number;
+    otherPercentage: number;
+} {
+    const { passCount, failCount, manualCount, otherCount, totalCount } =
+        getStatusCounts(checkStats);
+
+    const passPercentage = getPercentage(passCount, totalCount);
+    const failPercentage = getPercentage(failCount, totalCount);
+    const manualPercentage = getPercentage(manualCount, totalCount);
+    const otherPercentage = getPercentage(otherCount, totalCount);
+
+    return {
+        passPercentage,
+        failPercentage,
+        manualPercentage,
+        otherPercentage,
+    };
 }
 
 export function sortCheckStats(items: ComplianceCheckStatusCount[]): ComplianceCheckStatusCount[] {

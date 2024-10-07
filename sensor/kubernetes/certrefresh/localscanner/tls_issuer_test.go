@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -36,6 +37,15 @@ var (
 	sensorNamespace      = "stackrox-ns"
 	sensorReplicasetName = "sensor-replicaset"
 	sensorPodName        = "sensor-pod"
+
+	namespace        = "stackrox-ns"
+	errForced        = errors.New("forced error")
+	sensorDeployment = &appsApiv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sensor-deployment",
+			Namespace: namespace,
+		},
+	}
 )
 
 type localScannerTLSIssuerFixture struct {
@@ -83,7 +93,7 @@ func (f *localScannerTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
 	f.certRequester.On("Start").Once()
 	f.certRefresher.On("Start").Once().Return(conf.refresherStartErr)
 
-	f.repo.On("getServiceCertificates", mock.Anything).Once().
+	f.repo.On("GetServiceCertificates", mock.Anything).Once().
 		Return((*storage.TypedServiceCertificateSet)(nil), conf.getCertsErr)
 
 	f.componentGetter.On("getServiceCertificatesRepo", mock.Anything,
@@ -103,8 +113,8 @@ func TestLocalScannerTLSIssuerStartStopSuccess(t *testing.T) {
 		getCertsErr error
 	}{
 		"no error":            {getCertsErr: nil},
-		"missing secret data": {getCertsErr: errors.Wrap(ErrMissingSecretData, "wrap error")},
-		"inconsistent CAs":    {getCertsErr: errors.Wrap(ErrDifferentCAForDifferentServiceTypes, "wrap error")},
+		"missing secret data": {getCertsErr: errors.Wrap(certrepo.ErrMissingSecretData, "wrap error")},
+		"inconsistent CAs":    {getCertsErr: errors.Wrap(certrepo.ErrDifferentCAForDifferentServiceTypes, "wrap error")},
 		"missing secret":      {getCertsErr: k8sErrors.NewNotFound(schema.GroupResource{Group: "Core", Resource: "Secret"}, "scanner-db-slim-tls")},
 	}
 	for tcName, tc := range testCases {
@@ -543,27 +553,27 @@ type componentGetterMock struct {
 }
 
 func (m *componentGetterMock) getCertificateRefresher(requestCertificates requestCertificatesFunc,
-	repository serviceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
+	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
 	args := m.Called(requestCertificates, repository, timeout, backoff)
 	return args.Get(0).(concurrency.RetryTicker)
 }
 
 func (m *componentGetterMock) getServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace string,
-	secretsClient corev1.SecretInterface) serviceCertificatesRepo {
+	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo {
 	args := m.Called(ownerReference, namespace, secretsClient)
-	return args.Get(0).(serviceCertificatesRepo)
+	return args.Get(0).(certrepo.ServiceCertificatesRepo)
 }
 
 type certsRepoMock struct {
 	mock.Mock
 }
 
-func (m *certsRepoMock) getServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
+func (m *certsRepoMock) GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
 	args := m.Called(ctx)
 	return args.Get(0).(*storage.TypedServiceCertificateSet), args.Error(1)
 }
 
-func (m *certsRepoMock) ensureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
+func (m *certsRepoMock) EnsureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	args := m.Called(ctx, certificates)
 	return certificates.ServiceCerts, args.Error(0)
 }

@@ -2,8 +2,8 @@ import React from 'react';
 import { SelectList, SelectOption } from '@patternfly/react-core';
 import { FilterIcon } from '@patternfly/react-icons';
 
-import { RunState, runStates } from 'services/ReportsService.types';
 import CheckboxSelect from 'Components/CheckboxSelect';
+import { RunState, runStates } from 'types/reportJob';
 
 /**
  * Ensures that the given search filter value is converted to an array of valid "RunState" values.

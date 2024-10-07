@@ -229,7 +229,11 @@ class Services extends BaseService {
 
     static checkForNoViolations(String deploymentName, String policyName, int checkSeconds = 5) {
         def violations = getViolationsWithTimeout(deploymentName, policyName, checkSeconds)
-        return violations == null || violations.size() == 0
+        boolean noViolations = (violations == null || violations.size() == 0)
+        if (!noViolations) {
+            LOG.info "Deployment '${deploymentName}' has violation(s): ${violations}"
+        }
+        return noViolations
     }
 
     static boolean expectNoViolations(String deploymentName, String policyName, int timeoutSeconds = 60) {
