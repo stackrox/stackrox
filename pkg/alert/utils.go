@@ -26,6 +26,11 @@ func AnyAttemptedAlert(alerts ...*storage.Alert) bool {
 	return false
 }
 
+// IsDeployTimeAlertResult returns whether or not the passed results are from a deploy time policy
+func IsDeployTimeAlertResult(alert *central.AlertResults) bool {
+	return alert.GetStage() == storage.LifecycleStage_DEPLOY
+}
+
 // IsRuntimeAlertResult returns whether or not the passed results are from a runtime policy
 func IsRuntimeAlertResult(alert *central.AlertResults) bool {
 	return alert.GetStage() == storage.LifecycleStage_RUNTIME
