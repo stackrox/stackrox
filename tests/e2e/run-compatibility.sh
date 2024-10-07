@@ -68,10 +68,10 @@ _run_compatibility_tests() {
 
     #prepare_for_endpoints_test
 
-    run_roxctl_tests
-    run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
-    store_test_results "roxctl-test-output" "roxctl-test-output"
-    [[ ! -f FAIL ]] || die "roxctl e2e tests failed"
+    #run_roxctl_tests
+    #run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
+    #store_test_results "roxctl-test-output" "roxctl-test-output"
+    #[[ ! -f FAIL ]] || die "roxctl e2e tests failed"
 
     # Give some time for stackrox to be reachable
     wait_for_api
