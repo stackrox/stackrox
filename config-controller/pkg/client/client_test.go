@@ -245,6 +245,7 @@ func TestCachedClientUpdate(t *testing.T) {
 
 	policyToUpdate := clientTest.policies[0]
 	policyToUpdate.Description = "Update this description"
+	policyToUpdate.Source = storage.PolicySource_DECLARATIVE
 	clientTest.mockClient.EXPECT().PutPolicy(gomock.Any(), policyToUpdate).Return(nil).Times(1)
 
 	err := clientTest.client.UpdatePolicy(clientTest.ctx, policyToUpdate)
