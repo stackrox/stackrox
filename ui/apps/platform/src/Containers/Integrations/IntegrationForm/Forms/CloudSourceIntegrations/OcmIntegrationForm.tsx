@@ -218,10 +218,6 @@ function OcmIntegrationForm({
                                             </ExternalLink>
                                         </FlexItem>
                                         <FlexItem>
-                                            The service account must belong to a group with the{' '}
-                                            <strong>Subscription Viewer</strong> role.
-                                        </FlexItem>
-                                        <FlexItem>
                                             For more information, see{' '}
                                             <ExternalLink>
                                                 <a
@@ -286,10 +282,6 @@ function OcmIntegrationForm({
                                                     Red Hat service account
                                                 </a>
                                             </ExternalLink>
-                                        </FlexItem>
-                                        <FlexItem>
-                                            The service account must belong to a group with the{' '}
-                                            <strong>Subscription Viewer</strong> role.
                                         </FlexItem>
                                         <FlexItem>
                                             For more information, see{' '}
