@@ -56,10 +56,10 @@ func (d *dbCloneManagerImpl) getVersion() (*migrations.MigrationVersion, error) 
 func (d *dbCloneManagerImpl) ensureVersionCompatible(ver *migrations.MigrationVersion) error {
 	if d.versionExists(ver) {
 		// current sequence number == database sequence number -- All good
-		// current sequence number != database sequence number BUT database min >= current min -- ALL Good
-		// version min < current database min -- DO NOT ROLLBACK
-		if ver.MinimumSeqNum > migrations.MinimumSupportedDBVersionSeqNum() {
-			return errors.Errorf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.MinimumSupportedDBVersionSeqNum(), ver.MinimumSeqNum)
+		// current sequence number != database sequence number BUT database min >= current sequence number -- ALL Good
+		// version min < current sequence number-- DO NOT ROLLBACK
+		if ver.MinimumSeqNum > migrations.CurrentDBVersionSeqNum() {
+			return errors.Errorf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), ver.MinimumSeqNum)
 		}
 	}
 
