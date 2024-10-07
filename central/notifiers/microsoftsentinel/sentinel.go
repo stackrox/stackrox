@@ -12,16 +12,20 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs"
 	"github.com/pkg/errors"
+	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/administration/events/codes"
 	"github.com/stackrox/rox/pkg/administration/events/option"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/x509utils"
 	"google.golang.org/protobuf/proto"
@@ -36,9 +40,18 @@ var (
 
 func init() {
 	if features.MicrosoftSentinelNotifier.Enabled() {
+		cryptoKey := ""
+		var err error
+		if env.EncNotifierCreds.BooleanSetting() {
+			cryptoKey, _, err = notifierUtils.GetActiveNotifierEncryptionKey()
+			if err != nil {
+				utils.Should(errors.Wrap(err, "Error reading encryption key, notifier will be unable to send notifications"))
+			}
+		}
+
 		log.Debug("Microsoft Sentinel notifier enabled.")
 		notifiers.Add(notifiers.MicrosoftSentinelType, func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-			return newSentinelNotifier(notifier)
+			return newSentinelNotifier(notifier, cryptocodec.Singleton(), cryptoKey)
 		})
 	}
 }
@@ -69,7 +82,7 @@ func (s sentinel) AuditLoggingEnabled() bool {
 }
 
 // newSentinelNotifier returns a new sentinel notifier.
-func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
+func newSentinelNotifier(notifier *storage.Notifier, cryptoCodec cryptocodec.CryptoCodec, key string) (*sentinel, error) {
 	config := notifier.GetMicrosoftSentinel()
 
 	err := Validate(config, false)
@@ -77,17 +90,38 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 		return nil, errors.Wrap(err, "could not create sentinel notifier, validation failed")
 	}
 
+	secret, err := notifierUtils.GetCredentials(notifier)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Could not read secret for notifier %q", notifier.GetName())
+	}
+
+	if env.EncNotifierCreds.BooleanSetting() {
+		// Decrypted secret is a secret when using secret auth or the private key belonging to a
+		// client certificate used in client cert authentication.
+		secret, err = cryptoCodec.Decrypt(key, notifier.GetNotifierSecret())
+		if err != nil {
+			return nil, errors.Errorf("Error decrypting notifier secret for notifier %q", notifier.GetName())
+		}
+	}
+
 	// Tries to build authentication token for Client Cert Auth, if this is not possible proceed to create token credentials
 	// for secrets.
 	var azureTokenCredential azcore.TokenCredential
 	var authErrList = errorhelpers.NewErrorList("Sentinel authentication")
-	if config.GetClientCertAuthConfig().GetClientCert() != "" && config.GetClientCertAuthConfig().GetPrivateKey() != "" {
+	if config.GetClientCertAuthConfig().GetClientCert() != "" {
 		certs, err := x509utils.ConvertPEMTox509Certs([]byte(config.GetClientCertAuthConfig().GetClientCert()))
 		if err != nil {
 			return nil, errors.Wrap(err, "invalid cert")
 		}
 
-		keyBlock, _ := pem.Decode([]byte(config.GetClientCertAuthConfig().GetPrivateKey()))
+		keyBlock, rest := pem.Decode([]byte(secret))
+		if len(rest) != 0 {
+			log.Errorf("PEM was not valid, could not parse all data: %s", string(rest))
+			return nil, errors.Errorf("PEM was not valid, could not parse all data: %s", string(rest))
+		}
+		if keyBlock == nil {
+			return nil, errors.New("Could not parse empty key")
+		}
 		privateKey, err := x509.ParsePKCS8PrivateKey(keyBlock.Bytes)
 		if err != nil {
 			return nil, errors.Wrap(err, "could not parse azure sentinel private key")
@@ -99,9 +133,10 @@ func newSentinelNotifier(notifier *storage.Notifier) (*sentinel, error) {
 		}
 	}
 
-	if config.GetSecret() != "" && azureTokenCredential == nil {
+	// If client cert authentication is not configured use secret auth.
+	if config.GetClientCertAuthConfig().GetClientCert() == "" && azureTokenCredential == nil {
 		var err error
-		azureTokenCredential, err = azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), config.GetSecret(), &azidentity.ClientSecretCredentialOptions{})
+		azureTokenCredential, err = azidentity.NewClientSecretCredential(config.GetDirectoryTenantId(), config.GetApplicationClientId(), secret, &azidentity.ClientSecretCredentialOptions{})
 		if err != nil {
 			authErrList.AddError(errors.Wrap(err, "could not create azure credentials with secret"))
 		}

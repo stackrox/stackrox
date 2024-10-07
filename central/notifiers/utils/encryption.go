@@ -82,7 +82,7 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 	if secured {
 		return nil
 	}
-	creds, err := getCredentials(notifier)
+	creds, err := GetCredentials(notifier)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func IsNotifierSecured(notifier *storage.Notifier) (bool, error) {
 		// So just checking if the field NotifierSecret is non-empty is enough.
 		return notifier.GetNotifierSecret() != "", nil
 	}
-	creds, err := getCredentials(notifier)
+	creds, err := GetCredentials(notifier)
 	if err != nil {
 		return false, nil
 	}
@@ -141,7 +141,7 @@ func RekeyNotifier(notifier *storage.Notifier, oldKey string, newKey string) err
 	return err
 }
 
-func getCredentials(notifier *storage.Notifier) (string, error) {
+func GetCredentials(notifier *storage.Notifier) (string, error) {
 	if notifier.GetConfig() == nil {
 		return "", nil
 	}
@@ -158,6 +158,11 @@ func getCredentials(notifier *storage.Notifier) (string, error) {
 		return notifier.GetPagerduty().GetApiKey(), nil
 	case pkgNotifiers.GenericType:
 		return notifier.GetGeneric().GetPassword(), nil
+	case pkgNotifiers.MicrosoftSentinelType:
+		if notifier.GetMicrosoftSentinel().GetSecret() != "" {
+			return notifier.GetMicrosoftSentinel().GetSecret(), nil
+		}
+		return notifier.GetMicrosoftSentinel().GetClientCertAuthConfig().GetPrivateKey(), nil
 	case pkgNotifiers.AWSSecurityHubType:
 		creds := notifier.GetAwsSecurityHub().GetCredentials()
 		if creds != nil {
@@ -168,6 +173,7 @@ func getCredentials(notifier *storage.Notifier) (string, error) {
 			return string(marshalled), nil
 		}
 	}
+
 	return "", nil
 }
 
@@ -213,6 +219,14 @@ func cleanupCredentials(notifier *storage.Notifier) {
 		if creds != nil {
 			creds.AccessKeyId = ""
 			creds.SecretAccessKey = ""
+		}
+	case pkgNotifiers.MicrosoftSentinelType:
+		sentinel := notifier.GetMicrosoftSentinel()
+		if sentinel != nil {
+			if sentinel.GetClientCertAuthConfig() != nil {
+				sentinel.GetClientCertAuthConfig().PrivateKey = ""
+			}
+			sentinel.Secret = ""
 		}
 	}
 }
