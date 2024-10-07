@@ -26,14 +26,7 @@ func DefaultNewID() ProviderOption {
 		if pr.storedInfo == nil {
 			return noOpRevert, noStoredInfoErr
 		}
-		oldID := pr.storedInfo.GetId()
-		revert := func(pr *providerImpl) error {
-			if pr.storedInfo == nil {
-				return noStoredInfoErr
-			}
-			pr.storedInfo.Id = oldID
-			return nil
-		}
+		revert := getRevertIDFunc(pr, noStoredInfoErr)
 		pr.storedInfo.Id = uuid.NewV4().String()
 		return revert, nil
 	}
@@ -48,16 +41,20 @@ func DefaultLoginURL(fn func(authProviderID string) string) ProviderOption {
 		if pr.storedInfo == nil {
 			return noOpRevert, noStoredInfoErr
 		}
-		oldLoginURL := pr.storedInfo.GetLoginUrl()
-		revert := func(pr *providerImpl) error {
-			if pr.storedInfo == nil {
-				return noStoredInfoErr
-			}
-			pr.storedInfo.LoginUrl = oldLoginURL
-			return nil
-		}
+		revert := getRevertLoginURLFunc(pr)
 		pr.storedInfo.LoginUrl = fn(pr.storedInfo.Id)
 		return revert, nil
+	}
+}
+
+func getRevertLoginURLFunc(provider *providerImpl) RevertOption {
+	oldLoginURL := provider.storedInfo.GetLoginUrl()
+	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return noStoredInfoErr
+		}
+		pr.storedInfo.LoginUrl = oldLoginURL
+		return nil
 	}
 }
 
@@ -69,17 +66,21 @@ func DefaultTokenIssuerFromFactory(tf tokens.IssuerFactory) ProviderOption {
 		if pr.issuer != nil {
 			return noOpRevert, nil
 		}
-		oldIssuer := pr.issuer
-		revert := func(pr *providerImpl) error {
-			pr.issuer = oldIssuer
-			return nil
-		}
+		revert := getRevertIssuerFunc(pr)
 		issuer, err := tf.CreateIssuer(pr, tokens.WithTTL(tokenTTL))
 		if err != nil {
 			return noOpRevert, errors.Wrap(err, "failed to create issuer for newly created auth provider")
 		}
 		pr.issuer = issuer
 		return revert, nil
+	}
+}
+
+func getRevertIssuerFunc(provider *providerImpl) RevertOption {
+	oldIssuer := provider.issuer
+	return func(pr *providerImpl) error {
+		pr.issuer = oldIssuer
+		return nil
 	}
 }
 
@@ -92,11 +93,7 @@ func DefaultRoleMapperOption(fn func(id string) permissions.RoleMapper) Provider
 		if pr.storedInfo.GetId() == "" {
 			return noOpRevert, nil
 		}
-		oldRoleMapper := pr.roleMapper
-		revert := func(pr *providerImpl) error {
-			pr.roleMapper = oldRoleMapper
-			return nil
-		}
+		revert := getRevertRoleMapperFunc(pr)
 		pr.roleMapper = fn(pr.storedInfo.GetId())
 		return revert, nil
 	}
@@ -109,33 +106,23 @@ func DefaultBackend(ctx context.Context, backendFactoryPool map[string]BackendFa
 			return noOpRevert, nil
 		}
 
-		oldBackendFactory := pr.backendFactory
-		oldBackend := pr.backend
-		oldConfig := pr.storedInfo.GetConfig()
-		revert := func(pr *providerImpl) error {
-			if pr.storedInfo != nil {
-				pr.storedInfo.Config = oldConfig
-			}
-			pr.backend = oldBackend
-			backendID := pr.storedInfo.GetId()
-			pr.backendFactory.CleanupBackend(backendID)
-			pr.backendFactory = oldBackendFactory
-			return nil
-		}
+		revert := getRevertBackendFactoryFunc(pr)
 		// Get the backend factory for the type of provider.
 		backendFactory := backendFactoryPool[pr.storedInfo.GetType()]
 		if backendFactory == nil {
 			return noOpRevert, errors.Errorf("provider type %q is either unknown, no longer available, or incompatible with this installation", pr.storedInfo.GetType())
 		}
-
 		pr.backendFactory = backendFactory
 
+		revert = getRevertBackendFunc(pr, revert)
 		// Create the backend for the provider.
 		backend, err := backendFactory.CreateBackend(ctx, pr.storedInfo.GetId(), AllUIEndpoints(pr.storedInfo), pr.storedInfo.GetConfig(), pr.storedInfo.GetClaimMappings())
 		if err != nil {
 			return revert, errors.Wrapf(err, "unable to create backend for provider id %s", pr.storedInfo.GetId())
 		}
 		pr.backend = backend
+
+		revert = getRevertProviderConfigFunc(pr, revert)
 		// We can assume that pr.storedInfo is non-nil here because pr.storedInfo.GetType() referenced a valid auth provider type.
 		pr.storedInfo.Config = backend.Config()
 		return revert, nil

@@ -59,6 +59,20 @@ func (mr *MockIssuerFactoryMockRecorder) CreateIssuer(source any, options ...any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIssuer", reflect.TypeOf((*MockIssuerFactory)(nil).CreateIssuer), varargs...)
 }
 
+// RegisterSource mocks base method.
+func (m *MockIssuerFactory) RegisterSource(source tokens.Source) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegisterSource", source)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RegisterSource indicates an expected call of RegisterSource.
+func (mr *MockIssuerFactoryMockRecorder) RegisterSource(source any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterSource", reflect.TypeOf((*MockIssuerFactory)(nil).RegisterSource), source)
+}
+
 // UnregisterSource mocks base method.
 func (m *MockIssuerFactory) UnregisterSource(source tokens.Source) error {
 	m.ctrl.T.Helper()

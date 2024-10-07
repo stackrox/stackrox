@@ -34,68 +34,101 @@ type ProviderOption func(*providerImpl) (RevertOption, error)
 // WithBackendFromFactory adds a backend from the factory to the provider.
 func WithBackendFromFactory(ctx context.Context, factory BackendFactory) ProviderOption {
 	return func(pr *providerImpl) (RevertOption, error) {
-		oldBackendFactory := pr.backendFactory
-		oldBackend := pr.backend
-		oldConfig := pr.storedInfo.GetConfig()
-		revert := func(pr *providerImpl) error {
-			if pr.storedInfo != nil {
-				pr.storedInfo.Config = oldConfig
-			}
-			pr.backend = oldBackend
-			backendID := pr.storedInfo.GetId()
-			pr.backendFactory.CleanupBackend(backendID)
-			pr.backendFactory = oldBackendFactory
-			return nil
-		}
+		revert := getRevertBackendFactoryFunc(pr)
 		pr.backendFactory = factory
 
+		revert = getRevertBackendFunc(pr, revert)
 		backend, err := factory.CreateBackend(ctx, pr.storedInfo.GetId(), AllUIEndpoints(pr.storedInfo), pr.storedInfo.GetConfig(), nil)
 		if err != nil {
 			return revert, errors.Wrapf(err, "failed to create auth provider of type %s", pr.storedInfo.GetType())
 		}
-
 		pr.backend = backend
+
+		revert = getRevertProviderConfigFunc(pr, revert)
 		pr.storedInfo.Config = backend.Config()
 		return revert, nil
 	}
 }
 
+func getRevertBackendFactoryFunc(provider *providerImpl) RevertOption {
+	oldBackendFactory := provider.backendFactory
+	return func(pr *providerImpl) error {
+		pr.backendFactory = oldBackendFactory
+		return nil
+	}
+}
+
+func getRevertBackendFunc(provider *providerImpl, revert RevertOption) RevertOption {
+	oldBackend := provider.Backend()
+	revertBackendAction := func(pr *providerImpl) error {
+		backendID := pr.storedInfo.GetId()
+		pr.backendFactory.CleanupBackend(backendID)
+		pr.backend = oldBackend
+		return nil
+	}
+	return composeRevertOptions(revertBackendAction, revert)
+}
+
+func getRevertProviderConfigFunc(provider *providerImpl, revert RevertOption) RevertOption {
+	oldConfig := provider.storedInfo.GetConfig()
+	revertConfigAction := func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return noStoredInfoErr
+		}
+		pr.storedInfo.Config = oldConfig
+		return nil
+	}
+	return composeRevertOptions(revertConfigAction, revert)
+}
+
 // DoNotStore indicates that this provider should not be stored.
 func DoNotStore() ProviderOption {
 	return func(pr *providerImpl) (RevertOption, error) {
-		oldDoNotStore := pr.doNotStore
-		revert := func(pr *providerImpl) error {
-			pr.doNotStore = oldDoNotStore
-			return nil
-		}
+		revert := getRevertDoNotStoreFunc(pr)
 		pr.doNotStore = true
 		return revert, nil
+	}
+}
+
+func getRevertDoNotStoreFunc(provider *providerImpl) RevertOption {
+	oldDoNotStore := provider.doNotStore
+	return func(pr *providerImpl) error {
+		pr.doNotStore = oldDoNotStore
+		return nil
 	}
 }
 
 // WithRoleMapper adds a role mapper to the provider.
 func WithRoleMapper(roleMapper permissions.RoleMapper) ProviderOption {
 	return func(pr *providerImpl) (RevertOption, error) {
-		oldRoleMapper := pr.roleMapper
-		revert := func(pr *providerImpl) error {
-			pr.roleMapper = oldRoleMapper
-			return nil
-		}
+		revert := getRevertRoleMapperFunc(pr)
 		pr.roleMapper = roleMapper
 		return revert, nil
+	}
+}
+
+func getRevertRoleMapperFunc(provider *providerImpl) RevertOption {
+	oldRoleMapper := provider.RoleMapper()
+	return func(pr *providerImpl) error {
+		pr.roleMapper = oldRoleMapper
+		return nil
 	}
 }
 
 // WithStorageView sets the values in the store auth provider from the input value.
 func WithStorageView(stored *storage.AuthProvider) ProviderOption {
 	return func(pr *providerImpl) (RevertOption, error) {
-		oldStoredInfo := pr.storedInfo
-		revert := func(pr *providerImpl) error {
-			pr.storedInfo = oldStoredInfo
-			return nil
-		}
+		revert := getRevertStorageViewFunc(pr)
 		pr.storedInfo = stored.CloneVT()
 		return revert, nil
+	}
+}
+
+func getRevertStorageViewFunc(pr *providerImpl) RevertOption {
+	oldStoredInfo := pr.storedInfo.CloneVT()
+	return func(pr *providerImpl) error {
+		pr.storedInfo = oldStoredInfo
+		return nil
 	}
 }
 
@@ -103,18 +136,22 @@ func WithStorageView(stored *storage.AuthProvider) ProviderOption {
 func WithID(id string) ProviderOption {
 	return func(pr *providerImpl) (RevertOption, error) {
 		if pr.storedInfo == nil {
-			return noOpRevert, errox.InvariantViolation.CausedBy("no storage data for auth provider")
+			return noOpRevert, noStoredInfoErrox
 		}
-		oldID := pr.storedInfo.GetId()
-		revert := func(pr *providerImpl) error {
-			if pr.storedInfo == nil {
-				return errox.InvariantViolation.CausedBy("no storage data for auth provider")
-			}
-			pr.storedInfo.Id = oldID
-			return nil
-		}
+		revert := getRevertIDFunc(pr, noStoredInfoErrox)
 		pr.storedInfo.Id = id
 		return revert, nil
+	}
+}
+
+func getRevertIDFunc(provider *providerImpl, noStoredInfoErr error) RevertOption {
+	oldID := provider.storedInfo.GetId()
+	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return noStoredInfoErr
+		}
+		pr.storedInfo.Id = oldID
+		return nil
 	}
 }
 
@@ -122,18 +159,22 @@ func WithID(id string) ProviderOption {
 func WithType(typ string) ProviderOption {
 	return func(pr *providerImpl) (RevertOption, error) {
 		if pr.storedInfo == nil {
-			return noOpRevert, errox.InvariantViolation.CausedBy("no storage data for auth provider")
+			return noOpRevert, noStoredInfoErrox
 		}
-		oldType := pr.storedInfo.GetType()
-		revert := func(pr *providerImpl) error {
-			if pr.storedInfo == nil {
-				return errox.InvariantViolation.CausedBy("no storage data for auth provider")
-			}
-			pr.storedInfo.Type = oldType
-			return nil
-		}
+		revert := getRevertTypeFunc(pr)
 		pr.storedInfo.Type = typ
 		return revert, nil
+	}
+}
+
+func getRevertTypeFunc(provider *providerImpl) RevertOption {
+	oldType := provider.storedInfo.GetType()
+	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return noStoredInfoErrox
+		}
+		pr.storedInfo.Type = oldType
+		return nil
 	}
 }
 
@@ -141,18 +182,22 @@ func WithType(typ string) ProviderOption {
 func WithName(name string) ProviderOption {
 	return func(pr *providerImpl) (RevertOption, error) {
 		if pr.storedInfo == nil {
-			return noOpRevert, errox.InvariantViolation.CausedBy("no storage data for auth provider")
+			return noOpRevert, noStoredInfoErrox
 		}
-		oldName := pr.storedInfo.GetName()
-		revert := func(pr *providerImpl) error {
-			if pr.storedInfo == nil {
-				return errox.InvariantViolation.CausedBy("no storage data for auth provider")
-			}
-			pr.storedInfo.Name = oldName
-			return nil
-		}
+		revert := getRevertNameFunc(pr)
 		pr.storedInfo.Name = name
 		return revert, nil
+	}
+}
+
+func getRevertNameFunc(provider *providerImpl) RevertOption {
+	oldName := provider.storedInfo.GetName()
+	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return noStoredInfoErrox
+		}
+		pr.storedInfo.Name = oldName
+		return nil
 	}
 }
 
@@ -160,33 +205,41 @@ func WithName(name string) ProviderOption {
 func WithEnabled(enabled bool) ProviderOption {
 	return func(pr *providerImpl) (RevertOption, error) {
 		if pr.storedInfo == nil {
-			return noOpRevert, errox.InvariantViolation.CausedBy("no storage data for auth provider")
+			return noOpRevert, noStoredInfoErrox
 		}
-		oldEnabled := pr.storedInfo.GetEnabled()
-		revert := func(pr *providerImpl) error {
-			if pr.storedInfo == nil {
-				return errox.InvariantViolation.CausedBy("no storage data for auth provider")
-			}
-			pr.storedInfo.Enabled = oldEnabled
-			return nil
-		}
+		revert := getRevertEnabledFunc(pr)
 		pr.storedInfo.Enabled = enabled
 		return revert, nil
+	}
+}
+
+func getRevertEnabledFunc(provider *providerImpl) RevertOption {
+	oldEnabled := provider.storedInfo.GetEnabled()
+	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return noStoredInfoErrox
+		}
+		pr.storedInfo.Enabled = oldEnabled
+		return nil
 	}
 }
 
 // WithValidateCallback adds a callback to validate the auth provider.
 func WithValidateCallback(store Store) ProviderOption {
 	return func(pr *providerImpl) (RevertOption, error) {
-		oldValidateCallback := pr.validateCallback
-		revert := func(pr *providerImpl) error {
-			pr.validateCallback = oldValidateCallback
-			return nil
-		}
+		revert := getRevertValidateCallbackFunc(pr)
 		pr.validateCallback = func() error {
 			return pr.ApplyOptions(WithActive(true), UpdateStore(internalUpdateProviderCtx, store))
 		}
 		return revert, nil
+	}
+}
+
+func getRevertValidateCallbackFunc(provider *providerImpl) RevertOption {
+	oldValidateCallback := provider.validateCallback
+	return func(pr *providerImpl) error {
+		pr.validateCallback = oldValidateCallback
+		return nil
 	}
 }
 
@@ -196,19 +249,23 @@ func WithActive(active bool) ProviderOption {
 		if pr.storedInfo == nil {
 			return noOpRevert, errox.InvariantViolation.CausedBy("no storage data for auth provider")
 		}
-		oldValidated := pr.storedInfo.GetValidated()
-		oldActive := pr.storedInfo.GetActive()
-		revert := func(pr *providerImpl) error {
-			if pr.storedInfo == nil {
-				return errox.InvariantViolation.CausedBy("no storage data for auth provider")
-			}
-			pr.storedInfo.Active = oldActive
-			pr.storedInfo.Validated = oldValidated
-			return nil
-		}
+		revert := getRevertActiveFunc(pr)
 		pr.storedInfo.Validated = active
 		pr.storedInfo.Active = active
 		return revert, nil
+	}
+}
+
+func getRevertActiveFunc(provider *providerImpl) RevertOption {
+	oldActive := provider.storedInfo.GetActive()
+	oldValidated := provider.storedInfo.GetValidated()
+	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return noStoredInfoErrox
+		}
+		pr.storedInfo.Active = oldActive
+		pr.storedInfo.Validated = oldValidated
+		return nil
 	}
 }
 
@@ -216,16 +273,20 @@ func WithActive(active bool) ProviderOption {
 // required attributes from the provided auth provider instance.
 func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
 	return func(pr *providerImpl) (RevertOption, error) {
-		oldAttributeVerifier := pr.attributeVerifier
-		revert := func(pr *providerImpl) error {
-			pr.attributeVerifier = oldAttributeVerifier
-			return nil
-		}
 		if stored.GetRequiredAttributes() == nil {
 			return noOpRevert, nil
 		}
+		revert := getRevertAttributeVerifierFunc(pr)
 		pr.attributeVerifier = user.NewRequiredAttributesVerifier(stored.GetRequiredAttributes())
 		return revert, nil
+	}
+}
+
+func getRevertAttributeVerifierFunc(provider *providerImpl) RevertOption {
+	oldAttributeVerifier := provider.attributeVerifier
+	return func(pr *providerImpl) error {
+		pr.attributeVerifier = oldAttributeVerifier
+		return nil
 	}
 }
 
@@ -233,27 +294,31 @@ func WithAttributeVerifier(stored *storage.AuthProvider) ProviderOption {
 func WithVisibility(visibility storage.Traits_Visibility) ProviderOption {
 	return func(pr *providerImpl) (RevertOption, error) {
 		if pr.storedInfo == nil {
-			return noOpRevert, errox.InvariantViolation.CausedBy("no storage data for auth provider")
+			return noOpRevert, noStoredInfoErrox
 		}
-		oldTraits := pr.storedInfo.GetTraits()
-		oldVisibility := oldTraits.GetVisibility()
-		revert := func(pr *providerImpl) error {
-			if pr.storedInfo == nil {
-				return errox.InvariantViolation.CausedBy("no storage data for auth provider")
-			}
-			if oldTraits == nil {
-				pr.storedInfo.Traits = nil
-			} else {
-				pr.storedInfo.Traits.Visibility = oldVisibility
-			}
-			return nil
-		}
+		revert := getRevertVisibilityFunc(pr)
 		if pr.storedInfo.GetTraits() != nil {
 			pr.storedInfo.Traits.Visibility = visibility
 		} else {
 			pr.storedInfo.Traits = &storage.Traits{Visibility: visibility}
 		}
 		return revert, nil
+	}
+}
+
+func getRevertVisibilityFunc(provider *providerImpl) RevertOption {
+	oldTraits := provider.storedInfo.GetTraits()
+	oldVisibility := oldTraits.GetVisibility()
+	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return noStoredInfoErrox
+		}
+		if oldTraits == nil {
+			pr.storedInfo.Traits = nil
+		} else {
+			pr.storedInfo.Traits.Visibility = oldVisibility
+		}
+		return nil
 	}
 }
 

@@ -577,6 +577,8 @@ func (*tstTokenIssuerFactory) UnregisterSource(_ tokens.Source) error {
 	return nil
 }
 
+func (*tstTokenIssuerFactory) RegisterSource(_ tokens.Source) error { return nil }
+
 // RoleMapper factory (needed for NewStoreBackedRegistry)
 type tstRoleMapper struct {
 	roleMapping map[string][]perm.ResolvedRole
