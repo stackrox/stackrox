@@ -15,6 +15,7 @@ Each notifier must implement the interfaces of the notifications it wants to sup
 | AuditNotifier           | pkg/notifiers/audit_notifier.go            | The AuditLog notifications are used to send notifications about AuditLogs.                                                                    |
 | NetworkPolicyNotifier   | pkg/notifiers/network_policy_notifier.go   | NetworkPolicyNotifier sends notifications about Network Policies.                                                                             |
 | ResolvableAlertNotifier | pkg/notifiers/resolvable_alert_notifier.go | The ResolvableAlertNotifier is used to resolve alerts from a third party system. PagerDuty and AWS Security Hub implement these.              |
+| ReportNotifier          | pkg/notifiers/report_notifier.go           | The Report notifier defines to send reports, e.g. acscs email and email support this type.                                                    |
 
 
 ## Write a notifier
