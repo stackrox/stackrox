@@ -1,33 +1,19 @@
 package v1alpha1
 
 import (
-	"embed"
-	"encoding/json"
-	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/encoding/protojson"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
-
-//go:embed test.json
-var files embed.FS
 
 const (
 	expirationTS = "2006-01-02T15:04:05Z"
 )
 
-func TestMarshalJSON(t *testing.T) {
-
-	bytes, err := files.ReadFile("test.json")
-
-	assert.NoError(t, err, "Failed to read policy file")
-
-	policyCRSpec := SecurityPolicySpec{}
-
-	assert.NoError(t, json.Unmarshal(bytes, &policyCRSpec), "Failed to unmarshal policy spec CR JSON")
-
-	expected := SecurityPolicySpec{
+func TestToProtobuf(t *testing.T) {
+	policyCRSpec := SecurityPolicySpec{
 		PolicyName:      "This is a test policy",
 		Description:     "This is a test description",
 		Rationale:       "This is a test rationale",
@@ -68,14 +54,51 @@ func TestMarshalJSON(t *testing.T) {
 		IsDefault:          false,
 	}
 
-	assert.Equal(t, expected, policyCRSpec)
-
+	expectedProto := &storage.Policy{
+		Name:            "This is a test policy",
+		Description:     "This is a test description",
+		Rationale:       "This is a test rationale",
+		Remediation:     "This is a test remediation",
+		Categories:      []string{"Security Best Practices"},
+		PolicyVersion:   "1.1",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD, storage.LifecycleStage_DEPLOY},
+		Exclusions: []*storage.Exclusion{
+			{
+				Name: "Don't alert on deployment collector in namespace stackrox",
+				Deployment: &storage.Exclusion_Deployment{
+					Name: "collector",
+					Scope: &storage.Scope{
+						Namespace: "stackrox",
+						Cluster:   "test",
+					},
+				},
+				Expiration: protoconv.ConvertTimeString(expirationTS),
+			},
+		},
+		Severity:           storage.Severity_LOW_SEVERITY,
+		EventSource:        storage.EventSource_DEPLOYMENT_EVENT,
+		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
+		PolicySections: []*storage.PolicySection{
+			{
+				SectionName: "Section name",
+				PolicyGroups: []*storage.PolicyGroup{
+					{
+						FieldName: "Image Component",
+						Values: []*storage.PolicyValue{
+							{
+								Value: "rpm|microdnf|dnf|yum=",
+							},
+						},
+					},
+				},
+			},
+		},
+		CriteriaLocked:     true,
+		MitreVectorsLocked: true,
+		IsDefault:          false,
+	}
 	protoPolicy := policyCRSpec.ToProtobuf()
-
-	protoBytes, err := protojson.MarshalOptions{
-		Multiline: true,
-	}.Marshal(protoPolicy)
-
-	assert.NoError(t, err, "Failed to marshal protobuf")
-	assert.Equal(t, string(bytes), strings.ReplaceAll(string(protoBytes), ":  ", ": ")+"\n")
+	// Hack: Reset the source field for us to be able to compare
+	protoPolicy.Source = storage.PolicySource_IMPERATIVE
+	protoassert.Equal(t, expectedProto, protoPolicy, "proto message derived from custom resource not as expected")
 }

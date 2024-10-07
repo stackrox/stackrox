@@ -38,7 +38,7 @@ type EnforcementAction string
 type SecurityPolicySpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Pattern=`^[^\n\r\$]{5,128}$`
-	PolicyName string `json:"name,omitempty"`
+	PolicyName string `json:"policyName,omitempty"`
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Pattern=`^[^\$]{0,800}$`
 	Description string `json:"description,omitempty"`
@@ -120,6 +120,7 @@ type MitreAttackVectors struct {
 type SecurityPolicyStatus struct {
 	Accepted bool   `json:"accepted"`
 	Message  string `json:"message"`
+	PolicyId string `json:"policyId"`
 }
 
 // IsValid runs validation checks against the SecurityPolicy spec
@@ -144,6 +145,7 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		CriteriaLocked:     p.CriteriaLocked,
 		MitreVectorsLocked: p.MitreVectorsLocked,
 		IsDefault:          p.IsDefault,
+		Source:             storage.PolicySource_DECLARATIVE,
 	}
 
 	for _, ls := range p.LifecycleStages {
