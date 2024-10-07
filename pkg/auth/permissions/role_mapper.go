@@ -6,6 +6,8 @@ import (
 
 // A RoleMapper returns the role corresponding to an identifier
 // obtained from a token.
+//
+//go:generate mockgen-wrapper
 type RoleMapper interface {
 	FromUserDescriptor(ctx context.Context, user *UserDescriptor) ([]ResolvedRole, error)
 }
@@ -24,6 +26,8 @@ type RoleStore interface {
 }
 
 // RoleMapperFactory provides an interface for generating a role mapper for an auth provider.
+//
+//go:generate mockgen-wrapper
 type RoleMapperFactory interface {
 	GetRoleMapper(authProviderID string) RoleMapper
 }
