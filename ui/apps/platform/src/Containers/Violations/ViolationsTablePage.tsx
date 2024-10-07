@@ -12,7 +12,7 @@ import {
 
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 import { CancelledPromiseError } from 'services/cancellationUtils';
-
+import useAnalytics from 'hooks/useAnalytics';
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import VIOLATION_STATES from 'constants/violationStates';
@@ -61,6 +61,7 @@ function getFilteredWorkflowSearchFilter(
 }
 
 function ViolationsTablePage(): ReactElement {
+    const { analyticsTrack } = useAnalytics();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isPlatformComponentsEnabled = isFeatureFlagEnabled('ROX_PLATFORM_COMPONENTS');
@@ -107,6 +108,11 @@ function ViolationsTablePage(): ReactElement {
 
     const onSearch = (payload: OnSearchPayload) => {
         onURLSearch(searchFilter, setSearchFilter, payload);
+    };
+
+    const onChangeFilteredWorkflowState = (value) => {
+        setFilteredWorkflowState(value);
+        analyticsTrack({ event: 'Selected Filtered Workflow View', properties: { value } });
     };
 
     useEffectAfterFirstRender(() => {
@@ -233,7 +239,7 @@ function ViolationsTablePage(): ReactElement {
                 <PageSection className="pf-v5-u-py-md" component="div" variant="light">
                     <FilteredWorkflowSelector
                         filteredWorkflowState={filteredWorkflowState}
-                        setFilteredWorkflowState={setFilteredWorkflowState}
+                        onChangeFilteredWorkflowState={onChangeFilteredWorkflowState}
                     />
                 </PageSection>
             )}

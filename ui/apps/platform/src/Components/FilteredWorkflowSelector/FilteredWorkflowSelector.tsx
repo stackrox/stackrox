@@ -10,18 +10,28 @@ import {
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 
-import { FilteredWorkflowState, SetFilteredWorkflowState } from './types';
+import { FilteredWorkflowState, filteredWorkflowStates } from './types';
 
 const width = '330px';
 
+function ensureFilteredWorkflowState(value: unknown): FilteredWorkflowState {
+    if (
+        typeof value === 'string' &&
+        filteredWorkflowStates.includes(value as FilteredWorkflowState)
+    ) {
+        return value as FilteredWorkflowState;
+    }
+    return filteredWorkflowStates[0];
+}
+
 export type FilteredWorkflowSelectorProps = {
     filteredWorkflowState: FilteredWorkflowState;
-    setFilteredWorkflowState: SetFilteredWorkflowState;
+    onChangeFilteredWorkflowState: (value: FilteredWorkflowState) => void;
 };
 
 function FilteredWorkflowSelector({
     filteredWorkflowState,
-    setFilteredWorkflowState,
+    onChangeFilteredWorkflowState,
 }: FilteredWorkflowSelectorProps) {
     const [isSelectOpen, setIsSelectOpen] = useState(false);
 
@@ -30,7 +40,7 @@ function FilteredWorkflowSelector({
             isOpen={isSelectOpen}
             selected={filteredWorkflowState}
             onSelect={(_, value) => {
-                setFilteredWorkflowState(value);
+                onChangeFilteredWorkflowState(ensureFilteredWorkflowState(value));
                 setIsSelectOpen(false);
             }}
             onOpenChange={(isOpen) => setIsSelectOpen(isOpen)}

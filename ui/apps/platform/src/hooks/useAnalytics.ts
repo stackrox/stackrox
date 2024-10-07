@@ -6,6 +6,7 @@ import { selectors } from 'reducers';
 import { UnionFrom, tupleTypeGuard } from 'utils/type.utils';
 
 // Event Name Constants
+
 // clusters
 export const CLUSTER_CREATED = 'Cluster Created';
 
@@ -36,7 +37,7 @@ export const VULNERABILITY_REPORT_CREATED = 'Vulnerability Report Created';
 export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Download Generated';
 export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Manually';
 
-// Node and Platform CVEs
+// node and platform CVEs
 export const GLOBAL_SNOOZE_CVE = 'Global Snooze CVE';
 export const NODE_CVE_FILTER_APPLIED = 'Node CVE Filter Applied';
 export const NODE_CVE_ENTITY_CONTEXT_VIEWED = 'Node CVE Entity Context View';
@@ -51,6 +52,10 @@ export const DOWNLOAD_INIT_BUNDLE = 'Download Init Bundle';
 export const REVOKE_INIT_BUNDLE = 'Revoke Init Bundle';
 export const LEGACY_CLUSTER_DOWNLOAD_YAML = 'Legacy Cluster Download YAML';
 export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm Values';
+
+// policy violations
+
+export const SELECTED_FILTERED_WORKFLOW_VIEW = 'Selected Filtered Workflow View';
 
 /**
  * Boolean fields should be tracked with 0 or 1 instead of true/false. This
@@ -284,7 +289,16 @@ export type AnalyticsEvent =
     /**
      * Tracks each time the user downloads a cluster's Helm values
      */
-    | typeof LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES;
+    | typeof LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES
+    /**
+     * Tracks each time the user selects a filtered workflow view
+     */
+    | {
+          event: typeof SELECTED_FILTERED_WORKFLOW_VIEW;
+          properties: {
+              value: 'Application View' | 'Platform view' | 'Full view';
+          };
+      };
 
 const useAnalytics = () => {
     const telemetry = useSelector(selectors.publicConfigTelemetrySelector);
