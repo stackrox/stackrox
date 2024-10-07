@@ -44,7 +44,7 @@ This will display the logs in StackRox under `/main/administration-events?s[Reso
 
 ### Encryption
 
-Encryption of notifier secrets is used in ACS Cloud Service. The encryption feature is disabled by default and must by enabled by `ROX_ENC_NOTIFIER_CREDS`.
+Encryption of notifier secrets is used in ACS Cloud Service. The encryption feature is disabled by default and is enabled by setting `ROX_ENC_NOTIFIER_CREDS=true`.
 An example PR can be found [here](https://github.com/stackrox/stackrox/pull/12829).
 
 For this you need to:
