@@ -21,9 +21,8 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
 
 import {
-    POLICY_BEHAVIOR_ENFORCEMENT_ID,
+    POLICY_BEHAVIOR_ACTIONS_ID,
     POLICY_BEHAVIOR_ID,
-    POLICY_BEHAVIOR_NOTIFIERS_ID,
     POLICY_BEHAVIOR_SCOPE_ID,
     POLICY_DEFINITION_DETAILS_ID,
     POLICY_DEFINITION_ID,
@@ -37,9 +36,8 @@ import PolicyDetailsForm from './Step1/PolicyDetailsForm';
 import PolicyBehaviorForm from './Step2/PolicyBehaviorForm';
 import PolicyCriteriaForm from './Step3/PolicyCriteriaForm';
 import PolicyScopeForm from './Step4/PolicyScopeForm';
-import PolicyEnforcementForm from './Step5/PolicyEnforcementForm';
-import NotifiersForm from './Step6/NotifiersForm';
-import ReviewPolicyForm from './Step7/ReviewPolicyForm';
+import PolicyActionsForm from './Step5/PolicyActionsForm';
+import ReviewPolicyForm from './Step6/ReviewPolicyForm';
 
 import './PolicyWizard.css';
 
@@ -212,22 +210,13 @@ function PolicyWizard({ pageAction, policy }: PolicyWizardProps): ReactElement {
                                     <PolicyScopeForm />
                                 </WizardStep>,
                                 <WizardStep
-                                    name="Enforcement"
-                                    id={POLICY_BEHAVIOR_ENFORCEMENT_ID}
-                                    key={POLICY_BEHAVIOR_ENFORCEMENT_ID}
+                                    name="Actions"
+                                    id={POLICY_BEHAVIOR_ACTIONS_ID}
+                                    key={POLICY_BEHAVIOR_ACTIONS_ID}
                                     body={{ hasNoPadding: true }}
                                     footer={{ isNextDisabled: !isValidOnClient }}
                                 >
-                                    <PolicyEnforcementForm />
-                                </WizardStep>,
-                                <WizardStep
-                                    name="Notifiers"
-                                    id={POLICY_BEHAVIOR_NOTIFIERS_ID}
-                                    key={POLICY_BEHAVIOR_NOTIFIERS_ID}
-                                    body={{ hasNoPadding: true }}
-                                    footer={{ isNextDisabled: !isValidOnClient }}
-                                >
-                                    <NotifiersForm />
+                                    <PolicyActionsForm />
                                 </WizardStep>,
                             ]}
                         />
