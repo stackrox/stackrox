@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"encoding/base64"
 	"io"
 	"net/http"
 	"testing"
@@ -12,7 +13,10 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs"
 	"github.com/stackrox/rox/central/notifiers/microsoftsentinel/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -296,15 +300,40 @@ func (suite *SentinelTestSuite) TestNewSentinelNotifier() {
 		PrivateKey: sentinelCaKey,
 	}
 
-	notifier, err := newSentinelNotifier(config)
+	notifier, err := newSentinelNotifier(config, nil, "")
 
 	suite.Require().NoError(err)
 	suite.NotNil(notifier)
 }
 
+func (suite *SentinelTestSuite) TestEncryption() {
+	suite.T().Setenv(env.EncNotifierCreds.EnvVar(), "true")
+
+	var exampleKey = []byte("key-string-12345")
+	b64EncodedKey := base64.StdEncoding.EncodeToString(exampleKey)
+	encryptedSecret, err := cryptocodec.NewGCMCryptoCodec().Encrypt(b64EncodedKey, "secret-for-sentinel")
+	suite.Require().NoError(err)
+
+	config := getNotifierConfig()
+	config.NotifierSecret = encryptedSecret
+
+	sentinelNotifier, err := newSentinelNotifier(config, cryptocodec.Singleton(), b64EncodedKey)
+
+	suite.Require().NoError(err)
+	suite.Require().NotNil(sentinelNotifier)
+
+	// test with invalid secret encryption should fail
+	config.NotifierSecret = ""
+
+	sentinelNotifier, err = newSentinelNotifier(config, cryptocodec.Singleton(), b64EncodedKey)
+	suite.ErrorContains(err, "Error decrypting notifier secret for notifier \"microsoft-sentinel\"")
+	suite.Nil(sentinelNotifier)
+}
+
 func getNotifierConfig() *storage.Notifier {
 	return &storage.Notifier{
 		Name: "microsoft-sentinel",
+		Type: pkgNotifiers.MicrosoftSentinelType,
 		Config: &storage.Notifier_MicrosoftSentinel{
 			MicrosoftSentinel: &storage.MicrosoftSentinel{
 				LogIngestionEndpoint: "portal.azure.com",
