@@ -577,6 +577,8 @@ func (*tstTokenIssuerFactory) UnregisterSource(_ tokens.Source) error {
 	return nil
 }
 
+func (*tstTokenIssuerFactory) RegisterSource(_ tokens.Source) error { return nil }
+
 // RoleMapper factory (needed for NewStoreBackedRegistry)
 type tstRoleMapper struct {
 	roleMapping map[string][]perm.ResolvedRole
@@ -600,6 +602,7 @@ func (*tstRoleMapperFactory) GetRoleMapper(_ string) perm.RoleMapper {
 
 // Authentication backend factory (needed by registry.RegisterBackendFactory)
 type tstAuthProviderBackend struct {
+	ID       string
 	authRsp  *AuthResponse
 	err      error
 	loginURL string
@@ -616,7 +619,7 @@ func (b *tstAuthProviderBackend) registerLoginURL(loginURL string, err error) {
 }
 
 func (*tstAuthProviderBackend) Config() map[string]string {
-	return nil
+	return testAuthProviderBackendConfig
 }
 
 func (b *tstAuthProviderBackend) LoginURL(_ string, _ *requestinfo.RequestInfo) (string, error) {
@@ -645,9 +648,12 @@ func (*tstAuthProviderBackend) Validate(_ context.Context, _ *tokens.Claims) err
 	return nil
 }
 
-var testAuthProviderBackend = &tstAuthProviderBackend{}
+var testAuthProviderBackend = &tstAuthProviderBackend{
+	ID: testAuthProviderBackendID,
+}
 
 type tstAuthProviderBackendFactory struct {
+	ID          string
 	providerID  string
 	clientState string
 	err         error
@@ -693,7 +699,9 @@ func (*tstAuthProviderBackendFactory) MergeConfig(newCfg, oldCfg map[string]stri
 	return mergedCfg
 }
 
-var testAuthProviderBackendFactory = &tstAuthProviderBackendFactory{}
+var testAuthProviderBackendFactory = &tstAuthProviderBackendFactory{
+	ID: testAuthProviderBackendFactoryID,
+}
 
 func newTestAuthProviderBackendFactory(_ string) BackendFactory {
 	return testAuthProviderBackendFactory

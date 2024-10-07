@@ -16,59 +16,132 @@ import (
 
 // DefaultAddToStore adds the providers stored data to the input store.
 func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(pr *providerImpl) (RevertOption, error) {
 		if pr.doNotStore {
-			return nil
+			return noOpRevert, nil
 		}
+		revert := getRevertLastUpdatedFunc(pr)
 		if pr.storedInfo.LastUpdated == nil {
 			pr.storedInfo.LastUpdated = protocompat.TimestampNow()
 		}
-		return store.AddAuthProvider(ctx, pr.storedInfo)
+		revert = getRemoveProviderFunc(ctx, pr, store, revert)
+		return revert, store.AddAuthProvider(ctx, pr.storedInfo)
 	}
+}
+
+func getRevertLastUpdatedFunc(pr *providerImpl) RevertOption {
+	oldLastUpdated := pr.storedInfo.GetLastUpdated()
+	return func(pr *providerImpl) error {
+		if pr.storedInfo == nil {
+			return noStoredInfoErrox
+		}
+		pr.storedInfo.LastUpdated = oldLastUpdated
+		return nil
+	}
+}
+
+func getRemoveProviderFunc(ctx context.Context, provider *providerImpl, store Store, revert RevertOption) RevertOption {
+	providerID := provider.storedInfo.GetId()
+	removeProviderAction := func(pr *providerImpl) error {
+		return store.RemoveAuthProvider(ctx, providerID, true)
+	}
+	return composeRevertOptions(removeProviderAction, revert)
 }
 
 // UpdateStore updates the stored value for the provider in the input store.
 func UpdateStore(ctx context.Context, store Store) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(pr *providerImpl) (RevertOption, error) {
 		if pr.doNotStore {
-			return nil
+			return noOpRevert, nil
 		}
+		revert := getRevertLastUpdatedFunc(pr)
 		pr.storedInfo.LastUpdated = protocompat.TimestampNow()
-		return store.UpdateAuthProvider(ctx, pr.storedInfo)
+		revert = getRevertUpdateProviderFunc(ctx, pr, store, revert)
+		return revert, store.UpdateAuthProvider(ctx, pr.storedInfo)
 	}
+}
+
+func getRevertUpdateProviderFunc(ctx context.Context, provider *providerImpl, store Store, revert RevertOption) RevertOption {
+	oldProviderID := provider.storedInfo.GetId()
+	oldProvider, found, err := store.GetAuthProvider(ctx, oldProviderID)
+	if err != nil {
+		return noOpRevert
+	}
+	revertUpdateAction := func(_ *providerImpl) error {
+		if !found {
+			return store.RemoveAuthProvider(ctx, oldProviderID, true)
+		}
+		return store.UpdateAuthProvider(ctx, oldProvider)
+	}
+	return composeRevertOptions(revertUpdateAction, revert)
 }
 
 // DeleteFromStore removes the providers stored data from the input store.
 func DeleteFromStore(ctx context.Context, store Store, providerID string, force bool) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(pr *providerImpl) (RevertOption, error) {
+		revert := getRevertDeleteProviderFunc(ctx, store, providerID)
 		err := store.RemoveAuthProvider(ctx, providerID, force)
 		if err != nil {
 			// If it's a type we don't want to store, then we're okay with it not existing.
 			// We do this in case it was stored in the DB in a previous version.
+			// The revert action will anyway restore what was in the DB prior to the removal,
+			// if there was anything in DB.
 			if pr.doNotStore && dberrors.IsNotFound(err) {
-				return nil
+				return revert, nil
 			}
-			return err
+			return revert, err
 		}
+
+		revert = getRestoreStoredInfoFunc(pr, revert)
 		// a deleted provider should no longer be accessible, but it's still cached as a token source so mark it as
 		// no longer valid
 		pr.storedInfo = &storage.AuthProvider{
 			Id:      pr.storedInfo.GetId(),
 			Enabled: false,
 		}
+		return revert, nil
+	}
+}
+
+func getRevertDeleteProviderFunc(ctx context.Context, store Store, providerID string) RevertOption {
+	oldProvider, found, err := store.GetAuthProvider(ctx, providerID)
+	if err != nil {
+		return noOpRevert
+	}
+	if !found {
+		// No DB data to re-create.
+		return noOpRevert
+	}
+	return func(_ *providerImpl) error {
+		return store.AddAuthProvider(ctx, oldProvider)
+	}
+}
+
+func getRestoreStoredInfoFunc(provider *providerImpl, revert RevertOption) RevertOption {
+	oldStoredInfo := provider.storedInfo
+	restoreStoredInfoAction := func(pr *providerImpl) error {
+		pr.storedInfo = oldStoredInfo
 		return nil
 	}
+	return composeRevertOptions(restoreStoredInfoAction, revert)
 }
 
 // UnregisterSource unregisters the token source from the source factory
 func UnregisterSource(factory tokens.IssuerFactory) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(pr *providerImpl) (RevertOption, error) {
+		revert := getRegisterSourceBackFunc(factory, pr)
 		err := factory.UnregisterSource(pr)
 		// both DeleteFromStore and UnregisterSource mutate external stores, so regardless of order the second one
 		// can't return err and fail the change.
 		if err != nil {
 			log.Warnf("Unable to unregister token source: %v", err)
 		}
-		return nil
+		return revert, nil
+	}
+}
+
+func getRegisterSourceBackFunc(factory tokens.IssuerFactory, provider *providerImpl) RevertOption {
+	return func(_ *providerImpl) error {
+		return factory.RegisterSource(provider)
 	}
 }

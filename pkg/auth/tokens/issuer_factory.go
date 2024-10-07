@@ -16,6 +16,7 @@ type IssuerFactory interface {
 	// CreateIssuer creates an issuer for the given source. This must only be invoked once per source (ID).
 	CreateIssuer(source Source, options ...Option) (Issuer, error)
 	UnregisterSource(source Source) error
+	RegisterSource(source Source) error
 }
 
 func newIssuerFactory(id string, signer jose.Signer, sources *sourceStore, globalOptions ...Option) IssuerFactory {
@@ -35,7 +36,7 @@ type issuerFactory struct {
 }
 
 func (f *issuerFactory) CreateIssuer(source Source, options ...Option) (Issuer, error) {
-	if err := f.sources.Register(source); err != nil {
+	if err := f.RegisterSource(source); err != nil {
 		return nil, err
 	}
 
@@ -85,4 +86,8 @@ func translateExtra(extra map[string]json.RawMessage) map[string]interface{} {
 
 func (f *issuerFactory) UnregisterSource(source Source) error {
 	return f.sources.Unregister(source)
+}
+
+func (f *issuerFactory) RegisterSource(source Source) error {
+	return f.sources.Register(source)
 }
