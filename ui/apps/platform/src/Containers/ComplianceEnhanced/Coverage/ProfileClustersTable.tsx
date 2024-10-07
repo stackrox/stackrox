@@ -17,13 +17,10 @@ import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceClusterOverallStats } from 'services/ComplianceCommon';
 import { TableUIState } from 'utils/getTableUIState';
+import { getPercentage } from 'utils/mathUtils';
 
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
-import {
-    calculateCompliancePercentage,
-    getStatusCounts,
-    getTimeDifferenceAsPhrase,
-} from './compliance.coverage.utils';
+import { getStatusCounts, getTimeDifferenceAsPhrase } from './compliance.coverage.utils';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
@@ -112,10 +109,7 @@ function ProfileClustersTable({
                                         otherCount,
                                         totalCount,
                                     } = getStatusCounts(checkStats);
-                                    const passPercentage = calculateCompliancePercentage(
-                                        passCount,
-                                        totalCount
-                                    );
+                                    const passPercentage = getPercentage(passCount, totalCount);
                                     const progressBarId = `progress-bar-${clusterId}`;
                                     const lastScanTimeAsPhrase = getTimeDifferenceAsPhrase(
                                         lastScanTime,
