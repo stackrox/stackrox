@@ -151,7 +151,7 @@ message Alert {
   reserved 14; // was tags
 
   bool platform_component = 22; // @gotags: search:"Platform Component"
-  EntityType entity_type = 23;  // @gotags: search:"Entity Type"
+  EntityType entity_type = 23; // @gotags: search:"Entity Type"
 }
 
 message ListAlert {
