@@ -148,8 +148,8 @@ function PoliciesTablePage({
             });
     }
 
-    function saveAsCustomResourceHandler(ids: string[], onClearAll?: () => void) {
-        savePoliciesAsCustomResource(ids)
+    function saveAsCustomResourceHandler(ids: string[], onClearAll?: () => void): Promise<void> {
+        return savePoliciesAsCustomResource(ids)
             .then(() => {
                 addToast(`Successfully saved selected policies as Custom Resources`, 'success');
                 if (onClearAll) {

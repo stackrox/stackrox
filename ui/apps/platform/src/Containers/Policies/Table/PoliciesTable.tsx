@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import {
     Button,
+    CodeBlockCode,
     Flex,
     FlexItem,
     PageSection,
@@ -62,7 +63,7 @@ type PoliciesTableProps = {
     hasWriteAccessForPolicy: boolean;
     deletePoliciesHandler: (ids: string[]) => Promise<void>;
     exportPoliciesHandler: (ids, onClearAll?) => void;
-    saveAsCustomResourceHandler: (ids, onClearAll?) => void;
+    saveAsCustomResourceHandler: (ids, onClearAll?) => Promise<void>;
     enablePoliciesHandler: (ids) => void;
     disablePoliciesHandler: (ids) => void;
     handleChangeSearchFilter: (searchFilter: SearchFilter) => void;
@@ -99,6 +100,9 @@ function PoliciesTable({
 
     const [deletingIds, setDeletingIds] = useState<string[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const [savingIds, setSavingIds] = useState<string[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
 
     const [enableDisableType, setEnableDisableType] = useState<EnableDisableType | null>(null);
 
@@ -155,6 +159,7 @@ function PoliciesTable({
     let numEnabled = 0;
     let numDisabled = 0;
     let numDeletable = 0;
+    let numSaveable = 0;
     selectedPolicies.forEach(({ disabled, isDefault }) => {
         if (disabled) {
             numDisabled += 1;
@@ -163,6 +168,7 @@ function PoliciesTable({
         }
         if (!isDefault) {
             numDeletable += 1;
+            numSaveable += 1;
         }
     });
 
@@ -180,6 +186,18 @@ function PoliciesTable({
 
     function onCancelDeletePolicy() {
         setDeletingIds([]);
+    }
+
+    function onConfirmSavePolicyAsCustomResource() {
+        setIsSaving(true);
+        saveAsCustomResourceHandler(savingIds).finally(() => {
+            setSavingIds([]);
+            setIsSaving(false);
+        });
+    }
+
+    function onCancelSavePolicyAsCustomResource() {
+        setSavingIds([]);
     }
 
     // TODO: https://stack-rox.atlassian.net/browse/ROX-8613
@@ -276,15 +294,18 @@ function PoliciesTable({
                                                 <DropdownItem
                                                     key="Save as Custom Resource"
                                                     component="button"
-                                                    isDisabled={selectedPolicies.length === 0}
+                                                    isDisabled={numSaveable === 0}
                                                     onClick={() =>
-                                                        saveAsCustomResourceHandler(
-                                                            selectedIds,
-                                                            onClearAll
+                                                        setSavingIds(
+                                                            selectedPolicies
+                                                                .filter(
+                                                                    ({ isDefault }) => !isDefault
+                                                                )
+                                                                .map(({ id }) => id)
                                                         )
                                                     }
                                                 >
-                                                    {`Save as Custom Resource (${selectedPolicies.length})`}
+                                                    {`Save as Custom Resources (${numSaveable})`}
                                                 </DropdownItem>
                                             ) : (
                                                 <React.Fragment key="Save as Custom Resource"></React.Fragment>
@@ -389,14 +410,15 @@ function PoliciesTable({
                         };
                         // Store as an array so that we can conditionally spread into actionItems
                         // based on feature flag without having to deal with nulls
-                        const saveAsCustomResourceActionItems: ActionItem[] = isPolicyAsCodeEnabled
-                            ? [
-                                  {
-                                      title: 'Save as Custom Resource',
-                                      onClick: () => saveAsCustomResourceHandler([id]),
-                                  },
-                              ]
-                            : [];
+                        const saveAsCustomResourceActionItems: ActionItem[] =
+                            isPolicyAsCodeEnabled && !isDefault
+                                ? [
+                                      {
+                                          title: 'Save as Custom Resource',
+                                          onClick: () => setSavingIds([id]),
+                                      },
+                                  ]
+                                : [];
                         const actionItems = hasWriteAccessForPolicy
                             ? [
                                   {
@@ -533,6 +555,31 @@ function PoliciesTable({
                         longer trigger violations.
                     </>
                 )}
+            </ConfirmationModal>
+            <ConfirmationModal
+                title={`Save policies as Custom Resources? (${savingIds.length})`}
+                ariaLabel="Save as Custom Resources"
+                confirmText="Save As Custom Resources"
+                isLoading={isSaving}
+                isOpen={savingIds.length !== 0}
+                onConfirm={onConfirmSavePolicyAsCustomResource}
+                onCancel={onCancelSavePolicyAsCustomResource}
+                isDestructive={false}
+            >
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                    <FlexItem>
+                        The selected polices will be saved as kubernetes custom resources. Any
+                        existing policy with a name that matches the{' '}
+                        <code className="pf-v5-u-font-family-monospace">policyName</code> field of a
+                        saved custom resource will be overwritten when the custom resource is added
+                        to a tracked git repository.
+                    </FlexItem>
+                    <FlexItem>
+                        To prevent this behavior, edit the{' '}
+                        <code className="pf-v5-u-font-family-monospace">policyName</code> field
+                        before committing the file to the repository.
+                    </FlexItem>
+                </Flex>
             </ConfirmationModal>
             <EnableDisableNotificationModal
                 enableDisableType={enableDisableType}

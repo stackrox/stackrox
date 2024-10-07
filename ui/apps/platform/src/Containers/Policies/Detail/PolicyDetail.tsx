@@ -234,7 +234,7 @@ function PolicyDetail({
                                               >
                                                   Export policy to JSON
                                               </DropdownItem>,
-                                              isPolicyAsCodeEnabled ? (
+                                              isPolicyAsCodeEnabled && !isDefault ? (
                                                   <DropdownItem
                                                       key="Save as Custom Resource"
                                                       component="button"
@@ -272,7 +272,7 @@ function PolicyDetail({
                                               >
                                                   Export policy to JSON
                                               </DropdownItem>,
-                                              isPolicyAsCodeEnabled ? (
+                                              isPolicyAsCodeEnabled && !isDefault ? (
                                                   <DropdownItem
                                                       key="Save as Custom Resource"
                                                       component="button"
