@@ -66,7 +66,7 @@ _run_compatibility_tests() {
 
     rm -f FAIL
 
-    prepare_for_endpoints_test
+    #prepare_for_endpoints_test
 
     run_roxctl_tests
     run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
