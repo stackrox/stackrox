@@ -5,6 +5,7 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -27,6 +28,88 @@ func (s *indexReportConvertSuite) TestToNodeInventory() {
 	s.Equal("8.7p1-38.el9", actual.GetComponents()[0].GetVersion())
 	s.Equal("RHSA-2024:4616", actual.GetComponents()[0].GetVulns()[0].GetCve())
 	s.Equal([]storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED}, actual.GetNotes())
+}
+
+func (s *indexReportConvertSuite) TestEmptyReportConversionNoPanic() {
+	r := &v4.VulnerabilityReport{
+		HashId:                 "",
+		Vulnerabilities:        nil,
+		PackageVulnerabilities: nil,
+		Contents:               nil,
+		Notes:                  nil,
+	}
+
+	actual := ToNodeScan(r)
+
+	s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
+}
+
+func (s *indexReportConvertSuite) TestConvertNodeNotes() {
+	in := []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_UNSPECIFIED, v4.VulnerabilityReport_NOTE_OS_UNKNOWN, v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED}
+	expected := []storage.NodeScan_Note{storage.NodeScan_UNSET, storage.NodeScan_UNSUPPORTED, storage.NodeScan_UNSUPPORTED}
+
+	actual := toStorageNotes(in)
+	for i, note := range actual {
+		s.Equal(note, expected[i])
+	}
+}
+
+func (s *indexReportConvertSuite) TestConvertVulnerability() {
+	v := &v4.VulnerabilityReport_Vulnerability{
+		Name:           "TestCVE",
+		Description:    "Test Description",
+		Link:           "https://some.localhost",
+		Severity:       "Low",
+		FixedInVersion: "2.4.54-r3",
+		CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+			{
+				Url: "https://dontpickme.localhost",
+			},
+			{
+				V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					BaseScore: 1,
+				},
+				Url: "https://dontpickme.either.localhost",
+			},
+			{
+				V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					BaseScore: 7,
+					Vector:    "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+				},
+				Url: "https://url1.localhost",
+			},
+			{
+				V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+					BaseScore: 5,
+					Vector:    "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+				},
+				Url: "https://url2.localhost",
+			},
+		},
+	}
+	expected := &storage.EmbeddedVulnerability{
+		Cve:               "TestCVE",
+		Summary:           "Test Description",
+		SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.4.54-r3"},
+		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+		Severity:          storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
+		Link:              "https://url1.localhost",
+		Cvss:              5,
+		ScoreVersion:      1,
+		CvssV3: &storage.CVSSV3{
+			Vector:             "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
+			Confidentiality:    storage.CVSSV3_IMPACT_NONE,
+			Integrity:          storage.CVSSV3_IMPACT_LOW,
+			Availability:       storage.CVSSV3_IMPACT_HIGH,
+			PrivilegesRequired: storage.CVSSV3_PRIVILEGE_LOW,
+			Severity:           storage.CVSSV3_MEDIUM,
+			Score:              5,
+		},
+	}
+
+	actual := convertVulnerability(v)
+
+	protoassert.Equal(s.T(), expected, actual)
 }
 
 func createVulnerabilityReport() *v4.VulnerabilityReport {

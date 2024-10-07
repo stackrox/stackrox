@@ -81,7 +81,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	// Read the node from the database, if not found we fail.
 	node, found, err := p.nodeDatastore.GetNode(ctx, ninv.GetNodeId())
-	// node.GetScan() // Throw out message here if GetScan.Scanner_Version is 4 AND the FF for Scanner v4 is enabled
+	// TODO(ROX-26519): Throw out message here if GetScan.Scanner_Version is 4 AND the FF for Scanner v4 is enabled
 	if err != nil {
 		log.Errorf("fetching node %s from the database: %v", nodeStr, err)
 		return errors.WithMessagef(err, "fetching node: %s", ninv.GetNodeId())

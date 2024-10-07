@@ -43,26 +43,32 @@ func convertVulnerability(v *v4.VulnerabilityReport_Vulnerability) *storage.Embe
 	converted := &storage.EmbeddedVulnerability{
 		Cve:               v.GetName(),
 		Summary:           v.GetDescription(),
-		Link:              v.GetLink(),
 		SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: v.GetFixedInVersion()},
 		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 		Severity:          clair.SeverityToStorageSeverity(v.GetSeverity()),
 	}
 
-	if v.GetCvss() == nil || v.GetCvss().GetV3() == nil || v.GetCvss().GetV3().GetVector() == "" { // VEX-RPM provides only CVSS v3 data
-		log.Warnf("unable to convert CVSS v3 vector information for vulnerability %s", v.GetName())
-		return converted
-	}
+	for _, c := range v.GetCvssMetrics() {
+		if c.GetV3() == nil || c.GetV3().GetVector() == "" {
+			log.Debugf("Skipping metrics as v3 information is unavailable/incomplete")
+			continue
+		}
 
-	if cvssV3, err := cvssv3.ParseCVSSV3(v.GetCvss().GetV3().GetVector()); err == nil {
-		cvssV3.Score = v.GetCvss().GetV3().GetBaseScore()
+		// As EmbeddedVulnerability can only track one URL, we'll pick and keep the first one encountered
+		if c.GetUrl() != "" && converted.GetLink() == "" {
+			converted.Link = c.GetUrl()
+		}
 
-		converted.CvssV3 = cvssV3
-		converted.Cvss = cvssV3.GetScore()
-		converted.ScoreVersion = storage.EmbeddedVulnerability_V3
-		converted.CvssV3.Severity = cvssv3.Severity(converted.GetCvss())
-	} else {
-		log.Errorf("converting v4.VulnerabilityReport CVSSv3: %v", err)
+		if cvssV3, err := cvssv3.ParseCVSSV3(c.GetV3().GetVector()); err == nil {
+			cvssV3.Score = c.GetV3().GetBaseScore()
+
+			converted.CvssV3 = cvssV3
+			converted.Cvss = cvssV3.GetScore()
+			converted.ScoreVersion = storage.EmbeddedVulnerability_V3
+			converted.CvssV3.Severity = cvssv3.Severity(converted.GetCvss())
+		} else {
+			log.Errorf("converting v4.VulnerabilityReport CVSSv3: %v", err)
+		}
 	}
 
 	return converted
