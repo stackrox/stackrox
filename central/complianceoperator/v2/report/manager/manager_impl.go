@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/uuid"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -30,12 +32,14 @@ var (
 type reportRequest struct {
 	scanConfig *storage.ComplianceOperatorScanConfigurationV2
 	ctx        context.Context
+	snapshotID string
 }
 
 type managerImpl struct {
-	datastore        scanConfigurationDS.DataStore
-	scanDataStore    scanDS.DataStore
-	profileDataStore profileDatastore.DataStore
+	datastore         scanConfigurationDS.DataStore
+	scanDataStore     scanDS.DataStore
+	profileDataStore  profileDatastore.DataStore
+	snapshotDataStore snapshotDS.DataStore
 
 	runningReportConfigs map[string]*reportRequest
 	// channel for report job requests
@@ -65,11 +69,12 @@ type managerImpl struct {
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
 }
 
-func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, profileDataStore profileDatastore.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
+func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, profileDataStore profileDatastore.DataStore, snapshotDatastore snapshotDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
 	return &managerImpl{
 		datastore:            scanConfigDS,
 		scanDataStore:        scanDataStore,
 		profileDataStore:     profileDataStore,
+		snapshotDataStore:    snapshotDatastore,
 		stopper:              concurrency.NewStopper(),
 		runningReportConfigs: make(map[string]*reportRequest, maxRequests),
 		reportRequests:       make(chan *reportRequest, maxRequests),
@@ -197,7 +202,43 @@ func (m *managerImpl) runReports() {
 				continue
 			}
 			logging.Infof("Executing report %q at %v", req.scanConfig.GetId(), time.Now().Format(time.RFC822))
-			go m.generateReport(req)
+			var w watcher.ScanConfigWatcher
+			concurrency.WithLock(&m.watchingScanConfigsLock, func() {
+				w = m.watchingScanConfigs[req.scanConfig.GetId()]
+			})
+			reportType := storage.ComplianceOperatorReportStatus_ON_DEMAND
+			notificationMethod := storage.ComplianceOperatorReportStatus_EMAIL
+			snapshot := &storage.ComplianceOperatorReportSnapshotV2{
+				ReportId:            uuid.NewV4().String(),
+				ScanConfigurationId: req.scanConfig.GetId(),
+				Name:                req.scanConfig.GetScanConfigName(),
+				Description:         req.scanConfig.GetDescription(),
+				ReportStatus: &storage.ComplianceOperatorReportStatus{
+					RunState:                 storage.ComplianceOperatorReportStatus_WAITING,
+					StartedAt:                nil,
+					ReportRequestType:        reportType,
+					ReportNotificationMethod: notificationMethod,
+				},
+				User: req.scanConfig.GetModifiedBy(),
+			}
+			if w == nil {
+				log.Infof("No watcher running")
+				snapshot.ReportStatus.RunState = storage.ComplianceOperatorReportStatus_PREPARING
+				log.Infof("Creating snapshot %s", snapshot.GetReportId())
+				if err := m.snapshotDataStore.UpsertSnapshot(req.ctx, snapshot); err != nil {
+					log.Errorf("Unable to create snapshot: ", err)
+					continue
+				}
+				req.snapshotID = snapshot.GetReportId()
+				go m.generateReport(req)
+				continue
+			}
+			log.Infof("Creating snapshot %s", snapshot.GetReportId())
+			if err := m.snapshotDataStore.UpsertSnapshot(req.ctx, snapshot); err != nil {
+				log.Errorf("Unable to create snapshot: ", err)
+				continue
+			}
+			w.Subscribe(snapshot.GetReportId())
 		}
 	}
 }
@@ -229,7 +270,7 @@ func (m *managerImpl) HandleScan(ctx context.Context, scan *storage.ComplianceOp
 	}
 
 	// Start the ScanConfigWatcher as soon as we received the first scan
-	if _, err := m.getScanConfigWatcher(ctx, scan, m.datastore, m.scanConfigReadyQueue); err != nil {
+	if _, err := m.getScanConfigWatcher(ctx, scan, m.datastore, m.scanConfigReadyQueue, false, false); err != nil {
 		return err
 	}
 
@@ -275,7 +316,7 @@ func (m *managerImpl) handleReadyScan() {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanResult.WatcherID)
 				})
-				w, err := m.getScanConfigWatcher(scanResult.Ctx, scanResult.Scan, m.datastore, m.scanConfigReadyQueue)
+				w, err := m.getScanConfigWatcher(scanResult.Ctx, scanResult.Scan, m.datastore, m.scanConfigReadyQueue, false, false)
 				if err != nil {
 					log.Errorf("Unable to create the ScanConfigWatcher: %v", err)
 					continue
@@ -289,7 +330,7 @@ func (m *managerImpl) handleReadyScan() {
 }
 
 // getScanConfigWatcher returns the ScanConfigWatcher of a given scan
-func (m *managerImpl) getScanConfigWatcher(ctx context.Context, scan *storage.ComplianceOperatorScanV2, ds scanConfigurationDS.DataStore, queue *queue.Queue[*watcher.ScanConfigWatcherResults]) (watcher.ScanConfigWatcher, error) {
+func (m *managerImpl) getScanConfigWatcher(ctx context.Context, scan *storage.ComplianceOperatorScanV2, ds scanConfigurationDS.DataStore, queue *queue.Queue[*watcher.ScanConfigWatcherResults], onDemand bool, reportDownload bool) (watcher.ScanConfigWatcher, error) {
 	sc, err := watcher.GetScanConfigFromScan(ctx, scan, ds)
 	if err != nil {
 		return nil, errors.Errorf("Unable to get scan config id: %v", err)
@@ -305,6 +346,33 @@ func (m *managerImpl) getScanConfigWatcher(ctx context.Context, scan *storage.Co
 			m.watchingScanConfigs[sc.GetId()] = w
 		}
 	})
+	if !ok {
+		reportType := storage.ComplianceOperatorReportStatus_SCHEDULED
+		if onDemand {
+			reportType = storage.ComplianceOperatorReportStatus_ON_DEMAND
+		}
+		notificationMethod := storage.ComplianceOperatorReportStatus_EMAIL
+		if reportDownload {
+			notificationMethod = storage.ComplianceOperatorReportStatus_DOWNLOAD
+		}
+		snapshot := &storage.ComplianceOperatorReportSnapshotV2{
+			ReportId:            uuid.NewV4().String(),
+			ScanConfigurationId: sc.GetId(),
+			Name:                sc.GetScanConfigName(),
+			Description:         sc.GetDescription(),
+			ReportStatus: &storage.ComplianceOperatorReportStatus{
+				RunState:                 storage.ComplianceOperatorReportStatus_WAITING,
+				StartedAt:                scan.GetLastStartedTime(),
+				ReportRequestType:        reportType,
+				ReportNotificationMethod: notificationMethod,
+			},
+			User: sc.GetModifiedBy(),
+		}
+		log.Infof("Creating snapshot %s", snapshot.GetReportId())
+		if err := m.snapshotDataStore.UpsertSnapshot(ctx, snapshot); err != nil {
+			return nil, err
+		}
+	}
 	return w, nil
 }
 
@@ -323,6 +391,29 @@ func (m *managerImpl) handleReadyScanConfig() {
 				concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 					delete(m.watchingScanConfigs, result.WatcherID)
 				})
+				for _, id := range result.ReportSnapshotIDs {
+					snapshot, found, err := m.snapshotDataStore.GetSnapshot(result.Ctx, id)
+					if err != nil {
+						log.Errorf("Unable to retrieve snapshot %s: %v", id, err)
+						continue
+					}
+					if !found {
+						log.Errorf("Snapshot %s not found", id)
+						continue
+					}
+					snapshot.ReportStatus.RunState = storage.ComplianceOperatorReportStatus_PREPARING
+					log.Infof("Updating snapshot %s", snapshot.GetReportId())
+					if err := m.snapshotDataStore.UpsertSnapshot(result.Ctx, snapshot); err != nil {
+						log.Errorf("Unable to update the snapshot %s: %v", snapshot.GetReportId(), err)
+						continue
+					}
+					generateReportReq := &reportRequest{
+						ctx:        result.Ctx,
+						scanConfig: result.ScanConfig,
+						snapshotID: snapshot.GetReportId(),
+					}
+					go m.generateReport(generateReportReq)
+				}
 			}
 		}
 	}
