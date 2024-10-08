@@ -340,7 +340,7 @@ describe('cluster helpers', () => {
             expect(received).toEqual(expected);
         });
 
-        it(`should return "Version not managed by ${getProductBranding().reportName}" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED`, () => {
+        it(`should return "Secured cluster version is not managed by ${getProductBranding().reportName}" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED`, () => {
             const testUpgradeStatus = {
                 upgradability: 'MANUAL_UPGRADE_REQUIRED',
             };
