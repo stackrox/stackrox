@@ -61,7 +61,7 @@ function NotifiersForm() {
                     tableState={tableState}
                     colSpan={3}
                     errorProps={{
-                        title: 'There was an error loading the collections',
+                        title: 'There was an error loading notifiers',
                     }}
                     emptyProps={{
                         message:

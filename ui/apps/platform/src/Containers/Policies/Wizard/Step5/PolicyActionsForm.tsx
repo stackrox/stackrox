@@ -36,7 +36,7 @@ function PolicyActionsForm() {
                         <div className="pf-v5-u-mt-sm">Select a state for this policy</div>
                     </FlexItem>
                 </Flex>
-                <FlexItem className="pf-v5-u-pt-sm">
+                <FlexItem>
                     <Form>
                         <FormGroup fieldId="policy-enablement">
                             <Flex direction={{ default: 'row' }}>
