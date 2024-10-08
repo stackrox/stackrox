@@ -40,6 +40,34 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 	return m.recorder
 }
 
+// HandleResult mocks base method.
+func (m *MockManager) HandleResult(result *storage.ComplianceOperatorCheckResultV2) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleResult", result)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleResult indicates an expected call of HandleResult.
+func (mr *MockManagerMockRecorder) HandleResult(result any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleResult", reflect.TypeOf((*MockManager)(nil).HandleResult), result)
+}
+
+// HandleScan mocks base method.
+func (m *MockManager) HandleScan(scan *storage.ComplianceOperatorScanV2) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleScan", scan)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HandleScan indicates an expected call of HandleScan.
+func (mr *MockManagerMockRecorder) HandleScan(scan any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleScan", reflect.TypeOf((*MockManager)(nil).HandleScan), scan)
+}
+
 // Start mocks base method.
 func (m *MockManager) Start() {
 	m.ctrl.T.Helper()
