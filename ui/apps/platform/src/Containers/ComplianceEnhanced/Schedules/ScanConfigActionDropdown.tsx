@@ -47,6 +47,7 @@ function ScanConfigActionDropdown({
     const scanConfigUrl = generatePath(scanConfigDetailsPath, {
         scanConfigId: id,
     });
+    const isProcessing = isScanning || isReportStatusPending;
 
     function onToggle() {
         setIsOpen((prevValue) => !prevValue);
@@ -61,7 +62,7 @@ function ScanConfigActionDropdown({
             key="Edit scan schedule"
             component="button"
             // description={isScanning ? 'Edit is disabled while scan is running' : ''}
-            isDisabled={isScanning || isReportStatusPending}
+            isDisabled={isProcessing}
             onClick={() => {
                 history.push({
                     pathname: scanConfigUrl,
@@ -76,7 +77,7 @@ function ScanConfigActionDropdown({
             key="Run scan"
             component="button"
             description={isScanning ? 'Run is disabled while scan is already running' : ''}
-            isDisabled={isScanning || isReportStatusPending}
+            isDisabled={isProcessing}
             onClick={() => {
                 handleRunScanConfig(scanConfigResponse);
             }}
@@ -98,7 +99,7 @@ function ScanConfigActionDropdown({
                           ? 'Send is disabled while scan is running' */
                           ''
                 }
-                isDisabled={notifiers.length === 0 || isScanning || isReportStatusPending}
+                isDisabled={notifiers.length === 0 || isProcessing}
                 onClick={() => {
                     handleSendReport(scanConfigResponse);
                 }}
@@ -114,7 +115,7 @@ function ScanConfigActionDropdown({
             <DropdownItem
                 key="Generate download"
                 component="button"
-                isDisabled={isScanning || isReportStatusPending}
+                isDisabled={isProcessing}
                 onClick={() => {
                     handleGenerateDownload(scanConfigResponse);
                 }}
