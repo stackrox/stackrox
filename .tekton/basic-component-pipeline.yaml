@@ -29,7 +29,7 @@ spec:
   - name: show-sbom
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-index.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
@@ -113,10 +113,10 @@ spec:
   results:
   - description: ""
     name: IMAGE_URL
-    value: $(tasks.build-image-manifest.results.IMAGE_URL)
+    value: $(tasks.build-image-index.results.IMAGE_URL)
   - description: ""
     name: IMAGE_DIGEST
-    value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+    value: $(tasks.build-image-index.results.IMAGE_DIGEST)
   - description: ""
     name: CHAINS-GIT_URL
     value: $(tasks.clone-repository.results.url)
@@ -137,7 +137,7 @@ spec:
     - name: image-url
       # We can't provide a StackRox-style tag because it is not known at this time (requires cloning source, etc.)
       # As a workaround, we still provide a unique tag that's based on a revision to this task to comply with its
-      # expected input. We later actually add this tag on a built image with build-image-manifest-konflux task.
+      # expected input. We later actually add this tag on a built image with build-image-index-konflux task.
       value: $(params.output-image-repo):konflux-$(params.revision)
     - name: rebuild
       value: $(params.rebuild)
@@ -373,7 +373,7 @@ spec:
       operator: in
       values: [ "true" ]
 
-  - name: build-image-manifest
+  - name: build-image-index
     params:
     - name: IMAGE
       value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
@@ -390,9 +390,9 @@ spec:
     taskRef:
       params:
       - name: name
-        value: build-image-manifest
+        value: build-image-index
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:56c8236523509b8669755e725fb6c0c5810fa49431e14da8a3a0b36ff1fde448
+        value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.1@sha256:e4871851566d8b496966b37bcb8c5ce9748a52487f116373d96c6cd28ef684c6
       - name: kind
         value: task
       resolver: bundles
@@ -401,7 +401,7 @@ spec:
       operator: in
       values: [ "true" ]
 
-  - name: build-image-manifest-konflux
+  - name: build-image-index-konflux
     params:
     - name: IMAGE
       value: $(params.output-image-repo):konflux-$(params.revision)
@@ -418,9 +418,9 @@ spec:
     taskRef:
       params:
       - name: name
-        value: build-image-manifest
+        value: build-image-index
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-build-image-manifest:0.1@sha256:56c8236523509b8669755e725fb6c0c5810fa49431e14da8a3a0b36ff1fde448
+        value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.1@sha256:e4871851566d8b496966b37bcb8c5ce9748a52487f116373d96c6cd28ef684c6
       - name: kind
         value: task
       resolver: bundles
@@ -432,7 +432,7 @@ spec:
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-index.results.IMAGE_URL)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -457,9 +457,9 @@ spec:
   - name: deprecated-base-image-check
     params:
     - name: IMAGE_URL
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-index.results.IMAGE_URL)
     - name: IMAGE_DIGEST
-      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     taskRef:
       params:
       - name: name
@@ -477,9 +477,9 @@ spec:
   - name: clair-scan
     params:
     - name: image-digest
-      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     - name: image-url
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-index.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
@@ -497,7 +497,7 @@ spec:
   - name: ecosystem-cert-preflight-checks
     params:
     - name: image-url
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-index.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
@@ -517,9 +517,9 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: image-digest
-      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     - name: image-url
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-index.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
@@ -537,9 +537,9 @@ spec:
   - name: clamav-scan
     params:
     - name: image-digest
-      value: $(tasks.build-image-manifest.results.IMAGE_DIGEST)
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     - name: image-url
-      value: $(tasks.build-image-manifest.results.IMAGE_URL)
+      value: $(tasks.build-image-index.results.IMAGE_URL)
     taskRef:
       params:
       - name: name
