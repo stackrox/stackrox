@@ -124,7 +124,9 @@ func listAlertsRequestToQuery(request *v1.ListAlertsRequest, sort bool) (*v1.Que
 		q = search.EmptyQuery()
 	} else {
 		var err error
+		log.Infof("ROX-25993: Query is '%s'", request.GetQuery())
 		q, err = search.ParseQuery(request.GetQuery())
+		log.Infof("ROX-25993: Parsed query is '%s'", q.String())
 		if err != nil {
 			return nil, err
 		}

@@ -733,6 +733,10 @@ func tracedQueryRow(ctx context.Context, pool postgres.DB, sql string, args ...i
 func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db postgres.DB) ([]searchPkg.Result, error) {
 	queryStr := query.AsSQL()
 
+	if schema == pkgSchema.AlertsSchema {
+		log.Infof("ROX-25993: SQL query is '%s', values are '%v'", queryStr, query.Data)
+	}
+
 	// Assumes that ids are strings.
 	numPrimaryKeys := len(schema.PrimaryKeys())
 	extraSelectedFields := query.ExtraSelectedFieldPaths()
@@ -893,6 +897,9 @@ func RunGetQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context,
 
 func retryableRunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, query *query, db postgres.DB) ([]*T, error) {
 	queryStr := query.AsSQL()
+	if query.Schema == pkgSchema.AlertsSchema {
+		log.Infof("ROX-25993: SQL query is '%s', values are '%v'", queryStr, query.Data)
+	}
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
 		return nil, err
@@ -916,6 +923,10 @@ func RunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Cont
 		return nil, emptyQueryErr
 	}
 
+	if schema == pkgSchema.AlertsSchema {
+		log.Infof("ROX-25993: Before running SQL query, query is '%s'", q.String())
+	}
+	
 	return pgutils.Retry2(ctx, func() ([]*T, error) {
 
 		return retryableRunGetManyQueryForSchema[T, PT](ctx, query, db)
