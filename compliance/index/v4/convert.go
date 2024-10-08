@@ -30,8 +30,11 @@ func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanC
 		}
 		vulns := make([]*storage.EmbeddedVulnerability, 0)
 		for _, vulnID := range pkgvuln.GetValues() {
-			vuln := vulnerabilities[vulnID]
-			log.Info(vuln.Name)
+			vuln, ok := vulnerabilities[vulnID]
+			if !ok {
+				log.Warnf("Unable to find vulnerability for id %s in %d vulnerabilites. Skipping", vulnID, len(vulnerabilities))
+				continue
+			}
 			vulns = append(vulns, convertVulnerability(vuln))
 		}
 		result = append(result, createEmbeddedComponent(pkg, vulns))
