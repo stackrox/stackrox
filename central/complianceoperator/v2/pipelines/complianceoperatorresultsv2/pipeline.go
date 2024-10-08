@@ -27,20 +27,22 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(v2.Singleton(), clusterDatastore.Singleton())
+	return NewPipeline(v2.Singleton(), clusterDatastore.Singleton(), reportManager.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(v2Datastore v2.DataStore, clusterDatastore clusterDatastore.DataStore) pipeline.Fragment {
+func NewPipeline(v2Datastore v2.DataStore, clusterDatastore clusterDatastore.DataStore, reportMgr reportManager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
 		v2Datastore:      v2Datastore,
 		clusterDatastore: clusterDatastore,
+		reportMgr:        reportMgr,
 	}
 }
 
 type pipelineImpl struct {
 	v2Datastore      v2.DataStore
 	clusterDatastore clusterDatastore.DataStore
+	reportMgr        reportManager.Manager
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -82,7 +84,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			return errox.NotFound.Newf("cluster with id %q does not exist", clusterID)
 		}
 		result := internaltov2storage.ComplianceOperatorCheckResult(checkResult, clusterID, clusterName)
-		if err := reportManager.Singleton().HandleResult(result); err != nil {
+		if err := s.reportMgr.HandleResult(result); err != nil {
 			log.Errorf("unable to handle the check result in the report manager: %v", err)
 		}
 		return s.v2Datastore.UpsertResult(ctx, result)

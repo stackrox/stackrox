@@ -114,7 +114,7 @@ func GetWatcherIDFromCheckResult(result *storage.ComplianceOperatorCheckResultV2
 		return "", errors.Errorf("Unable to parse time: %v", err)
 	}
 	if timestamp.String() != scans[0].GetLastStartedTime().String() {
-		return "", errors.Errorf("The result and the scan do not have the same timestamp")
+		return "", errors.New("The result and the scan do not have the same timestamp")
 	}
 	return GetWatcherIDFromScan(scans[0])
 }

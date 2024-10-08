@@ -26,18 +26,20 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(v2.Singleton())
+	return NewPipeline(v2.Singleton(), reportManager.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(v2Datastore v2.DataStore) pipeline.Fragment {
+func NewPipeline(v2Datastore v2.DataStore, reportMgr reportManager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
 		v2Datastore: v2Datastore,
+		reportMgr:   reportMgr,
 	}
 }
 
 type pipelineImpl struct {
 	v2Datastore v2.DataStore
+	reportMgr   reportManager.Manager
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -86,7 +88,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return s.v2Datastore.DeleteScan(ctx, event.GetId())
 	default:
 		scan := internaltov2storage.ComplianceOperatorScanObject(complianceScanObject, clusterID)
-		if err := reportManager.Singleton().HandleScan(scan); err != nil {
+		if err := s.reportMgr.HandleScan(scan); err != nil {
 			log.Errorf("unable to handle the scan in the report manager: %v", err)
 		}
 		return s.v2Datastore.UpsertScan(ctx, scan)
