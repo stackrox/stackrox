@@ -188,7 +188,7 @@ const upgradeStates: UpgradeStates = {
         type: 'current',
     },
     MANUAL_UPGRADE_REQUIRED: {
-        displayValue: `Version not managed by ${getProductBranding().reportName}`,
+        displayValue: `Secured cluster version is not managed by ${getProductBranding().reportName}`,
         type: 'intervention',
     },
     UPGRADE_AVAILABLE: {

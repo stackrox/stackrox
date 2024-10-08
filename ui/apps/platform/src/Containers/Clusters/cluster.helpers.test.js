@@ -348,7 +348,7 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
-                displayValue: `Version not managed by ${getProductBranding().reportName}`,
+                displayValue: `Secured cluster version is not managed by ${getProductBranding().reportName}`,
                 type: 'intervention',
             };
             expect(received).toEqual(expected);
