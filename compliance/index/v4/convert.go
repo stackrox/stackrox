@@ -25,7 +25,7 @@ func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanC
 	for pkgID, pkgvuln := range r.GetPackageVulnerabilities() {
 		pkg := findPackage(packages, pkgID)
 		if pkg == nil {
-			log.Warnf("Unable to find package for id %s in %d packages. Skipping", pkg, len(packages))
+			log.Warnf("Unable to find package for id %s in %d packages. Skipping", pkgID, len(packages))
 			continue
 		}
 		vulns := make([]*storage.EmbeddedVulnerability, 0)
