@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -39,12 +40,15 @@ const (
 )
 
 var (
+	log        = logging.LoggerForModule()
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigurations",
 			"/v2.ComplianceScanConfigurationService/GetComplianceScanConfiguration",
 			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigProfiles",
 			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigClusterProfiles",
+			"/v2.ComplianceScanConfigurationService/GetReportHistory",
+			"/v2.ComplianceScanConfigurationService/GetMyReportHistory",
 		},
 		user.With(permissions.Modify(resources.Compliance)): {
 			"/v2.ComplianceScanConfigurationService/CreateComplianceScanConfiguration",
@@ -268,6 +272,22 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 		SubmittedAt: types.TimestampNow(),
 		ErrorMsg:    "",
 	}, nil
+}
+
+func (s *serviceImpl) GetReportHistory(_ context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
+	if !features.ComplianceReporting.Enabled() {
+		return nil, errors.Wrapf(errox.NotImplemented, "%s not enabled", features.ComplianceReporting.EnvVar())
+	}
+	log.Infof("GetReportHistory for %s", request.Id)
+	return nil, nil
+}
+
+func (s *serviceImpl) GetMyReportHistory(_ context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
+	if !features.ComplianceReporting.Enabled() {
+		return nil, errors.Wrapf(errox.NotImplemented, "%s not enabled", features.ComplianceReporting.EnvVar())
+	}
+	log.Infof("GetMyReportHistory for %s", request.Id)
+	return nil, nil
 }
 
 func (s *serviceImpl) ListComplianceScanConfigProfiles(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigsProfileResponse, error) {
