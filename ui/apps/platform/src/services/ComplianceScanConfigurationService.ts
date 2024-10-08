@@ -202,7 +202,7 @@ export function runComplianceReport(
     // @TODO: Add the scanNotificationMethod to the PUT Body when the API can handle it
     // const body = { scanConfigId, scanNotificationMethod };
     return axios
-        .put<ComplianceRunReportResponse>(`${complianceScanConfigBaseUrl}/reports/run`, body)
+        .post<ComplianceRunReportResponse>(`${complianceScanConfigBaseUrl}/reports/run`, body)
         .then((response) => {
             return response.data;
         });
