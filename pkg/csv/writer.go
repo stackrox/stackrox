@@ -40,8 +40,8 @@ func (c *GenericWriter) AddValue(value Value) {
 }
 
 // Append to value
-func (c *GenericWriter) AppendValue(value Value, field string) {
-	value = append(value, field)
+func (c *GenericWriter) AppendToValue(value *Value, field string) {
+	*value = append(*value, field)
 }
 
 // IsEmpty returns true if there are no values.

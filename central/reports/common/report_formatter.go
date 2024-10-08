@@ -92,7 +92,7 @@ type ZippedCSVResult struct {
 // a flag if the report is empty or not. For v1 config pass an empty string.
 func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult, configName string, includeNvd bool) (*ZippedCSVResult, error) {
 	csvHeaderRep := csvHeader
-	if includeNvd == true {
+	if includeNvd {
 		csvHeaderRep = append(csvHeader, "NVDCVSS")
 	}
 	csvWriter := csv.NewGenericWriter(csvHeaderRep, true)
@@ -121,11 +121,10 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 							discoveredTs,
 							v.Link,
 						}
-						csvWriter.AddValue(row)
-						if includeNvd == true {
-							csvWriter.AppendValue(row, strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64))
+						if includeNvd {
+							csvWriter.AppendToValue(&row, strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64))
 						}
-
+						csvWriter.AddValue(row)
 					}
 				}
 			}
@@ -142,7 +141,7 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 					if v.DiscoveredAtImage != nil {
 						discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
 					}
-					csvWriter.AddValue(csv.Value{
+					row := csv.Value{
 						"",
 						"",
 						"",
@@ -153,10 +152,13 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 						v.FixedByVersion,
 						strings.ToTitle(stringutils.GetUpTo(v.Severity, "_")),
 						strconv.FormatFloat(v.Cvss, 'f', 2, 64),
-						strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64),
 						discoveredTs,
 						v.Link,
-					})
+					}
+					if includeNvd {
+						csvWriter.AppendToValue(&row, strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64))
+					}
+					csvWriter.AddValue(row)
 				}
 			}
 		}
