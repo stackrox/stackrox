@@ -59,7 +59,6 @@ function DeploymentComponentVulnerabilitiesTable({
     vulnerabilityState,
 }: DeploymentComponentVulnerabilitiesTableProps) {
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
-
     const componentVulns = images.flatMap(({ imageMetadataContext, componentVulnerabilities }) =>
         flattenDeploymentComponentVulns(imageMetadataContext, componentVulnerabilities)
     );
