@@ -36,7 +36,7 @@ function main() {
     ;;
   *)
     echo -e "Usage:\n\t$0 [--allow-dirty-tag | -d] <operator_ns> <index-image-repo> <index-image-tag> [<csv-version> [<install-channel>]]" >&2
-    echo -e "Example:\n\t$0 -d index-test quay.io/rhacs-eng/stackrox-operator-index v3.70.1 v3.70.0" >&2
+    echo -e "Example:\n\t$0 -d index-test quay.io/rhacs-eng/stackrox-operator-index v3.70.1 v3.70.0 latest" >&2
     echo -e "Note that KUTTL environment variable must be defined and point to a kuttl executable." >&2
     exit 1
     ;;
