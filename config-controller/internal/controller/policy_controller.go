@@ -170,7 +170,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
-		rlog.Error(err, "error updating status for securitypolicy '%s'", policyCR.GetName())
+		rlog.Error(err, "error updating status for securitypolicy", "name", policyCR.GetName())
 		return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on security policy resource '%s'", policyCR.GetName()))
 	}
 
