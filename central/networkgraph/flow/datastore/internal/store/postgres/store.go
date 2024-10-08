@@ -516,7 +516,7 @@ func (s *flowStoreImpl) GetFlowsForDeployment(ctx context.Context, deploymentID 
 
 // GetExternalFlowsForDeployment returns the external flows matching the deployment ID
 func (s *flowStoreImpl) GetExternalFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetFlowsForDeployment, "NetworkFlow")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetExternalFlowsForDeployment, "NetworkFlow")
 
 	return pgutils.Retry2(ctx, func() ([]*storage.NetworkFlow, error) {
 		return s.retryableGetFlowsForDeployment(ctx, deploymentID, getExternalByDeploymentStmt)
