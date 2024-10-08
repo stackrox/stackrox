@@ -339,6 +339,7 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventResourceSyncFinished:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			if m.initialSync.CompareAndSwap(false, true) {
+				log.Info("Resetting enricher ticker - inital sync false -> true")
 				m.enricherTicker.Reset(tickerTime)
 			}
 			return
@@ -346,6 +347,7 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 		m.resetContext()
 		m.resetLastSentState()
 		m.centralReady.Signal()
+		log.Info("Resetting enricher ticker - sync finished")
 		m.enricherTicker.Reset(tickerTime)
 	case common.SensorComponentEventOfflineMode:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
@@ -448,8 +450,13 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 func (m *networkFlowManager) enrichAndSend() {
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
 
+	log.Infof("enrichAndSend: m.enrichedConnsLastSentState: %+v", m.enrichedConnsLastSentState)
+	log.Infof("enrichAndSend: m.enrichedEndpointsLastSentState: %+v", m.enrichedEndpointsLastSentState)
+
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
+	log.Infof("enrichAndSend: updatedConns: %+v", updatedConns)
+	log.Infof("enrichAndSend: updatedEndpoints: %+v", updatedEndpoints)
 
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
 		return
@@ -827,6 +834,7 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS) {
 	allHostConns := m.getAllHostConnections()
+	log.Infof("currentEnrichedConnsAndEndpoints: allHostConns: %+v", allHostConns)
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
 	enrichedEndpoints := make(map[containerEndpointIndicator]timestamp.MicroTS)
@@ -834,6 +842,8 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConn
 		m.enrichHostConnections(hostConns, enrichedConnections)
 		m.enrichHostContainerEndpoints(hostConns, enrichedEndpoints)
 	}
+	log.Infof("currentEnrichedConnsAndEndpoints: enrichedConnections: %+v", enrichedConnections)
+	log.Infof("currentEnrichedConnsAndEndpoints: enrichedEndpoints: %+v", enrichedEndpoints)
 
 	return enrichedConnections, enrichedEndpoints
 }
