@@ -55,7 +55,7 @@ export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm
 
 // policy violations
 
-export const SELECTED_FILTERED_WORKFLOW_VIEW = 'Selected Filtered Workflow View';
+export const FILTERED_WORKFLOW_VIEW_SELECTED = 'Filtered Workflow View Selected';
 
 /**
  * Boolean fields should be tracked with 0 or 1 instead of true/false. This
@@ -294,9 +294,9 @@ export type AnalyticsEvent =
      * Tracks each time the user selects a filtered workflow view
      */
     | {
-          event: typeof SELECTED_FILTERED_WORKFLOW_VIEW;
+          event: typeof FILTERED_WORKFLOW_VIEW_SELECTED;
           properties: {
-              value: 'Application View' | 'Platform view' | 'Full view';
+              value: 'Application view' | 'Platform view' | 'Full view';
           };
       };
 

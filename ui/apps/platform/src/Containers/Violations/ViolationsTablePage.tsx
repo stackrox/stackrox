@@ -19,7 +19,7 @@ import VIOLATION_STATES from 'constants/violationStates';
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import { FilteredWorkflowState } from 'Components/FilteredWorkflowSelector/types';
+import { FilteredWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import { SearchFilter } from 'types/search';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLStringUnion from 'hooks/useURLStringUnion';
@@ -30,8 +30,8 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLPagination from 'hooks/useURLPagination';
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import FilteredWorkflowSelector from 'Components/FilteredWorkflowSelector/FilteredWorkflowSelector';
-import useFilteredWorkflowURLState from 'Components/FilteredWorkflowSelector/useFilteredWorkflowURLState';
+import FilteredWorkflowViewSelector from 'Components/FilteredWorkflowViewSelector/FilteredWorkflowViewSelector';
+import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import ViolationsTablePanel from './ViolationsTablePanel';
 import tableColumnDescriptor from './violationTableColumnDescriptors';
 import { violationStateTabs } from './types';
@@ -40,10 +40,10 @@ import './ViolationsTablePage.css';
 
 const tabContentId = 'ViolationsTable';
 
-function getFilteredWorkflowSearchFilter(
-    filteredWorkflowState: FilteredWorkflowState
+function getFilteredWorkflowViewSearchFilter(
+    filteredWorkflowView: FilteredWorkflowView
 ): SearchFilter {
-    switch (filteredWorkflowState) {
+    switch (filteredWorkflowView) {
         case 'Application view':
             return {
                 'Platform Component': 'false',
@@ -70,7 +70,7 @@ function ViolationsTablePage(): ReactElement {
         'violationState',
         violationStateTabs
     );
-    const { filteredWorkflowState, setFilteredWorkflowState } = useFilteredWorkflowURLState();
+    const { filteredWorkflowView, setFilteredWorkflowView } = useFilteredWorkflowViewURLState();
 
     const hasExecutableFilter =
         Object.keys(searchFilter).length &&
@@ -110,9 +110,9 @@ function ViolationsTablePage(): ReactElement {
         onURLSearch(searchFilter, setSearchFilter, payload);
     };
 
-    const onChangeFilteredWorkflowState = (value) => {
-        setFilteredWorkflowState(value);
-        analyticsTrack({ event: 'Selected Filtered Workflow View', properties: { value } });
+    const onChangeFilteredWorkflowView = (value) => {
+        setFilteredWorkflowView(value);
+        analyticsTrack({ event: 'Filtered Workflow View Selected', properties: { value } });
     };
 
     useEffectAfterFirstRender(() => {
@@ -143,7 +143,7 @@ function ViolationsTablePage(): ReactElement {
     useEffect(() => {
         const alertSearchFilter: SearchFilter = {
             ...searchFilter,
-            ...getFilteredWorkflowSearchFilter(filteredWorkflowState),
+            ...getFilteredWorkflowViewSearchFilter(filteredWorkflowView),
             'Violation State': activeViolationStateTab,
         };
 
@@ -190,7 +190,7 @@ function ViolationsTablePage(): ReactElement {
         setAlertCount,
         perPage,
         activeViolationStateTab,
-        filteredWorkflowState,
+        filteredWorkflowView,
     ]);
 
     // We need to be able to identify which alerts are runtime or attempted, and which are not by id.
@@ -237,9 +237,9 @@ function ViolationsTablePage(): ReactElement {
             </PageSection>
             {isPlatformComponentsEnabled && (
                 <PageSection className="pf-v5-u-py-md" component="div" variant="light">
-                    <FilteredWorkflowSelector
-                        filteredWorkflowState={filteredWorkflowState}
-                        onChangeFilteredWorkflowState={onChangeFilteredWorkflowState}
+                    <FilteredWorkflowViewSelector
+                        filteredWorkflowView={filteredWorkflowView}
+                        onChangeFilteredWorkflowView={onChangeFilteredWorkflowView}
                     />
                 </PageSection>
             )}

@@ -10,37 +10,27 @@ import {
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 
-import { FilteredWorkflowState, filteredWorkflowStates } from './types';
+import { FilteredWorkflowView } from './types';
 
 const width = '330px';
 
-function ensureFilteredWorkflowState(value: unknown): FilteredWorkflowState {
-    if (
-        typeof value === 'string' &&
-        filteredWorkflowStates.includes(value as FilteredWorkflowState)
-    ) {
-        return value as FilteredWorkflowState;
-    }
-    return filteredWorkflowStates[0];
-}
-
-export type FilteredWorkflowSelectorProps = {
-    filteredWorkflowState: FilteredWorkflowState;
-    onChangeFilteredWorkflowState: (value: FilteredWorkflowState) => void;
+export type FilteredWorkflowViewSelectorProps = {
+    filteredWorkflowView: FilteredWorkflowView;
+    onChangeFilteredWorkflowView: (value: string | number | undefined) => void;
 };
 
-function FilteredWorkflowSelector({
-    filteredWorkflowState,
-    onChangeFilteredWorkflowState,
-}: FilteredWorkflowSelectorProps) {
+function FilteredWorkflowViewSelector({
+    filteredWorkflowView,
+    onChangeFilteredWorkflowView,
+}: FilteredWorkflowViewSelectorProps) {
     const [isSelectOpen, setIsSelectOpen] = useState(false);
 
     return (
         <Select
             isOpen={isSelectOpen}
-            selected={filteredWorkflowState}
+            selected={filteredWorkflowView}
             onSelect={(_, value) => {
-                onChangeFilteredWorkflowState(ensureFilteredWorkflowState(value));
+                onChangeFilteredWorkflowView(value);
                 setIsSelectOpen(false);
             }}
             onOpenChange={(isOpen) => setIsSelectOpen(isOpen)}
@@ -57,7 +47,7 @@ function FilteredWorkflowSelector({
                         alignItems={{ default: 'alignItemsCenter' }}
                     >
                         <Icon>{<CubesIcon />}</Icon>
-                        <span>{filteredWorkflowState}</span>
+                        <span>{filteredWorkflowView}</span>
                     </Flex>
                 </MenuToggle>
             )}
@@ -87,4 +77,4 @@ function FilteredWorkflowSelector({
     );
 }
 
-export default FilteredWorkflowSelector;
+export default FilteredWorkflowViewSelector;
