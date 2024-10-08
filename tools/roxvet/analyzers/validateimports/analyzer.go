@@ -37,6 +37,7 @@ var (
 		"sensor/admission-control",
 		"sensor/common",
 		"sensor/debugger",
+		"sensor/init-tls-certs",
 		"sensor/kubernetes",
 		"sensor/tests",
 		"sensor/testutils",
