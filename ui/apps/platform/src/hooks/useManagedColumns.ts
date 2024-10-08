@@ -27,11 +27,11 @@ function tablePreferencesValidator(value: unknown): value is TablePreferencesSto
 
 // Using the existing stored table config as a base, merge in the provided config options
 // and use the existing visibility state if it exists, otherwise use the default visibility
-function getCurrentColumnConfig<ColumnName extends string>(
+function getCurrentColumnConfig<ColumnKey extends string>(
     tablePreferences: TablePreferencesStorage,
     tableId: string,
-    columnConfig: Record<ColumnName, InitialColumnConfig>
-): Record<ColumnName, ColumnConfig> {
+    columnConfig: Record<ColumnKey, InitialColumnConfig>
+): Record<ColumnKey, ColumnConfig> {
     const tableConfig = {};
     Object.entries<InitialColumnConfig>(columnConfig).forEach(
         ([key, { title, isShownByDefault }]) => {
@@ -49,7 +49,7 @@ function getCurrentColumnConfig<ColumnName extends string>(
     // Type assertion :( - we know that the keys are valid as the return object is created
     // from the same keys as the provided columnConfig. Fudging type safety here for this internal
     // function is worthwhile in order to gain additional safety in the useManagedColumns hook.
-    return tableConfig as Record<ColumnName, ColumnConfig>;
+    return tableConfig as Record<ColumnKey, ColumnConfig>;
 }
 
 export type ManagedColumns<ColumnKey extends string> = {
@@ -61,10 +61,10 @@ export type ManagedColumns<ColumnKey extends string> = {
     setColumns: (columns: Record<string, boolean>) => void;
 };
 
-export function useManagedColumns<ColumnName extends string>(
+export function useManagedColumns<ColumnKey extends string>(
     tableId: string,
-    initialConfig: Readonly<Record<ColumnName, InitialColumnConfig>>
-): ManagedColumns<ColumnName> {
+    initialConfig: Readonly<Record<ColumnKey, InitialColumnConfig>>
+): ManagedColumns<ColumnKey> {
     const [tablePreferencesStorage, setTablePreferencesStorage] = useLocalStorage(
         'tablePreferences',
         { columnManagement: {} },
