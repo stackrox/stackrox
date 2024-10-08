@@ -50,8 +50,12 @@ function apply_operator_manifests() {
     starting_csv="rhacs-operator.${csv_version}"
   fi
   env -i PATH="${PATH}" \
-    INDEX_IMAGE_TAG="${index_image_tag}" STARTING_CSV="${starting_csv}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
-    INDEX_IMAGE_REPO="${index_image_repo}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
+    INDEX_IMAGE_TAG="${index_image_tag}" \
+    STARTING_CSV="${starting_csv}" \
+    NAMESPACE="${operator_ns}" \
+    OPERATOR_CHANNEL="${operator_channel}" \
+    INDEX_IMAGE_REPO="${index_image_repo}" \
+    DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
     INSTALL_PLAN_APPROVAL="${install_plan_approval}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
