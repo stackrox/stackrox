@@ -253,7 +253,7 @@ spec:
 
   # TODO(ROX-26471): This is currently needed, since some images do not
   # seem to be available with the "-fast" suffix added.
-  # Once they are pushed with the currect suffix, we can remove this step
+  # Once they are pushed with the correct suffix, we can remove this step
   # and reuse the results of the `determine-main-image-tag` task everywhere.
   - name: determine-main-image-tag-unsuffixed
     params:
@@ -276,17 +276,6 @@ spec:
       value: "."
     taskRef:
       name: determine-image-tag
-
-  - name: determine-scanner-image-tag
-    params:
-    - name: TAG_SUFFIX
-      value: $(params.output-tag-suffix)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: FILE_PATH
-      value: "./SCANNER_VERSION"
-    taskRef:
-      name: retrieve-image-tag-from-file
 
   - name: prefetch-dependencies
     params:
@@ -334,7 +323,7 @@ spec:
       workspace: quay-auth
     params:
     - name: IMAGE
-      value: "$(params.scanner-image-repo):$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
 
@@ -344,7 +333,7 @@ spec:
       workspace: quay-auth
     params:
     - name: IMAGE
-      value: "$(params.scanner-db-image-repo):$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-db-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
 
@@ -354,7 +343,7 @@ spec:
       workspace: quay-auth
     params:
     - name: IMAGE
-      value: "$(params.scanner-slim-image-repo):$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
 
@@ -364,7 +353,7 @@ spec:
       workspace: quay-auth
     params:
     - name: IMAGE
-      value: "$(params.scanner-db-slim-image-repo):$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-db-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
 
@@ -464,7 +453,7 @@ spec:
     - name: IMAGE_REPOSITORY
       value: "$(params.scanner-image-repo)"
     - name: IMAGE_TAG
-      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: determine-image-digest
     runAfter:
@@ -478,7 +467,7 @@ spec:
     - name: IMAGE_REPOSITORY
       value: "$(params.scanner-db-image-repo)"
     - name: IMAGE_TAG
-      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: determine-image-digest
     runAfter:
@@ -492,7 +481,7 @@ spec:
     - name: IMAGE_REPOSITORY
       value: "$(params.scanner-slim-image-repo)"
     - name: IMAGE_TAG
-      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: determine-image-digest
     runAfter:
@@ -506,7 +495,7 @@ spec:
     - name: IMAGE_REPOSITORY
       value: "$(params.scanner-db-slim-image-repo)"
     - name: IMAGE_TAG
-      value: "$(tasks.determine-scanner-image-tag.results.IMAGE_TAG)"
+      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: determine-image-digest
     runAfter:
@@ -616,8 +605,7 @@ spec:
     - name: BUILD_ARGS
       value:
       - OPERATOR_IMAGE_TAG=$(tasks.determine-operator-image-tag.results.IMAGE_TAG)
-      - OPERATOR_IMAGE_DIGEST=$(tasks.determine-operator-image-digest.results.IMAGE_DIGEST)
-      - OPERATOR_IMAGE_REPO=$(params.operator-image-repo)
+      - OPERATOR_IMAGE_REF=$(params.operator-image-repo)@$(tasks.determine-operator-image-digest.results.IMAGE_DIGEST)
       - RELATED_IMAGE_MAIN=$(params.main-image-repo)@$(tasks.determine-main-image-digest.results.IMAGE_DIGEST)
       - RELATED_IMAGE_SCANNER=$(params.scanner-image-repo)@$(tasks.determine-scanner-image-digest.results.IMAGE_DIGEST)
       - RELATED_IMAGE_SCANNER_DB=$(params.scanner-db-image-repo)@$(tasks.determine-scanner-db-image-digest.results.IMAGE_DIGEST)
