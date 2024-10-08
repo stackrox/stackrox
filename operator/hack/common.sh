@@ -35,14 +35,13 @@ function apply_operator_manifests() {
   catalog_source_crd="$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get customresourcedefinitions.apiextensions.k8s.io catalogsources.operators.coreos.com -o yaml)"
   local disable_security_context_config="# "
   local has_scc_key
-  local operator_channel
-  local install_plan_approval
-  local starting_csv
   has_scc_key="$(yq eval '[.. | select(key == "grpcPodConfig")].[].properties | has("securityContextConfig")' - <<< "$catalog_source_crd")"
   if [[ "$has_scc_key" == "true" ]]; then
       disable_security_context_config=""
   fi
 
+  local install_plan_approval
+  local starting_csv
   if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
     install_plan_approval="Automatic"
     starting_csv="null"
