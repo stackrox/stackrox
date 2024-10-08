@@ -10,27 +10,27 @@ import {
 } from '@patternfly/react-core';
 import { CubesIcon } from '@patternfly/react-icons';
 
-import { FilteredWorkflowState, SetFilteredWorkflowState } from './types';
+import { FilteredWorkflowView } from './types';
 
 const width = '330px';
 
-export type FilteredWorkflowSelectorProps = {
-    filteredWorkflowState: FilteredWorkflowState;
-    setFilteredWorkflowState: SetFilteredWorkflowState;
+export type FilteredWorkflowViewSelectorProps = {
+    filteredWorkflowView: FilteredWorkflowView;
+    onChangeFilteredWorkflowView: (value: string | number | undefined) => void;
 };
 
-function FilteredWorkflowSelector({
-    filteredWorkflowState,
-    setFilteredWorkflowState,
-}: FilteredWorkflowSelectorProps) {
+function FilteredWorkflowViewSelector({
+    filteredWorkflowView,
+    onChangeFilteredWorkflowView,
+}: FilteredWorkflowViewSelectorProps) {
     const [isSelectOpen, setIsSelectOpen] = useState(false);
 
     return (
         <Select
             isOpen={isSelectOpen}
-            selected={filteredWorkflowState}
+            selected={filteredWorkflowView}
             onSelect={(_, value) => {
-                setFilteredWorkflowState(value);
+                onChangeFilteredWorkflowView(value);
                 setIsSelectOpen(false);
             }}
             onOpenChange={(isOpen) => setIsSelectOpen(isOpen)}
@@ -47,7 +47,7 @@ function FilteredWorkflowSelector({
                         alignItems={{ default: 'alignItemsCenter' }}
                     >
                         <Icon>{<CubesIcon />}</Icon>
-                        <span>{filteredWorkflowState}</span>
+                        <span>{filteredWorkflowView}</span>
                     </Flex>
                 </MenuToggle>
             )}
@@ -77,4 +77,4 @@ function FilteredWorkflowSelector({
     );
 }
 
-export default FilteredWorkflowSelector;
+export default FilteredWorkflowViewSelector;
