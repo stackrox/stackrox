@@ -77,6 +77,7 @@ RUN mkdir -p build/ && \
     ./bundle_helpers/patch-csv.py \
       --use-version "${OPERATOR_IMAGE_TAG}" \
       --first-version 3.62.0 \
+      --inject-related-images \
       --operator-image "${OPERATOR_IMAGE_REF}" \
       --add-supported-arch amd64 \
       --add-supported-arch arm64 \
