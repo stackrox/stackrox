@@ -559,7 +559,7 @@ function PoliciesTable({
             <ConfirmationModal
                 title={`Save policies as Custom Resources? (${savingIds.length})`}
                 ariaLabel="Save as Custom Resources"
-                confirmText="Save As Custom Resources"
+                confirmText="Yes"
                 isLoading={isSaving}
                 isOpen={savingIds.length !== 0}
                 onConfirm={onConfirmSavePolicyAsCustomResource}
@@ -568,16 +568,14 @@ function PoliciesTable({
             >
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                     <FlexItem>
-                        The selected polices will be saved as kubernetes custom resources. Any
-                        existing policy with a name that matches the{' '}
-                        <code className="pf-v5-u-font-family-monospace">policyName</code> field of a
-                        saved custom resource will be overwritten when the custom resource is added
-                        to a tracked git repository.
+                        Clicking <strong>Yes</strong> saves the selected policies as Kubernetes
+                        custom resources (YAML).
                     </FlexItem>
                     <FlexItem>
-                        To prevent this behavior, edit the{' '}
-                        <code className="pf-v5-u-font-family-monospace">policyName</code> field
-                        before committing the file to the repository.
+                        <strong>Important</strong>: If you are committing the saved custom resources
+                        to a source control repository, replace the policy name in the{' '}
+                        <code className="pf-v5-u-font-family-monospace">policyName</code> field to
+                        avoid overwriting existing policies.
                     </FlexItem>
                 </Flex>
             </ConfirmationModal>
