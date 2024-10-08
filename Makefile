@@ -487,6 +487,7 @@ main-build-dockerized: build-volumes
 main-build-nodeps: central-build-nodeps migrator-build-nodeps config-controller-build-nodeps
 	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/collection
 	$(GOBUILD) sensor/upgrader
+	$(GOBUILD) sensor/init-tls-certs
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
 endif
