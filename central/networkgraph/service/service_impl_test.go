@@ -143,22 +143,15 @@ func (s *NetworkGraphServiceTestSuite) TestGenerateNetworkGraphWithAllAccessAndL
 }
 
 func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkEntities() {
-	ctx := sac.WithGlobalAccessScopeChecker(context.Background(),
-		sac.TestScopeCheckerCoreFromFullScopeMap(s.T(),
-			sac.TestScopeMap{
-				storage.Access_READ_ACCESS: {
-					resources.Deployment.Resource: &sac.TestResourceScope{
-						Clusters: map[string]*sac.TestClusterScope{
-							"mycluster": {Namespaces: []string{"foo"}},
-						},
-					},
-					resources.NetworkGraph.Resource: &sac.TestResourceScope{
-						Clusters: map[string]*sac.TestClusterScope{
-							"mycluster": {Namespaces: []string{"foo"}},
-						},
-					},
-				},
-			}))
+	ctx := sac.WithGlobalAccessScopeChecker(
+		context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment, resources.NetworkGraph),
+			sac.ClusterScopeKeys("mycluster"),
+			sac.NamespaceScopeKeys("foo"),
+		),
+	)
 
 	req := v1.GetExternalNetworkEntitiesRequest{
 		ClusterId: "mycluster",
