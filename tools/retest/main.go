@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v60/github"
+	"github.com/pkg/errors"
 )
 
 // allowedCheckFailures defines a set of PR checks that should not prevent the retest job starting
@@ -197,5 +198,5 @@ func shouldRetestFailedStatuses(statuses map[string]string, comments []string) e
 			return nil
 		}
 	}
-	return fmt.Errorf("job has not failed")
+	return errors.New("job has not failed")
 }
