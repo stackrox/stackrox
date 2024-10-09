@@ -2,7 +2,7 @@
 # A library of bash functions useful for installing operator using OLM.
 
 declare -r KUTTL="${KUTTL:-kubectl-kuttl}"
-declare -r USE_MIDSTREAM_IMAGES=${USE_MIDSTREAM_IMAGES:-false}
+declare -r INSTALL_PLAN_APPROVAL=${INSTALL_PLAN_APPROVAL:-Manual}
 # `declare` ignores `errexit`: http://mywiki.wooledge.org/BashFAQ/105
 ROOT_DIR="$(dirname "${BASH_SOURCE[0]}")/../.."
 readonly ROOT_DIR
@@ -40,15 +40,19 @@ function apply_operator_manifests() {
       disable_security_context_config=""
   fi
 
-  local install_plan_approval
   local starting_csv
-  if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-    install_plan_approval="Automatic"
+  case "${INSTALL_PLAN_APPROVAL}" in
+  Automatic)
     starting_csv="null"
-  else
-    install_plan_approval="Manual"
+    ;;
+  Manual)
     starting_csv="rhacs-operator.${starting_csv_version}"
-  fi
+    ;;
+  *)
+    log "Unsupported \$INSTALL_PLAN_APPROVAL ${INSTALL_PLAN_APPROVAL}"
+    return 1
+    ;;
+  esac
   env -i PATH="${PATH}" \
     INDEX_IMAGE_TAG="${index_image_tag}" \
     STARTING_CSV="${starting_csv}" \
@@ -56,7 +60,7 @@ function apply_operator_manifests() {
     OPERATOR_CHANNEL="${operator_channel}" \
     INDEX_IMAGE_REPO="${index_image_repo}" \
     DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
-    INSTALL_PLAN_APPROVAL="${install_plan_approval}" \
+    INSTALL_PLAN_APPROVAL="${INSTALL_PLAN_APPROVAL}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
 }
