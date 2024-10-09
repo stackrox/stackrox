@@ -10631,10 +10631,6 @@
               {
                 "name": "CERTIFIED_RHEL_CVES_UNAVAILABLE",
                 "integer": 3
-              },
-              {
-                "name": "UNSUPPORTED_NODE_INDEXER",
-                "integer": 4
               }
             ]
           },

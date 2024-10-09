@@ -794,8 +794,7 @@
         "UNSET",
         "UNSUPPORTED",
         "KERNEL_UNSUPPORTED",
-        "CERTIFIED_RHEL_CVES_UNAVAILABLE",
-        "UNSUPPORTED_NODE_INDEXER"
+        "CERTIFIED_RHEL_CVES_UNAVAILABLE"
       ],
       "default": "UNSET"
     },
