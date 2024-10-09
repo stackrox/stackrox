@@ -108,7 +108,7 @@ func toStorageNotes(notes []v4.VulnerabilityReport_Note) []storage.NodeScan_Note
 		case v4.VulnerabilityReport_NOTE_UNSPECIFIED:
 			convertedNotes = append(convertedNotes, storage.NodeScan_UNSET)
 		default:
-			log.Warnf("encountered unknown Vulnerability Report Note type while converting")
+			log.Warnf("encountered unknown Vulnerability Report Note type while converting: %s", n.String())
 		}
 	}
 	return convertedNotes

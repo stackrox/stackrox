@@ -39,9 +39,15 @@ func (s *indexReportConvertSuite) TestEmptyReportConversionNoPanic() {
 		Notes:                  nil,
 	}
 
-	actual := ToNodeScan(r)
+	var actual *storage.NodeScan
 
+	s.NotPanics(func() {
+		actual = ToNodeScan(r)
+	})
+
+	s.NotNil(actual)
 	s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
+
 }
 
 func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
@@ -56,7 +62,7 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 
 	actual := toStorageComponents(in)
 
-	s.Equal(2, len(actual))
+	s.Len(len(actual), 2)
 	for _, c := range actual {
 		// Ensure that each of the components track the expected CVE
 		protoassert.SliceContains(s.T(), c.GetVulns(), expectedCVE)
