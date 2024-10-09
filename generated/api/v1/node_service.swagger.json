@@ -229,11 +229,13 @@
         },
         "publishedOn": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "This indicates the timestamp when the cve was first published in the cve feeds."
         },
         "createdAt": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in the system."
         },
         "lastModified": {
           "type": "string",
@@ -580,11 +582,13 @@
         },
         "firstSystemOccurrence": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
         },
         "firstImageOccurrence": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in this image."
         },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"
@@ -617,10 +621,12 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "A unique ID identifying this node."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "The (host)name of the node. Might or might not be the same as ID."
         },
         "taints": {
           "type": "array",
@@ -683,7 +689,8 @@
           "description": "From NodeInfo. Operating system reported by the node (ex: linux)."
         },
         "osImage": {
-          "type": "string"
+          "type": "string",
+          "description": "From NodeInfo. OS image reported by the node from /etc/os-release."
         },
         "kubeletVersion": {
           "type": "string"
@@ -697,7 +704,8 @@
         },
         "k8sUpdated": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Time we received an update from Kubernetes."
         },
         "scan": {
           "$ref": "#/definitions/storageNodeScan"

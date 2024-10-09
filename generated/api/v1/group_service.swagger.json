@@ -36,6 +36,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "Unique identifier for group properties and respectively the group.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -368,7 +369,8 @@
           "description": "GroupProperties define the properties of a group, applying to users when their properties match.\nThey also uniquely identify the group with the props.id field."
         },
         "roleName": {
-          "type": "string"
+          "type": "string",
+          "description": "This is the name of the role that will apply to users in this group."
         }
       },
       "description": "Group is a GroupProperties : Role mapping."
@@ -377,7 +379,8 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for group properties and respectively the group."
         },
         "traits": {
           "$ref": "#/definitions/storageTraits"

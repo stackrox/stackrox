@@ -327,7 +327,8 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Config holds auth provider specific configuration. Each configuration options\nare different based on the given auth provider type.\nOIDC:\n- \"issuer\": the OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.\n- \"client_id\": the client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.\n- \"client_secret\": the client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.\n- \"do_not_use_client_secret\": set to \"true\" if you want to create a configuration with only\n  a client ID and no client secret.\n- \"mode\": the OIDC callback mode, choosing from \"fragment\", \"post\", or \"query\".\n- \"disable_offline_access_scope\": set to \"true\" if no offline tokens shall be issued.\n- \"extra_scopes\": a space-delimited string of additional scopes to request in addition to \"openid profile email\"\n  according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.\n\nOpenShift Auth: supports no extra configuration options.\n\nUser PKI:\n- \"keys\": the trusted certificates PEM encoded.\n\nSAML:\n- \"sp_issuer\": the service provider issuer according to https://datatracker.ietf.org/doc/html/rfc7522#section-3.\n- \"idp_metadata_url\": the metadata URL according to https://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf.\n- \"idp_issuer\": the IdP issuer.\n- \"idp_cert_pem\": the cert PEM encoded for the IdP endpoint.\n- \"idp_sso_url\": the IdP SSO URL.\n- \"idp_nameid_format\": the IdP name ID format.\n\nIAP:\n- \"audience\": the audience to use."
         },
         "loginUrl": {
           "type": "string",
@@ -515,7 +516,8 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Config holds auth provider specific configuration. Each configuration options\nare different based on the given auth provider type.\nOIDC:\n- \"issuer\": the OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.\n- \"client_id\": the client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.\n- \"client_secret\": the client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.\n- \"do_not_use_client_secret\": set to \"true\" if you want to create a configuration with only\n  a client ID and no client secret.\n- \"mode\": the OIDC callback mode, choosing from \"fragment\", \"post\", or \"query\".\n- \"disable_offline_access_scope\": set to \"true\" if no offline tokens shall be issued.\n- \"extra_scopes\": a space-delimited string of additional scopes to request in addition to \"openid profile email\"\n  according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.\n\nOpenShift Auth: supports no extra configuration options.\n\nUser PKI:\n- \"keys\": the trusted certificates PEM encoded.\n\nSAML:\n- \"sp_issuer\": the service provider issuer according to https://datatracker.ietf.org/doc/html/rfc7522#section-3.\n- \"idp_metadata_url\": the metadata URL according to https://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf.\n- \"idp_issuer\": the IdP issuer.\n- \"idp_cert_pem\": the cert PEM encoded for the IdP endpoint.\n- \"idp_sso_url\": the IdP SSO URL.\n- \"idp_nameid_format\": the IdP name ID format.\n\nIAP:\n- \"audience\": the audience to use."
         },
         "loginUrl": {
           "type": "string",
@@ -563,7 +565,8 @@
       "type": "object",
       "properties": {
         "serialStr": {
-          "type": "string"
+          "type": "string",
+          "title": "The serial number in decimal representation."
         },
         "serial": {
           "type": "string",
@@ -710,7 +713,8 @@
       "type": "object",
       "properties": {
         "externalToken": {
-          "type": "string"
+          "type": "string",
+          "description": "The external authentication token. The server will mask the value of this credential in responses and logs."
         },
         "type": {
           "type": "string"
