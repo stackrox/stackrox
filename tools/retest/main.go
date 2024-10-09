@@ -93,7 +93,11 @@ issues:
 			continue
 		}
 		log.Printf("#%d jobs to retest: %s", prNumber, strings.Join(jobsToRetest, ", "))
-		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestFailedStatuses(statuses, userComments))
+		shouldRetestErr := shouldRetestFailedStatuses(statuses, userComments)
+		if shouldRetestErr != nil {
+			log.Printf("PR %d retest status due to failures: %v", prNumber, shouldRetestErr)
+		}
+		newComments := commentsToCreate(statuses, jobsToRetest, shouldRetestErr == nil)
 		createComment(ctx, client, prNumber, strings.Join(newComments, "\n"))
 	}
 	return nil
@@ -109,6 +113,7 @@ func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldR
 	for _, job := range jobsToRetest {
 		state := statuses[job]
 		if state == "pending" {
+			log.Printf("Not adding comment for job %q because it is already running", job)
 			continue
 		}
 		comments = append(comments, "/test "+job)
@@ -162,7 +167,9 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 	missingTests := make([]string, 0, len(jobsToRetest))
 	for job, times := range jobsToRetest {
 		toTest := times - testedJobs[job]
+		log.Printf("Job %q has been tested already %d out of %d times", job, testedJobs[job], times)
 		if toTest < 1 {
+			log.Printf("Exceeded number of retests for %q", job)
 			continue
 		}
 		missingTests = append(missingTests, job)
@@ -174,7 +181,7 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 
 const retestComment = "/retest"
 
-func shouldRetestFailedStatuses(statuses map[string]string, comments []string) bool {
+func shouldRetestFailedStatuses(statuses map[string]string, comments []string) error {
 	retested := 0
 	for _, c := range comments {
 		if c == retestComment {
@@ -182,13 +189,13 @@ func shouldRetestFailedStatuses(statuses map[string]string, comments []string) b
 		}
 	}
 	if retested > 3 {
-		return false
+		return fmt.Errorf("job has been retested already %d times", retested)
 	}
 
 	for _, status := range statuses {
 		if status == "failure" {
-			return true
+			return nil
 		}
 	}
-	return false
+	return fmt.Errorf("job has not failed")
 }
