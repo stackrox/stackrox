@@ -19,7 +19,6 @@ slack_user=''
 # TODO: please keep the list in the alphabetic order. It is simpler to maintain it this way.
 case "$github_login" in
 '0x656b694d')       slack_user='U02MJ72K1B5' ;;
-'parametalol')      slack_user='U02MJ72K1B5' ;;
 'BradLugo')         slack_user='U042Z3TSZU3' ;;
 'GrimmiMeloni')     slack_user='U048VH2JZ1C' ;;
 'JoukoVirtanen')    slack_user='U033Y28GYN4' ;;
@@ -59,13 +58,14 @@ case "$github_login" in
 'kylape')           slack_user='UGJML86DD'   ;;
 'ludydoo')          slack_user='U04TFDR57KQ' ;;
 'lvalerom')         slack_user='U02SJTV567N' ;;
+'mclasmeier')       slack_user='U02DKH1LQ5N' ;;
 'md2119')           slack_user='U01Q57U4JFK' ;;
 'mfosterrox')       slack_user='U01PMH71ACU' ;;
 'misberner')        slack_user='U01PFA6NUG3' ;;
 'msugakov')         slack_user='U020QJZCQAH' ;;
-'mclasmeier')       slack_user='U02DKH1LQ5N' ;;
 'mtodor')           slack_user='U039LQ48PT7' ;;
 'ovalenti')         slack_user='U03F2F9EXUL' ;;
+'parametalol')      slack_user='U02MJ72K1B5' ;;
 'pedrottimark')     slack_user='U01RN8V8DEH' ;;
 'porridge')         slack_user='U020XCUG2LA' ;;
 'rhybrillou')       slack_user='U02GPRG4NHF' ;;
