@@ -23,7 +23,7 @@ func (s *indexReportConvertSuite) TestToNodeInventory() {
 	actual := ToNodeScan(r)
 
 	s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
-	s.Equal(1, len(actual.GetComponents()))
+	s.Len(actual.GetComponents(), 1)
 	s.Equal("openssh-clients", actual.GetComponents()[0].GetName())
 	s.Equal("8.7p1-38.el9", actual.GetComponents()[0].GetVersion())
 	s.Equal("RHSA-2024:4616", actual.GetComponents()[0].GetVulns()[0].GetCve())
@@ -62,7 +62,7 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 
 	actual := toStorageComponents(in)
 
-	s.Len(len(actual), 2)
+	s.Len(actual, 2)
 	for _, c := range actual {
 		// Ensure that each of the components track the expected CVE
 		protoassert.SliceContains(s.T(), c.GetVulns(), expectedCVE)
