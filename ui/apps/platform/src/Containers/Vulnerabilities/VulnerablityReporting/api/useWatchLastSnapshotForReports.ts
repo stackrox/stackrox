@@ -5,17 +5,13 @@ import { ReportConfiguration, ReportSnapshot } from 'services/ReportsService.typ
 import useInterval from 'hooks/useInterval';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useRestQuery from 'hooks/useRestQuery';
-import { getRequestQueryString } from './apiUtils';
 
 async function fetchLastReportJobForConfiguration(
     reportConfigurationId: string
 ): Promise<ReportSnapshot> {
-    // Query for the current user's last report job
-    const query = getRequestQueryString({ 'Report state': ['PREPARING', 'WAITING'] });
-
     const reportSnapshot = await fetchReportHistory({
         id: reportConfigurationId,
-        query,
+        query: '',
         page: 1,
         perPage: 1,
         showMyHistory: true,
@@ -27,7 +23,7 @@ async function fetchLastReportJobForConfiguration(
     return reportSnapshot[0] ?? null;
 }
 
-type ReportSnapshotLookup = Record<string, ReportSnapshot | null>;
+type ReportSnapshotLookup = Partial<Record<string, ReportSnapshot | null>>;
 
 type Result = {
     reportSnapshots: ReportSnapshotLookup;
@@ -42,7 +38,7 @@ export type FetchLastSnapshotReturn = Result & {
 export function useWatchLastSnapshotForReports(
     reportConfigurations: ReportConfiguration | ReportConfiguration[] | null
 ): FetchLastSnapshotReturn {
-    const fetchSnapshotsCallback = useCallback(async () => {
+    const fetchSnapshotsCallback = useCallback(() => {
         if (!reportConfigurations) {
             const result: ReportSnapshotLookup = {};
             return Promise.resolve(result);

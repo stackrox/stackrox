@@ -28,10 +28,11 @@ import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
 import { TableUIState } from 'utils/getTableUIState';
+import { getPercentage } from 'utils/mathUtils';
 
 import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
-import { calculateCompliancePercentage, getStatusCounts } from './compliance.coverage.utils';
+import { getStatusCounts } from './compliance.coverage.utils';
 import ControlLabels from './components/ControlLabels';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
@@ -133,10 +134,7 @@ function ProfileChecksTable({
                                         otherCount,
                                         totalCount,
                                     } = getStatusCounts(checkStats);
-                                    const passPercentage = calculateCompliancePercentage(
-                                        passCount,
-                                        totalCount
-                                    );
+                                    const passPercentage = getPercentage(passCount, totalCount);
                                     const progressBarId = `progress-bar-${checkName}`;
                                     const isRowExpanded = expandedRows.includes(rowIndex);
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
+	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 )
@@ -36,5 +37,5 @@ func (s *factoryImpl) GetFragment(ctx context.Context, clusterID string) (pipeli
 			return nil, errors.Wrapf(err, "creating flow store for cluster %s", clusterID)
 		}
 	}
-	return NewPipeline(clusterID, newFlowPersister(flowStore, s.networkBaselines)), nil
+	return NewPipeline(clusterID, newFlowPersister(flowStore, s.networkBaselines, entityDataStore.Singleton())), nil
 }

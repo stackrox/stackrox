@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"

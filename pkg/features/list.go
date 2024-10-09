@@ -101,10 +101,6 @@ var (
 	// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
 	SensorSingleScanPerImage = registerFeature("Sensor will only allow a single active scan per image", "ROX_SENSOR_SINGLE_SCAN", enabled)
 
-	// SensorLazyTLSChecks when set to enabled forces Sensor to perform lazy TLS checks during local scanning, otherwise the
-	// checks will be performed on startup and immediately when secrets are discovered.
-	SensorLazyTLSChecks = registerFeature("Sensor will perform lazy TLS checks instead of immediate", "ROX_SENSOR_LAZY_TLS_CHECKS", enabled)
-
 	// PolicyAsCode enables policy definition and lifecycle changes to be managed in external repositories.
 	PolicyAsCode = registerFeature("Enables policy definition and lifecycle changes to be managed in external repositories.", "ROX_POLICY_AS_CODE")
 
@@ -125,4 +121,11 @@ var (
 
 	// ClusterRegistrationSecrets enables support for Cluster Registration Secrets (CRS), the next-gen init-bundles.
 	ClusterRegistrationSecrets = registerFeature("Enable support for Cluster Registration Secrets (CRS)", "ROX_CLUSTER_REGISTRATION_SECRETS")
+
+	// SensorPullSecretsByName when set to enabled will cause Sensor to capture pull secrets by secret name and registry host instead of just
+	// registry host.
+	SensorPullSecretsByName = registerFeature("Sensor will capture pull secrets by name and registry host instead of just registry host", "ROX_SENSOR_PULL_SECRETS_BY_NAME", enabled)
+
+	// ExternalIPs enables storing detailed discovered external IPs
+	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
 )

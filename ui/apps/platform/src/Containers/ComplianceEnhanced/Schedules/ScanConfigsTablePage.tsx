@@ -47,6 +47,9 @@ import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
+import MyLastJobStatusTh from 'Components/ReportJob/MyLastJobStatusTh';
+import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
+import useAuthStatus from 'hooks/useAuthStatus';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import {
@@ -54,9 +57,12 @@ import {
     getTimeWithHourMinuteFromISO8601,
 } from './compliance.scanConfigs.utils';
 import ScanConfigActionsColumn from './ScanConfigActionsColumn';
+import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapshotForComplianceReports';
 
 type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
+    isReportJobsEnabled: boolean;
+    isComplianceReportingEnabled: boolean;
 };
 
 const CreateScanConfigButton = () => {
@@ -75,7 +81,11 @@ const defaultSortOption = {
 
 function ScanConfigsTablePage({
     hasWriteAccessForCompliance,
+    isReportJobsEnabled,
+    isComplianceReportingEnabled,
 }: ScanConfigsTablePageProps): React.ReactElement {
+    const { currentUser } = useAuthStatus();
+
     const [scanConfigsToDelete, setScanConfigsToDelete] = useState<
         ComplianceScanConfigurationStatus[]
     >([]);
@@ -93,10 +103,18 @@ function ScanConfigsTablePage({
         [sortOption, page, perPage]
     );
     const { data: listData, isLoading, error, refetch } = useRestQuery(listQuery);
+    const { complianceReportSnapshots, isLoading: isLoadingSnapshots } =
+        useWatchLastSnapshotForComplianceReports(listData?.configurations);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 
-    const colSpan = hasWriteAccessForCompliance ? 6 : 5;
+    let colSpan = 5;
+    if (hasWriteAccessForCompliance) {
+        colSpan += 1;
+    }
+    if (isReportJobsEnabled) {
+        colSpan += 1;
+    }
 
     function openDeleteModal(scanConfigs) {
         setScanConfigsToDelete(scanConfigs);
@@ -198,6 +216,10 @@ function ScanConfigsTablePage({
             const scanConfigUrl = generatePath(scanConfigDetailsPath, {
                 scanConfigId: id,
             });
+            const snapshot = complianceReportSnapshots[id];
+            const isSnapshotStatusPending =
+                snapshot?.reportStatus?.runState === 'PREPARING' ||
+                snapshot?.reportStatus?.runState === 'WAITING';
 
             return (
                 <Tr key={id}>
@@ -219,6 +241,16 @@ function ScanConfigsTablePage({
                     <Td dataLabel="Profiles">
                         {displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}
                     </Td>
+                    {isReportJobsEnabled && (
+                        <Td dataLabel="My last job status">
+                            <MyLastJobStatus
+                                snapshot={snapshot}
+                                isLoadingSnapshots={isLoadingSnapshots}
+                                currentUserId={currentUser.userId}
+                                baseDownloadURL="" // TODO: Put the correct URL here
+                            />
+                        </Td>
+                    )}
                     {hasWriteAccessForCompliance && (
                         <Td isActionCell>
                             <ScanConfigActionsColumn
@@ -227,6 +259,9 @@ function ScanConfigsTablePage({
                                 handleSendReport={handleSendReport}
                                 handleGenerateDownload={handleGenerateDownload}
                                 scanConfigResponse={scanSchedule}
+                                isSnapshotStatusPending={isSnapshotStatusPending}
+                                isReportJobsEnabled={isReportJobsEnabled}
+                                isComplianceReportingEnabled={isComplianceReportingEnabled}
                             />
                         </Td>
                     )}
@@ -343,6 +378,7 @@ function ScanConfigsTablePage({
                                 <Th>Last scanned</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
+                                {isReportJobsEnabled && <MyLastJobStatusTh />}
                                 {hasWriteAccessForCompliance && <Td />}
                             </Tr>
                         </Thead>

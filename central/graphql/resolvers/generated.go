@@ -547,6 +547,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("CosignSignature", []string{
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CvssScoreVersion(0)))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
 		"mirror: String!",
@@ -686,6 +687,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cvssMetrics: [CVSSScore]!",
 		"id: ID!",
 		"impactScore: Float!",
+		"nvdScoreVersion: CvssScoreVersion!",
 		"nvdcvss: Float!",
 		"operatingSystem: String!",
 		"severity: VulnerabilitySeverity!",
@@ -896,6 +898,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("NetworkEntityInfo_ExternalSource", []string{
 		"default: Boolean!",
+		"discovered: Boolean!",
 		"name: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
@@ -6739,6 +6742,24 @@ func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) [
 	return value
 }
 
+func toCvssScoreVersion(value *string) storage.CvssScoreVersion {
+	if value != nil {
+		return storage.CvssScoreVersion(storage.CvssScoreVersion_value[*value])
+	}
+	return storage.CvssScoreVersion(0)
+}
+
+func toCvssScoreVersions(values *[]string) []storage.CvssScoreVersion {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CvssScoreVersion, len(*values))
+	for i, v := range *values {
+		output[i] = toCvssScoreVersion(&v)
+	}
+	return output
+}
+
 type dataSourceResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -8180,6 +8201,11 @@ func (resolver *imageCVEResolver) Id(ctx context.Context) graphql.ID {
 func (resolver *imageCVEResolver) ImpactScore(ctx context.Context) float64 {
 	value := resolver.data.GetImpactScore()
 	return float64(value)
+}
+
+func (resolver *imageCVEResolver) NvdScoreVersion(ctx context.Context) string {
+	value := resolver.data.GetNvdScoreVersion()
+	return value.String()
 }
 
 func (resolver *imageCVEResolver) Nvdcvss(ctx context.Context) float64 {
@@ -10373,6 +10399,11 @@ func (resolver *Resolver) wrapNetworkEntityInfo_ExternalSourcesWithContext(ctx c
 
 func (resolver *networkEntityInfo_ExternalSourceResolver) Default(ctx context.Context) bool {
 	value := resolver.data.GetDefault()
+	return value
+}
+
+func (resolver *networkEntityInfo_ExternalSourceResolver) Discovered(ctx context.Context) bool {
+	value := resolver.data.GetDiscovered()
 	return value
 }
 

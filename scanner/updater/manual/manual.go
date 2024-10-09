@@ -20,6 +20,7 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
+// Vulnerability represents a manually entered vulnerability found int vulns.yaml.
 type Vulnerability struct {
 	Name               string `yaml:"Name"`
 	Description        string `yaml:"Description"`

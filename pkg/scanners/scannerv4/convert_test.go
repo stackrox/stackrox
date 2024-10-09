@@ -1,6 +1,7 @@
 package scannerv4
 
 import (
+	"fmt"
 	"testing"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -288,11 +289,8 @@ func TestComponents(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			cs := components(tc.metadata, tc.report)
-			assert.Len(t, cs, len(tc.expected))
-			for i, got := range cs {
-				assert.Truef(t, tc.expected[i].EqualVT(got), "expected: %+#v\ngot: %+#v", tc.expected[i], got)
-			}
+			got := components(tc.metadata, tc.report)
+			protoassert.SlicesEqual(t, tc.expected, got, fmt.Sprintf("expected: %+#v\ngot: %+#v", tc.expected, got))
 		})
 	}
 }

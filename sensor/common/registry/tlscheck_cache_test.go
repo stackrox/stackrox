@@ -4,13 +4,17 @@ import (
 	"context"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/registry/metrics"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCheckTLS(t *testing.T) {
-	ctx := context.Background()
+var (
+	ctx = context.Background()
+)
 
+func TestCheckTLS(t *testing.T) {
 	t.Run("secure", func(t *testing.T) {
 		c := newTLSCheckCache(alwaysSecureCheckTLS)
 		secure, skip, err := c.CheckTLS(ctx, "fake")
@@ -108,4 +112,25 @@ func runAsyncTLSChecks(cache *tlsCheckCacheImpl, regs []string) {
 	}
 
 	wg.Wait()
+}
+
+func TestMetrics(t *testing.T) {
+	cache := newTLSCheckCache(alwaysSecureCheckTLS)
+	_, _, err := cache.CheckTLS(ctx, "fake")
+
+	c := metrics.TLSCheckCount
+	// Counter metrics cannot be reset, so use the current
+	// value as a base and test relative changes.
+	base := testutil.ToFloat64(c)
+
+	assert.NoError(t, err)
+	assert.Equal(t, base, testutil.ToFloat64(c))
+
+	_, _, err = cache.CheckTLS(ctx, "fake")
+	assert.NoError(t, err)
+	assert.Equal(t, base+1, testutil.ToFloat64(c))
+
+	_, _, err = cache.CheckTLS(ctx, "fake")
+	assert.NoError(t, err)
+	assert.Equal(t, base+2, testutil.ToFloat64(c))
 }

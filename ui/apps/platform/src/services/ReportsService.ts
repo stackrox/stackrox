@@ -4,16 +4,16 @@ import {
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
-    ReportNotificationMethod,
-    ReportStatus,
     RunReportResponse,
 } from 'services/ReportsService.types';
 import { ApiSortOption } from 'types/search';
 import { getPaginationParams } from 'utils/searchUtils';
+import { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
 import axios from './instance';
 import { Empty } from './types';
 
 // The following functions are built around the new VM Reporting Enhancements
+export const reportDownloadURL = '/api/reports/jobs/download';
 
 // @TODO: Same logic is used in fetchReportConfigurations. Maybe consider something more DRY
 export function fetchReportConfigurationsCount({

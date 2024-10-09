@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/errox"
 )
@@ -103,7 +103,7 @@ func validateList[T hasIDAndCPE](l []T, fieldName string, validateF func(T) erro
 		if o.GetId() == "" {
 			return fmt.Errorf("%s element #%d: Id is empty", fieldName, n)
 		}
-		_, err := cpe.UnbindFS(o.GetCpe())
+		_, err := cpe.Unbind(o.GetCpe())
 		if err != nil {
 			return fmt.Errorf("%s element #%d (id: %q): invalid CPE: %w", fieldName, n, o.GetId(), err)
 		}

@@ -1,3 +1,4 @@
+import Raven from 'raven-js';
 import axios from 'services/instance';
 import qs from 'qs';
 
@@ -5,9 +6,11 @@ import { ApiSortOption, SearchFilter } from 'types/search';
 import { SlimUser } from 'types/user.proto';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
+import { getQueryString } from 'utils/queryStringUtils';
+import { Snapshot } from 'types/reportJob';
 import { ComplianceProfileSummary, complianceV2Url } from './ComplianceCommon';
 import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
-import { NotifierConfiguration, ReportStatus } from './ReportsService.types';
+import { NotifierConfiguration } from './ReportsService.types';
 import { Empty } from './types';
 
 const complianceScanConfigBaseUrl = `${complianceV2Url}/scan/configurations`;
@@ -79,13 +82,9 @@ export type ComplianceScanConfigurationStatus = {
     lastExecutedTime: string | null; // either ISO 8601 date string or null when scan is in progress
 };
 
-// @TODO: This may change and be moved around depending on how backend implements it.
-export type ComplianceScanSnapshot = {
-    reportJobId: string;
-    reportStatus: ReportStatus;
-    user: SlimUser;
-    isDownloadAvailable: boolean;
-    scanConfig: ComplianceScanConfigurationStatus;
+export type ComplianceReportSnapshot = Snapshot & {
+    scanConfigId: string;
+    reportData: ComplianceScanConfigurationStatus;
 };
 
 export type ListComplianceScanConfigurationsResponse = {
@@ -203,7 +202,7 @@ export function runComplianceReport(
     // @TODO: Add the scanNotificationMethod to the PUT Body when the API can handle it
     // const body = { scanConfigId, scanNotificationMethod };
     return axios
-        .put<ComplianceRunReportResponse>(`${complianceScanConfigBaseUrl}/reports/run`, body)
+        .post<ComplianceRunReportResponse>(`${complianceScanConfigBaseUrl}/reports/run`, body)
         .then((response) => {
             return response.data;
         });
@@ -238,4 +237,51 @@ export function listComplianceScanConfigClusterProfiles(
             `${complianceScanConfigBaseUrl}/clusters/${clusterId}/profiles/collection?${params}`
         )
         .then((response) => response.data);
+}
+
+/*
+ *  Fetches a list of snapshots (scan executions) from a given scan config
+ */
+
+export type FetchComplianceReportHistoryServiceProps = {
+    id: string;
+    query: string;
+    page: number;
+    perPage: number;
+    sortOption: ApiSortOption;
+    showMyHistory: boolean;
+};
+
+export type ReportHistoryResponse = {
+    complianceReportSnapshots: ComplianceReportSnapshot[];
+};
+
+export function fetchComplianceReportHistory({
+    id,
+    query,
+    page,
+    perPage,
+    sortOption,
+    showMyHistory,
+}: FetchComplianceReportHistoryServiceProps): Promise<ComplianceReportSnapshot[]> {
+    const params = getQueryString(
+        {
+            reportParamQuery: {
+                query,
+                pagination: getPaginationParams({ page, perPage, sortOption }),
+            },
+        },
+        { arrayFormat: 'repeat', allowDots: true, addQueryPrefix: false }
+    );
+    return axios
+        .get<ReportHistoryResponse>(
+            `/v2/compliance/scan/configuration/${id}/reports/${showMyHistory ? 'my-history' : 'history'}?${params}`
+        )
+        .then((response) => {
+            return response.data.complianceReportSnapshots;
+        })
+        .catch((error) => {
+            Raven.captureException(error);
+            return Promise.reject(error);
+        });
 }

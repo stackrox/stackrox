@@ -11,23 +11,26 @@ import {
 
 import {
     ComplianceScanConfigurationStatus,
-    ComplianceScanSnapshot,
+    ComplianceReportSnapshot,
 } from 'services/ComplianceScanConfigurationService';
 import JobDetails from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/JobDetails';
 import ReportJobsTable from 'Components/ReportJob/ReportJobsTable';
-import { RunState } from 'services/ReportsService.types';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { ensureBoolean, ensureStringArray } from 'utils/ensure';
 import useURLStringUnion from 'hooks/useURLStringUnion';
+import { RunState } from 'types/reportJob';
 import ConfigDetails from './ConfigDetails';
 import ReportRunStatesFilter, { ensureReportRunStates } from './ReportRunStatesFilter';
 import MyJobsFilter from './MyJobsFilter';
 
 function createMockData(scanConfig: ComplianceScanConfigurationStatus) {
-    const snapshots: ComplianceScanSnapshot[] = [
+    const snapshots: ComplianceReportSnapshot[] = [
         {
             reportJobId: 'ab1c03ae-9707-43d1-932d-f948afb67b53',
+            scanConfigId: scanConfig.id,
+            name: scanConfig.scanName,
+            description: scanConfig.scanConfig.description,
             reportStatus: {
                 completedAt: '2024-08-27T00:01:40.569402380Z',
                 errorMsg:
@@ -36,30 +39,31 @@ function createMockData(scanConfig: ComplianceScanConfigurationStatus) {
                 reportRequestType: 'SCHEDULED',
                 runState: 'FAILURE',
             },
+            reportData: scanConfig,
             user: {
                 id: 'sso:3e30efee-45f0-49d3-aec1-2861fcb3faf6:c02da449-f1c9-4302-afc7-3cbf450f2e0c',
                 name: 'Test User',
             },
             isDownloadAvailable: false,
-            scanConfig,
         },
     ];
     return snapshots;
 }
 
-function getJobId(snapshot: ComplianceScanSnapshot) {
-    return snapshot.scanConfig.id;
+function getJobId(snapshot: ComplianceReportSnapshot) {
+    return snapshot.scanConfigId;
 }
 
-function getConfigName(snapshot: ComplianceScanSnapshot) {
-    return snapshot.scanConfig.scanName;
+function getConfigName(snapshot: ComplianceReportSnapshot) {
+    return snapshot.name;
 }
 
 type ReportJobsProps = {
     scanConfig: ComplianceScanConfigurationStatus | undefined;
+    isComplianceReportingEnabled: boolean;
 };
 
-function ReportJobs({ scanConfig }: ReportJobsProps) {
+function ReportJobs({ scanConfig, isComplianceReportingEnabled }: ReportJobsProps) {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [isViewingOnlyMyJobs, setIsViewingOnlyMyJobs] = useURLStringUnion('viewOnlyMyJobs', [
@@ -136,7 +140,7 @@ function ReportJobs({ scanConfig }: ReportJobsProps) {
                 getConfigName={getConfigName}
                 onClearFilters={() => {}}
                 onDeleteDownload={() => {}}
-                renderExpandableRowContent={(snapshot: ComplianceScanSnapshot) => {
+                renderExpandableRowContent={(snapshot: ComplianceReportSnapshot) => {
                     return (
                         <>
                             <Card isFlat>
@@ -146,7 +150,10 @@ function ReportJobs({ scanConfig }: ReportJobsProps) {
                                         isDownloadAvailable={snapshot.isDownloadAvailable}
                                     />
                                     <Divider component="div" className="pf-v5-u-my-md" />
-                                    <ConfigDetails scanConfig={snapshot.scanConfig} />
+                                    <ConfigDetails
+                                        scanConfig={snapshot.reportData}
+                                        isComplianceReportingEnabled={isComplianceReportingEnabled}
+                                    />
                                 </CardBody>
                             </Card>
                         </>

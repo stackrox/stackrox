@@ -237,6 +237,7 @@ var (
 	ComplianceOperatorScanUpdateTime         = newFieldLabel("Compliance Scan Config Last Updated Time")
 	ComplianceOperatorResultCreateTime       = newFieldLabel("Compliance Check Result Created Time")
 	ComplianceOperatorScanLastExecutedTime   = newFieldLabel("Compliance Scan Last Executed Time")
+	ComplianceOperatorScanLastStartedTime    = newFieldLabel("Compliance Scan Last Started Time")
 	ComplianceOperatorRuleType               = newFieldLabel("Compliance Rule Type")
 	ComplianceOperatorScanSettingBindingName = newFieldLabel("Compliance Scan Setting Binding Name")
 	ComplianceOperatorSuiteName              = newFieldLabel("Compliance Suite Name")
@@ -343,7 +344,9 @@ var (
 	ComplianceLastScanMax = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
 
 	// External network sources fields
-	DefaultExternalSource = newFieldLabel("Default External Source")
+	DefaultExternalSource    = newFieldLabel("Default External Source")
+	DiscoveredExternalSource = newFieldLabel("Discovered External Source")
+	ExternalSourceAddress    = newFieldLabel("External Source Address")
 
 	// Report configurations search fields
 	ReportName     = newFieldLabel("Report Name")

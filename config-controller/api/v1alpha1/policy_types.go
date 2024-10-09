@@ -36,25 +36,91 @@ type EnforcementAction string
 
 // SecurityPolicySpec defines the desired state of SecurityPolicy
 type SecurityPolicySpec struct {
-	Description string   `json:"description,omitempty"`
-	Rationale   string   `json:"rationale,omitempty"`
-	Remediation string   `json:"remediation,omitempty"`
-	Disabled    bool     `json:"disabled,omitempty"`
-	Categories  []string `json:"categories,omitempty"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^[^\n\r\$]{5,128}$`
+	PolicyName string `json:"policyName,omitempty"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^[^\$]{0,800}$`
+	Description string `json:"description,omitempty"`
+	Rationale   string `json:"rationale,omitempty"`
+	Remediation string `json:"remediation,omitempty"`
+	Disabled    bool   `json:"disabled,omitempty"`
+	// +kubebuilder:validation:MinItems=1
+	Categories []string `json:"categories,omitempty"`
 	// +kubebuilder:validation:MinItems=1
 	LifecycleStages []LifecycleStage `json:"lifecycleStages,omitempty"`
 	EventSource     EventSource      `json:"eventSource,omitempty"`
 	Exclusions      []Exclusion      `json:"exclusions,omitempty"`
 	Scope           []Scope          `json:"scope,omitempty"`
+	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=UNSET_SEVERITY;LOW_SEVERITY;MEDIUM_SEVERITY;HIGH_SEVERITY;CRITICAL_SEVERITY
-	Severity           string               `json:"severity,omitempty"`
-	EnforcementActions []EnforcementAction  `json:"enforcementActions,omitempty"`
-	Notifiers          []string             `json:"notifiers,omitempty"`
+	Severity           string              `json:"severity,omitempty"`
+	EnforcementActions []EnforcementAction `json:"enforcementActions,omitempty"`
+	Notifiers          []string            `json:"notifiers,omitempty"`
+	// +kubebuilder:validation:MinItems=1
 	PolicySections     []PolicySection      `json:"policySections,omitempty"`
 	MitreAttackVectors []MitreAttackVectors `json:"mitreAttackVectors,omitempty"`
 	CriteriaLocked     bool                 `json:"criteriaLocked,omitempty"`
 	MitreVectorsLocked bool                 `json:"mitreVectorsLocked,omitempty"`
 	IsDefault          bool                 `json:"isDefault,omitempty"`
+}
+
+type Exclusion struct {
+	Name       string     `json:"name,omitempty"`
+	Deployment Deployment `json:"deployment,omitempty"`
+	Image      Image      `json:"image,omitempty"`
+	// +optional
+	// +kubebuilder:validation:Format="date-time"
+	Expiration string `json:"expiration,omitempty"`
+}
+
+type Deployment struct {
+	Name  string `json:"name,omitempty"`
+	Scope Scope  `json:"scope,omitempty"`
+}
+
+type Image struct {
+	Name string `json:"name,omitempty"`
+}
+
+type Scope struct {
+	Cluster   string `json:"cluster,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+	Label     Label  `json:"label,omitempty"`
+}
+
+type Label struct {
+	Key   string `json:"key,omitempty"`
+	Value string `json:"value,omitempty"`
+}
+
+type PolicySection struct {
+	SectionName  string        `json:"sectionName,omitempty"`
+	PolicyGroups []PolicyGroup `json:"policyGroups,omitempty"`
+}
+
+type PolicyGroup struct {
+	FieldName string `json:"fieldName,omitempty"`
+	// +kubebuilder:validation:Enum=OR;AND
+	BooleanOperator string        `json:"booleanOperator,omitempty"`
+	Negate          bool          `json:"negate,omitempty"`
+	Values          []PolicyValue `json:"values,omitempty"`
+}
+
+type PolicyValue struct {
+	Value string `json:"value,omitempty"`
+}
+
+type MitreAttackVectors struct {
+	Tactic     string   `json:"tactic,omitempty"`
+	Techniques []string `json:"techniques,omitempty"`
+}
+
+// SecurityPolicyStatus defines the observed state of SecurityPolicy
+type SecurityPolicyStatus struct {
+	Accepted bool   `json:"accepted"`
+	Message  string `json:"message"`
+	PolicyId string `json:"policyId"`
 }
 
 // IsValid runs validation checks against the SecurityPolicy spec
@@ -68,6 +134,7 @@ func (p SecurityPolicySpec) IsValid() (bool, error) {
 // ToProtobuf converts the SecurityPolicy spec into policy proto
 func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 	proto := storage.Policy{
+		Name:               p.PolicyName,
 		Description:        p.Description,
 		Rationale:          p.Rationale,
 		Remediation:        p.Remediation,
@@ -78,6 +145,7 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		CriteriaLocked:     p.CriteriaLocked,
 		MitreVectorsLocked: p.MitreVectorsLocked,
 		IsDefault:          p.IsDefault,
+		Source:             storage.PolicySource_DECLARATIVE,
 	}
 
 	for _, ls := range p.LifecycleStages {
@@ -92,8 +160,13 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 			Name: exclusion.Name,
 		}
 
-		if protoTS, err := protocompat.ParseRFC3339NanoTimestamp(exclusion.Expiration); err == nil {
+		if exclusion.Expiration != "" {
+			protoTS, err := protocompat.ParseRFC3339NanoTimestamp(exclusion.Expiration)
+			if err != nil {
+				return nil
+			}
 			protoExclusion.Expiration = protoTS
+
 		}
 
 		if exclusion.Deployment != (Deployment{}) {
@@ -191,61 +264,6 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 	}
 
 	return &proto
-}
-
-type Exclusion struct {
-	Name       string     `json:"name,omitempty"`
-	Deployment Deployment `json:"deployment,omitempty"`
-	Image      Image      `json:"image,omitempty"`
-	Expiration string     `json:"expiration,omitempty"`
-}
-
-type Deployment struct {
-	Name  string `json:"name,omitempty"`
-	Scope Scope  `json:"scope,omitempty"`
-}
-
-type Image struct {
-	Name string `json:"name,omitempty"`
-}
-
-type Scope struct {
-	Cluster   string `json:"cluster,omitempty"`
-	Namespace string `json:"namespace,omitempty"`
-	Label     Label  `json:"label,omitempty"`
-}
-
-type Label struct {
-	Key   string `json:"key,omitempty"`
-	Value string `json:"value,omitempty"`
-}
-
-type PolicySection struct {
-	SectionName  string        `json:"sectionName,omitempty"`
-	PolicyGroups []PolicyGroup `json:"policyGroups,omitempty"`
-}
-
-type PolicyGroup struct {
-	FieldName string `json:"fieldName,omitempty"`
-	// +kubebuilder:validation:Enum=OR;AND
-	BooleanOperator string        `json:"booleanOperator,omitempty"`
-	Negate          bool          `json:"negate,omitempty"`
-	Values          []PolicyValue `json:"values,omitempty"`
-}
-
-type PolicyValue struct {
-	Value string `json:"value,omitempty"`
-}
-
-type MitreAttackVectors struct {
-	Tactic     string   `json:"tactic,omitempty"`
-	Techniques []string `json:"techniques,omitempty"`
-}
-
-// SecurityPolicyStatus defines the observed state of SecurityPolicy
-type SecurityPolicyStatus struct {
-	Accepted bool   `json:"accepted"`
-	Message  string `json:"message"`
 }
 
 // +kubebuilder:object:root=true

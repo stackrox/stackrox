@@ -158,7 +158,7 @@ message MicrosoftSentinel {
     string client_cert = 1;
 
     // PEM encoded PKCS #8, ASN.1 DER format.
-    string private_key = 2;
+    string private_key = 2; // @gotags: scrub:"always"
   }
   ClientCertAuthConfig client_cert_auth_config = 7;
 }
