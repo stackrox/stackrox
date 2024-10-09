@@ -60,7 +60,7 @@ def patch_csv(csv_doc, version, operator_image, first_version, related_images_mo
 
     csv_doc['spec']['version'] = version
 
-    if related_images_mode in ["downstream", "konflux"]:
+    if related_images_mode != "omit":
         rewrite(csv_doc, related_image_passthrough)
 
     previous_y_stream = get_previous_y_stream(version)
