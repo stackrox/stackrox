@@ -19,6 +19,7 @@ slack_user=''
 # TODO: please keep the list in the alphabetic order. It is simpler to maintain it this way.
 case "$github_login" in
 '0x656b694d')       slack_user='U02MJ72K1B5' ;;
+'parametalol')      slack_user='U02MJ72K1B5' ;;
 'BradLugo')         slack_user='U042Z3TSZU3' ;;
 'GrimmiMeloni')     slack_user='U048VH2JZ1C' ;;
 'JoukoVirtanen')    slack_user='U033Y28GYN4' ;;
