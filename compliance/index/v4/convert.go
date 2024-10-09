@@ -102,7 +102,7 @@ func toStorageNotes(notes []v4.VulnerabilityReport_Note) []storage.NodeScan_Note
 	for _, n := range notes {
 		switch n {
 		case v4.VulnerabilityReport_NOTE_OS_UNKNOWN:
-			fallthrough
+			convertedNotes = append(convertedNotes, storage.NodeScan_UNSUPPORTED)
 		case v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED:
 			convertedNotes = append(convertedNotes, storage.NodeScan_UNSUPPORTED)
 		case v4.VulnerabilityReport_NOTE_UNSPECIFIED:
