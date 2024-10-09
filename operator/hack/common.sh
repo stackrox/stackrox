@@ -23,7 +23,7 @@ function apply_operator_manifests() {
   local -r operator_ns="$1"
   local -r index_image_repo="$2"
   local -r index_image_tag="$3"
-  local -r csv_version="$4"
+  local -r starting_csv_version="$4"
   local -r operator_channel="$5"
 
   # OCP starting from v4.14 requires either spec.grpcPodConfig.securityContextConfig attribute to be set on the
@@ -47,7 +47,7 @@ function apply_operator_manifests() {
     starting_csv="null"
   else
     install_plan_approval="Manual"
-    starting_csv="rhacs-operator.${csv_version}"
+    starting_csv="rhacs-operator.${starting_csv_version}"
   fi
   env -i PATH="${PATH}" \
     INDEX_IMAGE_TAG="${index_image_tag}" \
@@ -80,10 +80,10 @@ function retry() {
 }
 
 function check_version_tag() {
-  local -r csv_version="$1"
+  local -r starting_csv_version="$1"
   local -r allow_dirty_tag="$2"
 
-  if [[ "$csv_version" == *-dirty ]]; then
+  if [[ "$starting_csv_version" == *-dirty ]]; then
     log "Target image tag has -dirty suffix."
     if [[ "$allow_dirty_tag" == false ]]; then
       log "Cannot install from *-dirty image tag. Please, use 'deploy-dirty-tag-via-olm' command or add '--allow-dirty-tag' flag if you need to install dirty tagged image."
@@ -96,7 +96,7 @@ function check_version_tag() {
 
 function approve_install_plan() {
   local -r operator_ns="$1"
-  local -r csv_version="$2"
+  local -r starting_csv_version="$2"
 
   log "Waiting for an install plan to be created"
   if ! retry 15 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s; then
@@ -108,12 +108,12 @@ function approve_install_plan() {
     return 1
   fi
 
-  log "Verifying that the subscription is progressing to the expected CSV of ${csv_version}..."
+  log "Verifying that the subscription is progressing to the expected CSV of ${starting_csv_version}..."
   local current_csv
   # `local` ignores `errexit` so we assign value separately: http://mywiki.wooledge.org/BashFAQ/105
   current_csv=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.currentCSV}")
   readonly current_csv
-  local -r expected_csv="rhacs-operator.${csv_version}"
+  local -r expected_csv="rhacs-operator.${starting_csv_version}"
   if [[ $current_csv != "$expected_csv" ]]; then
     log "Subscription is progressing to unexpected CSV '${current_csv}', expected '${expected_csv}'"
     return 1
@@ -130,23 +130,23 @@ function approve_install_plan() {
 
 function nurse_deployment_until_available() {
   local -r operator_ns="$1"
-  local -r csv_version="$2"
+  local -r starting_csv_version="$2"
 
   # We check the CSV status first, because it is hard to wait for the deployment in a non-racy way:
   # the deployment .status is set separately from the .spec, so the .status reflects the status of
   # the _old_ .spec until the deployment controller runs the first reconciliation.
   # We use kuttl because CSV has a Condition type incompatible with `kubectl wait`.
-  log "Waiting for the ${csv_version} CSV to finish installing."
+  log "Waiting for the ${starting_csv_version} CSV to finish installing."
   "${KUTTL}" assert --timeout 600 --namespace "${operator_ns}" /dev/stdin <<-END
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: rhacs-operator.${csv_version}
+  name: rhacs-operator.${starting_csv_version}
 status:
   phase: Succeeded
 END
 
   # Double-check that the deployment itself is healthy.
-  log "Making sure the ${csv_version} operator deployment is available..."
-  retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait deployments.apps -l "olm.owner=rhacs-operator.${csv_version}" --for condition=available --timeout 5s
+  log "Making sure the ${starting_csv_version} operator deployment is available..."
+  retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait deployments.apps -l "olm.owner=rhacs-operator.${starting_csv_version}" --for condition=available --timeout 5s
 }
