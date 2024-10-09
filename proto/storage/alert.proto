@@ -132,7 +132,7 @@ message Alert {
 
   Enforcement enforcement = 6;
 
-  google.protobuf.Timestamp time = 7; // @gotags: sensorhash:"ignore" search:"Violation Time"
+  google.protobuf.Timestamp time = 7; // @gotags: sensorhash:"ignore" search:"Violation Time" sql:"index=btree"
   google.protobuf.Timestamp first_occurred = 10; // @gotags: sensorhash:"ignore"
 
   // The time at which the alert was resolved. Only set if ViolationState is RESOLVED.
