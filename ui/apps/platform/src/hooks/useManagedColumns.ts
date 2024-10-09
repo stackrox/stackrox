@@ -56,7 +56,7 @@ export type ManagedColumns<ColumnKey extends string> = {
     /* The current configuration state of the columns */
     columns: Readonly<Record<ColumnKey, ColumnConfig>>;
     /* Toggle the visibility of a single column */
-    toggleVisibility: (name: string) => void;
+    toggleVisibility: (key: string) => void;
     /* Sets the visibility of multiple columns at once */
     setColumns: (columns: Record<string, boolean>) => void;
 };
@@ -87,10 +87,10 @@ export function useManagedColumns<ColumnKey extends string>(
         };
     }
 
-    function toggleVisibility(name: string): void {
+    function toggleVisibility(key: string): void {
         setTablePreferencesStorage((prev) => {
-            const isShown = !columns[name].isShown;
-            return updateVisibility(prev, tableId, [[name, isShown]]);
+            const isShown = !columns[key].isShown;
+            return updateVisibility(prev, tableId, [[key, isShown]]);
         });
     }
 
