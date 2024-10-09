@@ -1,0 +1,476 @@
+- query: file_extraction_count_bucket{namespace="stackrox",container="central"}
+  metricName: central_file_extraction_count_bucket
+
+- query: file_extraction_count_count{namespace="stackrox",container="central"}
+  metricName: central_file_extraction_count_count
+
+- query: file_extraction_count_sum{namespace="stackrox",container="central"}
+  metricName: central_file_extraction_count_sum
+
+- query: file_extraction_inaccessible_count_bucket{namespace="stackrox",container="central"}
+  metricName: central_file_extraction_inaccessible_count_bucket
+
+- query: file_extraction_inaccessible_count_count{namespace="stackrox",container="central"}
+  metricName: central_file_extraction_inaccessible_count_count
+
+- query: file_extraction_inaccessible_count_sum{namespace="stackrox",container="central"}
+  metricName: central_file_extraction_inaccessible_count_sum
+
+- query: file_extraction_match_count_bucket{namespace="stackrox",container="central"}
+  metricName: central_file_extraction_match_count_bucket
+
+- query: file_extraction_match_count_count{namespace="stackrox",container="central"}
+  metricName: central_file_extraction_match_count_count
+
+- query: file_extraction_match_count_sum{namespace="stackrox",container="central"}
+  metricName: central_file_extraction_match_count_sum
+
+- query: go_gc_duration_seconds{namespace="stackrox",container="central"}
+  metricName: central_go_gc_duration_seconds
+
+- query: go_gc_duration_seconds_count{namespace="stackrox",container="central"}
+  metricName: central_go_gc_duration_seconds_count
+
+- query: go_gc_duration_seconds_sum{namespace="stackrox",container="central"}
+  metricName: central_go_gc_duration_seconds_sum
+
+- query: go_goroutines{namespace="stackrox",container="central"}
+  metricName: central_go_goroutines
+
+- query: go_info{namespace="stackrox",container="central"}
+  metricName: central_go_info
+
+- query: go_memstats_alloc_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_alloc_bytes
+
+- query: go_memstats_alloc_bytes_total{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_alloc_bytes_total
+
+- query: go_memstats_buck_hash_sys_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_buck_hash_sys_bytes
+
+- query: go_memstats_frees_total{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_frees_total
+
+- query: go_memstats_gc_sys_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_gc_sys_bytes
+
+- query: go_memstats_heap_alloc_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_heap_alloc_bytes
+
+- query: go_memstats_heap_idle_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_heap_idle_bytes
+
+- query: go_memstats_heap_inuse_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_heap_inuse_bytes
+
+- query: go_memstats_heap_objects{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_heap_objects
+
+- query: go_memstats_heap_released_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_heap_released_bytes
+
+- query: go_memstats_heap_sys_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_heap_sys_bytes
+
+- query: go_memstats_last_gc_time_seconds{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_last_gc_time_seconds
+
+- query: go_memstats_lookups_total{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_lookups_total
+
+- query: go_memstats_mallocs_total{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_mallocs_total
+
+- query: go_memstats_mcache_inuse_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_mcache_inuse_bytes
+
+- query: go_memstats_mcache_sys_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_mcache_sys_bytes
+
+- query: go_memstats_mspan_inuse_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_mspan_inuse_bytes
+
+- query: go_memstats_mspan_sys_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_mspan_sys_bytes
+
+- query: go_memstats_next_gc_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_next_gc_bytes
+
+- query: go_memstats_other_sys_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_other_sys_bytes
+
+- query: go_memstats_stack_inuse_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_stack_inuse_bytes
+
+- query: go_memstats_stack_sys_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_stack_sys_bytes
+
+- query: go_memstats_sys_bytes{namespace="stackrox",container="central"}
+  metricName: central_go_memstats_sys_bytes
+
+- query: go_threads{namespace="stackrox",container="central"}
+  metricName: central_go_threads
+
+- query: grpc_server_handled_total{namespace="stackrox",container="central"}
+  metricName: central_grpc_server_handled_total
+
+- query: grpc_server_handling_seconds_bucket{namespace="stackrox",container="central"}
+  metricName: central_grpc_server_handling_seconds_bucket
+
+- query: grpc_server_handling_seconds_count{namespace="stackrox",container="central"}
+  metricName: central_grpc_server_handling_seconds_count
+
+- query: grpc_server_handling_seconds_sum{namespace="stackrox",container="central"}
+  metricName: central_grpc_server_handling_seconds_sum
+
+- query: grpc_server_msg_received_total{namespace="stackrox",container="central"}
+  metricName: central_grpc_server_msg_received_total
+
+- query: grpc_server_msg_sent_total{namespace="stackrox",container="central"}
+  metricName: central_grpc_server_msg_sent_total
+
+- query: grpc_server_started_total{namespace="stackrox",container="central"}
+  metricName: central_grpc_server_started_total
+
+- query: http_incoming_in_flight_requests{namespace="stackrox",container="central"}
+  metricName: central_http_incoming_in_flight_requests
+
+- query: http_incoming_request_duration_histogram_seconds_bucket{namespace="stackrox",container="central"}
+  metricName: central_http_incoming_request_duration_histogram_seconds_bucket
+
+- query: http_incoming_request_duration_histogram_seconds_count{namespace="stackrox",container="central"}
+  metricName: central_http_incoming_request_duration_histogram_seconds_count
+
+- query: http_incoming_request_duration_histogram_seconds_sum{namespace="stackrox",container="central"}
+  metricName: central_http_incoming_request_duration_histogram_seconds_sum
+
+- query: http_incoming_request_size_histogram_bytes_bucket{namespace="stackrox",container="central"}
+  metricName: central_http_incoming_request_size_histogram_bytes_bucket
+
+- query: http_incoming_request_size_histogram_bytes_count{namespace="stackrox",container="central"}
+  metricName: central_http_incoming_request_size_histogram_bytes_count
+
+- query: http_incoming_request_size_histogram_bytes_sum{namespace="stackrox",container="central"}
+  metricName: central_http_incoming_request_size_histogram_bytes_sum
+
+- query: http_incoming_requests_total{namespace="stackrox",container="central"}
+  metricName: central_http_incoming_requests_total
+
+- query: http_incoming_response_size_histogram_bytes_bucket{namespace="stackrox",container="central"}
+  metricName: central_http_incoming_response_size_histogram_bytes_bucket
+
+- query: http_incoming_response_size_histogram_bytes_count{namespace="stackrox",container="central"}
+  metricName: central_http_incoming_response_size_histogram_bytes_count
+
+- query: http_incoming_response_size_histogram_bytes_sum{namespace="stackrox",container="central"}
+  metricName: central_http_incoming_response_size_histogram_bytes_sum
+
+- query: process_cpu_seconds_total{namespace="stackrox",container="central"}
+  metricName: central_process_cpu_seconds_total
+
+- query: process_max_fds{namespace="stackrox",container="central"}
+  metricName: central_process_max_fds
+
+- query: process_open_fds{namespace="stackrox",container="central"}
+  metricName: central_process_open_fds
+
+- query: process_resident_memory_bytes{namespace="stackrox",container="central"}
+  metricName: central_process_resident_memory_bytes
+
+- query: process_start_time_seconds{namespace="stackrox",container="central"}
+  metricName: central_process_start_time_seconds
+
+- query: process_virtual_memory_bytes{namespace="stackrox",container="central"}
+  metricName: central_process_virtual_memory_bytes
+
+- query: process_virtual_memory_max_bytes{namespace="stackrox",container="central"}
+  metricName: central_process_virtual_memory_max_bytes
+
+- query: rox_central_administration_events_queue_size_total{namespace="stackrox",container="central"}
+  metricName: central_rox_central_administration_events_queue_size_total
+
+- query: rox_central_cluster_metrics_cpu_capacity{namespace="stackrox",container="central"}
+  metricName: central_rox_central_cluster_metrics_cpu_capacity
+
+- query: rox_central_cluster_metrics_node_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_cluster_metrics_node_count
+
+- query: rox_central_datastore_function_duration_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_datastore_function_duration_bucket
+
+- query: rox_central_datastore_function_duration_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_datastore_function_duration_count
+
+- query: rox_central_datastore_function_duration_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_datastore_function_duration_sum
+
+- query: rox_central_deduping_hash_size{namespace="stackrox",container="central"}
+  metricName: central_rox_central_deduping_hash_size
+
+- query: rox_central_deployment_enhancement_duration_ms_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_deployment_enhancement_duration_ms_bucket
+
+- query: rox_central_deployment_enhancement_duration_ms_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_deployment_enhancement_duration_ms_count
+
+- query: rox_central_deployment_enhancement_duration_ms_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_deployment_enhancement_duration_ms_sum
+
+- query: rox_central_function_segment_duration_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_function_segment_duration_bucket
+
+- query: rox_central_function_segment_duration_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_function_segment_duration_count
+
+- query: rox_central_function_segment_duration_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_function_segment_duration_sum
+
+- query: rox_central_graphql_op_duration_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_graphql_op_duration_bucket
+
+- query: rox_central_graphql_op_duration_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_graphql_op_duration_count
+
+- query: rox_central_graphql_op_duration_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_graphql_op_duration_sum
+
+- query: rox_central_graphql_query_duration_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_graphql_query_duration_bucket
+
+- query: rox_central_graphql_query_duration_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_graphql_query_duration_count
+
+- query: rox_central_graphql_query_duration_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_graphql_query_duration_sum
+
+- query: rox_central_grpc_last_message_size_received_bytes{namespace="stackrox",container="central"}
+  metricName: central_rox_central_grpc_last_message_size_received_bytes
+
+- query: rox_central_grpc_last_message_size_sent_bytes{namespace="stackrox",container="central"}
+  metricName: central_rox_central_grpc_last_message_size_sent_bytes
+
+- query: rox_central_grpc_max_message_size_sent_bytes{namespace="stackrox",container="central"}
+  metricName: central_rox_central_grpc_max_message_size_sent_bytes
+
+- query: rox_central_grpc_message_size_sent_bytes_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_grpc_message_size_sent_bytes_bucket
+
+- query: rox_central_grpc_message_size_sent_bytes_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_grpc_message_size_sent_bytes_count
+
+- query: rox_central_grpc_message_size_sent_bytes_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_grpc_message_size_sent_bytes_sum
+
+- query: rox_central_image_upsert_deduper{namespace="stackrox",container="central"}
+  metricName: central_rox_central_image_upsert_deduper
+
+- query: rox_central_info{namespace="stackrox",container="central"}
+  metricName: central_rox_central_info
+
+- query: rox_central_k8s_event_processing_duration_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_k8s_event_processing_duration_bucket
+
+- query: rox_central_k8s_event_processing_duration_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_k8s_event_processing_duration_count
+
+- query: rox_central_k8s_event_processing_duration_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_k8s_event_processing_duration_sum
+
+- query: rox_central_metadata_cache_hits{namespace="stackrox",container="central"}
+  metricName: central_rox_central_metadata_cache_hits
+
+- query: rox_central_metadata_cache_misses{namespace="stackrox",container="central"}
+  metricName: central_rox_central_metadata_cache_misses
+
+- query: rox_central_node_scan_duration_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_node_scan_duration_bucket
+
+- query: rox_central_node_scan_duration_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_node_scan_duration_count
+
+- query: rox_central_node_scan_duration_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_node_scan_duration_sum
+
+- query: rox_central_node_scan_num_components{namespace="stackrox",container="central"}
+  metricName: central_rox_central_node_scan_num_components
+
+- query: rox_central_orphaned_plop_total{namespace="stackrox",container="central"}
+  metricName: central_rox_central_orphaned_plop_total
+
+- query: rox_central_postgres_acquire_conn_op_duration_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_acquire_conn_op_duration_bucket
+
+- query: rox_central_postgres_acquire_conn_op_duration_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_acquire_conn_op_duration_count
+
+- query: rox_central_postgres_acquire_conn_op_duration_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_acquire_conn_op_duration_sum
+
+- query: rox_central_postgres_available_size_bytes{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_available_size_bytes
+
+- query: rox_central_postgres_connected{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_connected
+
+- query: rox_central_postgres_db_size_bytes{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_db_size_bytes
+
+- query: rox_central_postgres_maximum_db_connections{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_maximum_db_connections
+
+- query: rox_central_postgres_op_duration_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_op_duration_bucket
+
+- query: rox_central_postgres_op_duration_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_op_duration_count
+
+- query: rox_central_postgres_op_duration_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_op_duration_sum
+
+- query: rox_central_postgres_table_data_bytes{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_table_data_bytes
+
+- query: rox_central_postgres_table_index_bytes{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_table_index_bytes
+
+- query: rox_central_postgres_table_size{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_table_size
+
+- query: rox_central_postgres_table_toast_bytes{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_table_toast_bytes
+
+- query: rox_central_postgres_table_total_bytes{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_table_total_bytes
+
+- query: rox_central_postgres_total_connections{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_total_connections
+
+- query: rox_central_postgres_total_size_bytes{namespace="stackrox",container="central"}
+  metricName: central_rox_central_postgres_total_size_bytes
+
+- query: rox_central_process_cpu_nr_periods{namespace="stackrox",container="central"}
+  metricName: central_rox_central_process_cpu_nr_periods
+
+- query: rox_central_process_cpu_nr_throttled{namespace="stackrox",container="central"}
+  metricName: central_rox_central_process_cpu_nr_throttled
+
+- query: rox_central_process_cpu_throttled_time{namespace="stackrox",container="central"}
+  metricName: central_rox_central_process_cpu_throttled_time
+
+- query: rox_central_process_filter{namespace="stackrox",container="central"}
+  metricName: central_rox_central_process_filter
+
+- query: rox_central_process_pruning_cache_hits{namespace="stackrox",container="central"}
+  metricName: central_rox_central_process_pruning_cache_hits
+
+- query: rox_central_process_pruning_cache_misses{namespace="stackrox",container="central"}
+  metricName: central_rox_central_process_pruning_cache_misses
+
+- query: rox_central_process_queue_length{namespace="stackrox",container="central"}
+  metricName: central_rox_central_process_queue_length
+
+- query: rox_central_pruned_process_indicators{namespace="stackrox",container="central"}
+  metricName: central_rox_central_pruned_process_indicators
+
+- query: rox_central_registry_client_request_duration_seconds_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_registry_client_request_duration_seconds_bucket
+
+- query: rox_central_registry_client_request_duration_seconds_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_registry_client_request_duration_seconds_count
+
+- query: rox_central_registry_client_request_duration_seconds_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_registry_client_request_duration_seconds_sum
+
+- query: rox_central_registry_client_requests_total{namespace="stackrox",container="central"}
+  metricName: central_rox_central_registry_client_requests_total
+
+- query: rox_central_reprocessor_duration_seconds{namespace="stackrox",container="central"}
+  metricName: central_rox_central_reprocessor_duration_seconds
+
+- query: rox_central_resource_processed_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_resource_processed_count
+
+- query: rox_central_risk_processing_duration_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_risk_processing_duration_bucket
+
+- query: rox_central_risk_processing_duration_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_risk_processing_duration_count
+
+- query: rox_central_risk_processing_duration_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_risk_processing_duration_sum
+
+- query: rox_central_scan_duration_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_scan_duration_bucket
+
+- query: rox_central_scan_duration_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_scan_duration_count
+
+- query: rox_central_scan_duration_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_scan_duration_sum
+
+- query: rox_central_secured_clusters{namespace="stackrox",container="central"}
+  metricName: central_rox_central_secured_clusters
+
+- query: rox_central_secured_nodes{namespace="stackrox",container="central"}
+  metricName: central_rox_central_secured_nodes
+
+- query: rox_central_secured_vcpus{namespace="stackrox",container="central"}
+  metricName: central_rox_central_secured_vcpus
+
+- query: rox_central_sensor_connected{namespace="stackrox",container="central"}
+  metricName: central_rox_central_sensor_connected
+
+- query: rox_central_sensor_event_deduper{namespace="stackrox",container="central"}
+  metricName: central_rox_central_sensor_event_deduper
+
+- query: rox_central_sensor_event_duration_bucket{namespace="stackrox",container="central"}
+  metricName: central_rox_central_sensor_event_duration_bucket
+
+- query: rox_central_sensor_event_duration_count{namespace="stackrox",container="central"}
+  metricName: central_rox_central_sensor_event_duration_count
+
+- query: rox_central_sensor_event_duration_sum{namespace="stackrox",container="central"}
+  metricName: central_rox_central_sensor_event_duration_sum
+
+- query: rox_central_sensor_event_queue{namespace="stackrox",container="central"}
+  metricName: central_rox_central_sensor_event_queue
+
+- query: rox_central_signature_verification_reprocessor_duration_seconds{namespace="stackrox",container="central"}
+  metricName: central_rox_central_signature_verification_reprocessor_duration_seconds
+
+- query: rox_central_total_network_endpoints_received_counter{namespace="stackrox",container="central"}
+  metricName: central_rox_central_total_network_endpoints_received_counter
+
+- query: rox_central_total_network_flows_central_received_counter{namespace="stackrox",container="central"}
+  metricName: central_rox_central_total_network_flows_central_received_counter
+
+- query: rox_central_uptime_seconds{namespace="stackrox",container="central"}
+  metricName: central_rox_central_uptime_seconds
+
+- query: tar_extracted_contents_bytes_per_layer_bucket{namespace="stackrox",container="central"}
+  metricName: central_tar_extracted_contents_bytes_per_layer_bucket
+
+- query: tar_extracted_contents_bytes_per_layer_count{namespace="stackrox",container="central"}
+  metricName: central_tar_extracted_contents_bytes_per_layer_count
+
+- query: tar_extracted_contents_bytes_per_layer_sum{namespace="stackrox",container="central"}
+  metricName: central_tar_extracted_contents_bytes_per_layer_sum
+
+- query: tar_file_count_per_layer_bucket{namespace="stackrox",container="central"}
+  metricName: central_tar_file_count_per_layer_bucket
+
+- query: tar_file_count_per_layer_count{namespace="stackrox",container="central"}
+  metricName: central_tar_file_count_per_layer_count
+
+- query: tar_file_count_per_layer_sum{namespace="stackrox",container="central"}
+  metricName: central_tar_file_count_per_layer_sum
+
+- query: tar_matched_file_count_per_layer_bucket{namespace="stackrox",container="central"}
+  metricName: central_tar_matched_file_count_per_layer_bucket
+
+- query: tar_matched_file_count_per_layer_count{namespace="stackrox",container="central"}
+  metricName: central_tar_matched_file_count_per_layer_count
+
+- query: tar_matched_file_count_per_layer_sum{namespace="stackrox",container="central"}
+  metricName: central_tar_matched_file_count_per_layer_sum
