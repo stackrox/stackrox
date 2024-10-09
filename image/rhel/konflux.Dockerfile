@@ -82,6 +82,10 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
+# This redundant FROM is to trick Konflux base image detection to recognize that the last stage is in fact based on UBI.
+# TODO: remove once KFLUXBUGS-1718 is fixed.
+FROM registry.access.redhat.com/ubi8/ubi:latest
+
 FROM scratch
 
 ARG FINAL_STAGE_PATH
