@@ -215,8 +215,6 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) error
 	}
 
 	pgClone, err := dbm.GetCloneToMigrate()
-	log.Infof("SHREWS -- %v", pgClone)
-	log.Infof("SHREWS -- %v", err)
 	if err != nil {
 		return err
 	}
@@ -224,7 +222,6 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) error
 
 	// If we are running rocks too, we need to either have just a pgClone OR both.
 	if m.runBoth {
-		log.Infof("SHREWS run both -- %v", pgClone)
 		require.True(m.t, pgClone != "")
 	}
 	if breakPoint == breakAfterGetClone {
