@@ -732,7 +732,8 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageEnforcementAction"
-          }
+          },
+          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates."
         },
         "notifiers": {
           "type": "array",
@@ -745,13 +746,16 @@
           "format": "date-time"
         },
         "SORTName": {
-          "type": "string"
+          "type": "string",
+          "description": "For internal use only."
         },
         "SORTLifecycleStage": {
-          "type": "string"
+          "type": "string",
+          "description": "For internal use only."
         },
         "SORTEnforcement": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "For internal use only."
         },
         "policyVersion": {
           "type": "string"
@@ -1054,7 +1058,8 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageEnforcementAction"
-          }
+          },
+          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates."
         },
         "notifiers": {
           "type": "array",
@@ -1067,13 +1072,16 @@
           "format": "date-time"
         },
         "SORTName": {
-          "type": "string"
+          "type": "string",
+          "description": "For internal use only."
         },
         "SORTLifecycleStage": {
-          "type": "string"
+          "type": "string",
+          "description": "For internal use only."
         },
         "SORTEnforcement": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "For internal use only."
         },
         "policyVersion": {
           "type": "string"

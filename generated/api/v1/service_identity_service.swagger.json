@@ -128,7 +128,8 @@
       "type": "object",
       "properties": {
         "serialStr": {
-          "type": "string"
+          "type": "string",
+          "title": "The serial number in decimal representation."
         },
         "serial": {
           "type": "string",
