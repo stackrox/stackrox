@@ -46,6 +46,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
