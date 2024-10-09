@@ -68,6 +68,7 @@ if [[ "$SMALL_INSTALL" == "true" ]]; then
     installflags+=('--set' 'scanner.resources.requests.cpu=500m')
     installflags+=('--set' 'scanner.resources.limits.memory=2500Mi')
     installflags+=('--set' 'scanner.resources.limits.cpu=2000m')
+    installflags+=('--set' 'central.persistence.none=true')
 fi
 
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services \
