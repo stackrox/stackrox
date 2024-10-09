@@ -63,16 +63,10 @@ _run_compatibility_tests() {
     #deploy_stackrox
     deploy_stackrox_with_custom_central_and_sensor_versions "${central_version}" "${sensor_version}"
     echo "Stackrox deployed with Central version - ${central_version}, Sensor version - ${sensor_version}"
-    #deploy_optional_e2e_components
 
     rm -f FAIL
 
-    #prepare_for_endpoints_test
-
-    #run_roxctl_tests
-    #run_roxctl_bats_tests "roxctl-test-output" "cluster" || touch FAIL
-    #store_test_results "roxctl-test-output" "roxctl-test-output"
-    #[[ ! -f FAIL ]] || die "roxctl e2e tests failed"
+    prepare_for_endpoints_test
 
     # Give some time for stackrox to be reachable
     wait_for_api

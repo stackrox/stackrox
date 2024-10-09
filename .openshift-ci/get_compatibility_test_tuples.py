@@ -86,8 +86,6 @@ def get_compatibility_test_tuples():
         for support_exception in support_exceptions
         if support_exception not in test_tuples
     )
-    # DELETE THE LINE BELOW, removes all but the first test tuple
-    test_tuples = test_tuples[:1]
     return test_tuples
 
 
