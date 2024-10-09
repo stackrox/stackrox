@@ -295,8 +295,8 @@ func (c *client) DeletePolicy(ctx context.Context, name string) error {
 }
 
 func (c *client) FlushCache(ctx context.Context) error {
-	if time.Since(c.lastUpdated).Seconds() < 10 {
-		// Don't flush the cache more often than every 10s
+	if time.Since(c.lastUpdated).Seconds() < 1 {
+		// Don't flush the cache more often than every 1s
 		return nil
 	}
 
