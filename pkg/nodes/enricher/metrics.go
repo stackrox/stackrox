@@ -12,11 +12,13 @@ import (
 type metrics interface {
 	SetScanDurationTime(start time.Time, scanner string, err error)
 	SetNodeInventoryNumberComponents(count int, clusterName string, nodeName string)
+	SetNodeScanScannerVersion(version int, clusterName string, nodeName string)
 }
 
 type metricsImpl struct {
 	scanTimeDuration           *prometheus.HistogramVec
 	nodeInventoryComponentSize *prometheus.GaugeVec
+	nodeScanScannerVersion     *prometheus.GaugeVec
 }
 
 func startTimeToMS(t time.Time) float64 {
@@ -29,6 +31,10 @@ func (m *metricsImpl) SetScanDurationTime(start time.Time, scanner string, err e
 
 func (m *metricsImpl) SetNodeInventoryNumberComponents(count int, clusterName string, nodeName string) {
 	m.nodeInventoryComponentSize.WithLabelValues(clusterName, nodeName).Set(float64(count))
+}
+
+func (m *metricsImpl) SetNodeScanScannerVersion(version int, clusterName string, nodeName string) {
+	m.nodeScanScannerVersion.WithLabelValues(clusterName, nodeName).Set(float64(version))
 }
 
 func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
@@ -46,11 +52,18 @@ func newMetrics(subsystem pkgMetrics.Subsystem) metrics {
 			Name:      "node_scan_num_components",
 			Help:      "Number of discovered components per Node",
 		}, []string{"ClusterName", "NodeName"}),
+		nodeScanScannerVersion: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: pkgMetrics.PrometheusNamespace,
+			Subsystem: subsystem.String(),
+			Name:      "node_scan_scanner_version",
+			Help:      "Version of Scanner this scan has been created with",
+		}, []string{"ClusterName", "NodeName"}),
 	}
 
 	pkgMetrics.EmplaceCollector(
 		m.scanTimeDuration,
 		m.nodeInventoryComponentSize,
+		m.nodeScanScannerVersion,
 	)
 
 	return m
