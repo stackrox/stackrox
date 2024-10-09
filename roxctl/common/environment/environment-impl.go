@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
@@ -134,15 +134,27 @@ func (w colorWriter) Write(p []byte) (int, error) {
 }
 
 func determineAuthMethod(cliEnv Environment) (auth.Method, error) {
-	if flags.APITokenFile() != "" && flags.Password() != "" {
-		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
+	if method, err := determineAuthMethodExt(
+		flags.APITokenFileChanged(), flags.PasswordChanged(),
+		flags.APITokenFile() == "", flags.Password() == ""); method != nil || err != nil {
+		return method, err
 	}
+	return ConfigMethod(cliEnv), nil
+}
+
+func determineAuthMethodExt(tokenFileChanged, passwordChanged, tokenFileNameEmpty, passwordEmpty bool) (auth.Method, error) {
+	// Prefer command line arguments over environment variables.
 	switch {
-	case flags.Password() != "":
+	case tokenFileChanged && tokenFileNameEmpty || passwordChanged && passwordEmpty:
+		utils.Should(errox.InvariantViolation)
+		return nil, nil
+	case tokenFileChanged && passwordChanged || !(tokenFileChanged || passwordChanged || tokenFileNameEmpty || passwordEmpty):
+		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
+	case passwordChanged || !(passwordEmpty || tokenFileChanged):
 		return auth.BasicAuth(), nil
-	case flags.APITokenFile() != "" || env.TokenEnv.Setting() != "":
+	case tokenFileChanged || !tokenFileNameEmpty:
 		return auth.TokenAuth(), nil
 	default:
-		return ConfigMethod(cliEnv), nil
+		return nil, nil
 	}
 }
