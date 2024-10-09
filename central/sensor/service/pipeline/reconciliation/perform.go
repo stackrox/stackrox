@@ -2,6 +2,7 @@ package reconciliation
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,6 +23,7 @@ func Perform(store Store, existingIDs set.StringSet, resourceType string, remove
 	}
 
 	log.Infof("Deleting %d %s as a part of reconciliation", idsToDelete.Cardinality(), resourceType)
+	log.Debugf("Deleting %s: %q as a part of reconciliation", resourceType, strings.Join(idsToDelete.AsSlice(), ", "))
 
 	errList := errorhelpers.NewErrorList(fmt.Sprintf("%s reconciliation", resourceType))
 	for id := range idsToDelete {
