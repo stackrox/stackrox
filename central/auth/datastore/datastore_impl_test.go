@@ -4,7 +4,6 @@ package datastore
 
 import (
 	"context"
-	"strconv"
 	"testing"
 
 	"github.com/stackrox/rox/central/auth/m2m/mocks"
@@ -15,7 +14,6 @@ import (
 	accessScopePostgresStore "github.com/stackrox/rox/central/role/store/simpleaccessscope/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -99,7 +97,6 @@ func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfigDisabledFeature
 }
 
 func (s *datastorePostgresTestSuite) kubeServiceAccountConfigTest(exchangerShouldExist bool, setFetcherCallCount func(call *gomock.Call)) {
-	s.T().Setenv(features.PolicyAsCode.EnvVar(), strconv.FormatBool(exchangerShouldExist))
 	controller := gomock.NewController(s.T())
 	defer controller.Finish()
 	store := store.New(s.pool.DB)

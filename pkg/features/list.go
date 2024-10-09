@@ -101,9 +101,6 @@ var (
 	// TODO(ROX-24641): Remove dependency on the UnqualifiedSearchRegistries feature so that this is enabled by default.
 	SensorSingleScanPerImage = registerFeature("Sensor will only allow a single active scan per image", "ROX_SENSOR_SINGLE_SCAN", enabled)
 
-	// PolicyAsCode enables policy definition and lifecycle changes to be managed in external repositories.
-	PolicyAsCode = registerFeature("Enables policy definition and lifecycle changes to be managed in external repositories.", "ROX_POLICY_AS_CODE")
-
 	// MicrosoftSentinelNotifier enables the Microsoft Sentinel notifier.
 	MicrosoftSentinelNotifier = registerFeature("Enable the Microsoft Sentinel notifier", "ROX_MICROSOFT_SENTINEL")
 
