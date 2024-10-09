@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import {
     Button,
-    CodeBlockCode,
     Flex,
     FlexItem,
     PageSection,
@@ -190,10 +189,14 @@ function PoliciesTable({
 
     function onConfirmSavePolicyAsCustomResource() {
         setIsSaving(true);
-        saveAsCustomResourceHandler(savingIds).finally(() => {
-            setSavingIds([]);
-            setIsSaving(false);
-        });
+        saveAsCustomResourceHandler(savingIds)
+            .catch(() => {
+                // TODO render error in dialog and move finally code to then block.
+            })
+            .finally(() => {
+                setSavingIds([]);
+                setIsSaving(false);
+            });
     }
 
     function onCancelSavePolicyAsCustomResource() {
@@ -568,11 +571,11 @@ function PoliciesTable({
             >
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                     <FlexItem>
-                        Clicking <strong>Yes</strong> saves the selected policies as Kubernetes
-                        custom resources (YAML).
+                        Clicking <strong>Yes</strong> will save the policy as a Kubernetes custom
+                        resource (YAML).
                     </FlexItem>
                     <FlexItem>
-                        <strong>Important</strong>: If you are committing the saved custom resources
+                        <strong>Important</strong>: If you are committing the saved custom resource
                         to a source control repository, replace the policy name in the{' '}
                         <code className="pf-v5-u-font-family-monospace">policyName</code> field to
                         avoid overwriting existing policies.

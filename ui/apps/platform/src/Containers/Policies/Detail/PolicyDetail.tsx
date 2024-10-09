@@ -13,6 +13,8 @@ import {
     ToolbarItem,
     Divider,
     PageSection,
+    Flex,
+    FlexItem,
 } from '@patternfly/react-core';
 import {
     Dropdown,
@@ -61,6 +63,7 @@ function PolicyDetail({
     const [requestError, setRequestError] = useState<ReactElement | null>(null);
     const [isActionsOpen, setIsActionsOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isSaveAsCustomResourceOpen, setIsSaveAsCustomResourceOpen] = useState(false);
 
     const { toasts, addToast, removeToast } = useToasts();
 
@@ -103,7 +106,7 @@ function PolicyDetail({
             });
     }
 
-    function onSaveAsCustomResource() {
+    function onConfirmSavePolicyAsCustomResource() {
         setIsRequesting(true);
         savePoliciesAsCustomResource([id])
             .then(() => {
@@ -115,7 +118,12 @@ function PolicyDetail({
             })
             .finally(() => {
                 setIsRequesting(false);
+                setIsSaveAsCustomResourceOpen(false);
             });
+    }
+
+    function onCancelSavePolicyAsCustomResource() {
+        setIsSaveAsCustomResourceOpen(false);
     }
 
     function onUpdateDisabledState() {
@@ -238,7 +246,9 @@ function PolicyDetail({
                                                   <DropdownItem
                                                       key="Save as Custom Resource"
                                                       component="button"
-                                                      onClick={onSaveAsCustomResource}
+                                                      onClick={() =>
+                                                          setIsSaveAsCustomResourceOpen(true)
+                                                      }
                                                   >
                                                       Save as Custom Resource
                                                   </DropdownItem>
@@ -276,7 +286,9 @@ function PolicyDetail({
                                                   <DropdownItem
                                                       key="Save as Custom Resource"
                                                       component="button"
-                                                      onClick={onSaveAsCustomResource}
+                                                      onClick={() =>
+                                                          setIsSaveAsCustomResourceOpen(true)
+                                                      }
                                                   >
                                                       Save as Custom Resource
                                                   </DropdownItem>
@@ -339,6 +351,29 @@ function PolicyDetail({
                         trigger violations.
                     </>
                 )}
+            </ConfirmationModal>
+            <ConfirmationModal
+                title={`Save policy as Custom Resource?`}
+                ariaLabel="Save as Custom Resource"
+                confirmText="Yes"
+                isLoading={isRequesting}
+                isOpen={isSaveAsCustomResourceOpen}
+                onConfirm={onConfirmSavePolicyAsCustomResource}
+                onCancel={onCancelSavePolicyAsCustomResource}
+                isDestructive={false}
+            >
+                <Flex>
+                    <FlexItem>
+                        Clicking <strong>Yes</strong> will save the policy as a Kubernetes custom
+                        resource (YAML).
+                    </FlexItem>
+                    <FlexItem>
+                        <strong>Important</strong>: If you are committing the saved custom resource
+                        to a source control repository, replace the policy name in the{' '}
+                        <code className="pf-v5-u-font-family-monospace">policyName</code> field to
+                        avoid overwriting existing policies.
+                    </FlexItem>
+                </Flex>
             </ConfirmationModal>
         </>
     );
