@@ -16,11 +16,11 @@ import ImageOverviewTable, {
     defaultColumns,
     imageListQuery,
     tableId,
-} from '../Tables/ImagesTable';
+} from '../Tables/ImageOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 
-export { imageListQuery } from '../Tables/ImagesTable';
+export { imageListQuery } from '../Tables/ImageOverviewTable';
 
 type ImagesTableContainerProps = {
     searchFilter: SearchFilter;
