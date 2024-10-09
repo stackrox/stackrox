@@ -3,7 +3,6 @@ package generate
 import (
 	"testing"
 
-	npguard "github.com/np-guard/cluster-topology-analyzer/v2/pkg/analyzer"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
@@ -28,6 +27,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		outFile               string
 		outDir                string
 		removeOutputPath      bool
+		dnsPort               string
 
 		expectedValidationError error
 		expectedWarnings        []string
@@ -96,6 +96,30 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			expectedWarnings:        []string{},
 			expectedErrors:          []string{},
 		},
+		"should report bad port name": {
+			inputFolderPath: "testdata/minimal",
+			dnsPort:         "bad@chars",
+
+			expectedValidationError: errox.InvalidArgs,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
+		},
+		"should report bad port number": {
+			inputFolderPath: "testdata/minimal",
+			dnsPort:         "100000",
+
+			expectedValidationError: errox.InvalidArgs,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
+		},
+		"should report 0 as a bad port number": {
+			inputFolderPath: "testdata/minimal",
+			dnsPort:         "0",
+
+			expectedValidationError: errox.InvalidArgs,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
+		},
 	}
 
 	for name, tt := range cases {
@@ -113,7 +137,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 					OutputFolderPath:      tt.outDir,
 					OutputFilePath:        tt.outFile,
 					RemoveOutputPath:      tt.removeOutputPath,
-					DNSPort:               npguard.DefaultDNSPort,
+					DNSPort:               tt.dnsPort,
 				},
 				offline:         true,
 				inputFolderPath: "", // set through construct
