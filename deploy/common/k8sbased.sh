@@ -347,7 +347,7 @@ function launch_central {
       central_scripts_dir="$unzip_dir/scripts"
 
       # New helm setup flavor
-      local helm_args=( )
+      local helm_args=(--set central.persistence.none="true")
 
       if [[ "${central_namespace}" != "stackrox" ]]; then
         helm_args+=(--set "allowNonstandardNamespace=true")
@@ -392,12 +392,6 @@ function launch_central {
       if [[ "$ROX_MANAGED_CENTRAL" == "true" ]]; then
         helm_args+=(
           --set env.managedServices=true
-        )
-      fi
-
-      if [[ -n "$CENTRAL_PERSISTENCE_NONE" ]]; then
-        helm_args+=(
-          --set central.persistence.none="true"
         )
       fi
 

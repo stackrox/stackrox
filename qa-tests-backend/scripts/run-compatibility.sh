@@ -48,7 +48,6 @@ _compatibility_test() {
     local short_sensor_tag="$4"
 
     export_test_environment
-    ci_export CENTRAL_PERSISTENCE_NONE "true"
 
     if [[ "${SKIP_DEPLOY:-false}" = "false" ]]; then
         if [[ "${CI:-false}" = "true" ]]; then
