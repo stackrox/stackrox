@@ -482,6 +482,32 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
+        label: 'NVD CVSS',
+        name: 'NVD CVSS',
+        shortName: 'NVD CVSS',
+        longName:
+            'Common Vulnerability Scoring System (CVSS) score from National Vulnerability Database (NVD)',
+        category: policyCriteriaCategories.IMAGE_CONTENTS,
+        type: 'group',
+        subComponents: [
+            {
+                type: 'select',
+                options: equalityOptions,
+                subpath: 'key',
+            },
+            {
+                type: 'number',
+                placeholder: '0-10',
+                max: 10.0,
+                min: 0.0,
+                step: 0.1,
+                subpath: 'value',
+            },
+        ],
+        canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+    },
+    {
         label: 'Severity',
         name: 'Severity',
         shortName: 'Severity',
