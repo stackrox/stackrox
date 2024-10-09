@@ -271,7 +271,7 @@ func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) er
 			}
 		}
 		if category == storage.ImageIntegrationCategory_NODE_SCANNER {
-			nodeIntegration, err := imageIntegrationToNodeIntegration(request)
+			nodeIntegration, err := enrichment.ImageIntegrationToNodeIntegration(request)
 			if err != nil {
 				return errors.Wrap(errox.InvalidArgs, errors.Wrap(err, "node scanner integration").Error())
 			}

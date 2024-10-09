@@ -53,6 +53,15 @@ func (m *NodeIntegration_Clairify) CloneVT() isNodeIntegration_IntegrationConfig
 	return r
 }
 
+func (m *NodeIntegration_Scannerv4) CloneVT() isNodeIntegration_IntegrationConfig {
+	if m == nil {
+		return (*NodeIntegration_Scannerv4)(nil)
+	}
+	r := new(NodeIntegration_Scannerv4)
+	r.Scannerv4 = m.Scannerv4.CloneVT()
+	return r
+}
+
 func (this *NodeIntegration) EqualVT(that *NodeIntegration) bool {
 	if this == that {
 		return true
@@ -107,6 +116,31 @@ func (this *NodeIntegration_Clairify) EqualVT(thatIface isNodeIntegration_Integr
 		}
 		if q == nil {
 			q = &ClairifyConfig{}
+		}
+		if !p.EqualVT(q) {
+			return false
+		}
+	}
+	return true
+}
+
+func (this *NodeIntegration_Scannerv4) EqualVT(thatIface isNodeIntegration_IntegrationConfig) bool {
+	that, ok := thatIface.(*NodeIntegration_Scannerv4)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if p, q := this.Scannerv4, that.Scannerv4; p != q {
+		if p == nil {
+			p = &ScannerV4Config{}
+		}
+		if q == nil {
+			q = &ScannerV4Config{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -197,6 +231,25 @@ func (m *NodeIntegration_Clairify) MarshalToSizedBufferVT(dAtA []byte) (int, err
 	}
 	return len(dAtA) - i, nil
 }
+func (m *NodeIntegration_Scannerv4) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *NodeIntegration_Scannerv4) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.Scannerv4 != nil {
+		size, err := m.Scannerv4.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x2a
+	}
+	return len(dAtA) - i, nil
+}
 func (m *NodeIntegration) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -230,6 +283,18 @@ func (m *NodeIntegration_Clairify) SizeVT() (n int) {
 	_ = l
 	if m.Clairify != nil {
 		l = m.Clairify.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	return n
+}
+func (m *NodeIntegration_Scannerv4) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Scannerv4 != nil {
+		l = m.Scannerv4.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	return n
@@ -410,6 +475,47 @@ func (m *NodeIntegration) UnmarshalVTUnsafe(dAtA []byte) error {
 					return err
 				}
 				m.IntegrationConfig = &NodeIntegration_Clairify{Clairify: v}
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Scannerv4", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.IntegrationConfig.(*NodeIntegration_Scannerv4); ok {
+				if err := oneof.Scannerv4.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &ScannerV4Config{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.IntegrationConfig = &NodeIntegration_Scannerv4{Scannerv4: v}
 			}
 			iNdEx = postIndex
 		default:
