@@ -49,7 +49,7 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, inject_related_images, extra_supported_arches, unreleased=None):
+def patch_csv(csv_doc, version, operator_image, first_version, related_images_mode, extra_supported_arches, unreleased=None):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -60,7 +60,7 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
 
     csv_doc['spec']['version'] = version
 
-    if not no_related_images:
+    if related_images_mode in ["downstream", "konflux"]:
         rewrite(csv_doc, related_image_passthrough)
 
     previous_y_stream = get_previous_y_stream(version)
@@ -80,7 +80,7 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     if replaced_xyz is not None:
         csv_doc["spec"]["replaces"] = f"{raw_name}.v{replaced_xyz}"
 
-    if inject_related_images:
+    if related_images_mode == "konflux":
         csv_doc['spec']['relatedImages'] = construct_related_images(operator_image)
     elif 'relatedImages' in csv_doc['spec']:
         # OSBS fills relatedImages therefore we must not provide that ourselves.
@@ -170,10 +170,8 @@ def parse_args():
                         help='The first version of the operator that was published')
     parser.add_argument("--operator-image", required=True, metavar='image',
                         help='Which operator image to use in the patched CSV')
-    parser.add_argument("--no-related-images", action='store_true',
-                        help='Disable passthrough of RELATED_IMAGE_* environment variables')
-    parser.add_argument("--inject-related-images", action='store_true',
-                        help='Create spec.relatedImages list, based on RELATED_IMAGE_* variables in the current environment.')
+    parser.add_argument("--related-images-mode", choices=["downstream", "omit", "konflux"], default="downstream",
+                        help="Set mode of operation for handling related image settings.")
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
@@ -201,8 +199,7 @@ def main():
               version=args.use_version,
               first_version=args.first_version,
               unreleased=args.unreleased,
-              no_related_images=args.no_related_images,
-              inject_related_images=args.inject_related_images,
+              related_images_mode=args.related_images_mode,
               extra_supported_arches=args.add_supported_arch)
     print(yaml.safe_dump(doc))
 
