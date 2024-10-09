@@ -1,2 +1,6 @@
-PyYAML==6.0
+# If you do any changes here, rebuild the fully resolved requirements-build.txt
+# with the steps explained at
+# https://github.com/containerbuildsystem/cachi2/blob/main/docs/pip.md#building-from-source
+
+PyYAML==6.0.2
 pytest==7.0.1
