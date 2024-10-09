@@ -70,6 +70,7 @@ RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTR
 #  go: inconsistent vendoring in /stackrox/operator/tools/operator-sdk:
 #      github.com/operator-framework/operator-lifecycle-manager@v0.27.0: is explicitly required in go.mod, but not marked as explicit in vendor/modules.txt
 ENV GOFLAGS=''
+ENV CGO_ENABLED=1
 
 RUN mkdir -p build/ && \
     rm -rf build/bundle && \
