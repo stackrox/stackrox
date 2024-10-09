@@ -52,7 +52,7 @@ STACKROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 
 echo "Installing stackrox-central-services"
 
-installflags=()
+installflags=('--set' 'central.persistence.none=true')
 if [[ "$SMALL_INSTALL" == "true" ]]; then
     installflags+=('--set' 'central.resources.requests.memory=1Gi')
     installflags+=('--set' 'central.resources.requests.cpu=1')
@@ -68,7 +68,6 @@ if [[ "$SMALL_INSTALL" == "true" ]]; then
     installflags+=('--set' 'scanner.resources.requests.cpu=500m')
     installflags+=('--set' 'scanner.resources.limits.memory=2500Mi')
     installflags+=('--set' 'scanner.resources.limits.cpu=2000m')
-    installflags+=('--set' 'central.persistence.none=true')
 fi
 
 helm install -n stackrox --create-namespace stackrox-central-services stackrox/stackrox-central-services \
