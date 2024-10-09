@@ -13,7 +13,7 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
 import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
 import {
-    generateVisibilityFor,
+    generateVisibilityForColumns,
     getHiddenColumnCount,
     ManagedColumns,
 } from 'hooks/useManagedColumns';
@@ -121,7 +121,7 @@ export type ImageOverviewTableProps = {
     onUnwatchImage: (imageName: string) => void;
     showCveDetailFields: boolean;
     onClearFilters: () => void;
-    tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
+    columnVisibilityState: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
 
 function ImageOverviewTable({
@@ -134,10 +134,10 @@ function ImageOverviewTable({
     onUnwatchImage,
     showCveDetailFields,
     onClearFilters,
-    tableConfig,
+    columnVisibilityState,
 }: ImageOverviewTableProps) {
-    const getVisibilityClass = generateVisibilityFor(tableConfig);
-    const hiddenColumnCount = getHiddenColumnCount(tableConfig);
+    const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
+    const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
     const colSpan =
         5 +
         (hasWriteAccessForWatchedImage ? 1 : 0) +

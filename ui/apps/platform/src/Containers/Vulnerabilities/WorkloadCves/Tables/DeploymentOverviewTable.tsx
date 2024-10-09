@@ -12,7 +12,7 @@ import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
 import {
-    generateVisibilityFor,
+    generateVisibilityForColumns,
     getHiddenColumnCount,
     ManagedColumns,
 } from 'hooks/useManagedColumns';
@@ -95,7 +95,7 @@ type DeploymentOverviewTableProps = {
     filteredSeverities?: VulnerabilitySeverityLabel[];
     showCveDetailFields: boolean;
     onClearFilters: () => void;
-    tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
+    columnVisibilityState: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
 
 function DeploymentOverviewTable({
@@ -105,11 +105,11 @@ function DeploymentOverviewTable({
     filteredSeverities,
     showCveDetailFields,
     onClearFilters,
-    tableConfig,
+    columnVisibilityState,
 }: DeploymentOverviewTableProps) {
     const vulnerabilityState = useVulnerabilityState();
-    const getVisibilityClass = generateVisibilityFor(tableConfig);
-    const hiddenColumnCount = getHiddenColumnCount(tableConfig);
+    const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
+    const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
     const colSpan = 5 + (showCveDetailFields ? 1 : 0) + -hiddenColumnCount;
 
     return (

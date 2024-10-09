@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 
-import { generateVisibilityFor, useManagedColumns } from './useManagedColumns';
+import { generateVisibilityForColumns, useManagedColumns } from './useManagedColumns';
 
 beforeEach(() => {
     window.localStorage.clear();
@@ -470,7 +470,7 @@ test('should correctly generate visibility classes', () => {
         result.current.toggleVisibility('Name');
     });
 
-    const getVisibilityClass = generateVisibilityFor(result.current.columns);
+    const getVisibilityClass = generateVisibilityForColumns(result.current.columns);
 
     expect(getVisibilityClass('Name')).toEqual('pf-v5-u-display-none');
     expect(getVisibilityClass('CVSS')).toEqual('');

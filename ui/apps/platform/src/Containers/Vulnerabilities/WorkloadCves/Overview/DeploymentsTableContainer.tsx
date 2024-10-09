@@ -94,7 +94,7 @@ function DeploymentsTableContainer({
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
-                    tableConfig={managedColumnState.columns}
+                    columnVisibilityState={managedColumnState.columns}
                 />
             </div>
         </>

@@ -106,7 +106,7 @@ function ImagesTableContainer({
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
-                    tableConfig={managedColumns.columns}
+                    columnVisibilityState={managedColumns.columns}
                 />
             </div>
         </>

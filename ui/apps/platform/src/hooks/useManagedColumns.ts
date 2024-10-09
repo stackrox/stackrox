@@ -53,9 +53,11 @@ function getCurrentColumnConfig<ColumnKey extends string>(
 }
 
 // Helper function to generate a visibility class based on the current column state
-export function generateVisibilityFor<T extends Record<string, ColumnConfig>>(columnState: T) {
+export function generateVisibilityForColumns<T extends Record<string, ColumnConfig>>(
+    columnVisibilityState: T
+) {
     return function getVisibilityClass(key: keyof T) {
-        const state = columnState[key];
+        const state = columnVisibilityState[key];
         if (!state || state.isShown) {
             return '';
         }
