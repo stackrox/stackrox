@@ -15,7 +15,7 @@ import DeploymentsTable, {
     Deployment,
     deploymentListQuery,
     tableId,
-} from '../Tables/DeploymentsTable';
+} from '../Tables/DeploymentOverviewTable';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { VulnerabilitySeverityLabel } from '../../types';
 

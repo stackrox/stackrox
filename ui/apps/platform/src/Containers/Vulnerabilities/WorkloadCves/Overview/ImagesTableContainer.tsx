@@ -10,9 +10,9 @@ import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
 import { useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
-import ImagesTable, {
+import ImageOverviewTable, {
     Image,
-    ImagesTableProps,
+    ImageOverviewTableProps,
     defaultColumns,
     imageListQuery,
     tableId,
@@ -33,8 +33,8 @@ type ImagesTableContainerProps = {
     workloadCvesScopedQueryString: string;
     isFiltered: boolean;
     hasWriteAccessForWatchedImage: boolean;
-    onWatchImage: ImagesTableProps['onWatchImage'];
-    onUnwatchImage: ImagesTableProps['onUnwatchImage'];
+    onWatchImage: ImageOverviewTableProps['onWatchImage'];
+    onUnwatchImage: ImageOverviewTableProps['onUnwatchImage'];
     showCveDetailFields: boolean;
 };
 
@@ -93,7 +93,7 @@ function ImagesTableContainer({
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >
-                <ImagesTable
+                <ImageOverviewTable
                     tableState={tableState}
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}

@@ -21,7 +21,7 @@ import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
-export const tableId = 'workloadCvesDeploymentOverviewTable';
+export const tableId = 'WorkloadCvesDeploymentOverviewTable';
 
 export const defaultColumns = {
     cvesBySeverity: {
@@ -88,7 +88,7 @@ export type Deployment = {
     created: string | null;
 };
 
-type DeploymentsTableProps = {
+type DeploymentOverviewTableProps = {
     tableState: TableUIState<Deployment>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
@@ -98,7 +98,7 @@ type DeploymentsTableProps = {
     tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
 
-function DeploymentsTable({
+function DeploymentOverviewTable({
     tableState,
     getSortParams,
     isFiltered,
@@ -106,7 +106,7 @@ function DeploymentsTable({
     showCveDetailFields,
     onClearFilters,
     tableConfig,
-}: DeploymentsTableProps) {
+}: DeploymentOverviewTableProps) {
     const vulnerabilityState = useVulnerabilityState();
     const getVisibilityClass = generateVisibilityFor(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
@@ -187,7 +187,10 @@ function DeploymentsTable({
                                         </Link>
                                     </Td>
                                     {showCveDetailFields && (
-                                        <Td className={getVisibilityClass('cvesBySeverity')}>
+                                        <Td
+                                            dataLabel="CVEs by severity"
+                                            className={getVisibilityClass('cvesBySeverity')}
+                                        >
                                             <SeverityCountLabels
                                                 criticalCount={criticalCount}
                                                 importantCount={importantCount}
@@ -198,14 +201,27 @@ function DeploymentsTable({
                                             />
                                         </Td>
                                     )}
-                                    <Td className={getVisibilityClass('cluster')}>{clusterName}</Td>
-                                    <Td className={getVisibilityClass('namespace')}>{namespace}</Td>
-                                    <Td className={getVisibilityClass('images')}>
+                                    <Td
+                                        dataLabel="Cluster"
+                                        className={getVisibilityClass('cluster')}
+                                    >
+                                        {clusterName}
+                                    </Td>
+                                    <Td
+                                        dataLabel="Namespace"
+                                        className={getVisibilityClass('namespace')}
+                                    >
+                                        {namespace}
+                                    </Td>
+                                    <Td dataLabel="Images" className={getVisibilityClass('images')}>
                                         <>
                                             {imageCount} {pluralize('image', imageCount)}
                                         </>
                                     </Td>
-                                    <Td className={getVisibilityClass('firstDiscovered')}>
+                                    <Td
+                                        dataLabel="First discovered"
+                                        className={getVisibilityClass('firstDiscovered')}
+                                    >
                                         <DateDistance date={created} />
                                     </Td>
                                 </Tr>
@@ -218,4 +234,4 @@ function DeploymentsTable({
     );
 }
 
-export default DeploymentsTable;
+export default DeploymentOverviewTable;

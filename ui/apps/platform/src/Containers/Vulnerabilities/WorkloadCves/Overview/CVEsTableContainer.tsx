@@ -16,13 +16,13 @@ import { SearchFilter } from 'types/search';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import { useManagedColumns } from 'hooks/useManagedColumns';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
-import CVEsTable, {
+import WorkloadCVEOverviewTable, {
     ImageCVE,
     cveListQuery,
     defaultColumns,
     tableId,
     unfilteredImageCountQuery,
-} from '../Tables/CVEsTable';
+} from '../Tables/WorkloadCVEOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import { getStatusesForExceptionCount } from '../../utils/searchUtils';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
@@ -169,7 +169,7 @@ function CVEsTableContainer({
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >
-                <CVEsTable
+                <WorkloadCVEOverviewTable
                     tableState={tableState}
                     unfilteredImageCount={imageCountData?.imageCount || 0}
                     getSortParams={getSortParams}

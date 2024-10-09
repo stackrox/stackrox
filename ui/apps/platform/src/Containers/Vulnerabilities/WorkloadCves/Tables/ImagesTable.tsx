@@ -22,7 +22,7 @@ import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
 import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabelLayout';
 
-export const tableId = 'workloadCvesImageOverviewTable';
+export const tableId = 'WorkloadCvesImageOverviewTable';
 
 export const defaultColumns = {
     cvesBySeverity: {
@@ -111,7 +111,7 @@ export type Image = {
     notes: string[];
 };
 
-export type ImagesTableProps = {
+export type ImageOverviewTableProps = {
     tableState: TableUIState<Image>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
@@ -124,7 +124,7 @@ export type ImagesTableProps = {
     tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
 
-function ImagesTable({
+function ImageOverviewTable({
     tableState,
     getSortParams,
     isFiltered,
@@ -135,7 +135,7 @@ function ImagesTable({
     showCveDetailFields,
     onClearFilters,
     tableConfig,
-}: ImagesTableProps) {
+}: ImageOverviewTableProps) {
     const getVisibilityClass = generateVisibilityFor(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const colSpan =
@@ -263,10 +263,14 @@ function ImagesTable({
                                             />
                                         </Td>
                                     )}
-                                    <Td className={getVisibilityClass('operatingSystem')}>
+                                    <Td
+                                        dataLabel="Operating system"
+                                        className={getVisibilityClass('operatingSystem')}
+                                    >
                                         {operatingSystem || 'unknown'}
                                     </Td>
                                     <Td
+                                        dataLabel="Deployments"
                                         className={getVisibilityClass('deployments')}
                                         modifier="nowrap"
                                     >
@@ -281,7 +285,10 @@ function ImagesTable({
                                             </Flex>
                                         )}
                                     </Td>
-                                    <Td className={getVisibilityClass('imageCreatedTime')}>
+                                    <Td
+                                        dataLabel="Age"
+                                        className={getVisibilityClass('imageCreatedTime')}
+                                    >
                                         {metadata?.v1?.created ? (
                                             <DateDistance
                                                 date={metadata.v1.created}
@@ -291,7 +298,10 @@ function ImagesTable({
                                             'unknown'
                                         )}
                                     </Td>
-                                    <Td className={getVisibilityClass('imageScanTime')}>
+                                    <Td
+                                        dataLabel="Scan time"
+                                        className={getVisibilityClass('imageScanTime')}
+                                    >
                                         {scanTime ? <DateDistance date={scanTime} /> : 'unknown'}
                                     </Td>
                                     {hasWriteAccessForWatchedImage && (
@@ -322,4 +332,4 @@ function ImagesTable({
     );
 }
 
-export default ImagesTable;
+export default ImageOverviewTable;
