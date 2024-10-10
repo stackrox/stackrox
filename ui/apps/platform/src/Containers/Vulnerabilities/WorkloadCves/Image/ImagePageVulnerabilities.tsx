@@ -36,6 +36,8 @@ import {
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
+import { useManagedColumns } from 'hooks/useManagedColumns';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
 import {
     SearchOption,
     IMAGE_CVE_SEARCH_OPTION,
@@ -49,7 +51,9 @@ import CvesByStatusSummaryCard, {
 } from '../SummaryCards/CvesByStatusSummaryCard';
 import ImageVulnerabilitiesTable, {
     ImageVulnerability,
+    defaultColumns,
     imageVulnerabilitiesFragment,
+    tableId,
 } from '../Tables/ImageVulnerabilitiesTable';
 import {
     getHiddenSeverities,
@@ -187,6 +191,7 @@ function ImagePageVulnerabilities({
         error,
         searchFilter,
     });
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
@@ -277,7 +282,7 @@ function ImagePageVulnerabilities({
                     </SummaryCardLayout>
                     <Divider />
                     <div className="pf-v5-u-p-lg">
-                        <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                        <Split hasGutter className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                             <SplitItem isFilled>
                                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                     <Title headingLevel="h2">
@@ -286,6 +291,9 @@ function ImagePageVulnerabilities({
                                     </Title>
                                     {isFiltered && <DynamicTableLabel />}
                                 </Flex>
+                            </SplitItem>
+                            <SplitItem>
+                                <ColumnManagementButton managedColumnState={managedColumnState} />
                             </SplitItem>
                             {canSelectRows && (
                                 <>
@@ -353,6 +361,7 @@ function ImagePageVulnerabilities({
                                     setSearchFilter({});
                                     setPage(1);
                                 }}
+                                tableConfig={managedColumnState.columns}
                             />
                         </div>
                     </div>
