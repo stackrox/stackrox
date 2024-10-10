@@ -390,7 +390,7 @@ function WorkloadCVEOverviewTable({
                                             />
                                         )}
                                         {createTableActions && (
-                                            <Td className="pf-v5-u-px-0">
+                                            <Td isActionCell>
                                                 <ActionsColumn
                                                     popperProps={ACTION_COLUMN_POPPER_PROPS}
                                                     items={createTableActions({
