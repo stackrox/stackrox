@@ -49,6 +49,9 @@ func getDeploymentIDsFromAlerts(alertSlices ...[]*storage.Alert) set.StringSet {
 func (d *alertManagerImpl) AlertAndNotify(ctx context.Context, currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (set.StringSet, error) {
 	// Merge the old and the new alerts.
 	newAlerts, updatedAlerts, toBeResolvedAlerts, err := d.mergeManyAlerts(ctx, currentAlerts, oldAlertFilters...)
+	for i, alert := range toBeResolvedAlerts {
+		log.Debugf("AlertAndNotify toBeResolvedAlerts [%d]: %s:%s", i, alert.GetId(), alert.GetPolicy().GetName())
+	}
 	if err != nil {
 		return nil, err
 	}

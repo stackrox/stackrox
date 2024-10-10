@@ -3,6 +3,7 @@ package alerts
 import (
 	"context"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -65,6 +66,8 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 	}
 
 	alertResults := msg.GetEvent().GetAlertResults()
+	log.Debugf("Handling AlertResults: source=%s, deplID=%s, action=%s",
+		alertResults.Source, alertResults.DeploymentId, msg.GetEvent().GetAction())
 	if msg.GetEvent().GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		if len(alertResults.GetAlerts()) > 0 {
 			return errors.Errorf("unexpected: Got non-zero alerts for a deployment remove: %+v", msg.GetEvent())

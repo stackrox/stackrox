@@ -79,6 +79,12 @@ func (s *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 func (s *pipelineImpl) runRemovePipeline(ctx context.Context, pod *storage.Pod) error {
 	// Remove the pod from persistence.
+	p, found, err := s.pods.GetPod(ctx, pod.GetId())
+	if found && err == nil && p != nil {
+		log.Debugf("Removing pod id=%s, name=%s", pod.GetId(), p.GetName())
+	} else {
+		log.Debugf("Wanted to remove pod id=%s (found=%t) but that failed: %v", pod.GetId(), found, err)
+	}
 	return s.pods.RemovePod(ctx, pod.GetId())
 }
 
