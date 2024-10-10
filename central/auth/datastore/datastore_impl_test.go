@@ -89,14 +89,6 @@ func (s *datastorePostgresTestSuite) TearDownTest() {
 }
 
 func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
-	s.kubeServiceAccountConfigTest(true, func(call *gomock.Call) { call.Times(1) })
-}
-
-func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfigDisabledFeature() {
-	s.kubeServiceAccountConfigTest(false, func(call *gomock.Call) { call.Times(0) })
-}
-
-func (s *datastorePostgresTestSuite) kubeServiceAccountConfigTest(exchangerShouldExist bool, setFetcherCallCount func(call *gomock.Call)) {
 	controller := gomock.NewController(s.T())
 	defer controller.Finish()
 	store := store.New(s.pool.DB)
@@ -104,8 +96,8 @@ func (s *datastorePostgresTestSuite) kubeServiceAccountConfigTest(exchangerShoul
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
 	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
 
-	setFetcherCallCount(issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil))
-	setFetcherCallCount(mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil))
+	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil).Times(1)
+	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	authDataStore := New(store, mockSet, issuerFetcher)
 	s.NoError(authDataStore.InitializeTokenExchangers())
