@@ -50,6 +50,10 @@ func TestGetVersionKind(t *testing.T) {
 			expectedKind: DevelopmentKind,
 		},
 		{
+			versionStr:   "2.5.33.0-71-g1f24b194f0",
+			expectedKind: DevelopmentKind,
+		},
+		{
 			versionStr:   "2.5.33.x-71-g1f24b194f0-dirty",
 			expectedKind: DevelopmentKind,
 		},

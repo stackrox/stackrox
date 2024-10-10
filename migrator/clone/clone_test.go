@@ -32,8 +32,8 @@ var (
 	// Current versions
 	rcVer      = versionPair{version: "3.0.58.0-rc.1", seqNum: 65, minSeqNum: 62}
 	releaseVer = versionPair{version: "3.0.58.0", seqNum: 65, minSeqNum: 62}
-	devVer     = versionPair{version: "3.0.58.x-19-g6bd31dae22-dirty", seqNum: 65, minSeqNum: 62}
-	nightlyVer = versionPair{version: "3.0.58.x-nightly-20210407", seqNum: 65, minSeqNum: 62}
+	devVer     = versionPair{version: "3.0.58.0-19-g6bd31dae22-dirty", seqNum: 65, minSeqNum: 62}
+	nightlyVer = versionPair{version: "3.0.58.0-nightly-20210407", seqNum: 65, minSeqNum: 62}
 )
 
 func setVersion(t *testing.T, ver *versionPair) {
