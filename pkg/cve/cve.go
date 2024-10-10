@@ -49,19 +49,22 @@ func ContainsClusterCVE(types []storage.CVE_CVEType) bool {
 }
 
 // ID creates a CVE ID from the given cve id (and os if postgres is enabled).
-func ID(cve, os string) string {
-	return pgSearch.IDFromPks([]string{cve, os})
+func ID(cve, os, hash string) string {
+	return pgSearch.IDFromPks([]string{cve, os, hash})
 }
 
 // IDToParts return the CVE ID parts—cve and operating system.
-func IDToParts(id string) (string, string) {
+func IDToParts(id string) (string, string, string) {
 	parts := pgSearch.IDToParts(id)
-	if len(parts) > 2 {
+	if len(parts) > 3 {
 		utils.Should(errors.Errorf("unexpected number of parts for CVE ID %s", id))
-		return "", ""
+		return "", "", ""
 	}
 	if len(parts) == 2 {
-		return parts[0], parts[1]
+		return parts[0], parts[1], ""
 	}
-	return parts[0], ""
+	if len(parts) == 3 {
+		return parts[0], parts[1], parts[2]
+	}
+	return parts[0], "", ""
 }
