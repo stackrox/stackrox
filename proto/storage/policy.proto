@@ -15,57 +15,56 @@ option java_package = "io.stackrox.proto.storage";
 
 //Next tag: 28
 message Policy {
-  string id = 1; // @gotags: search:"Policy ID,store,hidden" sql:"pk,index=btree"
-  string name = 2; // @gotags: search:"Policy,store" sql:"unique"
-  string description = 3; // @gotags: search:"Description"
-  string rationale = 4;
-  string remediation = 5;
-  bool disabled = 6; // @gotags: search:"Disabled"
-  repeated string categories = 7; // @gotags: search:"Category,store"
+  string id = 1; // @gotags: search:"Policy ID,store,hidden" sql:"pk,index=btree" crYaml:"-"
+  string name = 2; // @gotags: search:"Policy,store" sql:"unique" crYaml:"policyName"
+  string description = 3; // @gotags: search:"Description" crYaml:",omitempty"
+  string rationale = 4; // @gotags: crYaml:",omitempty"
+  string remediation = 5; // @gotags: crYaml:",omitempty"
+  bool disabled = 6; // @gotags: search:"Disabled,omitempty"
+  repeated string categories = 7; // @gotags: search:"Category,store" crYaml:",omitempty"
   reserved 8; // was PolicyFields fields
 
-  repeated LifecycleStage lifecycle_stages = 9; // @gotags: search:"Lifecycle Stage,store"
-  EventSource event_source = 22;
+  repeated LifecycleStage lifecycle_stages = 9; // @gotags: search:"Lifecycle Stage,store" crYaml:"lifecycleStages,stringer"
+  EventSource event_source = 22; // @gotags: crYaml:"eventSource,stringer"
 
   reserved 10; //was repeated Exclusion whitelists
-  repeated Exclusion exclusions = 21;
-  repeated Scope scope = 11;
+  repeated Exclusion exclusions = 21; // @gotags: crYaml:",omitempty"
+  repeated Scope scope = 11; // @gotags: crYaml:",omitempty"
 
-  Severity severity = 12; // @gotags: search:"Severity,store"
+  Severity severity = 12; // @gotags: search:"Severity,store" crYaml:",stringer"
   // FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
   // FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
   // FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
-  repeated EnforcementAction enforcement_actions = 13; // @gotags: search:"Enforcement"
-  repeated string notifiers = 14;
-  google.protobuf.Timestamp last_updated = 15; // @gotags: search:"Policy Last Updated"
+  repeated EnforcementAction enforcement_actions = 13; // @gotags: search:"Enforcement" crYaml:"enforcementActions,omitempty,stringer"
+  repeated string notifiers = 14; // @gotags: crYaml:",omitempty"
+  google.protobuf.Timestamp last_updated = 15; // @gotags: search:"Policy Last Updated" crYaml:"-"
 
   // For internal use only.
-  string SORT_name = 16; // @gotags: search:"SORT_Policy,hidden,analyzer=keyword"
+  string SORT_name = 16; // @gotags: search:"SORT_Policy,hidden,analyzer=keyword" crYaml:"-"
   // For internal use only.
-  string SORT_lifecycleStage = 17; // @gotags: search:"SORT_Lifecycle Stage,hidden"
+  string SORT_lifecycleStage = 17; // @gotags: search:"SORT_Lifecycle Stage,hidden" crYaml:"-"
   // For internal use only.
-  bool SORT_enforcement = 18; // @gotags: search:"SORT_Enforcement,hidden"
+  bool SORT_enforcement = 18; // @gotags: search:"SORT_Enforcement,hidden" crYaml:"-"
 
-  string policy_version = 19;
-  repeated PolicySection policy_sections = 20;
+  string policy_version = 19; // @gotags: crYaml:"-"
+  repeated PolicySection policy_sections = 20; // @gotags: crYaml:"policySections,omitempty"
 
   message MitreAttackVectors {
     string tactic = 1;
     repeated string techniques = 2;
   }
 
-  repeated MitreAttackVectors mitre_attack_vectors = 23;
+  repeated MitreAttackVectors mitre_attack_vectors = 23; // @gotags: crYaml:"mitreAttackVectors,omitempty"
 
   // Read-only field. If true, the policy's criteria fields are rendered read-only.
-  bool criteria_locked = 24;
+  bool criteria_locked = 24; // @gotags: crYaml:"criteriaLocked"
   // Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
-  bool mitre_vectors_locked = 25;
+  bool mitre_vectors_locked = 25; // @gotags: crYaml:"mitreVectorsLocked"
   // Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
-  bool is_default = 26;
+  bool is_default = 26; // @gotags: crYaml:"isDefault"
 
-  PolicySource source = 27;
+  PolicySource source = 27; // @gotags: crYaml:"-"
 }
-
 enum PolicySource {
   IMPERATIVE = 0;
   DECLARATIVE = 1;
@@ -78,15 +77,15 @@ enum EventSource {
 }
 
 message PolicySection {
-  string section_name = 1;
-  repeated PolicyGroup policy_groups = 3;
+  string section_name = 1; // @gotags: crYaml:"sectionName,omitempty"
+  repeated PolicyGroup policy_groups = 3; // @gotags: crYaml:"policyGroups,omitempty"
 }
 
 message PolicyGroup {
-  string field_name = 1;
-  BooleanOperator boolean_operator = 2;
-  bool negate = 3;
-  repeated PolicyValue values = 4;
+  string field_name = 1; // @gotags: crYaml:"fieldName"
+  BooleanOperator boolean_operator = 2; // @gotags: crYaml:"booleanOperator,stringer"
+  bool negate = 3; // @gotags: crYaml:",omitempty"
+  repeated PolicyValue values = 4; // @gotags: crYaml:",omitempty"
 }
 
 message PolicyValue {
@@ -155,25 +154,25 @@ enum Comparator {
 }
 
 message Exclusion {
-  string name = 1;
+  string name = 1; // @gotags: crYaml:",omitempty"
 
   message Container {
-    ImageName image_name = 3; // @gotags: search:"-"
+    ImageName image_name = 3; // @gotags: search:"-" crYaml:"imageName"
   }
   reserved 2; // formally Container container
 
   message Deployment {
-    string name = 3;
-    Scope scope = 4;
+    string name = 3; // @gotags: crYaml:",omitempty"
+    Scope scope = 4; // @gotags: crYaml:",omitempty"
   }
-  Deployment deployment = 5;
+  Deployment deployment = 5; // @gotags: crYaml:",omitempty"
 
   message Image {
     string name = 1;
   }
-  Image image = 7;
+  Image image = 7; // @gotags: crYaml:",omitempty"
 
-  google.protobuf.Timestamp expiration = 6;
+  google.protobuf.Timestamp expiration = 6; // @gotags: crYaml:",timestamp,omitempty"
 }
 
 // ExportPoliciesResponse is used by the API but it is defined in storage because we expect customers to store them.
