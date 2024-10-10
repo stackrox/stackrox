@@ -7,7 +7,6 @@ import pathlib
 import subprocess
 import sys
 import yaml
-import textwrap
 from collections import namedtuple
 from datetime import datetime, timezone
 
@@ -164,23 +163,15 @@ def get_previous_y_stream(version):
 
 
 def parse_args():
-    partial_parser = argparse.ArgumentParser(add_help=False)
-    partial_parser.add_argument('--related-images-mode', nargs='?')
-    args, _ = partial_parser.parse_known_args()
-    if args.related_images_mode == 'help':
-        print_related_images_mode_help()
-        sys.exit(0)
-
-    parser = argparse.ArgumentParser(description='Patch StackRox Operator ClusterServiceVersion file',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description='Patch StackRox Operator ClusterServiceVersion file')
     parser.add_argument("--use-version", required=True, metavar='version',
                         help='Which SemVer version of the operator to set in the patched CSV, e.g. 3.62.0')
     parser.add_argument("--first-version", required=True, metavar='version',
                         help='The first version of the operator that was published')
     parser.add_argument("--operator-image", required=True, metavar='image',
                         help='Which operator image to use in the patched CSV')
-    parser.add_argument("--related-images-mode", choices=["downstream", "omit", "konflux", "help"], default="downstream",
-                        help="Set mode of operation for handling related image settings; specify 'help' for more information.")
+    parser.add_argument("--related-images-mode", choices=["downstream", "omit", "konflux"], default="downstream",
+                        help="Set mode of operation for handling related image settings.")
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
@@ -189,21 +180,6 @@ def parse_args():
     parser.add_argument("--unreleased", help="Not yet released version of operator, if any.")
     return parser.parse_args()
 
-def print_related_images_mode_help():
-    print(textwrap.dedent('''
-            The '--related-images-mode' parameter allows controlling the mode in which the 'related images'
-            are integrated within the output CSV. The default mode is 'downstream'.
-
-            Description of the supported modes:
-
-                downstream: In this mode the current RELATED_IMAGE_* environment variables are injected into
-                    the output CSV and spec.relatedImages is not added.
-
-                omit: In this mode no RELATED_IMAGE_* environment variables are injected into the output CSV
-                    and spec.relatedImages is not added.
-
-                konflux: In this mode the current RELATED_IMAGE_* environment variables are injected into the
-                    output CSV and spec.relatedImages is populated based on them.'''))
 
 def main():
     logging.basicConfig(stream=sys.stderr, level=logging.INFO,
