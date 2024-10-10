@@ -116,7 +116,8 @@
                 "CLOUD_SOURCES",
                 "DISCOVERED_CLUSTERS",
                 "COMPLIANCE_REMEDIATIONS",
-                "COMPLIANCE_BENCHMARKS"
+                "COMPLIANCE_BENCHMARKS",
+                "AUTH_PROVIDERS"
               ]
             },
             "collectionFormat": "multi"
@@ -227,7 +228,8 @@
                 "CLOUD_SOURCES",
                 "DISCOVERED_CLUSTERS",
                 "COMPLIANCE_REMEDIATIONS",
-                "COMPLIANCE_BENCHMARKS"
+                "COMPLIANCE_BENCHMARKS",
+                "AUTH_PROVIDERS"
               ]
             },
             "collectionFormat": "multi"
@@ -332,7 +334,8 @@
                 "CLOUD_SOURCES",
                 "DISCOVERED_CLUSTERS",
                 "COMPLIANCE_REMEDIATIONS",
-                "COMPLIANCE_BENCHMARKS"
+                "COMPLIANCE_BENCHMARKS",
+                "AUTH_PROVIDERS"
               ]
             },
             "collectionFormat": "multi"
@@ -480,10 +483,11 @@
         "CLOUD_SOURCES",
         "DISCOVERED_CLUSTERS",
         "COMPLIANCE_REMEDIATIONS",
-        "COMPLIANCE_BENCHMARKS"
+        "COMPLIANCE_BENCHMARKS",
+        "AUTH_PROVIDERS"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 72"
+      "title": "Next available tag: 73"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

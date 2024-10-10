@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/dberrors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
@@ -13,6 +14,25 @@ import (
 // So that we can keep Provider opaque, and to decouple store operations from the registry,
 // These commands are temporarily applied as options.
 /////////////////////////////////////////////////////
+
+// ValidateName checks that the name of the provider is neither empty
+// nor already used in database.
+func ValidateName(ctx context.Context, store Store) ProviderOption {
+	return func(pr *providerImpl) error {
+		providerName := pr.storedInfo.GetName()
+		if len(providerName) == 0 {
+			return errox.InvalidArgs.CausedBy("no name specified for the provider")
+		}
+		exists, err := store.AuthProviderExistsWithName(ctx, providerName)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return errox.InvalidArgs.CausedBy("a provider already exists with the given name")
+		}
+		return nil
+	}
+}
 
 // DefaultAddToStore adds the providers stored data to the input store.
 func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {

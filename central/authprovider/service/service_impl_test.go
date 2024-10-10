@@ -110,9 +110,7 @@ func (s *authProviderServiceTestSuite) TestPostDuplicateAuthProvider() {
 	// Second call with an already registered auth provider should
 	// fail the duplicate name check and not be added
 	// to the openshiftAuth certificate watch loop.
-	// Currently, the duplicate name check is not enforced, so an
-	// extra backend is registered in the loop.
 	_, err = s.service.PostAuthProvider(ctx, postRequest)
 	s.Error(err)
-	s.Equal(3, openshiftAuth.GetRegisteredBackendCount())
+	s.Equal(2, openshiftAuth.GetRegisteredBackendCount())
 }
