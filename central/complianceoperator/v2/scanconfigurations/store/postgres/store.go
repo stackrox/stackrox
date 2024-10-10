@@ -113,7 +113,6 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 
 	query = "delete from compliance_operator_scan_configuration_v2_profiles where compliance_operator_scan_configuration_v2_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetProfiles()))
-
 	for childIndex, child := range obj.GetClusters() {
 		if err := insertIntoComplianceOperatorScanConfigurationV2Clusters(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
@@ -122,7 +121,6 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 
 	query = "delete from compliance_operator_scan_configuration_v2_clusters where compliance_operator_scan_configuration_v2_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetClusters()))
-
 	for childIndex, child := range obj.GetNotifiers() {
 		if err := insertIntoComplianceOperatorScanConfigurationV2Notifiers(batch, child, obj.GetId(), childIndex); err != nil {
 			return err

@@ -14,6 +14,7 @@ import {
 } from '@patternfly/react-table';
 import { Text } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
@@ -31,6 +32,7 @@ import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import {
     getScoreVersionsForTopCVSS,
+    getScoreVersionsForTopNvdCVSS,
     sortCveDistroList,
     aggregateByCVSS,
     aggregateByCreatedTime,
@@ -70,11 +72,14 @@ export const cveListQuery = gql`
             topCVSS
             affectedImageCount
             firstDiscoveredInSystem
+            topNvdCVSS
             distroTuples {
                 summary
                 operatingSystem
                 cvss
                 scoreVersion
+                nvdCvss
+                nvdScoreVersion
             }
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
@@ -102,11 +107,14 @@ export type ImageCVE = {
     topCVSS: number;
     affectedImageCount: number;
     firstDiscoveredInSystem: string | null;
+    topNvdCVSS: number;
     distroTuples: {
         summary: string;
         operatingSystem: string;
         cvss: number;
         scoreVersion: string;
+        nvdCvss: number;
+        nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
     }[];
     pendingExceptionCount: number;
 };
@@ -143,8 +151,11 @@ function CVEsTable({
     const expandedRowSet = useSet<string>();
     const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+
     const colSpan =
-        6 +
+        (isNvdCvssEnabled ? 7 : 6) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0);
@@ -172,6 +183,11 @@ function CVEsTable({
                     >
                         Top CVSS
                     </TooltipTh>
+                    {isNvdCvssEnabled && (
+                        <TooltipTh tooltip="Highest CVSS score (from National Vulnerability Database) of this CVE across images">
+                            Top NVD CVSS
+                        </TooltipTh>
+                    )}
                     <TooltipTh
                         sort={getSortParams('Image Sha', aggregateByDistinctCount)}
                         tooltip="Ratio of total images affected by this CVE"
@@ -210,6 +226,7 @@ function CVEsTable({
                                 cve,
                                 affectedImageCountBySeverity,
                                 topCVSS,
+                                topNvdCVSS,
                                 affectedImageCount,
                                 firstDiscoveredInSystem,
                                 distroTuples,
@@ -225,6 +242,10 @@ function CVEsTable({
 
                             const prioritizedDistros = sortCveDistroList(distroTuples);
                             const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
+                            const nvdScoreVersions = getScoreVersionsForTopNvdCVSS(
+                                topNvdCVSS,
+                                distroTuples
+                            );
                             const summary =
                                 prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
@@ -291,6 +312,14 @@ function CVEsTable({
                                                 }
                                             />
                                         </Td>
+                                        {isNvdCvssEnabled && (
+                                            <Td dataLabel="Top NVD CVSS">
+                                                <CvssFormatted
+                                                    cvss={topNvdCVSS ?? 0}
+                                                    scoreVersion={nvdScoreVersions.join('/')}
+                                                />
+                                            </Td>
+                                        )}
                                         <Td dataLabel="Affected images">
                                             {affectedImageCount}/{unfilteredImageCount} affected
                                             images

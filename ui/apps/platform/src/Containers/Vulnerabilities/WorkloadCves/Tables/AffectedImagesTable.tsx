@@ -2,6 +2,7 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import { ExpandableRowContent, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
@@ -17,6 +18,7 @@ import { isNonEmptyArray } from 'utils/type.utils';
 import {
     getIsSomeVulnerabilityFixable,
     getHighestCvssScore,
+    getHighestNvdCvssScore,
     getHighestVulnerabilitySeverity,
     getEarliestDiscoveredAtTime,
 } from '../../utils/vulnerabilityUtils';
@@ -52,6 +54,8 @@ export type ImageForCve = {
             discoveredAtImage: string;
             cvss: number;
             scoreVersion: string;
+            nvdCvss: number;
+            nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
         })[];
     })[];
 };
@@ -69,6 +73,8 @@ export const imagesForCveFragment = gql`
                 discoveredAtImage
                 cvss
                 scoreVersion
+                nvdCvss
+                nvdScoreVersion
             }
             ...ImageComponentVulnerabilities
         }
@@ -94,6 +100,9 @@ function AffectedImagesTable({
 }: AffectedImagesTableProps) {
     const expandedRowSet = useSet<string>();
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+
     return (
         <Table variant="compact">
             <Thead noWrap>
@@ -101,11 +110,12 @@ function AffectedImagesTable({
                     <ExpandRowTh />
                     <Th sort={getSortParams('Image')}>Image</Th>
                     <Th sort={getSortParams('Severity')}>CVE severity</Th>
-                    <Th>CVSS</Th>
                     <Th>
                         CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
+                    <Th>CVSS</Th>
+                    {isNvdCvssEnabled && <Th>NVD CVSS</Th>}
                     <Th sort={getSortParams('Operating System')}>Operating system</Th>
                     <Th>
                         Affected components
@@ -128,6 +138,8 @@ function AffectedImagesTable({
                         const topSeverity = getHighestVulnerabilitySeverity(vulnerabilities);
                         const isFixableInImage = getIsSomeVulnerabilityFixable(vulnerabilities);
                         const { cvss, scoreVersion } = getHighestCvssScore(vulnerabilities);
+                        const { nvdCvss, nvdScoreVersion } =
+                            getHighestNvdCvssScore(vulnerabilities);
                         const hasPendingException = imageComponents.some((imageComponent) =>
                             imageComponent.imageVulnerabilities.some(
                                 (imageVulnerability) => imageVulnerability.pendingExceptionCount > 0
@@ -162,14 +174,22 @@ function AffectedImagesTable({
                                     <Td dataLabel="CVE severity" modifier="nowrap">
                                         <VulnerabilitySeverityIconText severity={topSeverity} />
                                     </Td>
-                                    <Td dataLabel="CVSS" modifier="nowrap">
-                                        <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
-                                    </Td>
                                     <Td dataLabel="CVE status" modifier="nowrap">
                                         <VulnerabilityFixableIconText
                                             isFixable={isFixableInImage}
                                         />
                                     </Td>
+                                    <Td dataLabel="CVSS" modifier="nowrap">
+                                        <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
+                                    </Td>
+                                    {isNvdCvssEnabled && (
+                                        <Td dataLabel="NVD CVSS" modifier="nowrap">
+                                            <CvssFormatted
+                                                cvss={nvdCvss}
+                                                scoreVersion={nvdScoreVersion}
+                                            />
+                                        </Td>
+                                    )}
                                     <Td dataLabel="Operating system">{operatingSystem}</Td>
                                     <Td dataLabel="Affected components">
                                         {imageComponents.length === 1
