@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
@@ -19,7 +20,8 @@ import (
 var (
 	_ DataStore = (*datastoreImpl)(nil)
 
-	accessSAC = sac.ForResource(resources.Access)
+	accessSAC                          = sac.ForResource(resources.Access)
+	configControllerServiceAccountName = fmt.Sprintf("system:serviceaccount:%s:config-controller", env.Namespace.Setting())
 )
 
 type datastoreImpl struct {
@@ -154,9 +156,10 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
 		TokenExpirationDuration: "1m",
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{{
+			// sub stands for "subject identifier", a required field on an OIDC token
 			Key:             "sub",
-			ValueExpression: fmt.Sprintf("system:serviceaccount:%s:config-controller", env.Namespace.Setting()),
-			Role:            "Configuration Controller",
+			ValueExpression: configControllerServiceAccountName,
+			Role:            accesscontrol.ConfigController,
 		}},
 		Issuer: kubeSAIssuer,
 	})
