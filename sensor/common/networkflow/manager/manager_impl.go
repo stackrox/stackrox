@@ -339,6 +339,7 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventResourceSyncFinished:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			if m.initialSync.CompareAndSwap(false, true) {
+				log.Info("Resetting enricher ticker - inital sync false -> true")
 				m.enricherTicker.Reset(tickerTime)
 			}
 			return
@@ -346,6 +347,7 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 		m.resetContext()
 		m.resetLastSentState()
 		m.centralReady.Signal()
+		log.Info("Resetting enricher ticker - sync finished")
 		m.enricherTicker.Reset(tickerTime)
 	case common.SensorComponentEventOfflineMode:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
@@ -380,6 +382,8 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 			// If the m.sensorUpdates queue is full, we bounce the Network Flow update.
 			// They will still be processed by the detection engine for newer entities, but
 			// sensor will not keep ordered updates indefinitely in memory.
+
+			log.Infof("Message %+v cannot be enqueued", msg)
 			return false
 		}
 	} else {
@@ -422,6 +426,7 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 		case <-m.stopper.Flow().StopRequested():
 			return
 		case <-tickerC:
+			log.Info("enriching connections tick")
 			if !features.SensorCapturesIntermediateEvents.Enabled() && !m.centralReady.IsDone() {
 				log.Info("Sensor is in offline mode: skipping enriching until connection is back up")
 				continue
@@ -445,8 +450,13 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 func (m *networkFlowManager) enrichAndSend() {
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
 
+	log.Infof("enrichAndSend: m.enrichedConnsLastSentState: %+v", m.enrichedConnsLastSentState)
+	log.Infof("enrichAndSend: m.enrichedEndpointsLastSentState: %+v", m.enrichedEndpointsLastSentState)
+
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
+	log.Infof("enrichAndSend: updatedConns: %+v", updatedConns)
+	log.Infof("enrichAndSend: updatedEndpoints: %+v", updatedEndpoints)
 
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
 		return
@@ -469,15 +479,18 @@ func (m *networkFlowManager) enrichAndSend() {
 		m.policyDetector.ProcessNetworkFlow(detectionContext, flow)
 	}
 
-	log.Debugf("Flow update : %v", protoToSend)
+	log.Infof("Sending flow update to central: %v", protoToSend)
 	if m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
 	}) {
+		log.Info("Flow has been enqueued in sensorUpdates")
 		m.updateConnectionStates(currentConns, currentEndpoints)
 		metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
 		metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
+	} else {
+		log.Info("Flow has NOT been enqueued in sensorUpdates")
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 }
@@ -821,6 +834,12 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS) {
 	allHostConns := m.getAllHostConnections()
+	for i, conn := range allHostConns {
+		concurrency.WithLock(&conn.mutex, func() {
+			log.Infof("currentEnrichedConnsAndEndpoints: allHostConns: [%d]:%+v", i, conn)
+
+		})
+	}
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
 	enrichedEndpoints := make(map[containerEndpointIndicator]timestamp.MicroTS)
@@ -828,6 +847,8 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConn
 		m.enrichHostConnections(hostConns, enrichedConnections)
 		m.enrichHostContainerEndpoints(hostConns, enrichedEndpoints)
 	}
+	log.Infof("currentEnrichedConnsAndEndpoints: enrichedConnections: %+v", enrichedConnections)
+	log.Infof("currentEnrichedConnsAndEndpoints: enrichedEndpoints: %+v", enrichedEndpoints)
 
 	return enrichedConnections, enrichedEndpoints
 }
@@ -939,6 +960,15 @@ func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo
 		}
 		m.connectionsByHost[hostname] = conns
 	}
+	for host, connections := range m.connectionsByHost {
+		if connections.connections == nil {
+			log.Infof("RegisterCollector: connections.connections for hostname %s is nil", host)
+			continue
+		}
+		for conn, status := range connections.connections {
+			log.Infof("RegisterCollector: connection for host [%s]: %s, status: %v", host, conn.String(), status)
+		}
+	}
 
 	conns.mutex.Lock()
 	defer conns.mutex.Unlock()
@@ -972,6 +1002,7 @@ func (m *networkFlowManager) deleteHostConnections(hostname string) {
 		return
 	}
 	flowMetrics.HostConnectionsRemoved.Add(float64(len(conns.connections)))
+	log.Infof("deleteHostConnections: deleting connection for host: %s", hostname)
 	delete(m.connectionsByHost, hostname)
 }
 
