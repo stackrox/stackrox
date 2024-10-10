@@ -367,7 +367,10 @@ describe('Policy wizard, Step 3 Policy Criteria', () => {
                 clearPolicyCriteriaCards();
 
                 clickPolicyKeyGroup('Image contents');
-                dragFieldIntoSection(`${selectors.step3.policyCriteria.key}:contains('CVSS')`);
+                // eq(0) to specify CVSS instead of NVD CVSS
+                dragFieldIntoSection(
+                    `${selectors.step3.policyCriteria.key}:contains('CVSS'):eq(0)`
+                );
                 cy.get(selectors.step3.policyCriteria.value.select).should('have.value', '');
                 cy.get(selectors.step3.policyCriteria.value.numberInput).should('have.value', '');
                 cy.get(selectors.step3.policyCriteria.value.select).click();
