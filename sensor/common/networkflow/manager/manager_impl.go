@@ -835,9 +835,10 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS) {
 	allHostConns := m.getAllHostConnections()
 	for i, conn := range allHostConns {
-		conn.mutex.Lock()
-		log.Infof("currentEnrichedConnsAndEndpoints: allHostConns: [%d]:%+v", i, conn)
-		conn.mutex.Unlock()
+		concurrency.WithLock(&conn.mutex, func() {
+			log.Infof("currentEnrichedConnsAndEndpoints: allHostConns: [%d]:%+v", i, conn)
+
+		})
 	}
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
