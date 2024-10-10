@@ -24,5 +24,11 @@ message NetworkConnectionConfig {
 // At this time it only controls if external IPs are aggregated at the
 // cluster level.
 message CollectorConfig {
+  message ExternalIPs {
+    bool enable = 1;
+  }
+  message Networking {
+    ExternalIPs external_ips = 1;
+  }
   NetworkConnectionConfig network_connection_config = 1;
 }
