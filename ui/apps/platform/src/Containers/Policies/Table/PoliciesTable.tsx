@@ -30,7 +30,6 @@ import { ActionItem } from 'Containers/Violations/ViolationsTablePanel';
 import EnableDisableNotificationModal, {
     EnableDisableType,
 } from 'Containers/Policies/Modal/EnableDisableNotificationModal';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import useSet from 'hooks/useSet';
 import { AlertVariantType } from 'hooks/patternfly/useToasts';
@@ -89,8 +88,6 @@ function PoliciesTable({
     searchFilter,
     searchOptions,
 }: PoliciesTableProps): React.ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isPolicyAsCodeEnabled = isFeatureFlagEnabled('ROX_POLICY_AS_CODE');
     const expandedRowSet = useSet<string>();
     const history = useHistory();
     const [labelAndNotifierIdsForTypes, setLabelAndNotifierIdsForTypes] = useState<
@@ -293,26 +290,20 @@ function PoliciesTable({
                                             >
                                                 {`Export policies (${selectedPolicies.length})`}
                                             </DropdownItem>,
-                                            isPolicyAsCodeEnabled ? (
-                                                <DropdownItem
-                                                    key="Save as Custom Resource"
-                                                    component="button"
-                                                    isDisabled={numSaveable === 0}
-                                                    onClick={() =>
-                                                        setSavingIds(
-                                                            selectedPolicies
-                                                                .filter(
-                                                                    ({ isDefault }) => !isDefault
-                                                                )
-                                                                .map(({ id }) => id)
-                                                        )
-                                                    }
-                                                >
-                                                    {`Save as Custom Resources (${numSaveable})`}
-                                                </DropdownItem>
-                                            ) : (
-                                                <React.Fragment key="Save as Custom Resource"></React.Fragment>
-                                            ),
+                                            <DropdownItem
+                                                key="Save as Custom Resource"
+                                                component="button"
+                                                isDisabled={numSaveable === 0}
+                                                onClick={() =>
+                                                    setSavingIds(
+                                                        selectedPolicies
+                                                            .filter(({ isDefault }) => !isDefault)
+                                                            .map(({ id }) => id)
+                                                    )
+                                                }
+                                            >
+                                                {`Save as Custom Resources (${numSaveable})`}
+                                            </DropdownItem>,
                                             <DropdownSeparator key="Separator" />,
                                             <DropdownItem
                                                 key="Delete policy"
@@ -413,15 +404,14 @@ function PoliciesTable({
                         };
                         // Store as an array so that we can conditionally spread into actionItems
                         // based on feature flag without having to deal with nulls
-                        const saveAsCustomResourceActionItems: ActionItem[] =
-                            isPolicyAsCodeEnabled && !isDefault
-                                ? [
-                                      {
-                                          title: 'Save as Custom Resource',
-                                          onClick: () => setSavingIds([id]),
-                                      },
-                                  ]
-                                : [];
+                        const saveAsCustomResourceActionItems: ActionItem[] = !isDefault
+                            ? [
+                                  {
+                                      title: 'Save as Custom Resource',
+                                      onClick: () => setSavingIds([id]),
+                                  },
+                              ]
+                            : [];
                         const actionItems = hasWriteAccessForPolicy
                             ? [
                                   {

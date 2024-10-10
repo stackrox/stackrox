@@ -36,7 +36,6 @@ import {
 import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import PolicyDetailContent from './PolicyDetailContent';
 import { isExternalPolicy } from '../policies.utils';
 
@@ -55,8 +54,6 @@ function PolicyDetail({
     hasWriteAccessForPolicy,
     policy,
 }: PolicyDetailProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isPolicyAsCodeEnabled = isFeatureFlagEnabled('ROX_POLICY_AS_CODE');
     const history = useHistory();
 
     const [isRequesting, setIsRequesting] = useState(false);
@@ -242,7 +239,7 @@ function PolicyDetail({
                                               >
                                                   Export policy to JSON
                                               </DropdownItem>,
-                                              isPolicyAsCodeEnabled && !isDefault ? (
+                                              !isDefault ? (
                                                   <DropdownItem
                                                       key="Save as Custom Resource"
                                                       component="button"
@@ -282,7 +279,7 @@ function PolicyDetail({
                                               >
                                                   Export policy to JSON
                                               </DropdownItem>,
-                                              isPolicyAsCodeEnabled && !isDefault ? (
+                                              !isDefault ? (
                                                   <DropdownItem
                                                       key="Save as Custom Resource"
                                                       component="button"

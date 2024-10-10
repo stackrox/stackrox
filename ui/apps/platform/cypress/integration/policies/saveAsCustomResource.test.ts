@@ -1,5 +1,4 @@
 import { selectors } from '../../constants/PoliciesPage';
-import { hasFeatureFlag } from '../../helpers/features';
 import withAuth from '../../helpers/basicAuth';
 import {
     doPolicyPageAction,
@@ -27,12 +26,6 @@ function visitPoliciesAndGetFirstPolicyId() {
 
 describe('Save policies as Custom Resource', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_POLICY_AS_CODE')) {
-            this.skip();
-        }
-    });
 
     describe('policies table', () => {
         it('should save policy as Custom Resource via table row menu', () => {
