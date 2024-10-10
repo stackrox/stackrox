@@ -7,12 +7,6 @@
 # dropped (e.g. 3.0.61.1 -> 3.61.1) and development version ".x" is changed to ".0" (e.g. 3.0.61.x-123 -> 3.0.61.0-123).
 VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g' | sed -E 's@^3.0.([[:digit:]]+\.[[:digit:]]+)(-)?@3.\1\2@g')
 
-# The operator version prefixed with "v" for ClusterServiceVersion resource and bundle and index tooling.
-CSV_VERSION ?= v$(VERSION)
-# Operator version to install and channel to install from, used by deploy-(dirty-tag-)via-olm targets.
-INSTALL_VERSION ?= $(CSV_VERSION)
-INSTALL_CHANNEL ?= latest
-
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
@@ -63,6 +57,12 @@ USE_IMAGE_DIGESTS ?= false
 ifeq ($(USE_IMAGE_DIGESTS), true)
 	BUNDLE_GEN_FLAGS += --use-image-digests
 endif
+
+# The operator version prefixed with "v" for ClusterServiceVersion resource and bundle and index tooling.
+CSV_VERSION ?= v$(VERSION)
+# Overridable operator version and channel to install for (deploy|upgrade)*-via-olm targets.
+INSTALL_VERSION ?= $(CSV_VERSION)
+INSTALL_CHANNEL ?= latest
 
 # INDEX_IMG_BASE and INDEX_IMG_TAG define the image:tag used for the index (a.k.a. catalog) image.
 # These variables can be overridden when calling deploy*-via-olm targets,
