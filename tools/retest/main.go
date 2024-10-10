@@ -114,7 +114,7 @@ func commentsToCreate(statuses map[string]string, jobsToRetest []string, shouldR
 	for _, job := range jobsToRetest {
 		state := statuses[job]
 		if state == "pending" {
-			log.Printf("Not adding comment for job %q because it is already running", job)
+			log.Printf("Not issuing /test %q because the job is %s", job, state)
 			continue
 		}
 		comments = append(comments, "/test "+job)
