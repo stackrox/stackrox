@@ -2,7 +2,6 @@
 # A library of bash functions useful for installing operator using OLM.
 
 declare -r KUTTL="${KUTTL:-kubectl-kuttl}"
-declare -r INSTALL_PLAN_APPROVAL=${INSTALL_PLAN_APPROVAL:-Manual}
 # `declare` ignores `errexit`: http://mywiki.wooledge.org/BashFAQ/105
 ROOT_DIR="$(dirname "${BASH_SOURCE[0]}")/../.."
 readonly ROOT_DIR
@@ -40,27 +39,13 @@ function apply_operator_manifests() {
       disable_security_context_config=""
   fi
 
-  local starting_csv
-  case "${INSTALL_PLAN_APPROVAL}" in
-  Automatic)
-    starting_csv="null"
-    ;;
-  Manual)
-    starting_csv="rhacs-operator.${starting_csv_version}"
-    ;;
-  *)
-    log "Unsupported \$INSTALL_PLAN_APPROVAL ${INSTALL_PLAN_APPROVAL}"
-    return 1
-    ;;
-  esac
   env -i PATH="${PATH}" \
     INDEX_IMAGE_TAG="${index_image_tag}" \
-    STARTING_CSV="${starting_csv}" \
+    STARTING_CSV="rhacs-operator.${starting_csv_version}" \
     NAMESPACE="${operator_ns}" \
     OPERATOR_CHANNEL="${operator_channel}" \
     INDEX_IMAGE_REPO="${index_image_repo}" \
     DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
-    INSTALL_PLAN_APPROVAL="${INSTALL_PLAN_APPROVAL}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
 }

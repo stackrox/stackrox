@@ -35,11 +35,7 @@ function main() {
   check_version_tag "${starting_csv_version}" "${allow_dirty_tag}"
   create_namespace "${operator_ns}"
   apply_operator_manifests "${operator_ns}" "${index_image_repo}" "${index_image_tag}" "${starting_csv_version}" "${operator_channel}"
-
-  if [[ ${INSTALL_PLAN_APPROVAL} == "Manual" ]]; then
-    approve_install_plan "${operator_ns}" "${starting_csv_version}"
-  fi
-
+  approve_install_plan "${operator_ns}" "${starting_csv_version}"
   nurse_deployment_until_available "${operator_ns}" "${starting_csv_version}"
 
 }
