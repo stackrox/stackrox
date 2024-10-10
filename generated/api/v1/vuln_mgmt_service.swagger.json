@@ -885,6 +885,10 @@
             "$ref": "#/definitions/storageCVSSScore"
           },
           "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
+        },
+        "nvdCvss": {
+          "type": "number",
+          "format": "float"
         }
       },
       "title": "Next Tag: 22"
