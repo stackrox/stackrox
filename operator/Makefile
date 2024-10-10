@@ -9,8 +9,6 @@ VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(
 
 # The operator version prefixed with "v" for ClusterServiceVersion resource and bundle and index tooling.
 CSV_VERSION ?= v$(VERSION)
-# Operator index image tag to install from, used by deploy*-via-olm targets.
-INDEX_IMG_TAG ?= $(CSV_VERSION)
 # Operator version to install and channel to install from, used by deploy-(dirty-tag-)via-olm targets.
 INSTALL_VERSION ?= $(CSV_VERSION)
 INSTALL_CHANNEL ?= latest
@@ -66,8 +64,11 @@ ifeq ($(USE_IMAGE_DIGESTS), true)
 	BUNDLE_GEN_FLAGS += --use-image-digests
 endif
 
-# INDEX_IMG defines the image:tag used for the index (a.k.a. catalog) image, containing the single operator bundle image.
+# INDEX_IMG_BASE and INDEX_IMG_TAG define the image:tag used for the index (a.k.a. catalog) image.
+# These variables can be overridden when calling deploy*-via-olm targets,
+# e.g. to deploy catalogs from IIB or other externally-built indexes.
 INDEX_IMG_BASE = $(IMAGE_TAG_BASE)-index
+INDEX_IMG_TAG ?= $(CSV_VERSION)
 INDEX_IMG ?= $(INDEX_IMG_BASE):$(INDEX_IMG_TAG)
 
 # Image URL to use all building/pushing image targets
