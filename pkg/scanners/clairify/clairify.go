@@ -412,6 +412,7 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *scannerT
 	clairComponents := components.Clairify()
 
 	req := &clairGRPCV1.GetImageVulnerabilitiesRequest{
+		Image: utils.GetFullyQualifiedFullName(image),
 		Components: clairComponents,
 		Notes:      notes,
 	}
