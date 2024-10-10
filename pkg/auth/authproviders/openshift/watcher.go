@@ -8,26 +8,63 @@ import (
 
 	"github.com/stackrox/rox/pkg/k8scfgwatch"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
 	log = logging.LoggerForModule()
 
 	_ k8scfgwatch.Handler = (*handler)(nil)
+
+	backendRegistry      = map[string]*backend{}
+	backendRegistryMutex sync.RWMutex
+
+	once sync.Once
 )
 
-type notifyCertPoolUpdate = func()
+func registerBackend(b *backend) {
+	once.Do(watchCertPool)
+	backendRegistryMutex.Lock()
+	defer backendRegistryMutex.Unlock()
 
-func watchCertPool(n notifyCertPoolUpdate) {
+	backendRegistry[b.id] = b
+}
+
+func listRegisteredBackends() []*backend {
+	backendRegistryMutex.RLock()
+	defer backendRegistryMutex.RUnlock()
+	backends := make([]*backend, 0, len(backendRegistry))
+	for _, b := range backendRegistry {
+		backends = append(backends, b)
+	}
+	return backends
+}
+
+func handleCertPoolUpdate() {
+	backends := listRegisteredBackends()
+	for _, b := range backends {
+		b.recreateOpenshiftConnector()
+	}
+}
+
+// GetRegisteredBackendCount gives the number of backend registered
+// in the certificate watcher update loop.
+func GetRegisteredBackendCount() int {
+	backendRegistryMutex.RLock()
+	defer backendRegistryMutex.RUnlock()
+
+	return len(backendRegistry)
+}
+func watchCertPool() {
 	opts := k8scfgwatch.Options{
 		Interval: 5 * time.Second,
 		Force:    true,
 	}
 
 	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), path.Dir(serviceOperatorCAPath),
-		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: internalCAs, onCertPoolUpdate: n}), opts)
+		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: internalCAs, onCertPoolUpdate: handleCertPoolUpdate}), opts)
 	_ = k8scfgwatch.WatchConfigMountDir(context.Background(), path.Dir(injectedCAPath),
-		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: injectedCAs, onCertPoolUpdate: n}), opts)
+		k8scfgwatch.DeduplicateWatchErrors(&handler{readCAs: injectedCAs, onCertPoolUpdate: handleCertPoolUpdate}), opts)
 }
 
 type handler struct {
