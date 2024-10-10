@@ -10,7 +10,7 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 }
 
 tmp=$(mktemp)
-status=$(curl -k --config <(curl_cfg user "admin:${ROX_PASSWORD}") \
+status=$(curl -k --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
   -w "%{http_code}\n" \
   -o "$tmp" \
   https://central:443/v1/signatureintegrations )
@@ -33,7 +33,7 @@ fi
 replacedIntegrationJSON=$(echo "$integrationJSON" | jq -c -r ".cosign.publicKeys[0].publicKeyPemEnc = \"${currentPublicKey}\"")
 
 tmp=$(mktemp)
-status=$(curl -k --config <(curl_cfg user "admin:${ROX_PASSWORD}") -X PUT \
+status=$(curl -k --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") -X PUT \
   -d "${replacedIntegrationJSON}" \
   -o "$tmp" \
   -w "%{http_code}\n" \

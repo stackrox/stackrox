@@ -266,29 +266,29 @@ run_proxy_tests() {
         info "Testing roxctl access through ${name}..."
         local endpoint="${server_name}:${port}"
         for endpoint_tgt in "${scheme}://${endpoint}" "${scheme}://${endpoint}/" "$endpoint"; do
-        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
+        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" central debug log >/dev/null || \
             failures+=("$p")
 
         if (( direct )); then
-            roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log &>/dev/null && \
+            roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" central debug log &>/dev/null && \
             failures+=("${p},force-http1")
         else
-            roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
+            roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" central debug log >/dev/null || \
             failures+=("${p},force-http1")
         fi
 
         if [[ "$endpoint_tgt" = *://* ]]; then
             # Auto-sense plaintext or TLS when specifying a scheme
-            roxctl "${extra_args[@]}" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
+            roxctl "${extra_args[@]}" -e "${endpoint_tgt}" central debug log >/dev/null || \
             failures+=("${p},tls-autosense")
 
             # Incompatible plaintext configuration should fail
-            roxctl "${extra_args[@]}" --plaintext="$plaintext_neg" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log &>/dev/null && \
+            roxctl "${extra_args[@]}" --plaintext="$plaintext_neg" -e "${endpoint_tgt}" central debug log &>/dev/null && \
             failures+=("${p},incompatible-tls")
         fi
 
         done
-        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${server_name}:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
+        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${server_name}:${port}" sensor generate k8s --name remote --continue-if-exists || \
         failures+=("${p},sensor-generate")
         echo "Done."
         rm -rf "/tmp/proxy-test-${port}"

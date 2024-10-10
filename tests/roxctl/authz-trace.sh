@@ -2,10 +2,10 @@
 
 set -uo pipefail
 
-# This test script requires API_ENDPOINT and ROX_PASSWORD to be set in the environment.
+# This test script requires API_ENDPOINT and ROX_ADMIN_PASSWORD to be set in the environment.
 
 [[ -n "$API_ENDPOINT" ]] || die "API_ENDPOINT environment variable required"
-[[ -n "$ROX_PASSWORD" ]] || die "ROX_PASSWORD environment variable required"
+[[ -n "$ROX_ADMIN_PASSWORD" ]] || die "ROX_ADMIN_PASSWORD environment variable required"
 
 echo "Testing command: roxctl central debug authz-trace"
 
@@ -30,7 +30,7 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 }
 
 curl_central_admin() {
-  curl_central "$@" --config <(curl_cfg user "admin:${ROX_PASSWORD}")
+  curl_central "$@" --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}")
 }
 
 curl_central_token() {
@@ -89,7 +89,7 @@ curl_central_admin /v1/apitokens/generate -d '{"name": "test", "roles": ["Analys
 FAILED_CHECKS=0
 
 # Run authorization trace collection in the background.
-nohup roxctl --endpoint "$API_ENDPOINT" --insecure-skip-tls-verify --insecure -p "$ROX_PASSWORD" -t 20s central debug authz-trace > trace.out &
+nohup roxctl --endpoint "$API_ENDPOINT" --insecure-skip-tls-verify --insecure -t 20s central debug authz-trace > trace.out &
 # Wait for roxctl to subscribe for authz traces.
 sleep 5
 

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -22,7 +23,6 @@ import (
 
 const (
 	usernameEnvVar = "ROX_USERNAME"
-	passwordEnvVar = "ROX_PASSWORD"
 
 	apiEndpointEnvVar = "API_ENDPOINT"
 
@@ -51,7 +51,7 @@ func RoxUsername(t testutils.T) string {
 
 // RoxPassword returns the rox basic auth password (or fails the test if not found).
 func RoxPassword(t testutils.T) string {
-	if pw := mustGetEnvVarInCI(t, passwordEnvVar); pw != "" {
+	if pw := mustGetEnvVarInCI(t, env.PasswordEnv.EnvVar()); pw != "" {
 		return pw
 	}
 

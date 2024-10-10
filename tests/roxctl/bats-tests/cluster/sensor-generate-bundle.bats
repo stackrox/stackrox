@@ -8,7 +8,7 @@ setup_file() {
   echo "Testing roxctl version: '$(roxctl-development version)'" >&3
   command -v yq || skip "Tests in this file require yq"
   [[ -n "$API_ENDPOINT" ]] || fail "API_ENDPOINT environment variable required"
-  [[ -n "$ROX_PASSWORD" ]] || fail "ROX_PASSWORD environment variable required"
+  [[ -n "$ROX_ADMIN_PASSWORD" ]] || fail "ROX_ADMIN_PASSWORD environment variable required"
 }
 
 setup() {

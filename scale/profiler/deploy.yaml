@@ -29,8 +29,8 @@ spec:
         imagePullPolicy: IfNotPresent
         name: profiler
         env:
-        - name: ROX_PASSWORD
-          value: ${ROX_PASSWORD}
+        - name: ROX_ADMIN_PASSWORD
+          value: ${ROX_ADMIN_PASSWORD}
         command:
           - /profiler-entrypoint.sh
           - ${OUTPUT_DIR}
