@@ -659,6 +659,8 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvds
 
 	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
 	var preferredErr error
+	var nvd *v4.VulnerabilityReport_Vulnerability_CVSS
+	nvd, nvdErr := nvdCVSS(nvdVuln)
 	switch {
 	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
@@ -666,22 +668,22 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvds
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV)
 	case strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
 		// It is expected manually added vulnerabilities only have a single link.
-		preferredCVSS, preferredErr = vulnCVSS(vuln, sourceFromLinks(vuln.Links))
+		src := sourceFromLinks(vuln.Links)
+		// When NVD has available CVSS score, use NVD CVSS score
+		if src == v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD && nvd != nil {
+			preferredCVSS = nvd
+			preferredErr = nvdErr
+		} else {
+			preferredCVSS, preferredErr = vulnCVSS(vuln, src)
+		}
 	}
 	if preferredCVSS != nil {
 		metrics = append(metrics, preferredCVSS)
 	}
 
-	var nvdErr error
-	// Manually added vulnerabilities may have its data sourced from NVD.
-	// In that scenario, there is no need to add yet another NVD entry,
-	// especially since there is a reason the manual entry exists in the first place.
-	if preferredCVSS.GetSource() != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
-		var cvss *v4.VulnerabilityReport_Vulnerability_CVSS
-		cvss, nvdErr = nvdCVSS(nvdVuln)
-		if cvss != nil {
-			metrics = append(metrics, cvss)
-		}
+	// If preferred CVSS score is not NVD, NVD needs to be added for data completeness
+	if preferredCVSS.GetSource() != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD && nvd != nil {
+		metrics = append(metrics, cvss)
 	}
 
 	return metrics, errors.Join(preferredErr, nvdErr)
