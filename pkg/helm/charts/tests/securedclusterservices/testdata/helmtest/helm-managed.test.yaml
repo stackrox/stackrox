@@ -27,3 +27,14 @@ tests:
     envVars(.deployments.sensor; "sensor") | assertThat(.["ROX_HELM_CLUSTER_CONFIG_FP"] == "test-fpr")
   set:
     meta.configFingerprintOverride: "test-fpr"
+
+- name: "Operator-installed instance should"
+  set:
+    managedBy: MANAGER_TYPE_KUBERNETES_OPERATOR
+  tests:
+  - name: "be not Helm-managed"
+    expect: |
+      helmClusterConfig | assertThat(.notHelmManaged == true)
+  - name: "be managed by operator"
+    expect: |
+      helmClusterConfig | assertThat(.managedBy == "MANAGER_TYPE_KUBERNETES_OPERATOR")

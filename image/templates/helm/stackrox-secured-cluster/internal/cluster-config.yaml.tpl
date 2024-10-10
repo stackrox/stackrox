@@ -2,7 +2,7 @@
 clusterName: {{ ._rox.clusterName }}
 {{- end }}
 managedBy: {{ ._rox.managedBy }}
-notHelmManaged: {{ eq ._rox.managedBy "MANAGER_TYPE_MANUAL" }}
+notHelmManaged: {{ not (eq ._rox.managedBy "MANAGER_TYPE_HELM_CHART") }}
 clusterConfig:
   staticConfig:
     {{- if not ._rox.env.openshift }}
