@@ -7,6 +7,7 @@ import { transformPolicyCriteriaValuesToStrings } from 'utils/policyUtils';
 
 import axios from './instance';
 import { Empty } from './types';
+import { saveFile } from './DownloadService';
 
 const baseUrl = '/v1/policies';
 
@@ -203,6 +204,14 @@ export function exportPolicies(policyIds: string[]): Promise<void> {
         } else {
             throw new Error('No policy data returned for the specified ID');
         }
+    });
+}
+
+export function savePoliciesAsCustomResource(policyIds: string[]): Promise<void> {
+    return saveFile({
+        method: 'post',
+        url: `${baseUrl}/save-as`,
+        data: { policyIds },
     });
 }
 
