@@ -40,6 +40,7 @@ const (
 
 	// CertsPrefix is the filesystem prefix under which service certificates and keys are stored.
 	CertsPrefix = "/run/secrets/stackrox.io/certs/"
+
 	// defaultCACertFilePath is where the certificate is stored.
 	defaultCACertFilePath = CertsPrefix + CACertFileName
 	// defaultCAKeyFilePath is where the key is stored.
@@ -49,6 +50,8 @@ const (
 	defaultCertFilePath = CertsPrefix + ServiceCertFileName
 	// defaultKeyFilePath is where the key is stored.
 	defaultKeyFilePath = CertsPrefix + ServiceKeyFileName
+	// defaultCrsFilePath is where the CRS is stored.
+	defaultCrsFilePath = "/run/secrets/stackrox.io/crs/crs"
 
 	// To account for clock skew, set certificates to be valid some time in the past.
 	beforeGracePeriod = 1 * time.Hour
@@ -136,7 +139,7 @@ type IssuedCert struct {
 
 // LeafCertificateFromFile reads a tls.Certificate (including private key and cert).
 func LeafCertificateFromFile() (tls.Certificate, error) {
-	return tls.LoadX509KeyPair(certFilePathSetting.Setting(), keyFilePathSetting.Setting())
+	return tls.LoadX509KeyPair(CertFilePathSetting.Setting(), KeyFilePathSetting.Setting())
 }
 
 // CACertPEM returns the PEM-encoded CA certificate.
@@ -153,7 +156,7 @@ func CACertPEM() ([]byte, error) {
 
 func readCAKey() ([]byte, error) {
 	readCAKeyOnce.Do(func() {
-		caKeyBytes, err := os.ReadFile(caKeyFilePathSetting.Setting())
+		caKeyBytes, err := os.ReadFile(CAKeyFilePathSetting.Setting())
 		if err != nil {
 			caKeyErr = errors.Wrap(err, "reading CA key")
 			return
@@ -165,7 +168,7 @@ func readCAKey() ([]byte, error) {
 
 func readCA() (*x509.Certificate, []byte, []byte, error) {
 	readCACertOnce.Do(func() {
-		caBytes, err := os.ReadFile(caFilePathSetting.Setting())
+		caBytes, err := os.ReadFile(CAFilePathSetting.Setting())
 		if err != nil {
 			caCertErr = errors.Wrap(err, "reading CA file")
 			return
@@ -221,7 +224,7 @@ func CAForSigning() (CA, error) {
 }
 
 func signer() (cfsigner.Signer, error) {
-	return local.NewSignerFromFile(caFilePathSetting.Setting(), caKeyFilePathSetting.Setting(), createSigningPolicy())
+	return local.NewSignerFromFile(CAFilePathSetting.Setting(), CAKeyFilePathSetting.Setting(), createSigningPolicy())
 }
 
 func createSigningPolicy() *config.Signing {
