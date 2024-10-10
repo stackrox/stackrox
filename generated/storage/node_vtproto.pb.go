@@ -148,6 +148,7 @@ func (m *NodeScan) CloneVT() *NodeScan {
 	r := new(NodeScan)
 	r.ScanTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ScanTime).CloneVT())
 	r.OperatingSystem = m.OperatingSystem
+	r.ScannerVersion = m.ScannerVersion
 	if rhs := m.Components; rhs != nil {
 		tmpContainer := make([]*EmbeddedNodeScanComponent, len(rhs))
 		for k, v := range rhs {
@@ -627,6 +628,9 @@ func (this *NodeScan) EqualVT(that *NodeScan) bool {
 		if vx != vy {
 			return false
 		}
+	}
+	if this.ScannerVersion != that.ScannerVersion {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1314,6 +1318,11 @@ func (m *NodeScan) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.ScannerVersion != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.ScannerVersion))
+		i--
+		dAtA[i] = 0x28
 	}
 	if len(m.Notes) > 0 {
 		var pksize2 int
@@ -2003,6 +2012,9 @@ func (m *NodeScan) SizeVT() (n int) {
 			l += protohelpers.SizeOfVarint(uint64(e))
 		}
 		n += 1 + protohelpers.SizeOfVarint(uint64(l)) + l
+	}
+	if m.ScannerVersion != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.ScannerVersion))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3536,6 +3548,25 @@ func (m *NodeScan) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			} else {
 				return fmt.Errorf("proto: wrong wireType = %d for field Notes", wireType)
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScannerVersion", wireType)
+			}
+			m.ScannerVersion = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.ScannerVersion |= NodeScan_Scanner(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
 			}
 		default:
 			iNdEx = preIndex
