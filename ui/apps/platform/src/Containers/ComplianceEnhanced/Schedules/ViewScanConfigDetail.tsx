@@ -31,6 +31,7 @@ import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
 import { jobContextTabs } from 'Components/ReportJob/types';
+import useAnalytics from 'hooks/useAnalytics';
 import ScanConfigActionDropdown from './ScanConfigActionDropdown';
 import ConfigDetails from './components/ConfigDetails';
 import ReportJobs from './components/ReportJobs';
@@ -57,6 +58,8 @@ function ViewScanConfigDetail({
     error = null,
 }: ViewScanConfigDetailProps): React.ReactElement {
     const { scanConfigId } = useParams();
+    const { analyticsTrack } = useAnalytics();
+
     const [activeScanConfigTab, setActiveScanConfigTab] = useURLStringUnion(
         'scanConfigTab',
         jobContextTabs
@@ -96,6 +99,10 @@ function ViewScanConfigDetail({
     }
 
     function handleSendReport(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        analyticsTrack({
+            event: 'Compliance Report Manual Send Triggered',
+            properties: { source: 'Details page' },
+        });
         clearAlertObj();
         runComplianceReport(scanConfigResponse.id, 'EMAIL')
             .then(() => {
@@ -114,6 +121,10 @@ function ViewScanConfigDetail({
     }
 
     function handleGenerateDownload(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        analyticsTrack({
+            event: 'Compliance Report Download Generation Triggered',
+            properties: { source: 'Details page' },
+        });
         clearAlertObj();
         runComplianceReport(scanConfigResponse.id, 'DOWNLOAD')
             .then(() => {

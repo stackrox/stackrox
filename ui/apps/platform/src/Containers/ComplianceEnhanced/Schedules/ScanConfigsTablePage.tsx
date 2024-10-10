@@ -50,6 +50,7 @@ import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 import MyLastJobStatusTh from 'Components/ReportJob/MyLastJobStatusTh';
 import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
+import useAnalytics from 'hooks/useAnalytics';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import {
@@ -85,6 +86,7 @@ function ScanConfigsTablePage({
     isComplianceReportingEnabled,
 }: ScanConfigsTablePageProps): React.ReactElement {
     const { currentUser } = useAuthStatus();
+    const { analyticsTrack } = useAnalytics();
 
     const [scanConfigsToDelete, setScanConfigsToDelete] = useState<
         ComplianceScanConfigurationStatus[]
@@ -175,6 +177,10 @@ function ScanConfigsTablePage({
     }
 
     function handleSendReport(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        analyticsTrack({
+            event: 'Compliance Report Manual Send Triggered',
+            properties: { source: 'Table row' },
+        });
         clearAlertObj();
         runComplianceReport(scanConfigResponse.id, 'EMAIL')
             .then(() => {
@@ -193,6 +199,10 @@ function ScanConfigsTablePage({
     }
 
     function handleGenerateDownload(scanConfigResponse: ComplianceScanConfigurationStatus) {
+        analyticsTrack({
+            event: 'Compliance Report Download Generation Triggered',
+            properties: { source: 'Table row' },
+        });
         clearAlertObj();
         runComplianceReport(scanConfigResponse.id, 'DOWNLOAD')
             .then(() => {
