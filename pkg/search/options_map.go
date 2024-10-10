@@ -38,6 +38,8 @@ type OptionsMap interface {
 	// PrimaryCategory is the category of the object this options map describes. Note that some of the fields might
 	// be linked fields and hence refer to a different category.
 	PrimaryCategory() v1.SearchCategory
+	// Clone creates copy of the OptionsMap
+	Clone() OptionsMap
 }
 
 type optionsMapImpl struct {
@@ -96,6 +98,14 @@ func (o *optionsMapImpl) Merge(o1 OptionsMap) OptionsMap {
 		o.Add(k, v)
 	}
 	return o
+}
+
+func (o *optionsMapImpl) Clone() OptionsMap {
+	clone := NewOptionsMap(o.PrimaryCategory())
+	for k, v := range o.Original() {
+		clone.Add(k, v)
+	}
+	return clone
 }
 
 // Difference returns a new option map with all elements of first not in second.
