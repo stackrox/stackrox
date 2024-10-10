@@ -158,7 +158,6 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 
 	query = "delete from deployments_containers where deployments_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetContainers()))
-
 	for childIndex, child := range obj.GetPorts() {
 		if err := insertIntoDeploymentsPorts(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
@@ -204,7 +203,6 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 
 	query = "delete from deployments_containers_envs where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
 	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetConfig().GetEnv()))
-
 	for childIndex, child := range obj.GetVolumes() {
 		if err := insertIntoDeploymentsContainersVolumes(batch, child, deploymentID, idx, childIndex); err != nil {
 			return err
@@ -213,7 +211,6 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 
 	query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
 	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetVolumes()))
-
 	for childIndex, child := range obj.GetSecrets() {
 		if err := insertIntoDeploymentsContainersSecrets(batch, child, deploymentID, idx, childIndex); err != nil {
 			return err
