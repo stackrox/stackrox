@@ -1,4 +1,4 @@
-package v4
+package scannerv4
 
 import (
 	"testing"

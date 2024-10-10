@@ -1,4 +1,4 @@
-package v4
+package scannerv4
 
 import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
