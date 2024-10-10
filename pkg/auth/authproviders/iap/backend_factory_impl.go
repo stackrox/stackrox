@@ -33,6 +33,10 @@ func (f *factory) CreateBackend(_ context.Context, id string, _ []string, config
 	return newBackend(audience, loginURL)
 }
 
+func (f *factory) CleanupBackend(_ string) error {
+	return nil
+}
+
 func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (string, string, error) {
 	if r.Method != http.MethodGet {
 		return "", "", httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)

@@ -51,6 +51,10 @@ func (f *factory) CreateBackend(ctx context.Context, id string, uiEndpoints []st
 	return be, nil
 }
 
+func (f *factory) CleanupBackend(_ string) error {
+	return nil
+}
+
 func (f *factory) processACSRequest(r *http.Request) (string, error) {
 	if r.Method != http.MethodPost {
 		return "", httputil.NewError(http.StatusMethodNotAllowed, "only POST requests are allowed to this URL")

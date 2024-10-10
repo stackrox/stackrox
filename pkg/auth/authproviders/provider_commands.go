@@ -16,39 +16,64 @@ import (
 
 // DefaultAddToStore adds the providers stored data to the input store.
 func DefaultAddToStore(ctx context.Context, store Store) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(pr *providerImpl) (RevertOption, error) {
 		if pr.doNotStore {
-			return nil
+			return noOpRevert, nil
+		}
+		providerID := pr.storedInfo.GetId()
+		revert := func(pr *providerImpl) error {
+			return store.RemoveAuthProvider(ctx, providerID, true)
 		}
 		if pr.storedInfo.LastUpdated == nil {
 			pr.storedInfo.LastUpdated = protocompat.TimestampNow()
 		}
-		return store.AddAuthProvider(ctx, pr.storedInfo)
+		return revert, store.AddAuthProvider(ctx, pr.storedInfo)
 	}
 }
 
 // UpdateStore updates the stored value for the provider in the input store.
 func UpdateStore(ctx context.Context, store Store) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(pr *providerImpl) (RevertOption, error) {
 		if pr.doNotStore {
-			return nil
+			return noOpRevert, nil
+		}
+		oldProvider, found, err := store.GetAuthProvider(ctx, pr.storedInfo.Id)
+		if err != nil {
+			return noOpRevert, err
+		}
+		revert := func(pr *providerImpl) error {
+			if !found {
+				return store.RemoveAuthProvider(ctx, pr.storedInfo.Id, true)
+			}
+			return store.UpdateAuthProvider(ctx, oldProvider)
 		}
 		pr.storedInfo.LastUpdated = protocompat.TimestampNow()
-		return store.UpdateAuthProvider(ctx, pr.storedInfo)
+		return revert, store.UpdateAuthProvider(ctx, pr.storedInfo)
 	}
 }
 
 // DeleteFromStore removes the providers stored data from the input store.
 func DeleteFromStore(ctx context.Context, store Store, providerID string, force bool) ProviderOption {
-	return func(pr *providerImpl) error {
-		err := store.RemoveAuthProvider(ctx, providerID, force)
+	return func(pr *providerImpl) (RevertOption, error) {
+		oldProvider, found, err := store.GetAuthProvider(ctx, pr.storedInfo.GetId())
+		if err != nil && !pr.doNotStore {
+			return noOpRevert, err
+		}
+		revert := func(pr *providerImpl) error {
+			if !found {
+				return nil
+			}
+			pr.storedInfo = oldProvider
+			return store.AddAuthProvider(ctx, oldProvider)
+		}
+		err = store.RemoveAuthProvider(ctx, providerID, force)
 		if err != nil {
 			// If it's a type we don't want to store, then we're okay with it not existing.
 			// We do this in case it was stored in the DB in a previous version.
 			if pr.doNotStore && dberrors.IsNotFound(err) {
-				return nil
+				return noOpRevert, nil
 			}
-			return err
+			return revert, err
 		}
 		// a deleted provider should no longer be accessible, but it's still cached as a token source so mark it as
 		// no longer valid
@@ -56,19 +81,19 @@ func DeleteFromStore(ctx context.Context, store Store, providerID string, force 
 			Id:      pr.storedInfo.GetId(),
 			Enabled: false,
 		}
-		return nil
+		return revert, nil
 	}
 }
 
 // UnregisterSource unregisters the token source from the source factory
 func UnregisterSource(factory tokens.IssuerFactory) ProviderOption {
-	return func(pr *providerImpl) error {
+	return func(pr *providerImpl) (RevertOption, error) {
 		err := factory.UnregisterSource(pr)
 		// both DeleteFromStore and UnregisterSource mutate external stores, so regardless of order the second one
 		// can't return err and fail the change.
 		if err != nil {
 			log.Warnf("Unable to unregister token source: %v", err)
 		}
-		return nil
+		return noOpRevert, nil
 	}
 }
