@@ -18,8 +18,9 @@ export function useCollectionFormSubmission(pageAction: CollectionPageAction) {
                 return reject(new Error('A Collection form has been submitted in read-only view'));
             }
             const isEmptyCollection =
-                Object.values(collection.resourceSelector).every(({ type }) => type === 'All') &&
-                collection.embeddedCollectionIds.length === 0;
+                Object.values(collection.resourceSelector).every(
+                    ({ type }) => type === 'NoneSpecified'
+                ) && collection.embeddedCollectionIds.length === 0;
 
             if (isEmptyCollection) {
                 return reject(new Error('Cannot save an empty collection'));
