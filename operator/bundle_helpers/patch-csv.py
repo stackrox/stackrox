@@ -6,10 +6,11 @@ import os
 import pathlib
 import subprocess
 import sys
-import yaml
 import textwrap
 from collections import namedtuple
 from datetime import datetime, timezone
+
+import yaml
 
 from rewrite import rewrite, string_replacer
 
@@ -50,7 +51,8 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, related_images_mode, extra_supported_arches, unreleased=None):
+def patch_csv(csv_doc, version, operator_image, first_version, related_images_mode, extra_supported_arches,
+              unreleased=None):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -77,7 +79,8 @@ def patch_csv(csv_doc, version, operator_image, first_version, related_images_mo
 
     skips = parse_skips(csv_doc["spec"], raw_name)
     replaced_xyz = calculate_replaced_version(
-        version=version, first_version=first_version, previous_y_stream=previous_y_stream, skips=skips, unreleased=unreleased)
+        version=version, first_version=first_version, previous_y_stream=previous_y_stream, skips=skips,
+        unreleased=unreleased)
     if replaced_xyz is not None:
         csv_doc["spec"]["replaces"] = f"{raw_name}.v{replaced_xyz}"
 
@@ -87,6 +90,7 @@ def patch_csv(csv_doc, version, operator_image, first_version, related_images_mo
         # OSBS fills relatedImages therefore we must not provide that ourselves.
         # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
         del csv_doc['spec']['relatedImages']
+
 
 def construct_related_images(manager_image):
     related_images = []
@@ -99,6 +103,7 @@ def construct_related_images(manager_image):
     # air-gapped installation, but has no reason to appear in operator manager's environment.
     related_images.append({'name': 'manager', 'image': manager_image})
     return related_images
+
 
 def parse_skips(spec, raw_name):
     raw_skips = spec.get("skips", [])
@@ -163,24 +168,31 @@ def get_previous_y_stream(version):
     return subprocess.check_output([executable, version], encoding='utf-8').strip()
 
 
-def parse_args():
-    partial_parser = argparse.ArgumentParser(add_help=False)
-    partial_parser.add_argument('--related-images-mode', nargs='?')
-    args, _ = partial_parser.parse_known_args()
-    if args.related_images_mode == 'help':
-        print_related_images_mode_help()
-        sys.exit(0)
+# This class configures ArgumentParser help to print default values and preserve linebreaks in argument help.
+class HelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter):
+    pass
 
+
+def parse_args():
     parser = argparse.ArgumentParser(description='Patch StackRox Operator ClusterServiceVersion file',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                                     formatter_class=HelpFormatter)
     parser.add_argument("--use-version", required=True, metavar='version',
                         help='Which SemVer version of the operator to set in the patched CSV, e.g. 3.62.0')
     parser.add_argument("--first-version", required=True, metavar='version',
                         help='The first version of the operator that was published')
     parser.add_argument("--operator-image", required=True, metavar='image',
                         help='Which operator image to use in the patched CSV')
-    parser.add_argument("--related-images-mode", choices=["downstream", "omit", "konflux", "help"], default="downstream",
-                        help="Set mode of operation for handling related image settings; specify 'help' for more information.")
+    parser.add_argument("--related-images-mode", choices=["downstream", "omit", "konflux"], default="downstream",
+                        help=textwrap.dedent("""
+                        Set mode of operation for handling related image attributes in the output CSV.
+                        Supported modes:
+                            downstream: In this mode the current RELATED_IMAGE_* environment variables are injected into
+                                the output CSV and spec.relatedImages is not added.
+                            omit: In this mode no RELATED_IMAGE_* environment variables are injected into the output CSV
+                                and spec.relatedImages is not added.
+                            konflux: In this mode the current RELATED_IMAGE_* environment variables are injected into the
+                                output CSV and spec.relatedImages is populated based on them.
+                        """).lstrip())
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
@@ -189,21 +201,6 @@ def parse_args():
     parser.add_argument("--unreleased", help="Not yet released version of operator, if any.")
     return parser.parse_args()
 
-def print_related_images_mode_help():
-    print(textwrap.dedent('''
-            The '--related-images-mode' parameter allows controlling the mode in which the 'related images'
-            are integrated within the output CSV. The default mode is 'downstream'.
-
-            Description of the supported modes:
-
-                downstream: In this mode the current RELATED_IMAGE_* environment variables are injected into
-                    the output CSV and spec.relatedImages is not added.
-
-                omit: In this mode no RELATED_IMAGE_* environment variables are injected into the output CSV
-                    and spec.relatedImages is not added.
-
-                konflux: In this mode the current RELATED_IMAGE_* environment variables are injected into the
-                    output CSV and spec.relatedImages is populated based on them.'''))
 
 def main():
     logging.basicConfig(stream=sys.stderr, level=logging.INFO,
