@@ -18,6 +18,6 @@ type Manager interface {
 	// Stop scheduler
 	Stop()
 
-	HandleScan(scan *storage.ComplianceOperatorScanV2) error
-	HandleResult(result *storage.ComplianceOperatorCheckResultV2) error
+	HandleScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2) error
+	HandleResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error
 }

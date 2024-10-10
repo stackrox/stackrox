@@ -52,7 +52,7 @@ func (s *PipelineTestSuite) TestRunCreate() {
 	ctx := context.Background()
 
 	s.v2ScanDS.EXPECT().UpsertScan(ctx, testutils.GetScanV2Storage(s.T())).Return(nil).Times(1)
-	s.reportMgr.EXPECT().HandleScan(gomock.Any()).Times(1)
+	s.reportMgr.EXPECT().HandleScan(gomock.Any(), gomock.Any()).Times(1)
 
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{

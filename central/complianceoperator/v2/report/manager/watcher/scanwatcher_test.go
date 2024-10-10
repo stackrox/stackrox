@@ -13,10 +13,15 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/queue"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+)
+
+var (
+	testDBAccess = sac.WithAllAccess(context.Background())
 )
 
 type testEvent func(*testing.T, ScanWatcher)
@@ -160,14 +165,16 @@ func TestScanWatcherTimeout(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	finishedSignal := concurrency.NewSignal()
 	scanWatcher := &scanWatcherImpl{
-		ctx:          ctx,
-		cancel:       cancel,
-		watcherID:    "id",
-		scanC:        make(chan *storage.ComplianceOperatorScanV2),
-		resultC:      make(chan *storage.ComplianceOperatorCheckResultV2),
-		stopped:      &finishedSignal,
-		readyQueue:   resultQueue,
-		checkResults: set.NewStringSet(),
+		ctx:        ctx,
+		cancel:     cancel,
+		scanC:      make(chan *storage.ComplianceOperatorScanV2),
+		resultC:    make(chan *storage.ComplianceOperatorCheckResultV2),
+		stopped:    &finishedSignal,
+		readyQueue: resultQueue,
+		scanResults: &ScanWatcherResults{
+			WatcherID:    "id",
+			CheckResults: set.NewStringSet(),
+		},
 	}
 	timeoutC := make(chan time.Time)
 	go scanWatcher.run(timeoutC)
@@ -213,14 +220,14 @@ func TestGetIDFromResult(t *testing.T) {
 			return nil, errors.New("db error")
 		})
 	result := &storage.ComplianceOperatorCheckResultV2{}
-	_, err := GetWatcherIDFromCheckResult(result, ds)
+	_, err := GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.Error(t, err)
 	// No Scan retrieved
 	ds.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
 			return nil, nil
 		})
-	_, err = GetWatcherIDFromCheckResult(result, ds)
+	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.Error(t, err)
 	// Scan retrieved successfully
 	ds.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(4).
@@ -234,25 +241,25 @@ func TestGetIDFromResult(t *testing.T) {
 			}, nil
 		})
 	// Empty annotation
-	_, err = GetWatcherIDFromCheckResult(result, ds)
+	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.Error(t, err)
 	// Invalid format in the annotation
 	result.Annotations = map[string]string{
 		lastScannedAnnotationKey: protocompat.TimestampNow().String(),
 	}
 	// The timestamp does not coincide with the Scan start time
-	_, err = GetWatcherIDFromCheckResult(result, ds)
+	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.Error(t, err)
 	result.Annotations = map[string]string{
 		lastScannedAnnotationKey: protocompat.TimestampNow().AsTime().Format(time.RFC3339Nano),
 	}
 	// Successful execution
-	_, err = GetWatcherIDFromCheckResult(result, ds)
+	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.Error(t, err)
 	result.Annotations = map[string]string{
 		lastScannedAnnotationKey: timeNow.AsTime().Format(time.RFC3339Nano),
 	}
-	id, err := GetWatcherIDFromCheckResult(result, ds)
+	id, err := GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("cluster-1:scan-1:%s", timeNow.String()), id)
 }
@@ -267,14 +274,14 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceIntegration, error) {
 			return []*storage.ComplianceIntegration{}, ComplianceOperatorIntegrationDataStoreError
 		})
-	assert.Error(t, IsComplianceOperatorHealthy(clusterID, ds))
+	assert.Error(t, IsComplianceOperatorHealthy(testDBAccess, clusterID, ds))
 
 	// No integrations retrieved
 	ds.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceIntegration, error) {
-			return []*storage.ComplianceIntegration{}, ComplianceOperatorIntegrationZeroIngerationsError
+			return []*storage.ComplianceIntegration{}, ComplianceOperatorIntegrationZeroIntegrationsError
 		})
-	assert.Error(t, IsComplianceOperatorHealthy(clusterID, ds))
+	assert.Error(t, IsComplianceOperatorHealthy(testDBAccess, clusterID, ds))
 
 	// Compliance Operator not installed
 	ds.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).Times(1).
@@ -285,7 +292,7 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 				},
 			}, nil
 		})
-	err := IsComplianceOperatorHealthy(clusterID, ds)
+	err := IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
 	assert.Error(t, err)
 	assert.Error(t, ComplianceOperatorNotInstalledError, err)
 
@@ -299,7 +306,7 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 				},
 			}, nil
 		})
-	err = IsComplianceOperatorHealthy(clusterID, ds)
+	err = IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
 	assert.Error(t, err)
 	assert.Equal(t, ComplianceOperatorVersionError, err)
 
@@ -313,5 +320,5 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 				},
 			}, nil
 		})
-	assert.NoError(t, IsComplianceOperatorHealthy(clusterID, ds))
+	assert.NoError(t, IsComplianceOperatorHealthy(testDBAccess, clusterID, ds))
 }

@@ -13,20 +13,18 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/mod/semver"
 )
 
 var (
-	log                                               = logging.LoggerForModule()
-	dbAccess                                          = sac.WithAllAccess(context.Background())
-	ScanTimeoutError                                  = errors.New("scan watcher timed out")
-	ComplianceOperatorNotInstalledError               = errors.New("compliance operator is not installed")
-	ComplianceOperatorVersionError                    = errors.New("compliance operator version")
-	ComplianceOperatorIntegrationDataStoreError       = errors.New("unable to retrieve compliance operator integration")
-	ComplianceOperatorIntegrationZeroIngerationsError = errors.New("no compliance operator integrations retrieved")
+	log                                                = logging.LoggerForModule()
+	ScanTimeoutError                                   = errors.New("scan watcher timed out")
+	ComplianceOperatorNotInstalledError                = errors.New("compliance operator is not installed")
+	ComplianceOperatorVersionError                     = errors.New("compliance operator version")
+	ComplianceOperatorIntegrationDataStoreError        = errors.New("unable to retrieve compliance operator integration")
+	ComplianceOperatorIntegrationZeroIntegrationsError = errors.New("no compliance operator integrations retrieved")
 )
 
 const (
@@ -47,21 +45,22 @@ type ScanWatcher interface {
 
 // ScanWatcherResults is returned when the watcher detects that the scan is completed.
 type ScanWatcherResults struct {
-	ID           string
+	Ctx          context.Context
+	WatcherID    string
 	Scan         *storage.ComplianceOperatorScanV2
 	CheckResults set.StringSet
 	Error        error
 }
 
 // IsComplianceOperatorHealthy indicates whether Compliance Operator is ready for automatic reporting
-func IsComplianceOperatorHealthy(clusterID string, complianceIntegrationDataStore complianceIntegrationDS.DataStore) error {
-	coStatus, err := complianceIntegrationDataStore.GetComplianceIntegrationByCluster(dbAccess, clusterID)
+func IsComplianceOperatorHealthy(ctx context.Context, clusterID string, complianceIntegrationDataStore complianceIntegrationDS.DataStore) error {
+	coStatus, err := complianceIntegrationDataStore.GetComplianceIntegrationByCluster(ctx, clusterID)
 	if err != nil {
 		return errors.Wrap(err, ComplianceOperatorIntegrationDataStoreError.Error())
 	}
 	if len(coStatus) == 0 {
 		log.Errorf("No compliance integrations retrieved from cluster %s", clusterID)
-		return ComplianceOperatorIntegrationZeroIngerationsError
+		return ComplianceOperatorIntegrationZeroIntegrationsError
 	}
 	if !coStatus[0].GetOperatorInstalled() {
 		return ComplianceOperatorNotInstalledError
@@ -92,12 +91,12 @@ func GetWatcherIDFromScan(scan *storage.ComplianceOperatorScanV2) (string, error
 }
 
 // GetWatcherIDFromCheckResult given a CheckResult, returns a unique ID for the watcher
-func GetWatcherIDFromCheckResult(result *storage.ComplianceOperatorCheckResultV2, scanDataStore scanDS.DataStore) (string, error) {
+func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2, scanDataStore scanDS.DataStore) (string, error) {
 	scanRefQuery := search.NewQueryBuilder().AddExactMatches(
 		search.ComplianceOperatorScanRef,
 		result.GetScanRefId(),
 	).ProtoQuery()
-	scans, err := scanDataStore.SearchScans(dbAccess, scanRefQuery)
+	scans, err := scanDataStore.SearchScans(ctx, scanRefQuery)
 	if err != nil {
 		return "", errors.Errorf("Unable to retrieve scan : %v", err)
 	}
@@ -131,11 +130,9 @@ type scanWatcherImpl struct {
 	resultC chan *storage.ComplianceOperatorCheckResultV2
 	stopped *concurrency.Signal
 
-	watcherID    string
-	readyQueue   readyQueue[*ScanWatcherResults]
-	scan         *storage.ComplianceOperatorScanV2
-	checkResults set.StringSet
-	totalChecks  int
+	readyQueue  readyQueue[*ScanWatcherResults]
+	scanResults *ScanWatcherResults
+	totalChecks int
 }
 
 // NewScanWatcher creates a new ScanWatcher
@@ -143,14 +140,17 @@ func NewScanWatcher(ctx context.Context, watcherID string, queue readyQueue[*Sca
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
 	ret := &scanWatcherImpl{
-		ctx:          watcherCtx,
-		cancel:       cancel,
-		scanC:        make(chan *storage.ComplianceOperatorScanV2, defaultChanelSize),
-		resultC:      make(chan *storage.ComplianceOperatorCheckResultV2, defaultChanelSize),
-		stopped:      &finishedSignal,
-		watcherID:    watcherID,
-		readyQueue:   queue,
-		checkResults: set.NewStringSet(),
+		ctx:        watcherCtx,
+		cancel:     cancel,
+		scanC:      make(chan *storage.ComplianceOperatorScanV2, defaultChanelSize),
+		resultC:    make(chan *storage.ComplianceOperatorCheckResultV2, defaultChanelSize),
+		stopped:    &finishedSignal,
+		readyQueue: queue,
+		scanResults: &ScanWatcherResults{
+			Ctx:          ctx,
+			WatcherID:    watcherID,
+			CheckResults: set.NewStringSet(),
+		},
 	}
 	timeout := time.NewTimer(defaultTimeout)
 	go ret.run(timeout.C)
@@ -198,13 +198,9 @@ func (s *scanWatcherImpl) run(timerC <-chan time.Time) {
 			log.Infof("Stopping scan watcher for scan")
 			return
 		case <-timerC:
-			log.Warnf("Timeout waiting for the scan %s to finish", s.scan.GetScanName())
-			s.readyQueue.Push(&ScanWatcherResults{
-				ID:           s.watcherID,
-				Scan:         s.scan,
-				CheckResults: s.checkResults,
-				Error:        ScanTimeoutError,
-			})
+			log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())
+			s.scanResults.Error = ScanTimeoutError
+			s.readyQueue.Push(s.scanResults)
 			return
 		case scan := <-s.scanC:
 			if err := s.handleScan(scan); err != nil {
@@ -215,12 +211,8 @@ func (s *scanWatcherImpl) run(timerC <-chan time.Time) {
 				log.Errorf("Unable to handle result %s for scan %s: %v", result.GetCheckName(), result.GetScanName(), err)
 			}
 		}
-		if s.totalChecks != 0 && s.totalChecks == len(s.checkResults) {
-			s.readyQueue.Push(&ScanWatcherResults{
-				ID:           s.watcherID,
-				Scan:         s.scan,
-				CheckResults: s.checkResults,
-			})
+		if s.totalChecks != 0 && s.totalChecks == len(s.scanResults.CheckResults) {
+			s.readyQueue.Push(s.scanResults)
 			return
 		}
 	}
@@ -235,13 +227,13 @@ func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) err
 		}
 		s.totalChecks = numChecks
 	}
-	if s.scan == nil {
-		s.scan = scan
+	if s.scanResults.Scan == nil {
+		s.scanResults.Scan = scan
 	}
 	return nil
 }
 
 func (s *scanWatcherImpl) handleResult(result *storage.ComplianceOperatorCheckResultV2) error {
-	s.checkResults.Add(result.GetCheckId())
+	s.scanResults.CheckResults.Add(result.GetCheckId())
 	return nil
 }

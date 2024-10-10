@@ -67,7 +67,7 @@ func (suite *PipelineTestSuite) TestRunCreate() {
 
 	suite.clusterDS.EXPECT().GetClusterName(ctx, fixtureconsts.Cluster1).Return("cluster1", true, nil).Times(1)
 	suite.v2ResultDS.EXPECT().UpsertResult(ctx, getTestRec(fixtureconsts.Cluster1)).Return(nil).Times(1)
-	suite.reportMgr.EXPECT().HandleResult(gomock.Any()).Times(1)
+	suite.reportMgr.EXPECT().HandleResult(gomock.Any(), gomock.Any()).Times(1)
 	pipeline := NewPipeline(suite.v2ResultDS, suite.clusterDS, suite.reportMgr)
 
 	msg := &central.MsgFromSensor{

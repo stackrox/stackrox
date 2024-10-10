@@ -186,7 +186,7 @@ func (m *managerImpl) runReports() {
 }
 
 // HandleScan starts a new ScanWatcher if needed and pushes the scan to it
-func (m *managerImpl) HandleScan(scan *storage.ComplianceOperatorScanV2) error {
+func (m *managerImpl) HandleScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2) error {
 	if !features.ComplianceReporting.Enabled() {
 		return nil
 	}
@@ -201,7 +201,7 @@ func (m *managerImpl) HandleScan(scan *storage.ComplianceOperatorScanV2) error {
 		var scanWatcher watcher.ScanWatcher
 		var found bool
 		if scanWatcher, found = m.watchingScans[id]; !found {
-			scanWatcher = watcher.NewScanWatcher(context.Background(), id, m.readyQueue)
+			scanWatcher = watcher.NewScanWatcher(ctx, id, m.readyQueue)
 			m.watchingScans[id] = scanWatcher
 		}
 		err = scanWatcher.PushScan(scan)
@@ -210,11 +210,11 @@ func (m *managerImpl) HandleScan(scan *storage.ComplianceOperatorScanV2) error {
 }
 
 // HandleResult starts a new ScanWatcher if needed and pushes the checkResult to it
-func (m *managerImpl) HandleResult(result *storage.ComplianceOperatorCheckResultV2) error {
+func (m *managerImpl) HandleResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
 	if !features.ComplianceReporting.Enabled() {
 		return nil
 	}
-	id, err := watcher.GetWatcherIDFromCheckResult(result, m.scanDataStore)
+	id, err := watcher.GetWatcherIDFromCheckResult(ctx, result, m.scanDataStore)
 	if err != nil {
 		return err
 	}
@@ -225,7 +225,7 @@ func (m *managerImpl) HandleResult(result *storage.ComplianceOperatorCheckResult
 		var scanWatcher watcher.ScanWatcher
 		var found bool
 		if scanWatcher, found = m.watchingScans[id]; !found {
-			scanWatcher = watcher.NewScanWatcher(context.Background(), id, m.readyQueue)
+			scanWatcher = watcher.NewScanWatcher(ctx, id, m.readyQueue)
 			m.watchingScans[id] = scanWatcher
 		}
 		err = scanWatcher.PushCheckResult(result)
@@ -246,7 +246,7 @@ func (m *managerImpl) handleReadyScan() {
 			if scanResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanResult != nil {
 				log.Infof("Scan %s done with %d checks", scanResult.Scan.GetScanName(), len(scanResult.CheckResults))
 				concurrency.WithLock(&m.watchingScansLock, func() {
-					delete(m.watchingScans, scanResult.ID)
+					delete(m.watchingScans, scanResult.WatcherID)
 				})
 			}
 		}
