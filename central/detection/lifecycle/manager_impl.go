@@ -451,6 +451,7 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 }
 
 func (m *managerImpl) DeploymentRemoved(deploymentID string) error {
+	log.Debugf("Sensor reports removal of deployment id: %s", deploymentID)
 	_, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, nil, alertmanager.WithDeploymentID(deploymentID, true))
 
 	m.deploymentObservationQueue.RemoveDeployment(deploymentID)
