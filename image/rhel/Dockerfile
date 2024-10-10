@@ -73,6 +73,8 @@ COPY --from=postgres /usr/bin/psql /usr/bin
 COPY --from=postgres /usr/bin/pg_dump /usr/bin
 COPY --from=postgres /usr/bin/pg_dumpall /usr/bin
 COPY --from=postgres /usr/bin/pg_restore /usr/bin
+COPY --from=postgres /usr/bin/createdb /usr/bin
+COPY --from=postgres /usr/bin/dropdb /usr/bin
 
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
 COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
