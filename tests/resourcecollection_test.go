@@ -1,4 +1,4 @@
-//go:build sql_integration || test_compatibility
+//go:build sql_integration
 
 package tests
 
