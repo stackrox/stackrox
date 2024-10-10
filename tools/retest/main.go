@@ -168,9 +168,8 @@ func jobsToRetestFromComments(userComments, allComments []string) ([]string, err
 	missingTests := make([]string, 0, len(jobsToRetest))
 	for job, times := range jobsToRetest {
 		toTest := times - testedJobs[job]
-		log.Printf("Job %q has been tested already %d out of %d times", job, testedJobs[job], times)
 		if toTest < 1 {
-			log.Printf("Exceeded number of retests for %q", job)
+			log.Printf("Exceeded max number (%d) of retests for %q: %d", times, job, testedJobs[job])
 			continue
 		}
 		missingTests = append(missingTests, job)
