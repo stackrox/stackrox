@@ -135,7 +135,7 @@ func (s *PostgresExternalManagerSuite) TestScanIncompatibleExternal() {
 		SeqNum:        int32(migrations.CurrentDBVersionSeqNum() + 2),
 		Version:       futureVer.version,
 		LastPersisted: protoconv.ConvertMicroTSToProtobufTS(timestamp.Now()),
-		MinSeqNum:     int32(migrations.MinimumSupportedDBVersionSeqNum() + 2),
+		MinSeqNum:     int32(migrations.CurrentDBVersionSeqNum() + 2),
 	}
 	migVer.SetVersionPostgres(s.ctx, externalDB, futureVersion)
 
@@ -143,7 +143,7 @@ func (s *PostgresExternalManagerSuite) TestScanIncompatibleExternal() {
 	pgtest.DropDatabase(s.T(), migrations.PreviousDatabase)
 
 	// Scan the clones
-	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.MinimumSupportedDBVersionSeqNum(), futureVersion.MinSeqNum)
+	errorMessage := fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, migrations.CurrentDBVersionSeqNum(), futureVersion.MinSeqNum)
 	s.EqualError(dbm.Scan(), errorMessage)
 }
 
