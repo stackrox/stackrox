@@ -14,12 +14,8 @@ import (
 // validate expected behaviors that cannot be validated elsewhere, such
 // as StackRox API responses.
 
-func allMatch(reader io.ReadSeeker, matchers ...logMatcher) (ok bool, err error) {
+func allMatch(reader io.ReadSeeker, matchers ...logMatcher) (bool, error) {
 	for i, matcher := range matchers {
-		_, err := reader.Seek(0, io.SeekStart)
-		if err != nil {
-			return false, fmt.Errorf("could not rewind the reader: %w", err)
-		}
 		ok, err := matcher.Match(reader)
 		if err != nil {
 			return false, fmt.Errorf("matcher %d returned an error: %w", i, err)
@@ -41,19 +37,17 @@ type multiLineLogMatcher struct {
 // containsLineMatching returns a simple line-based regex matcher to go with waitUntilLog.
 // Note: currently limited by bufio.Reader default buffer size (4KB) for simplicity.
 func containsLineMatching(re *regexp.Regexp) *multiLineLogMatcher {
-	return &multiLineLogMatcher{re: re, numLines: 1}
+	return containsMultipleLinesMatching(re, 1)
 }
 
 // containsLineMatchingAfter mimics containsLineMatching but will only attempt to match
 // lines that appear after fromByte.
 func containsLineMatchingAfter(re *regexp.Regexp, fromByte int64) *multiLineLogMatcher {
-	return &multiLineLogMatcher{re: re, numLines: 1, fromByte: fromByte}
+	return containsMultipleLinesMatchingAfter(re, 1, fromByte)
 }
 
 // containsMultipleLinesMatching is a line-based regex matcher to go with waitUntilLog
 // that will return true when the desired number of lines are found matching the reg exp.
-//
-//lint:ignore U1000 unused - utility function that may help future e2e test writers
 func containsMultipleLinesMatching(re *regexp.Regexp, numLines int) *multiLineLogMatcher {
 	return &multiLineLogMatcher{re: re, numLines: numLines}
 }
@@ -69,13 +63,23 @@ func (lm *multiLineLogMatcher) String() string {
 }
 
 func (lm *multiLineLogMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
+	if lm.re == nil {
+		return false, fmt.Errorf("invalid matcher config, re is nil")
+	}
+
+	if lm.numLines <= 0 {
+		return false, fmt.Errorf("invalid matcher config, numLines (%d) is <= 0", lm.numLines)
+	}
+
+	if lm.fromByte < 0 {
+		return false, fmt.Errorf("invalid matcher config, fromByte (%d) is < 0", lm.fromByte)
+	}
+
 	br := bufio.NewReader(reader)
 
-	if lm.fromByte != 0 {
-		_, err = reader.Seek(lm.fromByte, io.SeekStart)
-		if err != nil {
-			return false, err
-		}
+	_, err = reader.Seek(lm.fromByte, io.SeekStart)
+	if err != nil {
+		return false, fmt.Errorf("could not seek to pos %d: %w", lm.fromByte, err)
 	}
 
 	var lineMatchCount int
@@ -122,13 +126,19 @@ func (lm *notFoundLineMatcher) String() string {
 }
 
 func (lm *notFoundLineMatcher) Match(reader io.ReadSeeker) (ok bool, err error) {
+	if lm.re == nil {
+		return false, fmt.Errorf("invalid matcher config, re is nil")
+	}
+
+	if lm.fromByte < 0 {
+		return false, fmt.Errorf("invalid matcher config, fromByte (%d) is < 0", lm.fromByte)
+	}
+
 	br := bufio.NewReader(reader)
 
-	if lm.fromByte != 0 {
-		_, err = reader.Seek(lm.fromByte, io.SeekStart)
-		if err != nil {
-			return false, err
-		}
+	_, err = reader.Seek(lm.fromByte, io.SeekStart)
+	if err != nil {
+		return false, fmt.Errorf("could not seek to pos %d: %w", lm.fromByte, err)
 	}
 
 	for {

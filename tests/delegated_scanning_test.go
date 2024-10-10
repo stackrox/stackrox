@@ -295,7 +295,7 @@ func (ts *DelegatedScanningSuite) TestConfig() {
 		assert.Len(t, cfg.Registries, 0)
 	})
 
-	// Verify the API returns the same values that were sent in, at the time
+	// Verify the API returns the same values that were sent in. At the time
 	// this test was written the config was always read from Central DB
 	// (as opposed to in-mem). This test verifies that the config
 	// is persisted to the DB and read back accurately.
@@ -391,7 +391,7 @@ func (ts *DelegatedScanningSuite) TestImageIntegrations() {
 
 	// Created, updated, and deleted image integrations should be sent to every Secured Cluster, this
 	// gives users control over the credentials used for delegated scanning.
-	ts.Run("image integrations are kept synced with the secured clusters", func() {
+	ts.Run("image integrations are synced with the secured clusters", func() {
 		t := ts.T()
 
 		fromByte := ts.getSensorLastLogBytePos(ctx)
@@ -638,7 +638,7 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 
 		// Pull the image scan from the API and validate it.
 		imageService := v1.NewImageServiceClient(conn)
-		img, err := ts.getImageWithRetires(t, ctx, imageService, &v1.GetImageRequest{Id: image.ID()})
+		img, err := ts.getImageWithRetries(t, ctx, imageService, &v1.GetImageRequest{Id: image.ID()})
 		require.NoError(t, err)
 		ts.validateImageScan(t, image.IDRef(), img)
 
@@ -805,7 +805,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			t.Logf("Creating deployment %q with image: %q", tc.deployName, tc.imageStr)
 			setupDeploymentNoWait(t, tc.imageStr, tc.deployName, 1)
 
-			img, err := ts.getImageWithRetires(t, ctx, imageService, &v1.GetImageRequest{Id: tc.imgID})
+			img, err := ts.getImageWithRetries(t, ctx, imageService, &v1.GetImageRequest{Id: tc.imgID})
 			require.NoError(t, err)
 			ts.validateImageScan(t, tc.imageStr, img)
 
@@ -837,8 +837,8 @@ func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName st
 	require.Fail(t, "No vulnerabilities found.", "Expected at least one vulnerability in image %q, but found none.", imgFullName)
 }
 
-// getImageWithRetires will get an image from the StackRox API, retrying when not found.
-func (ts *DelegatedScanningSuite) getImageWithRetires(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.GetImageRequest) (*storage.Image, error) {
+// getImageWithRetries will get an image from the StackRox API, retrying when not found.
+func (ts *DelegatedScanningSuite) getImageWithRetries(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.GetImageRequest) (*storage.Image, error) {
 	var err error
 	var img *storage.Image
 

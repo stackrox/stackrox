@@ -293,6 +293,8 @@ func (d *deleScanTestUtils) addCredToOCPGlobalPullSecret(t *testing.T, ctx conte
 // all nodes returned to a ready state.
 func (d *deleScanTestUtils) waitForNodesToProcessConfigUpdates(t *testing.T, ctx context.Context, machineCfgClient *machineconfigurationv1client.MachineconfigurationV1Client, origPools map[string]machineconfigurationv1.MachineConfigPool) {
 	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+
 	t.Logf("Waiting for changes to be propagated")
 	for {
 		select {
