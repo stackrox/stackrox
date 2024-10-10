@@ -1,6 +1,6 @@
-import React, { ElementType, ReactElement, useEffect } from 'react';
+import React, { ElementType, ReactElement } from 'react';
 import { useSelector } from 'react-redux';
-import { Redirect, Route, Switch, useLocation } from 'react-router-dom';
+import { Redirect, Route, Switch } from 'react-router-dom';
 import { PageSection } from '@patternfly/react-core';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
@@ -52,9 +52,9 @@ import PageTitle from 'Components/PageTitle';
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import usePermissions, { HasReadAccess } from 'hooks/usePermissions';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import useAnalytics from 'hooks/useAnalytics';
 import { selectors } from 'reducers';
 
+import useAnalyticsPageTracking from 'hooks/useAnalyticsPageTracking';
 import asyncComponent from './AsyncComponent';
 import InviteUsersModal from './InviteUsers/InviteUsersModal';
 
@@ -241,11 +241,8 @@ type BodyProps = {
 };
 
 function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement {
-    const location = useLocation();
-    const { analyticsPageVisit } = useAnalytics();
-    useEffect(() => {
-        analyticsPageVisit('Page Viewed', '', { path: location.pathname });
-    }, [location, analyticsPageVisit]);
+    useAnalyticsPageTracking();
+
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForInviting = hasReadWriteAccess('Access');
     const showInviteModal = useSelector(selectors.inviteSelector);
