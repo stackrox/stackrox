@@ -278,7 +278,10 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return err
 	}
 	// Format results into CSV
-	zippedCSVResult, err := common.Format(reportData, nil, "")
+	watchedImagesReportData := []common.WatchedImagesResult{}
+	configName := ""
+	includedNvd := false
+	zippedCSVResult, err := common.Format(reportData, watchedImagesReportData, configName, includedNvd)
 	if err != nil {
 		return errors.Wrap(err, "error formatting the report data")
 	}

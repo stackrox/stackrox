@@ -107,7 +107,8 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedSCVResult, err := common.Format(deployedImgData, watchedImgData, req.ReportSnapshot.Name)
+	includeNvd := req.ReportSnapshot.GetVulnReportFilters().GetIncludeNvdCvss()
+	zippedSCVResult, err := common.Format(deployedImgData, watchedImgData, req.ReportSnapshot.Name, includeNvd)
 	if err != nil {
 		return err
 	}

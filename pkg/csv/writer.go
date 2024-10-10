@@ -39,6 +39,11 @@ func (c *GenericWriter) AddValue(value Value) {
 	c.values = append(c.values, value)
 }
 
+// Append to value
+func (c *GenericWriter) AppendToValue(value *Value, field string) {
+	*value = append(*value, field)
+}
+
 // IsEmpty returns true if there are no values.
 func (c *GenericWriter) IsEmpty() bool {
 	return len(c.values) == 0
