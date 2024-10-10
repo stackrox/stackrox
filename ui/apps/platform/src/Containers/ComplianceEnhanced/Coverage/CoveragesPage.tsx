@@ -31,13 +31,18 @@ import { defaultChartHeight } from 'utils/chartUtils';
 
 import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
 import { clusterSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
+import {
+    CHECK_NAME_QUERY,
+    CHECK_STATUS_QUERY,
+    CLUSTER_QUERY,
+} from './compliance.coverage.constants';
 import {
     coverageProfileChecksPath,
     coverageProfileClustersPath,
 } from './compliance.coverage.routes';
 import { createScanConfigFilter } from './compliance.coverage.utils';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
+import CheckStatusDropdown from './components/CheckStatusDropdown';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
 import ProfileStatsWidget from './components/ProfileStatsWidget';
 import ScanConfigurationSelect from './components/ScanConfigurationSelect';
@@ -91,6 +96,17 @@ function CoveragesPage() {
 
     const onSearch = (payload: OnSearchPayload) => {
         onURLSearch(searchFilter, setSearchFilter, payload);
+    };
+
+    const onCheckStatusSelect = (
+        filterType: 'Compliance Check Status',
+        checked: boolean,
+        selection: string
+    ) => {
+        const action = checked ? 'ADD' : 'REMOVE';
+        const category = filterType;
+        const value = selection;
+        onSearch({ action, category, value });
     };
 
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
@@ -175,6 +191,12 @@ function CoveragesPage() {
                                                 onSearch={onSearch}
                                             />
                                         </ToolbarItem>
+                                        <ToolbarItem>
+                                            <CheckStatusDropdown
+                                                searchFilter={searchFilter}
+                                                onSelect={onCheckStatusSelect}
+                                            />
+                                        </ToolbarItem>
                                     </ToolbarGroup>
                                     <ToolbarGroup className="pf-v5-u-w-100">
                                         <SearchFilterChips
@@ -188,6 +210,10 @@ function CoveragesPage() {
                                                 {
                                                     displayName: 'Cluster',
                                                     searchFilterName: CLUSTER_QUERY,
+                                                },
+                                                {
+                                                    displayName: 'Compliance Status',
+                                                    searchFilterName: CHECK_STATUS_QUERY,
                                                 },
                                             ]}
                                         />
