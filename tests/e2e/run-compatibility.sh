@@ -46,7 +46,7 @@ _run_compatibility_tests() {
     require_environment "KUBECONFIG"
 
     export_test_environment
-    #ci_export CENTRAL_PERSISTENCE_NONE "true"
+    ci_export CENTRAL_PERSISTENCE_NONE "true"
 
     export SENSOR_HELM_DEPLOY=true
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
