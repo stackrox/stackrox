@@ -656,34 +656,48 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 // It is up to the caller to ensure the returned slice is populated prior to using it.
 func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
-
 	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
 	var preferredErr error
 	var nvd *v4.VulnerabilityReport_Vulnerability_CVSS
 	nvd, nvdErr := nvdCVSS(nvdVuln)
+
+	copyNvdCVSS := func(nvd *v4.VulnerabilityReport_Vulnerability_CVSS) *v4.VulnerabilityReport_Vulnerability_CVSS {
+		cvss := &v4.VulnerabilityReport_Vulnerability_CVSS{
+			Url:    nvd.GetUrl(),
+			Source: nvd.GetSource(),
+		}
+		if nvd.GetV2() != nil {
+			cvss.V2 = nvd.GetV2()
+		}
+		if nvd.GetV3() != nil {
+			cvss.V3 = nvd.GetV3()
+		}
+		return cvss
+	}
+
 	switch {
 	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
 	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix) && !isOSVDBSpecificSeverity(vuln.Severity):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV)
 	case strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
-		// It is expected manually added vulnerabilities only have a single link.
 		src := sourceFromLinks(vuln.Links)
-		// When NVD has available CVSS score, use NVD CVSS score
+		// When both NVD and manual data have available NVD CVSS scores, use the NVD score.
+		// And only the NVD score is included in the metrics, as the manual data originates from the same
 		if src == v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD && nvd != nil {
-			preferredCVSS = nvd
-			preferredErr = nvdErr
-		} else {
-			preferredCVSS, preferredErr = vulnCVSS(vuln, src)
+			metrics = append(metrics, copyNvdCVSS(nvd))
+			return metrics, nil
 		}
+		preferredCVSS, preferredErr = vulnCVSS(vuln, src)
 	}
+
 	if preferredCVSS != nil {
 		metrics = append(metrics, preferredCVSS)
 	}
 
-	// If preferred CVSS score is not NVD, NVD needs to be added for data completeness
+	// If preferred CVSS score is not from NVD, add NVD score for data completeness
 	if preferredCVSS.GetSource() != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD && nvd != nil {
-		metrics = append(metrics, cvss)
+		metrics = append(metrics, copyNvdCVSS(nvd))
 	}
 
 	return metrics, errors.Join(preferredErr, nvdErr)
