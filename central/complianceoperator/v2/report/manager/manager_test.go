@@ -4,8 +4,11 @@ import (
 	"context"
 	"testing"
 
+	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
+	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/mocks"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
+	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
@@ -15,10 +18,13 @@ import (
 
 type ManagerTestSuite struct {
 	suite.Suite
-	mockCtrl  *gomock.Controller
-	ctx       context.Context
-	datastore *scanConfigurationDS.MockDataStore
-	reportGen *reportGen.MockComplianceReportGenerator
+	mockCtrl          *gomock.Controller
+	ctx               context.Context
+	datastore         *scanConfigurationDS.MockDataStore
+	scanDataStore     *scanMocks.MockDataStore
+	profileDataStore  *profileMocks.MockDataStore
+	snapshotDataStore *snapshotMocks.MockDataStore
+	reportGen         *reportGen.MockComplianceReportGenerator
 }
 
 func (m *ManagerTestSuite) SetupSuite() {
@@ -29,6 +35,9 @@ func (m *ManagerTestSuite) SetupSuite() {
 func (m *ManagerTestSuite) SetupTest() {
 	m.mockCtrl = gomock.NewController(m.T())
 	m.datastore = scanConfigurationDS.NewMockDataStore(m.mockCtrl)
+	m.scanDataStore = scanMocks.NewMockDataStore(m.mockCtrl)
+	m.profileDataStore = profileMocks.NewMockDataStore(m.mockCtrl)
+	m.snapshotDataStore = snapshotMocks.NewMockDataStore(m.mockCtrl)
 	m.reportGen = reportGen.NewMockComplianceReportGenerator(m.mockCtrl)
 }
 
@@ -37,7 +46,7 @@ func TestComplianceReportManager(t *testing.T) {
 }
 
 func (m *ManagerTestSuite) TestSubmitReportRequest() {
-	manager := New(m.datastore, m.reportGen)
+	manager := New(m.datastore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.reportGen)
 	reportRequest := &storage.ComplianceOperatorScanConfigurationV2{
 		ScanConfigName: "test_scan_config",
 		Id:             "test_scan_config",

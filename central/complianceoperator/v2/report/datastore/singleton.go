@@ -1,0 +1,26 @@
+package datastore
+
+import (
+	"github.com/stackrox/rox/central/complianceoperator/v2/report/store/postgres"
+	"github.com/stackrox/rox/central/globaldb"
+	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	once sync.Once
+
+	dataStore DataStore
+)
+
+// Singleton provides the interface for non-service external interaction.
+func Singleton() DataStore {
+	if !features.ComplianceEnhancements.Enabled() {
+		return nil
+	}
+	once.Do(func() {
+		storage := postgres.New(globaldb.GetPostgres())
+		dataStore = New(storage)
+	})
+	return dataStore
+}
