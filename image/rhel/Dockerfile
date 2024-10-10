@@ -5,6 +5,7 @@ ARG BASE_REGISTRY=registry.access.redhat.com
 ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=latest
 
+FROM quay.io/sclorg/postgresql-13-c8s:latest AS postgres
 FROM ${RPMS_REGISTRY}/${RPMS_BASE_IMAGE}:${RPMS_BASE_TAG} AS downloads
 
 ARG DEBUG_BUILD=no
@@ -53,11 +54,8 @@ COPY --from=downloads /output/go/ /go/
 
 RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
     microdnf -y upgrade --nobest && \
-    rpm -i --nodeps /tmp/postgres-libs.rpm && \
-    rpm -i --nodeps /tmp/postgres.rpm && \
     microdnf install --setopt=install_weak_deps=0 --nodocs -y lz4 bzip2 util-linux && \
     microdnf clean all -y && \
-    rm /tmp/postgres.rpm /tmp/postgres-libs.rpm RPM-GPG-KEY-CentOS-Official && \
     # (Optional) Remove line below to keep package management utilities
     rpm -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
     rm -rf /var/cache/dnf /var/cache/yum && \
@@ -70,6 +68,11 @@ RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
     mkdir -p /var/log/stackrox && chown -R 4000:4000 /var/log/stackrox && \
     mkdir -p /var/cache/stackrox && chown -R 4000:4000 /var/cache/stackrox && \
     chown -R 4000:4000 /tmp
+
+COPY --from=postgres /usr/bin/psql /usr/bin
+COPY --from=postgres /usr/bin/pg_dump /usr/bin
+COPY --from=postgres /usr/bin/pg_dumpall /usr/bin
+COPY --from=postgres /usr/bin/pg_restore /usr/bin
 
 COPY --from=stackrox_data /stackrox-data /stackrox/static-data
 COPY ./docs/api/v1/swagger.json /stackrox/static-data/docs/api/v1/swagger.json
