@@ -38,23 +38,6 @@ func (m *CollectorRegisterRequest) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *NetworkConnectionConfig) CloneVT() *NetworkConnectionConfig {
-	if m == nil {
-		return (*NetworkConnectionConfig)(nil)
-	}
-	r := new(NetworkConnectionConfig)
-	r.EnableExternalIps = m.EnableExternalIps
-	if len(m.unknownFields) > 0 {
-		r.unknownFields = make([]byte, len(m.unknownFields))
-		copy(r.unknownFields, m.unknownFields)
-	}
-	return r
-}
-
-func (m *NetworkConnectionConfig) CloneMessageVT() proto.Message {
-	return m.CloneVT()
-}
-
 func (m *CollectorConfig_ExternalIPs) CloneVT() *CollectorConfig_ExternalIPs {
 	if m == nil {
 		return (*CollectorConfig_ExternalIPs)(nil)
@@ -94,7 +77,7 @@ func (m *CollectorConfig) CloneVT() *CollectorConfig {
 		return (*CollectorConfig)(nil)
 	}
 	r := new(CollectorConfig)
-	r.NetworkConnectionConfig = m.NetworkConnectionConfig.CloneVT()
+	r.Networking = m.Networking.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -123,25 +106,6 @@ func (this *CollectorRegisterRequest) EqualVT(that *CollectorRegisterRequest) bo
 
 func (this *CollectorRegisterRequest) EqualMessageVT(thatMsg proto.Message) bool {
 	that, ok := thatMsg.(*CollectorRegisterRequest)
-	if !ok {
-		return false
-	}
-	return this.EqualVT(that)
-}
-func (this *NetworkConnectionConfig) EqualVT(that *NetworkConnectionConfig) bool {
-	if this == that {
-		return true
-	} else if this == nil || that == nil {
-		return false
-	}
-	if this.EnableExternalIps != that.EnableExternalIps {
-		return false
-	}
-	return string(this.unknownFields) == string(that.unknownFields)
-}
-
-func (this *NetworkConnectionConfig) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*NetworkConnectionConfig)
 	if !ok {
 		return false
 	}
@@ -191,7 +155,7 @@ func (this *CollectorConfig) EqualVT(that *CollectorConfig) bool {
 	} else if this == nil || that == nil {
 		return false
 	}
-	if !this.NetworkConnectionConfig.EqualVT(that.NetworkConnectionConfig) {
+	if !this.Networking.EqualVT(that.Networking) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -247,49 +211,6 @@ func (m *CollectorRegisterRequest) MarshalToSizedBufferVT(dAtA []byte) (int, err
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Hostname)))
 		i--
 		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *NetworkConnectionConfig) MarshalVT() (dAtA []byte, err error) {
-	if m == nil {
-		return nil, nil
-	}
-	size := m.SizeVT()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *NetworkConnectionConfig) MarshalToVT(dAtA []byte) (int, error) {
-	size := m.SizeVT()
-	return m.MarshalToSizedBufferVT(dAtA[:size])
-}
-
-func (m *NetworkConnectionConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
-	if m == nil {
-		return 0, nil
-	}
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.unknownFields != nil {
-		i -= len(m.unknownFields)
-		copy(dAtA[i:], m.unknownFields)
-	}
-	if m.EnableExternalIps {
-		i--
-		if m.EnableExternalIps {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
-		i--
-		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -410,8 +331,8 @@ func (m *CollectorConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.NetworkConnectionConfig != nil {
-		size, err := m.NetworkConnectionConfig.MarshalToSizedBufferVT(dAtA[:i])
+	if m.Networking != nil {
+		size, err := m.Networking.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -436,19 +357,6 @@ func (m *CollectorRegisterRequest) SizeVT() (n int) {
 	l = len(m.InstanceId)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	n += len(m.unknownFields)
-	return n
-}
-
-func (m *NetworkConnectionConfig) SizeVT() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	if m.EnableExternalIps {
-		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -487,8 +395,8 @@ func (m *CollectorConfig) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.NetworkConnectionConfig != nil {
-		l = m.NetworkConnectionConfig.SizeVT()
+	if m.Networking != nil {
+		l = m.Networking.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -596,77 +504,6 @@ func (m *CollectorRegisterRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.InstanceId = stringValue
 			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *NetworkConnectionConfig) UnmarshalVTUnsafe(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return protohelpers.ErrIntOverflow
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: NetworkConnectionConfig: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: NetworkConnectionConfig: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field EnableExternalIps", wireType)
-			}
-			var v int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				v |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			m.EnableExternalIps = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -878,7 +715,7 @@ func (m *CollectorConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field NetworkConnectionConfig", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Networking", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -905,10 +742,10 @@ func (m *CollectorConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.NetworkConnectionConfig == nil {
-				m.NetworkConnectionConfig = &NetworkConnectionConfig{}
+			if m.Networking == nil {
+				m.Networking = &CollectorConfig_Networking{}
 			}
-			if err := m.NetworkConnectionConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.Networking.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

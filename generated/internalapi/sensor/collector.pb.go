@@ -78,53 +78,6 @@ func (x *CollectorRegisterRequest) GetInstanceId() string {
 	return ""
 }
 
-type NetworkConnectionConfig struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	EnableExternalIps bool `protobuf:"varint,1,opt,name=enable_external_ips,json=enableExternalIps,proto3" json:"enable_external_ips,omitempty"`
-}
-
-func (x *NetworkConnectionConfig) Reset() {
-	*x = NetworkConnectionConfig{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_internalapi_sensor_collector_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *NetworkConnectionConfig) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*NetworkConnectionConfig) ProtoMessage() {}
-
-func (x *NetworkConnectionConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_collector_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use NetworkConnectionConfig.ProtoReflect.Descriptor instead.
-func (*NetworkConnectionConfig) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_collector_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *NetworkConnectionConfig) GetEnableExternalIps() bool {
-	if x != nil {
-		return x.EnableExternalIps
-	}
-	return false
-}
-
 // CollectorConfig controls which type of data is reported by collector
 // and how it is processed by collector. These configurations are used
 // to fine-tune collector's performance on large scale clusters.
@@ -135,13 +88,13 @@ type CollectorConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	NetworkConnectionConfig *NetworkConnectionConfig `protobuf:"bytes,1,opt,name=network_connection_config,json=networkConnectionConfig,proto3" json:"network_connection_config,omitempty"`
+	Networking *CollectorConfig_Networking `protobuf:"bytes,1,opt,name=networking,proto3" json:"networking,omitempty"`
 }
 
 func (x *CollectorConfig) Reset() {
 	*x = CollectorConfig{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_internalapi_sensor_collector_proto_msgTypes[2]
+		mi := &file_internalapi_sensor_collector_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -154,7 +107,7 @@ func (x *CollectorConfig) String() string {
 func (*CollectorConfig) ProtoMessage() {}
 
 func (x *CollectorConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_collector_proto_msgTypes[2]
+	mi := &file_internalapi_sensor_collector_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -167,12 +120,12 @@ func (x *CollectorConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectorConfig.ProtoReflect.Descriptor instead.
 func (*CollectorConfig) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_collector_proto_rawDescGZIP(), []int{2}
+	return file_internalapi_sensor_collector_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *CollectorConfig) GetNetworkConnectionConfig() *NetworkConnectionConfig {
+func (x *CollectorConfig) GetNetworking() *CollectorConfig_Networking {
 	if x != nil {
-		return x.NetworkConnectionConfig
+		return x.Networking
 	}
 	return nil
 }
@@ -188,7 +141,7 @@ type CollectorConfig_ExternalIPs struct {
 func (x *CollectorConfig_ExternalIPs) Reset() {
 	*x = CollectorConfig_ExternalIPs{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_internalapi_sensor_collector_proto_msgTypes[3]
+		mi := &file_internalapi_sensor_collector_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -201,7 +154,7 @@ func (x *CollectorConfig_ExternalIPs) String() string {
 func (*CollectorConfig_ExternalIPs) ProtoMessage() {}
 
 func (x *CollectorConfig_ExternalIPs) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_collector_proto_msgTypes[3]
+	mi := &file_internalapi_sensor_collector_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +167,7 @@ func (x *CollectorConfig_ExternalIPs) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectorConfig_ExternalIPs.ProtoReflect.Descriptor instead.
 func (*CollectorConfig_ExternalIPs) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_collector_proto_rawDescGZIP(), []int{2, 0}
+	return file_internalapi_sensor_collector_proto_rawDescGZIP(), []int{1, 0}
 }
 
 func (x *CollectorConfig_ExternalIPs) GetEnable() bool {
@@ -235,7 +188,7 @@ type CollectorConfig_Networking struct {
 func (x *CollectorConfig_Networking) Reset() {
 	*x = CollectorConfig_Networking{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_internalapi_sensor_collector_proto_msgTypes[4]
+		mi := &file_internalapi_sensor_collector_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -248,7 +201,7 @@ func (x *CollectorConfig_Networking) String() string {
 func (*CollectorConfig_Networking) ProtoMessage() {}
 
 func (x *CollectorConfig_Networking) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_collector_proto_msgTypes[4]
+	mi := &file_internalapi_sensor_collector_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -261,7 +214,7 @@ func (x *CollectorConfig_Networking) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectorConfig_Networking.ProtoReflect.Descriptor instead.
 func (*CollectorConfig_Networking) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_collector_proto_rawDescGZIP(), []int{2, 1}
+	return file_internalapi_sensor_collector_proto_rawDescGZIP(), []int{1, 1}
 }
 
 func (x *CollectorConfig_Networking) GetExternalIps() *CollectorConfig_ExternalIPs {
@@ -282,29 +235,23 @@ var file_internalapi_sensor_collector_proto_rawDesc = []byte{
 	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x68, 0x6f, 0x73, 0x74,
 	0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1f, 0x0a, 0x0b, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63, 0x65,
 	0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x69, 0x6e, 0x73, 0x74, 0x61,
-	0x6e, 0x63, 0x65, 0x49, 0x64, 0x22, 0x49, 0x0a, 0x17, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b,
-	0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
-	0x12, 0x2e, 0x0a, 0x13, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x5f, 0x65, 0x78, 0x74, 0x65, 0x72,
-	0x6e, 0x61, 0x6c, 0x5f, 0x69, 0x70, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x11, 0x65,
-	0x6e, 0x61, 0x62, 0x6c, 0x65, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x49, 0x70, 0x73,
-	0x22, 0xeb, 0x01, 0x0a, 0x0f, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x43, 0x6f,
-	0x6e, 0x66, 0x69, 0x67, 0x12, 0x5b, 0x0a, 0x19, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x5f,
-	0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x63, 0x6f, 0x6e, 0x66, 0x69,
-	0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x73, 0x65, 0x6e, 0x73, 0x6f, 0x72,
-	0x2e, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69,
-	0x6f, 0x6e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x52, 0x17, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72,
-	0x6b, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x6f, 0x6e, 0x66, 0x69,
-	0x67, 0x1a, 0x25, 0x0a, 0x0b, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x49, 0x50, 0x73,
-	0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08,
-	0x52, 0x06, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x1a, 0x54, 0x0a, 0x0a, 0x4e, 0x65, 0x74, 0x77,
-	0x6f, 0x72, 0x6b, 0x69, 0x6e, 0x67, 0x12, 0x46, 0x0a, 0x0c, 0x65, 0x78, 0x74, 0x65, 0x72, 0x6e,
-	0x61, 0x6c, 0x5f, 0x69, 0x70, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x73,
-	0x65, 0x6e, 0x73, 0x6f, 0x72, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x43,
-	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x49, 0x50,
-	0x73, 0x52, 0x0b, 0x65, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x49, 0x70, 0x73, 0x42, 0x20,
-	0x5a, 0x1b, 0x2e, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x61, 0x70, 0x69, 0x2f,
-	0x73, 0x65, 0x6e, 0x73, 0x6f, 0x72, 0x3b, 0x73, 0x65, 0x6e, 0x73, 0x6f, 0x72, 0xf8, 0x01, 0x01,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x63, 0x65, 0x49, 0x64, 0x22, 0xd2, 0x01, 0x0a, 0x0f, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63,
+	0x74, 0x6f, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x42, 0x0a, 0x0a, 0x6e, 0x65, 0x74,
+	0x77, 0x6f, 0x72, 0x6b, 0x69, 0x6e, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e,
+	0x73, 0x65, 0x6e, 0x73, 0x6f, 0x72, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72,
+	0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x69, 0x6e,
+	0x67, 0x52, 0x0a, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x69, 0x6e, 0x67, 0x1a, 0x25, 0x0a,
+	0x0b, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x49, 0x50, 0x73, 0x12, 0x16, 0x0a, 0x06,
+	0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x65, 0x6e,
+	0x61, 0x62, 0x6c, 0x65, 0x1a, 0x54, 0x0a, 0x0a, 0x4e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x69,
+	0x6e, 0x67, 0x12, 0x46, 0x0a, 0x0c, 0x65, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x5f, 0x69,
+	0x70, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x23, 0x2e, 0x73, 0x65, 0x6e, 0x73, 0x6f,
+	0x72, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x6f, 0x72, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x67, 0x2e, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x49, 0x50, 0x73, 0x52, 0x0b, 0x65,
+	0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x49, 0x70, 0x73, 0x42, 0x20, 0x5a, 0x1b, 0x2e, 0x2f,
+	0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x61, 0x70, 0x69, 0x2f, 0x73, 0x65, 0x6e, 0x73,
+	0x6f, 0x72, 0x3b, 0x73, 0x65, 0x6e, 0x73, 0x6f, 0x72, 0xf8, 0x01, 0x01, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -319,17 +266,16 @@ func file_internalapi_sensor_collector_proto_rawDescGZIP() []byte {
 	return file_internalapi_sensor_collector_proto_rawDescData
 }
 
-var file_internalapi_sensor_collector_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_internalapi_sensor_collector_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_internalapi_sensor_collector_proto_goTypes = []any{
 	(*CollectorRegisterRequest)(nil),    // 0: sensor.CollectorRegisterRequest
-	(*NetworkConnectionConfig)(nil),     // 1: sensor.NetworkConnectionConfig
-	(*CollectorConfig)(nil),             // 2: sensor.CollectorConfig
-	(*CollectorConfig_ExternalIPs)(nil), // 3: sensor.CollectorConfig.ExternalIPs
-	(*CollectorConfig_Networking)(nil),  // 4: sensor.CollectorConfig.Networking
+	(*CollectorConfig)(nil),             // 1: sensor.CollectorConfig
+	(*CollectorConfig_ExternalIPs)(nil), // 2: sensor.CollectorConfig.ExternalIPs
+	(*CollectorConfig_Networking)(nil),  // 3: sensor.CollectorConfig.Networking
 }
 var file_internalapi_sensor_collector_proto_depIdxs = []int32{
-	1, // 0: sensor.CollectorConfig.network_connection_config:type_name -> sensor.NetworkConnectionConfig
-	3, // 1: sensor.CollectorConfig.Networking.external_ips:type_name -> sensor.CollectorConfig.ExternalIPs
+	3, // 0: sensor.CollectorConfig.networking:type_name -> sensor.CollectorConfig.Networking
+	2, // 1: sensor.CollectorConfig.Networking.external_ips:type_name -> sensor.CollectorConfig.ExternalIPs
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -356,18 +302,6 @@ func file_internalapi_sensor_collector_proto_init() {
 			}
 		}
 		file_internalapi_sensor_collector_proto_msgTypes[1].Exporter = func(v any, i int) any {
-			switch v := v.(*NetworkConnectionConfig); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_internalapi_sensor_collector_proto_msgTypes[2].Exporter = func(v any, i int) any {
 			switch v := v.(*CollectorConfig); i {
 			case 0:
 				return &v.state
@@ -379,7 +313,7 @@ func file_internalapi_sensor_collector_proto_init() {
 				return nil
 			}
 		}
-		file_internalapi_sensor_collector_proto_msgTypes[3].Exporter = func(v any, i int) any {
+		file_internalapi_sensor_collector_proto_msgTypes[2].Exporter = func(v any, i int) any {
 			switch v := v.(*CollectorConfig_ExternalIPs); i {
 			case 0:
 				return &v.state
@@ -391,7 +325,7 @@ func file_internalapi_sensor_collector_proto_init() {
 				return nil
 			}
 		}
-		file_internalapi_sensor_collector_proto_msgTypes[4].Exporter = func(v any, i int) any {
+		file_internalapi_sensor_collector_proto_msgTypes[3].Exporter = func(v any, i int) any {
 			switch v := v.(*CollectorConfig_Networking); i {
 			case 0:
 				return &v.state
@@ -410,7 +344,7 @@ func file_internalapi_sensor_collector_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_internalapi_sensor_collector_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

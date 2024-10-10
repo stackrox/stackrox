@@ -14,10 +14,6 @@ message CollectorRegisterRequest {
   string instance_id = 2;
 }
 
-message NetworkConnectionConfig {
-  bool enable_external_ips = 1;
-}
-
 // CollectorConfig controls which type of data is reported by collector
 // and how it is processed by collector. These configurations are used
 // to fine-tune collector's performance on large scale clusters.
@@ -27,8 +23,10 @@ message CollectorConfig {
   message ExternalIPs {
     bool enable = 1;
   }
+
   message Networking {
     ExternalIPs external_ips = 1;
   }
-  NetworkConnectionConfig network_connection_config = 1;
+
+  Networking networking = 1;
 }
