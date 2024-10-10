@@ -6,7 +6,6 @@ import os
 import pathlib
 import subprocess
 import sys
-import textwrap
 from collections import namedtuple
 from datetime import datetime, timezone
 
@@ -168,14 +167,9 @@ def get_previous_y_stream(version):
     return subprocess.check_output([executable, version], encoding='utf-8').strip()
 
 
-# This class configures ArgumentParser help to print default values and preserve linebreaks in argument help.
-class HelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter):
-    pass
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description='Patch StackRox Operator ClusterServiceVersion file',
-                                     formatter_class=HelpFormatter)
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--use-version", required=True, metavar='version',
                         help='Which SemVer version of the operator to set in the patched CSV, e.g. 3.62.0')
     parser.add_argument("--first-version", required=True, metavar='version',
@@ -183,16 +177,12 @@ def parse_args():
     parser.add_argument("--operator-image", required=True, metavar='image',
                         help='Which operator image to use in the patched CSV')
     parser.add_argument("--related-images-mode", choices=["downstream", "omit", "konflux"], default="downstream",
-                        help=textwrap.dedent("""
+                        help="""
                         Set mode of operation for handling related image attributes in the output CSV.
-                        Supported modes:
-                            downstream: In this mode the current RELATED_IMAGE_* environment variables are injected into
-                                the output CSV and spec.relatedImages is not added.
-                            omit: In this mode no RELATED_IMAGE_* environment variables are injected into the output CSV
-                                and spec.relatedImages is not added.
-                            konflux: In this mode the current RELATED_IMAGE_* environment variables are injected into the
-                                output CSV and spec.relatedImages is populated based on them.
-                        """).lstrip())
+                        "downstream": add RELATED_IMAGE_* env variables, delete spec.relatedImages.
+                        "omit": ignore RELATED_IMAGE_* env variables, delete spec.relatedImages.
+                        "konflux": add RELATED_IMAGE_* env variables, populate spec.relatedImages.
+                        """)
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
                         default=[])
