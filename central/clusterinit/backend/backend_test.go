@@ -320,6 +320,7 @@ func (s *clusterInitBackendTestSuite) TestCRSLifecycle() {
 	s.Require().NoError(err)
 	id := crsWithMeta.Meta.Id
 
+	s.Require().Equal(crsWithMeta.CRS.Version, currentCrsVersion)
 	err = s.backend.CheckRevoked(ctx, id)
 	s.Require().NoErrorf(err, "newly generated CRS %q is revoked", id)
 
