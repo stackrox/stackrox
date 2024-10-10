@@ -834,7 +834,11 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS) {
 	allHostConns := m.getAllHostConnections()
-	log.Infof("currentEnrichedConnsAndEndpoints: allHostConns: %+v", allHostConns)
+	for i, conn := range allHostConns {
+		conn.mutex.Lock()
+		log.Infof("currentEnrichedConnsAndEndpoints: allHostConns: [%d]:%+v", i, conn)
+		conn.mutex.Unlock()
+	}
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
 	enrichedEndpoints := make(map[containerEndpointIndicator]timestamp.MicroTS)
@@ -955,6 +959,15 @@ func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo
 		}
 		m.connectionsByHost[hostname] = conns
 	}
+	for host, connections := range m.connectionsByHost {
+		if connections.connections == nil {
+			log.Infof("RegisterCollector: connections.connections for hostname %s is nil", host)
+			continue
+		}
+		for conn, status := range connections.connections {
+			log.Infof("RegisterCollector: connection for host [%s]: %s, status: %v", host, conn.String(), status)
+		}
+	}
 
 	conns.mutex.Lock()
 	defer conns.mutex.Unlock()
@@ -988,6 +1001,7 @@ func (m *networkFlowManager) deleteHostConnections(hostname string) {
 		return
 	}
 	flowMetrics.HostConnectionsRemoved.Add(float64(len(conns.connections)))
+	log.Infof("deleteHostConnections: deleting connection for host: %s", hostname)
 	delete(m.connectionsByHost, hostname)
 }
 
