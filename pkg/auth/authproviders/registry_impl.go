@@ -218,6 +218,7 @@ func (r *registryImpl) DeleteProvider(ctx context.Context, providerID string, fo
 	if err := provider.ApplyOptions(DeleteFromStore(ctx, r.store, providerID, force), UnregisterSource(r.issuerFactory)); err != nil {
 		return err
 	}
+	provider.BackendFactory().CleanupBackend(providerID)
 	delete(r.providers, providerID)
 	r.deletedNoLock(provider)
 	return nil

@@ -40,6 +40,8 @@ func (f *factory) CreateBackend(ctx context.Context, id string, _ []string, conf
 	return be, nil
 }
 
+func (f *factory) CleanupBackend(_ string) {}
+
 func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error) {
 	if r.Method != http.MethodGet {
 		return "", "", httputil.Errorf(http.StatusMethodNotAllowed, "invalid method %q, only GET requests are allowed", r.Method)
