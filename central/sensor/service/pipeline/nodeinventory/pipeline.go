@@ -14,7 +14,9 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
@@ -81,7 +83,6 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	// Read the node from the database, if not found we fail.
 	node, found, err := p.nodeDatastore.GetNode(ctx, ninv.GetNodeId())
-	// TODO(ROX-26519): Throw out message here if GetScan.Scanner_Version is 4 AND the FF for Scanner v4 is enabled
 	if err != nil {
 		log.Errorf("fetching node %s from the database: %v", nodeStr, err)
 		return errors.WithMessagef(err, "fetching node: %s", ninv.GetNodeId())
@@ -89,6 +90,16 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	if !found {
 		log.Errorf("fetching node %s from the database: node does not exist", nodeStr)
 		return errors.WithMessagef(err, "node does not exist: %s", ninv.GetNodeId())
+	}
+
+	// Discard message if NodeScanning v4 and v2 are running in parallel - v4 scans are prioritized in that case.
+	// The message will be kepen even if a v4 scan is already persisted for the node if the feature flag for
+	// Scanner v4 has been disabled. This ensures node scans are updated even if a customer falls back to Scanner v2.
+	if node.GetScan() != nil && node.GetScan().GetScannerVersion() == storage.NodeScan_SCANNER_V4 && features.ScannerV4.Enabled() {
+		// To prevent resending the inventory, still acknowledge receipt of it
+		sendComplianceAck(ctx, node, ninv, injector)
+		log.Debugf("Discarding v2 NodeScan in favor of v4 NodeScan")
+		return nil
 	}
 
 	// Call Scanner to enrich the node inventory and attach the results to the node object.
@@ -107,15 +118,20 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return err
 	}
 
-	if injector != nil {
-		reply := replyCompliance(node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK)
-		if err := injector.InjectMessage(ctx, reply); err != nil {
-			log.Warnf("Failed sending node-scanning-ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
-		} else {
-			log.Debugf("Sent node-scanning-ACK for %s", nodeDatastore.NodeString(node))
-		}
-	}
+	sendComplianceAck(ctx, node, ninv, injector)
 	return nil
+}
+
+func sendComplianceAck(ctx context.Context, node *storage.Node, ninv *storage.NodeInventory, injector common.MessageInjector) {
+	if injector == nil {
+		return
+	}
+	reply := replyCompliance(node.GetClusterId(), ninv.GetNodeName(), central.NodeInventoryACK_ACK)
+	if err := injector.InjectMessage(ctx, reply); err != nil {
+		log.Warnf("Failed sending node-scanning-ACK to Sensor for %s: %v", nodeDatastore.NodeString(node), err)
+	} else {
+		log.Debugf("Sent node-scanning-ACK for %s", nodeDatastore.NodeString(node))
+	}
 }
 
 func replyCompliance(clusterID, nodeName string, t central.NodeInventoryACK_Action) *central.MsgToSensor {
