@@ -5,9 +5,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-    {{- include "srox.annotations" (list . "customresourcedefinition" "securitypolicies.config.stackrox.io") | nindent 4 }}
-  labels:
-    {{- include "srox.labels" (list . "customresourcedefinition" "securitypolicies.config.stackrox.io") | nindent 4 }}
   name: securitypolicies.config.stackrox.io
 spec:
   group: config.stackrox.io
