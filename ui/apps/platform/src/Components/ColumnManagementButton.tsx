@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 import { ColumnManagementModal } from '@patternfly/react-component-groups';
-import { Button, ButtonVariant } from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
 
 import { ColumnConfig, ManagedColumns } from 'hooks/useManagedColumns';
 
@@ -33,7 +33,7 @@ function ColumnManagementButton<ColumnKey extends string>({
             />
             <Button
                 onClick={() => setOpen(true)}
-                variant={ButtonVariant.secondary}
+                variant="secondary"
                 countOptions={{
                     isRead: true,
                     count: enabledColumnCount,
