@@ -86,8 +86,15 @@ function roxcurl() {
 
 deploy_earlier_postgres_central() {
     info "Deploying: $EARLIER_TAG..."
+#    go mod tidy
+#    make cli
 
-    make cli
+    mkdir -p "bin/$TEST_HOST_PLATFORM"
+    ls -l "bin/$TEST_HOST_PLATFORM/"
+    wget "https://mirror.openshift.com/pub/rhacs/assets/${EARLIER_TAG}/bin/${HOST_OS}/roxctl" -O "bin/$TEST_HOST_PLATFORM/roxctl"
+#    gsutil cp "gs://rhacs-openshift-mirror-src/assets/${EARLIER_TAG}/bin/linux/roxctl" "bin/$TEST_HOST_PLATFORM/"
+    chmod 0755 "bin/$TEST_HOST_PLATFORM/roxctl"
+    ls -l "bin/$TEST_HOST_PLATFORM/"
 
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" command -v roxctl
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
