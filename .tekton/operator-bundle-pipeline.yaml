@@ -654,6 +654,10 @@ spec:
 
   - name: build-source-image
     params:
+    - name: BASE_IMAGES
+      # This overrides default detection of the base images which has a bug KFLUXBUGS-1718 saying that there is in fact
+      # no base image. TODO: remove this parameter after the mentioned bug is resolved.
+      value: "scratch"
     - name: BINARY_IMAGE
       value: $(tasks.build-container.results.IMAGE_URL)
     - name: SOURCE_ARTIFACT
