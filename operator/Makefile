@@ -7,7 +7,7 @@
 # dropped (e.g. 3.0.61.1 -> 3.61.1) and development version ".x" is changed to ".0" (e.g. 3.0.61.x-123 -> 3.0.61.0-123).
 VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g' | sed -E 's@^3.0.([[:digit:]]+\.[[:digit:]]+)(-)?@3.\1\2@g')
 
-# The operator version used by ClusterServiceVersion object and related tooling (bundle, index). It is prefixed with "v".
+# The operator version prefixed with "v" for ClusterServiceVersion resource and bundle and index tooling.
 CSV_VERSION ?= v$(VERSION)
 # Operator index image tag to install from, used by deploy*-via-olm targets.
 INDEX_IMG_TAG ?= $(CSV_VERSION)
