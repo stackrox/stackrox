@@ -25,8 +25,6 @@ const (
 	s                        = namespaces.StackRox // for brevity
 	proxyNs                  = "qa-tls-challenge"  // Must match the additionalCA X509v3 Subject Alternative Name
 	proxyImagePullSecretName = "quay"
-	sensorDeployment         = "sensor"
-	sensorContainer          = "sensor"
 	centralEndpointVar       = "ROX_CENTRAL_ENDPOINT"
 )
 
@@ -59,7 +57,7 @@ func (ts *TLSChallengeSuite) SetupSuite() {
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 
 	ts.logf("Gathering original central endpoint value from sensor...")
-	ts.originalCentralEndpoint = ts.getDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
+	ts.originalCentralEndpoint = ts.mustGetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
 	ts.logf("Original value is %q. (Will restore this value on cleanup.)", ts.originalCentralEndpoint)
 
 	ts.setupProxy(ts.originalCentralEndpoint)
@@ -68,7 +66,7 @@ func (ts *TLSChallengeSuite) SetupSuite() {
 func (ts *TLSChallengeSuite) TearDownSuite() {
 	ts.cleanupProxy(ts.cleanupCtx, proxyNs)
 	if ts.originalCentralEndpoint != "" {
-		ts.setDeploymentEnvVal(ts.cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, ts.originalCentralEndpoint)
+		ts.mustSetDeploymentEnvVal(ts.cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, ts.originalCentralEndpoint)
 	}
 	// Check sanity after test.
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
@@ -82,7 +80,7 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 	)
 
 	ts.logf("Pointing sensor at the proxy...")
-	ts.setDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
+	ts.mustSetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
 	ts.logf("Sensor will now attempt connecting via the nginx proxy.")
 
 	ts.waitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection",

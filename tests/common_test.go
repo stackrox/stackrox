@@ -30,7 +30,7 @@ func TestLogMatcher(t *testing.T) {
 			},
 			expectedResult: assert.True,
 			expectedError:  assert.NoError,
-			expectedString: `[contains line matching "sunt in culpa qui officia deserunt"]`,
+			expectedString: `[contains line(s) matching "sunt in culpa qui officia deserunt"]`,
 		},
 		"two matches": {
 			funcs: []logMatcher{
@@ -39,7 +39,7 @@ func TestLogMatcher(t *testing.T) {
 			},
 			expectedResult: assert.True,
 			expectedError:  assert.NoError,
-			expectedString: `[contains line matching "Lorem ipsum dolor" contains line matching "Duis aute irure"]`,
+			expectedString: `[contains line(s) matching "Lorem ipsum dolor" contains line(s) matching "Duis aute irure"]`,
 		},
 		"text divided with newline": {
 			funcs: []logMatcher{
@@ -47,7 +47,7 @@ func TestLogMatcher(t *testing.T) {
 			},
 			expectedResult: assert.False,
 			expectedError:  assert.NoError,
-			expectedString: `[contains line matching "labore et dolore.*magna aliqua"]`,
+			expectedString: `[contains line(s) matching "labore et dolore.*magna aliqua"]`,
 		},
 	}
 	r := bytes.NewReader(text)

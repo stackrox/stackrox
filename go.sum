@@ -1175,10 +1175,10 @@ github.com/opencontainers/runtime-spec v1.2.0 h1:z97+pHb3uELt/yiAWD691HNHQIF07bE
 github.com/opencontainers/runtime-spec v1.2.0/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
 github.com/openshift-online/ocm-sdk-go v0.1.431 h1:jEWVqkf2EyXV+ocIBAAO+Htl0jXFShenKM/h5aSP46Q=
 github.com/openshift-online/ocm-sdk-go v0.1.431/go.mod h1:CiAu2jwl3ITKOxkeV0Qnhzv4gs35AmpIzVABQLtcI2Y=
-github.com/openshift/api v0.0.0-20231117201702-2ea16bbab164 h1:0dwIuUDjrKSnq/ujysraljX8Vk/lxDJDVUcUcl9bx9M=
-github.com/openshift/api v0.0.0-20231117201702-2ea16bbab164/go.mod h1:qNtV0315F+f8ld52TLtPvrfivZpdimOzTi3kn9IVbtU=
-github.com/openshift/client-go v0.0.0-20230926161409-848405da69e1 h1:W1N/3nVciqmjPjn2xldHjb0AwwCQzlGxLvX5BCgE8H4=
-github.com/openshift/client-go v0.0.0-20230926161409-848405da69e1/go.mod h1:ihUJrhBcYAGYQrJu/gP2OMgfVds5f5z5kbeLNBqjHLo=
+github.com/openshift/api v0.0.0-20240415161129-d7aff303fa1a h1:BJqjjh5Q10aJEr84zUnoW0RKGfSIihTxU+iNnPqRzKQ=
+github.com/openshift/api v0.0.0-20240415161129-d7aff303fa1a/go.mod h1:CxgbWAlvu2iQB0UmKTtRu1YfepRg1/vJ64n2DlIEVz4=
+github.com/openshift/client-go v0.0.0-20240415191513-dcdeb09390b4 h1:l/gocTF9qYhmm+RWgPS9GVPyeisDqCYluSUy2+F3G2E=
+github.com/openshift/client-go v0.0.0-20240415191513-dcdeb09390b4/go.mod h1:Q3mt/X5xrxnR5R6BE7duF2ToLioRQJYnTYaaDS4QZTs=
 github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b h1:oXzC1N6E9gw76/WH2gEA8GEHvuq09wuVQ9GoCuR8GF4=
 github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b/go.mod h1:l9/qeKZuAmYUMl0yicJlbkPGDsIycGhwxOvOAWyaP0E=
 github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=

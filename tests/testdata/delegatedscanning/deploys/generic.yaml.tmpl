@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{index . "name"}}
+  namespace: {{index . "namespace"}}
+  labels:
+    app: {{index . "name"}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{index . "name"}}
+  template:
+    metadata:
+      labels:
+        app: {{index . "name"}}
+    spec:
+      containers:
+      - name: main
+        image: {{index . "image"}}
+        command: [ "/bin/sh", "-c"]
+        args: [ "trap : TERM INT; sleep 9999999999d & wait" ]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]

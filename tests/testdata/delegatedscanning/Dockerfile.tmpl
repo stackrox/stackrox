@@ -1,0 +1,5 @@
+FROM {{index . "image"}}
+
+COPY --chmod=755 ./sleepforever.sh /sleepforever.sh
+
+ENTRYPOINT [ "/sleepforever.sh" ]

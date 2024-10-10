@@ -1,0 +1,21 @@
+# This build config is used to build and push images
+# into the OCP internal registry
+
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: {{index . "name"}}
+  namespace: {{index . "namespace"}}
+spec:
+  failedBuildsHistoryLimit: 1
+  successfulBuildsHistoryLimit: 0
+  source:
+    type: Binary
+    binary: {}
+  strategy:
+    type: Docker
+    dockerStrategy: {}
+  output:
+    to:
+      kind: ImageStreamTag
+      name: '{{index . "name"}}:latest'
