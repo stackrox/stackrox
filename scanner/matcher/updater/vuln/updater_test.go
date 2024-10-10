@@ -92,8 +92,9 @@ func TestSingleBundleUpdate(t *testing.T) {
 		importFunc: func(_ context.Context, _ io.Reader) error {
 			return nil
 		},
-		retryDelay: 1 * time.Second,
-		retryMax:   1,
+		retryDelay:  1 * time.Second,
+		retryMax:    1,
+		distManager: newDistManager(store),
 	}
 
 	// Skip update when locking fails.
@@ -112,6 +113,9 @@ func TestSingleBundleUpdate(t *testing.T) {
 	store.EXPECT().
 		GC(gomock.Any(), gomock.Any()).
 		Return(int64(0), nil)
+	store.EXPECT().
+		Distributions(gomock.Any()).
+		Return(nil, nil)
 	err = u.Update(context.Background())
 	assert.NoError(t, err)
 
@@ -158,6 +162,7 @@ func TestMultiBundleUpdate(t *testing.T) {
 		importFunc:    func(_ context.Context, _ io.Reader) error { return nil },
 		retryDelay:    1 * time.Second,
 		retryMax:      1,
+		distManager:   newDistManager(store),
 	}
 
 	// Skip update and error when unable to get previous update time.
@@ -180,6 +185,9 @@ func TestMultiBundleUpdate(t *testing.T) {
 	store.EXPECT().
 		GC(gomock.Any(), gomock.Any()).
 		Return(int64(0), nil)
+	store.EXPECT().
+		Distributions(gomock.Any()).
+		Return(nil, nil)
 	err = u.Update(context.Background())
 	assert.NoError(t, err)
 
