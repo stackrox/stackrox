@@ -492,7 +492,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         subComponents: [
             {
                 type: 'select',
-                options: equalityOptions,
+                options: equalityOptions, // see nonStandardNumberFields
                 subpath: 'key',
             },
             {
