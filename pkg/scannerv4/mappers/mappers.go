@@ -337,7 +337,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 				}
 			}
 		}
-		metrics, err := cvssMetrics(ctx, v, &nvdVuln)
+		metrics, err := cvssMetrics(ctx, v, nvdVuln)
 		if err != nil {
 			zlog.Warn(ctx).
 				Err(err).
@@ -649,9 +649,8 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 // An error is returned when there is a failure to collect CVSS metrics from all sources;
 // however, the returned slice of metrics will still be populated with any successfully gathered metrics.
 // It is up to the caller to ensure the returned slice is populated prior to using it.
-func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
-
 	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
 	var preferredErr error
 	switch {
@@ -660,20 +659,28 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvds
 	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix) && !isOSVDBSpecificSeverity(vuln.Severity):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV)
 	case strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
-		// It is expected manually added vulnerabilities only have a single link.
-		preferredCVSS, preferredErr = vulnCVSS(vuln, sourceFromLinks(vuln.Links))
+		src := sourceFromLinks(vuln.Links)
+		// When both NVD and manual data have available NVD CVSS scores, use the NVD score.
+		// And only the NVD score is included in the metrics, as the manual data originates from the same
+		if src == v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
+			preferredCVSS, preferredErr = nvdCVSS(&nvdVuln)
+			if preferredCVSS != nil {
+				metrics = append(metrics, preferredCVSS)
+			}
+			return metrics, preferredErr
+		}
+		preferredCVSS, preferredErr = vulnCVSS(vuln, src)
 	}
+
 	if preferredCVSS != nil {
 		metrics = append(metrics, preferredCVSS)
 	}
 
 	var nvdErr error
-	// Manually added vulnerabilities may have its data sourced from NVD.
-	// In that scenario, there is no need to add yet another NVD entry,
-	// especially since there is a reason the manual entry exists in the first place.
+	// If preferred CVSS score is not from NVD, add NVD score for data completeness
 	if preferredCVSS.GetSource() != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
 		var cvss *v4.VulnerabilityReport_Vulnerability_CVSS
-		cvss, nvdErr = nvdCVSS(nvdVuln)
+		cvss, nvdErr = nvdCVSS(&nvdVuln)
 		if cvss != nil {
 			metrics = append(metrics, cvss)
 		}
