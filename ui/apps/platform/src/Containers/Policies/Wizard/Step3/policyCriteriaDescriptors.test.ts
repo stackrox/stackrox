@@ -11,6 +11,7 @@ const allowListForItems = [
     'API',
     'CPU',
     'CVE',
+    'CVSS',
     'Dockerfile',
     'IP',
     'IPC',
@@ -25,7 +26,10 @@ const allowListForItems = [
 ];
 
 // Items that are allowed only in the content of an entire string.
-const allowListForNames = ['Common Vulnerability Scoring System (CVSS) score'];
+const allowListForNames = [
+    'Common Vulnerability Scoring System (CVSS) score',
+    'Common Vulnerability Scoring System (CVSS) score from National Vulnerability Database (NVD)',
+];
 
 function isInitialUpperCase(item: string) {
     return /^[A-Z]/.test(item);
