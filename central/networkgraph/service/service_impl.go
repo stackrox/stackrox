@@ -32,7 +32,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/predicate"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -45,6 +44,7 @@ var (
 		user.With(permissions.View(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/GetNetworkGraph",
 			"/v1.NetworkGraphService/GetExternalNetworkEntities",
+			"/v1.NetworkGraphService/GetExternalNetworkFlows",
 		},
 		user.With(permissions.Modify(resources.NetworkGraph)): {
 			"/v1.NetworkGraphService/CreateExternalNetworkEntity",
@@ -59,9 +59,8 @@ var (
 		},
 	})
 
-	defaultSince         = -5 * time.Minute
-	networkGraphSAC      = sac.ForResource(resources.NetworkGraph)
-	netEntityPredFactory = predicate.NewFactory("networkEntity", &storage.NetworkEntity{})
+	defaultSince    = -5 * time.Minute
+	networkGraphSAC = sac.ForResource(resources.NetworkGraph)
 )
 
 // serviceImpl provides APIs for alerts.
@@ -69,7 +68,7 @@ type serviceImpl struct {
 	v1.UnimplementedNetworkGraphServiceServer
 
 	clusterFlows   networkFlowDS.ClusterDataStore
-	entities       networkEntityDS.EntityDataStore
+	entityDS       networkEntityDS.EntityDataStore
 	networkTreeMgr networktree.Manager
 	deployments    deploymentDS.DataStore
 	clusters       clusterDS.DataStore
@@ -101,24 +100,87 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 	}
 
 	query, _ = search.FilterQueryWithMap(query, schema.NetworkEntitiesSchema.OptionsMap)
-	pred, err := netEntityPredFactory.GeneratePredicate(query)
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "failed to parse query %q: %v", query.String(), err.Error())
-	}
 
-	ret, err := s.entities.GetAllMatchingEntities(ctx, func(entity *storage.NetworkEntity) bool {
-		// Do not respect the graph configuration.
-		if entity.GetScope().GetClusterId() == "" || entity.GetScope().GetClusterId() == request.GetClusterId() {
-			return pred.Matches(entity)
-		}
-		return false
-	})
+	entities, err := s.entityDS.GetEntityByQuery(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 
 	return &v1.GetExternalNetworkEntitiesResponse{
-		Entities: ret,
+		Entities: entities,
+	}, nil
+}
+
+func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.GetExternalNetworkFlowsRequest) (*v1.GetExternalNetworkFlowsResponse, error) {
+	// verify SAC for the requested deployment.
+	// elevate to get the deployment, then verify the provided
+	// context has access.
+
+	elevatedCtx := sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment),
+		),
+	)
+
+	deployment, found, err := s.deployments.GetDeployment(elevatedCtx, request.GetDeploymentId())
+	if err != nil || !found {
+		return nil, err
+	}
+
+	allowed, err := networkGraphSAC.ReadAllowed(ctx, sac.KeyForNSScopedObj(deployment)...)
+	if err != nil || !allowed {
+		return nil, err
+	}
+
+	// confirmed access, proceed to access flows for the given deployment
+
+	flowStore, err := s.getFlowStore(ctx, request.GetClusterId())
+	if err != nil {
+		return nil, err
+	}
+
+	flows, err := flowStore.GetExternalFlowsForDeployment(ctx, request.GetDeploymentId())
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate entities. This could probably be implemented in the DB query
+	// for better efficiency, but is simply implemented here for now.
+	for _, flow := range flows {
+		var toGet string
+		var toSet **storage.NetworkEntityInfo
+
+		props := flow.GetProps()
+		if props == nil {
+			continue
+		}
+
+		src, dst := props.GetSrcEntity(), props.GetDstEntity()
+
+		if src != nil && src.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			toGet = src.GetId()
+			toSet = &props.SrcEntity
+		}
+
+		if dst != nil && dst.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			toGet = dst.GetId()
+			toSet = &props.DstEntity
+		}
+
+		if toGet != "" {
+			entity, _, err := s.entityDS.GetEntity(ctx, toGet)
+			if err != nil {
+				return nil, err
+			}
+
+			*toSet = entity.GetInfo()
+		}
+	}
+
+	return &v1.GetExternalNetworkFlowsResponse{
+		Flows: flows,
 	}, nil
 }
 
@@ -146,7 +208,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 		},
 	}
 
-	err = s.entities.CreateExternalNetworkEntity(ctx, entity, false)
+	err = s.entityDS.CreateExternalNetworkEntity(ctx, entity, false)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +221,7 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 		return nil, err
 	}
 
-	if err := s.entities.DeleteExternalNetworkEntity(ctx, request.GetId()); err != nil {
+	if err := s.entityDS.DeleteExternalNetworkEntity(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
 
@@ -183,14 +245,14 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 
 	entity.Info.GetExternalSource().Name = request.GetName()
 
-	if err := s.entities.UpdateExternalNetworkEntity(ctx, entity, false); err != nil {
+	if err := s.entityDS.UpdateExternalNetworkEntity(ctx, entity, false); err != nil {
 		return nil, err
 	}
 	return entity, nil
 }
 
 func (s *serviceImpl) getEntityAndValidateMutable(ctx context.Context, id string) (*storage.NetworkEntity, error) {
-	entity, found, err := s.entities.GetEntity(ctx, id)
+	entity, found, err := s.entityDS.GetEntity(ctx, id)
 	if err != nil {
 		return nil, err
 	}

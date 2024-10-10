@@ -10,6 +10,7 @@ import (
 	pgStore "github.com/stackrox/rox/central/networkgraph/entity/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
@@ -229,6 +230,10 @@ func (ds *dataStoreImpl) GetAllMatchingEntities(ctx context.Context, pred func(e
 		return nil, errors.Wrap(err, "fetching network entities from storage")
 	}
 	return entities, nil
+}
+
+func (ds *dataStoreImpl) GetEntityByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error) {
+	return ds.storage.GetByQuery(ctx, query)
 }
 
 func (ds *dataStoreImpl) CreateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
