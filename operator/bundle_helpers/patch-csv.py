@@ -88,6 +88,29 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
     else:
         csv_doc['spec']['relatedImages'] = construct_related_images()
 
+    # Add SecurityPolicy CRD to ACS operator CSV
+    policy_crd = {
+        "name": "securitypolicies.config.stackrox.io",
+        "version": "v1alpha1",
+        "kind": "SecurityPolicy",
+        "displayName": "Security Policy",
+        "description": "SecurityPolicy is the Schema for the policies API",
+        "resources": [{
+            "kind": "Deployment",
+            "name": "",
+            "version": "v1",
+        }],
+    }
+
+    csv_doc["spec"]["customresourcedefinitions"]["owned"].append(policy_crd)
+
+    # Apply policy-as-code feature flag to operator
+    env = csv_doc["spec"]["install"]["spec"]["deployments"][0]["spec"]["template"]["spec"]["containers"][0]["env"]
+    env.append({
+        "name": "ROX_POLICY_AS_CODE",
+        "value": "true",
+    })
+
 def construct_related_images():
     related_images = []
     for name, val in os.environ.items():
