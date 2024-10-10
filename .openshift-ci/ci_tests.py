@@ -157,6 +157,30 @@ class QaE2eTestCompatibility(BaseTest):
         )
 
 
+class QaE2eGoCompatibilityTest(BaseTest):
+    TEST_TIMEOUT = 240 * 60
+    TEST_OUTPUT_DIR = "/tmp/compatibility-test-logs"
+
+    def __init__(self, central_version, sensor_version):
+        super().__init__()
+        self._central_version = central_version
+        self._sensor_version = sensor_version
+
+    def run(self):
+        print("Executing non-groovy compatibility tests")
+
+        def set_dirs_after_start():
+            # let post test know where logs are
+            self.test_outputs = [NonGroovyE2e.TEST_OUTPUT_DIR]
+
+        self.run_with_graceful_kill(
+            ["tests/e2e/run-compatibility.sh",
+             self._central_version, self._sensor_version],
+            QaE2eGoCompatibilityTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
+
+
 class QaE2eDBBackupRestoreTest(BaseTest):
     TEST_TIMEOUT = 30 * 60
     TEST_OUTPUT_DIR = "/tmp/db-backup-restore-test"
