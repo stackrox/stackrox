@@ -42,6 +42,7 @@ describe('Cloud Source Integrations', () => {
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Paladin Cloud endpoint').clear().type('https://stackrox.io');
         getInputByLabel('Paladin Cloud token').clear().type('tokenvalue');
+        getInputByLabel('Create integration without testing').check();
 
         saveCreatedIntegrationInForm(integrationSource, integrationType);
 
@@ -94,6 +95,7 @@ describe('Cloud Source Integrations', () => {
         getInputByLabel('API token').clear();
         getInputByLabel('Client ID').clear().type('client_id');
         getInputByLabel('Client secret').clear().type('client_secret');
+        getInputByLabel('Create integration without testing').check();
 
         saveCreatedIntegrationInForm(integrationSource, integrationType);
 

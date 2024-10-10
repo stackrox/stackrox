@@ -58,7 +58,7 @@ export const defaultValues: CloudSourceIntegrationFormValues = {
             clientId: '',
             clientSecret: '',
         },
-        skipTestIntegration: true,
+        skipTestIntegration: false,
         paladinCloud: {
             endpoint: 'https://api.paladincloud.io',
         },
@@ -183,6 +183,21 @@ function PaladinCloudIntegrationForm({
                                     ? ''
                                     : 'Currently-stored token will be used.'
                             }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        fieldId="cloudSource.skipTestIntegration"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
+                            label="Create integration without testing"
+                            id="cloudSource.skipTestIntegration"
+                            aria-label="skip integration test"
+                            isChecked={values.cloudSource.skipTestIntegration}
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>
