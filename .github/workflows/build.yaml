@@ -529,7 +529,7 @@ jobs:
         fi
         # TODO(arm64): re-enable arm64
         # architectures="amd64,arm64"
-        # architectures="amd64"
+        architectures="amd64"
         if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
           # TODO(arm64): re-enable arm64
           # architectures="amd64,arm64,ppc64le,s390x"
