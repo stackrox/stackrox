@@ -49,7 +49,7 @@ ENV PATH="/stackrox:$PATH" \
 COPY signatures/RPM-GPG-KEY-CentOS-Official /
 COPY static-bin /stackrox/
 
-COPY --from=downloads /output/rpms/ /tmp/
+#COPY --from=downloads /output/rpms/ /tmp/
 COPY --from=downloads /output/go/ /go/
 
 RUN rpm --import RPM-GPG-KEY-CentOS-Official && \
