@@ -171,11 +171,11 @@ describe('Node CVEs - CVE Detail Page', () => {
             );
 
             // check sorting of CVSS column
-            sortByTableHeader('CVSS score');
+            sortByTableHeader('CVSS');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'CVSS', reversed: true })
             );
-            sortByTableHeader('CVSS score');
+            sortByTableHeader('CVSS');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'CVSS', reversed: false })
             );

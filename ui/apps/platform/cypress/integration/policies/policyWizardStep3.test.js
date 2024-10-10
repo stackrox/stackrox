@@ -24,9 +24,10 @@ function addPolicyField(fieldName) {
     // cy.log(firstWordOfFieldName);
     cy.get(TREE_VIEW_SEARCH_INPUT).type(firstWordOfFieldName);
 
-    cy.get(
-        `${TREE_VIEW_FIRST_LEVEL_CHILD} .pf-v5-c-tree-view__node-title:contains(${fieldName})`
-    ).click();
+    // Match entire title to distinguish CVSS From NVD CVSS.
+    cy.get(`${TREE_VIEW_FIRST_LEVEL_CHILD} .pf-v5-c-tree-view__node-title`)
+        .contains(new RegExp(`^${fieldName}$`))
+        .click();
 
     cy.get(`${TREE_VIEW_FIRST_LEVEL_CHILD} .pf-v5-c-tree-view__node`).should(
         'have.class',

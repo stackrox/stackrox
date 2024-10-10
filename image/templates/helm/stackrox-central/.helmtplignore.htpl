@@ -31,7 +31,3 @@ templates/*
 templates/*
 [< end >]
 templates/keep.yaml
-[<- if not .FeatureFlags.ROX_POLICY_AS_CODE >]
-templates/02-config-controller-*.yaml
-templates/00-securitypolicies-crd.yaml
-[<- end >]

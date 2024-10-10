@@ -609,7 +609,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storagePortConfig"
-          }
+          },
+          "title": "Policies use the port config on the top-level deployment."
         },
         "secrets": {
           "type": "array",
@@ -819,7 +820,8 @@
         },
         "stateTimestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Internal use only"
         },
         "riskScore": {
           "type": "number",

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"time"
 
 	pkgErrors "github.com/pkg/errors"
@@ -288,14 +289,15 @@ func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName
 
 func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.ContainerImage {
 	pullSources, err := s.mirrorStore.PullSources(srcImage.GetName().GetFullName())
-	if err != nil {
+	// A not exist error is expected when mirroring is not setup, therefore we do not log it.
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Warnf("Error obtaining pull sources: %v", err)
 	}
 
 	if len(pullSources) == 0 {
 		// If no pull source was found due to an error or some other reason, we
 		// default to the source image.
-		log.Debugf("Using source image only for enriching %q", srcImage.GetName().GetFullName())
+		log.Debugf("Using source image only for enriching %q (id: %q)", srcImage.GetName().GetFullName(), srcImage.GetId())
 		return []*storage.ContainerImage{srcImage}
 	}
 
@@ -308,10 +310,23 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 			continue
 		}
 
+		// This ID assignment addresses an edge case where a podspec references an image
+		// by tag (e.g. latest) and the registry contents for that tag change after the pod was
+		// created. We want to ensure that we pull metadata and layers based on the
+		// ID (digest) of the running image instead of what the tag currently represents.
+		// This condition will only be true for mirrors setup via the ImageTagMirrorSet (ITMS) CR.
+		// The other supported CRs, ImageContentSourcePolicy (ICSP) and ImageDigestMirrorSet (IDMS),
+		// will only match IF the podspec references the image by digest, in which case ID
+		// would be populated and this condition never true.
+		if img.GetId() == "" && srcImage.GetId() != "" {
+			log.Debugf("Adding id from source image %q (id: %q) to pull source %q", srcImage.GetName().GetFullName(), srcImage.GetId(), img.GetName().GetFullName())
+			img.Id = srcImage.GetId()
+		}
+
 		cImages = append(cImages, img)
 	}
 
-	log.Debugf("Using %d pull sources for enriching %q: %+v", len(cImages), srcImage.GetName().GetFullName(), cImages)
+	log.Debugf("Using %d pull sources for enriching %q (id: %q): %+v", len(cImages), srcImage.GetName().GetFullName(), srcImage.GetId(), cImages)
 	return cImages
 }
 

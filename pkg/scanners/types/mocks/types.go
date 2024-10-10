@@ -13,6 +13,7 @@ import (
 	reflect "reflect"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	storage "github.com/stackrox/rox/generated/storage"
 	types "github.com/stackrox/rox/pkg/scanners/types"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -256,18 +257,18 @@ func (m *MockNodeScanner) EXPECT() *MockNodeScannerMockRecorder {
 }
 
 // GetNodeInventoryScan mocks base method.
-func (m *MockNodeScanner) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory) (*storage.NodeScan, error) {
+func (m *MockNodeScanner) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNodeInventoryScan", node, inv)
+	ret := m.ctrl.Call(m, "GetNodeInventoryScan", node, inv, ir)
 	ret0, _ := ret[0].(*storage.NodeScan)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNodeInventoryScan indicates an expected call of GetNodeInventoryScan.
-func (mr *MockNodeScannerMockRecorder) GetNodeInventoryScan(node, inv any) *gomock.Call {
+func (mr *MockNodeScannerMockRecorder) GetNodeInventoryScan(node, inv, ir any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeInventoryScan", reflect.TypeOf((*MockNodeScanner)(nil).GetNodeInventoryScan), node, inv)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeInventoryScan", reflect.TypeOf((*MockNodeScanner)(nil).GetNodeInventoryScan), node, inv, ir)
 }
 
 // GetNodeScan mocks base method.

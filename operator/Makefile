@@ -451,7 +451,7 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 		--first-version $${first_version} \
 		--operator-image $(IMG) \
 		$${unreleased_opt} \
-		--no-related-images \
+		--related-images-mode=omit \
 		--add-supported-arch amd64 \
 		--add-supported-arch arm64 \
 		--add-supported-arch ppc64le \

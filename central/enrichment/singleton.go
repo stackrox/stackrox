@@ -63,6 +63,7 @@ func initializeManager() {
 
 	imageIntegrationStore = imageIntegrationDS.Singleton()
 	integrations, err := imageIntegrationStore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
+	log.Debugf("Found %d configured image integrations", len(integrations))
 	if err != nil {
 		log.Errorf("unable to use previous integrations: %s", err)
 		return

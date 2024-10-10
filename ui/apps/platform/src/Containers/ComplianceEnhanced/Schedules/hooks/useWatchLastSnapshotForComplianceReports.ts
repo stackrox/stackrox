@@ -41,7 +41,10 @@ export type FetchLastComplianceReportSnapshotReturn = Result & {
 
 // @TODO: Handle error states better for this polling scenario
 function useWatchLastSnapshotForComplianceReports(
-    scanConfigurations: ComplianceScanConfigurationStatus[] | undefined
+    scanConfigurations:
+        | ComplianceScanConfigurationStatus
+        | ComplianceScanConfigurationStatus[]
+        | undefined
 ): FetchLastComplianceReportSnapshotReturn {
     const fetchSnapshotsCallback = useCallback(() => {
         if (!scanConfigurations) {

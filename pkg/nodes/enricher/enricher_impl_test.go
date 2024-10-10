@@ -3,6 +3,7 @@ package enricher
 import (
 	"testing"
 
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
@@ -70,7 +71,7 @@ func (f *fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) 
 	}, nil
 }
 
-func (f *fakeNodeScanner) GetNodeInventoryScan(*storage.Node, *storage.NodeInventory) (*storage.NodeScan, error) {
+func (f *fakeNodeScanner) GetNodeInventoryScan(*storage.Node, *storage.NodeInventory, *v4.IndexReport) (*storage.NodeScan, error) {
 	f.requestedScan = true
 	return &storage.NodeScan{
 		Components: []*storage.EmbeddedNodeScanComponent{
