@@ -195,7 +195,7 @@ func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.De
 		return response, nil
 	}
 
-	toClear := make([]string, len(results))
+	toClear := make([]string, 0, len(results))
 	var toDelete []string
 	// go through list of IDs returned from the search results; clear the baseline and remove deployments from observation.
 	for _, r := range results {
