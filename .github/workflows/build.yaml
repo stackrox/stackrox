@@ -32,10 +32,13 @@ jobs:
 
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
-          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          # TODO(arm64): re-enable arm64
+          # matrix="$(jq '.pre_build_go_binaries.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_go_binaries.arch += ["amd64"]' <<< "$matrix")"
 
           matrix="$(jq '.build_and_push_main.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
-          matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          # matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
+          matrix="$(jq '.build_and_push_main.arch += ["amd64"]' <<< "$matrix")"
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
 
@@ -59,10 +62,12 @@ jobs:
             matrix="$(jq '.build_and_push_main.name += ["race-condition-debug"]' <<< "$matrix")"
             matrix="$(jq '.push_main_multiarch_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
             # Exclude "arm64", "ppc64le", "s390x"
-            matrix="$(jq '.pre_build_go_binaries.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
+            # TODO(arm64): revert this
+            # matrix="$(jq '.pre_build_go_binaries.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
             matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
             matrix="$(jq '.pre_build_go_binaries.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
-            matrix="$(jq '.build_and_push_main.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
+            # TODO(arm64): revert this
+            # matrix="$(jq '.build_and_push_main.exclude = [{ "name": "race-condition-debug", "arch": "arm64" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "ppc64le" }]' <<< "$matrix")"
             matrix="$(jq '.build_and_push_main.exclude += [{ "name": "race-condition-debug", "arch": "s390x" }]' <<< "$matrix")"
           fi
@@ -522,9 +527,13 @@ jobs:
         if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "master" ]]; then
           push_context="merge-to-master"
         fi
-        architectures="amd64,arm64"
+        # TODO(arm64): re-enable arm64
+        # architectures="amd64,arm64"
+        # architectures="amd64"
         if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-          architectures="amd64,arm64,ppc64le,s390x"
+          # TODO(arm64): re-enable arm64
+          # architectures="amd64,arm64,ppc64le,s390x"
+          architectures="amd64,ppc64le,s390x"
         fi
         if [[ "${{ matrix.name }}" == "race-condition-debug" ]]; then
           architectures="amd64"
