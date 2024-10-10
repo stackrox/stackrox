@@ -6,11 +6,9 @@ import (
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
-	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 type searchWalker struct {
@@ -91,17 +89,6 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 		searchTag := field.Tag.Get("search")
 		if searchTag == "-" {
 			continue
-		}
-		if strings.HasPrefix(searchTag, "flag=") {
-			flag := stringutils.GetAfter(searchTag, "=")
-			ff, ok := features.Flags[flag]
-			if !ok {
-				log.Fatalf("flag %s is not a valid feature flag", flag)
-			}
-			if !ff.Enabled() {
-				continue
-			}
-			searchTag = ""
 		}
 
 		// Special case proto timestamp because we actually want to index seconds
