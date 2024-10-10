@@ -38,27 +38,39 @@ type EnforcementAction string
 type SecurityPolicySpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Pattern=`^[^\n\r\$]{5,128}$`
-	PolicyName string `json:"policyName,omitempty"`
+	// PolicyName is the name of the policy as it appears in Central.  Note that changing this value will rename the policy in Central.  This field must be unique.
+	PolicyName string `json:"policyName"`
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Pattern=`^[^\$]{0,800}$`
-	Description string `json:"description,omitempty"`
+	// Description is a free-form text description of this policy.
+	Description string `json:"description"`
 	Rationale   string `json:"rationale,omitempty"`
+	// Remediation describes how to remediate a violation of this policy.
 	Remediation string `json:"remediation,omitempty"`
-	Disabled    bool   `json:"disabled,omitempty"`
+	// Disabled toggles whether or not this policy will be actively firing alerts.
+	Disabled bool `json:"disabled,omitempty"`
 	// +kubebuilder:validation:MinItems=1
-	Categories []string `json:"categories,omitempty"`
+	// Categories is a list of categories that this policy falls under.  Category names must already exist in Central.
+	Categories []string `json:"categories"`
 	// +kubebuilder:validation:MinItems=1
-	LifecycleStages []LifecycleStage `json:"lifecycleStages,omitempty"`
+	// LifecycleStages describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME.
+	LifecycleStages []LifecycleStage `json:"lifecycleStages"`
 	EventSource     EventSource      `json:"eventSource,omitempty"`
-	Exclusions      []Exclusion      `json:"exclusions,omitempty"`
-	Scope           []Scope          `json:"scope,omitempty"`
+	// Exclusions define deployments or images that should be excluded from this policy.
+	Exclusions []Exclusion `json:"exclusions,omitempty"`
+	// Scope defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything.
+	Scope []Scope `json:"scope,omitempty"`
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=UNSET_SEVERITY;LOW_SEVERITY;MEDIUM_SEVERITY;HIGH_SEVERITY;CRITICAL_SEVERITY
-	Severity           string              `json:"severity,omitempty"`
+	// Severity defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY.
+	Severity string `json:"severity"`
+	// Enforcement lists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT.
 	EnforcementActions []EnforcementAction `json:"enforcementActions,omitempty"`
-	Notifiers          []string            `json:"notifiers,omitempty"`
+	// Notifiers is a list of notifier IDs that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found in the Central API.
+	Notifiers []string `json:"notifiers,omitempty"`
 	// +kubebuilder:validation:MinItems=1
-	PolicySections     []PolicySection      `json:"policySections,omitempty"`
+	// PolicySections define the violation criteria for this policy.
+	PolicySections     []PolicySection      `json:"policySections"`
 	MitreAttackVectors []MitreAttackVectors `json:"mitreAttackVectors,omitempty"`
 	CriteriaLocked     bool                 `json:"criteriaLocked,omitempty"`
 	MitreVectorsLocked bool                 `json:"mitreVectorsLocked,omitempty"`
@@ -95,19 +107,27 @@ type Label struct {
 }
 
 type PolicySection struct {
-	SectionName  string        `json:"sectionName,omitempty"`
-	PolicyGroups []PolicyGroup `json:"policyGroups,omitempty"`
+	// SectionName is a user-friendly name for this section of policies
+	SectionName string `json:"sectionName,omitempty"`
+	// PolicyGroups is the set of policies groups that make up this section.  Each group can be considered an individual criterion.
+	PolicyGroups []PolicyGroup `json:"policyGroups"`
 }
 
 type PolicyGroup struct {
-	FieldName string `json:"fieldName,omitempty"`
+
+	// FieldName defines which field on a deployment or image this PolicyGroup evaluates.  See https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies for a complete list of possible values.
+	FieldName string `json:"fieldName"`
 	// +kubebuilder:validation:Enum=OR;AND
-	BooleanOperator string        `json:"booleanOperator,omitempty"`
-	Negate          bool          `json:"negate,omitempty"`
-	Values          []PolicyValue `json:"values,omitempty"`
+	// BooleanOperator determines if the values are combined with an OR or an AND.  Defaults to OR.
+	BooleanOperator string `json:"booleanOperator,omitempty"`
+	// Negate determines if the evaluation of this PolicyGroup is negated.  Default to false.
+	Negate bool `json:"negate,omitempty"`
+	// Values is the list of values for the specified field
+	Values []PolicyValue `json:"values,omitempty"`
 }
 
 type PolicyValue struct {
+	// Value is simply the string value
 	Value string `json:"value,omitempty"`
 }
 
