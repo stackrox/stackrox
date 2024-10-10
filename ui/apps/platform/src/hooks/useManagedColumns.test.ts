@@ -92,7 +92,7 @@ test('should set all columns to a specific visibility', () => {
     const { result } = renderHook(() => useManagedColumns('test', defaultColumnConfig));
 
     act(() => {
-        result.current.setColumns({
+        result.current.setVisibility({
             Name: false,
             CVSS: false,
             'NVD CVSS': true,
@@ -104,7 +104,7 @@ test('should set all columns to a specific visibility', () => {
     expect(result.current.columns['NVD CVSS'].isShown).toEqual(true);
 
     act(() => {
-        result.current.setColumns({
+        result.current.setVisibility({
             Name: true,
             CVSS: true,
             'NVD CVSS': true,
@@ -117,7 +117,7 @@ test('should set all columns to a specific visibility', () => {
 
     // Check setting a column that doesn't exist does not add an extra column to the state
     act(() => {
-        result.current.setColumns({
+        result.current.setVisibility({
             Name: false,
             CVSS: true,
             Bogus: false,
@@ -132,7 +132,7 @@ test('should set all columns to a specific visibility', () => {
 
     // Check that setting an empty object does not change the state
     act(() => {
-        result.current.setColumns({});
+        result.current.setVisibility({});
     });
 
     expect(result.current.columns.Name.isShown).toEqual(false);
@@ -141,7 +141,7 @@ test('should set all columns to a specific visibility', () => {
 
     // Check setting a partial state does not change the other columns
     act(() => {
-        result.current.setColumns({
+        result.current.setVisibility({
             Name: true,
         });
     });

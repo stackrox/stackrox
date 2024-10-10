@@ -58,7 +58,7 @@ export type ManagedColumns<ColumnKey extends string> = {
     /* Toggle the visibility of a single column */
     toggleVisibility: (key: string) => void;
     /* Sets the visibility of multiple columns at once */
-    setColumns: (columns: Record<string, boolean>) => void;
+    setVisibility: (columns: Record<string, boolean>) => void;
 };
 
 export function useManagedColumns<ColumnKey extends string>(
@@ -94,7 +94,7 @@ export function useManagedColumns<ColumnKey extends string>(
         });
     }
 
-    function setColumns(newColumns: Record<string, boolean>): void {
+    function setVisibility(newColumns: Record<string, boolean>): void {
         setTablePreferencesStorage((prev) => {
             return updateVisibility(prev, tableId, Object.entries(newColumns));
         });
@@ -102,7 +102,7 @@ export function useManagedColumns<ColumnKey extends string>(
 
     return {
         columns,
-        setColumns,
+        setVisibility,
         toggleVisibility,
     };
 }
