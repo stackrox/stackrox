@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Checkbox, Form, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
@@ -104,12 +105,10 @@ function SplunkIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<SplunkIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.notifier = {
-            ...formInitialValues.notifier,
-            ...initialValues,
-        };
+        merge(formInitialValues.notifier, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.splunk.httpToken = '';

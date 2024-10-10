@@ -2,6 +2,7 @@
 import React, { ReactElement } from 'react';
 import { Form, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
@@ -45,13 +46,11 @@ function EmailIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ACSCSEmailIntegration>): ReactElement {
-    let formInitialValues = { ...defaultValues, ...initialValues };
-    if (initialValues) {
-        formInitialValues = {
-            ...formInitialValues,
-            ...initialValues,
-        };
-    }
+    const formInitialValues: ACSCSEmailIntegrationFormValues = merge(
+        {},
+        defaultValues,
+        initialValues
+    );
     const {
         values,
         touched,

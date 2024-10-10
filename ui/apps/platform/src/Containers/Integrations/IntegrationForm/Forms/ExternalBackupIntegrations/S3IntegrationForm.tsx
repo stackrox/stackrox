@@ -2,6 +2,7 @@
 import React, { ReactElement } from 'react';
 import { Checkbox, Form, FormSelect, PageSection, Text, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
@@ -123,13 +124,10 @@ function S3IntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<S3Integration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
-
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.externalBackup = {
-            ...formInitialValues.externalBackup,
-            ...initialValues,
-        };
+        merge(formInitialValues.externalBackup, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.externalBackup.s3.accessKeyId = '';

@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Form, PageSection, TextInput, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { ClairifyImageIntegration } from 'types/imageIntegration.proto';
 
@@ -53,9 +54,7 @@ function ClairifyIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ClairifyImageIntegration>): ReactElement {
-    const formInitialValues = initialValues
-        ? { ...defaultValues, ...initialValues }
-        : defaultValues;
+    const formInitialValues: ClairifyImageIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,

@@ -9,6 +9,7 @@ import {
     TextInput,
 } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
@@ -64,9 +65,7 @@ function ClairIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ClairIntegration>): ReactElement {
-    const formInitialValues = initialValues
-        ? ({ ...defaultValues, ...initialValues } as ClairIntegration)
-        : defaultValues;
+    const formInitialValues: ClairIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,

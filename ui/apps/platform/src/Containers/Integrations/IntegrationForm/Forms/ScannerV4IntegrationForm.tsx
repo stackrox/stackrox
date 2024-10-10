@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { TextInput, PageSection, Form, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { ScannerV4ImageIntegration } from 'types/imageIntegration.proto';
 
@@ -54,9 +55,7 @@ function ScannerV4IntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ScannerV4ImageIntegration>): ReactElement {
-    const formInitialValues = initialValues
-        ? ({ ...defaultValues, ...initialValues } as ScannerV4ImageIntegration)
-        : defaultValues;
+    const formInitialValues: ScannerV4ImageIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,

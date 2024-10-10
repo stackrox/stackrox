@@ -12,6 +12,7 @@ import {
 import { SelectOption } from '@patternfly/react-core/deprecated';
 import { HelpIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
@@ -143,13 +144,12 @@ function EmailIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<EmailIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
     const [storedUsername, setStoredUsername] = useState('');
+
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.notifier = {
-            ...formInitialValues.notifier,
-            ...initialValues,
-        };
+        merge(formInitialValues.notifier, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.email.password = '';
