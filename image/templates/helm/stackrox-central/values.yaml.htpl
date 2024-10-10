@@ -538,12 +538,10 @@ central:
 #    # sufficient and manual override is required.
 #    configOverride: null
 #
-[<- if .FeatureFlags.ROX_POLICY_AS_CODE >]
 #configAsCode:
 #  enabled: true
 #  installCRDs: true
 #
-[<- end >]
 ## EXPERT SETTINGS. You usually do not need to touch those.
 #
 ## If set to true, allow deploying in a namespace other than "stackrox". This is unsupported, so

@@ -142,10 +142,6 @@ spec:
           value: "true"
         {{- end }}
         [<- end >]
-        [<- if .FeatureFlags.ROX_POLICY_AS_CODE >]
-        - name: ROX_POLICY_AS_CODE
-          value: {{ ._rox.configAsCode.enabled | quote }}
-        [<- end >]
         {{- include "srox.envVars" (list . "deployment" "central" "central") | nindent 8 }}
         volumeMounts:
         - name: varlog
