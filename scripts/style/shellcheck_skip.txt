@@ -14,7 +14,6 @@ image/templates/common/setup.sh
 image/templates/sensor/kubernetes/sensor.sh
 image/templates/sensor/openshift/sensor.sh
 licenses/generate-license-wrapper.sh
-operator/hack/common.sh
 qa-tests-backend/scripts/migrate_protos.sh
 qa-tests-backend/test-images/fail-compliance/ssh/run-ssh.sh
 qa-tests-backend/test-images/trigger-policy-violations/most/run-csh.sh
