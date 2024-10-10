@@ -41,13 +41,8 @@ TEST_FIXTURES="${BATS_TEST_DIRNAME}/test_fixtures"
     [ "$status" -eq 2 ]
 }
 
-@test "it can depend on CI job" {
-    run "$CMD" "another-job" "${TEST_FIXTURES}/rox-5861-exception-compliance-previous.log"
-    [ "$status" -eq 2 ]
-}
-
-@test "it handles the exception for ROX-5861" {
-    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/rox-5861-exception-compliance-previous.log"
+@test "it handles the exception for ROX-26311" {
+    run "$CMD" "any-job-name" "${TEST_FIXTURES}/rox-26311-exception-compliance-previous.log"
     [ "$status" -eq 0 ]
 }
 
@@ -62,22 +57,22 @@ TEST_FIXTURES="${BATS_TEST_DIRNAME}/test_fixtures"
 }
 
 @test "it handles exceptions in > 1 logs" {
-    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/rox-5861-exception-compliance-previous.log"
+    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/rox-26311-exception-compliance-previous.log"
     [ "$status" -eq 0 ]
 }
 
 @test "it spots a log with no exceptions with other logs that have an exception (by content)" {
-    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/no-exception-collector-previous.log" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/rox-5861-exception-compliance-previous.log"
+    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/no-exception-collector-previous.log" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/rox-26311-exception-compliance-previous.log"
     [ "$status" -eq 2 ]
 }
 
 @test "it spots a log with no exceptions with other logs that have an exception (by process)" {
-    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/other-process-previous.log" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/rox-5861-exception-compliance-previous.log"
+    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/other-process-previous.log" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/rox-26311-exception-compliance-previous.log"
     [ "$status" -eq 2 ]
 }
 
 @test "ordering is not a problem" {
-    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/rox-5861-exception-compliance-previous.log" "${TEST_FIXTURES}/no-exception-collector-previous.log"
+    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/rox-26311-exception-compliance-previous.log" "${TEST_FIXTURES}/no-exception-collector-previous.log"
     [ "$status" -eq 2 ]
 }
 
@@ -85,7 +80,7 @@ TEST_FIXTURES="${BATS_TEST_DIRNAME}/test_fixtures"
     if [[ -n "${GITHUB_ACTION:-}" ]]; then
         skip "not working on GHA"
     fi
-    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/no-exception-collector-previous.log" "${TEST_FIXTURES}/rox-5861-exception-compliance-previous.log"
+    run "$CMD" "openshift-api-e2e-tests" "${TEST_FIXTURES}/exception-collector-previous.log" "${TEST_FIXTURES}/no-exception-collector-previous.log" "${TEST_FIXTURES}/rox-26311-exception-compliance-previous.log"
     [ "$status" -eq 2 ]
     [ "${#lines[@]}" -eq 7 ]
 }
