@@ -352,6 +352,9 @@ func (m *managerImpl) filterOutDisabledPolicies(alerts *[]*storage.Alert) {
 func (m *managerImpl) HandleDeploymentAlerts(deploymentID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
 	defer m.reprocessor.ReprocessRiskForDeployments(deploymentID)
 
+	for i, alert := range alerts {
+		log.Debugf("HandleDeploymentAlerts: alert[%d]: %v", i, alert)
+	}
 	m.filterOutDisabledPolicies(&alerts)
 	if len(alerts) == 0 && stage == storage.LifecycleStage_RUNTIME {
 		return nil
