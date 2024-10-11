@@ -37,11 +37,11 @@ export const defaultColumns = {
         title: 'Deployments',
         isShownByDefault: true,
     },
-    imageCreatedTime: {
+    age: {
         title: 'Age',
         isShownByDefault: true,
     },
-    imageScanTime: {
+    scanTime: {
         title: 'Scan time',
         isShownByDefault: true,
     },
@@ -169,13 +169,13 @@ function ImageOverviewTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th
-                        className={getVisibilityClass('imageCreatedTime')}
+                        className={getVisibilityClass('age')}
                         sort={getSortParams('Image created time')}
                     >
                         Age
                     </Th>
                     <Th
-                        className={getVisibilityClass('imageScanTime')}
+                        className={getVisibilityClass('scanTime')}
                         sort={getSortParams('Image scan time')}
                     >
                         Scan time
@@ -285,10 +285,7 @@ function ImageOverviewTable({
                                             </Flex>
                                         )}
                                     </Td>
-                                    <Td
-                                        dataLabel="Age"
-                                        className={getVisibilityClass('imageCreatedTime')}
-                                    >
+                                    <Td dataLabel="Age" className={getVisibilityClass('age')}>
                                         {metadata?.v1?.created ? (
                                             <DateDistance
                                                 date={metadata.v1.created}
@@ -300,7 +297,7 @@ function ImageOverviewTable({
                                     </Td>
                                     <Td
                                         dataLabel="Scan time"
-                                        className={getVisibilityClass('imageScanTime')}
+                                        className={getVisibilityClass('scanTime')}
                                     >
                                         {scanTime ? <DateDistance date={scanTime} /> : 'unknown'}
                                     </Td>
