@@ -52,6 +52,10 @@ spec:
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -75,6 +79,9 @@ spec:
         - mountPath: /run/secrets/stackrox.io/certs/
           name: central-certs-volume
           readOnly: true
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
       terminationGracePeriodSeconds: 10
       volumes:
       - name: central-certs-volume
@@ -84,4 +91,8 @@ spec:
           - key: ca.pem
             path: ca.pem
           secretName: central-tls
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
 {{- end }}

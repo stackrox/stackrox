@@ -26,6 +26,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	configv1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
+	configv1beta1 "github.com/stackrox/rox/config-controller/api/v1beta1"
 	"github.com/stackrox/rox/config-controller/internal/controller"
 	"github.com/stackrox/rox/config-controller/pkg/client"
 	"github.com/stackrox/rox/pkg/env"
@@ -52,6 +53,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(configv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(configv1beta1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -150,6 +152,12 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Policy")
 		os.Exit(1)
+	}
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&configv1alpha1.SecurityPolicy{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "SecurityPolicy")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 

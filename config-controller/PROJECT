@@ -14,7 +14,19 @@ resources:
   controller: true
   domain: stackrox.io
   group: config
-  kind: Policy
+  kind: SecurityPolicy
   path: github.com/stackrox/rox/config-controller/api/v1alpha1
   version: v1alpha1
+  webhooks:
+    conversion: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: stackrox.io
+  group: config
+  kind: SecurityPolicy
+  path: github.com/stackrox/rox/config-controller/api/v1beta1
+  version: v1beta1
 version: "3"

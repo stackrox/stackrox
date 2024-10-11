@@ -1,0 +1,45 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/name: config-controller
+    app.kubernetes.io/managed-by: kustomize
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/instance: serving-cert
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: config-controller
+    app.kubernetes.io/part-of: config-controller
+    app.kubernetes.io/managed-by: kustomize
+  name: serving-cert  # this name should match the one appeared in kustomizeconfig.yaml
+spec:
+  # SERVICE_NAME and SERVICE_NAMESPACE will be substituted by kustomize
+  dnsNames:
+  - webhook-service.stackrox.svc
+  - webhook-service.stackrox.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: webhook-server-cert # this secret will not be prefixed, since it's not managed by kustomize
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: config-controller
+    app.kubernetes.io/managed-by: kustomize
+  name: webhook-service
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    app: config-controller

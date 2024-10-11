@@ -14,14 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1beta1
 
 import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/protocompat"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
+	"github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -58,7 +60,7 @@ type SecurityPolicySpec struct {
 	EnforcementActions []EnforcementAction `json:"enforcementActions,omitempty"`
 	Notifiers          []string            `json:"notifiers,omitempty"`
 	// +kubebuilder:validation:MinItems=1
-	PolicySections     []PolicySection      `json:"policySections,omitempty"`
+	Criteria           []Criterion          `json:"criteria,omitempty"`
 	MitreAttackVectors []MitreAttackVectors `json:"mitreAttackVectors,omitempty"`
 	CriteriaLocked     bool                 `json:"criteriaLocked,omitempty"`
 	MitreVectorsLocked bool                 `json:"mitreVectorsLocked,omitempty"`
@@ -95,12 +97,7 @@ type Label struct {
 	Value string `json:"value,omitempty"`
 }
 
-type PolicySection struct {
-	SectionName  string        `json:"sectionName,omitempty"`
-	PolicyGroups []PolicyGroup `json:"policyGroups,omitempty"`
-}
-
-type PolicyGroup struct {
+type Criterion struct {
 	FieldName string `json:"fieldName,omitempty"`
 	// +kubebuilder:validation:Enum=OR;AND
 	BooleanOperator string        `json:"booleanOperator,omitempty"`
@@ -228,32 +225,28 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 		}
 	}
 
-	for _, section := range p.PolicySections {
-		protoSection := &storage.PolicySection{
-			SectionName: section.SectionName,
+	protoSection := &storage.PolicySection{SectionName: "Section 1"}
+
+	for _, criterion := range p.Criteria {
+		protoGroup := &storage.PolicyGroup{
+			FieldName: criterion.FieldName,
+			Negate:    criterion.Negate,
 		}
 
-		for _, group := range section.PolicyGroups {
-			protoGroup := &storage.PolicyGroup{
-				FieldName: group.FieldName,
-				Negate:    group.Negate,
-			}
-
-			val, found = storage.BooleanOperator_value[group.BooleanOperator]
-			if found {
-				protoGroup.BooleanOperator = storage.BooleanOperator(val)
-			}
-
-			for _, value := range group.Values {
-				protoValue := &storage.PolicyValue{
-					Value: value.Value,
-				}
-				protoGroup.Values = append(protoGroup.Values, protoValue)
-			}
-			protoSection.PolicyGroups = append(protoSection.PolicyGroups, protoGroup)
+		val, found = storage.BooleanOperator_value[criterion.BooleanOperator]
+		if found {
+			protoGroup.BooleanOperator = storage.BooleanOperator(val)
 		}
-		proto.PolicySections = append(proto.PolicySections, protoSection)
+
+		for _, value := range criterion.Values {
+			protoValue := &storage.PolicyValue{
+				Value: value.Value,
+			}
+			protoGroup.Values = append(protoGroup.Values, protoValue)
+		}
+		protoSection.PolicyGroups = append(protoSection.PolicyGroups, protoGroup)
 	}
+	proto.PolicySections = []*storage.PolicySection{protoSection}
 
 	for _, mitreAttackVectors := range p.MitreAttackVectors {
 		protoMitreAttackVetor := &storage.Policy_MitreAttackVectors{
@@ -269,7 +262,6 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:storageversion
 
 // SecurityPolicy is the Schema for the policies API
 type SecurityPolicy struct {
@@ -280,7 +272,214 @@ type SecurityPolicy struct {
 	Status SecurityPolicyStatus `json:"status,omitempty"`
 }
 
-func (*SecurityPolicy) Hub() {}
+func (src *SecurityPolicy) ConvertTo(dstRaw conversion.Hub) error {
+	dst := dstRaw.(*v1alpha1.SecurityPolicy)
+	dst.ObjectMeta = src.ObjectMeta
+	dst.Spec.PolicyName = src.Spec.PolicyName
+	dst.Spec.Description = src.Spec.Description
+	dst.Spec.Rationale = src.Spec.Rationale
+	dst.Spec.Remediation = src.Spec.Remediation
+	dst.Spec.Disabled = src.Spec.Disabled
+	dst.Spec.Categories = src.Spec.Categories
+	dst.Spec.Notifiers = src.Spec.Notifiers
+	dst.Spec.CriteriaLocked = src.Spec.CriteriaLocked
+	dst.Spec.MitreVectorsLocked = src.Spec.MitreVectorsLocked
+	dst.Spec.IsDefault = src.Spec.IsDefault
+
+	for _, ls := range src.Spec.LifecycleStages {
+		dst.Spec.LifecycleStages = append(dst.Spec.LifecycleStages, v1alpha1.LifecycleStage(ls))
+	}
+
+	for _, exclusion := range src.Spec.Exclusions {
+		dstExclusion := v1alpha1.Exclusion{
+			Name: exclusion.Name,
+		}
+
+		dstExclusion.Expiration = exclusion.Expiration
+
+		if exclusion.Deployment != (Deployment{}) {
+			dstExclusion.Deployment = v1alpha1.Deployment{
+				Name: exclusion.Deployment.Name,
+			}
+
+			scope := exclusion.Deployment.Scope
+			if scope != (Scope{}) {
+				dstExclusion.Deployment.Scope = v1alpha1.Scope{
+					Cluster:   scope.Cluster,
+					Namespace: scope.Namespace,
+				}
+			}
+
+			if scope.Label != (Label{}) {
+				dstExclusion.Deployment.Scope.Label = v1alpha1.Label{
+					Key:   scope.Label.Key,
+					Value: scope.Label.Value,
+				}
+			}
+
+		}
+
+		dst.Spec.Exclusions = append(dst.Spec.Exclusions, dstExclusion)
+	}
+
+	for _, scope := range src.Spec.Scope {
+		dstScope := v1alpha1.Scope{
+			Cluster:   scope.Cluster,
+			Namespace: scope.Namespace,
+		}
+
+		if scope.Label != (Label{}) {
+			dstScope.Label = v1alpha1.Label{
+				Key:   scope.Label.Key,
+				Value: scope.Label.Value,
+			}
+		}
+
+		dst.Spec.Scope = append(dst.Spec.Scope, dstScope)
+	}
+
+	dst.Spec.Severity = src.Spec.Severity
+
+	dst.Spec.EventSource = v1alpha1.EventSource(src.Spec.EventSource)
+
+	for _, ea := range src.Spec.EnforcementActions {
+		dst.Spec.EnforcementActions = append(dst.Spec.EnforcementActions, v1alpha1.EnforcementAction(ea))
+	}
+
+	dstSection := v1alpha1.PolicySection{SectionName: "Section 1"}
+
+	for _, criterion := range src.Spec.Criteria {
+		dstGroup := v1alpha1.PolicyGroup{
+			FieldName: criterion.FieldName,
+			Negate:    criterion.Negate,
+		}
+
+		dstGroup.BooleanOperator = criterion.BooleanOperator
+
+		for _, value := range criterion.Values {
+			dstValue := v1alpha1.PolicyValue{
+				Value: value.Value,
+			}
+			dstGroup.Values = append(dstGroup.Values, dstValue)
+		}
+		dstSection.PolicyGroups = append(dstSection.PolicyGroups, dstGroup)
+	}
+	dst.Spec.PolicySections = []v1alpha1.PolicySection{dstSection}
+
+	for _, mitreAttackVectors := range src.Spec.MitreAttackVectors {
+		dstMitreAttackVetor := v1alpha1.MitreAttackVectors{
+			Tactic:     mitreAttackVectors.Tactic,
+			Techniques: mitreAttackVectors.Techniques,
+		}
+
+		dst.Spec.MitreAttackVectors = append(dst.Spec.MitreAttackVectors, dstMitreAttackVetor)
+	}
+	return nil
+}
+
+func (dst *SecurityPolicy) ConvertFrom(srcRaw conversion.Hub) error {
+	src := srcRaw.(*v1alpha1.SecurityPolicy)
+	dst.ObjectMeta = src.ObjectMeta
+	dst.Spec.PolicyName = src.Spec.PolicyName
+	dst.Spec.Description = src.Spec.Description
+	dst.Spec.Rationale = src.Spec.Rationale
+	dst.Spec.Remediation = src.Spec.Remediation
+	dst.Spec.Disabled = src.Spec.Disabled
+	dst.Spec.Categories = src.Spec.Categories
+	dst.Spec.Notifiers = src.Spec.Notifiers
+	dst.Spec.CriteriaLocked = src.Spec.CriteriaLocked
+	dst.Spec.MitreVectorsLocked = src.Spec.MitreVectorsLocked
+	dst.Spec.IsDefault = src.Spec.IsDefault
+
+	for _, ls := range src.Spec.LifecycleStages {
+		dst.Spec.LifecycleStages = append(dst.Spec.LifecycleStages, LifecycleStage(ls))
+	}
+
+	for _, exclusion := range src.Spec.Exclusions {
+		dstExclusion := Exclusion{
+			Name: exclusion.Name,
+		}
+
+		dstExclusion.Expiration = exclusion.Expiration
+
+		if exclusion.Deployment != (v1alpha1.Deployment{}) {
+			dstExclusion.Deployment = Deployment{
+				Name: exclusion.Deployment.Name,
+			}
+
+			scope := exclusion.Deployment.Scope
+			if scope != (v1alpha1.Scope{}) {
+				dstExclusion.Deployment.Scope = Scope{
+					Cluster:   scope.Cluster,
+					Namespace: scope.Namespace,
+				}
+			}
+
+			if scope.Label != (v1alpha1.Label{}) {
+				dstExclusion.Deployment.Scope.Label = Label{
+					Key:   scope.Label.Key,
+					Value: scope.Label.Value,
+				}
+			}
+
+		}
+
+		dst.Spec.Exclusions = append(dst.Spec.Exclusions, dstExclusion)
+	}
+
+	for _, scope := range src.Spec.Scope {
+		dstScope := Scope{
+			Cluster:   scope.Cluster,
+			Namespace: scope.Namespace,
+		}
+
+		if scope.Label != (v1alpha1.Label{}) {
+			dstScope.Label = Label{
+				Key:   scope.Label.Key,
+				Value: scope.Label.Value,
+			}
+		}
+
+		dst.Spec.Scope = append(dst.Spec.Scope, dstScope)
+	}
+
+	dst.Spec.Severity = src.Spec.Severity
+
+	dst.Spec.EventSource = EventSource(src.Spec.EventSource)
+
+	for _, ea := range src.Spec.EnforcementActions {
+		dst.Spec.EnforcementActions = append(dst.Spec.EnforcementActions, EnforcementAction(ea))
+	}
+
+	for _, section := range src.Spec.PolicySections {
+		for _, group := range section.PolicyGroups {
+			criterion := Criterion{
+				FieldName: group.FieldName,
+				Negate:    group.Negate,
+			}
+
+			criterion.BooleanOperator = group.BooleanOperator
+
+			for _, value := range group.Values {
+				dstValue := PolicyValue{
+					Value: value.Value,
+				}
+				criterion.Values = append(criterion.Values, dstValue)
+			}
+			dst.Spec.Criteria = append(dst.Spec.Criteria, criterion)
+		}
+	}
+
+	for _, mitreAttackVectors := range src.Spec.MitreAttackVectors {
+		dstMitreAttackVetor := MitreAttackVectors{
+			Tactic:     mitreAttackVectors.Tactic,
+			Techniques: mitreAttackVectors.Techniques,
+		}
+
+		dst.Spec.MitreAttackVectors = append(dst.Spec.MitreAttackVectors, dstMitreAttackVetor)
+	}
+	return nil
+}
 
 // +kubebuilder:object:root=true
 
