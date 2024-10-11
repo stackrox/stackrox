@@ -653,6 +653,16 @@
         }
       }
     },
+    "AlertEntityType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "DEPLOYMENT",
+        "CONTAINER_IMAGE",
+        "RESOURCE"
+      ],
+      "default": "UNSET"
+    },
     "AlertGroupAlertCounts": {
       "type": "object",
       "properties": {
@@ -1021,8 +1031,15 @@
         "snoozeTill": {
           "type": "string",
           "format": "date-time"
+        },
+        "platformComponent": {
+          "type": "boolean"
+        },
+        "entityType": {
+          "$ref": "#/definitions/AlertEntityType"
         }
-      }
+      },
+      "title": "Next available tag: 24"
     },
     "storageAlertDeployment": {
       "type": "object",
