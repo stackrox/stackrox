@@ -246,7 +246,7 @@ class CertRotationTest extends BaseSpecification {
             SensorUpgradeService.triggerCertRotation(cluster.getId())
         } catch (StatusRuntimeException exc) {
             caughtException = true
-            assert exc.status.description.contains("cluster is Helm-managed")
+            assert exc.status.description.contains("Helm controls the secured cluster version.")
         }
         assert caughtException
     }
