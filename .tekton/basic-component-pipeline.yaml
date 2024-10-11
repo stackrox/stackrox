@@ -205,6 +205,7 @@ spec:
       value: $(params.output-image-repo):konflux-$(params.revision).prefetch
     - name: ociArtifactExpiresAfter
       value: $(params.oci-artifact-expires-after)
+    retries: 1
     taskRef:
       params:
       - name: name
@@ -239,6 +240,7 @@ spec:
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    retries: 2
     taskRef:
       params:
       - name: name
@@ -264,6 +266,7 @@ spec:
       - $(tasks.build-container-amd64.results.IMAGE_REF)
     - name: IMAGE_EXPIRES_AFTER
       value: $(params.image-expires-after)
+    retries: 2
     taskRef:
       params:
       - name: name
@@ -289,6 +292,7 @@ spec:
       - $(tasks.build-container-amd64.results.IMAGE_REF)
     - name: IMAGE_EXPIRES_AFTER
       value: $(params.image-expires-after)
+    retries: 2
     taskRef:
       params:
       - name: name
@@ -360,7 +364,7 @@ spec:
       - name: name
         value: clair-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.2@sha256:37b9187c1d5f6672bbc9c61d88fc71a3ee688076cb16edef42d1ff92a59027fb
+        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.2@sha256:9f4ddafd599e06b319cece5a4b8ac36b9e7ec46bea378bc6c6af735d3f7f8060
       - name: kind
         value: task
       resolver: bundles
