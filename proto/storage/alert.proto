@@ -11,6 +11,7 @@ import "storage/process_indicator.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
+// Next available tag: 24
 message Alert {
   message Deployment {
     string id = 1; // @gotags: search:"Deployment ID,store,hidden" sql:"index=hash,type(uuid)"
@@ -114,6 +115,13 @@ message Alert {
   string namespace = 20; // @gotags: search:"Namespace,store"
   string namespace_id = 21; // @gotags: search:"Namespace ID" sql:"type(uuid)"
 
+  enum EntityType {
+    UNSET = 0;
+    DEPLOYMENT = 1;
+    CONTAINER_IMAGE = 2;
+    RESOURCE = 3;
+  }
+
   oneof Entity {
     // Represents an alert on a deployment
     // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
@@ -141,6 +149,9 @@ message Alert {
   ViolationState state = 11; // @gotags: search:"Violation State,store" sql:"index=btree"
   google.protobuf.Timestamp snooze_till = 12;
   reserved 14; // was tags
+
+  bool platform_component = 22; // @gotags: search:"Platform Component"
+  EntityType entity_type = 23; // @gotags: search:"Entity Type"
 }
 
 message ListAlert {
