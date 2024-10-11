@@ -13,6 +13,7 @@ import {
     ToggleGroupItem,
 } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
@@ -58,7 +59,7 @@ export type MicrosoftSentinelFormValues = {
 
 export const validationSchema = yup.object().shape({
     notifier: yup.object().shape({
-        name: yup.string().trim().required('Email integration name is required'),
+        name: yup.string().trim().required('A Microsoft Sentinel name is required'),
         microsoftSentinel: yup.object().shape({
             logIngestionEndpoint: yup
                 .string()
@@ -115,8 +116,11 @@ function MicrosoftSentinelForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<MicrosoftSentinel>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
+
     if (initialValues) {
+        merge(formInitialValues.notifier, initialValues);
+
         formInitialValues.notifier = {
             ...formInitialValues.notifier,
             ...initialValues,
@@ -152,8 +156,11 @@ function MicrosoftSentinelForm({
             : 'use-secret'
     );
 
-    function onChange(value, event) {
-        return setFieldValue(event.target.id, value);
+    function onChange(
+        value: string | boolean,
+        event: React.FormEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>
+    ) {
+        return setFieldValue(event.currentTarget.id, value);
     }
 
     function onUpdateAuthMethod(event) {
@@ -162,10 +169,13 @@ function MicrosoftSentinelForm({
         setSelectedAuthMethod(id);
     }
 
-    function onUpdateCredentialsChange(value, event) {
+    function onUpdateCredentialsChange(
+        value: string | boolean,
+        event: React.FormEvent<HTMLInputElement>
+    ) {
         setFieldValue('notifier.microsoftSentinel.secret', '');
         setFieldValue('notifier.microsoftSentinel.clientCertAuthConfig.privateKey', '');
-        return setFieldValue(event.target.id, value);
+        return setFieldValue(event.currentTarget.id, value);
     }
 
     function preOnSaveHook() {
@@ -266,7 +276,7 @@ function MicrosoftSentinelForm({
                     <Card isFlat>
                         <CardTitle>Authentication Method</CardTitle>
                         <CardBody>
-                            <ToggleGroup aria-label="Default with single selectable">
+                            <ToggleGroup aria-label="Authentication method selection">
                                 <ToggleGroupItem
                                     text="Use Secret"
                                     buttonId="use-secret"
@@ -304,9 +314,7 @@ function MicrosoftSentinelForm({
                             {selectedAuthMethod === 'use-secret' && (
                                 <FormLabelGroup
                                     label="Secret"
-                                    isRequired={
-                                        values.updatePassword && selectedAuthMethod === 'use-secret'
-                                    }
+                                    isRequired={values.updatePassword}
                                     fieldId="notifier.microsoftSentinel.secret"
                                     touched={touched}
                                     errors={errors}
@@ -352,10 +360,7 @@ function MicrosoftSentinelForm({
                                         />
                                     </FormLabelGroup>
                                     <FormLabelGroup
-                                        isRequired={
-                                            values.updatePassword &&
-                                            selectedAuthMethod === 'use-client-cert'
-                                        }
+                                        isRequired={values.updatePassword}
                                         label="Private key"
                                         fieldId="notifier.microsoftSentinel.clientCertAuthConfig.privateKey"
                                         touched={touched}
