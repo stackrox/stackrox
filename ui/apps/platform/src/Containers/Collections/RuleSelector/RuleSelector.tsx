@@ -88,7 +88,7 @@ function RuleSelector({
                 isDisabled={isDisabled}
             >
                 <SelectOption value="NoneSpecified">
-                    No specified {pluralEntity.toLowerCase()}
+                    No {pluralEntity.toLowerCase()} specified
                 </SelectOption>
                 <SelectOption value="ByName">{pluralEntity} with names matching</SelectOption>
                 <SelectOption value="ByLabel">
