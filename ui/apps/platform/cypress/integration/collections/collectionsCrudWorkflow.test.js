@@ -22,7 +22,7 @@ describe('Create collection', () => {
         cy.get('input[name="name"]').type(collectionName);
         cy.get('input[name="description"]').type('A collection for financial data');
 
-        cy.get('button:contains("All deployments")').click();
+        cy.get('button:contains("No deployments specified")').click();
         cy.get('button:contains("Deployments with labels matching")').click();
         cy.get('input[aria-label="Select label value 1 of 1 for deployment rule 1 of 1"]').type(
             'meta/name=visa-processor'
@@ -32,11 +32,11 @@ describe('Create collection', () => {
             'meta/name=mastercard-processor'
         );
 
-        cy.get('button:contains("All namespaces")').click();
+        cy.get('button:contains("No namespaces specified")').click();
         cy.get('button:contains("Namespaces with names matching")').click();
         cy.get('input[aria-label="Select value 1 of 1 for the namespace name"]').type('payments');
 
-        cy.get('button:contains("All clusters")').click();
+        cy.get('button:contains("No clusters specified")').click();
         cy.get('button:contains("Clusters with names matching")').click();
         cy.get('input[aria-label="Select value 1 of 1 for the cluster name"]').type('production');
 
