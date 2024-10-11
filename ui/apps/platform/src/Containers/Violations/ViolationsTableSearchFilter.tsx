@@ -2,10 +2,13 @@ import React from 'react';
 import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
+import useAnalytics from 'hooks/useAnalytics';
+import { createFilterTracker } from 'utils/telemetry';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import {
     CompoundSearchFilterConfig,
     OnSearchCallback,
+    OnSearchPayload,
 } from 'Components/CompoundSearchFilter/types';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
@@ -89,7 +92,14 @@ function ViolationsTableSearchFilter({
     onFilterChange,
     onSearch,
 }: ViolationsTableSearchFilterProps) {
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+
+    function onSearchHandler(payload: OnSearchPayload) {
+        trackAppliedFilter('Policy Violations Filter Applied', payload);
+        onSearch(payload);
+    }
 
     return (
         <Toolbar>
@@ -99,7 +109,7 @@ function ViolationsTableSearchFilter({
                         <CompoundSearchFilter
                             config={searchFilterConfig}
                             searchFilter={searchFilter}
-                            onSearch={onSearch}
+                            onSearch={onSearchHandler}
                         />
                     </ToolbarItem>
                 </ToolbarGroup>

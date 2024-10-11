@@ -51,7 +51,7 @@ import { VulnerabilityState } from 'types/cve.proto';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import LinkShim from 'Components/PatternFly/LinkShim';
 
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/telemetry';
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,

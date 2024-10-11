@@ -37,7 +37,7 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/telemetry';
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,
