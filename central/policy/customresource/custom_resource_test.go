@@ -1,6 +1,7 @@
 package customresource
 
 import (
+	"bytes"
 	_ "embed"
 	"strings"
 	"testing"
@@ -17,7 +18,7 @@ var templateFile string
 
 func TestConvertToCR(t *testing.T) {
 	policy := getTestPolicy()
-	converted, err := GenerateCustomResource(policy)
+	converted, err := generateCustomResource(policy)
 	require.NoError(t, err)
 	assert.YAMLEq(t, templateFile, converted)
 }
@@ -142,4 +143,15 @@ func TestToDNSSubdomainName(t *testing.T) {
 			}
 		})
 	}
+}
+
+// generateCustomResource generate custom resource in YAML text from a policy
+func generateCustomResource(policy *storage.Policy) (string, error) {
+	w := &bytes.Buffer{}
+	convertedPolicy := ConvertPolicyToCustomResource(policy)
+	err := WriteCustomResource(w, convertedPolicy)
+	if err != nil {
+		return "", err
+	}
+	return w.String(), nil
 }
