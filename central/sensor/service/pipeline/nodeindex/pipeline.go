@@ -71,25 +71,24 @@ func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.Ms
 	report = report.CloneVT()
 
 	// Query storage for the node this report comes from
-	node, found, err := p.nodeDatastore.GetNode(ctx, event.GetNode().GetId())
+	nodeId := event.GetId()
+	node, found, err := p.nodeDatastore.GetNode(ctx, nodeId)
 	if err != nil {
-		return errors.Wrapf(err, "failed to fetch node %s from database", event.GetNode().GetId())
+		log.Warnf("failed to fetch node %s from database", nodeId)
+		return errors.Wrapf(err, "failed to fetch node %s from database", nodeId)
 	}
 	if !found {
-		return errors.WithMessagef(err, "node %s not found in datastore", event.GetNode().GetId())
+		log.Warnf("node %s not found in datastore", nodeId)
+		return errors.WithMessagef(err, "node %s not found in datastore", nodeId)
 	}
-	//
-
-	log.Debugf("received node index report with %d packages from %d content sets for node %s",
-		len(report.GetContents().Packages), len(report.GetContents().Repositories), event.GetId())
-	cr := report.CloneVT()
 
 	// Send the Node and Index Report to Scanner for enrichment. The result will be persisted in node.NodeScan
-	err = p.enricher.EnrichNodeWithInventory(node, nil, cr)
+	err = p.enricher.EnrichNodeWithInventory(node, nil, report)
 	if err != nil {
-		return errors.WithMessagef(err, "enriching node %s with index report", event.GetId())
+		return errors.WithMessagef(err, "enriching node %s with index report", node.GetId())
 	}
-	log.Infof("Successfully enriched node %s with %s report - found %d components", node.GetName(), node.GetScan().GetScannerVersion().String(), len(node.GetScan().GetComponents()))
+	log.Infof("Successfully enriched node %s with %s report - found %d components (id: %s",
+		node.GetName(), node.GetScan().GetScannerVersion().String(), len(node.GetScan().GetComponents()), node.GetId())
 
 	// Update the whole node in the database with the new and previous information.
 	err = p.riskManager.CalculateRiskAndUpsertNode(node)
