@@ -378,6 +378,7 @@ func (d *detectorImpl) runDetector() {
 				Images:                 scanOutput.images,
 				NetworkPoliciesApplied: scanOutput.networkPoliciesApplied,
 			})
+			log.Debugf("runDetector: DetectDeployment returned alerts: %+v", alerts)
 
 			metrics.IncrementDetectorDeploymentProcessed()
 

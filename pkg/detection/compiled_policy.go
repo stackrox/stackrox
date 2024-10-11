@@ -1,6 +1,8 @@
 package detection
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -302,13 +304,22 @@ func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheRecep
 	if cp.deploymentMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against deployments", cp.Policy().GetName())
 	}
-	return cp.deploymentMatcher.MatchDeployment(cache, enhancedDeployment)
+	vio, err := cp.deploymentMatcher.MatchDeployment(cache, enhancedDeployment)
+	deplImages := ""
+	for i, image := range enhancedDeployment.Images {
+		deplImages += fmt.Sprintf("[%d]=%s,", i, image.GetName().GetFullName())
+	}
+	log.Debugf("MatchAgainstDeployment: policy %s for deployment %s with images %s = violations: %v, err: %v",
+		cache, enhancedDeployment.Deployment.GetName(), deplImages, vio, err)
+
+	return vio, err
 }
 
 func (cp *compiledPolicy) MatchAgainstImage(cache *booleanpolicy.CacheReceptacle, image *storage.Image) (booleanpolicy.Violations, error) {
 	if cp.imageMatcher == nil {
 		return booleanpolicy.Violations{}, errors.Errorf("couldn't match policy %q against images", cp.Policy().GetName())
 	}
+	log.Debugf("MatchAgainstImage: policy %s for image %s", cache, image.GetName().GetFullName())
 	return cp.imageMatcher.MatchImage(cache, image)
 }
 

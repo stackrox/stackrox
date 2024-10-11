@@ -235,12 +235,16 @@ func (m *matcherImpl) getViolations(
 	var processIndicatorMatched, kubeOrAuditEventMatched, networkFlowMatched, networkPolicyMatched bool
 	for _, eval := range m.evaluators {
 		result, err := matchWithEvaluator(eval, obj)
+
 		if err != nil {
 			return nil, err
 		}
 		if result == nil {
+			log.Debugf("getViolations: evaluator selection %s, object %v, result: NIL", eval.section.String(), obj.Value())
+
 			continue
 		}
+		log.Debugf("getViolations: evaluator selection %s, object %v, result: %+v", eval.section.String(), obj.Value(), result.Matches)
 
 		alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, err :=
 			violationmessages.Render(eval.section, result, indicator, kubeEvent, networkFlow, networkPolicy)
