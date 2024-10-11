@@ -1,6 +1,7 @@
 package buildtime
 
 import (
+	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -45,6 +46,10 @@ func (d *detectorImpl) Detect(image *storage.Image, policyFilters ...detection.F
 			return errors.Wrapf(err, "matching against policy %s", compiled.Policy().GetName())
 		}
 		alertViolations := violations.AlertViolations
+		for i, violation := range alertViolations {
+			log.Debugf("buildtime Detect: image=%s, policy=%s, [%d]violation=%v", image.GetName(), compiled.Policy().GetName(), i, violation.String())
+
+		}
 		if len(alertViolations) > 0 {
 			alerts = append(alerts, policyViolationsAndImageToAlert(compiled.Policy(), alertViolations, image))
 		}
