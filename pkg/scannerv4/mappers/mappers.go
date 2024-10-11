@@ -342,7 +342,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 				}
 			}
 		}
-		metrics, err := cvssMetrics(ctx, v, &nvdVuln)
+		metrics, err := cvssMetrics(ctx, v, nvdVuln)
 		if err != nil {
 			zlog.Warn(ctx).
 				Err(err).
@@ -654,27 +654,10 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 // An error is returned when there is a failure to collect CVSS metrics from all sources;
 // however, the returned slice of metrics will still be populated with any successfully gathered metrics.
 // It is up to the caller to ensure the returned slice is populated prior to using it.
-func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln nvdschema.CVEAPIJSON20CVEItem) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
 	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
 	var preferredErr error
-	var nvd *v4.VulnerabilityReport_Vulnerability_CVSS
-	nvd, nvdErr := nvdCVSS(nvdVuln)
-
-	copyNvdCVSS := func(nvd *v4.VulnerabilityReport_Vulnerability_CVSS) *v4.VulnerabilityReport_Vulnerability_CVSS {
-		cvss := &v4.VulnerabilityReport_Vulnerability_CVSS{
-			Url:    nvd.GetUrl(),
-			Source: nvd.GetSource(),
-		}
-		if nvd.GetV2() != nil {
-			cvss.V2 = nvd.GetV2()
-		}
-		if nvd.GetV3() != nil {
-			cvss.V3 = nvd.GetV3()
-		}
-		return cvss
-	}
-
 	switch {
 	case strings.EqualFold(vuln.Updater, rhelUpdaterName):
 		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
@@ -684,9 +667,12 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvds
 		src := sourceFromLinks(vuln.Links)
 		// When both NVD and manual data have available NVD CVSS scores, use the NVD score.
 		// And only the NVD score is included in the metrics, as the manual data originates from the same
-		if src == v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD && nvd != nil {
-			metrics = append(metrics, copyNvdCVSS(nvd))
-			return metrics, nil
+		if src == v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
+			preferredCVSS, preferredErr = nvdCVSS(&nvdVuln)
+			if preferredCVSS != nil {
+				metrics = append(metrics, preferredCVSS)
+			}
+			return metrics, preferredErr
 		}
 		preferredCVSS, preferredErr = vulnCVSS(vuln, src)
 	}
@@ -695,9 +681,14 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln *nvds
 		metrics = append(metrics, preferredCVSS)
 	}
 
+	var nvdErr error
 	// If preferred CVSS score is not from NVD, add NVD score for data completeness
-	if preferredCVSS.GetSource() != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD && nvd != nil {
-		metrics = append(metrics, copyNvdCVSS(nvd))
+	if preferredCVSS.GetSource() != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
+		var cvss *v4.VulnerabilityReport_Vulnerability_CVSS
+		cvss, nvdErr = nvdCVSS(&nvdVuln)
+		if cvss != nil {
+			metrics = append(metrics, cvss)
+		}
 	}
 
 	return metrics, errors.Join(preferredErr, nvdErr)

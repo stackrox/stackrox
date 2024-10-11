@@ -1348,8 +1348,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Severity: "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-							BaseScore: 10.0,
-							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 						},
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 						Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
@@ -1357,8 +1356,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
 						{
 							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-								BaseScore: 10.0,
-								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+								Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 							},
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
