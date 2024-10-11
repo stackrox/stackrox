@@ -10,6 +10,7 @@ import (
 	benchmarkMocks "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
+	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	reportManagerMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanSettingBindingMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
@@ -22,6 +23,8 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	mockIdentity "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -94,6 +97,7 @@ type ComplianceScanConfigServiceTestSuite struct {
 	profileDS                   *profileDatastore.MockDataStore
 	clusterDatastore            *clusterDatastoreMocks.MockDataStore
 	benchmarkDS                 *benchmarkMocks.MockDataStore
+	snapshotDS                  *snapshotMocks.MockDataStore
 	service                     Service
 }
 
@@ -117,7 +121,8 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.profileDS = profileDatastore.NewMockDataStore(s.mockCtrl)
 	s.clusterDatastore = clusterDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.benchmarkDS = benchmarkMocks.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.notifierDS, s.profileDS, s.benchmarkDS, s.clusterDatastore)
+	s.snapshotDS = snapshotMocks.NewMockDataStore(s.mockCtrl)
+	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.notifierDS, s.profileDS, s.benchmarkDS, s.clusterDatastore, s.snapshotDS)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
@@ -656,6 +661,190 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
 	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.RunState, "Failed to submit report")
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
+	s.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
+	if !features.ComplianceReporting.Enabled() {
+		s.T().Skipf("Skip test when the compliance reporting feature flag is disabled")
+		s.T().SkipNow()
+	}
+
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	s.Run("Invalid ID", func() {
+		invalidID := ""
+		_, err := s.service.GetReportHistory(allAccessContext, &v2.ComplianceReportHistoryRequest{Id: invalidID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Snapshot search error", func() {
+		scanConfigID := "scan-config-1"
+
+		s.snapshotDS.EXPECT().SearchSnapshots(allAccessContext, gomock.Any()).Return(nil, errors.New("some error"))
+
+		_, err := s.service.GetReportHistory(allAccessContext, &v2.ComplianceReportHistoryRequest{Id: scanConfigID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Success", func() {
+		scanConfigID := "scan-config-1"
+		now := protocompat.TimestampNow()
+		snapshots := []*storage.ComplianceOperatorReportSnapshotV2{
+			{
+				ReportId:            "snapshot-1",
+				ScanConfigurationId: scanConfigID,
+				ReportStatus: &storage.ComplianceOperatorReportStatus{
+					ReportRequestType:        storage.ComplianceOperatorReportStatus_SCHEDULED,
+					ReportNotificationMethod: storage.ComplianceOperatorReportStatus_EMAIL,
+					StartedAt:                now,
+					CompletedAt:              now,
+				},
+			},
+		}
+		sc := &storage.ComplianceOperatorScanConfigurationV2{
+			Id:             scanConfigID,
+			ScanConfigName: scanConfigID,
+		}
+
+		s.snapshotDS.EXPECT().SearchSnapshots(allAccessContext, gomock.Any()).Return(snapshots, nil)
+		s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, scanConfigID).Return(sc, true, nil)
+		s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, scanConfigID).Return(nil, nil)
+		s.suiteDataStore.EXPECT().GetSuites(allAccessContext, gomock.Any()).Return(nil, nil)
+
+		res, err := s.service.GetReportHistory(allAccessContext, &v2.ComplianceReportHistoryRequest{Id: scanConfigID})
+		s.Require().NoError(err)
+		protoassert.Equal(s.T(), &v2.ComplianceReportHistoryResponse{
+			ComplianceReportSnapshots: []*v2.ComplianceReportSnapshot{
+				{
+					ReportJobId:  "snapshot-1",
+					ScanConfigId: scanConfigID,
+					ReportStatus: &v2.ComplianceReportStatus{
+						ReportRequestType:        v2.ComplianceReportStatus_SCHEDULED,
+						ReportNotificationMethod: v2.NotificationMethod_EMAIL,
+						StartedAt:                now,
+						CompletedAt:              now,
+					},
+					ReportData: &v2.ComplianceScanConfigurationStatus{
+						Id:       scanConfigID,
+						ScanName: scanConfigID,
+						ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+							OneTimeScan: false,
+							Profiles:    []string{},
+							Notifiers:   []*v2.NotifierConfiguration{},
+						},
+						ClusterStatus: []*v2.ClusterScanStatus{},
+						ModifiedBy:    &v2.SlimUser{},
+					},
+					User:                &v2.SlimUser{},
+					IsDownloadAvailable: false,
+				},
+			},
+		}, res)
+	})
+
+}
+
+func (s *ComplianceScanConfigServiceTestSuite) TestGetMyReportHistory() {
+	s.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
+	if !features.ComplianceReporting.Enabled() {
+		s.T().Skipf("Skip test when the compliance reporting feature flag is disabled")
+		s.T().SkipNow()
+	}
+
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	s.Run("Invalid ID", func() {
+		invalidID := ""
+		_, err := s.service.GetMyReportHistory(allAccessContext, &v2.ComplianceReportHistoryRequest{Id: invalidID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Request Context does not have a User", func() {
+		scanConfigID := "scan-config-1"
+
+		_, err := s.service.GetMyReportHistory(allAccessContext, &v2.ComplianceReportHistoryRequest{Id: scanConfigID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Snapshot search error", func() {
+		scanConfigID := "scan-config-1"
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+
+		s.snapshotDS.EXPECT().SearchSnapshots(ctx, gomock.Any()).Return(nil, errors.New("some error"))
+
+		_, err := s.service.GetMyReportHistory(ctx, &v2.ComplianceReportHistoryRequest{Id: scanConfigID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Snapshot search found zero snapshots", func() {
+		scanConfigID := "scan-config-1"
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+
+		s.snapshotDS.EXPECT().SearchSnapshots(ctx, gomock.Any()).Return(nil, nil)
+
+		res, err := s.service.GetMyReportHistory(ctx, &v2.ComplianceReportHistoryRequest{Id: scanConfigID})
+		s.Require().NoError(err)
+		s.Require().Len(res.GetComplianceReportSnapshots(), 0)
+	})
+	s.Run("Success", func() {
+		scanConfigID := "scan-config-1"
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+		now := protocompat.TimestampNow()
+		// Search succeed
+		snapshots := []*storage.ComplianceOperatorReportSnapshotV2{
+			{
+				ReportId:            "snapshot-1",
+				ScanConfigurationId: scanConfigID,
+				ReportStatus: &storage.ComplianceOperatorReportStatus{
+					ReportRequestType:        storage.ComplianceOperatorReportStatus_SCHEDULED,
+					ReportNotificationMethod: storage.ComplianceOperatorReportStatus_EMAIL,
+					StartedAt:                now,
+					CompletedAt:              now,
+				},
+				User: storageRequester,
+			},
+		}
+		sc := &storage.ComplianceOperatorScanConfigurationV2{
+			Id:             scanConfigID,
+			ScanConfigName: scanConfigID,
+		}
+
+		s.snapshotDS.EXPECT().SearchSnapshots(ctx, gomock.Any()).Return(snapshots, nil)
+		s.scanConfigDatastore.EXPECT().GetScanConfiguration(ctx, scanConfigID).Return(sc, true, nil)
+		s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(ctx, scanConfigID).Return(nil, nil)
+		s.suiteDataStore.EXPECT().GetSuites(ctx, gomock.Any()).Return(nil, nil)
+
+		res, err := s.service.GetMyReportHistory(ctx, &v2.ComplianceReportHistoryRequest{Id: scanConfigID})
+		s.Require().NoError(err)
+		protoassert.Equal(s.T(), &v2.ComplianceReportHistoryResponse{
+			ComplianceReportSnapshots: []*v2.ComplianceReportSnapshot{
+				{
+					ReportJobId:  "snapshot-1",
+					ScanConfigId: scanConfigID,
+					ReportStatus: &v2.ComplianceReportStatus{
+						ReportRequestType:        v2.ComplianceReportStatus_SCHEDULED,
+						ReportNotificationMethod: v2.NotificationMethod_EMAIL,
+						StartedAt:                now,
+						CompletedAt:              now,
+					},
+					ReportData: &v2.ComplianceScanConfigurationStatus{
+						Id:       scanConfigID,
+						ScanName: scanConfigID,
+						ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+							OneTimeScan: false,
+							Profiles:    []string{},
+							Notifiers:   []*v2.NotifierConfiguration{},
+						},
+						ClusterStatus: []*v2.ClusterScanStatus{},
+						ModifiedBy:    &v2.SlimUser{},
+					},
+					User:                apiRequester,
+					IsDownloadAvailable: false,
+				},
+			},
+		}, res)
+	})
+}
+
 func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.ComplianceScanConfigurationStatus {
 	return &apiV2.ComplianceScanConfigurationStatus{
 		Id:       uuid.NewDummy().String(),
@@ -697,4 +886,12 @@ func getTestAPIRec() *apiV2.ComplianceScanConfiguration {
 		},
 		Clusters: []string{fixtureconsts.Cluster1},
 	}
+}
+
+func getContextForUser(t *testing.T, ctrl *gomock.Controller, ctx context.Context, user *storage.SlimUser) context.Context {
+	mockID := mockIdentity.NewMockIdentity(ctrl)
+	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
+	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
+	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+	return authn.ContextWithIdentity(ctx, mockID, t)
 }
