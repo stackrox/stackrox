@@ -240,11 +240,11 @@ func (m *matcherImpl) getViolations(
 			return nil, err
 		}
 		if result == nil {
-			log.Debugf("getViolations: evaluator selection %s, object %v, result: NIL", eval.section.String(), obj.Value())
+			log.Debugf("getViolations: evaluator section %s result: NIL", eval.section.String())
 
 			continue
 		}
-		log.Debugf("getViolations: evaluator selection %s, object %v, result: %+v", eval.section.String(), obj.Value(), result.Matches)
+		log.Debugf("getViolations: evaluator section %s, result: %+v", eval.section.String(), result.Matches)
 
 		alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, err :=
 			violationmessages.Render(eval.section, result, indicator, kubeEvent, networkFlow, networkPolicy)

@@ -329,12 +329,16 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 func (d *detectorImpl) ProcessUpdatedImage(image *storage.Image) error {
 	key := cache.GetKey(image)
 	log.Debugf("Receiving update for image: %s from central. Updating cache", image.GetName().GetFullName())
+	value, found := d.enricher.imageCache.Get(key)
+	log.Debugf("Before the update: Cache contents for key %s: %s (found? %t)", key, value.WaitAndGet().GetName().GetFullName(), found)
+
 	newValue := &cacheValue{
 		image:     image,
 		localScan: d.enricher.localScan,
 		regStore:  d.enricher.regStore,
 	}
 	d.enricher.imageCache.Add(key, newValue)
+	log.Debugf("After the update: Cache contents for key %s: %s", key, newValue.WaitAndGet().GetName().GetFullName())
 	d.admissionCacheNeedsFlush = true
 	return nil
 }

@@ -309,8 +309,10 @@ func (cp *compiledPolicy) MatchAgainstDeployment(cache *booleanpolicy.CacheRecep
 	for i, image := range enhancedDeployment.Images {
 		deplImages += fmt.Sprintf("[%d]=%s,", i, image.GetName().GetFullName())
 	}
-	log.Debugf("MatchAgainstDeployment: policy %s for deployment %s with images %s = violations: %v, err: %v",
-		cache, enhancedDeployment.Deployment.GetName(), deplImages, vio, err)
+	if enhancedDeployment.Deployment.GetName() == "nginx-deployment" {
+		log.Debugf("MatchAgainstDeployment: policy %s for deployment %s with images %s = violations: %v, err: %v",
+			cache, enhancedDeployment.Deployment.GetName(), deplImages, vio, err)
+	}
 
 	return vio, err
 }
