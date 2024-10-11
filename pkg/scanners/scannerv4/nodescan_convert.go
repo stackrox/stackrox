@@ -1,6 +1,10 @@
 package scannerv4
 
 import (
+	"fmt"
+	"regexp"
+	"strings"
+
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
@@ -8,13 +12,29 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
-func ToNodeScan(r *v4.VulnerabilityReport) *storage.NodeScan {
+var (
+	rhcosOSImageRegexp = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) ([\d])([\d]+)`)
+)
+
+func ToNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan {
+	// TODO(ROX-26593): Instead of fixing labels here, add RHCOS DistributionScanner to ClairCore
+	fixedNotes := fixNotes(toStorageNotes(r.Notes), osImageRef)
+
 	return &storage.NodeScan{
-		ScanTime:       protocompat.TimestampNow(),
-		Components:     toStorageComponents(r),
-		Notes:          toStorageNotes(r.Notes),
-		ScannerVersion: storage.NodeScan_SCANNER_V4,
+		ScanTime:        protocompat.TimestampNow(),
+		Components:      toStorageComponents(r),
+		Notes:           fixedNotes,
+		ScannerVersion:  storage.NodeScan_SCANNER_V4,
+		OperatingSystem: toOperatingSystem(osImageRef),
 	}
+}
+
+func toOperatingSystem(ref string) string {
+	r := rhcosOSImageRegexp.FindStringSubmatch(ref)
+	if len(r) != 5 {
+		return ""
+	}
+	return fmt.Sprintf("rhcos:%s.%s", r[3], r[4])
 }
 
 func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {
@@ -107,4 +127,21 @@ func toStorageNotes(notes []v4.VulnerabilityReport_Note) []storage.NodeScan_Note
 		}
 	}
 	return convertedNotes
+}
+
+func fixNotes(notes []storage.NodeScan_Note, osImageRef string) []storage.NodeScan_Note {
+	isRHCOS := strings.HasPrefix(osImageRef, "Red Hat Enterprise Linux CoreOS")
+	if !isRHCOS {
+		// Don't change notes if scanned node isn't RHCOS
+		return notes
+	}
+	fixedNotes := make([]storage.NodeScan_Note, 0)
+	for _, note := range notes {
+		switch note {
+		case storage.NodeScan_UNSUPPORTED:
+		default:
+			fixedNotes = append(fixedNotes, note)
+		}
+	}
+	return fixedNotes
 }

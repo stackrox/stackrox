@@ -31,12 +31,12 @@ func (s *indexReportConvertSuite) TestToNodeInventory() {
 		}},
 	}
 
-	actual := ToNodeScan(r)
+	actual := ToNodeScan(r, "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0")
 
 	s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
 	s.Len(actual.GetComponents(), 2)
+	s.Len(actual.GetNotes(), 0)
 	protoassert.SliceContains(s.T(), actual.GetComponents(), expected)
-	s.Equal([]storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED}, actual.GetNotes())
 }
 
 func (s *indexReportConvertSuite) TestEmptyReportConversionNoPanic() {
@@ -51,7 +51,7 @@ func (s *indexReportConvertSuite) TestEmptyReportConversionNoPanic() {
 	var actual *storage.NodeScan
 
 	s.NotPanics(func() {
-		actual = ToNodeScan(r)
+		actual = ToNodeScan(r, "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0")
 	})
 
 	s.NotNil(actual)
@@ -169,6 +169,61 @@ func (s *indexReportConvertSuite) TestConvertVulnerability() {
 	actual := convertVulnerability(v)
 
 	protoassert.Equal(s.T(), expected, actual)
+}
+
+func (s *indexReportConvertSuite) TestToOperatingSystem() {
+	cases := map[string]struct {
+		in       string
+		expected string
+	}{
+		"realistic version": {
+			in:       "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0",
+			expected: "rhcos:4.17",
+		},
+		"realistic long version": {
+			in:       "Red Hat Enterprise Linux CoreOS 41712345.94.2024",
+			expected: "rhcos:4.1712345",
+		},
+		"non-RHCOS": {
+			in:       "Oracle Linux Server release 6.8",
+			expected: "",
+		},
+		"blank": {
+			in:       "",
+			expected: "",
+		},
+	}
+	for name, c := range cases {
+		s.T().Run(name, func(tt *testing.T) {
+			actual := toOperatingSystem(c.in)
+			s.Equal(c.expected, actual)
+		})
+	}
+}
+
+func (s *indexReportConvertSuite) TestFixNotes() {
+	cases := map[string]struct {
+		in       []storage.NodeScan_Note
+		osRef    string
+		expected []storage.NodeScan_Note
+	}{
+		"RHCOS": {
+			in:       []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_UNSET},
+			osRef:    "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0",
+			expected: []storage.NodeScan_Note{storage.NodeScan_UNSET},
+		},
+		"Non-RHCOS": {
+			in:       []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_UNSET},
+			osRef:    "Oracle Linux Server release 6.8",
+			expected: []storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED, storage.NodeScan_UNSET},
+		},
+	}
+	for name, c := range cases {
+		s.T().Run(name, func(tt *testing.T) {
+			actual := fixNotes(c.in, c.osRef)
+			s.Equal(c.expected, actual)
+		})
+	}
 }
 
 func createVulnerabilityReport() *v4.VulnerabilityReport {

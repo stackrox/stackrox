@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 )
@@ -56,7 +57,11 @@ func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetIndexReport() != nil
 }
 
-func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+	if !features.ScannerV4.Enabled() {
+		// If Scanner v4 as a feature is disabled after initial installation, do not run this pipeline
+		return nil
+	}
 	event := msg.GetEvent()
 	report := event.GetIndexReport()
 	if report == nil {
