@@ -291,6 +291,8 @@ func (m *Alert) CloneVT() *Alert {
 	r.ResolvedAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ResolvedAt).CloneVT())
 	r.State = m.State
 	r.SnoozeTill = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.SnoozeTill).CloneVT())
+	r.PlatformComponent = m.PlatformComponent
+	r.EntityType = m.EntityType
 	if m.Entity != nil {
 		r.Entity = m.Entity.(interface{ CloneVT() isAlert_Entity }).CloneVT()
 	}
@@ -955,6 +957,12 @@ func (this *Alert) EqualVT(that *Alert) bool {
 		return false
 	}
 	if this.NamespaceId != that.NamespaceId {
+		return false
+	}
+	if this.PlatformComponent != that.PlatformComponent {
+		return false
+	}
+	if this.EntityType != that.EntityType {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2010,6 +2018,25 @@ func (m *Alert) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if m.EntityType != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.EntityType))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xb8
+	}
+	if m.PlatformComponent {
+		i--
+		if m.PlatformComponent {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xb0
+	}
 	if len(m.NamespaceId) > 0 {
 		i -= len(m.NamespaceId)
 		copy(dAtA[i:], m.NamespaceId)
@@ -3012,6 +3039,12 @@ func (m *Alert) SizeVT() (n int) {
 	l = len(m.NamespaceId)
 	if l > 0 {
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.PlatformComponent {
+		n += 3
+	}
+	if m.EntityType != 0 {
+		n += 2 + protohelpers.SizeOfVarint(uint64(m.EntityType))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -5905,6 +5938,45 @@ func (m *Alert) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.NamespaceId = stringValue
 			iNdEx = postIndex
+		case 22:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PlatformComponent", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.PlatformComponent = bool(v != 0)
+		case 23:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EntityType", wireType)
+			}
+			m.EntityType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.EntityType |= Alert_EntityType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

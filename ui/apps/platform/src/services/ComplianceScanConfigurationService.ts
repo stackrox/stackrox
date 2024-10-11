@@ -195,12 +195,9 @@ export type ComplianceRunReportResponse = {
  */
 export function runComplianceReport(
     scanConfigId: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     scanNotificationMethod: 'EMAIL' | 'DOWNLOAD'
 ): Promise<ComplianceRunReportResponse> {
-    const body = { scanConfigId };
-    // @TODO: Add the scanNotificationMethod to the PUT Body when the API can handle it
-    // const body = { scanConfigId, scanNotificationMethod };
+    const body = { scanConfigId, scanNotificationMethod };
     return axios
         .post<ComplianceRunReportResponse>(`${complianceScanConfigBaseUrl}/reports/run`, body)
         .then((response) => {
@@ -275,7 +272,7 @@ export function fetchComplianceReportHistory({
     );
     return axios
         .get<ReportHistoryResponse>(
-            `/v2/compliance/scan/configuration/${id}/reports/${showMyHistory ? 'my-history' : 'history'}?${params}`
+            `/v2/compliance/scan/configurations/${id}/reports/${showMyHistory ? 'my-history' : 'history'}?${params}`
         )
         .then((response) => {
             return response.data.complianceReportSnapshots;

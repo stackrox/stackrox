@@ -129,11 +129,11 @@ func (u *upgradeController) doTriggerUpgrade() (common.MessageInjector, *central
 	case storage.ClusterUpgradeStatus_SENSOR_VERSION_HIGHER:
 		// We still allow upgrade triggers in this case.
 	case storage.ClusterUpgradeStatus_MANUAL_UPGRADE_REQUIRED:
-		return nil, nil, errors.Errorf("manual upgrade required for cluster %s; cannot trigger upgrade", u.clusterID)
+		return nil, nil, errors.Errorf("RHACS does not control the version for the secured cluster %s; cannot trigger upgrade or downgrade", u.clusterID)
 	case storage.ClusterUpgradeStatus_UP_TO_DATE:
 		return nil, nil, errors.Errorf("sensor for cluster %s is already up-to-date; cannot trigger upgrade", u.clusterID)
 	default:
-		return nil, nil, errors.Errorf("unknown upgradability status of sensor for cluster %s; cannot trigger upgrades", u.clusterID)
+		return nil, nil, errors.Errorf("The upgradability status for secured cluster %s is unclear; cannot trigger upgrade or downgrade", u.clusterID)
 	}
 
 	cluster := u.getCluster()

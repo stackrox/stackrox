@@ -108,7 +108,8 @@ From here, you can install stackrox-central-services to get Central and Scanner 
 ```sh
 helm upgrade --install -n stackrox --create-namespace stackrox-central-services \
   stackrox/stackrox-central-services \
-  --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}"
+  --set central.adminPassword.value="${STACKROX_ADMIN_PASSWORD}" \
+  --set central.persistence.none="true"
 ```
 
 #### Install Central in Clusters With Limited Resources
@@ -130,7 +131,8 @@ helm upgrade -n stackrox stackrox-central-services stackrox/stackrox-central-ser
   --set scanner.resources.requests.memory=500Mi \
   --set scanner.resources.requests.cpu=500m \
   --set scanner.resources.limits.memory=2500Mi \
-  --set scanner.resources.limits.cpu=2000m
+  --set scanner.resources.limits.cpu=2000m \
+  --set central.persistence.none="true"
 ```
 
 </details>

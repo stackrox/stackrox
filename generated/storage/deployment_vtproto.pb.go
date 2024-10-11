@@ -52,6 +52,7 @@ func (m *Deployment) CloneVT() *Deployment {
 	r.RuntimeClass = m.RuntimeClass
 	r.StateTimestamp = m.StateTimestamp
 	r.RiskScore = m.RiskScore
+	r.PlatformComponent = m.PlatformComponent
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -754,6 +755,9 @@ func (this *Deployment) EqualVT(that *Deployment) bool {
 		return false
 	}
 	if this.RuntimeClass != that.RuntimeClass {
+		return false
+	}
+	if this.PlatformComponent != that.PlatformComponent {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1538,6 +1542,18 @@ func (m *Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.PlatformComponent {
+		i--
+		if m.PlatformComponent {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0x98
 	}
 	if len(m.RuntimeClass) > 0 {
 		i -= len(m.RuntimeClass)
@@ -3368,6 +3384,9 @@ func (m *Deployment) SizeVT() (n int) {
 	if l > 0 {
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.PlatformComponent {
+		n += 3
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -5140,6 +5159,26 @@ func (m *Deployment) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.RuntimeClass = stringValue
 			iNdEx = postIndex
+		case 35:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PlatformComponent", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.PlatformComponent = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

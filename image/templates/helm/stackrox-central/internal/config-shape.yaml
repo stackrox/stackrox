@@ -129,6 +129,12 @@ customize:
       podLabels: {} # dict
       podAnnotations: {} # dict
       envVars: {} # dict
+  config-controller:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
   scanner:
     labels: {} # dict
     annotations: {} # dict

@@ -139,6 +139,16 @@
         }
       }
     },
+    "AlertEntityType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "DEPLOYMENT",
+        "CONTAINER_IMAGE",
+        "RESOURCE"
+      ],
+      "default": "UNSET"
+    },
     "AlertProcessViolation": {
       "type": "object",
       "properties": {
@@ -529,8 +539,15 @@
         "snoozeTill": {
           "type": "string",
           "format": "date-time"
+        },
+        "platformComponent": {
+          "type": "boolean"
+        },
+        "entityType": {
+          "$ref": "#/definitions/AlertEntityType"
         }
-      }
+      },
+      "title": "Next available tag: 24"
     },
     "storageAlertDeployment": {
       "type": "object",
@@ -849,9 +866,12 @@
         "riskScore": {
           "type": "number",
           "format": "float"
+        },
+        "platformComponent": {
+          "type": "boolean"
         }
       },
-      "title": "Next available tag: 35"
+      "title": "Next available tag: 36"
     },
     "storageEmbeddedSecret": {
       "type": "object",

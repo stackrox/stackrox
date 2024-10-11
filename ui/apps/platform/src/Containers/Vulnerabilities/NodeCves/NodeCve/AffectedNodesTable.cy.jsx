@@ -274,7 +274,7 @@ describe(Cypress.spec.relative, () => {
                     .eq(rowIndex)
                     .within(() => {
                         cy.get(
-                            `td[data-label="CVSS score"]:contains("${expectedCVSS} (${expectedVersion})")`
+                            `td[data-label="CVSS"]:contains("${expectedCVSS} (${expectedVersion})")`
                         );
                     });
             });

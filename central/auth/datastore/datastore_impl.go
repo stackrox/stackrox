@@ -9,8 +9,8 @@ import (
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -20,7 +20,8 @@ import (
 var (
 	_ DataStore = (*datastoreImpl)(nil)
 
-	accessSAC = sac.ForResource(resources.Access)
+	accessSAC                          = sac.ForResource(resources.Access)
+	configControllerServiceAccountName = fmt.Sprintf("system:serviceaccount:%s:config-controller", env.Namespace.Setting())
 )
 
 type datastoreImpl struct {
@@ -144,25 +145,24 @@ func (d *datastoreImpl) InitializeTokenExchangers() error {
 		return err
 	}
 
-	if features.PolicyAsCode.Enabled() {
-		kubeSAIssuer, err := d.issuerFetcher.GetServiceAccountIssuer()
-		if err != nil {
-			return fmt.Errorf("Failed to get service account issuer: %w", err)
-		}
-
-		// Unconditionally add K8s service account exchanger.
-		// This is required for config-controller auth.
-		configs = append(configs, &storage.AuthMachineToMachineConfig{
-			Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
-			TokenExpirationDuration: "1m",
-			Mappings: []*storage.AuthMachineToMachineConfig_Mapping{{
-				Key:             "sub",
-				ValueExpression: fmt.Sprintf("system:serviceaccount:%s:config-controller", env.Namespace.Setting()),
-				Role:            "Configuration Controller",
-			}},
-			Issuer: kubeSAIssuer,
-		})
+	kubeSAIssuer, err := d.issuerFetcher.GetServiceAccountIssuer()
+	if err != nil {
+		return fmt.Errorf("Failed to get service account issuer: %w", err)
 	}
+
+	// Unconditionally add K8s service account exchanger.
+	// This is required for config-controller auth.
+	configs = append(configs, &storage.AuthMachineToMachineConfig{
+		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+		TokenExpirationDuration: "1m",
+		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{{
+			// sub stands for "subject identifier", a required field on an OIDC token
+			Key:             "sub",
+			ValueExpression: configControllerServiceAccountName,
+			Role:            accesscontrol.ConfigController,
+		}},
+		Issuer: kubeSAIssuer,
+	})
 
 	tokenExchangerErrors := []error{}
 	for _, config := range configs {

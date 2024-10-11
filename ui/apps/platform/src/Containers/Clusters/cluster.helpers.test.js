@@ -1,3 +1,5 @@
+import { getProductBranding } from 'constants/productBranding';
+
 import {
     findUpgradeState,
     formatSensorVersion,
@@ -338,14 +340,31 @@ describe('cluster helpers', () => {
             expect(received).toEqual(expected);
         });
 
-        it('should return "Manual upgrade required" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED', () => {
+        it(`should return "Secured cluster version is not managed by ${getProductBranding().shortName}." if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED`, () => {
             const testUpgradeStatus = {
                 upgradability: 'MANUAL_UPGRADE_REQUIRED',
             };
 
             const received = findUpgradeState(testUpgradeStatus);
 
-            const expected = { displayValue: 'Manual upgrade required', type: 'intervention' };
+            const expected = {
+                displayValue: `Secured cluster version is not managed by ${getProductBranding().shortName}.`,
+                type: 'intervention',
+            };
+            expect(received).toEqual(expected);
+        });
+
+        it('should return "Downgrade possible" if there is no mostRecentProcess', () => {
+            const testUpgradeStatus = {
+                upgradability: 'SENSOR_VERSION_HIGHER',
+            };
+
+            const received = findUpgradeState(testUpgradeStatus);
+
+            const expected = {
+                type: 'download',
+                actionText: 'Downgrade possible',
+            };
             expect(received).toEqual(expected);
         });
 

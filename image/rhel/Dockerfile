@@ -13,7 +13,7 @@ WORKDIR /
 COPY download.sh /download.sh
 RUN /download.sh
 
-FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} as stackrox_data
+FROM ${BASE_REGISTRY}/${BASE_IMAGE}:${BASE_TAG} AS stackrox_data
 
 RUN mkdir /stackrox-data
 RUN microdnf upgrade --nobest -y  && microdnf install -y zip

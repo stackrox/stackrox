@@ -31,6 +31,7 @@ central:
 var (
 	allowedGlobalResources = []string{
 		"/StorageClass/stackrox-gke-ssd",
+		"/CustomResourceDefinition/securitypolicies.config.stackrox.io",
 	}
 )
 
