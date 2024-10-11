@@ -31,7 +31,6 @@ import { ListAlert } from 'types/alert.proto';
 import { TableColumn } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { SearchFilter } from 'types/search';
-
 import { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
