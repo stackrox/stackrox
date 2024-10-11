@@ -56,7 +56,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Alert)
-
+	log.Debugf("Alerts Pipeline: Received msg from cluster %s: %v", clusterID, msg.GetEvent().String())
 	clusterName, exists, err := s.clusters.GetClusterName(ctx, clusterID)
 	if err != nil {
 		return errors.Wrap(err, "error getting cluster name")
