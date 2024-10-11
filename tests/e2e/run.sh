@@ -34,6 +34,7 @@ test_e2e() {
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
 
+    # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
     deploy_optional_e2e_components
     deploy_stackrox
 

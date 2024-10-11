@@ -85,6 +85,8 @@ _run_compatibility_tests() {
     collect_and_check_stackrox_logs "/tmp/compatibility-test-logs" "${compatibility_dir}/initial_tests"
 }
 
+# Duplicate function with run.sh
+# TODO: Remove duplication
 test_preamble() {
     require_executable "roxctl"
 
@@ -93,6 +95,8 @@ test_preamble() {
     export TRUSTED_CA_FILE="$ROOT/tests/bad-ca/root.crt"
 }
 
+# Duplicate function with run.sh
+# TODO: Remove duplication
 prepare_for_endpoints_test() {
     info "Preparation for endpoints_test.go"
 
@@ -108,43 +112,6 @@ prepare_for_endpoints_test() {
     export SERVICE_CA_FILE="$gencerts_dir/ca.pem"
     export SERVICE_CERT_FILE="$gencerts_dir/sensor-cert.pem"
     export SERVICE_KEY_FILE="$gencerts_dir/sensor-key.pem"
-}
-
-run_roxctl_bats_tests() {
-    local output="${1}"
-    local suite="${2}"
-    if (( $# != 2 )); then
-      die "Error: run_roxctl_bats_tests requires 2 arguments: run_roxctl_bats_tests <test_output> <suite>"
-    fi
-    [[ -d "$ROOT/tests/roxctl/bats-tests/$suite" ]] || die "Cannot find directory: $ROOT/tests/roxctl/bats-tests/$suite"
-
-    info "Running Bats e2e tests on development roxctl"
-    "$ROOT/tests/roxctl/bats-runner.sh" "$output" "$ROOT/tests/roxctl/bats-tests/$suite"
-}
-
-run_roxctl_tests() {
-    info "Run roxctl tests"
-
-    junit_wrap "roxctl-token-file" "roxctl token-file test" "" \
-        "$ROOT/tests/roxctl/token-file.sh"
-
-    junit_wrap "roxctl-slim-collector" "roxctl slim-collector test" "" \
-        "$ROOT/tests/roxctl/slim-collector.sh"
-
-    junit_wrap "roxctl-authz-trace" "roxctl authz-trace test" "" \
-        "$ROOT/tests/roxctl/authz-trace.sh"
-
-    junit_wrap "roxctl-istio-support" "roxctl istio-support test" "" \
-        "$ROOT/tests/roxctl/istio-support.sh"
-
-    junit_wrap "roxctl-k8s-context" "roxctl --use-current-k8s-context test" "" \
-        "$ROOT/tests/roxctl/roxctl-k8s-context.sh"
-
-    junit_wrap "roxctl-helm-chart-generation" "roxctl helm-chart-generation test" "" \
-        "$ROOT/tests/roxctl/helm-chart-generation.sh"
-
-    CA="$SERVICE_CA_FILE" junit_wrap "roxctl-yaml-verification" "roxctl yaml-verification test" "" \
-        "$ROOT/tests/yamls/roxctl_verification.sh"
 }
 
 shorten_tag() {
