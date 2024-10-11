@@ -529,6 +529,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
 			if activeConn, found := m.activeConnections[*conn]; found {
 				enrichedConnections[*activeConn] = timestamp.Now()
+				log.Debugf("Expiring connection %q. Reason: more time has elapsed than %s",
+					conn.String(), maxContainerResolutionWaitPeriod.String())
 				delete(m.activeConnections, *conn)
 				flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
 				return
@@ -572,6 +574,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
 		if isFresh && conn.remote.IPAndPort.Address.IsValid() {
+			log.Debugf("Cluster entity not found, but connection %q is fresh and has valid IP", conn.String())
 			return
 		}
 
@@ -581,6 +584,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if isFresh {
+			log.Debugf("Cluster entity not found, but connection %q is fresh", conn.String())
 			return
 		}
 
@@ -654,8 +658,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 		status.used = true
 		if conn.incoming {
-			// Only report incoming connections from outside of the cluster. These are already taken care of by the
+			// Only report incoming connections from outside the cluster. These are already taken care of by the
 			// corresponding outgoing connection from the other end.
+			log.Debugf("Skipping enriching connection %q because it originates outside of the cluster", conn.String())
 			return
 		}
 	}
@@ -678,12 +683,19 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			// Multiple connections from a collector can result in a single enriched connection
 			// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
 			if oldTS, found := enrichedConnections[indicator]; !found || oldTS < status.lastSeen {
+				if !found {
+					log.Debugf("Connection %q not found in previously enriched connections", conn.String())
+				} else {
+					log.Debugf("Connection %q - updating lastSeen", conn.String())
+				}
 				enrichedConnections[indicator] = status.lastSeen
 				if features.SensorCapturesIntermediateEvents.Enabled() {
 					if status.lastSeen == timestamp.InfiniteFuture {
 						m.activeConnections[*conn] = &indicator
+						log.Debugf("Connection %q: adding to active connections", conn.String())
 						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
 					} else {
+						log.Debugf("Connection %q: removing from active connections", conn.String())
 						delete(m.activeConnections, *conn)
 						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
 					}
@@ -786,8 +798,11 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 	prevSize := len(hostConns.connections)
 	for conn, status := range hostConns.connections {
 		m.enrichConnection(&conn, status, enrichedConnections)
-		if status.rotten || (status.used && status.lastSeen != timestamp.InfiniteFuture) {
+		noLongerActive := status.used && status.lastSeen != timestamp.InfiniteFuture
+		if status.rotten || noLongerActive {
 			// connections that are no longer active and have already been used can be deleted.
+			log.Debugf("Connection %q is rotten=%t or no longer active=%t (used=%t, lastSeen=%d)",
+				conn.String(), status.rotten, noLongerActive, status.used, status.lastSeen)
 			delete(hostConns.connections, conn)
 		}
 	}
