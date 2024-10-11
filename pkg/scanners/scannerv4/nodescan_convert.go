@@ -32,7 +32,7 @@ func getPackageVulns(packageID string, r *v4.VulnerabilityReport) []*storage.Emb
 	vulns := make([]*storage.EmbeddedVulnerability, 0)
 	mapping, ok := r.GetPackageVulnerabilities()[packageID]
 	if !ok {
-		log.Warnf("Could not find vulnerability mapping information for package %s - skipping vulnerabilites", packageID)
+		// No vulnerabilities for this package, skip
 		return vulns
 	}
 	for _, vulnID := range mapping.GetValues() {
