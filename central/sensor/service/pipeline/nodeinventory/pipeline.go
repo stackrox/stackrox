@@ -93,7 +93,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	// Discard message if NodeScanning v4 and v2 are running in parallel - v4 scans are prioritized in that case.
-	// The message will be kepen even if a v4 scan is already persisted for the node if the feature flag for
+	// The message will be kept even if a v4 scan is already persisted for the node if the feature flag for
 	// Scanner v4 has been disabled. This ensures node scans are updated even if a customer falls back to Scanner v2.
 	if node.GetScan() != nil && node.GetScan().GetScannerVersion() == storage.NodeScan_SCANNER_V4 && features.ScannerV4.Enabled() {
 		// To prevent resending the inventory, still acknowledge receipt of it

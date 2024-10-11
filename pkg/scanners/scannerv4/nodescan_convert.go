@@ -19,27 +19,31 @@ func ToNodeScan(r *v4.VulnerabilityReport) *storage.NodeScan {
 
 func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {
 	result := make([]*storage.EmbeddedNodeScanComponent, 0)
-	vulnerabilities := r.GetVulnerabilities()
 	packages := r.GetContents().GetPackages()
 
-	for pkgID, pkgvuln := range r.GetPackageVulnerabilities() {
-		pkg := findPackage(packages, pkgID)
-		if pkg == nil {
-			log.Warnf("Unable to find package for id %s in %d packages. Skipping", pkgID, len(packages))
-			continue
-		}
-		vulns := make([]*storage.EmbeddedVulnerability, 0)
-		for _, vulnID := range pkgvuln.GetValues() {
-			vuln, ok := vulnerabilities[vulnID]
-			if !ok {
-				log.Warnf("Unable to find vulnerability for id %s in %d vulnerabilites. Skipping", vulnID, len(vulnerabilities))
-				continue
-			}
-			vulns = append(vulns, convertVulnerability(vuln))
-		}
+	for _, pkg := range packages {
+		vulns := getPackageVulns(pkg.GetId(), r)
 		result = append(result, createEmbeddedComponent(pkg, vulns))
 	}
 	return result
+}
+
+func getPackageVulns(packageID string, r *v4.VulnerabilityReport) []*storage.EmbeddedVulnerability {
+	vulns := make([]*storage.EmbeddedVulnerability, 0)
+	mapping, ok := r.GetPackageVulnerabilities()[packageID]
+	if !ok {
+		log.Warnf("Could not find vulnerability mapping information for package %s - skipping vulnerabilites", packageID)
+		return vulns
+	}
+	for _, vulnID := range mapping.GetValues() {
+		vulnerability, ok := r.Vulnerabilities[vulnID]
+		if !ok {
+			log.Warnf("Unable to find vulnerability %s in report - skipping this vulnerability", vulnID)
+			continue
+		}
+		vulns = append(vulns, convertVulnerability(vulnerability))
+	}
+	return vulns
 }
 
 func convertVulnerability(v *v4.VulnerabilityReport_Vulnerability) *storage.EmbeddedVulnerability {
@@ -83,15 +87,6 @@ func createEmbeddedComponent(pkg *v4.Package, vulns []*storage.EmbeddedVulnerabi
 		Version: pkg.GetVersion(),
 		Vulns:   vulns,
 	}
-}
-
-func findPackage(packages []*v4.Package, targetID string) *v4.Package {
-	for _, pkg := range packages {
-		if pkg.GetId() == targetID {
-			return pkg
-		}
-	}
-	return nil
 }
 
 func toStorageNotes(notes []v4.VulnerabilityReport_Note) []storage.NodeScan_Note {

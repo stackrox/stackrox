@@ -74,11 +74,9 @@ func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.Ms
 	nodeId := event.GetId()
 	node, found, err := p.nodeDatastore.GetNode(ctx, nodeId)
 	if err != nil {
-		log.Warnf("failed to fetch node %s from database", nodeId)
-		return errors.Wrapf(err, "failed to fetch node %s from database", nodeId)
+		return errors.WithMessagef(err, "failed to fetch node %s from database", nodeId)
 	}
 	if !found {
-		log.Warnf("node %s not found in datastore", nodeId)
 		return errors.WithMessagef(err, "node %s not found in datastore", nodeId)
 	}
 
@@ -87,7 +85,7 @@ func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.Ms
 	if err != nil {
 		return errors.WithMessagef(err, "enriching node %s with index report", node.GetId())
 	}
-	log.Infof("Successfully enriched node %s with %s report - found %d components (id: %s",
+	log.Infof("Successfully enriched node %s with %s report - found %d components (id: %s)",
 		node.GetName(), node.GetScan().GetScannerVersion().String(), len(node.GetScan().GetComponents()), node.GetId())
 
 	// Update the whole node in the database with the new and previous information.

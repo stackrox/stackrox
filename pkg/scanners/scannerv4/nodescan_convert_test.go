@@ -19,14 +19,23 @@ type indexReportConvertSuite struct {
 
 func (s *indexReportConvertSuite) TestToNodeInventory() {
 	r := createVulnerabilityReport()
+	expected := &storage.EmbeddedNodeScanComponent{
+		Name:    "openssh-clients",
+		Version: "8.7p1-38.el9",
+		Vulns: []*storage.EmbeddedVulnerability{{
+			Cve:               "RHSA-2024:4616",
+			Summary:           "Sample Description",
+			SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9"},
+			VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
+			Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+		}},
+	}
 
 	actual := ToNodeScan(r)
 
 	s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
-	s.Len(actual.GetComponents(), 1)
-	s.Equal("openssh-clients", actual.GetComponents()[0].GetName())
-	s.Equal("8.7p1-38.el9", actual.GetComponents()[0].GetVersion())
-	s.Equal("RHSA-2024:4616", actual.GetComponents()[0].GetVulns()[0].GetCve())
+	s.Len(actual.GetComponents(), 2)
+	protoassert.SliceContains(s.T(), actual.GetComponents(), expected)
 	s.Equal([]storage.NodeScan_Note{storage.NodeScan_UNSUPPORTED}, actual.GetNotes())
 }
 
@@ -67,6 +76,31 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 		// Ensure that each of the components track the expected CVE
 		protoassert.SliceContains(s.T(), c.GetVulns(), expectedCVE)
 	}
+}
+
+func (s *indexReportConvertSuite) TestGetPackageVulnsBrokenMapping() {
+	r := &v4.VulnerabilityReport{
+		PackageVulnerabilities: map[string]*v4.StringList{"1": {Values: []string{"CVE1-ID"}}},
+	}
+	actual := getPackageVulns("DOESNTEXIST", r)
+	s.Len(actual, 0)
+}
+
+func (s *indexReportConvertSuite) TestGetPackageVulnsBrokenVulnereability() {
+	r := &v4.VulnerabilityReport{
+		PackageVulnerabilities: map[string]*v4.StringList{"1": {Values: []string{"DOESNTEXIST", "V2"}}},
+		Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+			"V2": {
+				Id:                 "V2",
+				Name:               "CVE-Name",
+				FixedInVersion:     "v99",
+				NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT,
+			},
+		},
+	}
+	actual := getPackageVulns("1", r)
+	s.Len(actual, 1)
+	s.Equal("CVE-Name", actual[0].GetCve())
 }
 
 func (s *indexReportConvertSuite) TestConvertNodeNotes() {
