@@ -345,11 +345,12 @@ func (d *detectorImpl) ProcessUpdatedImage(image *storage.Image) error {
 
 // ProcessReprocessDeployments marks all deployments to be reprocessed
 func (d *detectorImpl) ProcessReprocessDeployments() error {
-	log.Debug("Reprocess deployments triggered. Clearing cache and deduper")
+	log.Debug("Reprocess deployments triggered. Clearing admCtrl cache, image cache, and deduper")
 	if d.admissionCacheNeedsFlush && d.admCtrlSettingsMgr != nil {
 		// Would prefer to do a targeted flush
 		d.admCtrlSettingsMgr.FlushCache()
 	}
+	d.enricher.imageCache.RemoveAll()
 	d.admissionCacheNeedsFlush = false
 	d.deduper.reset()
 	return nil
