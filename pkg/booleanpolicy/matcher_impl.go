@@ -198,6 +198,7 @@ func (m *matcherImpl) MatchImage(cache *CacheReceptacle, image *storage.Image) (
 	if err != nil || violations == nil {
 		return Violations{}, err
 	}
+	log.Debugf("Matched %d violations in MatchImage for %s", len(violations.AlertViolations), image.GetName().GetFullName())
 	return *violations, nil
 }
 
@@ -240,11 +241,8 @@ func (m *matcherImpl) getViolations(
 			return nil, err
 		}
 		if result == nil {
-			log.Debugf("getViolations: evaluator section %s result: NIL", eval.section.String())
-
 			continue
 		}
-		log.Debugf("getViolations: evaluator section %s, result: %+v", eval.section.String(), result.Matches)
 
 		alertViolations, isProcessViolation, isKubeOrAuditEventViolation, isNetworkFlowViolation, isNetworkPolicyViolation, err :=
 			violationmessages.Render(eval.section, result, indicator, kubeEvent, networkFlow, networkPolicy)
