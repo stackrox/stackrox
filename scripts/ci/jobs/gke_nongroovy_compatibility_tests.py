@@ -3,12 +3,15 @@
 """
 Run version compatibility tests
 """
-import logging
-from runners import ClusterTestRunner
-from clusters import GKECluster
+import os
 
-logging.info("Dummy test target gke-nongroovy-comatibility-tests has been called successfully.")
+from ci_tests import QaE2eGoCompatibilityTest
+from compatibility_test import (
+    run_compatibility_tests,
+)
 
-ClusterTestRunner(
-    cluster=GKECluster("upgrade-test", machine_type="e2-standard-8")
-).run()
+# set required test parameters
+os.environ["ORCHESTRATOR_FLAVOR"] = "k8s"
+
+# Run supported central and sensor version tuples against QaE2eGoCompatibilityTest (nongroovy compatibility tests)
+run_compatibility_tests(QaE2eGoCompatibilityTest, "nongroovy-compat-test")
