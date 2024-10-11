@@ -29,7 +29,9 @@ export const aggregateByCreatedTime: SortAggregate = {
  * @param entityTab The chosen entity
  * @returns The available sort fields
  */
-export function getWorkloadSortFields(entityTab: WorkloadEntityTab): (string | string[])[] {
+export function getWorkloadCveOverviewSortFields(
+    entityTab: WorkloadEntityTab
+): (string | string[])[] {
     switch (entityTab) {
         case 'CVE':
             return [
@@ -45,7 +47,18 @@ export function getWorkloadSortFields(entityTab: WorkloadEntityTab): (string | s
                 'CVE Created Time',
             ];
         case 'Image':
-            return ['Image', 'Image OS', 'Image Created Time', 'Image Scan Time'];
+            return [
+                'Image',
+                [
+                    'Critical Severity Count',
+                    'Important Severity Count',
+                    'Moderate Severity Count',
+                    'Low Severity Count',
+                ],
+                'Image OS',
+                'Image Created Time',
+                'Image Scan Time',
+            ];
         case 'Deployment':
             return ['Deployment', 'Cluster', 'Namespace', 'Created'];
         default:
@@ -59,23 +72,24 @@ export function getWorkloadSortFields(entityTab: WorkloadEntityTab): (string | s
  * @param entityTab The chosen entity
  * @returns The default sort option
  */
-export function getDefaultWorkloadSortOption(
+export function getWorkloadCveOverviewDefaultSortOption(
     entityTab: WorkloadEntityTab,
     searchFilter?: SearchFilter
 ): SortOption | NonEmptyArray<SortOption> {
+    // Array.prototype.map does not currently retain the arity of an input tuple, so
+    // we need to cast the return value to a NonEmptyArray<SortOption>. This may be fixed
+    // soon in a future version of TypeScript https://github.com/microsoft/TypeScript/issues/29841
+    const appliedSeveritySortOptions = getSeveritySortOptions(
+        getAppliedSeverities(searchFilter ?? {})
+    ).map((o) => ({ ...o, direction: 'desc' })) as NonEmptyArray<SortOption>;
+
     switch (entityTab) {
         case 'CVE':
-            // Array.prototype.map does not currently retain the arity of an input tuple, so
-            // we need to cast the return value to a NonEmptyArray<SortOption>. This may be fixed
-            // soon in a future version of TypeScript https://github.com/microsoft/TypeScript/issues/29841
-            return getSeveritySortOptions(getAppliedSeverities(searchFilter ?? {})).map((o) => ({
-                ...o,
-                direction: 'desc',
-            })) as NonEmptyArray<SortOption>;
+            return appliedSeveritySortOptions;
         case 'Deployment':
             return { field: 'Deployment', direction: 'asc' };
         case 'Image':
-            return { field: 'Image created time', direction: 'asc' };
+            return appliedSeveritySortOptions;
         default:
             return ensureExhaustive(entityTab);
     }
