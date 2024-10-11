@@ -91,6 +91,7 @@ spec:
         requests:
           cpu: 4
           memory: 7Gi
+      retries: 5
     - name: sbom-syft-generate
       computeResources:
         limits:
