@@ -86,7 +86,7 @@ _run_compatibility_tests() {
 }
 
 # Duplicate function with run.sh
-# TODO: Remove duplication
+# TODO(ROX-26592): Remove duplication
 test_preamble() {
     require_executable "roxctl"
 
@@ -96,7 +96,7 @@ test_preamble() {
 }
 
 # Duplicate function with run.sh
-# TODO: Remove duplication
+# TODO(ROX-26592): Remove duplication
 prepare_for_endpoints_test() {
     info "Preparation for endpoints_test.go"
 
