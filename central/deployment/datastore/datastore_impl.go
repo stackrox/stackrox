@@ -12,6 +12,7 @@ import (
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	pwDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -47,9 +48,22 @@ type datastoreImpl struct {
 	clusterRanker    *ranking.Ranker
 	nsRanker         *ranking.Ranker
 	deploymentRanker *ranking.Ranker
+	platformMatcher  platformmatcher.PlatformMatcher
 }
 
-func newDatastoreImpl(storage deploymentStore.Store, searcher deploymentSearch.Searcher, images imageDS.DataStore, baselines pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache cache.DeletedDeployments, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) *datastoreImpl {
+func newDatastoreImpl(
+	storage deploymentStore.Store,
+	searcher deploymentSearch.Searcher,
+	images imageDS.DataStore,
+	baselines pwDS.DataStore,
+	networkFlows nfDS.ClusterDataStore,
+	risks riskDS.DataStore,
+	deletedDeploymentCache cache.DeletedDeployments,
+	processFilter filter.Filter,
+	clusterRanker *ranking.Ranker,
+	nsRanker *ranking.Ranker,
+	deploymentRanker *ranking.Ranker,
+	platformMatcher platformmatcher.PlatformMatcher) *datastoreImpl {
 	return &datastoreImpl{
 		deploymentStore:        storage,
 		deploymentSearcher:     searcher,
@@ -64,6 +78,7 @@ func newDatastoreImpl(storage deploymentStore.Store, searcher deploymentSearch.S
 		clusterRanker:    clusterRanker,
 		nsRanker:         nsRanker,
 		deploymentRanker: deploymentRanker,
+		platformMatcher:  platformMatcher,
 	}
 }
 
@@ -285,6 +300,11 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	if err := ds.mergeCronJobs(ctx, deployment); err != nil {
 		return errors.Wrapf(err, "error merging deployment %s", deployment.GetId())
 	}
+	match, err := ds.platformMatcher.MatchDeployment(deployment)
+	if err != nil {
+		return err
+	}
+	deployment.PlatformComponent = match
 	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
 		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 	}

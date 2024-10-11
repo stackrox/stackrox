@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	"github.com/stackrox/rox/central/metrics"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
@@ -32,10 +33,11 @@ var (
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
 // objects.
 type datastoreImpl struct {
-	storage    store.Store
-	searcher   search.Searcher
-	keyedMutex *concurrency.KeyedMutex
-	keyFence   concurrency.KeyFence
+	storage         store.Store
+	searcher        search.Searcher
+	keyedMutex      *concurrency.KeyedMutex
+	keyFence        concurrency.KeyFence
+	platformMatcher platformmatcher.PlatformMatcher
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
@@ -260,6 +262,26 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 	if len(alerts) == 0 {
 		return nil
 	}
+
+	for _, alert := range alerts {
+		switch alert.GetEntity().(type) {
+		case *storage.Alert_Deployment_:
+			alert.EntityType = storage.Alert_DEPLOYMENT
+		case *storage.Alert_Image:
+			alert.EntityType = storage.Alert_CONTAINER_IMAGE
+		case *storage.Alert_Resource_:
+			alert.EntityType = storage.Alert_RESOURCE
+		default:
+			alert.EntityType = storage.Alert_UNSET
+		}
+
+		match, err := ds.platformMatcher.MatchAlert(alert)
+		if err != nil {
+			return err
+		}
+		alert.PlatformComponent = match
+	}
+
 	return ds.storage.UpsertMany(ctx, alerts)
 }
 

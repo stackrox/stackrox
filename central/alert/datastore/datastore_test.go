@@ -9,6 +9,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/alert/datastore/internal/store/mocks"
 	_ "github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/alerttest"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -56,7 +57,7 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 
 	var err error
-	s.dataStore, err = New(s.storage, s.searcher)
+	s.dataStore, err = New(s.storage, s.searcher, platformmatcher.Singleton())
 	s.Require().NoError(err)
 }
 
@@ -198,7 +199,7 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 	var err error
-	s.dataStore, err = New(s.storage, s.searcher)
+	s.dataStore, err = New(s.storage, s.searcher, platformmatcher.Singleton())
 	s.NoError(err)
 }
 
