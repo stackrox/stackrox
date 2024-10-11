@@ -74,17 +74,22 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer) error {
+	log.Info("DBG: Communicate")
 	// Get the source cluster's ID.
 	identity, err := authn.IdentityFromContext(server.Context())
 	if err != nil {
 		return err
 	}
 
+	log.Infof("DBG: identity = %v", identity)
 	svc := identity.Service()
+	log.Infof("DBG: svc = %v", svc)
 	if svc == nil {
 		return errox.NotAuthorized.CausedBy("only sensor may access this API")
 	}
 	svcType := svc.GetType()
+	log.Infof("DBG: svcType = %v", svcType)
+
 	if !(svcType == storage.ServiceType_SENSOR_SERVICE || svcType == storage.ServiceType_REGISTRANT_SERVICE) {
 		return errox.NotAuthorized.CausedByf("only sensor may access this API, unexpected client identity %s", svcType)
 	}
@@ -224,8 +229,9 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 func receiveSensorHello(server central.SensorService_CommunicateServer) (*central.SensorHello, bool, error) {
 	incomingMD := metautils.ExtractIncoming(server.Context())
 	outMD := metautils.MD{}
-
+	log.Infof("DBG: incomingMD = %v", incomingMD)
 	sensorSupportsHello := incomingMD.Get(centralsensor.SensorHelloMetadataKey) == "true"
+	log.Infof("DBG: sensorSupportsHello = %v", sensorSupportsHello)
 	if sensorSupportsHello {
 		outMD.Set(centralsensor.SensorHelloMetadataKey, "true")
 	}
