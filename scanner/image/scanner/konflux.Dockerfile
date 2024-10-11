@@ -6,7 +6,7 @@ ARG BASE_IMAGE=ubi8-minimal
 ARG BASE_TAG=latest
 
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 as builder
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS builder
 
 ENV GOFLAGS=""
 # TODO(ROX-24276): re-enable release builds for fast stream.
