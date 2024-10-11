@@ -10,6 +10,7 @@ import (
 	pgStore "github.com/stackrox/rox/central/deployment/datastore/internal/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorFilter "github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/ranking"
@@ -59,6 +60,7 @@ func NewTestDataStore(
 		storeParams.ClusterRanker,
 		storeParams.NamespaceRanker,
 		storeParams.DeploymentRanker,
+		platformmatcher.Singleton(),
 	)
 
 	ds.initializeRanker()
@@ -95,5 +97,6 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 		clusterRanker,
 		namespaceRanker,
 		deploymentRanker,
+		platformmatcher.Singleton(),
 	), nil
 }

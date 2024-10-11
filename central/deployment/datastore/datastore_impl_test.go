@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -56,7 +57,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker)
+	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, platformmatcher.Singleton())
 
 	deployments := []*storage.Deployment{
 		{
@@ -105,7 +106,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 }
 
 func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
-	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil)
+	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil, platformmatcher.Singleton())
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Not a cronjob so no merging
