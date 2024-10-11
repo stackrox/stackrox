@@ -18,6 +18,7 @@ export type ColumnConfig = {
 };
 
 // The incoming type for the default column configuration
+// Note that `title` is displayed in the Column Management modal and should match the column header value
 type InitialColumnConfig = Pick<ColumnConfig, 'isShownByDefault' | 'title'>;
 
 // Basic validation of the shape of the object in local storage
@@ -79,6 +80,8 @@ export type ManagedColumns<ColumnKey extends string> = {
 };
 
 export function useManagedColumns<ColumnKey extends string>(
+    // `tableId` is a globally unique identifier for the table that indexes the column configuration
+    // in local storage. It is typically formed by combining the Container folder name and the table file name.
     tableId: string,
     initialConfig: Readonly<Record<ColumnKey, InitialColumnConfig>>
 ): ManagedColumns<ColumnKey> {
