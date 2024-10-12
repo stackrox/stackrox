@@ -231,7 +231,7 @@ func (s *SearchMapperTestSuite) TestConvertNVDCVSS() {
 		FieldName: fieldnames.NvdCvss,
 		Values: []*storage.PolicyValue{
 			{
-				Value: ">88",
+				Value: "> 88",
 			},
 			{
 				Value: "7644",
