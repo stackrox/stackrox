@@ -231,7 +231,7 @@ class CertRotationTest extends BaseSpecification {
 
     def "Test sensor cert rotation with upgrader fails for Helm clusters"() {
         when:
-        "Check that the cluster is Helm-managed"
+        "Check that the cluster is managed by external tools"
         def cluster = ClusterService.getCluster()
         assert cluster
 
@@ -246,7 +246,7 @@ class CertRotationTest extends BaseSpecification {
             SensorUpgradeService.triggerCertRotation(cluster.getId())
         } catch (StatusRuntimeException exc) {
             caughtException = true
-            assert exc.status.description.contains("cluster is Helm-managed")
+            assert exc.status.description.contains("External tools (Helm or Operator) control the secured cluster version.")
         }
         assert caughtException
     }
