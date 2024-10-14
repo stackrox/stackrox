@@ -162,7 +162,7 @@ func (d *datastoreImpl) UpsertInternalConfig(ctx context.Context, internalConfig
 
 	conf, _, err := d.store.Get(ctx)
 	if err != nil {
-		return errors.Wrapf(err, "Error upserting internal config")
+		return errors.Wrap(err, "Error upserting internal config")
 	}
 
 	conf.InternalConfig = internalConfig
