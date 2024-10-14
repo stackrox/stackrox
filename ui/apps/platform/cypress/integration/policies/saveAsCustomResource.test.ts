@@ -1,8 +1,10 @@
 import { selectors } from '../../constants/PoliciesPage';
 import withAuth from '../../helpers/basicAuth';
 import {
+    deletePolicyIfExists,
     doPolicyPageAction,
     doPolicyRowAction,
+    importPolicyFromFixture,
     visitPolicies,
     visitPolicy,
 } from '../../helpers/policies';
@@ -14,11 +16,11 @@ const routeMatcherMapForPolicySaveAs = {
     [saveAsUrl]: { method: 'POST', url: saveAsUrl },
 };
 
-const firstTableRowSelector = 'tbody:nth-child(2) tr:nth-child(1)';
+const policyWithNameSelector = (name) => `tbody tr:has(td:contains("${name}")):eq(0)`;
+const importedPolicyFixtureName = 'Severity greater than moderate';
 
-function visitPoliciesAndGetFirstPolicyId() {
-    visitPolicies();
-    return cy.get(`${firstTableRowSelector} ${selectors.table.policyLink}`).then(($a) => {
+function getPolicyIdFromRowWithName(name) {
+    return cy.get(`${policyWithNameSelector(name)} ${selectors.table.policyLink}`).then(($a) => {
         const segments = $a.attr('href')?.split('/') ?? [];
         return segments[segments.length - 1];
     });
@@ -27,19 +29,38 @@ function visitPoliciesAndGetFirstPolicyId() {
 describe('Save policies as Custom Resource', () => {
     withAuth();
 
+    // Clean up the two policies that will be created during the tests
+    beforeEach(() => {
+        deletePolicyIfExists(importedPolicyFixtureName);
+        deletePolicyIfExists(`${importedPolicyFixtureName} 2`);
+    });
+
+    afterEach(() => {
+        deletePolicyIfExists(importedPolicyFixtureName);
+        deletePolicyIfExists(`${importedPolicyFixtureName} 2`);
+    });
+
     describe('policies table', () => {
         it('should save policy as Custom Resource via table row menu', () => {
-            visitPoliciesAndGetFirstPolicyId().then((policyId) => {
+            visitPolicies();
+            importPolicyFromFixture('policies/good_policy_to_import.json');
+
+            getPolicyIdFromRowWithName(importedPolicyFixtureName).then((policyId) => {
                 interceptAndWatchRequests(routeMatcherMapForPolicySaveAs)
                     .then(({ waitForRequests }) => {
-                        doPolicyRowAction(firstTableRowSelector, 'Save as Custom Resource');
-
+                        doPolicyRowAction(
+                            policyWithNameSelector(importedPolicyFixtureName),
+                            'Save as Custom Resource'
+                        );
+                        cy.get('button:contains("Yes")').click();
                         return waitForRequests();
                     })
-                    .then(({ request }) => {
+                    .then(({ request, response }) => {
                         expect(request.body).to.deep.equal({ policyIds: [policyId] });
-                        // TODO Expect ZIP
-
+                        expect(response.headers).to.have.property(
+                            'content-type',
+                            'application/zip'
+                        );
                         cy.get(
                             `${selectors.toast.title}:contains("Successfully saved selected policies as Custom Resource")`
                         );
@@ -49,12 +70,28 @@ describe('Save policies as Custom Resource', () => {
 
         it('should allow export of multiple policies via the Bulk actions menu', () => {
             visitPolicies();
+            importPolicyFromFixture('policies/good_policy_to_import.json');
+            importPolicyFromFixture('policies/good_policy_to_import.json', (contents) => {
+                const [firstPolicy, ...rest] = contents.policies;
+                return {
+                    policies: [
+                        {
+                            ...firstPolicy,
+                            id: window.crypto.randomUUID(),
+                            name: `${importedPolicyFixtureName} 2`,
+                        },
+                        ...rest,
+                    ],
+                };
+            });
 
             cy.get(selectors.table.bulkActionsDropdownButton).should('be.disabled');
-            cy.get(`tbody ${selectors.table.selectCheckbox}:eq(0)`)
+            cy.get(`${policyWithNameSelector(importedPolicyFixtureName)} input[type="checkbox"]`)
                 .should('not.be.checked')
                 .click();
-            cy.get(`tbody ${selectors.table.selectCheckbox}:eq(1)`)
+            cy.get(
+                `${policyWithNameSelector(`${importedPolicyFixtureName} 2`)} input[type="checkbox"]`
+            )
                 .should('not.be.checked')
                 .click();
             cy.get(selectors.table.bulkActionsDropdownButton).should('be.enabled').click();
@@ -64,13 +101,13 @@ describe('Save policies as Custom Resource', () => {
                     cy.get(
                         `${selectors.table.bulkActionsDropdownItem}:contains("Save as Custom Resource")`
                     ).click();
-
+                    cy.get('button:contains("Yes")').click();
                     return waitForRequests();
                 })
-                .then(({ request }) => {
+                .then(({ request, response }) => {
                     // Request has policy ids.
                     expect(request.body.policyIds).to.have.length(2);
-                    // TODO Expect Zip
+                    expect(response.headers).to.have.property('content-type', 'application/zip');
                     cy.get(
                         `${selectors.toast.title}:contains("Successfully saved selected policies as Custom Resources")`
                     );
@@ -79,14 +116,17 @@ describe('Save policies as Custom Resource', () => {
 
         it('should display toast alert for export service failure', () => {
             visitPolicies();
+            importPolicyFromFixture('policies/good_policy_to_import.json');
 
             interceptAndWatchRequests(routeMatcherMapForPolicySaveAs, {
                 [saveAsUrl]: { statusCode: 400 },
             }).then(({ waitForRequests }) => {
-                doPolicyRowAction(firstTableRowSelector, 'Save as Custom Resource');
-
+                doPolicyRowAction(
+                    policyWithNameSelector(importedPolicyFixtureName),
+                    'Save as Custom Resource'
+                );
+                cy.get('button:contains("Yes")').click();
                 waitForRequests();
-
                 cy.get(
                     `${selectors.toast.title}:contains("Could not save the selected policies as Custom Resource")`
                 );
@@ -96,18 +136,25 @@ describe('Save policies as Custom Resource', () => {
 
     describe('policy detail page', () => {
         it('should save policy as custom resource', () => {
-            visitPoliciesAndGetFirstPolicyId().then((policyId) => {
+            visitPolicies();
+            importPolicyFromFixture('policies/good_policy_to_import.json');
+
+            getPolicyIdFromRowWithName(importedPolicyFixtureName).then((policyId) => {
                 visitPolicy(policyId);
 
                 interceptAndWatchRequests(routeMatcherMapForPolicySaveAs)
                     .then(({ waitForRequests }) => {
                         doPolicyPageAction('Save as Custom Resource');
+                        cy.get('button:contains("Yes")').click();
                         return waitForRequests();
                     })
-                    .then(({ request }) => {
+                    .then(({ request, response }) => {
                         // Request has expected policy id.
                         expect(request.body).to.deep.equal({ policyIds: [policyId] });
-                        // TODO Expect ZIP
+                        expect(response.headers).to.have.property(
+                            'content-type',
+                            'application/zip'
+                        );
                         cy.get(
                             `${selectors.toast.title}:contains("Successfully saved policy as Custom Resource")`
                         );
@@ -116,16 +163,18 @@ describe('Save policies as Custom Resource', () => {
         });
 
         it('should display toast alert for "save as" failure', () => {
-            visitPoliciesAndGetFirstPolicyId().then((policyId) => {
+            visitPolicies();
+            importPolicyFromFixture('policies/good_policy_to_import.json');
+
+            getPolicyIdFromRowWithName(importedPolicyFixtureName).then((policyId) => {
                 visitPolicy(policyId);
 
                 interceptAndWatchRequests(routeMatcherMapForPolicySaveAs, {
                     [saveAsUrl]: { statusCode: 400 },
                 }).then(({ waitForRequests }) => {
                     doPolicyPageAction('Save as Custom Resource');
-
+                    cy.get('button:contains("Yes")').click();
                     waitForRequests();
-
                     cy.get(
                         `${selectors.toast.title}:contains("Could not save policy as Custom Resource")`
                     );
