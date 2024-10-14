@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
+	alertutils "github.com/stackrox/rox/central/alert/utils"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
@@ -117,6 +118,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 			break
 		}
 		for _, alert := range alerts {
+			alert.EntityType = alertutils.GetEntityType(alert)
 			match, err := pr.platformMatcher.MatchAlert(alert)
 			if err != nil {
 				return err

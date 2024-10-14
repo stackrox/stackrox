@@ -365,6 +365,7 @@ func startServices() {
 	administrationUsageInjector.Singleton().Start()
 	gcp.Singleton().Start()
 	administrationEventHandler.Singleton().Start()
+	platformReprocessor.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
