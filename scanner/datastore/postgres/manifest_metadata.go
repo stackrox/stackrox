@@ -22,7 +22,7 @@ func (i *indexerMetadataStore) MigrateManifests(ctx context.Context) ([]string, 
 	// and thirty days from now.
 	const insertMissingManifests = `
 		INSERT INTO manifest_metadata (manifest_id, expiration)
-		SELECT m.hash, now() + (make_interval(days => 23) * random()) + make_interval(days => 7)
+		SELECT m.hash, (now() AT TIME ZONE 'utc') + (make_interval(days => 23) * random()) + make_interval(days => 7)
 		FROM manifest m
 		WHERE NOT EXISTS (
 			SELECT FROM manifest_metadata mm WHERE mm.manifest_id = m.hash
