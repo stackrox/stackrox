@@ -99,6 +99,14 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
+	// Only entities of the request cluster and global ones.
+	clusterMatch := search.DisjunctionQuery(
+		search.MatchFieldQuery(search.ClusterID.String(), search.ExactMatchString(""), false),
+		search.MatchFieldQuery(search.ClusterID.String(), search.ExactMatchString(request.ClusterId), false),
+	)
+
+	query = search.ConjunctionQuery(query, clusterMatch)
+
 	query, _ = search.FilterQueryWithMap(query, schema.NetworkEntitiesSchema.OptionsMap)
 
 	entities, err := s.entityDS.GetEntityByQuery(ctx, query)
