@@ -3,6 +3,7 @@ package clusterentities
 import (
 	"time"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -81,6 +82,7 @@ func NewStoreWithMemory(numTicks uint16) *Store {
 func (e *Store) initMaps() {
 	e.historyMutex.Lock()
 	defer e.historyMutex.Unlock()
+	log.Info("Cleaning containerIDMap")
 	e.ipMap = make(map[net.IPAddress]map[string]struct{})
 	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{})
 	e.containerIDMap = make(map[string]ContainerMetadata)
@@ -291,6 +293,7 @@ func (e *Store) purgeNoLock(deploymentID string) {
 		}
 	}
 	for containerID := range e.reverseContainerIDMap[deploymentID] {
+		log.Infof("Removing container %s from containerIDMap", containerID)
 		delete(e.containerIDMap, containerID)
 	}
 
@@ -373,6 +376,7 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 			e.reverseContainerIDMap[deploymentID] = reverseContainerIDs
 		}
 		reverseContainerIDs[containerID] = struct{}{}
+		log.Infof("Adding container %s to containerIDMap", containerID)
 		e.containerIDMap[containerID] = metadata
 		mdsForCallback = append(mdsForCallback, metadata)
 	}
@@ -418,6 +422,7 @@ func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 func (e *Store) LookupByContainerID(containerID string) (ContainerMetadata, bool) {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
+	log.Infof("Searching for container %s in containerIDMap", containerID)
 	metadata, ok := e.containerIDMap[containerID]
 	return metadata, ok
 }

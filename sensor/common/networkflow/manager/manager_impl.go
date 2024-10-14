@@ -523,10 +523,32 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 
+	log.Infof("enrichConnection: conn=%+v, status=%+v", *conn, *status)
+
+	/*
+		hostname:fake-collector
+		connections:map[
+			{
+				local:{Address:{data:<nil>} Port:0 IPNetwork:{ip:{data:<nil>} prefixLen:0}}
+				remote:{IPAndPort:{Address:{data:[34 118 224 251]} Port:80 IPNetwork:{ip:{data:<nil>} prefixLen:0}} L4Proto:0}
+				containerID:32b0ff124fa4 incoming:false
+			}:0xc0027c8b70 <- to jest status!
+			{
+				local:{Address:{data:<nil>} Port:80 IPNetwork:{ip:{data:<nil>} prefixLen:0}}
+				remote:{IPAndPort:{Address:{data:[10 57 162 11]} Port:0 IPNetwork:{ip:{data:<nil>} prefixLen:0}} L4Proto:0}
+				containerID:4762073dc1bb incoming:true
+			}:0xc0027c8b88
+		]
+	*/
+
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
+	log.Infof("enrichConnection: all known cluster entities: %v", m.clusterEntities)
 	if !ok {
+		log.Infof("enrichConnection: container %s not found", conn.containerID)
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
+		log.Infof("enrichConnection: timeElapsedSinceFirstSeen=%s", timeElapsedSinceFirstSeen.String())
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+			log.Infof("enrichConnection: timeElapsedSinceFirstSeen is longer than maxContainerResolutionWaitPeriod=%s", maxContainerResolutionWaitPeriod.String())
 			if activeConn, found := m.activeConnections[*conn]; found {
 				enrichedConnections[*activeConn] = timestamp.Now()
 				log.Debugf("Expiring connection %q. Reason: more time has elapsed than %s",
@@ -851,8 +873,11 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConn
 	allHostConns := m.getAllHostConnections()
 	for i, conn := range allHostConns {
 		concurrency.WithLock(&conn.mutex, func() {
-			log.Infof("currentEnrichedConnsAndEndpoints: allHostConns: [%d]:%+v", i, conn)
+			for c, status := range conn.connections {
+				log.Infof("currentEnrichedConnsAndEndpoints: allHostConns: [%d]: host=%s conn=%+v, status=%+v",
+					i, conn.hostname, c, *status)
 
+			}
 		})
 	}
 
@@ -863,7 +888,6 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConn
 		m.enrichHostContainerEndpoints(hostConns, enrichedEndpoints)
 	}
 	log.Infof("currentEnrichedConnsAndEndpoints: enrichedConnections: %+v", enrichedConnections)
-	log.Infof("currentEnrichedConnsAndEndpoints: enrichedEndpoints: %+v", enrichedEndpoints)
 
 	return enrichedConnections, enrichedEndpoints
 }
