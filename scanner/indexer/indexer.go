@@ -132,8 +132,8 @@ type localIndexer struct {
 	root            string
 	getLayerTimeout time.Duration
 
-	metadataStore postgres.IndexerMetadataStore
-	manifestGC    *manifest.GC
+	metadataStore   postgres.IndexerMetadataStore
+	manifestManager *manifest.Manager
 }
 
 // NewIndexer creates a new indexer.
@@ -209,10 +209,14 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		return nil, err
 	}
 
-	manifestGC := manifest.NewGC(ctx, metadataStore, locker, indexer.DeleteManifests)
+	manifestManager := manifest.NewManager(ctx, metadataStore, locker)
+	err = manifestManager.MigrateManifests()
+	if err != nil {
+		return nil, fmt.Errorf("migrating manifests to metadata store: %w", err)
+	}
 	// Start the manifest GC.
 	go func() {
-		if err := manifestGC.Start(); err != nil {
+		if err := manifestManager.StartGC(); err != nil {
 			zlog.Error(ctx).Err(err).Msg("manifest GC failed")
 		}
 	}()
@@ -225,8 +229,8 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		root:            root,
 		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
 
-		metadataStore: metadataStore,
-		manifestGC:    manifestGC,
+		metadataStore:   metadataStore,
+		manifestManager: manifestManager,
 	}, nil
 }
 
@@ -295,7 +299,7 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *h
 // Close closes the indexer.
 func (i *localIndexer) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.Close")
-	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root), i.manifestGC.Stop())
+	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root), i.manifestManager.StopGC())
 	i.pool.Close()
 	return err
 }
