@@ -2,7 +2,6 @@ package manifest
 
 import (
 	"context"
-	"math/rand/v2"
 	"time"
 
 	"github.com/quay/claircore"
@@ -20,19 +19,9 @@ const (
 	// gcName is the name of the GC process.
 	// This is used by the lock to prevent concurrent GC runs.
 	gcName = `manifest-garbage-collection`
-)
 
-var (
-	// jitterHours defines the potential durations
-	// to add to gcInterval for some amount of jitter between GC runs.
-	jitterHours = []time.Duration{
-		-1 * time.Hour,
-		0 * time.Hour,
-		1 * time.Hour,
-	}
-
-	// gcInterval is the base interval between GC runs.
-	gcInterval = env.ScannerV4ManifestGCInterval.DurationSetting()
+	// minGCInterval specifies the minimum interval between GC runs.
+	minGCInterval = time.Hour
 )
 
 // GC represents an indexer manifest garbage collector.
@@ -51,6 +40,9 @@ type GC struct {
 	//
 	// This is used instead of passing the entire *libindex.Libindex to the GC.
 	deleteFunc DeleteManifestsFunc
+
+	// interval specifies the amount of time between GC runs.
+	interval time.Duration
 }
 
 // DeleteManifestsFunc represents the type of the function used to delete manifests from ClairCore.
@@ -65,6 +57,8 @@ func NewGC(ctx context.Context, metadataStore postgres.IndexerMetadataStore, loc
 		metadataStore: metadataStore,
 		locker:        locker,
 		deleteFunc:    deleteFunc,
+
+		interval: max(env.ScannerV4ManifestGCInterval.DurationSetting(), minGCInterval),
 	}
 }
 
@@ -79,7 +73,8 @@ func (g *GC) Start() error {
 		zlog.Error(ctx).Err(err).Msg("errors encountered during manifest GC run")
 	}
 
-	t := time.NewTimer(gcInterval + jitter())
+	t := time.NewTimer(g.interval)
+	// TODO: log
 	defer t.Stop()
 	for {
 		select {
@@ -90,7 +85,8 @@ func (g *GC) Start() error {
 				zlog.Error(ctx).Err(err).Msg("errors encountered during manifest GC run")
 			}
 
-			t.Reset(gcInterval + jitter())
+			t.Reset(g.interval)
+			// TODO: log
 		}
 	}
 }
@@ -147,9 +143,4 @@ func (g *GC) runGC() error {
 func (g *GC) Stop() error {
 	g.cancel()
 	return nil
-}
-
-// jitter randomly chooses a duration from jitterHours.
-func jitter() time.Duration {
-	return jitterHours[rand.IntN(len(jitterHours))]
 }
