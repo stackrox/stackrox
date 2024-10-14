@@ -295,7 +295,7 @@ func TestComponents(t *testing.T) {
 	}
 }
 
-func TestSetScoresAndScoreVersionList(t *testing.T) {
+func TestSetScoresAndScoreVersions(t *testing.T) {
 	testcases := []struct {
 		name        string
 		cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS
@@ -303,8 +303,71 @@ func TestSetScoresAndScoreVersionList(t *testing.T) {
 		wantErr     bool
 	}{
 		{
-			name: "Both CVSS 2 and CVSS 3.1",
+			name: "CVSS 3.1 score differs from calculated",
 			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 4.0,
+						Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+					Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+				},
+			},
+			expected: &storage.EmbeddedVulnerability{
+				Cvss:         4.0,
+				ScoreVersion: storage.EmbeddedVulnerability_V3,
+				CvssV3: &storage.CVSSV3{
+					Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					ExploitabilityScore: 2.8,
+					ImpactScore:         4.7,
+					AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+					UserInteraction:     storage.CVSSV3_UI_NONE,
+					Scope:               storage.CVSSV3_CHANGED,
+					Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+					Integrity:           storage.CVSSV3_IMPACT_NONE,
+					Availability:        storage.CVSSV3_IMPACT_HIGH,
+					Score:               4.0,
+					Severity:            storage.CVSSV3_MEDIUM,
+				},
+				CvssMetrics: []*storage.CVSSScore{
+					{
+						CvssScore: &storage.CVSSScore_Cvssv3{
+							Cvssv3: &storage.CVSSV3{
+								Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+								ExploitabilityScore: 2.8,
+								ImpactScore:         4.7,
+								AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+								AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+								PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+								UserInteraction:     storage.CVSSV3_UI_NONE,
+								Scope:               storage.CVSSV3_CHANGED,
+								Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+								Integrity:           storage.CVSSV3_IMPACT_NONE,
+								Availability:        storage.CVSSV3_IMPACT_HIGH,
+								Score:               4.0,
+								Severity:            storage.CVSSV3_MEDIUM,
+							},
+						},
+						Source: storage.Source_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+				},
+			},
+		},
+		{
+			name: "Both CVSS 3.1 and CVSS 2",
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 8.2,
+						Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+					Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
+				},
 				{
 					V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
 						BaseScore: 6.4,
@@ -313,16 +376,38 @@ func TestSetScoresAndScoreVersionList(t *testing.T) {
 					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 					Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
 				},
-				{
-					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-						BaseScore: 5.0,
-						Vector:    "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N",
-					},
-					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
-					Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
-				},
 			},
 			expected: &storage.EmbeddedVulnerability{
+				Cvss:         8.2,
+				ScoreVersion: storage.EmbeddedVulnerability_V3,
+				CvssV3: &storage.CVSSV3{
+					Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					ExploitabilityScore: 2.8,
+					ImpactScore:         4.7,
+					AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+					UserInteraction:     storage.CVSSV3_UI_NONE,
+					Scope:               storage.CVSSV3_CHANGED,
+					Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+					Integrity:           storage.CVSSV3_IMPACT_NONE,
+					Availability:        storage.CVSSV3_IMPACT_HIGH,
+					Score:               8.2,
+					Severity:            storage.CVSSV3_HIGH,
+				},
+				CvssV2: &storage.CVSSV2{
+					Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+					AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+					AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+					Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
+					Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
+					Integrity:           storage.CVSSV2_IMPACT_NONE,
+					Availability:        storage.CVSSV2_IMPACT_PARTIAL,
+					ExploitabilityScore: 5.5,
+					ImpactScore:         7.8,
+					Score:               6.4,
+					Severity:            storage.CVSSV2_MEDIUM,
+				},
 				CvssMetrics: []*storage.CVSSScore{
 					{
 						CvssScore: &storage.CVSSScore_Cvssv2{
@@ -346,19 +431,19 @@ func TestSetScoresAndScoreVersionList(t *testing.T) {
 					{
 						CvssScore: &storage.CVSSScore_Cvssv3{
 							Cvssv3: &storage.CVSSV3{
-								Vector:              "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:N",
+								Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
 								ExploitabilityScore: 2.8,
-								ImpactScore:         1.4,
-								AttackVector:        storage.CVSSV3_ATTACK_NETWORK,
+								ImpactScore:         4.7,
+								AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
 								AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-								PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_LOW,
+								PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
 								UserInteraction:     storage.CVSSV3_UI_NONE,
-								Scope:               storage.CVSSV3_UNCHANGED,
-								Confidentiality:     storage.CVSSV3_IMPACT_NONE,
-								Integrity:           storage.CVSSV3_IMPACT_LOW,
-								Availability:        storage.CVSSV3_IMPACT_NONE,
-								Score:               5.0,
-								Severity:            storage.CVSSV3_MEDIUM,
+								Scope:               storage.CVSSV3_CHANGED,
+								Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+								Integrity:           storage.CVSSV3_IMPACT_NONE,
+								Availability:        storage.CVSSV3_IMPACT_HIGH,
+								Score:               8.2,
+								Severity:            storage.CVSSV3_HIGH,
 							},
 						},
 						Source: storage.Source_SOURCE_RED_HAT,
@@ -408,6 +493,21 @@ func TestSetScoresAndScoreVersionList(t *testing.T) {
 				},
 			},
 			expected: &storage.EmbeddedVulnerability{
+				Cvss:         6.4,
+				ScoreVersion: storage.EmbeddedVulnerability_V2,
+				CvssV2: &storage.CVSSV2{
+					Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+					AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+					AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+					Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
+					Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
+					Integrity:           storage.CVSSV2_IMPACT_NONE,
+					Availability:        storage.CVSSV2_IMPACT_PARTIAL,
+					ExploitabilityScore: 5.5,
+					ImpactScore:         7.8,
+					Score:               6.4,
+					Severity:            storage.CVSSV2_MEDIUM,
+				},
 				CvssMetrics: []*storage.CVSSScore{
 					{
 						CvssScore: &storage.CVSSScore_Cvssv2{
@@ -452,6 +552,23 @@ func TestSetScoresAndScoreVersionList(t *testing.T) {
 				},
 			},
 			expected: &storage.EmbeddedVulnerability{
+				Cvss:         8.2,
+				ScoreVersion: storage.EmbeddedVulnerability_V3,
+				CvssV3: &storage.CVSSV3{
+					Vector:              "CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					ExploitabilityScore: 2.8,
+					ImpactScore:         4.7,
+					AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+					UserInteraction:     storage.CVSSV3_UI_NONE,
+					Scope:               storage.CVSSV3_CHANGED,
+					Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+					Integrity:           storage.CVSSV3_IMPACT_NONE,
+					Availability:        storage.CVSSV3_IMPACT_HIGH,
+					Score:               8.2,
+					Severity:            storage.CVSSV3_HIGH,
+				},
 				CvssMetrics: []*storage.CVSSScore{
 					{
 						CvssScore: &storage.CVSSScore_Cvssv3{
@@ -519,6 +636,23 @@ func TestSetScoresAndScoreVersionList(t *testing.T) {
 				},
 			},
 			expected: &storage.EmbeddedVulnerability{
+				Cvss:         8.2,
+				ScoreVersion: storage.EmbeddedVulnerability_V3,
+				CvssV3: &storage.CVSSV3{
+					Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					ExploitabilityScore: 2.8,
+					ImpactScore:         4.7,
+					AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+					UserInteraction:     storage.CVSSV3_UI_NONE,
+					Scope:               storage.CVSSV3_CHANGED,
+					Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+					Integrity:           storage.CVSSV3_IMPACT_NONE,
+					Availability:        storage.CVSSV3_IMPACT_HIGH,
+					Score:               8.2,
+					Severity:            storage.CVSSV3_HIGH,
+				},
 				CvssMetrics: []*storage.CVSSScore{
 					{
 						CvssScore: &storage.CVSSScore_Cvssv3{
@@ -569,231 +703,6 @@ func TestSetScoresAndScoreVersionList(t *testing.T) {
 		t.Run(testcase.name, func(t *testing.T) {
 			vuln := &storage.EmbeddedVulnerability{}
 			err := setScoresAndScoreVersions(vuln, testcase.cvssMetrics)
-			if testcase.wantErr {
-				assert.Error(t, err)
-				return
-			}
-
-			assert.NoError(t, err)
-			protoassert.Equal(t, testcase.expected, vuln)
-		})
-	}
-}
-
-func TestSetScoresAndScoreVersion(t *testing.T) {
-	testcases := []struct {
-		name     string
-		vulnCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
-		expected *storage.EmbeddedVulnerability
-		wantErr  bool
-	}{
-		{
-			name: "CVSS 3.1 parse error",
-			vulnCVSS: &v4.VulnerabilityReport_Vulnerability_CVSS{
-				V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-					BaseScore: 8.2,
-					Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:Q",
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "CVSS 3.1 only",
-			vulnCVSS: &v4.VulnerabilityReport_Vulnerability_CVSS{
-				V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-					BaseScore: 8.2,
-					Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
-				},
-			},
-			expected: &storage.EmbeddedVulnerability{
-				Cvss:         8.2,
-				ScoreVersion: storage.EmbeddedVulnerability_V3,
-				CvssV3: &storage.CVSSV3{
-					Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
-					ExploitabilityScore: 2.8,
-					ImpactScore:         4.7,
-					AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
-					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-					UserInteraction:     storage.CVSSV3_UI_NONE,
-					Scope:               storage.CVSSV3_CHANGED,
-					Confidentiality:     storage.CVSSV3_IMPACT_LOW,
-					Integrity:           storage.CVSSV3_IMPACT_NONE,
-					Availability:        storage.CVSSV3_IMPACT_HIGH,
-					Score:               8.2,
-					Severity:            storage.CVSSV3_HIGH,
-				},
-			},
-		},
-		{
-			name: "CVSS 3.0 only",
-			vulnCVSS: &v4.VulnerabilityReport_Vulnerability_CVSS{
-				V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-					BaseScore: 8.2,
-					Vector:    "CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
-				},
-			},
-			expected: &storage.EmbeddedVulnerability{
-				Cvss:         8.2,
-				ScoreVersion: storage.EmbeddedVulnerability_V3,
-				CvssV3: &storage.CVSSV3{
-					Vector:              "CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
-					ExploitabilityScore: 2.8,
-					ImpactScore:         4.7,
-					AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
-					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-					UserInteraction:     storage.CVSSV3_UI_NONE,
-					Scope:               storage.CVSSV3_CHANGED,
-					Confidentiality:     storage.CVSSV3_IMPACT_LOW,
-					Integrity:           storage.CVSSV3_IMPACT_NONE,
-					Availability:        storage.CVSSV3_IMPACT_HIGH,
-					Score:               8.2,
-					Severity:            storage.CVSSV3_HIGH,
-				},
-			},
-		},
-		{
-			name: "CVSS 3.1 score differs from calculated",
-			vulnCVSS: &v4.VulnerabilityReport_Vulnerability_CVSS{
-				V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-					BaseScore: 4.0,
-					Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
-				},
-			},
-			expected: &storage.EmbeddedVulnerability{
-				Cvss:         4.0,
-				ScoreVersion: storage.EmbeddedVulnerability_V3,
-				CvssV3: &storage.CVSSV3{
-					Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
-					ExploitabilityScore: 2.8,
-					ImpactScore:         4.7,
-					AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
-					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-					UserInteraction:     storage.CVSSV3_UI_NONE,
-					Scope:               storage.CVSSV3_CHANGED,
-					Confidentiality:     storage.CVSSV3_IMPACT_LOW,
-					Integrity:           storage.CVSSV3_IMPACT_NONE,
-					Availability:        storage.CVSSV3_IMPACT_HIGH,
-					Score:               4.0,
-					Severity:            storage.CVSSV3_MEDIUM,
-				},
-			},
-		},
-		{
-			name: "CVSS 2 parse error",
-			vulnCVSS: &v4.VulnerabilityReport_Vulnerability_CVSS{
-				V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
-					BaseScore: 8.2,
-					Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:Q",
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "CVSS 2 only",
-			vulnCVSS: &v4.VulnerabilityReport_Vulnerability_CVSS{
-				V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
-					BaseScore: 6.4,
-					Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
-				},
-			},
-			expected: &storage.EmbeddedVulnerability{
-				Cvss:         6.4,
-				ScoreVersion: storage.EmbeddedVulnerability_V2,
-				CvssV2: &storage.CVSSV2{
-					Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
-					AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-					AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
-					Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
-					Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
-					Integrity:           storage.CVSSV2_IMPACT_NONE,
-					Availability:        storage.CVSSV2_IMPACT_PARTIAL,
-					ExploitabilityScore: 5.5,
-					ImpactScore:         7.8,
-					Score:               6.4,
-					Severity:            storage.CVSSV2_MEDIUM,
-				},
-			},
-		},
-		{
-			name: "CVSS 2 score differs from calculated",
-			vulnCVSS: &v4.VulnerabilityReport_Vulnerability_CVSS{
-				V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
-					BaseScore: 1.2,
-					Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
-				},
-			},
-			expected: &storage.EmbeddedVulnerability{
-				Cvss:         1.2,
-				ScoreVersion: storage.EmbeddedVulnerability_V2,
-				CvssV2: &storage.CVSSV2{
-					Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
-					AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-					AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
-					Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
-					Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
-					Integrity:           storage.CVSSV2_IMPACT_NONE,
-					Availability:        storage.CVSSV2_IMPACT_PARTIAL,
-					ExploitabilityScore: 5.5,
-					ImpactScore:         7.8,
-					Score:               1.2,
-					Severity:            storage.CVSSV2_LOW,
-				},
-			},
-		},
-		{
-			name: "Both CVSS 3.1 and 2",
-			vulnCVSS: &v4.VulnerabilityReport_Vulnerability_CVSS{
-				V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-					BaseScore: 8.2,
-					Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
-				},
-				V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
-					BaseScore: 6.4,
-					Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
-				},
-			},
-			expected: &storage.EmbeddedVulnerability{
-				Cvss:         8.2,
-				ScoreVersion: storage.EmbeddedVulnerability_V3,
-				CvssV3: &storage.CVSSV3{
-					Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
-					ExploitabilityScore: 2.8,
-					ImpactScore:         4.7,
-					AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
-					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
-					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
-					UserInteraction:     storage.CVSSV3_UI_NONE,
-					Scope:               storage.CVSSV3_CHANGED,
-					Confidentiality:     storage.CVSSV3_IMPACT_LOW,
-					Integrity:           storage.CVSSV3_IMPACT_NONE,
-					Availability:        storage.CVSSV3_IMPACT_HIGH,
-					Score:               8.2,
-					Severity:            storage.CVSSV3_HIGH,
-				},
-				CvssV2: &storage.CVSSV2{
-					Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
-					AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-					AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
-					Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
-					Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
-					Integrity:           storage.CVSSV2_IMPACT_NONE,
-					Availability:        storage.CVSSV2_IMPACT_PARTIAL,
-					ExploitabilityScore: 5.5,
-					ImpactScore:         7.8,
-					Score:               6.4,
-					Severity:            storage.CVSSV2_MEDIUM,
-				},
-			},
-		},
-	}
-
-	for _, testcase := range testcases {
-		t.Run(testcase.name, func(t *testing.T) {
-			vuln := &storage.EmbeddedVulnerability{}
-			err := setScoresAndScoreVersion(vuln, testcase.vulnCVSS)
 			if testcase.wantErr {
 				assert.Error(t, err)
 				return
