@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policy/customresource"
@@ -19,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/protoadapt"
@@ -26,7 +26,7 @@ import (
 
 var (
 	log                                      = logging.LoggerForModule()
-	maxCustomResourceNameToFilePathTruncSize = customresource.MaxCustomResourceMetadataNameLength - len(uuid.Max.String()) - 1
+	maxCustomResourceNameToFilePathTruncSize = customresource.MaxCustomResourceMetadataNameLength - uuid.StringLength - 1
 )
 
 // Handler returns a handler for policy http requests
