@@ -110,6 +110,14 @@ function ReportParametersDetails({
                             {getCVEsDiscoveredSinceText(formValues.reportParameters)}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
+                    {formValues.reportParameters.includeNvdCvss && (
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Optional columns</DescriptionListTerm>
+                            <DescriptionListDescription>
+                                Include NVD CVSS
+                            </DescriptionListDescription>
+                        </DescriptionListGroup>
+                    )}
                 </DescriptionList>
             </FlexItem>
         </Flex>

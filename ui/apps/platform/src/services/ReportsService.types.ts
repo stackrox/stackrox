@@ -20,6 +20,7 @@ export type VulnerabilityReportFiltersBase = {
     fixability: Fixability;
     severities: VulnerabilitySeverity[];
     imageTypes: ImageType[];
+    includeNvdCvss: boolean;
 };
 
 export type VulnerabilityReportFilters =

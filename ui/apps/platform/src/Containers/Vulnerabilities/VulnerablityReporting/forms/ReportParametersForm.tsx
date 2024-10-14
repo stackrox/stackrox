@@ -1,5 +1,6 @@
 import React, { ChangeEvent, FormEvent, ReactElement } from 'react';
 import {
+    Checkbox,
     DatePicker,
     Divider,
     Flex,
@@ -60,6 +61,10 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
     const handleCVEsDiscoveredStartDate = handleDateSelection(
         'reportParameters.cvesDiscoveredStartDate'
     );
+
+    function onChange(event, value) {
+        return formik.setFieldValue(event.target.id, value, false);
+    }
 
     return (
         <>
@@ -273,6 +278,18 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         />
                     </FormLabelGroup>
                 )}
+                <FormLabelGroup
+                    label="Optional columns"
+                    fieldId="reportParameters.includeNvdCvss"
+                    errors={formik.errors}
+                >
+                    <Checkbox
+                        label="Include NVD CVSS"
+                        id="reportParameters.includeNvdCvss"
+                        isChecked={formik.values.reportParameters.includeNvdCvss}
+                        onChange={onChange}
+                    />
+                </FormLabelGroup>
                 <FormLabelGroup
                     label="Configure collection included"
                     isRequired
