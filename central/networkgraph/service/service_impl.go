@@ -99,7 +99,7 @@ func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	// Only entities of the request cluster and global ones.
+	// Retrieves entities where the cluster ID matches the request cluster OR where the cluster ID is empty indicating global entities.
 	clusterMatch := search.DisjunctionQuery(
 		search.MatchFieldQuery(search.ClusterID.String(), search.ExactMatchString(""), false),
 		search.MatchFieldQuery(search.ClusterID.String(), search.ExactMatchString(request.ClusterId), false),
