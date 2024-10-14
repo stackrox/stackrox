@@ -204,12 +204,12 @@ func TestGetIDFromScan(t *testing.T) {
 	_, err = GetWatcherIDFromScan(scan, nil)
 	assert.Error(t, err)
 	scan.Id = "scan-1"
-	id, err := GetWatcherIDFromScan(scan, nil)
+	_, err = GetWatcherIDFromScan(scan, nil)
 	assert.Error(t, err)
 	assert.Equal(t, ErrComplianceOperatorScanMissingLastStartedFiled, err)
 	timeNow := protocompat.TimestampNow()
 	scan.LastStartedTime = timeNow
-	id, err = GetWatcherIDFromScan(scan, nil)
+	id, err := GetWatcherIDFromScan(scan, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("%s:%s:%s", scan.ClusterId, scan.Id, scan.LastStartedTime), id)
 	timeNow = protocompat.TimestampNow()
