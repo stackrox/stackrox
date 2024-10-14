@@ -22,7 +22,7 @@ func (p *platformMatcherImpl) MatchAlert(alert *storage.Alert) (bool, error) {
 	if alert == nil {
 		return false, errors.New("Error matching alert: alert must be non nil")
 	}
-	if alert.GetEntityType() != storage.Alert_DEPLOYMENT || alert.GetDeployment() == nil {
+	if alert.GetDeployment() == nil {
 		return false, nil
 	}
 	return p.matchNamespace(alert.GetDeployment().GetNamespace()), nil
