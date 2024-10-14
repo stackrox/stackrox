@@ -115,6 +115,7 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 		Type: kubernetes.Deployment,
 	}
 	expectedDep := dep.CloneVT()
+	suite.storage.EXPECT().GetMany(ctx, []string{"id"}).Return(nil, []int{0}, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
@@ -132,6 +133,7 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	}
 	dep.Type = kubernetes.CronJob
 	expectedDep = dep.CloneVT()
+	suite.storage.EXPECT().GetMany(ctx, []string{"id"}).Return(nil, []int{0}, nil)
 	// All container have images with digests
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
@@ -139,7 +141,7 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	// All containers don't have images with digests, but old deployment does not exist
 	dep.Containers[1].Image.Id = ""
 	expectedDep = dep.CloneVT()
-	suite.storage.EXPECT().Get(ctx, "id").Return(nil, false, nil)
+	suite.storage.EXPECT().GetMany(ctx, []string{"id"}).Return(nil, []int{0}, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
@@ -147,7 +149,7 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	returnedDep := dep.CloneVT()
 	returnedDep.Containers = returnedDep.Containers[:1]
 
-	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
+	suite.storage.EXPECT().GetMany(ctx, []string{"id"}).Return([]*storage.Deployment{returnedDep}, []int{}, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
@@ -157,7 +159,7 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	returnedDep.Containers[1].Image.Name = &storage.ImageName{
 		FullName: "fullname",
 	}
-	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
+	suite.storage.EXPECT().GetMany(ctx, []string{"id"}).Return([]*storage.Deployment{returnedDep}, []int{}, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 
@@ -165,7 +167,151 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	dep.Containers[1].Image.Name = returnedDep.Containers[1].Image.Name
 	expectedDep.Containers[1].Image.Name = returnedDep.Containers[1].Image.Name
 	expectedDep.Containers[1].Image.Id = "xyz"
-	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
+	suite.storage.EXPECT().GetMany(ctx, []string{"id"}).Return([]*storage.Deployment{returnedDep}, []int{}, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
+}
+
+func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs_MultipleDeployments() {
+	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil, platformmatcher.Singleton())
+	ctx := sac.WithAllAccess(context.Background())
+
+	deployments := []*storage.Deployment{
+		{
+			Id:   "1",
+			Name: "Not a cron job",
+			Type: kubernetes.Deployment,
+		},
+		{
+			Id:   "2",
+			Name: "All containers have image digests",
+			Type: kubernetes.CronJob,
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "abc",
+					},
+				},
+				{
+					Image: &storage.ContainerImage{
+						Id: "def",
+					},
+				},
+			},
+		},
+		{
+			Id:   "3",
+			Name: "No existing deployment",
+			Type: kubernetes.CronJob,
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "abc",
+					},
+				},
+				{
+					Image: &storage.ContainerImage{
+						Id: "",
+					},
+				},
+			},
+		},
+		{
+			Id:   "4",
+			Name: "Existing deployment has different number of containers",
+			Type: kubernetes.CronJob,
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "abc",
+					},
+				},
+				{
+					Image: &storage.ContainerImage{
+						Id: "",
+					},
+				},
+			},
+		},
+		{
+			Id:   "5",
+			Name: "Existing deployment has image with digest at index 1, but image names do not match",
+			Type: kubernetes.CronJob,
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "abc",
+					},
+				},
+				{
+					Image: &storage.ContainerImage{
+						Id: "",
+						Name: &storage.ImageName{
+							FullName: "def",
+						},
+					},
+				},
+			},
+		},
+		{
+			Id:   "6",
+			Name: "Existing deployment has image with digest at index 1 and image names match too",
+			Type: kubernetes.CronJob,
+			Containers: []*storage.Container{
+				{
+					Image: &storage.ContainerImage{
+						Id: "abc",
+					},
+				},
+				{
+					Image: &storage.ContainerImage{
+						Id: "",
+						Name: &storage.ImageName{
+							FullName: "xyz",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	existingDeployments := []*storage.Deployment{
+		deployments[0],
+		deployments[1],
+		func() *storage.Deployment {
+			dep := deployments[3].CloneVT()
+			dep.Containers = dep.Containers[:1]
+			return dep
+		}(),
+		func() *storage.Deployment {
+			dep := deployments[4].CloneVT()
+			dep.Containers[1].Image.Id = "xyz"
+			dep.Containers[1].Image.Name.FullName = "xyz"
+			return dep
+		}(),
+		func() *storage.Deployment {
+			dep := deployments[5].CloneVT()
+			dep.Containers[1].Image.Id = "xyz"
+			dep.Containers[1].Image.Name.FullName = "xyz"
+			return dep
+		}(),
+	}
+
+	expectedDeployments := []*storage.Deployment{
+		deployments[0],
+		deployments[1],
+		deployments[2],
+		deployments[3],
+		deployments[4],
+		func() *storage.Deployment {
+			dep := deployments[5].CloneVT()
+			dep.Containers[1].Image.Id = "xyz"
+			dep.Containers[1].Image.Name.FullName = "xyz"
+			return dep
+		}(),
+	}
+
+	suite.storage.EXPECT().GetMany(ctx, []string{"1", "2", "3", "4", "5", "6"}).Return(existingDeployments, []int{2}, nil)
+	suite.NoError(ds.mergeCronJobs(ctx, deployments...))
+	protoassert.SlicesEqual(suite.T(), expectedDeployments, deployments)
 }

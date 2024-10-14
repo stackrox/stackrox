@@ -103,6 +103,12 @@ var (
 	defaultAdministrationEventsConfig = &storage.AdministrationEventsConfig{
 		RetentionDurationDays: DefaultAdministrationEventsRetention,
 	}
+
+	defaultInternalConfig = &storage.InternalConfig{
+		PlatformComponentConfig: &storage.PlatformComponentConfig{
+			NeedsReprocessing: true,
+		},
+	}
 )
 
 func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
@@ -149,10 +155,17 @@ func validateConfigAndPopulateMissingDefaults(datastore DataStore) {
 		needsUpsert = true
 	}
 
+	internalConfig := config.GetInternalConfig()
+	if internalConfig == nil {
+		internalConfig = defaultInternalConfig
+		needsUpsert = true
+	}
+
 	if needsUpsert {
 		utils.Must(datastore.UpsertConfig(ctx, &storage.Config{
-			PublicConfig:  config.GetPublicConfig(),
-			PrivateConfig: privateConfig,
+			PublicConfig:   config.GetPublicConfig(),
+			PrivateConfig:  privateConfig,
+			InternalConfig: internalConfig,
 		}))
 	}
 }

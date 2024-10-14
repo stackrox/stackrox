@@ -119,6 +119,7 @@ import (
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
 	pingService "github.com/stackrox/rox/central/ping/service"
+	platformReprocessor "github.com/stackrox/rox/central/platform/reprocessor"
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyHandler "github.com/stackrox/rox/central/policy/handlers"
@@ -929,6 +930,7 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
+		{platformReprocessor.Singleton(), "platform components reprocessor"},
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {

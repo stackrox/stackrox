@@ -55,6 +55,21 @@ func (mr *MockDataStoreMockRecorder) GetConfig(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockDataStore)(nil).GetConfig), arg0)
 }
 
+// GetInternalConfig mocks base method.
+func (m *MockDataStore) GetInternalConfig(arg0 context.Context) (*storage.InternalConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInternalConfig", arg0)
+	ret0, _ := ret[0].(*storage.InternalConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInternalConfig indicates an expected call of GetInternalConfig.
+func (mr *MockDataStoreMockRecorder) GetInternalConfig(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInternalConfig", reflect.TypeOf((*MockDataStore)(nil).GetInternalConfig), arg0)
+}
+
 // GetPrivateConfig mocks base method.
 func (m *MockDataStore) GetPrivateConfig(arg0 context.Context) (*storage.PrivateConfig, error) {
 	m.ctrl.T.Helper()
@@ -112,4 +127,18 @@ func (m *MockDataStore) UpsertConfig(arg0 context.Context, arg1 *storage.Config)
 func (mr *MockDataStoreMockRecorder) UpsertConfig(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertConfig", reflect.TypeOf((*MockDataStore)(nil).UpsertConfig), arg0, arg1)
+}
+
+// UpsertInternalConfig mocks base method.
+func (m *MockDataStore) UpsertInternalConfig(arg0 context.Context, arg1 *storage.InternalConfig) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertInternalConfig", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertInternalConfig indicates an expected call of UpsertInternalConfig.
+func (mr *MockDataStoreMockRecorder) UpsertInternalConfig(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertInternalConfig", reflect.TypeOf((*MockDataStore)(nil).UpsertInternalConfig), arg0, arg1)
 }

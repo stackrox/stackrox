@@ -192,6 +192,23 @@ func (m *PrivateConfig_AlertConfig) CloneVT() isPrivateConfig_AlertRetention {
 	return r
 }
 
+func (m *InternalConfig) CloneVT() *InternalConfig {
+	if m == nil {
+		return (*InternalConfig)(nil)
+	}
+	r := new(InternalConfig)
+	r.PlatformComponentConfig = m.PlatformComponentConfig.CloneVT()
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *InternalConfig) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
 func (m *Config) CloneVT() *Config {
 	if m == nil {
 		return (*Config)(nil)
@@ -199,6 +216,7 @@ func (m *Config) CloneVT() *Config {
 	r := new(Config)
 	r.PublicConfig = m.PublicConfig.CloneVT()
 	r.PrivateConfig = m.PrivateConfig.CloneVT()
+	r.InternalConfig = m.InternalConfig.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -285,6 +303,23 @@ func (m *AdministrationEventsConfig) CloneVT() *AdministrationEventsConfig {
 }
 
 func (m *AdministrationEventsConfig) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *PlatformComponentConfig) CloneVT() *PlatformComponentConfig {
+	if m == nil {
+		return (*PlatformComponentConfig)(nil)
+	}
+	r := new(PlatformComponentConfig)
+	r.NeedsReprocessing = m.NeedsReprocessing
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *PlatformComponentConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -568,6 +603,25 @@ func (this *PrivateConfig_AlertConfig) EqualVT(thatIface isPrivateConfig_AlertRe
 	return true
 }
 
+func (this *InternalConfig) EqualVT(that *InternalConfig) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if !this.PlatformComponentConfig.EqualVT(that.PlatformComponentConfig) {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *InternalConfig) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*InternalConfig)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
 func (this *Config) EqualVT(that *Config) bool {
 	if this == that {
 		return true
@@ -578,6 +632,9 @@ func (this *Config) EqualVT(that *Config) bool {
 		return false
 	}
 	if !this.PrivateConfig.EqualVT(that.PrivateConfig) {
+		return false
+	}
+	if !this.InternalConfig.EqualVT(that.InternalConfig) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -687,6 +744,25 @@ func (this *AdministrationEventsConfig) EqualVT(that *AdministrationEventsConfig
 
 func (this *AdministrationEventsConfig) EqualMessageVT(thatMsg proto.Message) bool {
 	that, ok := thatMsg.(*AdministrationEventsConfig)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *PlatformComponentConfig) EqualVT(that *PlatformComponentConfig) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.NeedsReprocessing != that.NeedsReprocessing {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *PlatformComponentConfig) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*PlatformComponentConfig)
 	if !ok {
 		return false
 	}
@@ -1212,6 +1288,49 @@ func (m *PrivateConfig_AlertConfig) MarshalToSizedBufferVT(dAtA []byte) (int, er
 	}
 	return len(dAtA) - i, nil
 }
+func (m *InternalConfig) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *InternalConfig) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *InternalConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.PlatformComponentConfig != nil {
+		size, err := m.PlatformComponentConfig.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *Config) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
@@ -1241,6 +1360,16 @@ func (m *Config) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.InternalConfig != nil {
+		size, err := m.InternalConfig.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1a
 	}
 	if m.PrivateConfig != nil {
 		size, err := m.PrivateConfig.MarshalToSizedBufferVT(dAtA[:i])
@@ -1468,6 +1597,49 @@ func (m *AdministrationEventsConfig) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	}
 	if m.RetentionDurationDays != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.RetentionDurationDays))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *PlatformComponentConfig) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *PlatformComponentConfig) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *PlatformComponentConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.NeedsReprocessing {
+		i--
+		if m.NeedsReprocessing {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
 		i--
 		dAtA[i] = 0x8
 	}
@@ -1722,6 +1894,20 @@ func (m *PrivateConfig_AlertConfig) SizeVT() (n int) {
 	}
 	return n
 }
+func (m *InternalConfig) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.PlatformComponentConfig != nil {
+		l = m.PlatformComponentConfig.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
 func (m *Config) SizeVT() (n int) {
 	if m == nil {
 		return 0
@@ -1734,6 +1920,10 @@ func (m *Config) SizeVT() (n int) {
 	}
 	if m.PrivateConfig != nil {
 		l = m.PrivateConfig.SizeVT()
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.InternalConfig != nil {
+		l = m.InternalConfig.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -1804,6 +1994,19 @@ func (m *AdministrationEventsConfig) SizeVT() (n int) {
 	_ = l
 	if m.RetentionDurationDays != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.RetentionDurationDays))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *PlatformComponentConfig) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.NeedsReprocessing {
+		n += 2
 	}
 	n += len(m.unknownFields)
 	return n
@@ -3150,6 +3353,93 @@ func (m *PrivateConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
+func (m *InternalConfig) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: InternalConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: InternalConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PlatformComponentConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.PlatformComponentConfig == nil {
+				m.PlatformComponentConfig = &PlatformComponentConfig{}
+			}
+			if err := m.PlatformComponentConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
 func (m *Config) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -3248,6 +3538,42 @@ func (m *Config) UnmarshalVTUnsafe(dAtA []byte) error {
 				m.PrivateConfig = &PrivateConfig{}
 			}
 			if err := m.PrivateConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InternalConfig", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.InternalConfig == nil {
+				m.InternalConfig = &InternalConfig{}
+			}
+			if err := m.InternalConfig.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -3660,6 +3986,77 @@ func (m *AdministrationEventsConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *PlatformComponentConfig) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: PlatformComponentConfig: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: PlatformComponentConfig: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NeedsReprocessing", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.NeedsReprocessing = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

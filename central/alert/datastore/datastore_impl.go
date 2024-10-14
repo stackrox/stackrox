@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	alertutils "github.com/stackrox/rox/central/alert/utils"
 	"github.com/stackrox/rox/central/metrics"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -264,17 +265,7 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 	}
 
 	for _, alert := range alerts {
-		switch alert.GetEntity().(type) {
-		case *storage.Alert_Deployment_:
-			alert.EntityType = storage.Alert_DEPLOYMENT
-		case *storage.Alert_Image:
-			alert.EntityType = storage.Alert_CONTAINER_IMAGE
-		case *storage.Alert_Resource_:
-			alert.EntityType = storage.Alert_RESOURCE
-		default:
-			alert.EntityType = storage.Alert_UNSET
-		}
-
+		alert.EntityType = alertutils.GetEntityType(alert)
 		match, err := ds.platformMatcher.MatchAlert(alert)
 		if err != nil {
 			return err
