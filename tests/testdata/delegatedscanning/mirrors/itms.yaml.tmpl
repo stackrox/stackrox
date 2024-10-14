@@ -1,0 +1,10 @@
+apiVersion: config.openshift.io/v1
+kind: ImageTagMirrorSet
+metadata:
+  name: {{index . "name"}}
+spec:
+  imageTagMirrors:
+  - mirrors:
+    - quay.io
+    source: itms.invalid
+    mirrorSourcePolicy: NeverContactSource
