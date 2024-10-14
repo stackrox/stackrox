@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -366,7 +367,7 @@ func (s *localScannerTLSIssueIntegrationTests) TestUnexpectedOwnerStop() {
 
 func (s *localScannerTLSIssueIntegrationTests) getCertificate(serviceType storage.ServiceType) *mtls.IssuedCert {
 	// TODO(ROX-9463): use short expiration for testing renewal when ROX-9010 implementing `WithCustomCertLifetime` is merged
-	cert, err := issueCertificate(serviceType, mtls.WithValidityExpiringInHours())
+	cert, err := testutils.IssueCertificate(serviceType, mtls.WithValidityExpiringInHours())
 	s.Require().NoError(err)
 	return cert
 }

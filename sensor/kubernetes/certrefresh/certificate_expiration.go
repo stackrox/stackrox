@@ -1,4 +1,4 @@
-package localscanner
+package certrefresh
 
 import (
 	"crypto/x509"
