@@ -85,12 +85,14 @@ export type ViolationsTableSearchFilterProps = {
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
+    additionalContextFilter: SearchFilter;
 };
 
 function ViolationsTableSearchFilter({
     searchFilter,
     onFilterChange,
     onSearch,
+    additionalContextFilter,
 }: ViolationsTableSearchFilterProps) {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
@@ -111,6 +113,7 @@ function ViolationsTableSearchFilter({
                             config={searchFilterConfig}
                             searchFilter={searchFilter}
                             onSearch={onSearchHandler}
+                            additionalContextFilter={additionalContextFilter}
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
