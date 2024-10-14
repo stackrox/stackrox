@@ -129,7 +129,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 		if err != nil {
 			return err
 		}
-		query.GetPagination().Offset = int32(len(alerts))
+		query.GetPagination().Offset += int32(len(alerts))
 	}
 	return nil
 }
@@ -165,7 +165,7 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 		if err != nil {
 			return err
 		}
-		query.GetPagination().Offset = int32(len(deps))
+		query.GetPagination().Offset += int32(len(deps))
 	}
 	return nil
 }
