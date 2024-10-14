@@ -577,3 +577,16 @@ func (m *certsRepoMock) EnsureServiceCertificates(ctx context.Context, certifica
 	args := m.Called(ctx, certificates)
 	return certificates.ServiceCerts, args.Error(0)
 }
+
+func issueCertificate(serviceType storage.ServiceType, issueOption mtls.IssueCertOption) (*mtls.IssuedCert, error) {
+	ca, err := mtls.CAForSigning()
+	if err != nil {
+		return nil, err
+	}
+	subject := mtls.NewSubject("clusterId", serviceType)
+	cert, err := ca.IssueCertForSubject(subject, issueOption)
+	if err != nil {
+		return nil, err
+	}
+	return cert, err
+}
