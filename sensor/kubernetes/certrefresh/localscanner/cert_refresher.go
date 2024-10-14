@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -25,7 +26,7 @@ func newCertificatesRefresher(requestCertificates requestCertificatesFunc, repos
 	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
 
 	return concurrency.NewRetryTicker(func(ctx context.Context) (timeToNextTick time.Duration, err error) {
-		return refreshCertificates(ctx, requestCertificates, GetCertsRenewalTime, repository)
+		return refreshCertificates(ctx, requestCertificates, certrefresh.GetCertsRenewalTime, repository)
 	}, timeout, backoff)
 }
 
