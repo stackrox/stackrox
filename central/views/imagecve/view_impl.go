@@ -202,12 +202,6 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 }
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
-	// For pagination and sort to work properly, the filter query to get the CVEs needs to
-	// include the fields we are sorting on.  At this time custom code is required when
-	// sorting on custom sort fields.  For instance counts on the Severity column based on
-	// a value of that column
-	// TODO(ROX-26310): Update the search framework to inject required select.
-
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
