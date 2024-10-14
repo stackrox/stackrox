@@ -16,6 +16,9 @@ os.environ["ORCHESTRATOR_FLAVOR"] = "openshift"
 
 os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 
+# delegated scanning support in the secured cluster
+os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
+
 ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),
     pre_test=PreSystemTests(),
