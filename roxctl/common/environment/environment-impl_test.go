@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/fatih/color"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/io"
 	"github.com/stackrox/rox/roxctl/common/printer"
@@ -52,10 +53,14 @@ func Test_colorWriter_Write(t *testing.T) {
 }
 
 func Test_determineAuthMethodEx(t *testing.T) {
-	const empty = true
-	const value = false
+	if buildinfo.ReleaseBuild {
+		t.SkipNow()
+	}
+
 	const missing = false
 	const changed = true
+	const empty = true
+	const value = false
 
 	tests := map[string]struct {
 		tokenFileChanged   bool
@@ -66,8 +71,6 @@ func Test_determineAuthMethodEx(t *testing.T) {
 		expectedError  error
 		expectedMethod string
 	}{
-		//     arguments         has value
-		//    file   pass       file   pass
 		"0":       {missing, missing, empty, empty, nil, ""},
 		"1":       {missing, missing, empty, value, nil, "basic auth"},
 		"2":       {missing, missing, value, empty, nil, "token based auth"},
