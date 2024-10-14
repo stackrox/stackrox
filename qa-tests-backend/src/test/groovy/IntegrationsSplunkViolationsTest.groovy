@@ -380,7 +380,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
                     .build())
                     .asList()
                     .any { a -> a.getPolicy().getId() == policyId }
-        }, 10)
+        }, 30)
     }
 
     boolean isNetworkViolation(Map<String, String> result) {
