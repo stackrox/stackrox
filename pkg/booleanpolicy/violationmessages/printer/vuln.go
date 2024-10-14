@@ -25,6 +25,12 @@ const (
     {{- if .Component}} in component '{{.Component}}' (version {{.ComponentVersion}}){{end}}
     {{- if .ContainerName }} in container '{{.ContainerName}}'{{end}}
     {{- if .FixedBy}}, resolved by version {{.FixedBy}}{{end}}`
+
+	nvdcveTemplate = `
+    {{- if .FixedBy}}Fixable {{end}}{{.CVE}}{{if .NVDCVSS}} (NVD CVSS {{.NVDCVSS}}){{end}}{{if .Severity}} (severity {{.Severity}}){{end}} found
+    {{- if .Component}} in component '{{.Component}}' (version {{.ComponentVersion}}){{end}}
+    {{- if .ContainerName }} in container '{{.ContainerName}}'{{end}}
+    {{- if .FixedBy}}, resolved by version {{.FixedBy}}{{end}}`
 )
 
 func cvePrinter(fieldMap map[string][]string) ([]string, error) {
@@ -51,6 +57,32 @@ func cvePrinter(fieldMap map[string][]string) ([]string, error) {
 	r.FixedBy = maybeGetSingleValueFromFieldMap(search.FixedBy.String(), fieldMap)
 	r.Component, r.ComponentVersion = getComponentAndVersion(fieldMap)
 	return executeTemplate(cveTemplate, r)
+}
+
+func nvdcvePrinter(fieldMap map[string][]string) ([]string, error) {
+
+	type cveResultFields struct {
+		ContainerName    string
+		ImageName        string
+		CVE              string
+		NVDCVSS          string
+		Severity         string
+		FixedBy          string
+		Component        string
+		ComponentVersion string
+	}
+	r := cveResultFields{}
+
+	var err error
+	if r.CVE, err = getSingleValueFromFieldMap(search.CVE.String(), fieldMap); err != nil {
+		return nil, err
+	}
+	r.ContainerName = maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
+	r.NVDCVSS = maybeGetSingleValueFromFieldMap(search.NVDCVSS.String(), fieldMap)
+	r.Severity = strings.Title(strings.TrimSuffix(strings.ToLower(maybeGetSingleValueFromFieldMap(search.Severity.String(), fieldMap)), "_vulnerability_severity"))
+	r.FixedBy = maybeGetSingleValueFromFieldMap(search.FixedBy.String(), fieldMap)
+	r.Component, r.ComponentVersion = getComponentAndVersion(fieldMap)
+	return executeTemplate(nvdcveTemplate, r)
 }
 
 const (
