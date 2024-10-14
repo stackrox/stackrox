@@ -128,6 +128,7 @@ func (m *managerImpl) Stop() {
 	concurrency.WithLock(&m.watchingScansLock, func() {
 		for _, scanWatcher := range m.watchingScans {
 			scanWatcher.Stop()
+			<-scanWatcher.Finished().Done()
 		}
 	})
 	m.stopper.Client().Stop()
@@ -192,22 +193,26 @@ func (m *managerImpl) HandleScan(ctx context.Context, scan *storage.ComplianceOp
 	}
 	id, err := watcher.GetWatcherIDFromScan(scan, nil)
 	if err != nil {
-		if err == watcher.ComplianceOperatorScanMissingLastStartedFiledError {
+		if err == watcher.ErrComplianceOperatorScanMissingLastStartedFiled {
 			log.Debugf("The scan is missing the LastStartedField: %v", err)
 			return nil
 		}
 		return err
 	}
+	err = m.getWatcher(ctx, id).PushScan(scan)
+	return err
+}
+
+func (m *managerImpl) getWatcher(ctx context.Context, id string) watcher.ScanWatcher {
+	var scanWatcher watcher.ScanWatcher
 	concurrency.WithLock(&m.watchingScansLock, func() {
-		var scanWatcher watcher.ScanWatcher
 		var found bool
 		if scanWatcher, found = m.watchingScans[id]; !found {
 			scanWatcher = watcher.NewScanWatcher(ctx, id, m.readyQueue)
 			m.watchingScans[id] = scanWatcher
 		}
-		err = scanWatcher.PushScan(scan)
 	})
-	return err
+	return scanWatcher
 }
 
 // HandleResult starts a new ScanWatcher if needed and pushes the checkResult to it
@@ -217,25 +222,17 @@ func (m *managerImpl) HandleResult(ctx context.Context, result *storage.Complian
 	}
 	id, err := watcher.GetWatcherIDFromCheckResult(ctx, result, m.scanDataStore)
 	if err != nil {
-		if err == watcher.ComplianceOperatorReceivedOldCheckResultError {
+		if err == watcher.ErrComplianceOperatorReceivedOldCheckResult {
 			log.Debugf("The CheckResult is older than the current scan in the store")
 			return nil
 		}
-		if err == watcher.ComplianceOperatorScanMissingLastStartedFiledError {
+		if err == watcher.ErrComplianceOperatorScanMissingLastStartedFiled {
 			log.Debugf("The scan is missing the LastStartedField: %v", err)
 			return nil
 		}
 		return err
 	}
-	concurrency.WithLock(&m.watchingScansLock, func() {
-		var scanWatcher watcher.ScanWatcher
-		var found bool
-		if scanWatcher, found = m.watchingScans[id]; !found {
-			scanWatcher = watcher.NewScanWatcher(ctx, id, m.readyQueue)
-			m.watchingScans[id] = scanWatcher
-		}
-		err = scanWatcher.PushCheckResult(result)
-	})
+	err = m.getWatcher(ctx, id).PushCheckResult(result)
 	return err
 }
 

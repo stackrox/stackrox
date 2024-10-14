@@ -123,7 +123,7 @@ func TestScanWatcher(t *testing.T) {
 						break
 					}
 				}
-				assert.Equal(t, true, found)
+				assert.Truef(t, found, "Expected to find %s", checkID)
 			}
 		})
 	}
@@ -132,8 +132,8 @@ func TestScanWatcher(t *testing.T) {
 func TestScanWatcherCancel(t *testing.T) {
 	watcherID := "id"
 	ctx, cancel := context.WithCancel(context.Background())
-	resultQueue := queue.NewQueue[*ScanWatcherResults]()
-	scanWatcher := NewScanWatcher(ctx, watcherID, resultQueue)
+	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
+	scanWatcher := NewScanWatcher(ctx, watcherID, readyTestQueue)
 	handleScan("id-1")(t, scanWatcher)
 	handleResult("id-1")(t, scanWatcher)
 	cancel()
@@ -142,13 +142,13 @@ func TestScanWatcherCancel(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 		t.Error("timeout waiting for the watcher to stop")
 	}
-	assert.Equal(t, 0, resultQueue.Len())
+	assert.Equal(t, 0, readyTestQueue.Len())
 }
 
 func TestScanWatcherStop(t *testing.T) {
 	watcherID := "id"
-	resultQueue := queue.NewQueue[*ScanWatcherResults]()
-	scanWatcher := NewScanWatcher(context.Background(), watcherID, resultQueue)
+	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
+	scanWatcher := NewScanWatcher(context.Background(), watcherID, readyTestQueue)
 	handleScan("id-1")(t, scanWatcher)
 	handleResult("id-1")(t, scanWatcher)
 	scanWatcher.Stop()
@@ -157,11 +157,11 @@ func TestScanWatcherStop(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 		t.Error("timeout waiting for the watcher to stop")
 	}
-	assert.Equal(t, 0, resultQueue.Len())
+	assert.Equal(t, 0, readyTestQueue.Len())
 }
 
 func TestScanWatcherTimeout(t *testing.T) {
-	resultQueue := queue.NewQueue[*ScanWatcherResults]()
+	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
 	ctx, cancel := context.WithCancel(context.Background())
 	finishedSignal := concurrency.NewSignal()
 	scanWatcher := &scanWatcherImpl{
@@ -170,11 +170,12 @@ func TestScanWatcherTimeout(t *testing.T) {
 		scanC:      make(chan *storage.ComplianceOperatorScanV2),
 		resultC:    make(chan *storage.ComplianceOperatorCheckResultV2),
 		stopped:    &finishedSignal,
-		readyQueue: resultQueue,
+		readyQueue: readyTestQueue,
 		scanResults: &ScanWatcherResults{
 			WatcherID:    "id",
 			CheckResults: set.NewStringSet(),
 		},
+		timeout: time.NewTimer(defaultTimeout),
 	}
 	timeoutC := make(chan time.Time)
 	go scanWatcher.run(timeoutC)
@@ -188,14 +189,16 @@ func TestScanWatcherTimeout(t *testing.T) {
 		t.Error("timeout waiting for the watcher to stop")
 	}
 	// We should have a result in the queue with an error
-	require.Equal(t, 1, resultQueue.Len())
-	result := resultQueue.Pull()
+	require.Equal(t, 1, readyTestQueue.Len())
+	result := readyTestQueue.Pull()
 	assert.Error(t, result.Error)
 }
 
 func TestGetIDFromScan(t *testing.T) {
+	_, err := GetWatcherIDFromScan(nil, nil)
+	assert.Error(t, err)
 	scan := &storage.ComplianceOperatorScanV2{}
-	_, err := GetWatcherIDFromScan(scan, nil)
+	_, err = GetWatcherIDFromScan(scan, nil)
 	assert.Error(t, err)
 	scan.ClusterId = "cluster-1"
 	_, err = GetWatcherIDFromScan(scan, nil)
@@ -220,13 +223,16 @@ func TestGetIDFromResult(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ds := mocks.NewMockDataStore(ctrl)
 
+	_, err := GetWatcherIDFromCheckResult(testDBAccess, nil, ds)
+	assert.Error(t, err)
+
 	// Error querying the Scan DataStore
 	ds.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
 			return nil, errors.New("db error")
 		})
 	result := &storage.ComplianceOperatorCheckResultV2{}
-	_, err := GetWatcherIDFromCheckResult(testDBAccess, result, ds)
+	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.Error(t, err)
 
 	// No Scan retrieved

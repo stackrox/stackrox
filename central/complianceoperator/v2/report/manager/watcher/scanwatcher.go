@@ -19,14 +19,14 @@ import (
 )
 
 var (
-	log                                                = logging.LoggerForModule()
-	ScanTimeoutError                                   = errors.New("scan watcher timed out")
-	ComplianceOperatorNotInstalledError                = errors.New("compliance operator is not installed")
-	ComplianceOperatorVersionError                     = errors.New("compliance operator version")
-	ComplianceOperatorIntegrationDataStoreError        = errors.New("unable to retrieve compliance operator integration")
-	ComplianceOperatorIntegrationZeroIntegrationsError = errors.New("no compliance operator integrations retrieved")
-	ComplianceOperatorScanMissingLastStartedFiledError = errors.New("scan is missing the LastStartedTime field")
-	ComplianceOperatorReceivedOldCheckResultError      = errors.New("the check result is older than the current scan")
+	log                                              = logging.LoggerForModule()
+	ErrScanTimeout                                   = errors.New("scan watcher timed out")
+	ErrComplianceOperatorNotInstalled                = errors.New("compliance operator is not installed")
+	ErrComplianceOperatorVersion                     = errors.New("compliance operator version")
+	ErrComplianceOperatorIntegrationDataStore        = errors.New("unable to retrieve compliance operator integration")
+	ErrComplianceOperatorIntegrationZeroIntegrations = errors.New("no compliance operator integrations retrieved")
+	ErrComplianceOperatorScanMissingLastStartedFiled = errors.New("scan is missing the LastStartedTime field")
+	ErrComplianceOperatorReceivedOldCheckResult      = errors.New("the check result is older than the current scan")
 )
 
 const (
@@ -58,35 +58,38 @@ type ScanWatcherResults struct {
 func IsComplianceOperatorHealthy(ctx context.Context, clusterID string, complianceIntegrationDataStore complianceIntegrationDS.DataStore) error {
 	coStatus, err := complianceIntegrationDataStore.GetComplianceIntegrationByCluster(ctx, clusterID)
 	if err != nil {
-		return errors.Wrap(err, ComplianceOperatorIntegrationDataStoreError.Error())
+		return errors.Wrap(err, ErrComplianceOperatorIntegrationDataStore.Error())
 	}
 	if len(coStatus) == 0 {
 		log.Errorf("No compliance integrations retrieved from cluster %s", clusterID)
-		return ComplianceOperatorIntegrationZeroIntegrationsError
+		return ErrComplianceOperatorIntegrationZeroIntegrations
 	}
 	if !coStatus[0].GetOperatorInstalled() {
-		return ComplianceOperatorNotInstalledError
+		return ErrComplianceOperatorNotInstalled
 	}
 	if semver.Compare(coStatus[0].GetVersion(), minimumComplianceOperatorVersion) < 0 {
-		return ComplianceOperatorVersionError
+		return ErrComplianceOperatorVersion
 	}
 	return nil
 }
 
 // GetWatcherIDFromScan given a Scan, returns a unique ID for the watcher
 func GetWatcherIDFromScan(scan *storage.ComplianceOperatorScanV2, overrideTimestamp *protocompat.Timestamp) (string, error) {
+	if scan == nil {
+		return "", errors.New("nil scan")
+	}
 	clusterID := scan.GetClusterId()
 	if clusterID == "" {
-		return "", errors.New("Missing cluster ID")
+		return "", errors.New("missing cluster ID")
 	}
 	scanID := scan.GetId()
 	if scanID == "" {
-		return "", errors.New("Missing scan ID")
+		return "", errors.New("missing scan ID")
 	}
 	startTime := scan.GetLastStartedTime()
 	if startTime == nil {
 		// This could happen if the scan is freshly created
-		return "", ComplianceOperatorScanMissingLastStartedFiledError
+		return "", ErrComplianceOperatorScanMissingLastStartedFiled
 	}
 	if overrideTimestamp != nil {
 		startTime = overrideTimestamp
@@ -96,17 +99,20 @@ func GetWatcherIDFromScan(scan *storage.ComplianceOperatorScanV2, overrideTimest
 
 // GetWatcherIDFromCheckResult given a CheckResult, returns a unique ID for the watcher
 func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2, scanDataStore scanDS.DataStore) (string, error) {
+	if result == nil {
+		return "", errors.New("nil check result")
+	}
 	scanRefQuery := search.NewQueryBuilder().AddExactMatches(
 		search.ComplianceOperatorScanRef,
 		result.GetScanRefId(),
 	).ProtoQuery()
 	scans, err := scanDataStore.SearchScans(ctx, scanRefQuery)
 	if err != nil {
-		return "", errors.Errorf("Unable to retrieve scan : %v", err)
+		return "", errors.Wrap(err, "unable to retrieve scan")
 	}
 	// We should always receive one scan here since ComplianceOperatorScanRef should be unique
 	if len(scans) != 1 {
-		return "", errors.Errorf("Scan not found for result %s", result.GetCheckName())
+		return "", errors.Errorf("scan not found for result %s", result.GetCheckName())
 	}
 	var startTime string
 	var ok bool
@@ -119,7 +125,7 @@ func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.Compliance
 	}
 	timestampCmpResult := protocompat.CompareTimestamps(timestamp, scans[0].GetLastStartedTime())
 	if timestampCmpResult < 0 {
-		return "", ComplianceOperatorReceivedOldCheckResultError
+		return "", ErrComplianceOperatorReceivedOldCheckResult
 	}
 	if timestampCmpResult > 0 {
 		// In this case the timestamp from the check is newer which means the scans has not yet arrived
@@ -137,6 +143,7 @@ type readyQueue[T comparable] interface {
 type scanWatcherImpl struct {
 	ctx     context.Context
 	cancel  func()
+	timeout *time.Timer
 	scanC   chan *storage.ComplianceOperatorScanV2
 	resultC chan *storage.ComplianceOperatorCheckResultV2
 	stopped *concurrency.Signal
@@ -162,9 +169,9 @@ func NewScanWatcher(ctx context.Context, watcherID string, queue readyQueue[*Sca
 			WatcherID:    watcherID,
 			CheckResults: set.NewStringSet(),
 		},
+		timeout: time.NewTimer(defaultTimeout),
 	}
-	timeout := time.NewTimer(defaultTimeout)
-	go ret.run(timeout.C)
+	go ret.run(ret.timeout.C)
 	return ret
 }
 
@@ -172,7 +179,7 @@ func NewScanWatcher(ctx context.Context, watcherID string, queue readyQueue[*Sca
 func (s *scanWatcherImpl) PushScan(scan *storage.ComplianceOperatorScanV2) error {
 	select {
 	case <-s.ctx.Done():
-		return errors.New("The watcher is stopped")
+		return errors.New("the watcher is stopped")
 	case s.scanC <- scan:
 		return nil
 	}
@@ -182,7 +189,7 @@ func (s *scanWatcherImpl) PushScan(scan *storage.ComplianceOperatorScanV2) error
 func (s *scanWatcherImpl) PushCheckResult(result *storage.ComplianceOperatorCheckResultV2) error {
 	select {
 	case <-s.ctx.Done():
-		return errors.New("The watcher is stopped")
+		return errors.New("the watcher is stopped")
 	case s.resultC <- result:
 		return nil
 	}
@@ -200,6 +207,7 @@ func (s *scanWatcherImpl) Stop() {
 
 func (s *scanWatcherImpl) run(timerC <-chan time.Time) {
 	defer func() {
+		s.timeout.Stop()
 		s.stopped.Signal()
 		<-s.stopped.Done()
 	}()
@@ -210,7 +218,7 @@ func (s *scanWatcherImpl) run(timerC <-chan time.Time) {
 			return
 		case <-timerC:
 			log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())
-			s.scanResults.Error = ScanTimeoutError
+			s.scanResults.Error = ErrScanTimeout
 			s.readyQueue.Push(s.scanResults)
 			return
 		case scan := <-s.scanC:
@@ -234,7 +242,7 @@ func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) err
 		var numChecks int
 		var err error
 		if numChecks, err = strconv.Atoi(checkCountAnnotation); err != nil {
-			return err
+			return errors.Wrap(err, "unable to convert the check count annotation to int")
 		}
 		s.totalChecks = numChecks
 	}

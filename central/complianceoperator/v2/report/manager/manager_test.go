@@ -95,16 +95,16 @@ func (m *ManagerTestSuite) TestHandleResult() {
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	timeNow := time.Now()
-	passTime := timeNow.Add(-10 * time.Second)
+	pastTime := timeNow.Add(-10 * time.Second)
 	futureTime := timeNow.Add(10 * time.Second)
 	timeNowProto, err := protocompat.ConvertTimeToTimestampOrError(timeNow)
 	require.NoError(m.T(), err)
 	nowRFCFormat := timeNow.Format(time.RFC3339Nano)
-	passRFCFormat := passTime.Format(time.RFC3339Nano)
+	pastRFCFormat := pastTime.Format(time.RFC3339Nano)
 	futureRFCFormat := futureTime.Format(time.RFC3339Nano)
 	result := &storage.ComplianceOperatorCheckResultV2{
 		Annotations: map[string]string{
-			"compliance.openshift.io/last-scanned-timestamp": passRFCFormat,
+			"compliance.openshift.io/last-scanned-timestamp": pastRFCFormat,
 		},
 	}
 	scan := &storage.ComplianceOperatorScanV2{
