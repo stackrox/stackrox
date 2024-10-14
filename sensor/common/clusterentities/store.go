@@ -3,13 +3,17 @@ package clusterentities
 import (
 	"time"
 
-	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
