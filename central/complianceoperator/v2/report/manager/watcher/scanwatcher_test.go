@@ -195,25 +195,31 @@ func TestScanWatcherTimeout(t *testing.T) {
 
 func TestGetIDFromScan(t *testing.T) {
 	scan := &storage.ComplianceOperatorScanV2{}
-	_, err := GetWatcherIDFromScan(scan)
+	_, err := GetWatcherIDFromScan(scan, nil)
 	assert.Error(t, err)
 	scan.ClusterId = "cluster-1"
-	_, err = GetWatcherIDFromScan(scan)
+	_, err = GetWatcherIDFromScan(scan, nil)
 	assert.Error(t, err)
 	scan.Id = "scan-1"
-	id, err := GetWatcherIDFromScan(scan)
-	assert.NoError(t, err)
-	assert.Equal(t, "", id)
-	scan.LastStartedTime = protocompat.TimestampNow()
-	id, err = GetWatcherIDFromScan(scan)
+	id, err := GetWatcherIDFromScan(scan, nil)
+	assert.Error(t, err)
+	assert.Equal(t, ErrComplianceOperatorScanMissingLastStartedFiled, err)
+	timeNow := protocompat.TimestampNow()
+	scan.LastStartedTime = timeNow
+	id, err = GetWatcherIDFromScan(scan, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("%s:%s:%s", scan.ClusterId, scan.Id, scan.LastStartedTime), id)
+	timeNow = protocompat.TimestampNow()
+	id, err = GetWatcherIDFromScan(scan, timeNow)
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("%s:%s:%s", scan.ClusterId, scan.Id, timeNow), id)
 }
 
 func TestGetIDFromResult(t *testing.T) {
 	timeNow := protocompat.TimestampNow()
 	ctrl := gomock.NewController(t)
 	ds := mocks.NewMockDataStore(ctrl)
+
 	// Error querying the Scan DataStore
 	ds.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
@@ -222,6 +228,7 @@ func TestGetIDFromResult(t *testing.T) {
 	result := &storage.ComplianceOperatorCheckResultV2{}
 	_, err := GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.Error(t, err)
+
 	// No Scan retrieved
 	ds.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
@@ -229,8 +236,9 @@ func TestGetIDFromResult(t *testing.T) {
 		})
 	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.Error(t, err)
+
 	// Scan retrieved successfully
-	ds.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(4).
+	ds.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(5).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
 			return []*storage.ComplianceOperatorScanV2{
 				{
@@ -243,23 +251,38 @@ func TestGetIDFromResult(t *testing.T) {
 	// Empty annotation
 	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.Error(t, err)
+
 	// Invalid format in the annotation
 	result.Annotations = map[string]string{
 		lastScannedAnnotationKey: protocompat.TimestampNow().String(),
 	}
-	// The timestamp does not coincide with the Scan start time
 	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.Error(t, err)
+
+	// The timestamp is in the past
 	result.Annotations = map[string]string{
-		lastScannedAnnotationKey: protocompat.TimestampNow().AsTime().Format(time.RFC3339Nano),
+		lastScannedAnnotationKey: timeNow.AsTime().Add(-10 * time.Second).Format(time.RFC3339Nano),
 	}
-	// Successful execution
 	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.Error(t, err)
+	assert.Error(t, ErrComplianceOperatorReceivedOldCheckResult)
+
+	// The timestamp is in the future
+	futureTime := timeNow.AsTime().Add(10 * time.Second)
+	result.Annotations = map[string]string{
+		lastScannedAnnotationKey: futureTime.Format(time.RFC3339Nano),
+	}
+	futureTimeProto, err := protocompat.ConvertTimeToTimestampOrError(futureTime)
+	require.NoError(t, err)
+	id, err := GetWatcherIDFromCheckResult(testDBAccess, result, ds)
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("cluster-1:scan-1:%s", futureTimeProto.String()), id)
+
+	// The timestamp is the same
 	result.Annotations = map[string]string{
 		lastScannedAnnotationKey: timeNow.AsTime().Format(time.RFC3339Nano),
 	}
-	id, err := GetWatcherIDFromCheckResult(testDBAccess, result, ds)
+	id, err = GetWatcherIDFromCheckResult(testDBAccess, result, ds)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("cluster-1:scan-1:%s", timeNow.String()), id)
 }
@@ -272,14 +295,14 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 	// DataStore error
 	ds.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceIntegration, error) {
-			return []*storage.ComplianceIntegration{}, ComplianceOperatorIntegrationDataStoreError
+			return []*storage.ComplianceIntegration{}, ErrComplianceOperatorIntegrationDataStore
 		})
 	assert.Error(t, IsComplianceOperatorHealthy(testDBAccess, clusterID, ds))
 
 	// No integrations retrieved
 	ds.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceIntegration, error) {
-			return []*storage.ComplianceIntegration{}, ComplianceOperatorIntegrationZeroIntegrationsError
+			return []*storage.ComplianceIntegration{}, ErrComplianceOperatorIntegrationZeroIntegrations
 		})
 	assert.Error(t, IsComplianceOperatorHealthy(testDBAccess, clusterID, ds))
 
@@ -294,7 +317,7 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 		})
 	err := IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
 	assert.Error(t, err)
-	assert.Error(t, ComplianceOperatorNotInstalledError, err)
+	assert.Error(t, ErrComplianceOperatorNotInstalled, err)
 
 	// Minimum version error
 	ds.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).Times(1).
@@ -308,7 +331,7 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 		})
 	err = IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
 	assert.Error(t, err)
-	assert.Equal(t, ComplianceOperatorVersionError, err)
+	assert.Equal(t, ErrComplianceOperatorVersion, err)
 
 	// Compliance Operator is healthy
 	ds.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).Times(1).

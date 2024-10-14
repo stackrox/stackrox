@@ -32,8 +32,8 @@ type reportRequest struct {
 }
 
 type managerImpl struct {
-	datastore     scanConfigurationDS.DataStore
-	scanDataStore scanDS.DataStore
+	scanConfigDataStore scanConfigurationDS.DataStore
+	scanDataStore       scanDS.DataStore
 
 	runningReportConfigs map[string]*reportRequest
 	// channel for report job requests
@@ -59,7 +59,7 @@ type managerImpl struct {
 
 func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
 	return &managerImpl{
-		datastore:            scanConfigDS,
+		scanConfigDataStore:  scanConfigDS,
 		scanDataStore:        scanDataStore,
 		stopper:              concurrency.NewStopper(),
 		runningReportConfigs: make(map[string]*reportRequest, maxRequests),
@@ -190,12 +190,13 @@ func (m *managerImpl) HandleScan(ctx context.Context, scan *storage.ComplianceOp
 	if !features.ComplianceReporting.Enabled() {
 		return nil
 	}
-	id, err := watcher.GetWatcherIDFromScan(scan)
+	id, err := watcher.GetWatcherIDFromScan(scan, nil)
 	if err != nil {
+		if err == watcher.ComplianceOperatorScanMissingLastStartedFiledError {
+			log.Debugf("The scan is missing the LastStartedField: %v", err)
+			return nil
+		}
 		return err
-	}
-	if id == "" {
-		return nil
 	}
 	concurrency.WithLock(&m.watchingScansLock, func() {
 		var scanWatcher watcher.ScanWatcher
@@ -216,10 +217,15 @@ func (m *managerImpl) HandleResult(ctx context.Context, result *storage.Complian
 	}
 	id, err := watcher.GetWatcherIDFromCheckResult(ctx, result, m.scanDataStore)
 	if err != nil {
+		if err == watcher.ComplianceOperatorReceivedOldCheckResultError {
+			log.Debugf("The CheckResult is older than the current scan in the store")
+			return nil
+		}
+		if err == watcher.ComplianceOperatorScanMissingLastStartedFiledError {
+			log.Debugf("The scan is missing the LastStartedField: %v", err)
+			return nil
+		}
 		return err
-	}
-	if id == "" {
-		return nil
 	}
 	concurrency.WithLock(&m.watchingScansLock, func() {
 		var scanWatcher watcher.ScanWatcher

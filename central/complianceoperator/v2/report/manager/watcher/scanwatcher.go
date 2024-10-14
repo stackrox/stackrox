@@ -25,6 +25,8 @@ var (
 	ComplianceOperatorVersionError                     = errors.New("compliance operator version")
 	ComplianceOperatorIntegrationDataStoreError        = errors.New("unable to retrieve compliance operator integration")
 	ComplianceOperatorIntegrationZeroIntegrationsError = errors.New("no compliance operator integrations retrieved")
+	ComplianceOperatorScanMissingLastStartedFiledError = errors.New("scan is missing the LastStartedTime field")
+	ComplianceOperatorReceivedOldCheckResultError      = errors.New("the check result is older than the current scan")
 )
 
 const (
@@ -72,7 +74,7 @@ func IsComplianceOperatorHealthy(ctx context.Context, clusterID string, complian
 }
 
 // GetWatcherIDFromScan given a Scan, returns a unique ID for the watcher
-func GetWatcherIDFromScan(scan *storage.ComplianceOperatorScanV2) (string, error) {
+func GetWatcherIDFromScan(scan *storage.ComplianceOperatorScanV2, overrideTimestamp *protocompat.Timestamp) (string, error) {
 	clusterID := scan.GetClusterId()
 	if clusterID == "" {
 		return "", errors.New("Missing cluster ID")
@@ -84,8 +86,10 @@ func GetWatcherIDFromScan(scan *storage.ComplianceOperatorScanV2) (string, error
 	startTime := scan.GetLastStartedTime()
 	if startTime == nil {
 		// This could happen if the scan is freshly created
-		log.Debug("Missing last stated time")
-		return "", nil
+		return "", ComplianceOperatorScanMissingLastStartedFiledError
+	}
+	if overrideTimestamp != nil {
+		startTime = overrideTimestamp
 	}
 	return fmt.Sprintf("%s:%s:%s", clusterID, scanID, startTime.String()), nil
 }
@@ -100,7 +104,8 @@ func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.Compliance
 	if err != nil {
 		return "", errors.Errorf("Unable to retrieve scan : %v", err)
 	}
-	if len(scans) == 0 {
+	// We should always receive one scan here since ComplianceOperatorScanRef should be unique
+	if len(scans) != 1 {
 		return "", errors.Errorf("Scan not found for result %s", result.GetCheckName())
 	}
 	var startTime string
@@ -112,10 +117,16 @@ func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.Compliance
 	if err != nil {
 		return "", errors.Errorf("Unable to parse time: %v", err)
 	}
-	if timestamp.String() != scans[0].GetLastStartedTime().String() {
-		return "", errors.New("The result and the scan do not have the same timestamp")
+	timestampCmpResult := protocompat.CompareTimestamps(timestamp, scans[0].GetLastStartedTime())
+	if timestampCmpResult < 0 {
+		return "", ComplianceOperatorReceivedOldCheckResultError
 	}
-	return GetWatcherIDFromScan(scans[0])
+	if timestampCmpResult > 0 {
+		// In this case the timestamp from the check is newer which means the scans has not yet arrived
+		// to sensor's pipeline. We need to create the watcher with the new timestamp
+		return GetWatcherIDFromScan(scans[0], timestamp)
+	}
+	return GetWatcherIDFromScan(scans[0], nil)
 }
 
 // readyQueue represents the expected queue interface to push the results
