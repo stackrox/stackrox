@@ -28,14 +28,13 @@ func (s *platformMatcherTestSuite) TestMatchAlert() {
 	s.Require().False(match)
 
 	// case: alert without embedded deployment
-	match, err = s.matcher.MatchAlert(&storage.Alert{EntityType: storage.Alert_DEPLOYMENT})
-	s.Require().Error(err)
+	match, err = s.matcher.MatchAlert(&storage.Alert{})
+	s.Require().NoError(err)
 	s.Require().False(match)
 
 	// case: Alert on a non deployment entity
 	alert := &storage.Alert{
-		EntityType: storage.Alert_RESOURCE,
-		Entity:     &storage.Alert_Resource_{Resource: &storage.Alert_Resource{Name: "dummy_secret"}},
+		Entity: &storage.Alert_Resource_{Resource: &storage.Alert_Resource{Name: "dummy_secret"}},
 	}
 	match, err = s.matcher.MatchAlert(alert)
 	s.Require().NoError(err)
@@ -43,7 +42,6 @@ func (s *platformMatcherTestSuite) TestMatchAlert() {
 
 	// case: Alert on a deployment not matching platform rules
 	alert = &storage.Alert{
-		EntityType: storage.Alert_DEPLOYMENT,
 		Entity: &storage.Alert_Deployment_{
 			Deployment: &storage.Alert_Deployment{
 				Name:        "dep1",
@@ -110,4 +108,3 @@ func (s *platformMatcherTestSuite) TestMatchDeployment() {
 	s.Require().NoError(err)
 	s.Require().True(match)
 }
-
