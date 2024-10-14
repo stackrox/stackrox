@@ -62,9 +62,9 @@ func (m *ManagerTestSuite) TestSubmitReportRequest() {
 		ScanConfigName: "test_scan_config",
 		Id:             "test_scan_config",
 	}
-	err := manager.SubmitReportRequest(m.ctx, reportRequest)
+	err := manager.SubmitReportRequest(m.ctx, reportRequest, storage.ComplianceOperatorReportStatus_EMAIL)
 	m.Require().NoError(err)
-	err = manager.SubmitReportRequest(m.ctx, reportRequest)
+	err = manager.SubmitReportRequest(m.ctx, reportRequest, storage.ComplianceOperatorReportStatus_EMAIL)
 	m.Require().Error(err)
 }
 
@@ -90,7 +90,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 			wg.Done()
 			return nil
 		})
-	err := manager.SubmitReportRequest(ctx, getTestScanConfig())
+	err := manager.SubmitReportRequest(ctx, getTestScanConfig(), storage.ComplianceOperatorReportStatus_EMAIL)
 	m.Require().NoError(err)
 	handleWaitGroup(m.T(), wg, 10*time.Millisecond, "report generation")
 
@@ -102,7 +102,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 			wg.Done()
 			return errors.New("some error")
 		})
-	err = manager.SubmitReportRequest(ctx, getTestScanConfig())
+	err = manager.SubmitReportRequest(ctx, getTestScanConfig(), storage.ComplianceOperatorReportStatus_EMAIL)
 	m.Require().NoError(err)
 	handleWaitGroup(m.T(), wg, 10*time.Millisecond, "storage error")
 
@@ -128,7 +128,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 			return len(managerImp.watchingScanConfigs) > 0
 		})
 	}, 100*time.Millisecond, 10*time.Millisecond)
-	err = manager.SubmitReportRequest(ctx, getTestScanConfig())
+	err = manager.SubmitReportRequest(ctx, getTestScanConfig(), storage.ComplianceOperatorReportStatus_EMAIL)
 	m.Require().NoError(err)
 
 	time.Sleep(100 * time.Millisecond)

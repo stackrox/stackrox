@@ -93,15 +93,15 @@ func (mr *MockManagerMockRecorder) Stop() *gomock.Call {
 }
 
 // SubmitReportRequest mocks base method.
-func (m *MockManager) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
+func (m *MockManager) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, notificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitReportRequest", ctx, scanConfig)
+	ret := m.ctrl.Call(m, "SubmitReportRequest", ctx, scanConfig, notificationMethod)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SubmitReportRequest indicates an expected call of SubmitReportRequest.
-func (mr *MockManagerMockRecorder) SubmitReportRequest(ctx, scanConfig any) *gomock.Call {
+func (mr *MockManagerMockRecorder) SubmitReportRequest(ctx, scanConfig, notificationMethod any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitReportRequest", reflect.TypeOf((*MockManager)(nil).SubmitReportRequest), ctx, scanConfig)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitReportRequest", reflect.TypeOf((*MockManager)(nil).SubmitReportRequest), ctx, scanConfig, notificationMethod)
 }
