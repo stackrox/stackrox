@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	blobDSMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	benchmarkMocks "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
@@ -16,6 +17,7 @@ import (
 	scanSettingBindingMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
 	suiteMocks "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore/mocks"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore/mocks"
+	"github.com/stackrox/rox/central/reports/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	v2 "github.com/stackrox/rox/generated/api/v2"
@@ -98,6 +100,7 @@ type ComplianceScanConfigServiceTestSuite struct {
 	clusterDatastore            *clusterDatastoreMocks.MockDataStore
 	benchmarkDS                 *benchmarkMocks.MockDataStore
 	snapshotDS                  *snapshotMocks.MockDataStore
+	blobDS                      *blobDSMocks.MockDatastore
 	service                     Service
 }
 
@@ -122,7 +125,8 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.clusterDatastore = clusterDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.benchmarkDS = benchmarkMocks.NewMockDataStore(s.mockCtrl)
 	s.snapshotDS = snapshotMocks.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.notifierDS, s.profileDS, s.benchmarkDS, s.clusterDatastore, s.snapshotDS)
+	s.blobDS = blobDSMocks.NewMockDatastore(s.mockCtrl)
+	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.notifierDS, s.profileDS, s.benchmarkDS, s.clusterDatastore, s.snapshotDS, s.blobDS)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
@@ -249,7 +253,13 @@ func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfigura
 
 	// Test Case 1: Successful Deletion
 	validID := "validScanConfigID"
+	snapshotID := "snapshot-1"
+	snapshots := []*storage.ComplianceOperatorReportSnapshotV2{
+		getSnapshot(snapshotID, storageRequester),
+	}
 	s.manager.EXPECT().DeleteScan(gomock.Any(), validID).Return(nil).Times(1)
+	s.snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).Return(snapshots, nil)
+	s.blobDS.EXPECT().Delete(gomock.Any(), common.GetComplianceReportBlobPath(validID, snapshotID)).Times(1).Return(nil)
 
 	_, err := s.service.DeleteComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: validID})
 	s.Require().NoError(err)
@@ -262,6 +272,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfigura
 	// Test Case 3: Deletion Fails in Manager
 	failingID := "failingScanConfigID"
 	s.manager.EXPECT().DeleteScan(gomock.Any(), failingID).Return(errors.New("manager error")).Times(1)
+	s.snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).Return(nil, nil)
 
 	_, err = s.service.DeleteComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: failingID})
 	s.Require().Error(err)
@@ -654,9 +665,22 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
 		ScanConfigName: "scan-config-1",
 	}
 	s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, validScanConfigID).Return(validScanConfig, true, nil)
-	s.reportManager.EXPECT().SubmitReportRequest(allAccessContext, validScanConfig).Return(nil)
+	s.reportManager.EXPECT().SubmitReportRequest(allAccessContext, validScanConfig, storage.ComplianceOperatorReportStatus_EMAIL).Return(nil)
 
-	resp, err := s.service.RunReport(allAccessContext, &v2.ComplianceRunReportRequest{ScanConfigId: validScanConfigID})
+	resp, err := s.service.RunReport(allAccessContext, &v2.ComplianceRunReportRequest{
+		ScanConfigId:             validScanConfigID,
+		ReportNotificationMethod: v2.NotificationMethod_EMAIL,
+	})
+	s.Require().NoError(err)
+	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.RunState, "Failed to submit report")
+
+	s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, validScanConfigID).Return(validScanConfig, true, nil)
+	s.reportManager.EXPECT().SubmitReportRequest(allAccessContext, validScanConfig, storage.ComplianceOperatorReportStatus_DOWNLOAD).Return(nil)
+
+	resp, err = s.service.RunReport(allAccessContext, &v2.ComplianceRunReportRequest{
+		ScanConfigId:             validScanConfigID,
+		ReportNotificationMethod: v2.NotificationMethod_DOWNLOAD,
+	})
 	s.Require().NoError(err)
 	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.RunState, "Failed to submit report")
 }

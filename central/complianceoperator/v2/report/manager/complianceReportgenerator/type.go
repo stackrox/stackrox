@@ -7,11 +7,12 @@ import (
 )
 
 type ComplianceReportRequest struct {
-	ScanConfigID   string
-	Notifiers      []*storage.NotifierConfiguration
-	ClusterIDs     []string
-	Profiles       []string
-	ScanConfigName string
-	Ctx            context.Context
-	SnapshotID     string
+	ScanConfigID       string
+	Notifiers          []*storage.NotifierConfiguration
+	ClusterIDs         []string
+	Profiles           []string
+	ScanConfigName     string
+	Ctx                context.Context
+	SnapshotID         string
+	NotificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
 }

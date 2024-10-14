@@ -1,6 +1,7 @@
 package complianceReportgenerator
 
 import (
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
@@ -24,5 +25,5 @@ func Singleton() ComplianceReportGenerator {
 }
 
 func initialize() {
-	instance = New(checkResults.Singleton(), notifierProcessor.Singleton(), profileDS.Singleton(), remediationDS.Singleton(), scanDS.Singleton(), benchmarksDS.Singleton(), complianceRuleDS.Singleton(), snapshotDS.Singleton())
+	instance = New(checkResults.Singleton(), notifierProcessor.Singleton(), profileDS.Singleton(), remediationDS.Singleton(), scanDS.Singleton(), benchmarksDS.Singleton(), complianceRuleDS.Singleton(), snapshotDS.Singleton(), blobDS.Singleton())
 }
