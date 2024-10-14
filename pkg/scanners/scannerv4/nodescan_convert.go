@@ -7,9 +7,8 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/clair"
-	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -38,8 +37,8 @@ func toOperatingSystem(ref string) string {
 }
 
 func toStorageComponents(r *v4.VulnerabilityReport) []*storage.EmbeddedNodeScanComponent {
-	result := make([]*storage.EmbeddedNodeScanComponent, 0)
 	packages := r.GetContents().GetPackages()
+	result := make([]*storage.EmbeddedNodeScanComponent, 0, len(packages))
 
 	for _, pkg := range packages {
 		vulns := getPackageVulns(pkg.GetId(), r)
@@ -70,31 +69,19 @@ func convertVulnerability(v *v4.VulnerabilityReport_Vulnerability) *storage.Embe
 	converted := &storage.EmbeddedVulnerability{
 		Cve:               v.GetName(),
 		Summary:           v.GetDescription(),
-		SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: v.GetFixedInVersion()},
 		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-		Severity:          clair.SeverityToStorageSeverity(v.GetSeverity()),
+		Severity:          normalizedSeverity(v.GetNormalizedSeverity()),
+		Link:              link(v.GetLink()),
+		PublishedOn:       v.GetIssued(),
 	}
 
-	for _, c := range v.GetCvssMetrics() {
-		if c.GetV3() == nil || c.GetV3().GetVector() == "" {
-			log.Debugf("Skipping metrics as v3 information is unavailable/incomplete")
-			continue
-		}
-
-		// As EmbeddedVulnerability can only track one URL, we'll pick and keep the first one encountered
-		if c.GetUrl() != "" && converted.GetLink() == "" {
-			converted.Link = c.GetUrl()
-		}
-
-		if cvssV3, err := cvssv3.ParseCVSSV3(c.GetV3().GetVector()); err == nil {
-			cvssV3.Score = c.GetV3().GetBaseScore()
-
-			converted.CvssV3 = cvssV3
-			converted.Cvss = cvssV3.GetScore()
-			converted.ScoreVersion = storage.EmbeddedVulnerability_V3
-			converted.CvssV3.Severity = cvssv3.Severity(converted.GetCvss())
-		} else {
-			log.Errorf("converting v4.VulnerabilityReport CVSSv3: %v", err)
+	if err := setScoresAndScoreVersion(converted, v.GetCvss()); err != nil {
+		utils.Should(err)
+	}
+	maybeOverwriteSeverity(converted)
+	if v.GetFixedInVersion() != "" {
+		converted.SetFixedBy = &storage.EmbeddedVulnerability_FixedBy{
+			FixedBy: v.GetFixedInVersion(),
 		}
 	}
 

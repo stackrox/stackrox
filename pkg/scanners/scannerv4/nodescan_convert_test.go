@@ -24,10 +24,22 @@ func (s *indexReportConvertSuite) TestToNodeInventory() {
 		Version: "8.7p1-38.el9",
 		Vulns: []*storage.EmbeddedVulnerability{{
 			Cve:               "RHSA-2024:4616",
+			Cvss:              7.5,
 			Summary:           "Sample Description",
+			Link:              "https://localhost/7401229",
+			ScoreVersion:      1,
 			SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9"},
 			VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 			Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+			CvssV3: &storage.CVSSV3{
+				Vector:              "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+				ExploitabilityScore: 3.9,
+				ImpactScore:         3.6,
+				AttackVector:        2,
+				Availability:        2,
+				Score:               7.5,
+				Severity:            storage.CVSSV3_HIGH,
+			},
 		}},
 	}
 
@@ -63,10 +75,21 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 	in := createOutOfBoundsReport()
 	expectedCVE := &storage.EmbeddedVulnerability{
 		Cve:               "RHSA-2024:4616",
+		Cvss:              7.5,
 		Summary:           "Sample Description",
+		ScoreVersion:      1,
 		SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9"},
 		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 		Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+		CvssV3: &storage.CVSSV3{
+			Vector:              "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+			ExploitabilityScore: 3.9,
+			ImpactScore:         3.6,
+			AttackVector:        2,
+			Availability:        2,
+			Score:               7.5,
+			Severity:            4,
+		},
 	}
 
 	actual := toStorageComponents(in)
@@ -74,7 +97,8 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 	s.Len(actual, 2)
 	for _, c := range actual {
 		// Ensure that each of the components track the expected CVE
-		protoassert.SliceContains(s.T(), c.GetVulns(), expectedCVE)
+		// protoassert.SliceContains(s.T(), c.GetVulns(), expectedCVE)
+		protoassert.Equal(s.T(), expectedCVE, c.GetVulns()[0])
 	}
 }
 
@@ -111,64 +135,6 @@ func (s *indexReportConvertSuite) TestConvertNodeNotes() {
 	for i, note := range actual {
 		s.Equal(note, expected[i])
 	}
-}
-
-func (s *indexReportConvertSuite) TestConvertVulnerability() {
-	v := &v4.VulnerabilityReport_Vulnerability{
-		Name:           "TestCVE",
-		Description:    "Test Description",
-		Link:           "https://some.localhost",
-		Severity:       "Low",
-		FixedInVersion: "2.4.54-r3",
-		CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
-			{
-				Url: "https://dontpickme.localhost",
-			},
-			{
-				V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-					BaseScore: 1,
-				},
-				Url: "https://dontpickme.either.localhost",
-			},
-			{
-				V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-					BaseScore: 7,
-					Vector:    "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
-				},
-				Url: "https://url1.localhost",
-			},
-			{
-				V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-					BaseScore: 5,
-					Vector:    "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
-				},
-				Url: "https://url2.localhost",
-			},
-		},
-	}
-	expected := &storage.EmbeddedVulnerability{
-		Cve:               "TestCVE",
-		Summary:           "Test Description",
-		SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "2.4.54-r3"},
-		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
-		Severity:          storage.VulnerabilitySeverity_LOW_VULNERABILITY_SEVERITY,
-		Link:              "https://url1.localhost",
-		Cvss:              5,
-		ScoreVersion:      1,
-		CvssV3: &storage.CVSSV3{
-			Vector:             "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:L/A:H",
-			Confidentiality:    storage.CVSSV3_IMPACT_NONE,
-			Integrity:          storage.CVSSV3_IMPACT_LOW,
-			Availability:       storage.CVSSV3_IMPACT_HIGH,
-			PrivilegesRequired: storage.CVSSV3_PRIVILEGE_LOW,
-			Severity:           storage.CVSSV3_MEDIUM,
-			Score:              5,
-		},
-	}
-
-	actual := convertVulnerability(v)
-
-	protoassert.Equal(s.T(), expected, actual)
 }
 
 func (s *indexReportConvertSuite) TestToOperatingSystem() {
@@ -237,11 +203,13 @@ func createVulnerabilityReport() *v4.VulnerabilityReport {
 				Severity:           "Moderate",
 				NormalizedSeverity: 2,
 				FixedInVersion:     "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9",
+				Link:               "https://localhost/7401229",
 				Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
 						BaseScore: 7.5,
 						Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
 					},
+					Url: "https://localhost/7401229",
 				},
 			},
 		},
