@@ -27,6 +27,12 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+var policyGVR = schema.GroupVersionResource{
+	Group:    "config.stackrox.io",
+	Version:  "v1alpha1",
+	Resource: "securitypolicies",
+}
+
 func TestPolicyAsCode(t *testing.T) {
 	suite.Run(t, new(PolicyAsCodeSuite))
 }
@@ -51,20 +57,12 @@ func (pc *PolicyAsCodeSuite) SetupSuite() {
 	pc.centralClient = v1.NewPolicyServiceClient(conn)
 
 	dynamicClient := dynamic.NewForConfigOrDie(getConfig(pc.T()))
-	pc.k8sClient = dynamicClient.Resource(schema.GroupVersionResource{
-		Group:    "config.stackrox.io",
-		Version:  "v1alpha1",
-		Resource: "securitypolicies",
-	}).Namespace("stackrox")
+	pc.k8sClient = dynamicClient.Resource(policyGVR).Namespace("stackrox")
 
 	pc.informerfactory = dynamicinformer.NewFilteredDynamicSharedInformerFactory(dynamicClient, time.Hour, "stackrox", func(opts *metav1.ListOptions) {
 		opts.LabelSelector = "test=policy-as-code"
 	})
-	pc.informer = pc.informerfactory.ForResource(schema.GroupVersionResource{
-		Group:    "config.stackrox.io",
-		Version:  "v1alpha1",
-		Resource: "securitypolicies",
-	})
+	pc.informer = pc.informerfactory.ForResource(policyGVR)
 
 	pc.stopCh = make(chan struct{})
 	pc.informerfactory.Start(pc.stopCh)
@@ -83,7 +81,6 @@ func (pc *PolicyAsCodeSuite) TestPolicyAsCode() {
 }
 
 func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
-	// TODO: Add spaces to name to validate name conversions to k8s standards
 	policyName := "This is a test policy"
 	log.Infof("Adding policy with name \"%s\"", policyName)
 	policy, err := pc.centralClient.PostPolicy(pc.ctx, &v1.PostPolicyRequest{
