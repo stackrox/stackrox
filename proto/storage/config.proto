@@ -79,9 +79,14 @@ message PrivateConfig {
   AdministrationEventsConfig administration_events_config = 8;
 }
 
+message InternalConfig {
+  PlatformComponentConfig platform_component_config = 1;
+}
+
 message Config {
   PublicConfig public_config = 1;
   PrivateConfig private_config = 2;
+  InternalConfig internal_config = 3;
 }
 
 message VulnerabilityExceptionConfig {
@@ -102,6 +107,10 @@ message VulnerabilityExceptionConfig {
 
 message AdministrationEventsConfig {
   uint32 retention_duration_days = 1;
+}
+
+message PlatformComponentConfig {
+  bool needs_reprocessing = 1;
 }
 
 message DayOption {

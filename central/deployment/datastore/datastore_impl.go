@@ -238,7 +238,13 @@ func (ds *datastoreImpl) WalkByQuery(ctx context.Context, query *v1.Query, fn fu
 func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeployment")
 
-	return ds.upsertDeployment(ctx, deployment)
+	return ds.upsertDeployments(ctx, deployment)
+}
+
+func (ds *datastoreImpl) UpsertDeployments(ctx context.Context, deployments []*storage.Deployment) error {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "UpsertDeployments")
+
+	return ds.upsertDeployments(ctx, deployments...)
 }
 
 func allImagesAreSpecifiedByDigest(d *storage.Deployment) bool {
@@ -250,63 +256,90 @@ func allImagesAreSpecifiedByDigest(d *storage.Deployment) bool {
 	return true
 }
 
-func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.Deployment) error {
-	if deployment.GetType() != kubernetes.CronJob {
-		return nil
+func getIDsFromDeployments(deployments ...*storage.Deployment) []string {
+	ids := make([]string, 0, len(deployments))
+	for _, dep := range deployments {
+		ids = append(ids, dep.GetId())
 	}
-	if allImagesAreSpecifiedByDigest(deployment) {
-		return nil
-	}
-	oldDeployment, exists, err := ds.deploymentStore.Get(ctx, deployment.GetId())
+	return ids
+}
+
+func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployments ...*storage.Deployment) error {
+	ids := getIDsFromDeployments(deployments...)
+	existingDeployments, _, err := ds.deploymentStore.GetMany(ctx, ids)
 	if err != nil {
 		return err
 	}
-	if !exists {
-		return nil
+	existingDeploymentsMap := make(map[string]*storage.Deployment)
+	for _, dep := range existingDeployments {
+		existingDeploymentsMap[dep.GetId()] = dep
 	}
-	// Major changes to spec, just upsert
-	if len(oldDeployment.GetContainers()) != len(deployment.GetContainers()) {
-		return nil
-	}
-	for i, container := range deployment.GetContainers() {
-		if container.GetImage().GetId() != "" {
+
+	for _, deployment := range deployments {
+		if deployment.GetType() != kubernetes.CronJob {
 			continue
 		}
-		oldContainer := oldDeployment.Containers[i]
-		if oldContainer.GetImage().GetId() == "" {
+		if allImagesAreSpecifiedByDigest(deployment) {
 			continue
 		}
-		if container.GetImage().GetName().GetFullName() != oldContainer.GetImage().GetName().GetFullName() {
+		oldDeployment, ok := existingDeploymentsMap[deployment.GetId()]
+		if !ok {
 			continue
 		}
-		container.Image.Id = oldContainer.GetImage().GetId()
+		// Major changes to spec, just upsert
+		if len(oldDeployment.GetContainers()) != len(deployment.GetContainers()) {
+			continue
+		}
+
+		for i, container := range deployment.GetContainers() {
+			if container.GetImage().GetId() != "" {
+				continue
+			}
+			oldContainer := oldDeployment.Containers[i]
+			if oldContainer.GetImage().GetId() == "" {
+				continue
+			}
+			if container.GetImage().GetName().GetFullName() != oldContainer.GetImage().GetName().GetFullName() {
+				continue
+			}
+			container.Image.Id = oldContainer.GetImage().GetId()
+		}
 	}
 	return nil
 }
 
-// upsertDeployment inserts a deployment into deploymentStore
-func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
+// upsertDeployments inserts a deployment into deploymentStore
+func (ds *datastoreImpl) upsertDeployments(ctx context.Context, deployments ...*storage.Deployment) error {
 	if ok, err := deploymentsSAC.WriteAllowed(ctx); err != nil {
 		return err
 	} else if !ok {
 		return sac.ErrResourceAccessDenied
 	}
 
-	// Update deployment with latest risk score
-	deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
+	errList := errorhelpers.NewErrorList("Upserting deployments")
+	for _, deployment := range deployments {
+		// Update deployment with latest risk score
+		deployment.RiskScore = ds.deploymentRanker.GetScoreForID(deployment.GetId())
+
+		match, err := ds.platformMatcher.MatchDeployment(deployment)
+		errList.AddError(err)
+		deployment.PlatformComponent = match
+	}
+
+	if !errList.Empty() {
+		return errList.ToError()
+	}
+
+	depIDs := getIDsFromDeployments(deployments...)
 
 	// Deployments that run intermittently and do not have images that are referenced by digest
 	// should maintain the digest of the last used image
-	if err := ds.mergeCronJobs(ctx, deployment); err != nil {
-		return errors.Wrapf(err, "error merging deployment %s", deployment.GetId())
+	if err := ds.mergeCronJobs(ctx, deployments...); err != nil {
+		return errors.Wrapf(err, "error merging deployments %v", depIDs)
 	}
-	match, err := ds.platformMatcher.MatchDeployment(deployment)
-	if err != nil {
-		return err
-	}
-	deployment.PlatformComponent = match
-	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
-		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
+
+	if err := ds.deploymentStore.UpsertMany(ctx, deployments); err != nil {
+		return errors.Wrapf(err, "inserting deployments '%v' to store", depIDs)
 	}
 	return nil
 }
