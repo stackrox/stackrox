@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -54,6 +55,21 @@ func (s *authProviderDataStoreEnforceTestSuite) SetupTest() {
 
 func (s *authProviderDataStoreEnforceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
+}
+
+func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesAuthProviderExistsWithName() {
+	s.storage.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+
+	const testProviderName = "Test Auth Provider"
+
+	_, err := s.dataStore.AuthProviderExistsWithName(s.hasNoneCtx, testProviderName)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	_, err = s.dataStore.AuthProviderExistsWithName(s.hasReadCtx, testProviderName)
+	s.NoError(err)
+
+	_, err = s.dataStore.AuthProviderExistsWithName(s.hasWriteCtx, testProviderName)
+	s.NoError(err)
 }
 
 func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesGetAll() {
@@ -162,6 +178,25 @@ func (s *authProviderDataStoreTestSuite) TestErrorOnAdd() {
 		LoginUrl: "test",
 	})
 	s.Error(err)
+}
+
+func (s *authProviderDataStoreTestSuite) TestAuthProviderExistsWithName() {
+	testProviderName := "Test Auth Provider"
+	s.storage.EXPECT().
+		Search(gomock.Any(), gomock.Any()).
+		Times(1).
+		Return([]search.Result{{ID: "1234"}}, nil)
+	exists, err := s.dataStore.AuthProviderExistsWithName(s.hasReadCtx, testProviderName)
+	s.NoError(err)
+	s.True(exists)
+
+	s.storage.EXPECT().
+		Search(gomock.Any(), gomock.Any()).
+		Times(1).
+		Return(nil, nil)
+	exists, err = s.dataStore.AuthProviderExistsWithName(s.hasReadCtx, testProviderName)
+	s.NoError(err)
+	s.False(exists)
 }
 
 func (s *authProviderDataStoreTestSuite) TestGetFiltered() {
