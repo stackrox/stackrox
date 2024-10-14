@@ -32,6 +32,9 @@ import spock.lang.Tag
 @IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
 class CertRotationTest extends BaseSpecification {
 
+    private static final String CLUSTER_VERSION_MANAGED_ERROR =
+      "External tools (Helm or Operator) control the secured cluster version."
+
     def generateCerts(String path, String expectedFileName, JsonObject data = null) {
         def resp = DirectHTTPService.post(path, data)
         assert resp.getResponseCode() == 200
@@ -246,7 +249,7 @@ class CertRotationTest extends BaseSpecification {
             SensorUpgradeService.triggerCertRotation(cluster.getId())
         } catch (StatusRuntimeException exc) {
             caughtException = true
-            assert exc.status.description.contains("External tools (Helm or Operator) control the secured cluster version.")
+            assert exc.status.description.contains(CLUSTER_VERSION_MANAGED_ERROR)
         }
         assert caughtException
     }
