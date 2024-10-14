@@ -25,7 +25,7 @@ func TestExcludedScopes(t *testing.T) {
 	deploymentName := fmt.Sprintf("test-excluded-scopes-%d", rand.Intn(10000))
 
 	setupDeployment(t, "nginx", deploymentName)
-	defer teardownDeploymentWithoutCheck(deploymentName)
+	defer teardownDeploymentWithoutCheck(t, deploymentName)
 	waitForDeployment(t, deploymentName)
 
 	verifyNoAlertForExcludedScopes(t, deploymentName)

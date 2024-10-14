@@ -1499,6 +1499,7 @@ store_test_results() {
     local dest
     dest="$(stored_test_results "$to")"
 
+    mkdir -p "$dest"
     cp -a "$from" "$dest" || true # (best effort)
 }
 
