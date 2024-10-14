@@ -18,6 +18,7 @@ export type ColumnConfig = {
 };
 
 // The incoming type for the default column configuration
+// Note that `title` is displayed in the Column Management modal and should match the column header value
 type InitialColumnConfig = Pick<ColumnConfig, 'isShownByDefault' | 'title'>;
 
 // Basic validation of the shape of the object in local storage
@@ -52,6 +53,23 @@ function getCurrentColumnConfig<ColumnKey extends string>(
     return tableConfig as Record<ColumnKey, ColumnConfig>;
 }
 
+// Helper function to generate a visibility class based on the current column state
+export function generateVisibilityForColumns<T extends Record<string, ColumnConfig>>(
+    columnVisibilityState: T
+) {
+    return function getVisibilityClass(key: keyof T) {
+        const state = columnVisibilityState[key];
+        if (!state || state.isShown) {
+            return '';
+        }
+        return 'pf-v5-u-display-none';
+    };
+}
+
+export function getHiddenColumnCount(columnState: Record<string, ColumnConfig>): number {
+    return Object.values(columnState).filter(({ isShown }) => !isShown).length;
+}
+
 export type ManagedColumns<ColumnKey extends string> = {
     /* The current configuration state of the columns */
     columns: Readonly<Record<ColumnKey, ColumnConfig>>;
@@ -62,6 +80,8 @@ export type ManagedColumns<ColumnKey extends string> = {
 };
 
 export function useManagedColumns<ColumnKey extends string>(
+    // `tableId` is a globally unique identifier for the table that indexes the column configuration
+    // in local storage. It is typically formed by combining the Container folder name and the table file name.
     tableId: string,
     initialConfig: Readonly<Record<ColumnKey, InitialColumnConfig>>
 ): ManagedColumns<ColumnKey> {

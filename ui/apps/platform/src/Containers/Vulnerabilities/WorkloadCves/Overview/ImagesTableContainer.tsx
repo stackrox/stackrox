@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Divider } from '@patternfly/react-core';
+import { Divider, ToolbarItem } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
@@ -8,11 +8,19 @@ import useURLPagination from 'hooks/useURLPagination';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
-import ImagesTable, { Image, ImagesTableProps, imageListQuery } from '../Tables/ImagesTable';
+import { useManagedColumns } from 'hooks/useManagedColumns';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
+import ImageOverviewTable, {
+    Image,
+    ImageOverviewTableProps,
+    defaultColumns,
+    imageListQuery,
+    tableId,
+} from '../Tables/ImageOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 
-export { imageListQuery } from '../Tables/ImagesTable';
+export { imageListQuery } from '../Tables/ImageOverviewTable';
 
 type ImagesTableContainerProps = {
     searchFilter: SearchFilter;
@@ -25,8 +33,8 @@ type ImagesTableContainerProps = {
     workloadCvesScopedQueryString: string;
     isFiltered: boolean;
     hasWriteAccessForWatchedImage: boolean;
-    onWatchImage: ImagesTableProps['onWatchImage'];
-    onUnwatchImage: ImagesTableProps['onUnwatchImage'];
+    onWatchImage: ImageOverviewTableProps['onWatchImage'];
+    onUnwatchImage: ImageOverviewTableProps['onUnwatchImage'];
     showCveDetailFields: boolean;
 };
 
@@ -64,6 +72,8 @@ function ImagesTableContainer({
         searchFilter,
     });
 
+    const managedColumns = useManagedColumns(tableId, defaultColumns);
+
     return (
         <>
             <TableEntityToolbar
@@ -72,14 +82,18 @@ function ImagesTableContainer({
                 pagination={pagination}
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
-            />
+            >
+                <ToolbarItem align={{ default: 'alignRight' }}>
+                    <ColumnManagementButton managedColumnState={managedColumns} />
+                </ToolbarItem>
+            </TableEntityToolbar>
             <Divider component="div" />
             <div
                 className="workload-cves-table-container"
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >
-                <ImagesTable
+                <ImageOverviewTable
                     tableState={tableState}
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
@@ -92,6 +106,7 @@ function ImagesTableContainer({
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
+                    columnVisibilityState={managedColumns.columns}
                 />
             </div>
         </>
