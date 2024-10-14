@@ -1,6 +1,7 @@
 package complianceReportgenerator
 
 import (
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
@@ -20,7 +21,7 @@ type ComplianceReportGenerator interface {
 }
 
 // New will create a new instance of the ReportGenerator
-func New(checkResultDS checkResults.DataStore, notifierProcessor notifier.Processor, profileDS profileDS.DataStore, remediationDS remediationDS.DataStore, scanDS scanDS.DataStore, benchmarksDS benchmarksDS.DataStore, complianceRuleDS complianceRuleDS.DataStore, snapshotDS snapshotDS.DataStore) ComplianceReportGenerator {
+func New(checkResultDS checkResults.DataStore, notifierProcessor notifier.Processor, profileDS profileDS.DataStore, remediationDS remediationDS.DataStore, scanDS scanDS.DataStore, benchmarksDS benchmarksDS.DataStore, complianceRuleDS complianceRuleDS.DataStore, snapshotDS snapshotDS.DataStore, blobDS blobDS.Datastore) ComplianceReportGenerator {
 	return &complianceReportGeneratorImpl{
 		checkResultsDS:           checkResultDS,
 		notificationProcessor:    notifierProcessor,
@@ -30,6 +31,7 @@ func New(checkResultDS checkResults.DataStore, notifierProcessor notifier.Proces
 		benchmarkDS:              benchmarksDS,
 		complianceRuleDS:         complianceRuleDS,
 		snapshotDS:               snapshotDS,
+		blobStore:                blobDS,
 		numberOfTriesOnEmailSend: defaultNumberOfTriesOnEmailSend,
 	}
 }

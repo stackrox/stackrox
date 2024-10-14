@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	checkResults "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/checkresults/utils"
@@ -19,6 +20,7 @@ import (
 	reportUtils "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/utils"
 	complianceRuleDS "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/csv"
@@ -82,6 +84,7 @@ type complianceReportGeneratorImpl struct {
 	benchmarkDS              benchmarksDS.DataStore
 	complianceRuleDS         complianceRuleDS.DataStore
 	snapshotDS               snapshotDataStore.DataStore
+	blobStore                blobDS.Datastore
 	numberOfTriesOnEmailSend int
 }
 
@@ -131,6 +134,21 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceRep
 	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_GENERATED
 	if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
 		return errors.Wrap(err, "unable to update snapshot on report generation success")
+	}
+
+	if req.NotificationMethod == storage.ComplianceOperatorReportStatus_DOWNLOAD {
+		if err := rg.saveReportData(req.Ctx, snapshot.GetScanConfigurationId(), snapshot.GetReportId(), zipData); err != nil {
+			if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, err, rg.snapshotDS); dbErr != nil {
+				return errors.Wrap(err, "unable to update snapshot on download failure upsert")
+			}
+			return errors.Wrap(err, "unable to save the report download")
+		}
+		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
+		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
+		if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
+			return errors.Wrap(err, "unable to update snapshot on report download ready")
+		}
+		return nil
 	}
 
 	formatEmailBody := &formatBody{
@@ -303,6 +321,20 @@ func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData 
 	if err := rg.snapshotDS.UpsertSnapshot(ctx, snapshot); err != nil {
 		log.Errorf("Unable to update snapshot on send email success: %v", err)
 	}
+}
+
+func (rg *complianceReportGeneratorImpl) saveReportData(ctx context.Context, configID, snapshotID string, data *bytes.Buffer) error {
+	if data == nil {
+		return errors.Errorf("no data found for snapshot %s and scan configuration %s", snapshotID, configID)
+	}
+
+	b := &storage.Blob{
+		Name:         common.GetComplianceReportBlobPath(configID, snapshotID),
+		LastUpdated:  protocompat.TimestampNow(),
+		ModifiedTime: protocompat.TimestampNow(),
+		Length:       int64(data.Len()),
+	}
+	return rg.blobStore.Upsert(ctx, b, data)
 }
 
 func formatEmailSubjectwithDetails(subject string, data *formatSubject) (string, error) {
