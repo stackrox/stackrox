@@ -13,6 +13,7 @@ import {
 } from '@patternfly/react-core';
 import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FormikProps } from 'formik';
+import { cloneDeep } from 'lodash';
 
 import {
     CVESDiscoveredSince,
@@ -28,7 +29,7 @@ import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
-import { cloneDeep } from 'lodash';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { CollectionSlim } from 'services/CollectionsService';
 import { NotifierConfiguration } from 'services/ReportsService.types';
 import CollectionSelection from './CollectionSelection';
@@ -39,6 +40,9 @@ export type ReportParametersFormParams = {
 };
 
 function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+
     const handleTextChange =
         (fieldName: string) =>
         (event: FormEvent<HTMLInputElement> | ChangeEvent<HTMLTextAreaElement>, value: string) => {
@@ -278,18 +282,20 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         />
                     </FormLabelGroup>
                 )}
-                <FormLabelGroup
-                    label="Optional columns"
-                    fieldId="reportParameters.includeNvdCvss"
-                    errors={formik.errors}
-                >
-                    <Checkbox
-                        label="Include NVD CVSS"
-                        id="reportParameters.includeNvdCvss"
-                        isChecked={formik.values.reportParameters.includeNvdCvss}
-                        onChange={onChange}
-                    />
-                </FormLabelGroup>
+                {isNvdCvssEnabled && (
+                    <FormLabelGroup
+                        label="Optional columns"
+                        fieldId="reportParameters.includeNvdCvss"
+                        errors={formik.errors}
+                    >
+                        <Checkbox
+                            label="Include NVD CVSS"
+                            id="reportParameters.includeNvdCvss"
+                            isChecked={formik.values.reportParameters.includeNvdCvss}
+                            onChange={onChange}
+                        />
+                    </FormLabelGroup>
+                )}
                 <FormLabelGroup
                     label="Configure collection included"
                     isRequired

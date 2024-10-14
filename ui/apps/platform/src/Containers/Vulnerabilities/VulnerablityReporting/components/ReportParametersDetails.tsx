@@ -17,6 +17,7 @@ import {
 } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 export type ReportParametersDetailsProps = {
     headingLevel: 'h2' | 'h3';
@@ -27,6 +28,9 @@ function ReportParametersDetails({
     headingLevel,
     formValues,
 }: ReportParametersDetailsProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
             formValues.reportParameters.cveSeverities.map((severity) => (
@@ -110,7 +114,7 @@ function ReportParametersDetails({
                             {getCVEsDiscoveredSinceText(formValues.reportParameters)}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
-                    {formValues.reportParameters.includeNvdCvss && (
+                    {isNvdCvssEnabled && formValues.reportParameters.includeNvdCvss && (
                         <DescriptionListGroup>
                             <DescriptionListTerm>Optional columns</DescriptionListTerm>
                             <DescriptionListDescription>
