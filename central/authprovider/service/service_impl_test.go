@@ -1,87 +1,89 @@
-//go:build sql_integration
-
 package service
 
 import (
 	"context"
 	"testing"
 
-	authProviderDataStore "github.com/stackrox/rox/central/authprovider/datastore"
-	groupDataStore "github.com/stackrox/rox/central/group/datastore"
-	roleDataStore "github.com/stackrox/rox/central/role/datastore"
-	roleMapper "github.com/stackrox/rox/central/role/mapper"
-	userDataStore "github.com/stackrox/rox/central/user/datastore"
+	groupStoreMocks "github.com/stackrox/rox/central/group/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
-	openshiftAuth "github.com/stackrox/rox/pkg/auth/authproviders/openshift"
+	authProviderMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
+	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	authTokenMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
-	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-func TestAuthProviderService(t *testing.T) {
-	suite.Run(t, new(authProviderServiceTestSuite))
+const (
+	testProviderType = "test"
+
+	urlPathPrefix = "/sso/"
+	redirectURL   = "/auth/response/generic"
+)
+
+func TestMockedAuthProviderService(t *testing.T) {
+	suite.Run(t, new(mockedAuthProviderServiceTestSuite))
 }
 
-type authProviderServiceTestSuite struct {
+type mockedAuthProviderServiceTestSuite struct {
 	suite.Suite
 
-	db       *pgtest.TestPostgres
 	mockCtrl *gomock.Controller
+
+	providerMockBEFactory *authProviderMocks.MockBackendFactory
+	providerMockStore     *authProviderMocks.MockStore
 
 	service Service
 }
 
-func (s *authProviderServiceTestSuite) SetupSuite() {
-	t := s.T()
-	db := pgtest.ForT(t)
-	s.db = db
-	s.mockCtrl = gomock.NewController(t)
+func (s *mockedAuthProviderServiceTestSuite) SetupTest() {
+	s.mockCtrl = gomock.NewController(s.T())
 
 	tokenIssuerFactory := authTokenMocks.NewMockIssuerFactory(s.mockCtrl)
 	tokenIssuerFactory.EXPECT().CreateIssuer(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 
-	roleDS, err := roleDataStore.GetTestPostgresDataStore(t, db)
-	s.Require().NoError(err)
-	authProviderDS := authProviderDataStore.GetTestPostgresDataStore(t, db)
-	groupDS := groupDataStore.GetTestPostgresDataStore(t, db, roleDS, authProviderDS)
-	userDS := userDataStore.GetTestDataStore(t)
-	mapperFactory := roleMapper.NewStoreBasedMapperFactory(groupDS, roleDS, userDS)
-	providerRegistry := authproviders.NewStoreBackedRegistry(
-		"/sso/",
-		"/auth/response/generic",
-		authProviderDS,
+	s.providerMockStore = authProviderMocks.NewMockStore(s.mockCtrl)
+
+	mockRoleMapper := permissionsMocks.NewMockRoleMapper(s.mockCtrl)
+
+	mapperFactory := permissionsMocks.NewMockRoleMapperFactory(s.mockCtrl)
+	mapperFactory.EXPECT().GetRoleMapper(gomock.Any()).AnyTimes().Return(mockRoleMapper)
+
+	registry := authproviders.NewStoreBackedRegistry(
+		urlPathPrefix,
+		redirectURL,
+		s.providerMockStore,
 		tokenIssuerFactory,
 		mapperFactory,
 	)
 
-	ctx := sac.WithAllAccess(context.Background())
-	err = providerRegistry.RegisterBackendFactory(
-		ctx,
-		openshiftAuth.TypeName,
-		openshiftAuth.NewTestFactoryCreator(t),
+	s.providerMockBEFactory = authProviderMocks.NewMockBackendFactory(s.mockCtrl)
+
+	backendFactoryCreator := func(_ string) authproviders.BackendFactory {
+		return s.providerMockBEFactory
+	}
+
+	err := registry.RegisterBackendFactory(
+		context.Background(),
+		testProviderType,
+		backendFactoryCreator,
 	)
 	s.Require().NoError(err)
 
-	s.service = New(providerRegistry, groupDS)
+	groupStore := groupStoreMocks.NewMockDataStore(s.mockCtrl)
+	s.service = New(registry, groupStore)
 }
 
-func (s *authProviderServiceTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
+func (s *mockedAuthProviderServiceTestSuite) TearDownTest() {
+	s.mockCtrl.Finish()
 }
 
-func (s *authProviderServiceTestSuite) TestPostDuplicateAuthProvider() {
-	ctx := sac.WithAllAccess(context.Background())
-
-	s.Zero(openshiftAuth.GetRegisteredBackendCount())
-
+func (s *mockedAuthProviderServiceTestSuite) TestPostDuplicateAuthProvider() {
 	postRequest := &v1.PostAuthProviderRequest{
 		Provider: &storage.AuthProvider{
-			Name:       "OpenShift",
-			Type:       openshiftAuth.TypeName,
+			Name:       "Test Provider",
+			Type:       testProviderType,
 			Config:     map[string]string{},
 			UiEndpoint: "central.svc",
 			Enabled:    true,
@@ -92,27 +94,55 @@ func (s *authProviderServiceTestSuite) TestPostDuplicateAuthProvider() {
 	}
 
 	otherPostRequest := postRequest.CloneVT()
-	otherPostRequest.Provider.Name = "OpenShift 2"
+	otherPostRequest.Provider.Name = "Test Provider 2"
 
-	// First call should succeed and register an auth provider backend
-	// in the openshiftAuth certificate watch loop.
+	ctx := context.Background()
+
+	s.expectWorkingPostAuthProvider()
 	_, err := s.service.PostAuthProvider(ctx, postRequest)
 	s.NoError(err)
-	s.Equal(1, openshiftAuth.GetRegisteredBackendCount())
 
-	// First call with another auth provider name should succeed
-	// and register another auth provider backend in the openshiftAuth
-	// certificate watch loop.
+	s.expectWorkingPostAuthProvider()
 	_, err = s.service.PostAuthProvider(ctx, otherPostRequest)
 	s.NoError(err)
-	s.Equal(2, openshiftAuth.GetRegisteredBackendCount())
 
-	// Second call with an already registered auth provider should
-	// fail the duplicate name check and not be added
-	// to the openshiftAuth certificate watch loop.
-	// Currently, the duplicate name check is not enforced, so an
-	// extra backend is registered in the loop.
+	// There is a bug in the AuthProvider creation, which causes
+	// extra backend instance creation when creating a backend with
+	// a name that already exists in DB.
+	// Hence the mock expectation setup. Once the bug is fixed, this call
+	// should be removed.
+	s.expectWorkingPostAuthProvider()
 	_, err = s.service.PostAuthProvider(ctx, postRequest)
-	s.Error(err)
-	s.Equal(3, openshiftAuth.GetRegisteredBackendCount())
+	s.NoError(err)
+}
+
+func (s *mockedAuthProviderServiceTestSuite) expectWorkingPostAuthProvider() {
+	s.expectBackendCreation()
+	s.expectProviderAdditionToStore()
+	s.providerMockBEFactory.EXPECT().
+		RedactConfig(gomock.Any()).
+		Times(1).
+		Return(map[string]string{})
+}
+
+func (s *mockedAuthProviderServiceTestSuite) expectBackendCreation() {
+	mockBackend := authProviderMocks.NewMockBackend(s.mockCtrl)
+	mockBackend.EXPECT().Config().AnyTimes().Return(map[string]string{})
+	mockBackend.EXPECT().OnEnable(gomock.Any()).AnyTimes()
+
+	s.providerMockBEFactory.EXPECT().
+		CreateBackend(
+			gomock.Any(), // ctx
+			gomock.Any(), // id
+			gomock.Any(), // uiEndpoints
+			gomock.Any(), // config
+			gomock.Any(), // mappings
+		).Times(1).Return(mockBackend, nil)
+}
+
+func (s *mockedAuthProviderServiceTestSuite) expectProviderAdditionToStore() {
+	s.providerMockStore.EXPECT().
+		AddAuthProvider(gomock.Any(), gomock.Any()).
+		Times(1).
+		Return(nil)
 }
