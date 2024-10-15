@@ -4955,16 +4955,6 @@
             ]
           },
           {
-            "name": "InternalConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "platform_component_config",
-                "type": "PlatformComponentConfig"
-              }
-            ]
-          },
-          {
             "name": "Config",
             "fields": [
               {
@@ -4976,11 +4966,6 @@
                 "id": 2,
                 "name": "private_config",
                 "type": "PrivateConfig"
-              },
-              {
-                "id": 3,
-                "name": "internal_config",
-                "type": "InternalConfig"
               }
             ]
           },
@@ -5044,16 +5029,6 @@
                 "id": 1,
                 "name": "retention_duration_days",
                 "type": "uint32"
-              }
-            ]
-          },
-          {
-            "name": "PlatformComponentConfig",
-            "fields": [
-              {
-                "id": 1,
-                "name": "needs_reprocessing",
-                "type": "bool"
               }
             ]
           },

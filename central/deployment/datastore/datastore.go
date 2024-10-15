@@ -39,10 +39,6 @@ type DataStore interface {
 	// the stored deployment.
 	UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error
 
-	// UpsertDeployments adds or updates many deployments. For deployments that already exist, their tags are taken from
-	// the existing deployments
-	UpsertDeployments(ctx context.Context, deployments []*storage.Deployment) error
-
 	RemoveDeployment(ctx context.Context, clusterID, id string) error
 
 	GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error)

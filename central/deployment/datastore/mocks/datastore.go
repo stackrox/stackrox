@@ -237,20 +237,6 @@ func (mr *MockDataStoreMockRecorder) UpsertDeployment(ctx, deployment any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDeployment", reflect.TypeOf((*MockDataStore)(nil).UpsertDeployment), ctx, deployment)
 }
 
-// UpsertDeployments mocks base method.
-func (m *MockDataStore) UpsertDeployments(ctx context.Context, deployments []*storage.Deployment) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpsertDeployments", ctx, deployments)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpsertDeployments indicates an expected call of UpsertDeployments.
-func (mr *MockDataStoreMockRecorder) UpsertDeployments(ctx, deployments any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertDeployments", reflect.TypeOf((*MockDataStore)(nil).UpsertDeployments), ctx, deployments)
-}
-
 // WalkByQuery mocks base method.
 func (m *MockDataStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.Deployment) error) error {
 	m.ctrl.T.Helper()

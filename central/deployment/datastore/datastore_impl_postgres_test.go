@@ -83,7 +83,8 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(s.imageDatastore.UpsertImage(ctx, img3))
 	// Upsert Deployments.
 	s.NoError(s.deploymentDatastore.UpsertDeployment(ctx, dep1))
-	s.NoError(s.deploymentDatastore.UpsertDeployments(ctx, []*storage.Deployment{dep2, dep3}))
+	s.NoError(s.deploymentDatastore.UpsertDeployment(ctx, dep2))
+	s.NoError(s.deploymentDatastore.UpsertDeployment(ctx, dep3))
 
 	for _, tc := range []struct {
 		desc         string

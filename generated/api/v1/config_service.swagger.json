@@ -271,9 +271,6 @@
         },
         "privateConfig": {
           "$ref": "#/definitions/storagePrivateConfig"
-        },
-        "internalConfig": {
-          "$ref": "#/definitions/storageInternalConfig"
         }
       }
     },
@@ -313,14 +310,6 @@
       },
       "title": "next available tag: 5"
     },
-    "storageInternalConfig": {
-      "type": "object",
-      "properties": {
-        "platformComponentConfig": {
-          "$ref": "#/definitions/storagePlatformComponentConfig"
-        }
-      }
-    },
     "storageLoginNotice": {
       "type": "object",
       "properties": {
@@ -329,14 +318,6 @@
         },
         "text": {
           "type": "string"
-        }
-      }
-    },
-    "storagePlatformComponentConfig": {
-      "type": "object",
-      "properties": {
-        "needsReprocessing": {
-          "type": "boolean"
         }
       }
     },
