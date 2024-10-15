@@ -49,7 +49,7 @@ type scanConfigWatcherImpl struct {
 	cancel  func()
 	scanC   chan *ScanWatcherResults
 	stopped *concurrency.Signal
-	timeout *time.Timer
+	stopFn  func()
 
 	scanDS    scan.DataStore
 	profileDS profileDatastore.DataStore
@@ -70,7 +70,6 @@ func NewScanConfigWatcher(ctx context.Context, watcherID string, sc *storage.Com
 		ctx:        watcherCtx,
 		cancel:     cancel,
 		stopped:    &finishedSignal,
-		timeout:    timeout,
 		scanDS:     scanDS,
 		profileDS:  profileDS,
 		scanC:      make(chan *ScanWatcherResults),
@@ -83,6 +82,11 @@ func NewScanConfigWatcher(ctx context.Context, watcherID string, sc *storage.Com
 			ScanResults:       make(map[string]*ScanWatcherResults),
 		},
 		scansToWait: set.NewStringSet(),
+		stopFn: func() {
+			finishedSignal.Signal()
+			<-finishedSignal.Done()
+			timeout.Stop()
+		},
 	}
 	go ret.run(timeout.C)
 	return ret
@@ -119,11 +123,7 @@ func (w *scanConfigWatcherImpl) Finished() concurrency.ReadOnlySignal {
 }
 
 func (w *scanConfigWatcherImpl) run(timerC <-chan time.Time) {
-	defer func() {
-		w.stopped.Signal()
-		<-w.stopped.Done()
-		w.timeout.Stop()
-	}()
+	defer w.stopFn()
 	for {
 		select {
 		case <-w.ctx.Done():
@@ -153,9 +153,13 @@ func (w *scanConfigWatcherImpl) run(timerC <-chan time.Time) {
 func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) error {
 	// Here we have the scan config id and the scan
 	if w.totalResults == 0 {
-		if err := w.getScansToWait(result); err != nil {
+		scans, err := GetScansFromScanConfiguration(w.scanConfigResults.Ctx, w.scanConfigResults.ScanConfig, w.profileDS, w.scanDS)
+		if err != nil {
 			return err
 		}
+		w.scansToWait = scans
+		w.totalResults = len(w.scansToWait)
+		log.Infof("Scan config %s needs to wait for %d scans", w.scanConfigResults.ScanConfig.GetScanConfigName(), w.totalResults)
 	}
 	log.Infof("Scan to handle %s with id %s", result.Scan.GetScanName(), result.Scan.GetId())
 	if found := w.scansToWait.Remove(fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())); !found {
@@ -165,14 +169,15 @@ func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) er
 	return nil
 }
 
-func (w *scanConfigWatcherImpl) getScansToWait(result *ScanWatcherResults) error {
+// GetScansFromScanConfiguration returns the scans associated with a given ScanConfiguration
+func GetScansFromScanConfiguration(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, profileDataStore profileDatastore.DataStore, scanDataStore scan.DataStore) (set.StringSet, error) {
+	ret := set.NewStringSet()
 	var profileNames []string
-	for _, p := range w.scanConfigResults.ScanConfig.GetProfiles() {
+	for _, p := range scanConfig.GetProfiles() {
 		profileNames = append(profileNames, p.GetProfileName())
 	}
-	log.Debugf("Profiles %v", profileNames)
 	var clusters []string
-	for _, c := range w.scanConfigResults.ScanConfig.GetClusters() {
+	for _, c := range scanConfig.GetClusters() {
 		clusters = append(clusters, c.GetClusterId())
 	}
 	profileQuery := search.NewQueryBuilder().
@@ -184,25 +189,23 @@ func (w *scanConfigWatcherImpl) getScansToWait(result *ScanWatcherResults) error
 			search.ClusterID,
 			clusters...,
 		).ProtoQuery()
-	profiles, err := w.profileDS.SearchProfiles(result.Ctx, profileQuery)
+	profiles, err := profileDataStore.SearchProfiles(ctx, profileQuery)
 	if err != nil {
-		return errors.Wrap(err, "unable to search the profiles")
+		return nil, errors.Wrap(err, "unable to search the profiles")
 	}
 	for _, p := range profiles {
 		scanRefQuery := search.NewQueryBuilder().AddExactMatches(
 			search.ComplianceOperatorProfileRef,
 			p.GetProfileRefId(),
 		).ProtoQuery()
-		scans, err := w.scanDS.SearchScans(result.Ctx, scanRefQuery)
+		scans, err := scanDataStore.SearchScans(ctx, scanRefQuery)
 		if err != nil {
-			return errors.Wrap(err, "unable to search the scans")
+			return nil, errors.Wrap(err, "unable to search the scans")
 		}
 		for _, s := range scans {
 			log.Debugf("Adding scan to wait %s", s.GetScanName())
-			w.scansToWait.Add(fmt.Sprintf("%s:%s", s.GetClusterId(), s.GetId()))
+			ret.Add(fmt.Sprintf("%s:%s", s.GetClusterId(), s.GetId()))
 		}
 	}
-	w.totalResults = len(w.scansToWait)
-	log.Infof("Scan config %s needs to wait for %d scans", w.scanConfigResults.ScanConfig.GetScanConfigName(), w.totalResults)
-	return nil
+	return ret, nil
 }
