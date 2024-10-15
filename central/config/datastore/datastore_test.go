@@ -450,18 +450,12 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 		},
 		"Configure internal config when missing": {
 			initialConfig: &storage.Config{
-				PublicConfig:   samplePublicConfig,
-				PrivateConfig:  customPrivateConfig,
-				InternalConfig: nil,
+				PublicConfig:  samplePublicConfig,
+				PrivateConfig: customPrivateConfig,
 			},
 			upsertedConfig: &storage.Config{
 				PublicConfig:  samplePublicConfig,
 				PrivateConfig: customPrivateConfig,
-				InternalConfig: &storage.InternalConfig{
-					PlatformComponentConfig: &storage.PlatformComponentConfig{
-						NeedsReprocessing: true,
-					},
-				},
 			},
 		},
 	}
