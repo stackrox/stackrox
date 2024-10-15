@@ -398,7 +398,6 @@ function OcmIntegrationForm({
                         <Checkbox
                             label="Create integration without testing"
                             id="cloudSource.skipTestIntegration"
-                            aria-label="skip integration test"
                             isChecked={values.cloudSource.skipTestIntegration}
                             onChange={(event, value) => onChange(value, event)}
                             onBlur={handleBlur}
