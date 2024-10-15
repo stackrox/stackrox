@@ -12,7 +12,7 @@ import "storage/taints.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 35
+// Next available tag: 36
 message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,store,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment,store"
@@ -49,6 +49,8 @@ message Deployment {
   float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore"
 
   reserved 30; // was tags
+
+  bool platform_component = 35; // @gotags: search:"Platform Component"
 }
 
 // Next tag: 12

@@ -53,16 +53,14 @@ export const validationSchema = yup.object().shape({
         }),
         skipTestIntegration: yup.bool(),
     }),
-    updatePassword: yup.bool(),
+    updateCredentials: yup.bool(),
 });
 
 export type CloudSourceIntegrationFormValues = {
-    id: string;
     cloudSource: CloudSourceIntegration;
     updateCredentials: boolean;
 };
 export const defaultValues: CloudSourceIntegrationFormValues = {
-    id: '',
     cloudSource: {
         id: '',
         name: '',
@@ -72,7 +70,7 @@ export const defaultValues: CloudSourceIntegrationFormValues = {
             clientId: '',
             clientSecret: '',
         },
-        skipTestIntegration: true,
+        skipTestIntegration: false,
         ocm: {
             endpoint: 'https://api.openshift.com',
         },
@@ -87,7 +85,6 @@ function OcmIntegrationForm({
     const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
         merge(formInitialValues.cloudSource, initialValues);
-        formInitialValues.id = formInitialValues.cloudSource.id;
         formInitialValues.cloudSource.credentials.secret = '';
         formInitialValues.cloudSource.credentials.clientId = '';
         formInitialValues.cloudSource.credentials.clientSecret = '';
@@ -380,6 +377,20 @@ function OcmIntegrationForm({
                                     ? ''
                                     : 'Currently-stored token will be used.'
                             }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        fieldId="cloudSource.skipTestIntegration"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
+                            label="Create integration without testing"
+                            id="cloudSource.skipTestIntegration"
+                            isChecked={values.cloudSource.skipTestIntegration}
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>

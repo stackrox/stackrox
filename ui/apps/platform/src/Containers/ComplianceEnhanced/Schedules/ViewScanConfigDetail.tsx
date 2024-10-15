@@ -16,6 +16,7 @@ import {
     TabTitleText,
     Title,
 } from '@patternfly/react-core';
+import { useParams } from 'react-router-dom';
 
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import useAlert from 'hooks/useAlert';
@@ -30,9 +31,11 @@ import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
 import { jobContextTabs } from 'Components/ReportJob/types';
+import useAnalytics from 'hooks/useAnalytics';
 import ScanConfigActionDropdown from './ScanConfigActionDropdown';
 import ConfigDetails from './components/ConfigDetails';
 import ReportJobs from './components/ReportJobs';
+import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapshotForComplianceReports';
 
 type ViewScanConfigDetailProps = {
     hasWriteAccessForCompliance: boolean;
@@ -54,6 +57,9 @@ function ViewScanConfigDetail({
     isLoading,
     error = null,
 }: ViewScanConfigDetailProps): React.ReactElement {
+    const { scanConfigId } = useParams();
+    const { analyticsTrack } = useAnalytics();
+
     const [activeScanConfigTab, setActiveScanConfigTab] = useURLStringUnion(
         'scanConfigTab',
         jobContextTabs
@@ -61,6 +67,12 @@ function ViewScanConfigDetail({
     const [isTriggeringRescan, setIsTriggeringRescan] = useState(false);
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
+    const { complianceReportSnapshots } = useWatchLastSnapshotForComplianceReports(scanConfig);
+    const lastSnapshot = complianceReportSnapshots[scanConfigId];
+
+    const isReportStatusPending =
+        lastSnapshot?.reportStatus.runState === 'PREPARING' ||
+        lastSnapshot?.reportStatus.runState === 'WAITING';
 
     function handleRunScanConfig(scanConfigResponse: ComplianceScanConfigurationStatus) {
         clearAlertObj();
@@ -90,6 +102,10 @@ function ViewScanConfigDetail({
         clearAlertObj();
         runComplianceReport(scanConfigResponse.id, 'EMAIL')
             .then(() => {
+                analyticsTrack({
+                    event: 'Compliance Report Manual Send Triggered',
+                    properties: { source: 'Details page' },
+                });
                 setAlertObj({
                     type: 'success',
                     title: 'Successfully requested to send a report',
@@ -108,6 +124,10 @@ function ViewScanConfigDetail({
         clearAlertObj();
         runComplianceReport(scanConfigResponse.id, 'DOWNLOAD')
             .then(() => {
+                analyticsTrack({
+                    event: 'Compliance Report Download Generation Triggered',
+                    properties: { source: 'Details page' },
+                });
                 setAlertObj({
                     type: 'success',
                     title: 'The report generation has started and will be available for download once complete',
@@ -152,10 +172,8 @@ function ViewScanConfigDetail({
                                         handleRunScanConfig={handleRunScanConfig}
                                         handleSendReport={handleSendReport}
                                         handleGenerateDownload={handleGenerateDownload}
-                                        isScanning={
-                                            isTriggeringRescan /* ||
-                                            scanConfig.lastExecutedTime === null */
-                                        }
+                                        isScanning={isTriggeringRescan}
+                                        isReportStatusPending={isReportStatusPending}
                                         scanConfigResponse={scanConfig}
                                         isReportJobsEnabled={isReportJobsEnabled}
                                         isComplianceReportingEnabled={isComplianceReportingEnabled}
@@ -183,6 +201,9 @@ function ViewScanConfigDetail({
                         activeKey={activeScanConfigTab}
                         onSelect={(_e, tab) => {
                             setActiveScanConfigTab(tab);
+                            if (tab === 'ALL_REPORT_JOBS') {
+                                analyticsTrack('Compliance Report Jobs Table Viewed');
+                            }
                         }}
                         aria-label="Scan schedule details tabs"
                     >

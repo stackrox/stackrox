@@ -75,5 +75,7 @@ type Alerts struct {
 	EnforcementAction        storage.EnforcementAction           `gorm:"column:enforcement_action;type:integer"`
 	Time                     *time.Time                          `gorm:"column:time;type:timestamp;index:alerts_time,type:btree"`
 	State                    storage.ViolationState              `gorm:"column:state;type:integer;index:alerts_state,type:btree"`
+	PlatformComponent        bool                                `gorm:"column:platformcomponent;type:bool"`
+	EntityType               storage.Alert_EntityType            `gorm:"column:entitytype;type:integer"`
 	Serialized               []byte                              `gorm:"column:serialized;type:bytea"`
 }

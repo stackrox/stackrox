@@ -59,7 +59,7 @@ function RuleSelector({
         }
 
         const selectorMap: Record<RuleSelectorOption, ScopedResourceSelector> = {
-            All: { type: 'All' },
+            NoneSpecified: { type: 'NoneSpecified' },
             ByName: {
                 type: 'ByName',
                 field: entityType,
@@ -77,7 +77,6 @@ function RuleSelector({
     }
 
     const selection = scopedResourceSelector.type;
-
     return (
         <div className="rule-selector">
             <Select
@@ -88,7 +87,9 @@ function RuleSelector({
                 onSelect={onRuleOptionSelect}
                 isDisabled={isDisabled}
             >
-                <SelectOption value="All">All {pluralEntity.toLowerCase()}</SelectOption>
+                <SelectOption value="NoneSpecified">
+                    No {pluralEntity.toLowerCase()} specified
+                </SelectOption>
                 <SelectOption value="ByName">{pluralEntity} with names matching</SelectOption>
                 <SelectOption value="ByLabel">
                     {pluralEntity} with labels matching exactly
