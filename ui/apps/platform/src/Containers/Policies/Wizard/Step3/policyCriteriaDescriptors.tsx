@@ -506,7 +506,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         ],
         canBooleanLogic: true,
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
-        featureFlagDependency: ['ROX_NVD_CVSS_UI', 'ROX_SCANNER_V4'],
+        featureFlagDependency: ['ROX_SCANNER_V4', 'ROX_NVD_CVSS_UI'],
     },
     {
         label: 'Severity',
