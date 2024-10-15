@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -524,9 +525,9 @@ func (m *certificateRequesterMock) Start() {
 func (m *certificateRequesterMock) Stop() {
 	m.Called()
 }
-func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*IssueCertsResponse, error) {
+func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*certrefresh.IssueCertsResponse, error) {
 	args := m.Called(ctx)
-	return args.Get(0).(*IssueCertsResponse), args.Error(1)
+	return args.Get(0).(*certrefresh.IssueCertsResponse), args.Error(1)
 }
 
 type certificateRefresherMock struct {
@@ -552,7 +553,7 @@ type componentGetterMock struct {
 	mock.Mock
 }
 
-func (m *componentGetterMock) getCertificateRefresher(certsDescription string, requestCertificates requestCertificatesFunc,
+func (m *componentGetterMock) getCertificateRefresher(certsDescription string, requestCertificates certrefresh.RequestCertificatesFunc,
 	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
 	args := m.Called(certsDescription, requestCertificates, repository, timeout, backoff)
 	return args.Get(0).(concurrency.RetryTicker)

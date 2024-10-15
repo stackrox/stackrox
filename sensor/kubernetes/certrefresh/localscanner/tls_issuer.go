@@ -59,7 +59,7 @@ func NewLocalScannerTLSIssuer(
 		msgToCentralC:                msgToCentralC,
 		msgFromCentralC:              msgFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
-		getCertificateRefresherFn:    newCertificatesRefresher,
+		getCertificateRefresherFn:    certrefresh.NewCertificatesRefresher,
 		getServiceCertificatesRepoFn: NewServiceCertificatesRepo,
 		certRequester:                NewCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
@@ -82,11 +82,11 @@ type localScannerTLSIssuerImpl struct {
 type CertificateRequester interface {
 	Start()
 	Stop()
-	RequestCertificates(ctx context.Context) (*IssueCertsResponse, error)
+	RequestCertificates(ctx context.Context) (*certrefresh.IssueCertsResponse, error)
 }
 
-type certificateRefresherGetter func(certsDescription string, requestCertificates requestCertificatesFunc, repository certrepo.ServiceCertificatesRepo,
-	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
+type certificateRefresherGetter func(certsDescription string, requestCertificates certrefresh.RequestCertificatesFunc,
+	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
 
 type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo
