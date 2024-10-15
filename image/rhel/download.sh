@@ -39,10 +39,13 @@ if [[ "$arch" == "s390x" ]]; then
     || (
     echo "Broken stream again? Retry with dnf verbose logging."
     set -x
-    dnf clean all
-    rm -rf /var/cache/dnf
+    dnf upgrade --refresh || true
+    dnf install -v -y --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs && break || true
+    dnf clean all || true
+    rm -rf /var/cache/dnf || true
+    dnf upgrade --refresh || true
     dnf install -v -y --downloadonly --downloaddir=/tmp postgresql
-    dnf install -v -y --downloadonly --downloaddir=/tmp postgresql-private-libs;
+    dnf install -v -y --downloadonly --downloaddir=/tmp postgresql-private-libs
   )
   mv /tmp/postgresql-private-libs-*.rpm "${output_dir}/rpms/postgres-libs.rpm"
   mv /tmp/postgresql-*.rpm "${output_dir}/rpms/postgres.rpm"
