@@ -524,9 +524,9 @@ func (m *certificateRequesterMock) Start() {
 func (m *certificateRequesterMock) Stop() {
 	m.Called()
 }
-func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
+func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*IssueCertsResponse, error) {
 	args := m.Called(ctx)
-	return args.Get(0).(*central.IssueLocalScannerCertsResponse), args.Error(1)
+	return args.Get(0).(*IssueCertsResponse), args.Error(1)
 }
 
 type certificateRefresherMock struct {
