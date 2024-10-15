@@ -54,6 +54,7 @@ spec:
       {{- end }}
       serviceAccountName: sensor
       initContainers:
+{{- if ._rox.crs._enabled }}
       - image: {{ ._rox.image.main.fullRef | quote }}
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy | quote }}
         name: crs
@@ -89,8 +90,6 @@ spec:
               fieldPath: metadata.name
         - name: ROX_CENTRAL_ENDPOINT
           value: {{ ._rox.centralEndpoint }}
-        # - name: ROX_ADVERTISED_ENDPOINT
-        #   value: {{ ._rox.sensor.endpoint }}
         [<- if (not .KubectlOutput) >]
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
@@ -132,6 +131,7 @@ spec:
           readOnly: true
         [<- end >]
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+{{- end }}
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy }}

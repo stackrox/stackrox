@@ -250,7 +250,6 @@
 
 {{- $crsFile := ._rox.crs.file -}}
 {{- if kindIs "string" $crsFile -}}
-
   {{- $crs := dict -}}
   {{- $_ = set ._rox "createSecrets" false -}}
   {{- $crsManifest := $crsFile | fromYaml -}}
@@ -264,6 +263,7 @@
   {{/* FAIL ASSERT */}}
   {{- $crsCA := first $crsCAs -}}
   {{- $_ = set $crs "_caCert" $crsCA -}}
+  {{- $_ = set $crs "_enabled" true -}}
   {{- $_ = set ._rox.ca "_cert" $crsCA -}}
   {{- $_ = set ._rox "crs" $crs -}}
 {{- else -}}
