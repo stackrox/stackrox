@@ -27,7 +27,7 @@ import {
 import { getTableUIState } from 'utils/getTableUIState';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
-import { createFilterTracker } from 'utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import {
     imageComponentSearchFilterConfig,

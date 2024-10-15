@@ -3,7 +3,7 @@ import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarItem } from '@patternfly/
 
 import { SearchFilter } from 'types/search';
 import useAnalytics from 'hooks/useAnalytics';
-import { createFilterTracker } from 'utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import {
     CompoundSearchFilterConfig,
@@ -94,11 +94,12 @@ function ViolationsTableSearchFilter({
 }: ViolationsTableSearchFilterProps) {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
     function onSearchHandler(payload: OnSearchPayload) {
-        trackAppliedFilter('Policy Violations Filter Applied', payload);
         onSearch(payload);
+        trackAppliedFilter('Policy Violations Filter Applied', payload);
     }
 
     return (
