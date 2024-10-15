@@ -6,7 +6,7 @@
 # The version reported by the root Makefile is converted to be compatible with SemVer. Specifically, inner-zero is
 # dropped (e.g. 3.0.61.1 -> 3.61.1) and development version ".x" is changed to ".0" (e.g. 3.0.61.x-123 -> 3.0.61.0-123).
 VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g' | sed -E 's@^3.0.([[:digit:]]+\.[[:digit:]]+)(-)?@3.\1\2@g')
-# The operator version prefixed with "v" for ClusterServiceVersion resource and bundle and index tooling.
+# The operator version prefixed with "v" for ClusterServiceVersion resource, tagging bundle and index images and related tooling.
 CSV_VERSION ?= v$(VERSION)
 
 # Set to empty string to echo some command lines which are hidden by default.
