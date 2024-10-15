@@ -34,6 +34,8 @@ import {
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
+import { useManagedColumns } from 'hooks/useManagedColumns';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
 import {
     SearchOption,
     COMPONENT_SEARCH_OPTION,
@@ -60,7 +62,9 @@ import {
     imageMetadataContextFragment,
 } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
+    defaultColumns,
     deploymentWithVulnerabilitiesFragment,
+    tableId,
 } from '../Tables/DeploymentVulnerabilitiesTable';
 import VulnerabilityStateTabs, {
     vulnStateTabContentId,
@@ -191,6 +195,8 @@ function DeploymentPageVulnerabilities({
         },
     });
 
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+
     const vulnerabilityData = vulnerabilityRequest.data ?? vulnerabilityRequest.previousData;
     const totalVulnerabilityCount = vulnerabilityData?.deployment?.imageVulnerabilityCount ?? 0;
 
@@ -284,7 +290,7 @@ function DeploymentPageVulnerabilities({
                 <Divider />
                 <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
                     <div className="pf-v5-u-p-lg">
-                        <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                        <Split hasGutter className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                             <SplitItem isFilled>
                                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                     <Title headingLevel="h2">
@@ -293,6 +299,9 @@ function DeploymentPageVulnerabilities({
                                     </Title>
                                     {isFiltered && <DynamicTableLabel />}
                                 </Flex>
+                            </SplitItem>
+                            <SplitItem>
+                                <ColumnManagementButton managedColumnState={managedColumnState} />
                             </SplitItem>
                             <SplitItem>
                                 <Pagination
@@ -316,6 +325,7 @@ function DeploymentPageVulnerabilities({
                                     setSearchFilter({});
                                     setPage(1);
                                 }}
+                                tableConfig={managedColumnState.columns}
                             />
                         </div>
                     </div>
