@@ -18,11 +18,11 @@ function main() {
 
   case $# in
   5)
-    local -r operator_ns="${1:-}"
-    local -r index_image_repo="${2:-}"
-    local -r index_image_tag="${3:-}"
-    local -r starting_csv_version="${4:-}"
-    local -r operator_channel="${5:-}"
+    local -r operator_ns="${1}"
+    local -r index_image_repo="${2}"
+    local -r index_image_tag="${3}"
+    local -r starting_csv_version="${4}"
+    local -r operator_channel="${5}"
     ;;
   *)
     echo -e "Usage:\n\t$0 [--allow-dirty-tag | -d] <operator_ns> <index-image-repo> <index-image-tag> <starting-csv-version> <install-channel>" >&2
