@@ -525,22 +525,6 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 
 	log.Infof("enrichConnection: conn=%+v, status=%+v", *conn, *status)
 
-	/*
-		hostname:fake-collector
-		connections:map[
-			{
-				local:{Address:{data:<nil>} Port:0 IPNetwork:{ip:{data:<nil>} prefixLen:0}}
-				remote:{IPAndPort:{Address:{data:[34 118 224 251]} Port:80 IPNetwork:{ip:{data:<nil>} prefixLen:0}} L4Proto:0}
-				containerID:32b0ff124fa4 incoming:false
-			}:0xc0027c8b70 <- to jest status!
-			{
-				local:{Address:{data:<nil>} Port:80 IPNetwork:{ip:{data:<nil>} prefixLen:0}}
-				remote:{IPAndPort:{Address:{data:[10 57 162 11]} Port:0 IPNetwork:{ip:{data:<nil>} prefixLen:0}} L4Proto:0}
-				containerID:4762073dc1bb incoming:true
-			}:0xc0027c8b88
-		]
-	*/
-
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	log.Infof("enrichConnection: all known cluster entities: %v", m.clusterEntities) // this causes DATA race, but we cannot access m.clusterEntities.mutex from here
 	if !ok {
