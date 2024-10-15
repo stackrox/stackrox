@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,9 +25,7 @@ type DataStore interface {
 	GetPrivateConfig(context.Context) (*storage.PrivateConfig, error)
 	GetVulnerabilityExceptionConfig(ctx context.Context) (*storage.VulnerabilityExceptionConfig, error)
 	GetPublicConfig() (*storage.PublicConfig, error)
-	GetInternalConfig(context.Context) (*storage.InternalConfig, error)
 	UpsertConfig(context.Context, *storage.Config) error
-	UpsertInternalConfig(context.Context, *storage.InternalConfig) error
 }
 
 const (
@@ -140,33 +137,6 @@ func (d *datastoreImpl) GetPrivateConfig(ctx context.Context) (*storage.PrivateC
 
 	conf, _, err := d.store.Get(ctx)
 	return conf.GetPrivateConfig(), err
-}
-
-func (d *datastoreImpl) GetInternalConfig(ctx context.Context) (*storage.InternalConfig, error) {
-	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, nil
-	}
-
-	conf, _, err := d.store.Get(ctx)
-	return conf.GetInternalConfig(), err
-}
-
-func (d *datastoreImpl) UpsertInternalConfig(ctx context.Context, internalConfig *storage.InternalConfig) error {
-	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
-		return err
-	} else if !ok {
-		return sac.ErrResourceAccessDenied
-	}
-
-	conf, _, err := d.store.Get(ctx)
-	if err != nil {
-		return errors.Wrap(err, "Error upserting internal config")
-	}
-
-	conf.InternalConfig = internalConfig
-	return d.store.Upsert(ctx, conf)
 }
 
 func (d *datastoreImpl) GetVulnerabilityExceptionConfig(ctx context.Context) (*storage.VulnerabilityExceptionConfig, error) {

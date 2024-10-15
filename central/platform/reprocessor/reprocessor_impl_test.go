@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	alertDSMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
-	configMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +21,6 @@ type platformReprocessorImplTestSuite struct {
 	suite.Suite
 
 	reprocessor         *platformReprocessorImpl
-	configDatastore     *configMocks.MockDataStore
 	alertDatastore      *alertDSMocks.MockDataStore
 	deploymentDatastore *deploymentDSMocks.MockDataStore
 
@@ -31,12 +29,10 @@ type platformReprocessorImplTestSuite struct {
 
 func (s *platformReprocessorImplTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.configDatastore = configMocks.NewMockDataStore(s.mockCtrl)
 	s.alertDatastore = alertDSMocks.NewMockDataStore(s.mockCtrl)
 	s.deploymentDatastore = deploymentDSMocks.NewMockDataStore(s.mockCtrl)
 
 	s.reprocessor = &platformReprocessorImpl{
-		configDatastore:     s.configDatastore,
 		alertDatastore:      s.alertDatastore,
 		deploymentDatastore: s.deploymentDatastore,
 		platformMatcher:     platformmatcher.Singleton(),
@@ -49,26 +45,18 @@ func (s *platformReprocessorImplTestSuite) TearDownTest() {
 
 func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 	ctx := sac.WithAllAccess(context.Background())
-	// Nil platform component config
-	s.configDatastore.EXPECT().GetInternalConfig(ctx).Return(nil, nil).Times(1)
-	s.alertDatastore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Times(0)
-	s.deploymentDatastore.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Times(0)
-	s.reprocessor.runReprocessing()
 
 	// Needs reprocessing is false
-	s.configDatastore.EXPECT().GetInternalConfig(ctx).
-		Return(&storage.InternalConfig{
-			PlatformComponentConfig: &storage.PlatformComponentConfig{NeedsReprocessing: false},
-		}, nil).Times(1)
+	s.alertDatastore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, nil).Times(1)
+	s.deploymentDatastore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(0, nil).Times(1)
+
 	s.alertDatastore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Times(0)
 	s.deploymentDatastore.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Times(0)
 	s.reprocessor.runReprocessing()
 
 	// Alerts and deployments are updated
-	s.configDatastore.EXPECT().GetInternalConfig(ctx).
-		Return(&storage.InternalConfig{
-			PlatformComponentConfig: &storage.PlatformComponentConfig{NeedsReprocessing: true},
-		}, nil).Times(1)
+	s.alertDatastore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(6, nil).Times(1)
+	s.deploymentDatastore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(4, nil).Times(1)
 
 	s.alertDatastore.EXPECT().SearchRawAlerts(ctx, gomock.Any()).Return(testAlerts(), nil).Times(1)
 	s.alertDatastore.EXPECT().SearchRawAlerts(ctx, gomock.Any()).Return(nil, nil).Times(1)
@@ -76,11 +64,13 @@ func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 
 	s.deploymentDatastore.EXPECT().SearchRawDeployments(ctx, gomock.Any()).Return(testDeployments(), nil).Times(1)
 	s.deploymentDatastore.EXPECT().SearchRawDeployments(ctx, gomock.Any()).Return(nil, nil).Times(1)
-	s.deploymentDatastore.EXPECT().UpsertDeployments(ctx, expectedDeployments()).Return(nil).Times(1)
 
-	s.configDatastore.EXPECT().UpsertInternalConfig(ctx, &storage.InternalConfig{
-		PlatformComponentConfig: &storage.PlatformComponentConfig{NeedsReprocessing: false},
-	}).Return(nil).Times(1)
+	expectedDeps := expectedDeployments()
+	s.deploymentDatastore.EXPECT().UpsertDeployment(ctx, expectedDeps[0]).Return(nil).Times(1)
+	s.deploymentDatastore.EXPECT().UpsertDeployment(ctx, expectedDeps[1]).Return(nil).Times(1)
+	s.deploymentDatastore.EXPECT().UpsertDeployment(ctx, expectedDeps[2]).Return(nil).Times(1)
+	s.deploymentDatastore.EXPECT().UpsertDeployment(ctx, expectedDeps[3]).Return(nil).Times(1)
+
 	s.reprocessor.runReprocessing()
 }
 

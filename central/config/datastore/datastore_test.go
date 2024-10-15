@@ -93,11 +93,6 @@ var (
 			ReportRetentionConfig:               nil,
 			VulnerabilityExceptionConfig:        &storage.VulnerabilityExceptionConfig{},
 		},
-		InternalConfig: &storage.InternalConfig{
-			PlatformComponentConfig: &storage.PlatformComponentConfig{
-				NeedsReprocessing: true,
-			},
-		},
 	}
 )
 
@@ -214,58 +209,6 @@ func (s *configDataStoreTestSuite) TestAllowsUpdate() {
 	s.NotNil(updatedPublicConfig)
 }
 
-func (s *configDataStoreTestSuite) TestGetInternalConfig() {
-	// context without adminSAC access
-	s.storage.EXPECT().Get(s.hasNoneCtx).Times(0)
-
-	internalConfigNone, err := s.dataStore.GetInternalConfig(s.hasNoneCtx)
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Nil(internalConfigNone, "expected return value to be nil")
-
-	// context with adminSAC access
-	s.storage.EXPECT().Get(s.hasReadCtx).Return(sampleConfig, true, nil).Times(1)
-
-	internalConfigRead, err := s.dataStore.GetInternalConfig(s.hasReadCtx)
-	s.NoError(err, "expected no error trying to read with permissions")
-	s.NotNil(internalConfigRead)
-
-	s.storage.EXPECT().Get(s.hasWriteCtx).Return(sampleConfig, true, nil).Times(1)
-
-	internalConfigWrite, err := s.dataStore.GetInternalConfig(s.hasWriteCtx)
-	s.NoError(err, "expected no error trying to read with permissions")
-	s.NotNil(internalConfigWrite)
-}
-
-func (s *configDataStoreTestSuite) TestUpsertInternalConfig() {
-	// context without adminSAC access
-	s.storage.EXPECT().Get(s.hasNoneCtx).Times(0)
-	s.storage.EXPECT().Upsert(s.hasNoneCtx, gomock.Any()).Times(0)
-
-	err := s.dataStore.UpsertInternalConfig(s.hasNoneCtx, &storage.InternalConfig{})
-	s.Error(err, "expected error when trying to upsert without access")
-
-	// context without adminSAC write access
-	s.storage.EXPECT().Get(s.hasReadCtx).Times(0)
-	s.storage.EXPECT().Upsert(s.hasReadCtx, gomock.Any()).Times(0)
-	err = s.dataStore.UpsertInternalConfig(s.hasNoneCtx, &storage.InternalConfig{})
-	s.Error(err, "expected error when trying to upsert without write access")
-
-	// context with adminSAC write access
-	s.storage.EXPECT().Get(s.hasWriteCtx).Return(sampleConfig, true, nil).Times(1)
-	expectedConf := sampleConfig.CloneVT()
-	expectedConf.InternalConfig = &storage.InternalConfig{
-		PlatformComponentConfig: &storage.PlatformComponentConfig{
-			NeedsReprocessing: false,
-		},
-	}
-	s.storage.EXPECT().Upsert(s.hasWriteCtx, expectedConf).Return(nil).Times(1)
-	err = s.dataStore.UpsertInternalConfig(s.hasWriteCtx,
-		&storage.InternalConfig{
-			PlatformComponentConfig: &storage.PlatformComponentConfig{NeedsReprocessing: false},
-		})
-	s.NoError(err, "expected no error when trying to upsert with write access")
-}
-
 var (
 	customAlertRetention = &storage.PrivateConfig_AlertConfig{
 		AlertConfig: &storage.AlertRetentionConfig{
@@ -285,12 +228,6 @@ var (
 		ReportRetentionConfig:               customReportRetentionConfig,
 		VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 		AdministrationEventsConfig:          customAdministrationEventsConfig,
-	}
-
-	customInternalConfig = &storage.InternalConfig{
-		PlatformComponentConfig: &storage.PlatformComponentConfig{
-			NeedsReprocessing: false,
-		},
 	}
 
 	customVulnerabilityDeferralConfig = &storage.VulnerabilityExceptionConfig{
@@ -346,18 +283,16 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 	}{
 		"No Update for fully set config": {
 			initialConfig: &storage.Config{
-				PublicConfig:   samplePublicConfig,
-				PrivateConfig:  customPrivateConfig,
-				InternalConfig: customInternalConfig,
+				PublicConfig:  samplePublicConfig,
+				PrivateConfig: customPrivateConfig,
 			},
 			upsertedConfig: nil,
 		},
 		"Missing private config gets fully configured when Features activated": {
 			enabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
 			initialConfig: &storage.Config{
-				PublicConfig:   samplePublicConfig,
-				PrivateConfig:  nil,
-				InternalConfig: customInternalConfig,
+				PublicConfig:  samplePublicConfig,
+				PrivateConfig: nil,
 			},
 			upsertedConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
@@ -370,15 +305,13 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        defaultVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
 				},
-				InternalConfig: customInternalConfig,
 			},
 		},
 		"Missing private config gets partially configured when Features deactivated": {
 			disabledFlags: []string{features.UnifiedCVEDeferral.EnvVar()},
 			initialConfig: &storage.Config{
-				PublicConfig:   samplePublicConfig,
-				PrivateConfig:  nil,
-				InternalConfig: customInternalConfig,
+				PublicConfig:  samplePublicConfig,
+				PrivateConfig: nil,
 			},
 			upsertedConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
@@ -391,7 +324,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
 				},
-				InternalConfig: customInternalConfig,
 			},
 		},
 		"Configure decommissioned cluster retention when missing": {
@@ -406,7 +338,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
-				InternalConfig: customInternalConfig,
 			},
 			upsertedConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
@@ -419,7 +350,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
-				InternalConfig: customInternalConfig,
 			},
 		},
 		"Configure report retention when missing": {
@@ -434,7 +364,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
-				InternalConfig: customInternalConfig,
 			},
 			upsertedConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
@@ -447,7 +376,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
-				InternalConfig: customInternalConfig,
 			},
 		},
 		"Configure vulnerability exception management when missing and Feature activated": {
@@ -463,7 +391,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
-				InternalConfig: customInternalConfig,
 			},
 			upsertedConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
@@ -476,7 +403,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        defaultVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
-				InternalConfig: customInternalConfig,
 			},
 		},
 		"No update when vulnerability exception management is missing and Feature deactivated": {
@@ -492,7 +418,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        nil,
 					AdministrationEventsConfig:          customAdministrationEventsConfig,
 				},
-				InternalConfig: customInternalConfig,
 			},
 			upsertedConfig: nil,
 		},
@@ -509,7 +434,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          nil,
 				},
-				InternalConfig: customInternalConfig,
 			},
 			upsertedConfig: &storage.Config{
 				PublicConfig: samplePublicConfig,
@@ -522,7 +446,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 					VulnerabilityExceptionConfig:        customVulnerabilityDeferralConfig,
 					AdministrationEventsConfig:          defaultAdministrationEventsConfig,
 				},
-				InternalConfig: customInternalConfig,
 			},
 		},
 		"Configure internal config when missing": {

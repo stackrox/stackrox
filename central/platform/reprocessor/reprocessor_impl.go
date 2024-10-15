@@ -6,7 +6,6 @@ import (
 
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	alertutils "github.com/stackrox/rox/central/alert/utils"
-	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -24,7 +23,6 @@ var (
 )
 
 type platformReprocessorImpl struct {
-	configDatastore     configDS.DataStore
 	alertDatastore      alertDS.DataStore
 	deploymentDatastore deploymentDS.DataStore
 	platformMatcher     platformmatcher.PlatformMatcher
@@ -33,13 +31,11 @@ type platformReprocessorImpl struct {
 	isStarted atomic.Bool
 }
 
-func New(configDatastore configDS.DataStore,
-	alertDatastore alertDS.DataStore,
+func New(alertDatastore alertDS.DataStore,
 	deploymentDatastore deploymentDS.DataStore,
 	platformMatcher platformmatcher.PlatformMatcher) PlatformReprocessor {
 
 	return &platformReprocessorImpl{
-		configDatastore:     configDatastore,
 		alertDatastore:      alertDatastore,
 		deploymentDatastore: deploymentDatastore,
 		platformMatcher:     platformMatcher,
@@ -63,38 +59,41 @@ func (pr *platformReprocessorImpl) Stop() {
 }
 
 func (pr *platformReprocessorImpl) runReprocessing() {
-	conf, err := pr.configDatastore.GetInternalConfig(reprocessorCtx)
+	needsReprocessing, err := pr.needsReprocessing()
 	if err != nil {
-		log.Errorf("Error getting platform component config: %s", err)
-		return
-	}
-	if conf.GetPlatformComponentConfig() == nil {
-		log.Errorf("Platform component config is not set")
+		log.Errorf("Error determining if platform components need reporcessing: %v", err)
 		return
 	}
 
-	if !conf.GetPlatformComponentConfig().GetNeedsReprocessing() {
+	if !needsReprocessing {
 		log.Info("Platform components up to date, skipping reprocessing")
 		return
 	}
 
 	err = pr.reprocessAlerts()
 	if err != nil {
-		log.Errorf("Error reprocessing alerts with platform rules: %s", err)
+		log.Errorf("Error reprocessing alerts with platform rules: %v", err)
 		return
 	}
 
 	err = pr.reprocessDeployments()
 	if err != nil {
-		log.Errorf("Error reprocessing deployments with platform rules: %s", err)
+		log.Errorf("Error reprocessing deployments with platform rules: %v", err)
 		return
 	}
+}
 
-	conf.GetPlatformComponentConfig().NeedsReprocessing = false
-	err = pr.configDatastore.UpsertInternalConfig(reprocessorCtx, conf)
+func (pr *platformReprocessorImpl) needsReprocessing() (bool, error) {
+	query := search.NewQueryBuilder().AddNullField(search.PlatformComponent).ProtoQuery()
+	numAlerts, err := pr.alertDatastore.Count(reprocessorCtx, query)
 	if err != nil {
-		log.Errorf("Error upserting platform config after reprocessing: %s", err)
+		return false, err
 	}
+	numDeployments, err := pr.deploymentDatastore.Count(reprocessorCtx, query)
+	if err != nil {
+		return false, err
+	}
+	return numAlerts > 0 || numDeployments > 0, nil
 }
 
 func (pr *platformReprocessorImpl) reprocessAlerts() error {
@@ -160,10 +159,10 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 				return err
 			}
 			dep.PlatformComponent = match
-		}
-		err = pr.deploymentDatastore.UpsertDeployments(reprocessorCtx, deps)
-		if err != nil {
-			return err
+			err = pr.deploymentDatastore.UpsertDeployment(reprocessorCtx, dep)
+			if err != nil {
+				return err
+			}
 		}
 		query.GetPagination().Offset += int32(len(deps))
 	}

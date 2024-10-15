@@ -365,7 +365,10 @@ func startServices() {
 	administrationUsageInjector.Singleton().Start()
 	gcp.Singleton().Start()
 	administrationEventHandler.Singleton().Start()
-	platformReprocessor.Singleton().Start()
+
+	if features.PlatformComponents.Enabled() {
+		platformReprocessor.Singleton().Start()
+	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -931,7 +934,6 @@ func waitForTerminationSignal() {
 		{gcp.Singleton(), "GCP cloud credentials manager"},
 		{cloudSourcesManager.Singleton(), "cloud sources manager"},
 		{administrationEventHandler.Singleton(), "administration events handler"},
-		{platformReprocessor.Singleton(), "platform components reprocessor"},
 	}
 
 	if features.VulnReportingEnhancements.Enabled() {
@@ -945,6 +947,11 @@ func waitForTerminationSignal() {
 	if features.ComplianceReporting.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{complianceReportManager.Singleton(), "compliance reports manager"})
+	}
+
+	if features.PlatformComponents.Enabled() {
+		stoppables = append(stoppables,
+			stoppableWithName{platformReprocessor.Singleton(), "platform components reprocessor"})
 	}
 
 	var wg sync.WaitGroup
