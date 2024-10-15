@@ -217,8 +217,9 @@ func (s *Sensor) Start() {
 		s.AddNotifiable(wrapNotifiable(koCacheSource, "Kernel object cache"))
 	}
 
-	// Enable endpoint to retrieve vulnerability definitions if local image scanning is enabled.
-	if env.LocalImageScanningEnabled.BooleanSetting() {
+	// Enable endpoint to retrieve vulnerability definitions if local image scanning or Scanner v4 is enabled.
+	// Scanner v4 / Node Indexing requires access to the repo to cpe mapping file hosted by central.
+	if env.LocalImageScanningEnabled.BooleanSetting() || features.ScannerV4.Enabled() {
 		route, err := s.newScannerDefinitionsRoute(s.centralEndpoint, centralCertificates)
 		if err != nil {
 			utils.Should(errors.Wrap(err, "Failed to create scanner definition route"))
@@ -327,7 +328,7 @@ func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCerti
 	// We rely on central to handle content encoding negotiation.
 	return &routes.CustomRoute{
 		Route:         "/scanner/definitions",
-		Authorizer:    or.Or(idcheck.ScannerOnly(), idcheck.ScannerV4IndexerOnly()),
+		Authorizer:    or.Or(idcheck.ScannerOnly(), idcheck.ScannerV4IndexerOnly(), idcheck.CollectorOnly()),
 		ServerHandler: handler,
 	}, nil
 }
