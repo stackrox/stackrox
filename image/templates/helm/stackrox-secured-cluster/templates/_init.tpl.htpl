@@ -248,6 +248,7 @@
 
 {{ include "srox.initGlobalPrefix" (list $) }}
 
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
 {{- $crsFile := ._rox.crs.file -}}
 {{- if kindIs "string" $crsFile -}}
   {{- $crs := dict -}}
@@ -267,6 +268,7 @@
   {{- $_ = set ._rox.ca "_cert" $crsCA -}}
   {{- $_ = set ._rox "crs" $crs -}}
 {{- else -}}
+[<- end >]
 
 {{/*
 The following block checks for the validity of the provided init bundle. (`helm install ... -f <init-bundle.yaml>`)
