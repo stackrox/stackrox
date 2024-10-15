@@ -248,7 +248,7 @@ func (s *scannerv4) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeIn
 		return nil, errors.Wrap(err, "Failed to create vulnerability report")
 	}
 	log.Infof("Received Vulnerability Report with %d packages containing %d vulnerabilities", len(vr.GetContents().GetPackages()), len(vr.Vulnerabilities))
-	return ToNodeScan(vr, node.GetOsImage()), nil
+	return toNodeScan(vr, node.GetOsImage()), nil
 }
 
 func (s *scannerv4) GetNodeScan(_ *storage.Node) (*storage.NodeScan, error) {

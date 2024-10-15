@@ -43,7 +43,7 @@ func (s *indexReportConvertSuite) TestToNodeInventory() {
 		}},
 	}
 
-	actual := ToNodeScan(r, "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0")
+	actual := toNodeScan(r, "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0")
 
 	s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
 	s.Len(actual.GetComponents(), 2)
@@ -63,7 +63,7 @@ func (s *indexReportConvertSuite) TestEmptyReportConversionNoPanic() {
 	var actual *storage.NodeScan
 
 	s.NotPanics(func() {
-		actual = ToNodeScan(r, "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0")
+		actual = toNodeScan(r, "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0")
 	})
 
 	s.NotNil(actual)

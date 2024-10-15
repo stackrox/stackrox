@@ -8,6 +8,7 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -15,7 +16,7 @@ var (
 	rhcosOSImageRegexp = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) ([\d])([\d]+)`)
 )
 
-func ToNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan {
+func toNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan {
 	// TODO(ROX-26593): Instead of fixing labels here, add RHCOS DistributionScanner to ClairCore
 	fixedNotes := fixNotes(toStorageNotes(r.Notes), osImageRef)
 
@@ -54,7 +55,12 @@ func getPackageVulns(packageID string, r *v4.VulnerabilityReport) []*storage.Emb
 		// No vulnerabilities for this package, skip
 		return vulns
 	}
+	processedVulns := set.NewStringSet()
 	for _, vulnID := range mapping.GetValues() {
+		if !processedVulns.Add(vulnID) {
+			// Already processed this vulnerability, skip it
+			continue
+		}
 		vulnerability, ok := r.Vulnerabilities[vulnID]
 		if !ok {
 			log.Warnf("Unable to find vulnerability %s in report - skipping this vulnerability", vulnID)

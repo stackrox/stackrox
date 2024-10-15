@@ -59,7 +59,7 @@ func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 
 func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	if !features.ScannerV4.Enabled() {
-		// If Scanner v4 as a feature is disabled after initial installation, do not run this pipeline
+		// If Scanner V4 is disabled do not run this pipeline
 		return nil
 	}
 	event := msg.GetEvent()
