@@ -250,14 +250,6 @@ func allImagesAreSpecifiedByDigest(d *storage.Deployment) bool {
 	return true
 }
 
-func getIDsFromDeployments(deployments ...*storage.Deployment) []string {
-	ids := make([]string, 0, len(deployments))
-	for _, dep := range deployments {
-		ids = append(ids, dep.GetId())
-	}
-	return ids
-}
-
 func (ds *datastoreImpl) mergeCronJobs(ctx context.Context, deployment *storage.Deployment) error {
 	if deployment.GetType() != kubernetes.CronJob {
 		return nil
