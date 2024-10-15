@@ -64,18 +64,18 @@ func (s *certRefresherSuite) TestRefreshCertificatesImmediateRefresh() {
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
 			storedCertificates := testIssueCertsResponse(1,
-				storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE).GetCertificates()
+				storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE).Certificates
 			issueCertsResponse := testIssueCertsResponse(2,
 				storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE)
 
 			s.dependenciesMock.On("GetServiceCertificates", mock.Anything).Once().Return(storedCertificates, nil)
 			s.dependenciesMock.On("EnsureServiceCertificates", mock.Anything,
-				issueCertsResponse.GetCertificates()).Once().Return(nil)
+				issueCertsResponse.Certificates).Once().Return(nil)
 
 			s.dependenciesMock.On("getCertsRenewalTime", storedCertificates).Once().Return(
 				// renew immediately first
 				now.Add(-1*time.Hour), nil)
-			s.dependenciesMock.On("getCertsRenewalTime", issueCertsResponse.GetCertificates()).Once().Return(
+			s.dependenciesMock.On("getCertsRenewalTime", issueCertsResponse.Certificates).Once().Return(
 				tc.newCertsRenewalTime, tc.newCertsRenewalTimeErr)
 
 			s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(issueCertsResponse, nil)
@@ -122,7 +122,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetCertsInconsistentImmediat
 				(*storage.TypedServiceCertificateSet)(nil), tc.recoverableErr)
 			s.dependenciesMock.On("requestCertificates", mock.Anything).Return(
 				// stop the test here, as we have already checked this recovers from the first getCertsRenewalTime error.
-				(*central.IssueLocalScannerCertsResponse)(nil), errCertRefresherForced).Once().Run(func(args mock.Arguments) {
+				(*IssueCertsResponse)(nil), errCertRefresherForced).Once().Run(func(args mock.Arguments) {
 			})
 
 			_, err := s.refreshCertificates()
@@ -162,7 +162,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesGetTimeToRefreshFailureRecov
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), errCertRefresherForced)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Return(
 		// stop the test here, as we have already checked this recovers from the first getCertsRenewalTime error.
-		(*central.IssueLocalScannerCertsResponse)(nil), errCertRefresherForced).Once().Run(func(args mock.Arguments) {
+		(*IssueCertsResponse)(nil), errCertRefresherForced).Once().Run(func(args mock.Arguments) {
 	})
 
 	_, err := s.refreshCertificates()
@@ -177,7 +177,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesFailure()
 	s.dependenciesMock.On("GetServiceCertificates", mock.Anything).Once().Return(certificates, nil)
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), nil)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(
-		(*central.IssueLocalScannerCertsResponse)(nil), errCertRefresherForced)
+		(*IssueCertsResponse)(nil), errCertRefresherForced)
 
 	_, err := s.refreshCertificates()
 
@@ -190,13 +190,14 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesResponseF
 	var certificates *storage.TypedServiceCertificateSet
 	s.dependenciesMock.On("GetServiceCertificates", mock.Anything).Once().Return(certificates, nil)
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), nil)
-	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(&central.IssueLocalScannerCertsResponse{
-		Response: &central.IssueLocalScannerCertsResponse_Error{
-			Error: &central.LocalScannerCertsIssueError{
-				Message: errCertRefresherForced.Error(),
+	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(
+		convertToIssueCertsResponse(&central.IssueLocalScannerCertsResponse{
+			Response: &central.IssueLocalScannerCertsResponse_Error{
+				Error: &central.LocalScannerCertsIssueError{
+					Message: errCertRefresherForced.Error(),
+				},
 			},
-		},
-	}, nil)
+		}), nil)
 
 	_, err := s.refreshCertificates()
 
@@ -214,7 +215,7 @@ func (s *certRefresherSuite) TestRefreshCertificatesEnsureCertsFailure() {
 		storage.ServiceType_SCANNER_SERVICE, storage.ServiceType_SCANNER_DB_SERVICE, storage.ServiceType_SCANNER_V4_INDEXER_SERVICE, storage.ServiceType_SCANNER_V4_DB_SERVICE)
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(issueCertsResponse, nil)
 	s.dependenciesMock.On("EnsureServiceCertificates", mock.Anything,
-		issueCertsResponse.GetCertificates()).Once().Return(errCertRefresherForced)
+		issueCertsResponse.Certificates).Once().Return(errCertRefresherForced)
 
 	_, err := s.refreshCertificates()
 
@@ -225,17 +226,15 @@ func (s *certRefresherSuite) TestRefreshCertificatesEnsureCertsFailure() {
 
 // testIssueCertsResponse return a test response with certificates for serviceTypes. Different values of seed
 // produce different certificates.
-func testIssueCertsResponse(seed uint, serviceTypes ...storage.ServiceType) *central.IssueLocalScannerCertsResponse {
+func testIssueCertsResponse(seed uint, serviceTypes ...storage.ServiceType) *IssueCertsResponse {
 	serviceCerts := make([]*storage.TypedServiceCertificate, len(serviceTypes))
 	for i, serviceType := range serviceTypes {
 		serviceCerts[i] = testServiceCertificate(seed, serviceType)
 	}
-	return &central.IssueLocalScannerCertsResponse{
-		Response: &central.IssueLocalScannerCertsResponse_Certificates{
-			Certificates: &storage.TypedServiceCertificateSet{
-				CaPem:        make([]byte, 1*seed),
-				ServiceCerts: serviceCerts,
-			},
+	return &IssueCertsResponse{
+		Certificates: &storage.TypedServiceCertificateSet{
+			CaPem:        make([]byte, 1*seed),
+			ServiceCerts: serviceCerts,
 		},
 	}
 }
@@ -256,9 +255,9 @@ type dependenciesMock struct {
 	mock.Mock
 }
 
-func (m *dependenciesMock) requestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
+func (m *dependenciesMock) requestCertificates(ctx context.Context) (*IssueCertsResponse, error) {
 	args := m.Called(ctx)
-	return args.Get(0).(*central.IssueLocalScannerCertsResponse), args.Error(1)
+	return args.Get(0).(*IssueCertsResponse), args.Error(1)
 }
 
 func (m *dependenciesMock) GetServiceCertificates(ctx context.Context) (*storage.TypedServiceCertificateSet, error) {
