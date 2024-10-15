@@ -67,7 +67,9 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		// Wait for collector to connect
 		waitIfRealCollector(30 * time.Second)
 		testContext.GetFakeCentral().ClearReceivedBuffer()
+		t.Log("Stopping Central GRPC")
 		testContext.StopCentralGRPC()
+		t.Log("Central GRPC stopped")
 
 		// Nginx deployment
 		nginxObj := helper.ObjByKind(NginxDeployment.Kind)
@@ -136,6 +138,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		require.NoError(t, messagesReceivedSignal.Wait())
 
 		// We need to wait here at least 30s to make sure the network flows are processed
+		t.Log("Waiting 60s for Sensor to process the network flows")
 		time.Sleep(60 * time.Second)
 
 		require.NoError(t, deleteTalk())
@@ -144,7 +147,9 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		require.NoError(t, testContext.WaitForResourceDeleted(nginxObj))
 		require.NoError(t, deleteService())
 
+		t.Log("Starting GRPC connection to fake Central")
 		testContext.StartFakeGRPC()
+		t.Log("Waiting for sync event")
 		testContext.WaitForSyncEvent(t, 2*time.Minute)
 
 		msg, err := testContext.WaitForMessageWithMatcher(func(event *central.MsgFromSensor) bool {
