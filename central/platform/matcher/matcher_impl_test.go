@@ -54,23 +54,48 @@ func (s *platformMatcherTestSuite) TestMatchAlert() {
 	s.Require().NoError(err)
 	s.Require().False(match)
 
-	alert.GetDeployment().Namespace = "openshift-operators"
+	alert.GetDeployment().Namespace = "aap-suffix"
+	match, err = s.matcher.MatchAlert(alert)
+	s.Require().NoError(err)
+	s.Require().False(match)
+
+	alert.GetDeployment().Namespace = "prefix-hive"
+	match, err = s.matcher.MatchAlert(alert)
+	s.Require().NoError(err)
+	s.Require().False(match)
+
+	alert.GetDeployment().Namespace = "prefix-openshift-123"
 	match, err = s.matcher.MatchAlert(alert)
 	s.Require().NoError(err)
 	s.Require().False(match)
 
 	// case: Alert on a deployment matching platform rules
-	alert.GetDeployment().Namespace = "openshift123"
+	alert.GetDeployment().Namespace = "openshift-123"
 	match, err = s.matcher.MatchAlert(alert)
 	s.Require().NoError(err)
 	s.Require().True(match)
 
-	alert.GetDeployment().Namespace = "kube123"
+	alert.GetDeployment().Namespace = "kube-123"
 	match, err = s.matcher.MatchAlert(alert)
 	s.Require().NoError(err)
 	s.Require().True(match)
 
-	alert.GetDeployment().Namespace = "redhat123"
+	alert.GetDeployment().Namespace = "stackrox"
+	match, err = s.matcher.MatchAlert(alert)
+	s.Require().NoError(err)
+	s.Require().True(match)
+
+	alert.GetDeployment().Namespace = "rhacs-operator"
+	match, err = s.matcher.MatchAlert(alert)
+	s.Require().NoError(err)
+	s.Require().True(match)
+
+	alert.GetDeployment().Namespace = "open-cluster-management"
+	match, err = s.matcher.MatchAlert(alert)
+	s.Require().NoError(err)
+	s.Require().True(match)
+
+	alert.GetDeployment().Namespace = "multicluster-engine"
 	match, err = s.matcher.MatchAlert(alert)
 	s.Require().NoError(err)
 	s.Require().True(match)
@@ -92,18 +117,58 @@ func (s *platformMatcherTestSuite) TestMatchDeployment() {
 	s.Require().NoError(err)
 	s.Require().False(match)
 
-	dep.Namespace = "openshift-operators"
+	dep.Namespace = "open-cluster-management-suffix"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().False(match)
+
+	dep.Namespace = "prefix-multicluster-engine"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().False(match)
+
+	dep.Namespace = "openshift123"
 	match, err = s.matcher.MatchDeployment(dep)
 	s.Require().NoError(err)
 	s.Require().False(match)
 
 	// case: deployment matching platform rules
-	dep.Namespace = "redhat123"
+	dep.Namespace = "openshift-123"
 	match, err = s.matcher.MatchDeployment(dep)
 	s.Require().NoError(err)
 	s.Require().True(match)
 
-	dep.Namespace = "istio-system"
+	dep.Namespace = "kube-123"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().True(match)
+
+	dep.Namespace = "aap"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().True(match)
+
+	dep.Namespace = "hive"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().True(match)
+
+	dep.Namespace = "stackrox"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().True(match)
+
+	dep.Namespace = "rhacs-operator"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().True(match)
+
+	dep.Namespace = "open-cluster-management"
+	match, err = s.matcher.MatchDeployment(dep)
+	s.Require().NoError(err)
+	s.Require().True(match)
+
+	dep.Namespace = "nvidia-gpu-operator"
 	match, err = s.matcher.MatchDeployment(dep)
 	s.Require().NoError(err)
 	s.Require().True(match)

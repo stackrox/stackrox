@@ -102,7 +102,7 @@ func testAlerts() []*storage.Alert {
 			Entity: &storage.Alert_Deployment_{
 				Deployment: &storage.Alert_Deployment{
 					Name:      "dep1",
-					Namespace: "openshift-operators",
+					Namespace: "hive-suffix",
 				},
 			},
 		},
@@ -111,7 +111,7 @@ func testAlerts() []*storage.Alert {
 			Entity: &storage.Alert_Deployment_{
 				Deployment: &storage.Alert_Deployment{
 					Name:      "dep1",
-					Namespace: "openshift123",
+					Namespace: "openshift-123",
 				},
 			},
 		},
@@ -120,7 +120,7 @@ func testAlerts() []*storage.Alert {
 			Entity: &storage.Alert_Deployment_{
 				Deployment: &storage.Alert_Deployment{
 					Name:      "dep1",
-					Namespace: "redhat123",
+					Namespace: "stackrox",
 				},
 			},
 		},
@@ -161,7 +161,7 @@ func expectedAlerts() []*storage.Alert {
 			Entity: &storage.Alert_Deployment_{
 				Deployment: &storage.Alert_Deployment{
 					Name:      "dep1",
-					Namespace: "openshift-operators",
+					Namespace: "hive-suffix",
 				},
 			},
 			EntityType:        storage.Alert_DEPLOYMENT,
@@ -172,7 +172,7 @@ func expectedAlerts() []*storage.Alert {
 			Entity: &storage.Alert_Deployment_{
 				Deployment: &storage.Alert_Deployment{
 					Name:      "dep1",
-					Namespace: "openshift123",
+					Namespace: "openshift-123",
 				},
 			},
 			EntityType:        storage.Alert_DEPLOYMENT,
@@ -183,7 +183,7 @@ func expectedAlerts() []*storage.Alert {
 			Entity: &storage.Alert_Deployment_{
 				Deployment: &storage.Alert_Deployment{
 					Name:      "dep1",
-					Namespace: "redhat123",
+					Namespace: "stackrox",
 				},
 			},
 			EntityType:        storage.Alert_DEPLOYMENT,
@@ -200,15 +200,15 @@ func testDeployments() []*storage.Deployment {
 		},
 		{
 			Id:        "2",
-			Namespace: "openshift-operators",
+			Namespace: "prefix-aap",
 		},
 		{
 			Id:        "3",
-			Namespace: "openshift123",
+			Namespace: "kube-123",
 		},
 		{
 			Id:        "4",
-			Namespace: "redhat123",
+			Namespace: "open-cluster-management",
 		},
 	}
 }
@@ -222,17 +222,17 @@ func expectedDeployments() []*storage.Deployment {
 		},
 		{
 			Id:                "2",
-			Namespace:         "openshift-operators",
+			Namespace:         "prefix-aap",
 			PlatformComponent: false,
 		},
 		{
 			Id:                "3",
-			Namespace:         "openshift123",
+			Namespace:         "kube-123",
 			PlatformComponent: true,
 		},
 		{
 			Id:                "4",
-			Namespace:         "redhat123",
+			Namespace:         "open-cluster-management",
 			PlatformComponent: true,
 		},
 	}
