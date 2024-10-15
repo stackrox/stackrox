@@ -49,6 +49,7 @@ type scanConfigWatcherImpl struct {
 	cancel  func()
 	scanC   chan *ScanWatcherResults
 	stopped *concurrency.Signal
+	timeout *time.Timer
 
 	scanDS    scan.DataStore
 	profileDS profileDatastore.DataStore
@@ -64,10 +65,12 @@ type scanConfigWatcherImpl struct {
 func NewScanConfigWatcher(ctx context.Context, watcherID string, sc *storage.ComplianceOperatorScanConfigurationV2, scanDS scan.DataStore, profileDS profileDatastore.DataStore, queue readyQueue[*ScanConfigWatcherResults], snapshotIDs ...string) *scanConfigWatcherImpl {
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
+	timeout := time.NewTimer(defaultScanConfigTimeout)
 	ret := &scanConfigWatcherImpl{
 		ctx:        watcherCtx,
 		cancel:     cancel,
 		stopped:    &finishedSignal,
+		timeout:    timeout,
 		scanDS:     scanDS,
 		profileDS:  profileDS,
 		scanC:      make(chan *ScanWatcherResults),
@@ -81,7 +84,6 @@ func NewScanConfigWatcher(ctx context.Context, watcherID string, sc *storage.Com
 		},
 		scansToWait: set.NewStringSet(),
 	}
-	timeout := time.NewTicker(defaultScanConfigTimeout)
 	go ret.run(timeout.C)
 	return ret
 }
@@ -96,9 +98,12 @@ func (w *scanConfigWatcherImpl) PushScanResults(results *ScanWatcherResults) err
 	}
 }
 
-// Subscribe a new readyQueue to the watcher
+// Subscribe snapshot to the watcher
 func (w *scanConfigWatcherImpl) Subscribe(id string) {
 	concurrency.WithLock(&w.snapshotsLock, func() {
+		if w.scanConfigResults == nil {
+			return
+		}
 		w.scanConfigResults.ReportSnapshotIDs = append(w.scanConfigResults.ReportSnapshotIDs, id)
 	})
 }
@@ -117,6 +122,7 @@ func (w *scanConfigWatcherImpl) run(timerC <-chan time.Time) {
 	defer func() {
 		w.stopped.Signal()
 		<-w.stopped.Done()
+		w.timeout.Stop()
 	}()
 	for {
 		select {
@@ -147,50 +153,56 @@ func (w *scanConfigWatcherImpl) run(timerC <-chan time.Time) {
 func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) error {
 	// Here we have the scan config id and the scan
 	if w.totalResults == 0 {
-		var profileNames []string
-		for _, p := range w.scanConfigResults.ScanConfig.GetProfiles() {
-			profileNames = append(profileNames, p.GetProfileName())
-		}
-		log.Debugf("Profiles %v", profileNames)
-		var clusters []string
-		for _, c := range w.scanConfigResults.ScanConfig.GetClusters() {
-			clusters = append(clusters, c.GetClusterId())
-		}
-		profileQuery := search.NewQueryBuilder().
-			AddExactMatches(
-				search.ComplianceOperatorProfileName,
-				profileNames...,
-			).
-			AddExactMatches(
-				search.ClusterID,
-				clusters...,
-			).ProtoQuery()
-		profiles, err := w.profileDS.SearchProfiles(result.Ctx, profileQuery)
-		if err != nil {
+		if err := w.getScansToWait(result); err != nil {
 			return err
 		}
-		for _, p := range profiles {
-			scanRefQuery := search.NewQueryBuilder().AddExactMatches(
-				search.ComplianceOperatorProfileRef,
-				p.GetProfileRefId(),
-			).ProtoQuery()
-			scans, err := w.scanDS.SearchScans(result.Ctx, scanRefQuery)
-			if err != nil {
-				log.Errorf("Unable to retrieve scans: %v", err)
-				continue
-			}
-			for _, s := range scans {
-				log.Debugf("Adding scan to wait %s", s.GetScanName())
-				w.scansToWait.Add(fmt.Sprintf("%s:%s", s.GetClusterId(), s.GetId()))
-			}
-		}
-		w.totalResults = len(w.scansToWait)
-		log.Infof("Scan config %s needs to wait for %d scans", w.scanConfigResults.ScanConfig.GetScanConfigName(), w.totalResults)
 	}
 	log.Infof("Scan to handle %s with id %s", result.Scan.GetScanName(), result.Scan.GetId())
 	if found := w.scansToWait.Remove(fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())); !found {
 		return errors.Errorf("The scan %s should be handle by this watcher", result.Scan.GetId())
 	}
 	w.scanConfigResults.ScanResults[fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())] = result
+	return nil
+}
+
+func (w *scanConfigWatcherImpl) getScansToWait(result *ScanWatcherResults) error {
+	var profileNames []string
+	for _, p := range w.scanConfigResults.ScanConfig.GetProfiles() {
+		profileNames = append(profileNames, p.GetProfileName())
+	}
+	log.Debugf("Profiles %v", profileNames)
+	var clusters []string
+	for _, c := range w.scanConfigResults.ScanConfig.GetClusters() {
+		clusters = append(clusters, c.GetClusterId())
+	}
+	profileQuery := search.NewQueryBuilder().
+		AddExactMatches(
+			search.ComplianceOperatorProfileName,
+			profileNames...,
+		).
+		AddExactMatches(
+			search.ClusterID,
+			clusters...,
+		).ProtoQuery()
+	profiles, err := w.profileDS.SearchProfiles(result.Ctx, profileQuery)
+	if err != nil {
+		return errors.Wrap(err, "unable to search the profiles")
+	}
+	for _, p := range profiles {
+		scanRefQuery := search.NewQueryBuilder().AddExactMatches(
+			search.ComplianceOperatorProfileRef,
+			p.GetProfileRefId(),
+		).ProtoQuery()
+		scans, err := w.scanDS.SearchScans(result.Ctx, scanRefQuery)
+		if err != nil {
+			return errors.Wrap(err, "unable to search the scans")
+		}
+		for _, s := range scans {
+			log.Debugf("Adding scan to wait %s", s.GetScanName())
+			w.scansToWait.Add(fmt.Sprintf("%s:%s", s.GetClusterId(), s.GetId()))
+		}
+	}
+	w.totalResults = len(w.scansToWait)
+	log.Infof("Scan config %s needs to wait for %d scans", w.scanConfigResults.ScanConfig.GetScanConfigName(), w.totalResults)
 	return nil
 }

@@ -212,6 +212,7 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 		},
 		readyQueue:  resultQueue,
 		scansToWait: set.NewStringSet(),
+		timeout:     time.NewTimer(defaultScanConfigTimeout),
 	}
 	timeoutC := make(chan time.Time)
 	go scanConfigWatcher.run(timeoutC)
