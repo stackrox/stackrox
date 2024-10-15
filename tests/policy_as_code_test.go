@@ -132,7 +132,7 @@ func (pc *PolicyAsCodeSuite) saveAsCustomResource(policy *storage.Policy) *v1alp
 	pc.Require().Len(zipReader.File, 1, "Unexpected number of CRs in zip file")
 
 	// Load the yaml file from the zip
-	pc.Require().Equal("this-is-a-test-policy", zipReader.File[0].Name, "Unexpected name in zip file")
+	pc.Require().Equal("this-is-a-test-policy.yaml", zipReader.File[0].Name, "Unexpected name in zip file")
 	yamlFileBuff := bytes.NewBuffer([]byte{})
 	yamlReader, err := zipReader.File[0].Open()
 	pc.Require().NoError(err)

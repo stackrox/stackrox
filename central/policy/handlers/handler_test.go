@@ -107,7 +107,7 @@ func (s *PolicyHandlerTestSuite) TestSaveAsValidIDSucceeds() {
 	respBody, _ := io.ReadAll(resp.Body)
 	s.Contains(string(respBody), "PK") // ZIP files start with "PK" signature
 	s.Equal("application/zip", resp.Header().Get("Content-Type"))
-	s.Equal(`attachment; filename="custom_resources.zip"`, resp.Header().Get("Content-Disposition"))
+	s.Regexp(`attachment; filename="security_policies_.+"`, resp.Header().Get("Content-Disposition"))
 	// Create a temp file to save the zip content
 	tempZipFile, err := s.dumpToTempFile(respBody)
 	s.NoError(err)
@@ -137,7 +137,7 @@ func (s *PolicyHandlerTestSuite) TestSaveAsMultipleValidIDSucceeds() {
 	respBody, _ := io.ReadAll(resp.Body)
 	s.Contains(string(respBody), "PK")
 	s.Equal("application/zip", resp.Header().Get("Content-Type"))
-	s.Equal(`attachment; filename="custom_resources.zip"`, resp.Header().Get("Content-Disposition"))
+	s.Regexp(`attachment; filename="security_policies_.+"`, resp.Header().Get("Content-Disposition"))
 	// Create a temp file to save the zip content
 	tempZipFile, err := s.dumpToTempFile(respBody)
 	s.NoError(err)
@@ -241,9 +241,10 @@ func (s *PolicyHandlerTestSuite) checkCustomResourcesContents(zipFilePath string
 
 	for expectedName, p := range expectedNameToPolicies {
 		// Check if the expected file exists in the zip
-		s.True(zipReader.ContainsFile(expectedName), "Expected file %s not found in zip", expectedName)
+		fileName := expectedName + ".yaml"
+		s.True(zipReader.ContainsFile(fileName), "Expected file %s not found in zip", fileName)
 		// Check contents
-		fileContent, err := zipReader.ReadFrom(expectedName)
+		fileContent, err := zipReader.ReadFrom(fileName)
 		s.NoError(err)
 		s.Contains(string(fileContent), p.GetName())
 	}

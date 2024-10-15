@@ -100,10 +100,11 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 			cr.Metadata["name"] = crName
 		}
 
+		fileName := fmt.Sprintf("%s.yaml", crName)
 		// Write to zip archive
-		crWriter, err := zipWriter.Create(crName)
+		crWriter, err := zipWriter.Create(fileName)
 		if err != nil {
-			httputil.WriteGRPCStyleError(writer, codes.Unavailable, errors.Wrapf(err, "error creating %s in zip", crName))
+			httputil.WriteGRPCStyleError(writer, codes.Unavailable, errors.Wrapf(err, "error creating %s in zip", fileName))
 			break
 		}
 		err = customresource.WriteCustomResource(crWriter, cr)
