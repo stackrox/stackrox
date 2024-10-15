@@ -4,14 +4,16 @@ import (
 	"archive/zip"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/policy/customresource"
 	"github.com/stackrox/rox/central/policy/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/jsonutil"
@@ -81,7 +83,7 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 	zipWriter := zip.NewWriter(writer)
 	defer utils.IgnoreError(zipWriter.Close)
 
-	writer.Header().Set("Content-Disposition", `attachment; filename="custom_resources.zip"`)
+	writer.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="security_policies_%s.zip"`, time.Now().Format(time.RFC3339)))
 	writer.Header().Set("Content-Type", "application/zip")
 	names := set.NewStringSet()
 	for _, policy := range policyList {
@@ -116,10 +118,7 @@ func (h httpHandler) saveAsCustomResources(ctx context.Context, request *apipara
 	}
 	if len(errDetails.GetErrors()) > 0 {
 		writeErrorWithDetails(writer, codes.InvalidArgument, errors.New("Failed to marshal all policies. Check error for details."), errDetails)
-		return
 	}
-
-	return
 }
 
 func writeErrorWithDetails(w http.ResponseWriter, code codes.Code, err error, details ...protoadapt.MessageV1) {

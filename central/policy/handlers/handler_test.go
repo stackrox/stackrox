@@ -14,7 +14,7 @@ import (
 
 	"github.com/stackrox/rox/central/policy/customresource"
 	policyStoreMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/utils"
@@ -111,8 +111,7 @@ func (s *PolicyHandlerTestSuite) TestSaveAsValidIDSucceeds() {
 	// Create a temp file to save the zip content
 	tempZipFile, err := s.dumpToTempFile(respBody)
 	s.NoError(err)
-	defer os.Remove(tempZipFile) // Clean up the temp file after test
-
+	defer func() { _ = os.RemoveAll(tempZipFile) }()
 	// Check the contents of the zip file
 	s.checkCustomResourcesContents(tempZipFile, expectedNameToPolicies)
 }
@@ -142,7 +141,7 @@ func (s *PolicyHandlerTestSuite) TestSaveAsMultipleValidIDSucceeds() {
 	// Create a temp file to save the zip content
 	tempZipFile, err := s.dumpToTempFile(respBody)
 	s.NoError(err)
-	defer os.Remove(tempZipFile) // Clean up the temp file after test
+	defer func() { _ = os.RemoveAll(tempZipFile) }()
 
 	// Check the contents of the zip file
 	s.checkCustomResourcesContents(tempZipFile, expectedNameToPolicies)
@@ -220,8 +219,6 @@ func (s *PolicyHandlerTestSuite) verifyResponse(resp *httptest.ResponseRecorder,
 		expected, err := json.Marshal(expectedErrors)
 		s.NoError(err)
 		s.JSONEq(string(expected), errorsJson)
-	} else {
-
 	}
 }
 

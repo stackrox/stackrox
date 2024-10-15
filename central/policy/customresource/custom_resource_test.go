@@ -148,9 +148,7 @@ func TestToDNSSubdomainName(t *testing.T) {
 // generateCustomResource generate custom resource in YAML text from a policy
 func generateCustomResource(policy *storage.Policy) (string, error) {
 	w := &bytes.Buffer{}
-	convertedPolicy := ConvertPolicyToCustomResource(policy)
-	err := WriteCustomResource(w, convertedPolicy)
-	if err != nil {
+	if err := WriteCustomResource(w, ConvertPolicyToCustomResource(policy)); err != nil {
 		return "", err
 	}
 	return w.String(), nil
