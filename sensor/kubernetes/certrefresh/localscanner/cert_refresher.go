@@ -14,18 +14,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-var (
-	certsDescription = "local scanner credentials"
-)
-
 // newCertificatesRefresher returns a new retry ticker that uses `requestCertificates` to fetch certificates,
 // with the timeout and backoff strategy specified, and the specified repository for persistence.
 // Once started, the ticker will periodically refresh the certificates before expiration.
-func newCertificatesRefresher(requestCertificates requestCertificatesFunc, repository certrepo.ServiceCertificatesRepo,
+func newCertificatesRefresher(certsDescription string, requestCertificates requestCertificatesFunc, repository certrepo.ServiceCertificatesRepo,
 	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
 
 	return concurrency.NewRetryTicker(func(ctx context.Context) (timeToNextTick time.Duration, err error) {
-		return refreshCertificates(ctx, requestCertificates, certrefresh.GetCertsRenewalTime, repository)
+		return refreshCertificates(ctx, certsDescription, requestCertificates, certrefresh.GetCertsRenewalTime, repository)
 	}, timeout, backoff)
 }
 
@@ -40,10 +36,10 @@ type getCertsRenewalTimeFunc func(certificates *storage.TypedServiceCertificateS
 
 // refreshCertificates refreshes the certificate secrets if needed, and returns the time
 // until the next refresh.
-func refreshCertificates(ctx context.Context, requestCertificates requestCertificatesFunc,
+func refreshCertificates(ctx context.Context, certsDescription string, requestCertificates requestCertificatesFunc,
 	getCertsRenewalTime getCertsRenewalTimeFunc, repository certrepo.ServiceCertificatesRepo) (timeToNextRefresh time.Duration, err error) {
 
-	timeToNextRefresh, err = ensureCertificatesAreFresh(ctx, requestCertificates, getCertsRenewalTime, repository)
+	timeToNextRefresh, err = ensureCertificatesAreFresh(ctx, certsDescription, requestCertificates, getCertsRenewalTime, repository)
 	if err != nil {
 		if errors.Is(err, certrepo.ErrUnexpectedSecretsOwner) {
 			log.Errorf("non-recoverable error refreshing %s, automatic refresh will be stopped: %s", certsDescription, err)
@@ -58,10 +54,10 @@ func refreshCertificates(ctx context.Context, requestCertificates requestCertifi
 	return timeToNextRefresh, err
 }
 
-func ensureCertificatesAreFresh(ctx context.Context, requestCertificates requestCertificatesFunc,
+func ensureCertificatesAreFresh(ctx context.Context, certsDescription string, requestCertificates requestCertificatesFunc,
 	getCertsRenewalTime getCertsRenewalTimeFunc, repository certrepo.ServiceCertificatesRepo) (time.Duration, error) {
 
-	timeToRefresh, getCertsErr := getTimeToRefreshFromRepo(ctx, getCertsRenewalTime, repository)
+	timeToRefresh, getCertsErr := getTimeToRefreshFromRepo(ctx, certsDescription, getCertsRenewalTime, repository)
 	if getCertsErr != nil {
 		return 0, getCertsErr
 	}
@@ -79,7 +75,7 @@ func ensureCertificatesAreFresh(ctx context.Context, requestCertificates request
 	}
 	certificates := response.Certificates
 	if certificates == nil {
-		return 0, errors.Errorf("certificates set is nil")
+		return 0, errors.New("certificates set is nil")
 	}
 
 	persistedCertificates, putErr := repository.EnsureServiceCertificates(ctx, certificates)
@@ -105,7 +101,7 @@ func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate)
 	return serviceTypeNames
 }
 
-func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsRenewalTimeFunc,
+func getTimeToRefreshFromRepo(ctx context.Context, certsDescription string, getCertsRenewalTime getCertsRenewalTimeFunc,
 	repository certrepo.ServiceCertificatesRepo) (time.Duration, error) {
 
 	certificates, getCertsErr := repository.GetServiceCertificates(ctx)
@@ -113,13 +109,13 @@ func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsR
 		return 0, getCertsErr
 	}
 	if errors.Is(getCertsErr, certrepo.ErrDifferentCAForDifferentServiceTypes) || errors.Is(getCertsErr, certrepo.ErrMissingSecretData) {
-		log.Errorf("local scanner certificates are in an inconsistent state, "+
-			"will refresh certificates immediately: %s", getCertsErr)
+		log.Errorf("%s are in an inconsistent state, "+
+			"will refresh certificates immediately: %s", certsDescription, getCertsErr)
 		return 0, nil
 	}
 	if k8sErrors.IsNotFound(getCertsErr) {
-		log.Warnf("local scanner certificates not found (this is expected on a new deployment), "+
-			"will refresh certificates immediately: %s", getCertsErr)
+		log.Warnf("%s not found (this is expected on a new deployment), "+
+			"will refresh certificates immediately: %s", certsDescription, getCertsErr)
 		return 0, nil
 	}
 	if getCertsErr != nil {
@@ -129,8 +125,8 @@ func getTimeToRefreshFromRepo(ctx context.Context, getCertsRenewalTime getCertsR
 	renewalTime, err := getCertsRenewalTime(certificates)
 	if err != nil {
 		// recover by refreshing the certificates immediately.
-		log.Errorf("error getting local scanner certificate expiration, "+
-			"will refresh certificates immediately: %s", err)
+		log.Errorf("error getting %s expiration, "+
+			"will refresh certificates immediately: %s", certsDescription, err)
 		return 0, nil
 	}
 	return time.Until(renewalTime), nil

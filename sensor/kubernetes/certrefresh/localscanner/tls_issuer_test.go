@@ -99,7 +99,7 @@ func (f *localScannerTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
 	f.componentGetter.On("getServiceCertificatesRepo", mock.Anything,
 		mock.Anything, mock.Anything).Once().Return(f.repo, nil)
 
-	f.componentGetter.On("getCertificateRefresher", mock.Anything, f.repo,
+	f.componentGetter.On("getCertificateRefresher", "local scanner certificates", mock.Anything, f.repo,
 		certRefreshTimeout, certRefreshBackoff).Once().Return(f.certRefresher)
 }
 
@@ -552,9 +552,9 @@ type componentGetterMock struct {
 	mock.Mock
 }
 
-func (m *componentGetterMock) getCertificateRefresher(requestCertificates requestCertificatesFunc,
+func (m *componentGetterMock) getCertificateRefresher(certsDescription string, requestCertificates requestCertificatesFunc,
 	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
-	args := m.Called(requestCertificates, repository, timeout, backoff)
+	args := m.Called(certsDescription, requestCertificates, repository, timeout, backoff)
 	return args.Get(0).(concurrency.RetryTicker)
 }
 

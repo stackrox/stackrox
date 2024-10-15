@@ -38,7 +38,7 @@ func (s *certRefresherSuite) SetupTest() {
 	s.cancel = cancel
 	s.dependenciesMock = &dependenciesMock{}
 	s.refreshCertificates = func() (timeToNextRefresh time.Duration, err error) {
-		return refreshCertificates(ctx, s.dependenciesMock.requestCertificates, s.dependenciesMock.getCertsRenewalTime,
+		return refreshCertificates(ctx, "test certificates", s.dependenciesMock.requestCertificates, s.dependenciesMock.getCertsRenewalTime,
 			s.dependenciesMock)
 	}
 }
@@ -48,7 +48,7 @@ func (s *certRefresherSuite) TearDownTest() {
 }
 
 func (s *certRefresherSuite) TestNewCertificatesRefresherSmokeTest() {
-	s.NotNil(newCertificatesRefresher(s.dependenciesMock.requestCertificates, s.dependenciesMock,
+	s.NotNil(newCertificatesRefresher("test certificates", s.dependenciesMock.requestCertificates, s.dependenciesMock,
 		time.Second, retry.DefaultBackoff))
 }
 
