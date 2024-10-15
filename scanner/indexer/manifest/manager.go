@@ -2,6 +2,7 @@ package manifest
 
 import (
 	"context"
+	"math/rand/v2"
 	"time"
 
 	"github.com/quay/claircore/libvuln/updates"
@@ -22,6 +23,14 @@ const (
 	// minGCInterval specifies the minimum interval between GC runs.
 	minGCInterval = time.Hour
 )
+
+var jitterMinutes = []time.Duration{
+	-10 * time.Minute,
+	-5 * time.Minute,
+	0 * time.Minute,
+	5 * time.Minute,
+	10 * time.Minute,
+}
 
 // Manager represents an indexer manifest manager.
 //
@@ -46,7 +55,7 @@ func NewManager(ctx context.Context, metadataStore postgres.IndexerMetadataStore
 	gcCtx, gcCancel := context.WithCancel(ctx)
 	interval := env.ScannerV4ManifestGCInterval.DurationSetting()
 	if interval < minGCInterval {
-		zlog.Info(ctx).Msgf("configured manifest GC interval is too small: setting to %v", minGCInterval)
+		zlog.Warn(ctx).Msgf("configured manifest GC interval (%v) is too small: setting to %v", interval, minGCInterval)
 		interval = minGCInterval
 	}
 	return &Manager{
@@ -93,9 +102,10 @@ func (m *Manager) StartGC() error {
 	if err := m.runGC(ctx); err != nil {
 		zlog.Error(ctx).Err(err).Msg("errors encountered during manifest GC run")
 	}
-	zlog.Info(ctx).Msgf("next manifest metadata GC run will be in about %v", m.interval)
 
-	t := time.NewTimer(m.interval)
+	interval := m.interval + jitter()
+	zlog.Info(ctx).Msgf("next manifest metadata GC run will be in about %v", interval)
+	t := time.NewTimer(interval)
 	defer t.Stop()
 	for {
 		select {
@@ -106,8 +116,9 @@ func (m *Manager) StartGC() error {
 				zlog.Error(ctx).Err(err).Msg("errors encountered during manifest GC run")
 			}
 
-			t.Reset(m.interval)
-			zlog.Info(ctx).Msgf("next manifest metadata GC run will be in about %v", m.interval)
+			interval = m.interval + jitter()
+			t.Reset(interval)
+			zlog.Info(ctx).Msgf("next manifest metadata GC run will be in about %v", interval)
 		}
 	}
 }
@@ -141,4 +152,8 @@ func (m *Manager) runGC(ctx context.Context) error {
 func (m *Manager) StopGC() error {
 	m.gcCancel()
 	return nil
+}
+
+func jitter() time.Duration {
+	return jitterMinutes[rand.IntN(len(jitterMinutes))]
 }
