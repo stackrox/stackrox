@@ -19,19 +19,28 @@ import (
 // nor already used in database.
 func ValidateName(ctx context.Context, store Store) ProviderOption {
 	return func(pr *providerImpl) error {
-		providerName := pr.storedInfo.GetName()
-		if len(providerName) == 0 {
-			return errox.InvalidArgs.CausedBy("no name specified for the provider")
-		}
-		exists, err := store.AuthProviderExistsWithName(ctx, providerName)
-		if err != nil {
-			return err
-		}
-		if exists {
-			return errox.InvalidArgs.CausedBy("a provider already exists with the given name")
-		}
-		return nil
+		return validateName(ctx, pr, store)
 	}
+}
+
+var (
+	errNoProviderName        = errox.InvalidArgs.CausedBy("no name specified for the provider")
+	errDuplicateProviderName = errox.InvalidArgs.CausedBy("a provider already exists with the given name")
+)
+
+func validateName(ctx context.Context, pr *providerImpl, store Store) error {
+	providerName := pr.storedInfo.GetName()
+	if len(providerName) == 0 {
+		return errNoProviderName
+	}
+	exists, err := store.AuthProviderExistsWithName(ctx, providerName)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return errDuplicateProviderName
+	}
+	return nil
 }
 
 // DefaultAddToStore adds the providers stored data to the input store.
