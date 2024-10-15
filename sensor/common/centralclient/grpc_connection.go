@@ -117,6 +117,6 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	}
 
 	conn.Set(centralConnection)
-	f.okSignal.Signal()
+	f.okSignal.Signal() // this is too early to call the connection open!
 	log.Info("Initial gRPC connection with central successful")
 }

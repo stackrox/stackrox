@@ -118,6 +118,10 @@ func ObjByKind(kind string) k8s.Object {
 	}
 }
 
+type logger interface {
+	Logf(format string, args ...any)
+}
+
 // TestCallback represents the test case function written in the go test file.
 type TestCallback func(t *testing.T, testContext *TestContext, objects map[string]k8s.Object)
 
@@ -126,6 +130,7 @@ type TestCallback func(t *testing.T, testContext *TestContext, objects map[strin
 // messages emitted by Sensor. Each Go test should use a single TestContext instance to manage cluster interaction
 // and assertions.
 type TestContext struct {
+	l                logger
 	r                *resources.Resources
 	env              *envconf.Config
 	fakeCentral      *centralDebug.FakeService
@@ -175,6 +180,7 @@ func NewContextWithConfig(t *testing.T, config Config) (*TestContext, error) {
 	}
 
 	tc := TestContext{
+		l:                t,
 		r:                r,
 		env:              envConfig,
 		centralStopped:   atomic.Bool{},
@@ -312,7 +318,7 @@ func (c *TestContext) StartFakeGRPC(centralCaps ...string) {
 	fakeCentral.EnableDeduperState(c.config.SendDeduperState)
 	fakeCentral.SetDeduperState(c.deduperState)
 
-	conn, shutdown := createConnectionAndStartServer(fakeCentral)
+	conn, shutdown := createConnectionAndStartServer(fakeCentral, c.l)
 
 	// grpcFactory will be nil on the first run of the testContext
 	if c.grpcFactory == nil {
@@ -906,7 +912,7 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	c.fakeCentral.ConnectionStarted.Wait()
 }
 
-func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, func()) {
+func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService, l logger) (*grpc.ClientConn, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
@@ -915,7 +921,11 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 
 	go func() {
 		utils.IgnoreError(func() error {
-			return fakeCentral.ServerPointer.Serve(listener)
+			err := fakeCentral.ServerPointer.Serve(listener)
+			if err != nil {
+				l.Logf("failed to start fake Central server: %v", err)
+			}
+			return err
 		})
 	}()
 
