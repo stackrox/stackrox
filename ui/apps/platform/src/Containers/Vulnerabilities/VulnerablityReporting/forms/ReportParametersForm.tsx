@@ -41,7 +41,8 @@ export type ReportParametersFormParams = {
 
 function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isIncludeNvdCvssEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
 
     const handleTextChange =
         (fieldName: string) =>
@@ -282,7 +283,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         />
                     </FormLabelGroup>
                 )}
-                {isNvdCvssEnabled && (
+                {isIncludeNvdCvssEnabled && (
                     <FormLabelGroup
                         label="Optional columns"
                         fieldId="reportParameters.includeNvdCvss"

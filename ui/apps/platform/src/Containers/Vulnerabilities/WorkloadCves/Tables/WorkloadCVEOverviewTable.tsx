@@ -185,10 +185,11 @@ function WorkloadCVEOverviewTable({
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
 
     const colSpan =
-        (isNvdCvssEnabled ? 7 : 6) +
+        (isNvdCvssColumnEnabled ? 7 : 6) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0) +
@@ -219,7 +220,7 @@ function WorkloadCVEOverviewTable({
                     >
                         Top CVSS
                     </TooltipTh>
-                    {isNvdCvssEnabled && (
+                    {isNvdCvssColumnEnabled && (
                         <TooltipTh
                             className={getVisibilityClass('topNvdCvss')}
                             tooltip="Highest CVSS score (from National Vulnerability Database) of this CVE across images"
@@ -359,7 +360,7 @@ function WorkloadCVEOverviewTable({
                                                 }
                                             />
                                         </Td>
-                                        {isNvdCvssEnabled && (
+                                        {isNvdCvssColumnEnabled && (
                                             <Td
                                                 className={getVisibilityClass('topNvdCvss')}
                                                 dataLabel="Top NVD CVSS"

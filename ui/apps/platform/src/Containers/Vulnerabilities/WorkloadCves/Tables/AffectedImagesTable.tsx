@@ -143,7 +143,8 @@ function AffectedImagesTable({
     const colSpan = 8 + -hiddenColumnCount;
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
 
     return (
         <Table variant="compact">
@@ -162,7 +163,7 @@ function AffectedImagesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th className={getVisibilityClass('cvss')}>CVSS</Th>
-                    {isNvdCvssEnabled && (
+                    {isNvdCvssColumnEnabled && (
                         <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
                     )}
                     <Th
@@ -249,7 +250,7 @@ function AffectedImagesTable({
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
 
-                                    {isNvdCvssEnabled && (
+                                    {isNvdCvssColumnEnabled && (
                                         <Td
                                             className={getVisibilityClass('nvdCvss')}
                                             dataLabel="NVD CVSS"
