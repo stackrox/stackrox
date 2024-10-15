@@ -44,6 +44,9 @@ if [[ "$arch" == "s390x" ]]; then
       rm -rf /var/cache/dnf || true
       dnf upgrade --refresh --setopt=fastestmirror=0 || true
       dnf install -v -y --setopt=fastestmirror=0 --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs && break || true
+      echo 'try! checking if from cloudfront cache'
+      curl -v -s -o - -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache' -H "bypasscache: 1" -H "Keep-Alive: 0" -H "Connection: close" \
+        "https://mirror.stream.centos.org/9-stream/BaseOS/s390x/os/repodata/repomd.xml?$RANDOM" | sha512sum || true
       sleep 60
     done
   )
