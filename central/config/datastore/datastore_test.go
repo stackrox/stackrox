@@ -448,16 +448,6 @@ func TestValidateConfigAndPopulateMissingDefaults(t *testing.T) {
 				},
 			},
 		},
-		"Configure internal config when missing": {
-			initialConfig: &storage.Config{
-				PublicConfig:  samplePublicConfig,
-				PrivateConfig: customPrivateConfig,
-			},
-			upsertedConfig: &storage.Config{
-				PublicConfig:  samplePublicConfig,
-				PrivateConfig: customPrivateConfig,
-			},
-		},
 	}
 
 	for testName, testCase := range testCases {
