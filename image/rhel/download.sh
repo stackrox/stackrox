@@ -35,7 +35,15 @@ fi
 mkdir -p "$output_dir/rpms"
 
 if [[ "$arch" == "s390x" ]]; then
-  dnf install -y --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs
+  dnf install -y --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs \
+    || (
+    echo "Broken stream again? Retry with dnf verbose logging."
+    set -x
+    dnf clean all
+    rm -rf /var/cache/dnf
+    dnf install -v -y --downloadonly --downloaddir=/tmp postgresql
+    dnf install -v -y --downloadonly --downloaddir=/tmp postgresql-private-libs;
+  )
   mv /tmp/postgresql-private-libs-*.rpm "${output_dir}/rpms/postgres-libs.rpm"
   mv /tmp/postgresql-*.rpm "${output_dir}/rpms/postgres.rpm"
 else
