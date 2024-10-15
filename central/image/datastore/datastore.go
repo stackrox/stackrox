@@ -9,6 +9,7 @@ import (
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pg "github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -33,6 +34,7 @@ type DataStore interface {
 
 	UpsertImage(ctx context.Context, image *storage.Image) error
 	UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error
+	UpsertMany(db pg.DB, ctx context.Context, objs []*storage.Image) error
 
 	DeleteImages(ctx context.Context, ids ...string) error
 	Exists(ctx context.Context, id string) (bool, error)

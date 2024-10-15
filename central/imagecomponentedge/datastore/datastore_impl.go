@@ -3,10 +3,12 @@ package datastore
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/imagecomponentedge/search"
 	"github.com/stackrox/rox/central/imagecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pg "github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -57,4 +59,41 @@ func (ds *datastoreImpl) GetBatch(ctx context.Context, ids []string) ([]*storage
 		return nil, err
 	}
 	return edges, nil
+}
+
+type ImageComponentEdge struct {
+	Id               string
+	Location         string
+	ImageId          string
+	ImageComponentId string
+	Serialized       []byte
+}
+
+func (ds *datastoreImpl) UpsertMany(
+	db pg.DB,
+	ctx context.Context,
+	objs []*storage.ImageComponentEdge,
+) error {
+	tx, _ := db.Begin(ctx)
+
+	_, err := tx.CopyFrom(ctx,
+		pgx.Identifier{"image_component_edges"},
+		[]string{"id", "location", "imageid", "imagecomponentid", "serialized"},
+
+		pgx.CopyFromSlice(len(objs), func(i int) ([]any, error) {
+			obj := objs[i]
+			serialized, _ := obj.Marshal()
+			return []any{
+				obj.Id,
+				obj.Location,
+				obj.ImageId,
+				obj.ImageComponentId,
+				serialized,
+			}, nil
+		}),
+	)
+
+	tx.Commit(ctx)
+
+	return err
 }

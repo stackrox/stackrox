@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/search"
@@ -18,6 +19,8 @@ import (
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
+	pg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
@@ -245,7 +248,10 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 		return err
 	}
 	// If the image in db is latest, this image object will be carrying its risk score
-	ds.imageRanker.Add(image.GetId(), image.GetRiskScore())
+	if ds.imageRanker != nil {
+		ds.imageRanker.Add(image.GetId(), image.GetRiskScore())
+	}
+
 	return nil
 }
 
@@ -317,7 +323,9 @@ func (ds *datastoreImpl) initializeRankers() {
 			continue
 		}
 
-		ds.imageRanker.Add(id, image.GetRiskScore())
+		if ds.imageRanker != nil {
+			ds.imageRanker.Add(id, image.GetRiskScore())
+		}
 	}
 }
 
@@ -340,4 +348,55 @@ func (ds *datastoreImpl) updateComponentRisk(image *storage.Image) {
 	for _, component := range image.GetScan().GetComponents() {
 		component.RiskScore = ds.imageComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), image.GetScan().GetOperatingSystem()))
 	}
+}
+
+func (ds *datastoreImpl) UpsertMany(
+	db pg.DB,
+	ctx context.Context,
+	objs []*storage.Image,
+) error {
+	tx, _ := db.Begin(ctx)
+
+	_, err := tx.CopyFrom(ctx,
+		pgx.Identifier{"images"},
+		[]string{"id", "name_registry", "name_remote", "name_tag", "name_fullname",
+			"metadata_v1_created", "metadata_v1_user", "metadata_v1_command",
+			"metadata_v1_entrypoint", "metadata_v1_volumes", "metadata_v1_labels",
+			"scan_scantime", "scan_operatingsystem", "signature_fetched",
+			"components", "cves", "fixablecves", "lastupdated", "priority",
+			"riskscore", "topcvss", "serialized"},
+
+		pgx.CopyFromSlice(len(objs), func(i int) ([]any, error) {
+			obj := objs[i]
+			serialized, _ := obj.Marshal()
+			return []any{
+				obj.Id,
+				obj.Name.Registry,
+				obj.Name.Remote,
+				obj.Name.Tag,
+				obj.Name.FullName,
+				protocompat.NilOrTime(obj.Metadata.V1.Created),
+				obj.Metadata.V1.User,
+				obj.Metadata.V1.Command,
+				obj.Metadata.V1.Entrypoint,
+				obj.Metadata.V1.Volumes,
+				obj.Metadata.V1.Labels,
+				protocompat.NilOrTime(obj.Scan.ScanTime),
+				obj.Scan.OperatingSystem,
+				protocompat.NilOrTime(obj.Signature.Fetched),
+				obj.SetComponents,
+				obj.SetCves,
+				obj.SetFixable,
+				protocompat.NilOrTime(obj.LastUpdated),
+				obj.Priority,
+				obj.RiskScore,
+				obj.SetTopCvss,
+				serialized,
+			}, nil
+		}),
+	)
+
+	tx.Commit(ctx)
+
+	return err
 }

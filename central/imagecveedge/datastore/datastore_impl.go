@@ -3,10 +3,12 @@ package datastore
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/imagecveedge/search"
 	"github.com/stackrox/rox/central/imagecveedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pg "github.com/stackrox/rox/pkg/postgres"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -37,4 +39,34 @@ func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageCVEE
 		return nil, false, err
 	}
 	return edge, true, nil
+}
+
+func (ds *datastoreImpl) UpsertMany(
+	db pg.DB,
+	ctx context.Context,
+	objs []*storage.ImageCVEEdge,
+) error {
+	tx, _ := db.Begin(ctx)
+
+	_, err := tx.CopyFrom(ctx,
+		pgx.Identifier{"image_cve_edges"},
+		[]string{"id", "firstimageoccurrence", "state", "imageid", "imagecveid", "serialized"},
+
+		pgx.CopyFromSlice(len(objs), func(i int) ([]any, error) {
+			obj := objs[i]
+			serialized, _ := obj.Marshal()
+			return []any{
+				obj.Id,
+				obj.FirstImageOccurrence,
+				obj.State,
+				obj.ImageId,
+				obj.ImageCveId,
+				serialized,
+			}, nil
+		}),
+	)
+
+	tx.Commit(ctx)
+
+	return err
 }

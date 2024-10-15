@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/imagecomponentedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pg "github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -22,6 +23,7 @@ type DataStore interface {
 	Get(ctx context.Context, id string) (*storage.ImageComponentEdge, bool, error)
 	Count(ctx context.Context) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.ImageComponentEdge, error)
+	UpsertMany(db pg.DB, ctx context.Context, objs []*storage.ImageComponentEdge) error
 }
 
 // New returns a new instance of a DataStore.

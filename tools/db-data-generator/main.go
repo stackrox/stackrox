@@ -9,8 +9,16 @@ import (
 
 	"github.com/google/uuid"
 
+	imageCVEPostgresStore "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	dDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	"github.com/stackrox/rox/central/image/datastore/keyfence"
+	imageStore "github.com/stackrox/rox/central/image/datastore/store"
+	imagePostgresStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
+	imageComponentPostgresStore "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
+	imageComponentEdgeDataStore "github.com/stackrox/rox/central/imagecomponentedge/datastore"
+	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	podDataStore "github.com/stackrox/rox/central/pod/datastore"
 	piDataStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -502,6 +510,16 @@ func RandList(length int, n int) (list []string) {
 	return list
 }
 
+func RandMap(length int, n int) (result map[string]string) {
+	result = map[string]string{}
+
+	for i := 0; i < length; i++ {
+		result[Rand(n)] = Rand(n)
+	}
+
+	return result
+}
+
 type NameUuidPair struct {
 	Name string
 	Uuid string
@@ -550,6 +568,90 @@ func genPod(deployments []*storage.Deployment) *storage.Pod {
 	}
 }
 
+func genImage() *storage.Image {
+	return &storage.Image{
+		Id: uuid.New().String(),
+		Name: &storage.ImageName{
+			FullName: Rand(10),
+		},
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
+				Created:    protocompat.TimestampNow(),
+				User:       Rand(10),
+				Command:    RandList(10, 2),
+				Entrypoint: RandList(10, 2),
+				Volumes:    RandList(10, 2),
+				Labels:     RandMap(10, 2),
+			},
+		},
+		Scan: &storage.ImageScan{
+			ScanTime:        protocompat.TimestampNow(),
+			OperatingSystem: Rand(10),
+		},
+		Signature: &storage.ImageSignature{
+			Fetched: protocompat.TimestampNow(),
+		},
+	}
+}
+
+func genImageComponent() *storage.ImageComponent {
+	return &storage.ImageComponent{
+		Id:   uuid.New().String(),
+		Name: Rand(10),
+	}
+}
+
+func genImageComponentEdge(
+	image *storage.Image,
+	component *storage.ImageComponent,
+) *storage.ImageComponentEdge {
+
+	return &storage.ImageComponentEdge{
+		Id:               uuid.New().String(),
+		ImageId:          image.Id,
+		ImageComponentId: component.Id,
+	}
+}
+
+func genImageCVE() *storage.ImageCVE {
+	return &storage.ImageCVE{
+		Id:              uuid.New().String(),
+		OperatingSystem: Rand(10),
+		CveBaseInfo: &storage.CVEInfo{
+			Cve:          Rand(10),
+			CreatedAt:    protocompat.TimestampNow(),
+			LastModified: protocompat.TimestampNow(),
+			PublishedOn:  protocompat.TimestampNow(),
+		},
+	}
+}
+
+func genImageCVEEdge(
+	image *storage.Image,
+	cve *storage.ImageCVE,
+) *storage.ImageCVEEdge {
+
+	return &storage.ImageCVEEdge{
+		Id:         uuid.New().String(),
+		ImageId:    image.Id,
+		ImageCveId: cve.Id,
+		State:      storage.VulnerabilityState(rand.Intn(3)),
+	}
+}
+
+func genComponentCVEEdge(
+	image *storage.Image,
+	cve *storage.ImageCVE,
+) *storage.ImageCVEEdge {
+
+	return &storage.ImageCVEEdge{
+		Id:         uuid.New().String(),
+		ImageId:    image.Id,
+		ImageCveId: cve.Id,
+		State:      storage.VulnerabilityState(rand.Intn(3)),
+	}
+}
+
 func main() {
 	var batchSize = flag.Int("batch-size", 10000, "Size of a batch to insert")
 	var nrBatches = flag.Int("batch-count", 10000, "Number of batches to insert")
@@ -557,6 +659,10 @@ func main() {
 	var nrPods = flag.Int("pods-count", 10000, "Number of pods")
 	var nrNamespaces = flag.Int("ns-count", 100, "Number of namespaces")
 	var nrClusters = flag.Int("clusters-count", 100, "Number of clusters")
+	var nrImages = flag.Int("images-count", 100, "Number of images")
+	var nrImageComponents = flag.Int("image-components-count", 100, "Number of image components")
+	var nrImageCVEs = flag.Int("image-cves-count", 100, "Number of image CVEs")
+
 	var connectionString = flag.String("connection-string", "host=localhost", "DB Connection string")
 	var migrations = flag.Bool("migrations", false, "Whether to apply migrations first")
 	var useGlobalDB = flag.Bool("globaldb", false, "Whether to use global database configuration")
@@ -565,6 +671,16 @@ func main() {
 	var deploymentDS dDataStore.DataStore
 	var podDS podDataStore.DataStore
 	var nsDS nsDataStore.DataStore
+	var imageDS imageDataStore.DataStore
+	//var imageComponentDS imageComponentDataStore.DataStore
+	var imagePgStore imageStore.Store
+	var imageComponentPgStore imageComponentPostgresStore.Store
+	var imageCVEPgStore imageCVEPostgresStore.Store
+	var imageComponentEdgeStore imageComponentEdgeDataStore.DataStore
+	var imageCVEEdgeStore imageCVEEdgeDataStore.DataStore
+
+	var db postgres.DB
+	var err error
 
 	flag.Parse()
 	fmt.Printf("batch-size %d, batch-count %d\n", *batchSize, *nrBatches)
@@ -597,7 +713,7 @@ func main() {
 		podDS = podDataStore.Singleton()
 		nsDS = nsDataStore.Singleton()
 	} else {
-		db, err := postgres.Connect(context.TODO(), *connectionString)
+		db, err = postgres.Connect(context.TODO(), *connectionString)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -614,6 +730,25 @@ func main() {
 		podDS, err = podDataStore.NewPostgresDB(db, nil, nil, filter.Singleton())
 
 		nsDS = nsDataStore.New(nsStorage, nil, ranking.NamespaceRanker())
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		imagePgStore = imagePostgresStore.New(db, false, keyfence.ImageKeyFenceSingleton())
+		imageDS = imageDataStore.NewWithPostgres(imagePgStore, nil, nil, nil)
+
+		imageComponentPgStore = imageComponentPostgresStore.New(db)
+		//imageComponentDS = imageComponentDataStore.New(imageComponentPgStore, nil, nil, nil)
+
+		imageCVEPgStore = imageCVEPostgresStore.New(db)
+
+		imageComponentEdgePgStore := imageComponentEdgeDataStore.NewStorage(db)
+		imageComponentEdgeStore, err = imageComponentEdgeDataStore.New(imageComponentEdgePgStore, nil)
+
+		imageCVEEdgePgStore := imageCVEEdgeDataStore.NewStorage(db)
+		imageCVEEdgeStore = imageCVEEdgeDataStore.New(imageCVEEdgePgStore, nil)
 
 		if err != nil {
 			fmt.Println(err)
@@ -637,6 +772,50 @@ func main() {
 	containers := RandList(10, 10)
 
 	lifecycleMgmt := sac.WithAllAccess(context.Background())
+
+	images := []*storage.Image{}
+	for i := 0; i < *nrImages; i++ {
+		images = append(images, genImage())
+	}
+
+	imageComponents := []*storage.ImageComponent{}
+	for i := 0; i < *nrImageComponents; i++ {
+		imageComponents = append(imageComponents, genImageComponent())
+	}
+
+	imageComponentEdges := []*storage.ImageComponentEdge{}
+	for i := 0; i < *nrImageComponents; i++ {
+		image := images[i]
+		imageComponent := imageComponents[i]
+		imageComponentEdges = append(imageComponentEdges,
+			genImageComponentEdge(image, imageComponent))
+	}
+
+	imageCVEs := []*storage.ImageCVE{}
+	for i := 0; i < *nrImageCVEs; i++ {
+		imageCVEs = append(imageCVEs, genImageCVE())
+	}
+
+	imageCVEEdges := []*storage.ImageCVEEdge{}
+	for i := 0; i < *nrImageCVEs; i++ {
+		image := images[rand.Intn(len(images))]
+		cve := imageCVEs[i]
+		imageCVEEdges = append(imageCVEEdges, genImageCVEEdge(image, cve))
+	}
+
+	//for _, image := range images {
+	//imagePgStore.Upsert(lifecycleMgmt, image)
+	//}
+
+	imageDS.UpsertMany(db, lifecycleMgmt, images)
+
+	imageComponentPgStore.UpsertMany(lifecycleMgmt, imageComponents)
+
+	imageCVEPgStore.UpsertMany(lifecycleMgmt, imageCVEs)
+
+	imageComponentEdgeStore.UpsertMany(db, lifecycleMgmt, imageComponentEdges)
+
+	imageCVEEdgeStore.UpsertMany(db, lifecycleMgmt, imageCVEEdges)
 
 	for i := 0; i < *nrDeployments; i++ {
 		fmt.Printf("Insert deployment %s\n", deployments[i].Id)
