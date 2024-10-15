@@ -1,4 +1,4 @@
-package localscanner
+package certrefresh
 
 import (
 	"context"
@@ -8,20 +8,22 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-// newCertificatesRefresher returns a new retry ticker that uses `requestCertificates` to fetch certificates,
+var log = logging.LoggerForModule()
+
+// NewCertificatesRefresher returns a new retry ticker that uses `requestCertificates` to fetch certificates,
 // with the timeout and backoff strategy specified, and the specified repository for persistence.
 // Once started, the ticker will periodically refresh the certificates before expiration.
-func newCertificatesRefresher(certsDescription string, requestCertificates requestCertificatesFunc, repository certrepo.ServiceCertificatesRepo,
+func NewCertificatesRefresher(certsDescription string, requestCertificates RequestCertificatesFunc, repository certrepo.ServiceCertificatesRepo,
 	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
 
 	return concurrency.NewRetryTicker(func(ctx context.Context) (timeToNextTick time.Duration, err error) {
-		return refreshCertificates(ctx, certsDescription, requestCertificates, certrefresh.GetCertsRenewalTime, repository)
+		return refreshCertificates(ctx, certsDescription, requestCertificates, GetCertsRenewalTime, repository)
 	}, timeout, backoff)
 }
 
@@ -31,13 +33,13 @@ type IssueCertsResponse struct {
 	Certificates *storage.TypedServiceCertificateSet
 }
 
-type requestCertificatesFunc func(ctx context.Context) (*IssueCertsResponse, error)
-type getCertsRenewalTimeFunc func(certificates *storage.TypedServiceCertificateSet) (time.Time, error)
+type RequestCertificatesFunc func(ctx context.Context) (*IssueCertsResponse, error)
+type GetCertsRenewalTimeFunc func(certificates *storage.TypedServiceCertificateSet) (time.Time, error)
 
 // refreshCertificates refreshes the certificate secrets if needed, and returns the time
 // until the next refresh.
-func refreshCertificates(ctx context.Context, certsDescription string, requestCertificates requestCertificatesFunc,
-	getCertsRenewalTime getCertsRenewalTimeFunc, repository certrepo.ServiceCertificatesRepo) (timeToNextRefresh time.Duration, err error) {
+func refreshCertificates(ctx context.Context, certsDescription string, requestCertificates RequestCertificatesFunc,
+	getCertsRenewalTime GetCertsRenewalTimeFunc, repository certrepo.ServiceCertificatesRepo) (timeToNextRefresh time.Duration, err error) {
 
 	timeToNextRefresh, err = ensureCertificatesAreFresh(ctx, certsDescription, requestCertificates, getCertsRenewalTime, repository)
 	if err != nil {
@@ -54,8 +56,8 @@ func refreshCertificates(ctx context.Context, certsDescription string, requestCe
 	return timeToNextRefresh, err
 }
 
-func ensureCertificatesAreFresh(ctx context.Context, certsDescription string, requestCertificates requestCertificatesFunc,
-	getCertsRenewalTime getCertsRenewalTimeFunc, repository certrepo.ServiceCertificatesRepo) (time.Duration, error) {
+func ensureCertificatesAreFresh(ctx context.Context, certsDescription string, requestCertificates RequestCertificatesFunc,
+	getCertsRenewalTime GetCertsRenewalTimeFunc, repository certrepo.ServiceCertificatesRepo) (time.Duration, error) {
 
 	timeToRefresh, getCertsErr := getTimeToRefreshFromRepo(ctx, certsDescription, getCertsRenewalTime, repository)
 	if getCertsErr != nil {
@@ -101,7 +103,7 @@ func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate)
 	return serviceTypeNames
 }
 
-func getTimeToRefreshFromRepo(ctx context.Context, certsDescription string, getCertsRenewalTime getCertsRenewalTimeFunc,
+func getTimeToRefreshFromRepo(ctx context.Context, certsDescription string, getCertsRenewalTime GetCertsRenewalTimeFunc,
 	repository certrepo.ServiceCertificatesRepo) (time.Duration, error) {
 
 	certificates, getCertsErr := repository.GetServiceCertificates(ctx)
