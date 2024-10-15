@@ -40,18 +40,17 @@ if [[ "$arch" == "s390x" ]]; then
     echo "Broken stream again? Retry with dnf verbose logging."
     set -x
     set +e
-    which dnf5
-    for dnfbin in dnf dnf5; do
-      for (( i=20; i>0; i-- )); do
-        $dnfbin clean all
-        rm -rf /var/cache/dnf
-        $dnfbin upgrade --refresh --setopt=fastestmirror=0
-        $dnfbin install -v -y --setopt=fastestmirror=0 --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs && break
-        echo 'try! checking if from cloudfront cache'
-        curl -v -s -o - -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache' -H "bypasscache: 1" -H "Keep-Alive: 0" -H "Connection: close" \
-          "https://mirror.stream.centos.org/9-stream/BaseOS/s390x/os/repodata/repomd.xml?$RANDOM" | sha512sum
-        sleep 60
-      done
+    dnf --version
+    yum install dnf
+    for (( i=0; i<10; i++ )); do
+      dnf clean all
+      rm -rf /var/cache/dnf
+      dnf upgrade --refresh --setopt=fastestmirror=0
+      dnf install -v -y --setopt=fastestmirror=0 --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs && break
+      echo 'try! checking if from cloudfront cache'
+      curl -v -s -o - -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache' -H "bypasscache: 1" -H "Keep-Alive: 0" -H "Connection: close" \
+        "https://mirror.stream.centos.org/9-stream/BaseOS/s390x/os/repodata/repomd.xml?$RANDOM" | sha512sum
+      sleep ${i}0
     done
   )
   mv /tmp/postgresql-private-libs-*.rpm "${output_dir}/rpms/postgres-libs.rpm"
