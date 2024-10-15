@@ -144,47 +144,15 @@ func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.G
 
 	// confirmed access, proceed to access flows for the given deployment
 
-	flowStore, err := s.getFlowStore(ctx, request.GetClusterId())
+	flows, err := s.getExternalFlowsForDeployment(ctx, request.GetClusterId(), request.GetDeploymentId())
 	if err != nil {
 		return nil, err
 	}
 
-	flows, err := flowStore.GetExternalFlowsForDeployment(ctx, request.GetDeploymentId())
+	// Populate entities.
+	err = s.enrichFlowsWithExternalEntityDetails(ctx, &flows)
 	if err != nil {
 		return nil, err
-	}
-
-	// Populate entities. This could probably be implemented in the DB query
-	// for better efficiency, but is simply implemented here for now.
-	for _, flow := range flows {
-		var toGet string
-		var toSet **storage.NetworkEntityInfo
-
-		props := flow.GetProps()
-		if props == nil {
-			continue
-		}
-
-		src, dst := props.GetSrcEntity(), props.GetDstEntity()
-
-		if src != nil && src.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-			toGet = src.GetId()
-			toSet = &props.SrcEntity
-		}
-
-		if dst != nil && dst.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
-			toGet = dst.GetId()
-			toSet = &props.DstEntity
-		}
-
-		if toGet != "" {
-			entity, _, err := s.entityDS.GetEntity(ctx, toGet)
-			if err != nil {
-				return nil, err
-			}
-
-			*toSet = entity.GetInfo()
-		}
 	}
 
 	return &v1.GetExternalNetworkFlowsResponse{
@@ -691,4 +659,49 @@ func filterFlowsAndMaskScopeAlienDeployments(
 		}
 	}
 	return filtered, visibleNeighbors, masker.GetMaskedDeployments(), nil
+}
+
+func (s *serviceImpl) getExternalFlowsForDeployment(ctx context.Context, clusterId string, deploymentId string) ([]*storage.NetworkFlow, error) {
+	flowStore, err := s.getFlowStore(ctx, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	return flowStore.GetExternalFlowsForDeployment(ctx, deploymentId)
+}
+
+func (s *serviceImpl) enrichFlowsWithExternalEntityDetails(ctx context.Context, flows *[]*storage.NetworkFlow) error {
+	// This could probably be implemented in the DB query for better efficiency,
+	// but is simply implemented here for now.
+	for _, flow := range *flows {
+		var toGet string
+		var toSet **storage.NetworkEntityInfo
+
+		props := flow.GetProps()
+		if props == nil {
+			continue
+		}
+
+		src, dst := props.GetSrcEntity(), props.GetDstEntity()
+
+		if src != nil && src.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			toGet = src.GetId()
+			toSet = &props.SrcEntity
+		}
+
+		if dst != nil && dst.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			toGet = dst.GetId()
+			toSet = &props.DstEntity
+		}
+
+		if toGet != "" {
+			entity, _, err := s.entityDS.GetEntity(ctx, toGet)
+			if err != nil {
+				return err
+			}
+
+			*toSet = entity.GetInfo()
+		}
+	}
+	return nil
 }
