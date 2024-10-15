@@ -303,6 +303,58 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 		wantErr     bool
 	}{
 		{
+			name: "CVSS 2 score differs from calculated",
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+						BaseScore: 1.2,
+						Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+					Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+				},
+			},
+			expected: &storage.EmbeddedVulnerability{
+				Link:         "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+				Cvss:         1.2,
+				ScoreVersion: storage.EmbeddedVulnerability_V2,
+				CvssV2: &storage.CVSSV2{
+					Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+					AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+					AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+					Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
+					Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
+					Integrity:           storage.CVSSV2_IMPACT_NONE,
+					Availability:        storage.CVSSV2_IMPACT_PARTIAL,
+					ExploitabilityScore: 5.5,
+					ImpactScore:         7.8,
+					Score:               1.2,
+					Severity:            storage.CVSSV2_LOW,
+				},
+				CvssMetrics: []*storage.CVSSScore{
+					{
+						CvssScore: &storage.CVSSScore_Cvssv2{
+							Cvssv2: &storage.CVSSV2{
+								Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+								AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+								AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+								Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
+								Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
+								Integrity:           storage.CVSSV2_IMPACT_NONE,
+								Availability:        storage.CVSSV2_IMPACT_PARTIAL,
+								ExploitabilityScore: 5.5,
+								ImpactScore:         7.8,
+								Score:               1.2,
+								Severity:            storage.CVSSV2_LOW,
+							},
+						},
+						Source: storage.Source_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+				},
+			},
+		},
+		{
 			name: "CVSS 3.1 score differs from calculated",
 			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
 				{
@@ -317,6 +369,7 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 			expected: &storage.EmbeddedVulnerability{
 				Cvss:         4.0,
 				ScoreVersion: storage.EmbeddedVulnerability_V3,
+				Link:         "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
 				CvssV3: &storage.CVSSV3{
 					Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
 					ExploitabilityScore: 2.8,
@@ -380,6 +433,7 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 			expected: &storage.EmbeddedVulnerability{
 				Cvss:         8.2,
 				ScoreVersion: storage.EmbeddedVulnerability_V3,
+				Link:         "https://access.redhat.com/security/cve/CVE-1234-567",
 				CvssV3: &storage.CVSSV3{
 					Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
 					ExploitabilityScore: 2.8,
@@ -394,19 +448,6 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 					Availability:        storage.CVSSV3_IMPACT_HIGH,
 					Score:               8.2,
 					Severity:            storage.CVSSV3_HIGH,
-				},
-				CvssV2: &storage.CVSSV2{
-					Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
-					AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
-					AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
-					Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
-					Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
-					Integrity:           storage.CVSSV2_IMPACT_NONE,
-					Availability:        storage.CVSSV2_IMPACT_PARTIAL,
-					ExploitabilityScore: 5.5,
-					ImpactScore:         7.8,
-					Score:               6.4,
-					Severity:            storage.CVSSV2_MEDIUM,
 				},
 				CvssMetrics: []*storage.CVSSScore{
 					{
@@ -446,7 +487,7 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 								Severity:            storage.CVSSV2_MEDIUM,
 							},
 						},
-						Source: storage.Source_SOURCE_NVD, // Updated to match the correct source
+						Source: storage.Source_SOURCE_NVD,
 						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
 					},
 				},
@@ -495,6 +536,7 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 			expected: &storage.EmbeddedVulnerability{
 				Cvss:         6.4,
 				ScoreVersion: storage.EmbeddedVulnerability_V2,
+				Link:         "https://osv.dev/vulnerability/CVE-1234-567",
 				CvssV2: &storage.CVSSV2{
 					Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
 					AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
@@ -525,7 +567,7 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 								Severity:            storage.CVSSV2_MEDIUM,
 							},
 						},
-						Source: storage.Source_SOURCE_OSV, // Updated to match the correct source
+						Source: storage.Source_SOURCE_OSV,
 						Url:    "https://osv.dev/vulnerability/CVE-1234-567",
 					},
 				},
@@ -554,6 +596,7 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 			expected: &storage.EmbeddedVulnerability{
 				Cvss:         8.2,
 				ScoreVersion: storage.EmbeddedVulnerability_V3,
+				Link:         "https://access.redhat.com/security/cve/CVE-1234-567",
 				CvssV3: &storage.CVSSV3{
 					Vector:              "CVSS:3.0/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
 					ExploitabilityScore: 2.8,
@@ -588,7 +631,7 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 								Severity:            storage.CVSSV3_HIGH,
 							},
 						},
-						Source: storage.Source_SOURCE_RED_HAT, // Updated to match the correct source
+						Source: storage.Source_SOURCE_RED_HAT,
 						Url:    "https://access.redhat.com/security/cve/CVE-1234-567",
 					},
 					{
@@ -638,6 +681,7 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 			expected: &storage.EmbeddedVulnerability{
 				Cvss:         8.2,
 				ScoreVersion: storage.EmbeddedVulnerability_V3,
+				Link:         "https://osv.dev/vulnerability/CVE-1234-567",
 				CvssV3: &storage.CVSSV3{
 					Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
 					ExploitabilityScore: 2.8,
@@ -702,7 +746,7 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			vuln := &storage.EmbeddedVulnerability{}
-			err := setScoresAndScoreVersions(vuln, testcase.cvssMetrics)
+			err := setScoresAndScorevuln, testcase.cvssMetrics)
 			if testcase.wantErr {
 				assert.Error(t, err)
 				return
