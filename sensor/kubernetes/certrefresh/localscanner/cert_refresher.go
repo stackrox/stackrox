@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
@@ -30,7 +29,13 @@ func newCertificatesRefresher(requestCertificates requestCertificatesFunc, repos
 	}, timeout, backoff)
 }
 
-type requestCertificatesFunc func(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
+type IssueCertsResponse struct {
+	RequestId    string
+	ErrorMessage *string
+	Certificates *storage.TypedServiceCertificateSet
+}
+
+type requestCertificatesFunc func(ctx context.Context) (*IssueCertsResponse, error)
 type getCertsRenewalTimeFunc func(certificates *storage.TypedServiceCertificateSet) (time.Time, error)
 
 // refreshCertificates refreshes the certificate secrets if needed, and returns the time
@@ -69,10 +74,13 @@ func ensureCertificatesAreFresh(ctx context.Context, requestCertificates request
 	if requestErr != nil {
 		return 0, requestErr
 	}
-	if response.GetError() != nil {
-		return 0, errors.Errorf("central refused to issue certificates: %s", response.GetError().GetMessage())
+	if response.ErrorMessage != nil {
+		return 0, errors.Errorf("central refused to issue certificates: %s", *response.ErrorMessage)
 	}
-	certificates := response.GetCertificates()
+	certificates := response.Certificates
+	if certificates == nil {
+		return 0, errors.Errorf("certificates set is nil")
+	}
 
 	persistedCertificates, putErr := repository.EnsureServiceCertificates(ctx, certificates)
 	if putErr != nil {

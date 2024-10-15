@@ -65,7 +65,7 @@ func TestCertificateRequesterRequestSuccess(t *testing.T) {
 
 	response, err := f.requester.RequestCertificates(f.ctx)
 	assert.NoError(t, err)
-	assert.Equal(t, f.interceptedRequestID.Load(), response.GetRequestId())
+	assert.Equal(t, f.interceptedRequestID.Load(), response.RequestId)
 }
 
 func TestCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {

@@ -81,7 +81,7 @@ type localScannerTLSIssuerImpl struct {
 type CertificateRequester interface {
 	Start()
 	Stop()
-	RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
+	RequestCertificates(ctx context.Context) (*IssueCertsResponse, error)
 }
 
 type certificateRefresherGetter func(requestCertificates requestCertificatesFunc, repository certrepo.ServiceCertificatesRepo,
