@@ -1,4 +1,4 @@
-package localscanner
+package certrefresh
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
@@ -48,7 +47,7 @@ func (s *certRefresherSuite) TearDownTest() {
 }
 
 func (s *certRefresherSuite) TestNewCertificatesRefresherSmokeTest() {
-	s.NotNil(newCertificatesRefresher("test certificates", s.dependenciesMock.requestCertificates, s.dependenciesMock,
+	s.NotNil(NewCertificatesRefresher("test certificates", s.dependenciesMock.requestCertificates, s.dependenciesMock,
 		time.Second, retry.DefaultBackoff))
 }
 
@@ -190,14 +189,11 @@ func (s *certRefresherSuite) TestRefreshCertificatesRequestCertificatesResponseF
 	var certificates *storage.TypedServiceCertificateSet
 	s.dependenciesMock.On("GetServiceCertificates", mock.Anything).Once().Return(certificates, nil)
 	s.dependenciesMock.On("getCertsRenewalTime", certificates).Once().Return(time.UnixMilli(0), nil)
+	errorMessage := errCertRefresherForced.Error()
 	s.dependenciesMock.On("requestCertificates", mock.Anything).Once().Return(
-		convertToIssueCertsResponse(&central.IssueLocalScannerCertsResponse{
-			Response: &central.IssueLocalScannerCertsResponse_Error{
-				Error: &central.LocalScannerCertsIssueError{
-					Message: errCertRefresherForced.Error(),
-				},
-			},
-		}), nil)
+		&IssueCertsResponse{
+			ErrorMessage: &errorMessage,
+		}, nil)
 
 	_, err := s.refreshCertificates()
 
