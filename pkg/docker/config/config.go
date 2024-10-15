@@ -11,6 +11,7 @@ import (
 // The following types are copied from the Kubernetes codebase,
 // since it is not placed in any of the officially supported client
 // libraries.
+// See https://github.com/kubernetes/kubernetes/blob/v1.31.1/pkg/credentialprovider/config.go
 
 // DockerConfigJSON represents ~/.docker/config.json file info
 // see https://github.com/docker/docker/pull/12009.
@@ -81,6 +82,21 @@ func (d *DockerConfigEntry) UnmarshalJSON(data []byte) error {
 
 	d.Username, d.Password, err = decodeDockerConfigFieldAuth(tmp.Auth)
 	return err
+}
+
+// MarshalJSON marshals the entry with the basic auth field derived
+// from the username and password.
+func (d DockerConfigEntry) MarshalJSON() ([]byte, error) {
+	toEncode := DockerConfigEntryWithAuth{d.Username, d.Password, d.Email, ""}
+	toEncode.Auth = encodeDockerConfigFieldAuth(d.Username, d.Password)
+
+	return json.Marshal(toEncode)
+}
+
+func encodeDockerConfigFieldAuth(username, password string) string {
+	fieldValue := username + ":" + password
+
+	return base64.StdEncoding.EncodeToString([]byte(fieldValue))
 }
 
 // CreateFromAuthString decodes the given docker auth string into a DockerConfigEntry.

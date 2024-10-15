@@ -84,7 +84,7 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                     <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>Top severity</Th>
                     <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>
-                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS score</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
                     <Th>Affected components</Th>
                 </Tr>
             </Thead>
@@ -123,7 +123,7 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
                                     <Td dataLabel="CVE status">
                                         <VulnerabilityFixableIconText isFixable={isFixableInNode} />
                                     </Td>
-                                    <Td dataLabel="CVSS score">
+                                    <Td dataLabel="CVSS">
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
                                     <Td dataLabel="Affected components">

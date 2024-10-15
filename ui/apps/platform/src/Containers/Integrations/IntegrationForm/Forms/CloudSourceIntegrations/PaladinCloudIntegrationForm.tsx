@@ -39,16 +39,14 @@ export const validationSchema = yup.object().shape({
         }),
         skipTestIntegration: yup.bool(),
     }),
-    updatePassword: yup.bool(),
+    updateCredentials: yup.bool(),
 });
 
 export type CloudSourceIntegrationFormValues = {
-    id: string;
     cloudSource: CloudSourceIntegration;
     updateCredentials: boolean;
 };
 export const defaultValues: CloudSourceIntegrationFormValues = {
-    id: '',
     cloudSource: {
         id: '',
         name: '',
@@ -58,7 +56,7 @@ export const defaultValues: CloudSourceIntegrationFormValues = {
             clientId: '',
             clientSecret: '',
         },
-        skipTestIntegration: true,
+        skipTestIntegration: false,
         paladinCloud: {
             endpoint: 'https://api.paladincloud.io',
         },
@@ -73,7 +71,6 @@ function PaladinCloudIntegrationForm({
     const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
         merge(formInitialValues.cloudSource, initialValues);
-        formInitialValues.id = formInitialValues.cloudSource.id;
         formInitialValues.cloudSource.credentials.secret = '';
         formInitialValues.updateCredentials = false;
     }
@@ -183,6 +180,20 @@ function PaladinCloudIntegrationForm({
                                     ? ''
                                     : 'Currently-stored token will be used.'
                             }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        fieldId="cloudSource.skipTestIntegration"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <Checkbox
+                            label="Create integration without testing"
+                            id="cloudSource.skipTestIntegration"
+                            isChecked={values.cloudSource.skipTestIntegration}
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>

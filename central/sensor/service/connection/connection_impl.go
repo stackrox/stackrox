@@ -147,7 +147,7 @@ func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 // multiplexedPush pushes the given message to a dedicated queue for the respective event type.
 // The queues parameter, if non-nil, will be used to look up the queue by event type. If the `queues`
 // map is nil or does not contain an entry for the respective type, a queue is retrieved from the
-// mutex-protected `c.queues` map (and created if exists), and afterwards stored in the `queues` map
+// mutex-protected `c.queues` map (and created if exists), and afterward stored in the `queues` map
 // if non-nil.
 // The envisioned use for this is that a caller invoking `multiplexedPush` repeatedly will maintain
 // an exclusively used (i.e., not requiring protection via a mutex) map, that will automatically be
@@ -830,7 +830,7 @@ func (c *sensorConnection) ObjectsDeletedByReconciliation() (map[string]int, boo
 
 func (c *sensorConnection) CheckAutoUpgradeSupport() error {
 	if c.sensorHello.GetHelmManagedConfigInit() != nil && !c.sensorHello.GetHelmManagedConfigInit().GetNotHelmManaged() {
-		return errors.New("cluster is Helm-managed and does not support auto upgrades; use 'helm upgrade' or a Helm-aware CD pipeline for upgrades")
+		return errors.New("External tools (Helm or Operator) control the secured cluster version.")
 	}
 	return nil
 }

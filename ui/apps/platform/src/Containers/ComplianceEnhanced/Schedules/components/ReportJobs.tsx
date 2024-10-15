@@ -20,6 +20,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import { ensureBoolean, ensureStringArray } from 'utils/ensure';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { RunState } from 'types/reportJob';
+import useAnalytics from 'hooks/useAnalytics';
 import ConfigDetails from './ConfigDetails';
 import ReportRunStatesFilter, { ensureReportRunStates } from './ReportRunStatesFilter';
 import MyJobsFilter from './MyJobsFilter';
@@ -64,6 +65,8 @@ type ReportJobsProps = {
 };
 
 function ReportJobs({ scanConfig, isComplianceReportingEnabled }: ReportJobsProps) {
+    const { analyticsTrack } = useAnalytics();
+
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [isViewingOnlyMyJobs, setIsViewingOnlyMyJobs] = useURLStringUnion('viewOnlyMyJobs', [
@@ -75,23 +78,32 @@ function ReportJobs({ scanConfig, isComplianceReportingEnabled }: ReportJobsProp
 
     const onReportStatesFilterChange = (_checked: boolean, selectedStatus: RunState) => {
         const isStatusIncluded = filteredReportRunStates.includes(selectedStatus);
-        if (isStatusIncluded) {
-            setSearchFilter({
-                ...searchFilter,
-                'Report State': filteredReportRunStates.filter(
-                    (status) => status !== selectedStatus
-                ),
-            });
-        } else {
-            setSearchFilter({
-                ...searchFilter,
-                'Report State': [...filteredReportRunStates, selectedStatus],
-            });
-        }
+        const newFilters = isStatusIncluded
+            ? ensureReportRunStates(
+                  filteredReportRunStates.filter((status) => status !== selectedStatus)
+              )
+            : ensureReportRunStates([...filteredReportRunStates, selectedStatus]);
+        analyticsTrack({
+            event: 'Compliance Report Run State Filtered',
+            properties: {
+                value: newFilters,
+            },
+        });
+        setSearchFilter({
+            ...searchFilter,
+            'Report State': newFilters,
+        });
         setPage(1);
     };
 
     const onMyJobsFilterChange = (checked: boolean) => {
+        analyticsTrack({
+            event: 'Compliance Report Jobs View Toggled',
+            properties: {
+                view: 'My jobs',
+                state: checked,
+            },
+        });
         setIsViewingOnlyMyJobs(String(checked));
         setPage(1);
     };

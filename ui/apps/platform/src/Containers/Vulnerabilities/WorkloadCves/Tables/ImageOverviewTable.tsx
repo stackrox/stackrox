@@ -12,10 +12,40 @@ import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
 import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
+import {
+    generateVisibilityForColumns,
+    getHiddenColumnCount,
+    ManagedColumns,
+} from 'hooks/useManagedColumns';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
 import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabelLayout';
+
+export const tableId = 'WorkloadCvesImageOverviewTable';
+
+export const defaultColumns = {
+    cvesBySeverity: {
+        title: 'CVEs by severity',
+        isShownByDefault: true,
+    },
+    operatingSystem: {
+        title: 'Operating system',
+        isShownByDefault: true,
+    },
+    deployments: {
+        title: 'Deployments',
+        isShownByDefault: true,
+    },
+    age: {
+        title: 'Age',
+        isShownByDefault: true,
+    },
+    scanTime: {
+        title: 'Scan time',
+        isShownByDefault: true,
+    },
+} as const;
 
 export const imageListQuery = gql`
     query getImageList($query: String, $pagination: Pagination) {
@@ -81,7 +111,7 @@ export type Image = {
     notes: string[];
 };
 
-export type ImagesTableProps = {
+export type ImageOverviewTableProps = {
     tableState: TableUIState<Image>;
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
@@ -91,9 +121,10 @@ export type ImagesTableProps = {
     onUnwatchImage: (imageName: string) => void;
     showCveDetailFields: boolean;
     onClearFilters: () => void;
+    columnVisibilityState: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
 
-function ImagesTable({
+function ImageOverviewTable({
     tableState,
     getSortParams,
     isFiltered,
@@ -103,28 +134,52 @@ function ImagesTable({
     onUnwatchImage,
     showCveDetailFields,
     onClearFilters,
-}: ImagesTableProps) {
-    const colSpan = 5 + (hasWriteAccessForWatchedImage ? 1 : 0) + (showCveDetailFields ? 1 : 0);
+    columnVisibilityState,
+}: ImageOverviewTableProps) {
+    const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
+    const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
+    const colSpan =
+        5 +
+        (hasWriteAccessForWatchedImage ? 1 : 0) +
+        (showCveDetailFields ? 1 : 0) +
+        -hiddenColumnCount;
 
     return (
         <Table borders={false} variant="compact">
             <Thead noWrap>
-                {/* TODO: need to double check sorting on columns  */}
                 <Tr>
                     <Th sort={getSortParams('Image')}>Image</Th>
                     {showCveDetailFields && (
-                        <TooltipTh tooltip="CVEs by severity across this image">
+                        <TooltipTh
+                            className={getVisibilityClass('cvesBySeverity')}
+                            tooltip="CVEs by severity across this image"
+                        >
                             CVEs by severity
                             {isFiltered && <DynamicColumnIcon />}
                         </TooltipTh>
                     )}
-                    <Th sort={getSortParams('Image OS')}>Operating system</Th>
-                    <Th>
+                    <Th
+                        className={getVisibilityClass('operatingSystem')}
+                        sort={getSortParams('Image OS')}
+                    >
+                        Operating system
+                    </Th>
+                    <Th className={getVisibilityClass('deployments')}>
                         Deployments
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams('Image created time')}>Age</Th>
-                    <Th sort={getSortParams('Image scan time')}>Scan time</Th>
+                    <Th
+                        className={getVisibilityClass('age')}
+                        sort={getSortParams('Image created time')}
+                    >
+                        Age
+                    </Th>
+                    <Th
+                        className={getVisibilityClass('scanTime')}
+                        sort={getSortParams('Image scan time')}
+                    >
+                        Scan time
+                    </Th>
                     {hasWriteAccessForWatchedImage && (
                         <Th>
                             <span className="pf-v5-screen-reader">Image action menu</span>
@@ -194,7 +249,10 @@ function ImagesTable({
                                         )}
                                     </Td>
                                     {showCveDetailFields && (
-                                        <Td dataLabel="CVEs by severity">
+                                        <Td
+                                            className={getVisibilityClass('cvesBySeverity')}
+                                            dataLabel="CVEs by severity"
+                                        >
                                             <SeverityCountLabels
                                                 criticalCount={criticalCount}
                                                 importantCount={importantCount}
@@ -205,8 +263,17 @@ function ImagesTable({
                                             />
                                         </Td>
                                     )}
-                                    <Td>{operatingSystem || 'unknown'}</Td>
-                                    <Td modifier="nowrap">
+                                    <Td
+                                        dataLabel="Operating system"
+                                        className={getVisibilityClass('operatingSystem')}
+                                    >
+                                        {operatingSystem || 'unknown'}
+                                    </Td>
+                                    <Td
+                                        dataLabel="Deployments"
+                                        className={getVisibilityClass('deployments')}
+                                        modifier="nowrap"
+                                    >
                                         {deploymentCount > 0 ? (
                                             <>
                                                 {deploymentCount}{' '}
@@ -218,7 +285,7 @@ function ImagesTable({
                                             </Flex>
                                         )}
                                     </Td>
-                                    <Td>
+                                    <Td dataLabel="Age" className={getVisibilityClass('age')}>
                                         {metadata?.v1?.created ? (
                                             <DateDistance
                                                 date={metadata.v1.created}
@@ -228,7 +295,10 @@ function ImagesTable({
                                             'unknown'
                                         )}
                                     </Td>
-                                    <Td>
+                                    <Td
+                                        dataLabel="Scan time"
+                                        className={getVisibilityClass('scanTime')}
+                                    >
                                         {scanTime ? <DateDistance date={scanTime} /> : 'unknown'}
                                     </Td>
                                     {hasWriteAccessForWatchedImage && (
@@ -259,4 +329,4 @@ function ImagesTable({
     );
 }
 
-export default ImagesTable;
+export default ImageOverviewTable;

@@ -14,6 +14,7 @@ import {
 } from '@patternfly/react-table';
 import { Text } from '@patternfly/react-core';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
@@ -26,11 +27,17 @@ import { TableUIState } from 'utils/getTableUIState';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import ExpandRowTh from 'Components/ExpandRowTh';
 import { ACTION_COLUMN_POPPER_PROPS } from 'constants/tables';
+import {
+    generateVisibilityForColumns,
+    getHiddenColumnCount,
+    ManagedColumns,
+} from 'hooks/useManagedColumns';
 import { VulnerabilitySeverityLabel } from '../../types';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import {
     getScoreVersionsForTopCVSS,
+    getScoreVersionsForTopNvdCVSS,
     sortCveDistroList,
     aggregateByCVSS,
     aggregateByCreatedTime,
@@ -44,6 +51,30 @@ import CVESelectionTd from '../../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
+
+export const tableId = 'WorkloadCveOverviewTable';
+export const defaultColumns = {
+    imagesBySeverity: {
+        title: 'Images by severity',
+        isShownByDefault: true,
+    },
+    topCvss: {
+        title: 'Top CVSS',
+        isShownByDefault: true,
+    },
+    topNvdCvss: {
+        title: 'Top NVD CVSS',
+        isShownByDefault: true,
+    },
+    affectedImages: {
+        title: 'Affected images',
+        isShownByDefault: true,
+    },
+    firstDiscovered: {
+        title: 'First discovered',
+        isShownByDefault: true,
+    },
+} as const;
 
 export const cveListQuery = gql`
     query getImageCVEList(
@@ -70,11 +101,14 @@ export const cveListQuery = gql`
             topCVSS
             affectedImageCount
             firstDiscoveredInSystem
+            topNvdCVSS
             distroTuples {
                 summary
                 operatingSystem
                 cvss
                 scoreVersion
+                nvdCvss
+                nvdScoreVersion
             }
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
@@ -102,16 +136,19 @@ export type ImageCVE = {
     topCVSS: number;
     affectedImageCount: number;
     firstDiscoveredInSystem: string | null;
+    topNvdCVSS: number;
     distroTuples: {
         summary: string;
         operatingSystem: string;
         cvss: number;
         scoreVersion: string;
+        nvdCvss: number;
+        nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
     }[];
     pendingExceptionCount: number;
 };
 
-export type CVEsTableProps = {
+export type WorkloadCVEOverviewTableProps = {
     tableState: TableUIState<ImageCVE>;
     unfilteredImageCount: number;
     getSortParams: UseURLSortResult['getSortParams'];
@@ -126,9 +163,10 @@ export type CVEsTableProps = {
     }) => IAction[];
     vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     onClearFilters: () => void;
+    columnVisibilityState: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
 
-function CVEsTable({
+function WorkloadCVEOverviewTable({
     tableState,
     unfilteredImageCount,
     getSortParams,
@@ -139,15 +177,22 @@ function CVEsTable({
     createTableActions,
     vulnerabilityState,
     onClearFilters,
-}: CVEsTableProps) {
+    columnVisibilityState,
+}: WorkloadCVEOverviewTableProps) {
     const expandedRowSet = useSet<string>();
     const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
+    const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
+    const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
 
     const colSpan =
-        6 +
+        (isNvdCvssEnabled ? 7 : 6) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
-        (showExceptionDetailsLink ? 1 : 0);
+        (showExceptionDetailsLink ? 1 : 0) +
+        -hiddenColumnCount;
 
     return (
         <Table borders={false} variant="compact">
@@ -157,6 +202,7 @@ function CVEsTable({
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <TooltipTh
+                        className={getVisibilityClass('imagesBySeverity')}
                         sort={getSortParams(
                             'Images By Severity',
                             getSeveritySortOptions(filteredSeverities)
@@ -167,12 +213,22 @@ function CVEsTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
                     <TooltipTh
+                        className={getVisibilityClass('topCvss')}
                         sort={getSortParams('CVSS', aggregateByCVSS)}
                         tooltip="Highest CVSS score of this CVE across images"
                     >
                         Top CVSS
                     </TooltipTh>
+                    {isNvdCvssEnabled && (
+                        <TooltipTh
+                            className={getVisibilityClass('topNvdCvss')}
+                            tooltip="Highest CVSS score (from National Vulnerability Database) of this CVE across images"
+                        >
+                            Top NVD CVSS
+                        </TooltipTh>
+                    )}
                     <TooltipTh
+                        className={getVisibilityClass('affectedImages')}
                         sort={getSortParams('Image Sha', aggregateByDistinctCount)}
                         tooltip="Ratio of total images affected by this CVE"
                     >
@@ -180,6 +236,7 @@ function CVEsTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
                     <TooltipTh
+                        className={getVisibilityClass('firstDiscovered')}
                         sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}
                         tooltip="Time since this CVE first affected an entity"
                     >
@@ -210,6 +267,7 @@ function CVEsTable({
                                 cve,
                                 affectedImageCountBySeverity,
                                 topCVSS,
+                                topNvdCVSS,
                                 affectedImageCount,
                                 firstDiscoveredInSystem,
                                 distroTuples,
@@ -225,6 +283,10 @@ function CVEsTable({
 
                             const prioritizedDistros = sortCveDistroList(distroTuples);
                             const scoreVersions = getScoreVersionsForTopCVSS(topCVSS, distroTuples);
+                            const nvdScoreVersions = getScoreVersionsForTopNvdCVSS(
+                                topNvdCVSS,
+                                distroTuples
+                            );
                             const summary =
                                 prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
@@ -272,7 +334,10 @@ function CVEsTable({
                                                 </Link>
                                             </PendingExceptionLabelLayout>
                                         </Td>
-                                        <Td dataLabel="Images by severity">
+                                        <Td
+                                            dataLabel="Images by severity"
+                                            className={getVisibilityClass('imagesBySeverity')}
+                                        >
                                             <SeverityCountLabels
                                                 criticalCount={criticalCount}
                                                 importantCount={importantCount}
@@ -281,7 +346,10 @@ function CVEsTable({
                                                 filteredSeverities={filteredSeverities}
                                             />
                                         </Td>
-                                        <Td dataLabel="Top CVSS">
+                                        <Td
+                                            dataLabel="Top CVSS"
+                                            className={getVisibilityClass('topCvss')}
+                                        >
                                             <CvssFormatted
                                                 cvss={topCVSS}
                                                 scoreVersion={
@@ -291,11 +359,28 @@ function CVEsTable({
                                                 }
                                             />
                                         </Td>
-                                        <Td dataLabel="Affected images">
+                                        {isNvdCvssEnabled && (
+                                            <Td
+                                                className={getVisibilityClass('topNvdCvss')}
+                                                dataLabel="Top NVD CVSS"
+                                            >
+                                                <CvssFormatted
+                                                    cvss={topNvdCVSS ?? 0}
+                                                    scoreVersion={nvdScoreVersions.join('/')}
+                                                />
+                                            </Td>
+                                        )}
+                                        <Td
+                                            dataLabel="Affected images"
+                                            className={getVisibilityClass('affectedImages')}
+                                        >
                                             {affectedImageCount}/{unfilteredImageCount} affected
                                             images
                                         </Td>
-                                        <Td dataLabel="First discovered">
+                                        <Td
+                                            dataLabel="First discovered"
+                                            className={getVisibilityClass('firstDiscovered')}
+                                        >
                                             <DateDistance date={firstDiscoveredInSystem} />
                                         </Td>
                                         {showExceptionDetailsLink && (
@@ -305,7 +390,7 @@ function CVEsTable({
                                             />
                                         )}
                                         {createTableActions && (
-                                            <Td className="pf-v5-u-px-0">
+                                            <Td isActionCell>
                                                 <ActionsColumn
                                                     popperProps={ACTION_COLUMN_POPPER_PROPS}
                                                     items={createTableActions({
@@ -339,4 +424,4 @@ function CVEsTable({
     );
 }
 
-export default CVEsTable;
+export default WorkloadCVEOverviewTable;

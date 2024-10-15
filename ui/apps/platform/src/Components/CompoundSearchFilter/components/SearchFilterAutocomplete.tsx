@@ -66,6 +66,16 @@ function getSelectOptions(
         return options;
     }
 
+    if (filterValue === '') {
+        return [
+            {
+                isDisabled: true,
+                value: filterValue,
+                children: 'No options',
+            },
+        ];
+    }
+
     return [
         {
             value: filterValue,
@@ -123,7 +133,7 @@ function SearchFilterAutocomplete({
             ? [autocompleteContextString, autocompleteSearchString].join('+')
             : autocompleteSearchString;
 
-    const { data, loading: isLoading } = useQuery<SearchAutocompleteQueryResponse>(
+    const { data: rawData, loading: isLoading } = useQuery<SearchAutocompleteQueryResponse>(
         SEARCH_AUTOCOMPLETE_QUERY,
         {
             variables: {
@@ -132,6 +142,10 @@ function SearchFilterAutocomplete({
             },
         }
     );
+    // Filter out empty strings
+    const data: SearchAutocompleteQueryResponse = {
+        searchAutocomplete: rawData?.searchAutocomplete?.filter((item) => item !== '') ?? [],
+    };
 
     const selectOptions: SelectOptionProps[] = getSelectOptions(
         data,

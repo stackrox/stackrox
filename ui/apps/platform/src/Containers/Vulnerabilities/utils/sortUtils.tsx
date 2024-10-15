@@ -139,6 +139,16 @@ export function getScoreVersionsForTopCVSS(
     return Array.from(new Set(scoreVersions)).sort();
 }
 
+export function getScoreVersionsForTopNvdCVSS(
+    topNvdCvss: number,
+    scores: { nvdCvss: number; nvdScoreVersion: string }[]
+): string[] {
+    const scoreVersions = scores
+        .filter(({ nvdCvss = 0 }) => nvdCvss.toFixed(1) === topNvdCvss.toFixed(1))
+        .map(({ nvdScoreVersion = 'UNKNOWN_VERSION' }) => nvdScoreVersion);
+    return Array.from(new Set(scoreVersions)).sort();
+}
+
 export const severitySortMap = {
     Critical: 'Critical Severity Count',
     Important: 'Important Severity Count',

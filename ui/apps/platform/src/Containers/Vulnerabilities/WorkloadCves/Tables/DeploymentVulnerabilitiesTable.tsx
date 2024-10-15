@@ -13,6 +13,11 @@ import DateDistance from 'Components/DateDistance';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import ExpandRowTh from 'Components/ExpandRowTh';
 import { TableUIState } from 'utils/getTableUIState';
+import {
+    generateVisibilityForColumns,
+    getHiddenColumnCount,
+    ManagedColumns,
+} from 'hooks/useManagedColumns';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 
 import DeploymentComponentVulnerabilitiesTable, {
@@ -21,6 +26,30 @@ import DeploymentComponentVulnerabilitiesTable, {
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import { FormattedDeploymentVulnerability } from './table.utils';
+
+export const tableId = 'WorkloadCvesDeploymentVulnerabilitiesTable';
+export const defaultColumns = {
+    operatingSystem: {
+        title: 'Operating system',
+        isShownByDefault: true,
+    },
+    cveSeverity: {
+        title: 'CVE severity',
+        isShownByDefault: true,
+    },
+    cveStatus: {
+        title: 'CVE status',
+        isShownByDefault: true,
+    },
+    affectedComponents: {
+        title: 'Affected components',
+        isShownByDefault: true,
+    },
+    firstDiscovered: {
+        title: 'First discovered',
+        isShownByDefault: true,
+    },
+} as const;
 
 export const deploymentWithVulnerabilitiesFragment = gql`
     ${deploymentComponentVulnerabilitiesFragment}
@@ -51,6 +80,7 @@ export type DeploymentVulnerabilitiesTableProps = {
     isFiltered: boolean;
     vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
     onClearFilters: () => void;
+    tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
 
 function DeploymentVulnerabilitiesTable({
@@ -59,8 +89,13 @@ function DeploymentVulnerabilitiesTable({
     isFiltered,
     vulnerabilityState,
     onClearFilters,
+    tableConfig,
 }: DeploymentVulnerabilitiesTableProps) {
+    const getVisibilityClass = generateVisibilityForColumns(tableConfig);
+    const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
+
+    const colSpan = 7 - hiddenColumnCount;
 
     return (
         <Table variant="compact">
@@ -68,21 +103,26 @@ function DeploymentVulnerabilitiesTable({
                 <Tr>
                     <ExpandRowTh />
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <Th>OS</Th>
-                    <Th sort={getSortParams('Severity')}>CVE severity</Th>
-                    <Th>
+                    <Th className={getVisibilityClass('operatingSystem')}>Operating system</Th>
+                    <Th
+                        className={getVisibilityClass('cveSeverity')}
+                        sort={getSortParams('Severity')}
+                    >
+                        CVE severity
+                    </Th>
+                    <Th className={getVisibilityClass('cveStatus')}>
                         CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th>
+                    <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th>First discovered</Th>
+                    <Th className={getVisibilityClass('firstDiscovered')}>First discovered</Th>
                 </Tr>
             </Thead>
             <TbodyUnified
-                colSpan={7}
+                colSpan={colSpan}
                 tableState={tableState}
                 emptyProps={{ message: 'There were no CVEs detected for this deployment' }}
                 filteredEmptyProps={{ onClearFilters }}
@@ -129,19 +169,38 @@ function DeploymentVulnerabilitiesTable({
                                             </Link>
                                         </PendingExceptionLabelLayout>
                                     </Td>
-                                    <Td modifier="nowrap" dataLabel="OS">
+                                    <Td
+                                        className={getVisibilityClass('operatingSystem')}
+                                        modifier="nowrap"
+                                        dataLabel="Operating system"
+                                    >
                                         {operatingSystem}
                                     </Td>
-                                    <Td modifier="nowrap" dataLabel="Severity">
+                                    <Td
+                                        className={getVisibilityClass('cveSeverity')}
+                                        modifier="nowrap"
+                                        dataLabel="Severity"
+                                    >
                                         <VulnerabilitySeverityIconText severity={severity} />
                                     </Td>
-                                    <Td modifier="nowrap" dataLabel="CVE Status">
+                                    <Td
+                                        className={getVisibilityClass('cveStatus')}
+                                        modifier="nowrap"
+                                        dataLabel="CVE Status"
+                                    >
                                         <VulnerabilityFixableIconText isFixable={isFixable} />
                                     </Td>
-                                    <Td dataLabel="Affected components">
+                                    <Td
+                                        className={getVisibilityClass('affectedComponents')}
+                                        dataLabel="Affected components"
+                                    >
                                         {affectedComponentsText}
                                     </Td>
-                                    <Td modifier="nowrap" dataLabel="First discovered">
+                                    <Td
+                                        className={getVisibilityClass('firstDiscovered')}
+                                        modifier="nowrap"
+                                        dataLabel="First discovered"
+                                    >
                                         <DateDistance date={discoveredAtImage} />
                                     </Td>
                                 </Tr>

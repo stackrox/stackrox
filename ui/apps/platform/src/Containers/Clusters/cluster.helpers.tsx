@@ -14,6 +14,7 @@ import {
 
 import { Cluster, ClusterProviderMetadata } from 'types/cluster.proto';
 import { getDate } from 'utils/dateUtils';
+import { getProductBranding } from 'constants/productBranding';
 import { CertExpiryStatus } from './clusterTypes';
 
 export const runtimeOptions = [
@@ -187,12 +188,16 @@ const upgradeStates: UpgradeStates = {
         type: 'current',
     },
     MANUAL_UPGRADE_REQUIRED: {
-        displayValue: 'Manual upgrade required',
+        displayValue: `Secured cluster version is not managed by ${getProductBranding().shortName}.`,
         type: 'intervention',
     },
     UPGRADE_AVAILABLE: {
         type: 'download',
         actionText: 'Upgrade available',
+    },
+    DOWNGRADE_POSSIBLE: {
+        type: 'download',
+        actionText: 'Downgrade possible',
     },
     UPGRADE_INITIALIZING: {
         displayValue: 'Upgrade initializing',
@@ -467,7 +472,19 @@ export function findUpgradeState(
         // Auto upgrades are possible even in the case of SENSOR_VERSION_HIGHER (it's not technically an upgrade,
         // and not really something we ever expect, but eh.) If the backend detects this to be the case, it will not
         // trigger an upgrade unless asked to by the user.
-        case 'SENSOR_VERSION_HIGHER':
+        case 'SENSOR_VERSION_HIGHER': {
+            if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
+                return upgradeStates.DOWNGRADE_POSSIBLE;
+            }
+
+            const upgradeState = get(
+                upgradeStatus,
+                'mostRecentProcess.progress.upgradeState',
+                'unknown'
+            );
+
+            return upgradeStates[upgradeState] || upgradeStates.unknown;
+        }
         case 'AUTO_UPGRADE_POSSIBLE': {
             if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
                 return upgradeStates.UPGRADE_AVAILABLE;

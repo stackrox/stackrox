@@ -116,7 +116,7 @@ function AffectedNodesTable({
                     <Th sort={getSortParams(NODE_SORT_FIELD)}>Node</Th>
                     <Th sort={getSortParams(CVE_SEVERITY_SORT_FIELD)}>CVE severity</Th>
                     <Th sort={getSortParams(CVE_STATUS_SORT_FIELD)}>CVE status</Th>
-                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS score</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
                     <Th sort={getSortParams(CLUSTER_SORT_FIELD)}>Cluster</Th>
                     <Th sort={getSortParams(OPERATING_SYSTEM_SORT_FIELD)}>Operating system</Th>
                     <Th>Affected components</Th>
@@ -163,7 +163,7 @@ function AffectedNodesTable({
                                     <Td dataLabel="CVE status" modifier="nowrap">
                                         <VulnerabilityFixableIconText isFixable={isFixableInNode} />
                                     </Td>
-                                    <Td dataLabel="CVSS score" modifier="nowrap">
+                                    <Td dataLabel="CVSS" modifier="nowrap">
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
                                     <Td dataLabel="Cluster">
