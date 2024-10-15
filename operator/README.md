@@ -278,12 +278,12 @@ ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm
 
 This installs the operator into the `stackrox-operator` namespace.
 This can be overridden with a `TEST_NAMESPACE` argument.
-The version can be overridden with a `CSV_VERSION` argument.
+The version can be overridden with a `VERSION` argument.
 
 For example:
 
 ```bash
-ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm TEST_NAMESPACE=my-favorite-namespace CSV_VERSION=v4.5.0-123-g12deadbeef
+ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm TEST_NAMESPACE=my-favorite-namespace VERSION=4.5.0-123-g12deadbeef
 ```
 
 ### Removal
