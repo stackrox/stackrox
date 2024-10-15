@@ -97,8 +97,7 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 	s.Len(actual, 2)
 	for _, c := range actual {
 		// Ensure that each of the components track the expected CVE
-		// protoassert.SliceContains(s.T(), c.GetVulns(), expectedCVE)
-		protoassert.Equal(s.T(), expectedCVE, c.GetVulns()[0])
+		protoassert.SliceContains(s.T(), c.GetVulns(), expectedCVE)
 	}
 }
 

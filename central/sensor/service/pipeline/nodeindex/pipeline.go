@@ -88,10 +88,10 @@ func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSen
 	// Send the Node and Index Report to Scanner for enrichment. The result will be persisted in node.NodeScan
 	err = p.enricher.EnrichNodeWithInventory(node, nil, report)
 	if err != nil {
-		return errors.WithMessagef(err, "enriching node %s with index report", node.GetId())
+		return errors.WithMessagef(err, "enriching node %s with index report", nodeId)
 	}
-	log.Infof("Successfully enriched node %s with %s report - found %d components (id: %s)",
-		node.GetName(), node.GetScan().GetScannerVersion().String(), len(node.GetScan().GetComponents()), node.GetId())
+	log.Debugf("Successfully enriched node %s with %s report - found %d components (id: %s)",
+		node.GetName(), node.GetScan().GetScannerVersion().String(), len(node.GetScan().GetComponents()), nodeId)
 
 	// Update the whole node in the database with the new and previous information.
 	err = p.riskManager.CalculateRiskAndUpsertNode(node)

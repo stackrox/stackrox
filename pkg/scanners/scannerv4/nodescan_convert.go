@@ -16,16 +16,25 @@ var (
 	rhcosOSImageRegexp = regexp.MustCompile(`(Red Hat Enterprise Linux) (CoreOS) ([\d])([\d]+)`)
 )
 
+const (
+	rhcosFullName = "Red Hat Enterprise Linux CoreOS"
+)
+
 func toNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan {
 	// TODO(ROX-26593): Instead of fixing labels here, add RHCOS DistributionScanner to ClairCore
 	fixedNotes := fixNotes(toStorageNotes(r.Notes), osImageRef)
+
+	convertedOS := toOperatingSystem(osImageRef)
+	if convertedOS == "" {
+		log.Warnf("Could not determine operating system from OSimage ref %s", osImageRef)
+	}
 
 	return &storage.NodeScan{
 		ScanTime:        protocompat.TimestampNow(),
 		Components:      toStorageComponents(r),
 		Notes:           fixedNotes,
 		ScannerVersion:  storage.NodeScan_SCANNER_V4,
-		OperatingSystem: toOperatingSystem(osImageRef),
+		OperatingSystem: convertedOS,
 	}
 }
 
@@ -123,9 +132,8 @@ func toStorageNotes(notes []v4.VulnerabilityReport_Note) []storage.NodeScan_Note
 }
 
 func fixNotes(notes []storage.NodeScan_Note, osImageRef string) []storage.NodeScan_Note {
-	isRHCOS := strings.HasPrefix(osImageRef, "Red Hat Enterprise Linux CoreOS")
-	if !isRHCOS {
-		// Don't change notes if scanned node isn't RHCOS
+	if !strings.HasPrefix(osImageRef, rhcosFullName) {
+		// Keep notes as they are for nodes other than RHCOS
 		return notes
 	}
 	fixedNotes := make([]storage.NodeScan_Note, 0)
