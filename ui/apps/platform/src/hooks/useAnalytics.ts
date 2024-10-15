@@ -341,7 +341,7 @@ export type AnalyticsEvent =
           };
       }
     /**
-     * Tracks each time the filters by report run state
+     * Tracks each time the user filters by report run state
      */
     | {
           event: typeof COMPLIANCE_REPORT_RUN_STATE_FILTERED;

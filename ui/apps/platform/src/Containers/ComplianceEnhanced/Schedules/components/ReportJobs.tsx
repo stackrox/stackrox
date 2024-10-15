@@ -78,33 +78,21 @@ function ReportJobs({ scanConfig, isComplianceReportingEnabled }: ReportJobsProp
 
     const onReportStatesFilterChange = (_checked: boolean, selectedStatus: RunState) => {
         const isStatusIncluded = filteredReportRunStates.includes(selectedStatus);
-        if (isStatusIncluded) {
-            const newFilters = ensureReportRunStates(
-                filteredReportRunStates.filter((status) => status !== selectedStatus)
-            );
-            analyticsTrack({
-                event: 'Compliance Report Run State Filtered',
-                properties: {
-                    value: newFilters,
-                },
-            });
-            setSearchFilter({
-                ...searchFilter,
-                'Report State': newFilters,
-            });
-        } else {
-            const newFilters = ensureReportRunStates([...filteredReportRunStates, selectedStatus]);
-            analyticsTrack({
-                event: 'Compliance Report Run State Filtered',
-                properties: {
-                    value: newFilters,
-                },
-            });
-            setSearchFilter({
-                ...searchFilter,
-                'Report State': newFilters,
-            });
-        }
+        const newFilters = isStatusIncluded
+            ? ensureReportRunStates(
+                  filteredReportRunStates.filter((status) => status !== selectedStatus)
+              )
+            : ensureReportRunStates([...filteredReportRunStates, selectedStatus]);
+        analyticsTrack({
+            event: 'Compliance Report Run State Filtered',
+            properties: {
+                value: newFilters,
+            },
+        });
+        setSearchFilter({
+            ...searchFilter,
+            'Report State': newFilters,
+        });
         setPage(1);
     };
 
