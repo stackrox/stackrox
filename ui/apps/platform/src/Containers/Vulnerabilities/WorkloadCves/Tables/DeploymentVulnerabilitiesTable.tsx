@@ -29,8 +29,8 @@ import { FormattedDeploymentVulnerability } from './table.utils';
 
 export const tableId = 'WorkloadCvesDeploymentVulnerabilitiesTable';
 export const defaultColumns = {
-    os: {
-        title: 'OS',
+    operatingSystem: {
+        title: 'Operating system',
         isShownByDefault: true,
     },
     cveSeverity: {
@@ -103,7 +103,7 @@ function DeploymentVulnerabilitiesTable({
                 <Tr>
                     <ExpandRowTh />
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <Th className={getVisibilityClass('os')}>OS</Th>
+                    <Th className={getVisibilityClass('operatingSystem')}>Operating system</Th>
                     <Th
                         className={getVisibilityClass('cveSeverity')}
                         sort={getSortParams('Severity')}
@@ -170,9 +170,9 @@ function DeploymentVulnerabilitiesTable({
                                         </PendingExceptionLabelLayout>
                                     </Td>
                                     <Td
-                                        className={getVisibilityClass('os')}
+                                        className={getVisibilityClass('operatingSystem')}
                                         modifier="nowrap"
-                                        dataLabel="OS"
+                                        dataLabel="Operating system"
                                     >
                                         {operatingSystem}
                                     </Td>
