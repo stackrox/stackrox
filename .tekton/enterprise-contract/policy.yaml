@@ -1,0 +1,65 @@
+# ---
+# apiVersion: appstudio.redhat.com/v1beta1
+# kind: IntegrationTestScenario
+# metadata:
+#   name: acs-enterprise-contract-custom-tasks-debugging
+#   namespace: rh-acs-tenant
+# spec:
+#   application: acs
+#   contexts:
+#     - description: Application testing
+#       name: application
+#   resolverRef:
+#     params:
+#       - name: url
+#         value: 'https://github.com/konflux-ci/build-definitions'
+#       - name: revision
+#         value: main
+#       - name: pathInRepo
+#         value: pipelines/enterprise-contract.yaml
+#     resolver: git
+#   params:
+#   - name: POLICY_CONFIGURATION
+#     value: github.com/stackrox/stackrox?ref=rhtap-allow-quay-registry//.tekton/enterprise-contract
+#   - name: TIMEOUT
+#     value: 40m
+---
+name: Red Hat
+description: >-
+  Includes the full set of rules and policies required internally by Red Hat when building Red Hat products.
+  Source: https://github.com/enterprise-contract/config/blob/main/redhat/policy.yaml
+sources:
+  - name: Default
+    ruleData:
+      allowed_registry_prefixes:
+        - registry.access.redhat.com/
+        - registry.redhat.io/
+        - brew.registry.redhat.io/rh-osbs/openshift-golang-builder
+    data:
+      - oci::quay.io/konflux-ci/tekton-catalog/data-acceptable-bundles:latest
+      - github.com/release-engineering/rhtap-ec-policy//data
+    policy:
+      - oci::quay.io/enterprise-contract/ec-release-policy:git-75c36c3@sha256:5ab1e5a7314bb5a782fea919369a324e0f288bb3b1a9e39172f5204392c34dc0
+    # Disable trusted-task exception to see the 'real' results.
+    # volatileConfig:
+    #   exclude:
+    #     # TODO(ROX-22196): same
+    #     # Deadline for expiring this exception: https://issues.redhat.com/browse/EC-807
+    #     - value: 'trusted_task.trusted:<NAMELESS>'
+    #       effectiveUntil: "2024-12-01T00:00:00Z"
+    config:
+      include:
+        - '@redhat'
+      exclude:
+        # Because they include a custom task in their build pipelines in order to side-load kernel headers and
+        # vulnerability definitions. That is covered by a ProdSec exception, but EC complains about it today.
+        # Grant this exception until EC can learn to tolerate it.
+        # https://issues.redhat.com/browse/KONFLUX-319
+        # TODO(ROX-22196): create bundles for ACS custom tasks
+        - 'attestation_task_bundle.tasks_defined_in_bundle'
+        # Because some of their images need to be built with network.
+        # We need pre-fetch support for rpms to make this work:
+        # https://issues.redhat.com/browse/KONFLUX-1318
+        # TODO(ROX-20234): Ensure RPM/*dnf operations work in hermetic builds
+        - 'hermetic_build_task.build_task_hermetic'
+        - 'tasks.required_tasks_found:prefetch-dependencies'
