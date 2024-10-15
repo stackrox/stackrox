@@ -52,7 +52,7 @@ test_roxctl_cmd() {
       eecho "Captured output was:"
       eecho "$OUTPUT"
       FAILURES=$((FAILURES + 1))
-  elif echo "$OUTPUT" | grep -q "cannot use basic and token-based authentication at the same time"; then
+  elif echo "$OUTPUT" | grep -q "\[password token-file\] were all set"; then
     echo "[OK] Specifying --token-file and --password produced expected error message"
   else
     eecho "[FAIL] Specifying --token-file and --password produced error did not produce expected error message"
