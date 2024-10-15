@@ -20,7 +20,7 @@
 #     resolver: git
 #   params:
 #   - name: POLICY_CONFIGURATION
-#     value: github.com/stackrox/stackrox?ref=rhtap-allow-quay-registry//.tekton/enterprise-contract
+#     value: github.com/stackrox/stackrox?ref=tm/ec-with-custom-tasks//.tekton/enterprise-contract
 #   - name: TIMEOUT
 #     value: 40m
 ---
