@@ -61,6 +61,8 @@ ifeq ($(USE_IMAGE_DIGESTS), true)
 endif
 
 # Overridable operator version and channel to install for (deploy|upgrade)*-via-olm targets.
+# Note that when overriding INSTALL_VERSION one might also need to override INDEX_IMG_(BASE|TAG)
+# to make sure that the version to install is actually present in the used index image.
 INSTALL_VERSION ?= $(CSV_VERSION)
 INSTALL_CHANNEL ?= latest
 
