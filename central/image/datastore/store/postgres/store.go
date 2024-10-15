@@ -365,8 +365,7 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 	r := rand.New(rand.NewSource(99))
 
 	for idx, obj := range objs {
-		obj.Nvdcvss = r.Float32() * 10
-		obj.NvdScoreVersion = storage.CvssScoreVersion_V2
+
 		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
 			obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
 			obj.Snoozed = storedCVE.GetSnoozed()
@@ -375,6 +374,8 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 		} else {
 			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 		}
+		obj.Nvdcvss = r.Float32() * 10
+		obj.NvdScoreVersion = storage.CvssScoreVersion_V2
 
 		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
