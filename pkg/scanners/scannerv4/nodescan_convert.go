@@ -21,7 +21,7 @@ const (
 )
 
 func toNodeScan(r *v4.VulnerabilityReport, osImageRef string) *storage.NodeScan {
-	// TODO(ROX-26593): Instead of fixing labels here, add RHCOS DistributionScanner to ClairCore
+	// TODO(ROX-26593): Instead of fixing notes here, add RHCOS DistributionScanner to ClairCore
 	fixedNotes := fixNotes(toStorageNotes(r.Notes), osImageRef)
 
 	convertedOS := toOperatingSystem(osImageRef)
@@ -72,7 +72,7 @@ func getPackageVulns(packageID string, r *v4.VulnerabilityReport) []*storage.Emb
 		}
 		vulnerability, ok := r.Vulnerabilities[vulnID]
 		if !ok {
-			log.Debugf("Unable to find vulnerability %s in report mapping - skipping this vulnerability", vulnID)
+			log.Debugf("Mapping for package %s contains a vulnerability with unknown ID %s. This vulnerability won't be stored", packageID, vulnID)
 			continue
 		}
 		vulns = append(vulns, convertVulnerability(vulnerability))
@@ -131,6 +131,10 @@ func toStorageNotes(notes []v4.VulnerabilityReport_Note) []storage.NodeScan_Note
 	return convertedNotes
 }
 
+// TODO(ROX-26593): Instead of fixing notes here, add RHCOS DistributionScanner to ClairCore
+// All nodes currently get the note UNSUPPORTED assigned to them because the IndexReport does not contain
+// Distribution information. To include it there, a specialized RHCOS DistributionScanner needs to be added
+// to ClairCore and then called in Compliances' IndexNode function where the IndexReport is created.
 func fixNotes(notes []storage.NodeScan_Note, osImageRef string) []storage.NodeScan_Note {
 	if !strings.HasPrefix(osImageRef, rhcosFullName) {
 		// Keep notes as they are for nodes other than RHCOS
