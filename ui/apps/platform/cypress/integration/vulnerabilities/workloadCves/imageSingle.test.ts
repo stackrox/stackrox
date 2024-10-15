@@ -4,6 +4,7 @@ import {
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
 } from '../../../helpers/request';
+import { verifyColumnManagement } from '../../../helpers/tableHelpers';
 
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import {
@@ -310,6 +311,13 @@ describe('Workload CVE Image Single page', () => {
             cy.get(fixedInCellSelector)
                 .eq(index)
                 .contains(component.imageVulnerabilities[0].fixedByVersion);
+        });
+    });
+
+    describe('Column management tests', () => {
+        it('should allow the user to hide and show columns on the CVE table', () => {
+            visitFirstImage();
+            verifyColumnManagement({ tableSelector: 'table' });
         });
     });
 });
