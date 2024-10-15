@@ -300,6 +300,21 @@ export type AnalyticsEvent =
           };
       };
 
+// Strip out installation-specific information from the analytics context
+const redactedOriginProperties = {
+    url: '',
+    search: '',
+    referrer: '',
+};
+
+const redactedEventContext = {
+    context: {
+        page: {
+            ...redactedOriginProperties,
+        },
+    },
+};
+
 const useAnalytics = () => {
     const telemetry = useSelector(selectors.publicConfigTelemetrySelector);
     const { enabled: isTelemetryEnabled } = telemetry || ({} as Telemetry);
@@ -307,7 +322,10 @@ const useAnalytics = () => {
     const analyticsPageVisit = useCallback(
         (type: string, name: string, additionalProperties = {}): void => {
             if (isTelemetryEnabled !== false) {
-                window.analytics?.page(type, name, additionalProperties);
+                window.analytics?.page(type, name, {
+                    ...additionalProperties,
+                    ...redactedOriginProperties,
+                });
             }
         },
         [isTelemetryEnabled]
@@ -320,9 +338,13 @@ const useAnalytics = () => {
             }
 
             if (typeof analyticsEvent === 'string') {
-                window.analytics?.track(analyticsEvent);
+                window.analytics?.track(analyticsEvent, undefined, redactedEventContext);
             } else {
-                window.analytics?.track(analyticsEvent.event, analyticsEvent.properties);
+                window.analytics?.track(
+                    analyticsEvent.event,
+                    analyticsEvent.properties,
+                    redactedEventContext
+                );
             }
         },
         [isTelemetryEnabled]
