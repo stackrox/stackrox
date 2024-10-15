@@ -216,11 +216,6 @@ func EnsureClusterRegistered() error {
 	log.Infof("ClusterID = %s", clusterID)
 	log.Infof("CentralID = %s", centralHello.GetCentralId())
 
-	for k, v := range centralHello.GetCertBundle() {
-		fmt.Printf("Certificate: %s\n", k)
-		fmt.Println(v)
-	}
-
 	err = certdistribution.PersistCertificates(centralHello.GetCertBundle())
 	if err != nil {
 		return errors.Wrap(err, "persisting certificates")
