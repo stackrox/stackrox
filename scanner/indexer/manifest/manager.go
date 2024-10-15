@@ -72,9 +72,11 @@ func NewManager(ctx context.Context, metadataStore postgres.IndexerMetadataStore
 
 // MigrateManifests migrates manifests into the manifest_metadata table.
 func (m *Manager) MigrateManifests() error {
+	ctx := zlog.ContextWithValues(m.ctx, "component", "indexer/manifest/Manager.MigrateManifests")
+
 	// Use TryLock instead of Lock in case a migration is already happening.
 	// There is no need to run another one.
-	ctx, done := m.locker.TryLock(m.ctx, migrateName)
+	ctx, done := m.locker.TryLock(ctx, migrateName)
 	defer done()
 	if err := ctx.Err(); err != nil {
 		zlog.Debug(ctx).
@@ -97,7 +99,7 @@ func (m *Manager) MigrateManifests() error {
 
 // StartGC begins periodic garbage collection.
 func (m *Manager) StartGC() error {
-	ctx := zlog.ContextWithValues(m.gcCtx, "component", "indexer/manifest/GC.Start")
+	ctx := zlog.ContextWithValues(m.gcCtx, "component", "indexer/manifest/Manager.Start")
 
 	if err := m.runGC(ctx); err != nil {
 		zlog.Error(ctx).Err(err).Msg("errors encountered during manifest GC run")
