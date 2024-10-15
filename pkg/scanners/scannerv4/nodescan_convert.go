@@ -72,7 +72,7 @@ func getPackageVulns(packageID string, r *v4.VulnerabilityReport) []*storage.Emb
 		}
 		vulnerability, ok := r.Vulnerabilities[vulnID]
 		if !ok {
-			log.Warnf("Unable to find vulnerability %s in report - skipping this vulnerability", vulnID)
+			log.Debugf("Unable to find vulnerability %s in report mapping - skipping this vulnerability", vulnID)
 			continue
 		}
 		vulns = append(vulns, convertVulnerability(vulnerability))
