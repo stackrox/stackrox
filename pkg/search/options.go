@@ -426,6 +426,9 @@ var (
 	IntegrationName = newFieldLabel("Integration Name")
 	IntegrationType = newFieldLabel("Integration Type")
 
+	// AuthProvider fields.
+	AuthProviderName = newFieldLabel("AuthProvider Name")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")
