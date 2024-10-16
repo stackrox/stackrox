@@ -28,7 +28,7 @@ type AuthProvider struct {
 	unknownFields protoimpl.UnknownFields
 
 	Id         string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name       string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Name       string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"AuthProvider Name,store,hidden"` // @gotags: sql:"unique" search:"AuthProvider Name,store,hidden"
 	Type       string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	UiEndpoint string `protobuf:"bytes,4,opt,name=ui_endpoint,json=uiEndpoint,proto3" json:"ui_endpoint,omitempty"`
 	Enabled    bool   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
