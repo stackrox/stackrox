@@ -97,7 +97,7 @@ export function verifyColumnManagement({ tableSelector }: { tableSelector: strin
             columns.forEach((column) => {
                 const columnLabel = new RegExp(`^${column}$`, 'g');
                 // Assert that the table has a header for the column and that it is visible
-                cy.get(`${tableSelector} th`).contains(columnLabel).should('be.visible');
+                cy.get(tableSelector).contains('th', columnLabel).should('be.visible');
 
                 // Hide the column
                 cy.get('button:contains("Manage columns")').click();
@@ -105,7 +105,7 @@ export function verifyColumnManagement({ tableSelector }: { tableSelector: strin
                 cy.get('button:contains("Save")').click();
 
                 // Assert that the table header for the column is hidden
-                cy.get(`${tableSelector} th`).contains(columnLabel).should('not.be.visible');
+                cy.get(tableSelector).contains('th', columnLabel).should('not.be.visible');
             });
         });
 
