@@ -132,7 +132,10 @@ func TestScanConfigWatcher(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
-			scanConfigWatcher := NewScanConfigWatcher(ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue, tCase.snapshotIDs...)
+			scanConfigWatcher := NewScanConfigWatcher(ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
+			for _, id := range tCase.snapshotIDs {
+				require.NoError(t, scanConfigWatcher.Subscribe(&storage.ComplianceOperatorReportSnapshotV2{ReportId: id}))
+			}
 			for _, event := range tCase.events {
 				event(t, scanConfigWatcher)
 			}
@@ -148,9 +151,16 @@ func TestScanConfigWatcher(t *testing.T) {
 					assert.Contains(t, tCase.assertScanErrors, scanResult.Scan.GetId())
 				}
 			}
-			require.Len(t, result.ReportSnapshotIDs, len(tCase.snapshotIDs))
+			require.Len(t, result.ReportSnapshot, len(tCase.snapshotIDs))
 			for _, id := range tCase.snapshotIDs {
-				assert.Contains(t, result.ReportSnapshotIDs, id)
+				found := false
+				for _, snapshot := range result.ReportSnapshot {
+					if snapshot.GetReportId() == id {
+						found = true
+						break
+					}
+				}
+				assert.Truef(t, found, "the Snapshot with id %s was not found", id)
 			}
 		})
 	}
@@ -292,10 +302,12 @@ func TestScanConfigWatcherSubscribe(t *testing.T) {
 	resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 	scanIDs := []string{"scan-0", "scan-1", "scan-2"}
 	snapshotIDS := []string{"snapshot-0", "snapshot-1"}
-	scanConfigWatcher := NewScanConfigWatcher(context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue, snapshotIDS[0])
+	scanConfigWatcher := NewScanConfigWatcher(context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
+	err := scanConfigWatcher.Subscribe(&storage.ComplianceOperatorReportSnapshotV2{ReportId: snapshotIDS[0]})
+	assert.NoError(t, err)
 	handleInitialScanResults(scanIDs[0], scanDS, profileDS, len(scanIDs))(t, scanConfigWatcher)
 	handleScanResults(scanIDs[1])(t, scanConfigWatcher)
-	err := scanConfigWatcher.Subscribe(snapshotIDS[1])
+	err = scanConfigWatcher.Subscribe(&storage.ComplianceOperatorReportSnapshotV2{ReportId: snapshotIDS[1]})
 	assert.NoError(t, err)
 	handleScanResults(scanIDs[2])(t, scanConfigWatcher)
 
@@ -310,8 +322,15 @@ func TestScanConfigWatcherSubscribe(t *testing.T) {
 	for _, scanResult := range result.ScanResults {
 		assert.Contains(t, scanIDs, scanResult.Scan.GetId())
 	}
-	require.Len(t, result.ReportSnapshotIDs, len(snapshotIDS))
+	require.Len(t, result.ReportSnapshot, len(snapshotIDS))
 	for _, id := range snapshotIDS {
-		assert.Contains(t, result.ReportSnapshotIDs, id)
+		found := false
+		for _, snapshot := range result.ReportSnapshot {
+			if snapshot.GetReportId() == id {
+				found = true
+				break
+			}
+		}
+		assert.Truef(t, found, "the Snapshot with id %s was not found", id)
 	}
 }

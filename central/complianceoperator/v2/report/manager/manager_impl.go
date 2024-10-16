@@ -211,7 +211,7 @@ func (m *managerImpl) runReports() {
 			concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 				w = m.watchingScanConfigs[req.scanConfig.GetId()]
 			})
-			// This will be modified in a follow-up PR
+			// These will be modified in a follow-up PR
 			reportType := storage.ComplianceOperatorReportStatus_ON_DEMAND
 			notificationMethod := storage.ComplianceOperatorReportStatus_EMAIL
 			snapshot := &storage.ComplianceOperatorReportSnapshotV2{
@@ -237,7 +237,7 @@ func (m *managerImpl) runReports() {
 				go m.generateReport(req)
 				continue
 			}
-			if err := w.Subscribe(snapshot.GetReportId()); err != nil {
+			if err := w.Subscribe(snapshot); err != nil {
 				log.Errorf("Unable to subscribe to the scan configuration watcher")
 				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 				snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
@@ -262,11 +262,11 @@ func (m *managerImpl) HandleScan(ctx context.Context, scan *storage.ComplianceOp
 	}
 	id, err := watcher.GetWatcherIDFromScan(ctx, scan, m.snapshotDataStore, nil)
 	if err != nil {
-		if err == watcher.ErrComplianceOperatorScanMissingLastStartedFiled {
+		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
 			log.Debugf("The scan is missing the LastStartedField: %v", err)
 			return nil
 		}
-		if err == watcher.ErrScanAlreadyHandled {
+		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			log.Debugf("Scan %s was already handled", scan.GetScanName())
 			return nil
 		}
@@ -295,15 +295,15 @@ func (m *managerImpl) HandleResult(ctx context.Context, result *storage.Complian
 	}
 	id, err := watcher.GetWatcherIDFromCheckResult(ctx, result, m.scanDataStore, m.snapshotDataStore)
 	if err != nil {
-		if err == watcher.ErrComplianceOperatorReceivedOldCheckResult {
+		if errors.Is(err, watcher.ErrComplianceOperatorReceivedOldCheckResult) {
 			log.Debugf("The CheckResult is older than the current scan in the store")
 			return nil
 		}
-		if err == watcher.ErrComplianceOperatorScanMissingLastStartedFiled {
+		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
 			log.Debugf("The scan is missing the LastStartedField: %v", err)
 			return nil
 		}
-		if err == watcher.ErrScanAlreadyHandled {
+		if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 			log.Debugf("The scan linked to the check result %s is already handled", result.GetCheckName())
 			return nil
 		}
@@ -324,6 +324,10 @@ func (m *managerImpl) handleReadyScan() {
 			return
 		default:
 			if scanResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanResult != nil {
+				// At the moment we simply do not start the ScanConfigWatcher if there are errors in the ScanWatchers
+				// There are many reason why a ScanWatcher might fail like for example the Scan was deleted mid-execution
+				// If this happens we will generate many ReportSnapshots with timeouts. Until we implement a way to
+				// distinguish legitimate failures (CO not reporting back) we log the error and avoid creating the Report.
 				if scanResult.Error != nil {
 					log.Errorf("The scanResults returned with an error: %v", scanResult.Error)
 					continue
@@ -385,7 +389,7 @@ func (m *managerImpl) getScanConfigWatcher(ctx context.Context, results *watcher
 		if err := m.snapshotDataStore.UpsertSnapshot(ctx, snapshot); err != nil {
 			return nil, errors.Wrap(err, "unable to upsert the snapshot")
 		}
-		if err := w.Subscribe(snapshot.GetReportId()); err != nil {
+		if err := w.Subscribe(snapshot); err != nil {
 			log.Errorf("Unable to subscribe to the scan configuration watcher")
 			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 			snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
@@ -410,7 +414,7 @@ func (m *managerImpl) handleReadyScanConfig() {
 			return
 		default:
 			if result := m.scanConfigReadyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); result != nil {
-				log.Debugf("Scan Config %s done with %d scans and %d reports", result.ScanConfig.GetScanConfigName(), len(result.ScanResults), len(result.ReportSnapshotIDs))
+				log.Debugf("Scan Config %s done with %d scans and %d reports", result.ScanConfig.GetScanConfigName(), len(result.ScanResults), len(result.ReportSnapshot))
 				concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 					delete(m.watchingScanConfigs, result.WatcherID)
 				})
@@ -421,16 +425,7 @@ func (m *managerImpl) handleReadyScanConfig() {
 }
 
 func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConfigWatcherResults) {
-	for _, id := range result.ReportSnapshotIDs {
-		snapshot, found, err := m.snapshotDataStore.GetSnapshot(result.Ctx, id)
-		if err != nil {
-			log.Errorf("Unable to retrieve snapshot %s: %v", id, err)
-			continue
-		}
-		if !found {
-			log.Errorf("Snapshot %s not found", id)
-			continue
-		}
+	for _, snapshot := range result.ReportSnapshot {
 		if err := m.validateScanConfigResults(result); err != nil {
 			snapshot.ReportStatus.RunState = storage.ComplianceOperatorReportStatus_FAILURE
 			snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
