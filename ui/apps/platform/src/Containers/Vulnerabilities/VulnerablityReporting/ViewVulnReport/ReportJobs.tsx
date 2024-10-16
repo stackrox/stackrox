@@ -50,6 +50,7 @@ import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 
 import { RunState, runStates } from 'types/reportJob';
+import { deleteDownloadableReport } from 'services/ReportsService';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
@@ -99,6 +100,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
         onDeleteDownload,
         deleteDownloadError,
     } = useDeleteDownloadModal({
+        deleteDownloadFunc: deleteDownloadableReport,
         onCompleted: fetchReportSnapshots,
     });
 
