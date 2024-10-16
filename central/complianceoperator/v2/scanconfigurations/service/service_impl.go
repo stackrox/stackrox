@@ -59,6 +59,7 @@ var (
 			"/v2.ComplianceScanConfigurationService/RunComplianceScanConfiguration",
 			"/v2.ComplianceScanConfigurationService/UpdateComplianceScanConfiguration",
 			"/v2.ComplianceScanConfigurationService/RunReport",
+			"/v2.ComplianceScanConfigurationService/DeleteReport",
 		},
 	})
 
@@ -390,6 +391,53 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, request *v2.Compli
 		ComplianceReportSnapshots: snapshots,
 	}
 	return res, nil
+}
+
+func (s *serviceImpl) DeleteReport(ctx context.Context, req *v2.ResourceByID) (*v2.Empty, error) {
+	if req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Report Snapshot ID is required for deletion")
+	}
+
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	snapshot, found, err := s.snapshotDS.GetSnapshot(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve Report Snapshot %s", req.GetId())
+	}
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "Unable to find the Report Snapshots %s", req.GetId())
+	}
+
+	if slimUser.GetId() != snapshot.GetUser().GetId() {
+		return nil, errors.Errorf("The user %s cannot delete the report %s", slimUser.GetId(), snapshot.GetReportId())
+	}
+
+	status := snapshot.GetReportStatus()
+	if status.GetReportNotificationMethod() != storage.ComplianceOperatorReportStatus_DOWNLOAD {
+		return nil, errors.Wrapf(errox.InvalidArgs, "The Report Snapshot %s did not generate a downloadable report", req.GetId())
+	}
+	switch status.GetRunState() {
+	case storage.ComplianceOperatorReportStatus_FAILURE:
+		return nil, errors.Wrapf(errox.InvalidArgs, "The Report Snapshot %s has failed and no downloadable report was generated", req.GetId())
+	case storage.ComplianceOperatorReportStatus_WAITING, storage.ComplianceOperatorReportStatus_PREPARING:
+		return nil, errors.Wrapf(errox.InvalidArgs, "The Report Snapshot %s is still running", req.GetId())
+	}
+
+	blobName := common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), req.GetId())
+
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)),
+	)
+	if err = s.blobDS.Delete(ctx, blobName); err != nil {
+		return nil, errors.Wrap(errox.InvariantViolation, "Unable to delete the downloadable report")
+	}
+
+	return &v2.Empty{}, nil
 }
 
 func (s *serviceImpl) ListComplianceScanConfigProfiles(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigsProfileResponse, error) {

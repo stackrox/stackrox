@@ -881,6 +881,133 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetMyReportHistory() {
 	})
 }
 
+func (s *ComplianceScanConfigServiceTestSuite) TestDeleteReport() {
+	s.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
+	if !features.ComplianceReporting.Enabled() {
+		s.T().Skipf("Skip test when the compliance reporting feature flag is disabled")
+		s.T().SkipNow()
+	}
+
+	allAccessContext := sac.WithAllAccess(context.Background())
+
+	s.Run("Invalid ID", func() {
+		invalidID := ""
+		_, err := s.service.DeleteReport(allAccessContext, &v2.ResourceByID{Id: invalidID})
+		s.Require().Error(err)
+	})
+
+	s.Run("User not present in context", func() {
+		snapshotID := "snapshot-id"
+		_, err := s.service.DeleteReport(allAccessContext, &v2.ResourceByID{Id: snapshotID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Snapshot Store error", func() {
+		snapshotID := "snapshot-1"
+
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(nil, false, errors.New("some error"))
+
+		_, err := s.service.DeleteReport(ctx, &v2.ResourceByID{Id: snapshotID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Snapshot not found", func() {
+		snapshotID := "snapshot-1"
+
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(nil, false, nil)
+
+		_, err := s.service.DeleteReport(ctx, &v2.ResourceByID{Id: snapshotID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Snapshot User differs from the User in the context", func() {
+		snapshotID := "snapshot-id"
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, &storage.SlimUser{
+			Id:   "user-2",
+			Name: "user-2",
+		})
+		snapshot := getSnapshot(snapshotID, storageRequester)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
+
+		_, err := s.service.DeleteReport(ctx, &v2.ResourceByID{Id: snapshotID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Snapshot with notification method email", func() {
+		snapshotID := "snapshot-1"
+		snapshot := getSnapshot(snapshotID, storageRequester)
+		snapshot.GetReportStatus().ReportNotificationMethod = storage.ComplianceOperatorReportStatus_EMAIL
+
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
+
+		_, err := s.service.DeleteReport(ctx, &v2.ResourceByID{Id: snapshotID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Snapshot with failure state", func() {
+		snapshotID := "snapshot-1"
+		snapshot := getSnapshot(snapshotID, storageRequester)
+		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
+
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
+
+		_, err := s.service.DeleteReport(ctx, &v2.ResourceByID{Id: snapshotID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Snapshot with waiting state", func() {
+		snapshotID := "snapshot-1"
+		snapshot := getSnapshot(snapshotID, storageRequester)
+		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_WAITING
+
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
+
+		_, err := s.service.DeleteReport(ctx, &v2.ResourceByID{Id: snapshotID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Snapshot with preparing state", func() {
+		snapshotID := "snapshot-1"
+		snapshot := getSnapshot(snapshotID, storageRequester)
+		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
+
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
+
+		_, err := s.service.DeleteReport(ctx, &v2.ResourceByID{Id: snapshotID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Blob Store error", func() {
+		snapshotID := "snapshot-1"
+		snapshot := getSnapshot(snapshotID, storageRequester)
+
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
+		s.blobDS.EXPECT().Delete(gomock.Any(), common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshotID)).Return(errors.New("some error"))
+
+		_, err := s.service.DeleteReport(ctx, &v2.ResourceByID{Id: snapshotID})
+		s.Require().Error(err)
+	})
+
+	s.Run("Delete success", func() {
+		snapshotID := "snapshot-1"
+		snapshot := getSnapshot(snapshotID, storageRequester)
+
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
+		s.blobDS.EXPECT().Delete(gomock.Any(), common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshotID)).Return(nil)
+
+		_, err := s.service.DeleteReport(ctx, &v2.ResourceByID{Id: snapshotID})
+		s.Require().NoError(err)
+	})
+}
+
 func getTestAPIStatusRec(createdTime, lastUpdatedTime time.Time) *apiV2.ComplianceScanConfigurationStatus {
 	return &apiV2.ComplianceScanConfigurationStatus{
 		Id:       uuid.NewDummy().String(),
