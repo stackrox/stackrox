@@ -47,7 +47,7 @@ type SecurityPolicySpec struct {
 	Rationale   string `json:"rationale,omitempty"`
 	// Remediation describes how to remediate a violation of this policy.
 	Remediation string `json:"remediation,omitempty"`
-	// Disabled toggles whether or not this policy will be actively firing alerts.
+	// Disabled toggles whether or not this policy will be executing and actively firing alerts.
 	Disabled bool `json:"disabled,omitempty"`
 	// +kubebuilder:validation:MinItems=1
 	// Categories is a list of categories that this policy falls under.  Category names must already exist in Central.
@@ -55,7 +55,8 @@ type SecurityPolicySpec struct {
 	// +kubebuilder:validation:MinItems=1
 	// LifecycleStages describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME.
 	LifecycleStages []LifecycleStage `json:"lifecycleStages"`
-	EventSource     EventSource      `json:"eventSource,omitempty"`
+	// EventSource describes which events should trigger execution of this policy
+	EventSource EventSource `json:"eventSource,omitempty"`
 	// Exclusions define deployments or images that should be excluded from this policy.
 	Exclusions []Exclusion `json:"exclusions,omitempty"`
 	// Scope defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything.
@@ -72,9 +73,12 @@ type SecurityPolicySpec struct {
 	// PolicySections define the violation criteria for this policy.
 	PolicySections     []PolicySection      `json:"policySections"`
 	MitreAttackVectors []MitreAttackVectors `json:"mitreAttackVectors,omitempty"`
-	CriteriaLocked     bool                 `json:"criteriaLocked,omitempty"`
-	MitreVectorsLocked bool                 `json:"mitreVectorsLocked,omitempty"`
-	IsDefault          bool                 `json:"isDefault,omitempty"`
+	// Read-only field. If true, the policy's criteria fields are rendered read-only.
+	CriteriaLocked bool `json:"criteriaLocked,omitempty"`
+	// Read-only field. If true, the policy's MITRE ATT&CK fields are rendered read-only.
+	MitreVectorsLocked bool `json:"mitreVectorsLocked,omitempty"`
+	// Read-only field. Indicates the policy is a default policy if true and a custom policy if false.
+	IsDefault bool `json:"isDefault,omitempty"`
 }
 
 type Exclusion struct {

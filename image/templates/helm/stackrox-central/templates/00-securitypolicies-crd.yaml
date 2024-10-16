@@ -48,14 +48,16 @@ spec:
                 minItems: 1
                 type: array
               criteriaLocked:
+                description: Read-only field. If true, the policy's criteria fields
+                  are rendered read-only.
                 type: boolean
               description:
                 description: Description is a free-form text description of this policy.
                 pattern: ^[^\$]{0,800}$
                 type: string
               disabled:
-                description: Disabled toggles whether or not this policy will be actively
-                  firing alerts.
+                description: Disabled toggles whether or not this policy will be executing
+                  and actively firing alerts.
                 type: boolean
               enforcementActions:
                 description: Enforcement lists the enforcement actions to take when
@@ -76,6 +78,8 @@ spec:
                   type: string
                 type: array
               eventSource:
+                description: EventSource describes which events should trigger execution
+                  of this policy
                 enum:
                 - NOT_APPLICABLE
                 - DEPLOYMENT_EVENT
@@ -118,6 +122,8 @@ spec:
                   type: object
                 type: array
               isDefault:
+                description: Read-only field. Indicates the policy is a default policy
+                  if true and a custom policy if false.
                 type: boolean
               lifecycleStages:
                 description: LifecycleStages describes which policy lifecylce stages
@@ -142,6 +148,8 @@ spec:
                   type: object
                 type: array
               mitreVectorsLocked:
+                description: Read-only field. If true, the policy's MITRE ATT&CK fields
+                  are rendered read-only.
                 type: boolean
               notifiers:
                 description: Notifiers is a list of notifier IDs that should be triggered
