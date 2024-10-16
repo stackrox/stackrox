@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/report/manager/watcher"
 	scanConfigurationDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
@@ -26,6 +27,7 @@ type ManagerTestSuite struct {
 	ctx                 context.Context
 	scanConfigDataStore *scanConfigurationDS.MockDataStore
 	scanDataStore       *scanMocks.MockDataStore
+	profileDataStore    *profileMocks.MockDataStore
 	reportGen           *reportGen.MockComplianceReportGenerator
 }
 
@@ -38,6 +40,7 @@ func (m *ManagerTestSuite) SetupTest() {
 	m.mockCtrl = gomock.NewController(m.T())
 	m.scanConfigDataStore = scanConfigurationDS.NewMockDataStore(m.mockCtrl)
 	m.scanDataStore = scanMocks.NewMockDataStore(m.mockCtrl)
+	m.profileDataStore = profileMocks.NewMockDataStore(m.mockCtrl)
 	m.reportGen = reportGen.NewMockComplianceReportGenerator(m.mockCtrl)
 }
 
@@ -46,7 +49,7 @@ func TestComplianceReportManager(t *testing.T) {
 }
 
 func (m *ManagerTestSuite) TestSubmitReportRequest() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.reportGen)
 	reportRequest := &storage.ComplianceOperatorScanConfigurationV2{
 		ScanConfigName: "test_scan_config",
 		Id:             "test_scan_config",
@@ -62,7 +65,7 @@ func (m *ManagerTestSuite) TearDownTest() {
 }
 
 func (m *ManagerTestSuite) TestHandleScan() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	scan := &storage.ComplianceOperatorScanV2{
@@ -91,7 +94,7 @@ func (m *ManagerTestSuite) TestHandleScan() {
 }
 
 func (m *ManagerTestSuite) TestHandleResult() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	timeNow := time.Now()

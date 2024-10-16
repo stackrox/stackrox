@@ -143,7 +143,6 @@ type readyQueue[T comparable] interface {
 type scanWatcherImpl struct {
 	ctx     context.Context
 	cancel  func()
-	timeout *time.Timer
 	scanC   chan *storage.ComplianceOperatorScanV2
 	resultC chan *storage.ComplianceOperatorCheckResultV2
 	stopped *concurrency.Signal
@@ -157,6 +156,7 @@ type scanWatcherImpl struct {
 func NewScanWatcher(ctx context.Context, watcherID string, queue readyQueue[*ScanWatcherResults]) *scanWatcherImpl {
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
+	timeout := NewTimer(defaultTimeout)
 	ret := &scanWatcherImpl{
 		ctx:        watcherCtx,
 		cancel:     cancel,
@@ -169,9 +169,8 @@ func NewScanWatcher(ctx context.Context, watcherID string, queue readyQueue[*Sca
 			WatcherID:    watcherID,
 			CheckResults: set.NewStringSet(),
 		},
-		timeout: time.NewTimer(defaultTimeout),
 	}
-	go ret.run(ret.timeout.C)
+	go ret.run(timeout)
 	return ret
 }
 
@@ -205,18 +204,18 @@ func (s *scanWatcherImpl) Stop() {
 	s.cancel()
 }
 
-func (s *scanWatcherImpl) run(timerC <-chan time.Time) {
+func (s *scanWatcherImpl) run(timer Timer) {
 	defer func() {
-		s.timeout.Stop()
 		s.stopped.Signal()
 		<-s.stopped.Done()
+		timer.Stop()
 	}()
 	for {
 		select {
 		case <-s.ctx.Done():
 			log.Infof("Stopping scan watcher for scan")
 			return
-		case <-timerC:
+		case <-timer.C():
 			log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())
 			s.scanResults.Error = ErrScanTimeout
 			s.readyQueue.Push(s.scanResults)
