@@ -18,12 +18,14 @@ import (
 	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/env"
 	grpcUtil "github.com/stackrox/rox/pkg/grpc/util"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralclient"
-	"github.com/stackrox/rox/sensor/common/certdistribution"
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
+	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/encoding/gzip"
@@ -130,12 +132,19 @@ func EnsureClusterRegistered() error {
 
 	// Now centralConnection is usable.
 
+	config, err := k8sutil.GetK8sInClusterConfig()
+	if err != nil {
+		log.Panicf("Obtaining in-cluster Kubernetes config: %v", err)
+	}
+	k8sClient := k8sutil.MustCreateK8sClient(config)
+
+	deploymentIdentification := sensor.FetchDeploymentIdentification(context.Background(), k8sClient)
+	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+
 	sensorHello := &central.SensorHello{
-		SensorVersion: version.GetMainVersion(),
-		PolicyVersion: policyversion.CurrentVersion().String(),
-		// DeploymentIdentification: configHandler.GetDeploymentIdentification(),
-		// SensorState:              s.getSensorState(),
-		// RequestDeduperState:      s.clientReconcile,
+		SensorVersion:            version.GetMainVersion(),
+		PolicyVersion:            policyversion.CurrentVersion().String(),
+		DeploymentIdentification: deploymentIdentification,
 	}
 
 	// Inject desired Helm configuration.
@@ -169,7 +178,6 @@ func EnsureClusterRegistered() error {
 	}
 	sensorHello.HelmManagedConfigInit = helmManagedConfig
 
-	// Prepare outgoing context.
 	ctx := context.Background()
 
 	ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.SensorHelloMetadataKey, "true")
@@ -216,10 +224,10 @@ func EnsureClusterRegistered() error {
 	log.Infof("ClusterID = %s", clusterID)
 	log.Infof("CentralID = %s", centralHello.GetCentralId())
 
-	err = certdistribution.PersistCertificates(centralHello.GetCertBundle())
-	if err != nil {
-		return errors.Wrap(err, "persisting certificates")
+	for fileName, _ := range centralHello.GetCertBundle() {
+		fmt.Printf("Got certificate for file %s\n", fileName)
 	}
+
 	log.Infof("Persisted certificates")
 
 	return nil
