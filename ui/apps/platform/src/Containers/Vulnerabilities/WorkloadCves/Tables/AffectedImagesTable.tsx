@@ -39,7 +39,7 @@ import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayo
 
 export const tableId = 'WorkloadCvesAffectedImagesTable';
 export const defaultColumns = {
-    cvesBySeverity: {
+    cveSeverity: {
         title: 'CVE severity',
         isShownByDefault: true,
     },
@@ -154,7 +154,7 @@ function AffectedImagesTable({
                     <ExpandRowTh />
                     <Th sort={getSortParams('Image')}>Image</Th>
                     <Th
-                        className={getVisibilityClass('cvesBySeverity')}
+                        className={getVisibilityClass('cveSeverity')}
                         sort={getSortParams('Severity')}
                     >
                         CVE severity
@@ -228,7 +228,7 @@ function AffectedImagesTable({
                                         )}
                                     </Td>
                                     <Td
-                                        className={getVisibilityClass('cvesBySeverity')}
+                                        className={getVisibilityClass('cveSeverity')}
                                         dataLabel="CVE severity"
                                         modifier="nowrap"
                                     >
