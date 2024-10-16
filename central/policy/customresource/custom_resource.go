@@ -1,14 +1,13 @@
 package customresource
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -16,9 +15,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//
-//go:generate policy-as-code-helper-wrapper --type=storage.Policy
-//
+const (
+	MaxCustomResourceMetadataNameLength = 253
+)
 
 var (
 	invalidCRDNameCharPattern = regexp.MustCompile(`[^a-z0-9\.\-]`)
@@ -33,18 +32,16 @@ type CustomResource struct {
 	SecurityPolicySpec *Policy                `yaml:"spec"`
 }
 
-// GenerateCustomResource generate custom resource in YAML text from a policy
-func GenerateCustomResource(policy *storage.Policy) (string, error) {
-	convertedPolicy := ConvertPolicyToCustomResource(policy)
-	w := &bytes.Buffer{}
+// WriteCustomResource write custom resource in YAML text to a writer
+func WriteCustomResource(w io.Writer, cr *CustomResource) error {
 	enc := yaml.NewEncoder(w)
 	defer utils.IgnoreError(enc.Close)
 	// Use idiomatic indentation.
 	enc.SetIndent(2)
-	if err := enc.Encode(convertedPolicy); err != nil {
-		return "", err
+	if err := enc.Encode(cr); err != nil {
+		return errors.Wrapf(err, "failed to encode custom resource %+v", cr)
 	}
-	return w.String(), nil
+	return nil
 }
 
 func timestampToFormatRFC3339(ts *timestamppb.Timestamp) string {
@@ -67,8 +64,8 @@ func toDNSSubdomainName(name string) string {
 	name = consecutivePattern.ReplaceAllString(name, "-")
 
 	// Truncate to 253 characters max, as per DNS subdomain name requirements
-	if len(name) > 253 {
-		name = name[:253]
+	if len(name) > MaxCustomResourceMetadataNameLength {
+		name = name[:MaxCustomResourceMetadataNameLength]
 	}
 
 	name = strings.Trim(name, "-.")

@@ -37,7 +37,6 @@ const (
 	PolicyService_ExportPolicies_FullMethodName                  = "/v1.PolicyService/ExportPolicies"
 	PolicyService_PolicyFromSearch_FullMethodName                = "/v1.PolicyService/PolicyFromSearch"
 	PolicyService_ImportPolicies_FullMethodName                  = "/v1.PolicyService/ImportPolicies"
-	PolicyService_SaveAsCustomResources_FullMethodName           = "/v1.PolicyService/SaveAsCustomResources"
 )
 
 // PolicyServiceClient is the client API for PolicyService service.
@@ -76,8 +75,6 @@ type PolicyServiceClient interface {
 	PolicyFromSearch(ctx context.Context, in *PolicyFromSearchRequest, opts ...grpc.CallOption) (*PolicyFromSearchResponse, error)
 	// ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
 	ImportPolicies(ctx context.Context, in *ImportPoliciesRequest, opts ...grpc.CallOption) (*ImportPoliciesResponse, error)
-	// SaveAsCustomResources saves the policies, designed by the policy ids, as custome resources
-	SaveAsCustomResources(ctx context.Context, in *SaveAsCustomResourcesRequest, opts ...grpc.CallOption) (*SaveAsCustomResourcesResponse, error)
 }
 
 type policyServiceClient struct {
@@ -258,16 +255,6 @@ func (c *policyServiceClient) ImportPolicies(ctx context.Context, in *ImportPoli
 	return out, nil
 }
 
-func (c *policyServiceClient) SaveAsCustomResources(ctx context.Context, in *SaveAsCustomResourcesRequest, opts ...grpc.CallOption) (*SaveAsCustomResourcesResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SaveAsCustomResourcesResponse)
-	err := c.cc.Invoke(ctx, PolicyService_SaveAsCustomResources_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // PolicyServiceServer is the server API for PolicyService service.
 // All implementations should embed UnimplementedPolicyServiceServer
 // for forward compatibility.
@@ -304,8 +291,6 @@ type PolicyServiceServer interface {
 	PolicyFromSearch(context.Context, *PolicyFromSearchRequest) (*PolicyFromSearchResponse, error)
 	// ImportPolicies accepts a list of Policies and returns a list of the policies which could not be imported
 	ImportPolicies(context.Context, *ImportPoliciesRequest) (*ImportPoliciesResponse, error)
-	// SaveAsCustomResources saves the policies, designed by the policy ids, as custome resources
-	SaveAsCustomResources(context.Context, *SaveAsCustomResourcesRequest) (*SaveAsCustomResourcesResponse, error)
 }
 
 // UnimplementedPolicyServiceServer should be embedded to have
@@ -365,9 +350,6 @@ func (UnimplementedPolicyServiceServer) PolicyFromSearch(context.Context, *Polic
 }
 func (UnimplementedPolicyServiceServer) ImportPolicies(context.Context, *ImportPoliciesRequest) (*ImportPoliciesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ImportPolicies not implemented")
-}
-func (UnimplementedPolicyServiceServer) SaveAsCustomResources(context.Context, *SaveAsCustomResourcesRequest) (*SaveAsCustomResourcesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SaveAsCustomResources not implemented")
 }
 func (UnimplementedPolicyServiceServer) testEmbeddedByValue() {}
 
@@ -695,24 +677,6 @@ func _PolicyService_ImportPolicies_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PolicyService_SaveAsCustomResources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SaveAsCustomResourcesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PolicyServiceServer).SaveAsCustomResources(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PolicyService_SaveAsCustomResources_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PolicyServiceServer).SaveAsCustomResources(ctx, req.(*SaveAsCustomResourcesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // PolicyService_ServiceDesc is the grpc.ServiceDesc for PolicyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -787,10 +751,6 @@ var PolicyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ImportPolicies",
 			Handler:    _PolicyService_ImportPolicies_Handler,
-		},
-		{
-			MethodName: "SaveAsCustomResources",
-			Handler:    _PolicyService_SaveAsCustomResources_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

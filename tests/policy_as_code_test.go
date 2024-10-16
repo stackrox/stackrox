@@ -3,8 +3,12 @@
 package tests
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
+	"encoding/json"
+	"io"
+	"net/http"
 	"testing"
 	"time"
 
@@ -12,6 +16,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/codes"
@@ -39,15 +44,16 @@ func TestPolicyAsCode(t *testing.T) {
 
 type PolicyAsCodeSuite struct {
 	suite.Suite
-	centralClient   v1.PolicyServiceClient
-	k8sClient       dynamic.ResourceInterface
-	informerfactory dynamicinformer.DynamicSharedInformerFactory
-	informer        informers.GenericInformer
-	policies        []*storage.Policy
-	ctx             context.Context
-	cleanupCtx      context.Context
-	cancel          func()
-	stopCh          chan struct{}
+	centralClient     v1.PolicyServiceClient
+	centralHTTPClient *http.Client
+	k8sClient         dynamic.ResourceInterface
+	informerfactory   dynamicinformer.DynamicSharedInformerFactory
+	informer          informers.GenericInformer
+	policies          []*storage.Policy
+	ctx               context.Context
+	cleanupCtx        context.Context
+	cancel            func()
+	stopCh            chan struct{}
 }
 
 func (pc *PolicyAsCodeSuite) SetupSuite() {
@@ -55,6 +61,7 @@ func (pc *PolicyAsCodeSuite) SetupSuite() {
 
 	conn := centralgrpc.GRPCConnectionToCentral(pc.T())
 	pc.centralClient = v1.NewPolicyServiceClient(conn)
+	pc.centralHTTPClient = centralgrpc.HTTPClientForCentral(pc.T())
 
 	dynamicClient := dynamic.NewForConfigOrDie(getConfig(pc.T()))
 	pc.k8sClient = dynamicClient.Resource(policyGVR).Namespace("stackrox")
@@ -107,12 +114,33 @@ func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 }
 
 func (pc *PolicyAsCodeSuite) saveAsCustomResource(policy *storage.Policy) *v1alpha1.SecurityPolicy {
-	resp, err := pc.centralClient.SaveAsCustomResources(pc.ctx, &v1.SaveAsCustomResourcesRequest{
-		PolicyIds: []string{policy.Id},
-	})
+	req := map[string][]string{"ids": {policy.Id}}
+	jsonReq, err := json.Marshal(req)
 	pc.Require().NoError(err)
-	pc.Require().Len(resp.CustomResources, 1, "Unexpected number of CRs returned")
-	decoder := yaml.NewDecoder(bytes.NewReader([]byte(resp.CustomResources[0])))
+
+	resp, err := pc.centralHTTPClient.Post("/api/policy/custom-resource/save-as-zip", "application/json", bytes.NewBuffer(jsonReq))
+	pc.Require().NoError(err)
+	defer utils.IgnoreError(resp.Body.Close)
+	pc.Require().Equal("application/zip", resp.Header.Get("content-type"), "Unexpected content type")
+
+	// Load the zip file
+	buff := bytes.NewBuffer([]byte{})
+	size, err := io.Copy(buff, resp.Body)
+	pc.Require().NoError(err)
+	zipReader, err := zip.NewReader(bytes.NewReader(buff.Bytes()), size)
+	pc.Require().NoError(err)
+	pc.Require().Len(zipReader.File, 1, "Unexpected number of CRs in zip file")
+
+	// Load the yaml file from the zip
+	pc.Require().Equal("this-is-a-test-policy.yaml", zipReader.File[0].Name, "Unexpected name in zip file")
+	yamlFileBuff := bytes.NewBuffer([]byte{})
+	yamlReader, err := zipReader.File[0].Open()
+	pc.Require().NoError(err)
+	_, err = io.Copy(yamlFileBuff, yamlReader)
+	pc.Require().NoError(err)
+
+	// Parse the yaml and do basic validation
+	decoder := yaml.NewDecoder(bytes.NewReader(yamlFileBuff.Bytes()))
 	u := &unstructured.Unstructured{}
 	pc.Require().NoError(decoder.Decode(&u.Object))
 	pc.Require().Equal("SecurityPolicy", u.Object["kind"], "Failed to correctly marshal CR")

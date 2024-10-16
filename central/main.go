@@ -121,6 +121,7 @@ import (
 	pingService "github.com/stackrox/rox/central/ping/service"
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	policyHandler "github.com/stackrox/rox/central/policy/handlers"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	policyCategoryService "github.com/stackrox/rox/central/policycategory/service"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
@@ -814,6 +815,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer:    user.With(permissions.View(resources.Cluster)),
 			ServerHandler: clusterCveCsv.ClusterCVECSVHandler(),
 			Compression:   true,
+		},
+		{
+			Route:         "/api/policy/custom-resource/save-as-zip",
+			Authorizer:    user.With(permissions.View(resources.WorkflowAdministration)),
+			ServerHandler: policyHandler.Handler(policyDataStore.Singleton()),
+			Compression:   false,
 		},
 		{
 			Route:         "/api/extensions/clusters/helm-config.yaml",
