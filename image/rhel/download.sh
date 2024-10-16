@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash      dnf upgrade --refresh --setopt=fastestmirror=0
 
 set -euo pipefail
 
@@ -42,14 +42,12 @@ if [[ "$arch" == "s390x" ]]; then
     set +e
     dnf --version
     yum install dnf
+    dnf --version
     for (( i=0; i<10; i++ )); do
       dnf clean all
       rm -rf /var/cache/dnf
       dnf upgrade --refresh --setopt=fastestmirror=0
       dnf install -v -y --setopt=fastestmirror=0 --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs && break
-      echo 'try! checking if from cloudfront cache'
-      curl -v -s -o - -H 'Cache-Control: no-cache, no-store' -H 'Pragma: no-cache' -H "bypasscache: 1" -H "Keep-Alive: 0" -H "Connection: close" \
-        "https://mirror.stream.centos.org/9-stream/BaseOS/s390x/os/repodata/repomd.xml?$RANDOM" | sha512sum
       sleep ${i}0
     done
   )
