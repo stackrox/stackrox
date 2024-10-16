@@ -20,7 +20,7 @@ message Policy {
   string description = 3; // @gotags: search:"Description" crYaml:",omitempty"
   string rationale = 4; // @gotags: crYaml:",omitempty"
   string remediation = 5; // @gotags: crYaml:",omitempty"
-  bool disabled = 6; // @gotags: search:"Disabled,omitempty"
+  bool disabled = 6; // @gotags: search:"Disabled" crYaml:",omitempty"
   repeated string categories = 7; // @gotags: search:"Category,store" crYaml:",omitempty"
   reserved 8; // was PolicyFields fields
 

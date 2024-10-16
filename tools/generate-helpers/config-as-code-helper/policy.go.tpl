@@ -64,4 +64,3 @@ func Convert{{.TypeName}}ToCustomResource(p *storage.{{.TypeName}}) *CustomResou
         SecurityPolicySpec: convert{{.TypeName}}(p),
     }
 }
-
