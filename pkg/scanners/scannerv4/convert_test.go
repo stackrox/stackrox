@@ -303,6 +303,79 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 		wantErr     bool
 	}{
 		{
+			name: "CVSS 3.1 and CVSS 2 from one data source",
+			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+				{
+					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+						BaseScore: 8.2,
+						Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					},
+					V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+						BaseScore: 6.4,
+						Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+					Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+				},
+			},
+			expected: &storage.EmbeddedVulnerability{
+				Cvss:         8.2,
+				ScoreVersion: storage.EmbeddedVulnerability_V3,
+				Link:         "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+				CvssV3: &storage.CVSSV3{
+					Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					ExploitabilityScore: 2.8,
+					ImpactScore:         4.7,
+					AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+					AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+					PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+					UserInteraction:     storage.CVSSV3_UI_NONE,
+					Scope:               storage.CVSSV3_CHANGED,
+					Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+					Integrity:           storage.CVSSV3_IMPACT_NONE,
+					Availability:        storage.CVSSV3_IMPACT_HIGH,
+					Score:               8.2,
+					Severity:            storage.CVSSV3_HIGH,
+				},
+				CvssV2: &storage.CVSSV2{
+					Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+					AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+					AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+					Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
+					Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
+					Integrity:           storage.CVSSV2_IMPACT_NONE,
+					Availability:        storage.CVSSV2_IMPACT_PARTIAL,
+					ExploitabilityScore: 5.5,
+					ImpactScore:         7.8,
+					Score:               6.4,
+					Severity:            storage.CVSSV2_MEDIUM,
+				},
+				CvssMetrics: []*storage.CVSSScore{
+					{
+						CvssScore: &storage.CVSSScore_Cvssv3{
+							Cvssv3: &storage.CVSSV3{
+								Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+								ExploitabilityScore: 2.8,
+								ImpactScore:         4.7,
+								AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+								AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+								PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+								UserInteraction:     storage.CVSSV3_UI_NONE,
+								Scope:               storage.CVSSV3_CHANGED,
+								Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+								Integrity:           storage.CVSSV3_IMPACT_NONE,
+								Availability:        storage.CVSSV3_IMPACT_HIGH,
+								Score:               8.2,
+								Severity:            storage.CVSSV3_HIGH,
+							},
+						},
+						Source: storage.Source_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
+				},
+			},
+		},
+		{
 			name: "CVSS 2 score differs from calculated",
 			cvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
 				{
@@ -751,7 +824,6 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 				assert.Error(t, err)
 				return
 			}
-
 			assert.NoError(t, err)
 			protoassert.Equal(t, testcase.expected, vuln)
 		})

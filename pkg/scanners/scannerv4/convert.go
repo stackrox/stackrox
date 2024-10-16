@@ -165,7 +165,7 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 			Cve:     ccVuln.GetName(),
 			Summary: ccVuln.GetDescription(),
 			// TODO(ROX-26547)
-			// The deprecated source is still being populated but a better way is needed to get the default link
+			// The link field will be overwritten if preferred CVSS source is available
 			Link:        link(ccVuln.GetLink()),
 			PublishedOn: ccVuln.GetIssued(),
 			// LastModified: ,
@@ -188,14 +188,14 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 	return vulns
 }
 
-func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) error {
-	if len(cvssMetrics) == 0 {
+func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) error {
+	if len(CVSSMetrics) == 0 {
 		return nil
 	}
 
 	errList := errorhelpers.NewErrorList("failed to get CVSS Metrics")
 	var scores []*storage.CVSSScore
-	for _, cvss := range cvssMetrics {
+	for _, cvss := range CVSSMetrics {
 		score := &storage.CVSSScore{
 			Source: CVSSSource(cvss.Source),
 			Url:    cvss.GetUrl(),
@@ -204,9 +204,8 @@ func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, cvssMetrics 
 			baseScore, cvssV2, v2Err := toCVSSV2Scores(cvss, vuln.GetCve())
 			if v2Err == nil && cvssV2 != nil {
 				score.CvssScore = &storage.CVSSScore_Cvssv2{Cvssv2: cvssV2}
-				scores = append(scores, score)
 				// CVSS metrics has maximum two entries, one from NVD, one from updater if available
-				if len(cvssMetrics) == 1 || (len(cvssMetrics) > 1 && cvss.Source != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
+				if len(CVSSMetrics) == 1 || (len(CVSSMetrics) > 1 && cvss.Source != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
 					vuln.CvssV2 = cvssV2.CloneVT()
 					vuln.ScoreVersion = storage.EmbeddedVulnerability_V2
 					vuln.Cvss = baseScore
@@ -221,9 +220,8 @@ func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, cvssMetrics 
 			if v3Err == nil && cvssV3 != nil {
 				// overwrite if v3 available
 				score.CvssScore = &storage.CVSSScore_Cvssv3{Cvssv3: cvssV3}
-				scores = append(scores, score)
 				// CVSS metrics has maximum two entries, one from NVD, one from Rox updater if available
-				if len(cvssMetrics) == 1 || (len(cvssMetrics) > 1 && cvss.Source != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
+				if len(CVSSMetrics) == 1 || (len(CVSSMetrics) > 1 && cvss.Source != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD) {
 					vuln.CvssV3 = cvssV3.CloneVT()
 					// overwrite if v3 available
 					vuln.ScoreVersion = storage.EmbeddedVulnerability_V3
@@ -233,6 +231,9 @@ func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, cvssMetrics 
 			} else {
 				errList.AddError(v3Err)
 			}
+		}
+		if score.CvssScore != nil {
+			scores = append(scores, score)
 		}
 	}
 
