@@ -189,6 +189,18 @@ func TestScanConfigWatcherStop(t *testing.T) {
 	assert.Equal(t, 0, resultQueue.Len())
 }
 
+type testTimer struct {
+	ch chan time.Time
+}
+
+func (t *testTimer) Stop() bool {
+	return true
+}
+
+func (t *testTimer) C() <-chan time.Time {
+	return t.ch
+}
+
 func TestScanConfigWatcherTimeout(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	scanDS := scanMocks.NewMockDataStore(ctrl)
@@ -196,6 +208,11 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 	ctx, cancel := context.WithCancel(context.Background())
 	finishedSignal := concurrency.NewSignal()
+	timeoutC := make(chan time.Time)
+	defer close(timeoutC)
+	timeout := &testTimer{
+		ch: timeoutC,
+	}
 	scanConfigWatcher := &scanConfigWatcherImpl{
 		ctx:       ctx,
 		cancel:    cancel,
@@ -212,13 +229,8 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 		},
 		readyQueue:  resultQueue,
 		scansToWait: set.NewStringSet(),
-		stopFn: func() {
-			finishedSignal.Signal()
-			<-finishedSignal.Done()
-		},
 	}
-	timeoutC := make(chan time.Time)
-	go scanConfigWatcher.run(timeoutC)
+	go scanConfigWatcher.run(timeout)
 	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
 	timeoutC <- time.Now()
 	select {

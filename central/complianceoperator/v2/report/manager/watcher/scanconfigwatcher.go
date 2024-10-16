@@ -3,7 +3,6 @@ package watcher
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
@@ -49,7 +48,6 @@ type scanConfigWatcherImpl struct {
 	cancel  func()
 	scanC   chan *ScanWatcherResults
 	stopped *concurrency.Signal
-	stopFn  func()
 
 	scanDS    scan.DataStore
 	profileDS profileDatastore.DataStore
@@ -65,7 +63,7 @@ type scanConfigWatcherImpl struct {
 func NewScanConfigWatcher(ctx context.Context, watcherID string, sc *storage.ComplianceOperatorScanConfigurationV2, scanDS scan.DataStore, profileDS profileDatastore.DataStore, queue readyQueue[*ScanConfigWatcherResults], snapshotIDs ...string) *scanConfigWatcherImpl {
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
-	timeout := time.NewTimer(defaultScanConfigTimeout)
+	timeout := NewTimer(defaultScanConfigTimeout)
 	ret := &scanConfigWatcherImpl{
 		ctx:        watcherCtx,
 		cancel:     cancel,
@@ -82,13 +80,8 @@ func NewScanConfigWatcher(ctx context.Context, watcherID string, sc *storage.Com
 			ScanResults:       make(map[string]*ScanWatcherResults),
 		},
 		scansToWait: set.NewStringSet(),
-		stopFn: func() {
-			finishedSignal.Signal()
-			<-finishedSignal.Done()
-			timeout.Stop()
-		},
 	}
-	go ret.run(timeout.C)
+	go ret.run(timeout)
 	return ret
 }
 
@@ -122,14 +115,18 @@ func (w *scanConfigWatcherImpl) Finished() concurrency.ReadOnlySignal {
 	return w.stopped
 }
 
-func (w *scanConfigWatcherImpl) run(timerC <-chan time.Time) {
-	defer w.stopFn()
+func (w *scanConfigWatcherImpl) run(timer Timer) {
+	defer func() {
+		w.stopped.Signal()
+		<-w.stopped.Done()
+		timer.Stop()
+	}()
 	for {
 		select {
 		case <-w.ctx.Done():
 			log.Infof("Stopping scan config watcher")
 			return
-		case <-timerC:
+		case <-timer.C():
 			log.Warnf("Timeout waiting for the ScanConfiguration %s's scans to finish", w.scanConfigResults.ScanConfig.GetScanConfigName())
 			concurrency.WithLock(&w.snapshotsLock, func() {
 				w.scanConfigResults.Error = ScanConfigTimeoutError
