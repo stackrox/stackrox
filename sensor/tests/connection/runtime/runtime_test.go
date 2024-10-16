@@ -61,7 +61,9 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		require.NoError(t, fakeCollector.Start())
 	}
 
+	t.Log("Starting testcase")
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
+		t.Log("Waiting for sync event")
 		testContext.WaitForSyncEvent(t, 2*time.Minute)
 
 		// Wait for collector to connect
@@ -138,9 +140,11 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		require.NoError(t, messagesReceivedSignal.Wait())
 
 		// We need to wait here at least 30s to make sure the network flows are processed
+		t.Log("Messages from Collector received")
 		t.Log("Waiting 60s for Sensor to process the network flows")
 		time.Sleep(60 * time.Second)
 
+		t.Log("Deleting test resources")
 		require.NoError(t, deleteTalk())
 		require.NoError(t, testContext.WaitForResourceDeleted(talkObj))
 		require.NoError(t, deleteNginx())
@@ -150,7 +154,12 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		t.Log("Starting GRPC connection to fake Central")
 		testContext.StartFakeGRPC()
 		t.Log("Waiting for sync event")
-		testContext.WaitForSyncEvent(t, 2*time.Minute)
+		gotEvent := testContext.WaitForSyncEvent(t, 2*time.Minute)
+		if gotEvent != nil {
+			t.Log("Sync event received")
+		} else {
+			t.Log("Sync event has not been received for 2 mins")
+		}
 
 		msg, err := testContext.WaitForMessageWithMatcher(func(event *central.MsgFromSensor) bool {
 			return event.GetEvent().GetProcessIndicator().GetDeploymentId() == talkUID &&

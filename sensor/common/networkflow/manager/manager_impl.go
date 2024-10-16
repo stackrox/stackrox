@@ -526,9 +526,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	log.Infof("enrichConnection: conn=%+v, status=%+v", *conn, *status)
 
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
-	log.Infof("enrichConnection: all known cluster entities: %v", m.clusterEntities) // this causes DATA race, but we cannot access m.clusterEntities.mutex from here
+	log.Infof("enrichConnection: container %s found?=%t", conn.containerID, ok)
 	if !ok {
-		log.Infof("enrichConnection: container %s not found", conn.containerID)
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		log.Infof("enrichConnection: timeElapsedSinceFirstSeen=%s", timeElapsedSinceFirstSeen.String())
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {

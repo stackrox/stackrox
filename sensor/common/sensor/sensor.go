@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/scannerclient"
 	"github.com/stackrox/rox/sensor/common/scannerdefinitions"
+	"google.golang.org/grpc/connectivity"
 )
 
 const (
@@ -275,9 +276,6 @@ func (s *Sensor) Start() {
 	}
 	log.Info("All components have started")
 
-	okSig := s.centralConnectionFactory.OkSignal()
-	errSig := s.centralConnectionFactory.StopSignal()
-
 	err = s.pubSub.Subscribe(internalmessage.SensorMessageSoftRestart, func(message *internalmessage.SensorInternalMessage) {
 		if message.IsExpired() {
 			return
@@ -304,15 +302,22 @@ func (s *Sensor) Start() {
 		// This has to be checked only if retries are not enabled. With retries, this signal will be checked
 		// inside communicationWithCentralWithRetries since it has to be re-checked on reconnects, and not
 		// crash if it fails.
+		log.Infof("Sensor start: Waiting for change of grpc state...")
 		select {
-		case <-errSig.Done():
-			s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
-			return
-		case <-okSig.Done():
-			s.changeState(common.SensorComponentEventCentralReachable)
 		case <-s.stoppedSig.Done():
 			return
+		default:
+			state, grpcErr := s.centralConnectionFactory.ConnectionState()
+			switch state {
+			case connectivity.Ready:
+				s.changeState(common.SensorComponentEventCentralReachable)
+			default:
+				s.changeState(common.SensorComponentEventOfflineMode)
+				s.stoppedSig.SignalWithErrorWrap(grpcErr, "getting connection from connection factory")
+				return
+			}
 		}
+		log.Infof("Sensor start: done waiting for change of grpc state")
 		go s.communicationWithCentral(&centralReachable)
 	}
 }
@@ -383,14 +388,17 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 	}
 }
 
-func (s *Sensor) changeState(state common.SensorComponentEvent) {
+// changeState returns true if the state has been changed, false when the change was not necessary
+func (s *Sensor) changeState(state common.SensorComponentEvent) bool {
 	s.currentStateMtx.Lock()
 	defer s.currentStateMtx.Unlock()
 	if s.currentState != state {
 		log.Infof("Updating Sensor State to: %s", state)
 		s.currentState = state
 		s.notifyAllComponents(s.currentState)
+		return true
 	}
+	return false
 }
 
 func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
@@ -432,17 +440,20 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 	s.reconcile.Store(true)
 	err := backoff.RetryNotify(func() error {
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
-		select {
-		case <-s.centralConnectionFactory.OkSignal().WaitC():
-			// Connection is up, we can try to create a new central communication
+		state, grpcErr := s.centralConnectionFactory.ConnectionState()
+		log.Infof("Current state: %s", state)
+		switch state {
+		case connectivity.Ready:
 			s.changeState(common.SensorComponentEventCentralReachable)
-		case <-s.centralConnectionFactory.StopSignal().WaitC():
+		default:
+			s.changeState(common.SensorComponentEventOfflineMode)
 			// Save the error before retrying
-			err := wrapOrNewError(s.centralConnectionFactory.StopSignal().Err(), "communication stopped")
+			err := wrapOrNewError(grpcErr, "communication stopped")
 			// Connection is still broken, report and try again
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
 			return err
 		}
+		log.Infof("Post select")
 
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection

@@ -3,18 +3,24 @@ package central
 import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/util"
+	roxLogging "github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 )
 
-type fakeGRPCClient struct {
-	okSig   concurrency.Signal
-	stopSig concurrency.ErrorSignal
-	conn    *grpc.ClientConn
+var roxlog = roxLogging.LoggerForModule()
 
-	connMtx *sync.Mutex
+type fakeGRPCClient struct {
+	okSig             concurrency.Signal
+	stopSig           concurrency.ErrorSignal
+	transientErrorSig concurrency.ErrorSignal
+	conn              *grpc.ClientConn
+
+	connMtx      *sync.Mutex
+	stateMtx     *sync.Mutex
+	currentState connectivity.State
 }
 
 // FakeGRPCFactory implements centralclient.CentralConnectionFactory interface and additional functions for testing
@@ -26,47 +32,51 @@ type FakeGRPCFactory interface {
 
 // MakeFakeConnectionFactory creates the fake gRPC client object given a gRPC connection.
 func MakeFakeConnectionFactory(c *grpc.ClientConn) *fakeGRPCClient {
+	roxlog.Infof("Making new fake connection factory (this resets signals)")
 	return &fakeGRPCClient{
-		conn:    c,
-		stopSig: concurrency.NewErrorSignal(),
-		okSig:   concurrency.NewSignal(),
-		connMtx: &sync.Mutex{},
+		conn:              c,
+		stopSig:           concurrency.NewErrorSignal(),
+		transientErrorSig: concurrency.NewErrorSignal(),
+		okSig:             concurrency.NewSignal(),
+		connMtx:           &sync.Mutex{},
+		stateMtx:          &sync.Mutex{},
+		currentState:      99, // invalid state
 	}
 }
 
+func (f *fakeGRPCClient) ConnectionState() (connectivity.State, error) {
+	f.stateMtx.Lock()
+	defer f.stateMtx.Unlock()
+	return f.currentState, nil
+}
+
 func (f *fakeGRPCClient) OverwriteCentralConnection(newConn *grpc.ClientConn) {
-	f.connMtx.Lock()
-	defer f.connMtx.Unlock()
-	f.conn = newConn
+	concurrency.WithLock(f.connMtx, func() {
+		f.conn = newConn
+	})
+	concurrency.WithLock(f.stateMtx, func() {
+		f.currentState = f.conn.GetState()
+	})
 }
 
 // SetCentralConnectionWithRetries is the implementation of the concurrent function SetCentralConnectionWithRetries
 // that sensor uses to set the gRPC connection to all its components. Present test version simply.
 func (f *fakeGRPCClient) SetCentralConnectionWithRetries(ptr *util.LazyClientConn, _ centralclient.CertLoader) {
-	f.connMtx.Lock()
-	defer f.connMtx.Unlock()
-	ptr.Set(f.conn)
-	if f.conn.GetState() == connectivity.Ready {
-		f.okSig.Signal()
-	} else {
-		f.stopSig.Signal()
-	}
-}
-
-// StopSignal returns a signal that is sent if there is an error.
-// This signal is never called.
-func (f *fakeGRPCClient) StopSignal() concurrency.ReadOnlyErrorSignal {
-	return &f.stopSig
-}
-
-// OkSignal returns a signal that is sent if connection was swapped.
-// This signal is triggered instantly on calling SetCentralConnectionWithRetries.
-func (f *fakeGRPCClient) OkSignal() concurrency.ReadOnlySignal {
-	return &f.okSig
+	concurrency.WithLock(f.connMtx, func() {
+		ptr.Set(f.conn)
+	})
+	concurrency.WithLock(f.stateMtx, func() {
+		if f.currentState != f.conn.GetState() {
+			roxlog.Infof("State change from %s to %s", f.currentState.String(), f.conn.GetState().String())
+			f.currentState = f.conn.GetState()
+		} else {
+			roxlog.Infof("No State change and is %s", f.currentState.String())
+		}
+	})
 }
 
 // Reset signals
 func (f *fakeGRPCClient) Reset() {
-	f.stopSig.Reset()
-	f.okSig.Reset()
+	roxlog.Infof("Resetting fake grpc client")
+	f.currentState = 99
 }
