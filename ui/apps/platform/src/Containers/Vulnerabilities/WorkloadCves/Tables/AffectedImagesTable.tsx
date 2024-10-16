@@ -40,7 +40,7 @@ import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayo
 export const tableId = 'WorkloadCvesAffectedImagesTable';
 export const defaultColumns = {
     cvesBySeverity: {
-        title: 'CVEs by severity',
+        title: 'CVE severity',
         isShownByDefault: true,
     },
     cveStatus: {
@@ -137,14 +137,15 @@ function AffectedImagesTable({
     onClearFilters,
     tableConfig,
 }: AffectedImagesTableProps) {
+    const expandedRowSet = useSet<string>();
+
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
-    const expandedRowSet = useSet<string>();
-    const colSpan = 8 + -hiddenColumnCount;
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled =
         isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const colSpan = 8 + (isNvdCvssColumnEnabled ? 1 : 0) + -hiddenColumnCount;
 
     return (
         <Table variant="compact">

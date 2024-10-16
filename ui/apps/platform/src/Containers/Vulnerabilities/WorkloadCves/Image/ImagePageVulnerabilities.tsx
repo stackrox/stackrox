@@ -36,7 +36,7 @@ import {
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { useManagedColumns } from 'hooks/useManagedColumns';
+import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import {
     SearchOption,
@@ -191,7 +191,14 @@ function ImagePageVulnerabilities({
         error,
         searchFilter,
     });
-    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const filteredColumns = filterManagedColumns(
+        defaultColumns,
+        (key: keyof typeof defaultColumns) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
+    );
+    const managedColumnState = useManagedColumns(tableId, filteredColumns);
 
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
