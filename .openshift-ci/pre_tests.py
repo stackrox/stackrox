@@ -2,7 +2,6 @@
 PreTests - something to run before test but after resource provisioning.
 """
 
-import os
 import subprocess
 
 
@@ -57,15 +56,3 @@ class PreSystemTests:
             check=True,
             timeout=PreSystemTests.START_PREFETCH_TIMEOUT,
         )
-
-
-class CollectionMethodOverridePreTest:
-    """
-    CollectionPreTest - allows finer control over collection method
-    for individual test jobs
-    """
-    def __init__(self, method):
-        self._collection_method = method
-
-    def run(self):
-        os.environ['COLLECTION_METHOD'] = self._collection_method
