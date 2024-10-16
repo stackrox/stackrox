@@ -164,6 +164,11 @@ func TestScanWatcherTimeout(t *testing.T) {
 	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
 	ctx, cancel := context.WithCancel(context.Background())
 	finishedSignal := concurrency.NewSignal()
+	timeoutC := make(chan time.Time)
+	defer close(timeoutC)
+	timeout := &testTimer{
+		ch: timeoutC,
+	}
 	scanWatcher := &scanWatcherImpl{
 		ctx:        ctx,
 		cancel:     cancel,
@@ -175,10 +180,8 @@ func TestScanWatcherTimeout(t *testing.T) {
 			WatcherID:    "id",
 			CheckResults: set.NewStringSet(),
 		},
-		timeout: time.NewTimer(defaultTimeout),
 	}
-	timeoutC := make(chan time.Time)
-	go scanWatcher.run(timeoutC)
+	go scanWatcher.run(timeout)
 	handleScan("id-1")(t, scanWatcher)
 	handleResult("id-1")(t, scanWatcher)
 	// We signal the timeout
