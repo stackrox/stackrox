@@ -112,7 +112,7 @@ test_roxctl_cmd() {
 
   # Verify that a password on the command line has precedence over password in the environment.
   if OUTPUT=$(ROX_ADMIN_PASSWORD="bad-password" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
-    --password "$ROX_PASSWORD" \
+    --password "$password" \
     "$@" \
     2>&1); then
       echo "[OK] --password has precedence over ROX_ADMIN_PASSWORD environment variable"
@@ -147,7 +147,7 @@ test_roxctl_cmd() {
 
   # Verify that a password on the command line has precedence over token file in the environment.
   if OUTPUT=$(ROX_API_TOKEN_FILE="$TOKEN_FILE" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
-    --password "$ROX_PASSWORD" \
+    --password "$password" \
     "$@" \
     2>&1); then
       echo "[OK] --password has precedence over ROX_API_TOKEN_FILE environment variable"
