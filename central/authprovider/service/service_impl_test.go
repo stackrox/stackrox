@@ -11,6 +11,7 @@ import (
 	authProviderMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
 	permissionsMocks "github.com/stackrox/rox/pkg/auth/permissions/mocks"
 	authTokenMocks "github.com/stackrox/rox/pkg/auth/tokens/mocks"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -106,17 +107,22 @@ func (s *mockedAuthProviderServiceTestSuite) TestPostDuplicateAuthProvider() {
 	_, err = s.service.PostAuthProvider(ctx, otherPostRequest)
 	s.NoError(err)
 
-	// There is a bug in the AuthProvider creation, which causes
-	// extra backend instance creation when creating a backend with
-	// a name that already exists in DB.
-	// Hence the mock expectation setup. Once the bug is fixed, this call
-	// should be removed.
-	s.expectWorkingPostAuthProvider()
+	// The AuthProvider creation flow should fail on the duplicate name check
+	// and not proceed with the provider creation (hence no backend creation,
+	// no store addition and no provider config redaction),
+	s.providerMockStore.EXPECT().
+		AuthProviderExistsWithName(gomock.Any(), gomock.Any()).
+		Times(1).
+		Return(true, nil)
 	_, err = s.service.PostAuthProvider(ctx, postRequest)
-	s.NoError(err)
+	s.ErrorIs(err, errox.InvalidArgs)
 }
 
 func (s *mockedAuthProviderServiceTestSuite) expectWorkingPostAuthProvider() {
+	s.providerMockStore.EXPECT().
+		AuthProviderExistsWithName(gomock.Any(), gomock.Any()).
+		Times(1).
+		Return(false, nil)
 	s.expectBackendCreation()
 	s.expectProviderAdditionToStore()
 	s.providerMockBEFactory.EXPECT().
