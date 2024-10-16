@@ -10,7 +10,7 @@ import {
 } from '../../helpers/policies';
 import { interceptAndWatchRequests } from '../../helpers/request';
 
-const saveAsUrl = '/v1/policies/save-as';
+const saveAsUrl = '/api/policy/custom-resource/save-as-zip';
 
 const routeMatcherMapForPolicySaveAs = {
     [saveAsUrl]: { method: 'POST', url: saveAsUrl },
@@ -56,7 +56,7 @@ describe('Save policies as Custom Resource', () => {
                         return waitForRequests();
                     })
                     .then(({ request, response }) => {
-                        expect(request.body).to.deep.equal({ policyIds: [policyId] });
+                        expect(request.body).to.deep.equal({ ids: [policyId] });
                         expect(response.headers).to.have.property(
                             'content-type',
                             'application/zip'
@@ -106,7 +106,7 @@ describe('Save policies as Custom Resource', () => {
                 })
                 .then(({ request, response }) => {
                     // Request has policy ids.
-                    expect(request.body.policyIds).to.have.length(2);
+                    expect(request.body.ids).to.have.length(2);
                     expect(response.headers).to.have.property('content-type', 'application/zip');
                     cy.get(
                         `${selectors.toast.title}:contains("Successfully saved selected policies as Custom Resources")`
@@ -150,7 +150,7 @@ describe('Save policies as Custom Resource', () => {
                     })
                     .then(({ request, response }) => {
                         // Request has expected policy id.
-                        expect(request.body).to.deep.equal({ policyIds: [policyId] });
+                        expect(request.body).to.deep.equal({ ids: [policyId] });
                         expect(response.headers).to.have.property(
                             'content-type',
                             'application/zip'

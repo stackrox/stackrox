@@ -28,11 +28,8 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import { policiesBasePath } from 'routePaths';
-import {
-    deletePolicy,
-    savePoliciesAsCustomResource,
-    exportPolicies,
-} from 'services/PoliciesService';
+import { deletePolicy, exportPolicies } from 'services/PoliciesService';
+import { savePoliciesAsCustomResource } from 'services/PolicyCustomResourceService';
 import { ClientPolicy } from 'types/policy.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 

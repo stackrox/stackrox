@@ -21,8 +21,8 @@ import {
     deletePolicies,
     exportPolicies,
     updatePoliciesDisabledState,
-    savePoliciesAsCustomResource,
 } from 'services/PoliciesService';
+import { savePoliciesAsCustomResource } from 'services/PolicyCustomResourceService';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import useURLSort from 'hooks/useURLSort';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
