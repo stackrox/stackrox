@@ -212,7 +212,7 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 			}
 
 			return innerErr
-		}, retry.Tries(10), retry.WithExponentialBackoff())
+		}, retry.Tries(100), retry.WithExponentialBackoff())
 
 		if err != nil {
 			return nil, errors.Wrap(err, "could not initialize policy client")
