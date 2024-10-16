@@ -1,4 +1,4 @@
-#!/usr/bin/env bash      dnf upgrade --refresh --setopt=fastestmirror=0
+#!/usr/bin/env bash
 
 set -euo pipefail
 
