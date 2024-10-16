@@ -800,8 +800,7 @@ install-dev-tools: gotools-all
 	@echo "+ $@"
 
 .PHONY: roxvet
-roxvet: skip-dirs := operator/pkg/clientset \
-                     scanner/updater/rhel      # TODO(ROX-21539): Remove when CSAF/VEX arrives
+roxvet: skip-dirs := operator/pkg/clientset
 roxvet: $(ROXVET_BIN)
 	@echo "+ $@"
 	@# TODO(ROX-7574): Add options to ignore specific files or paths in roxvet
