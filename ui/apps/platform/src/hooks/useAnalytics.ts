@@ -56,6 +56,7 @@ export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm
 // policy violations
 
 export const FILTERED_WORKFLOW_VIEW_SELECTED = 'Filtered Workflow View Selected';
+export const POLICY_VIOLATIONS_FILTER_APPLIED = 'Policy Violations Filter Applied';
 
 // compliance
 
@@ -87,6 +88,11 @@ export const searchCategoriesWithFilter = [
     'CLUSTER CVE FIXABLE',
     'CVSS',
     'Node Top CVSS',
+    'Category',
+    'Severity',
+    'Lifecycle Stage',
+    'Resource Type',
+    'Inactive Deployment',
 ] as const;
 
 export const isSearchCategoryWithFilter = tupleTypeGuard(searchCategoriesWithFilter);
@@ -307,6 +313,15 @@ export type AnalyticsEvent =
           properties: {
               value: 'Application view' | 'Platform view' | 'Full view';
           };
+      }
+    /**
+     * Tracks each time the user applies a filter on the Policy Violations page.
+     * We only track the value of the applied filter when it does not represent
+     * specifics of a customer environment.
+     */
+    | {
+          event: typeof POLICY_VIOLATIONS_FILTER_APPLIED;
+          properties: { category: string; filter: string } | { category: string };
       }
     /**
      * Tracks each time the user generates a compliance report download

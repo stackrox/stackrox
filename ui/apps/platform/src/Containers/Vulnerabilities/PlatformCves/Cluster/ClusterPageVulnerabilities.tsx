@@ -19,7 +19,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import useURLSort from 'hooks/useURLSort';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { platformCVESearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';

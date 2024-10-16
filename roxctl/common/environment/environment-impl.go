@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
@@ -29,6 +30,8 @@ type cliEnvironmentImpl struct {
 var (
 	singleton Environment
 	once      sync.Once
+
+	errInvalidCombination = errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
 )
 
 // NewTestCLIEnvironment creates a new CLI environment with the given IO and common.RoxctlHTTPClient.
@@ -134,15 +137,31 @@ func (w colorWriter) Write(p []byte) (int, error) {
 }
 
 func determineAuthMethod(cliEnv Environment) (auth.Method, error) {
-	if flags.APITokenFile() != "" && flags.Password() != "" {
-		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
+	if method, err := determineAuthMethodExt(
+		flags.APITokenFileChanged(), flags.PasswordChanged(),
+		flags.APITokenFile() == "", flags.Password() == "", env.TokenEnv.Setting() == ""); method != nil || err != nil {
+		return method, err
 	}
+	return ConfigMethod(cliEnv), nil
+}
+
+func determineAuthMethodExt(tokenFileChanged, passwordChanged, tokenFileNameEmpty, passwordEmpty, tokenEmpty bool) (auth.Method, error) {
+	// Prefer command line arguments over environment variables.
 	switch {
-	case flags.Password() != "":
+	case tokenFileChanged && tokenFileNameEmpty || passwordChanged && passwordEmpty:
+		utils.Should(errox.InvariantViolation)
+		return nil, nil
+	case tokenFileChanged && passwordChanged:
+		return nil, errInvalidCombination
+	case !(tokenFileChanged || passwordChanged || tokenFileNameEmpty || passwordEmpty):
+		return nil, errInvalidCombination
+	case !(tokenFileChanged || passwordChanged || tokenEmpty || passwordEmpty):
+		return nil, errInvalidCombination
+	case passwordChanged || !(passwordEmpty || tokenFileChanged):
 		return auth.BasicAuth(), nil
-	case flags.APITokenFile() != "" || env.TokenEnv.Setting() != "":
+	case tokenFileChanged || !tokenFileNameEmpty || !tokenEmpty:
 		return auth.TokenAuth(), nil
 	default:
-		return ConfigMethod(cliEnv), nil
+		return nil, nil
 	}
 }

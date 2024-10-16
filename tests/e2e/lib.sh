@@ -186,17 +186,16 @@ deploy_stackrox_operator() {
         info "Deploying ACS operator via midstream images"
         # Retrieving values from json map for operator and iib
         ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
-        OPERATOR_VERSION=$(< operator/midstream/iib.json jq -r '.operator.version')
-        VERSION=$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')
-        #Exporting the above vars
-        export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib"
-        export OPERATOR_VERSION
-        export VERSION
 
-        make -C operator kuttl deploy-via-olm-midstream
+        make -C operator kuttl deploy-via-olm \
+          INDEX_IMG_BASE="brew.registry.redhat.io/rh-osbs/iib" \
+          INDEX_IMG_TAG="$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')" \
+          INSTALL_CHANNEL="$(< operator/midstream/iib.json jq -r '.operator.channel')" \
+          INSTALL_VERSION="v$(< operator/midstream/iib.json jq -r '.operator.version')"
     else
         info "Deploying ACS operator"
-        ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator kuttl deploy-via-olm
+        make -C operator kuttl deploy-via-olm \
+          ROX_PRODUCT_BRANDING=RHACS_BRANDING
     fi
 }
 

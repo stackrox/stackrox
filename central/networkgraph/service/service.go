@@ -39,7 +39,7 @@ func New(store nfDS.ClusterDataStore,
 }
 
 func newService(store nfDS.ClusterDataStore,
-	entities networkEntityDS.EntityDataStore,
+	entityDS networkEntityDS.EntityDataStore,
 	networkTreeMgr networktree.Manager,
 	deployments dDS.DataStore,
 	clusters clusterDS.DataStore,
@@ -47,7 +47,7 @@ func newService(store nfDS.ClusterDataStore,
 	graphConfigDS datastore.DataStore) *serviceImpl {
 	return &serviceImpl{
 		clusterFlows:     store,
-		entities:         entities,
+		entityDS:         entityDS,
 		networkTreeMgr:   networkTreeMgr,
 		deployments:      deployments,
 		clusters:         clusters,

@@ -266,8 +266,6 @@ This can be retrieved on quay.io by:
 If `git describe --dirty` shows a `-dirty` suffix, you'll need to clean up your repo until git considers it "clean".
 Otherwise the make targets below will add `-dirty` to the image tag, and it likely won't be found.
 
-Note that if you run `olm-operator-install.sh` directly, this requirement does not apply.
-
 ### Deploy
 
 Now the latest version (based off of `make tag`) can be installed like so:
@@ -279,16 +277,13 @@ ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm
 ```
 
 This installs the operator into the `stackrox-operator` namespace.
-This can be overridden with the `TEST_NAMESPACE` argument:
+This can be overridden with a `TEST_NAMESPACE` argument.
+The version can be overridden with a `VERSION` argument.
+
+For example:
 
 ```bash
-ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm TEST_NAMESPACE=my-favorite-namespace
-```
-
-If you'd rather put in a custom image spec, you can use the install script directly:
-
-```bash
-hack/olm-operator-install.sh stackrox-operator quay.io/rhacs-eng/stackrox-operator 3.74.0-588-ge99fe7b316
+ROX_PRODUCT_BRANDING=RHACS_BRANDING make deploy-via-olm TEST_NAMESPACE=my-favorite-namespace VERSION=4.5.0-123-g12deadbeef
 ```
 
 ### Removal
