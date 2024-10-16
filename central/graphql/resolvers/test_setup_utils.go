@@ -52,6 +52,7 @@ import (
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	connMgrMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/central/views/imagecve"
+	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/central/views/nodecve"
 	"github.com/stackrox/rox/central/views/platformcve"
 	"github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/cache"
@@ -89,7 +90,13 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 			registerNodeComponentLoader(t, ds)
 			resolver.NodeComponentDataStore = ds
 		case imageDS.DataStore:
-			registerImageLoader(t, ds)
+			var imageView imagesView.ImageView
+			for _, di := range datastores {
+				if view, ok := di.(imagesView.ImageView); ok {
+					imageView = view
+				}
+			}
+			registerImageLoader(t, ds, imageView)
 			resolver.ImageDataStore = ds
 		case deploymentDatastore.DataStore:
 			resolver.DeploymentDataStore = ds
@@ -315,9 +322,9 @@ func TestVulnReqDatastore(t testing.TB, testDB *pgtest.TestPostgres) vulnReqData
 	return vulnReqDatastore.GetTestPostgresDataStore(t, testDB, cache.New(), cache.New())
 }
 
-func registerImageLoader(_ testing.TB, ds imageDS.DataStore) {
+func registerImageLoader(_ testing.TB, ds imageDS.DataStore, view imagesView.ImageView) {
 	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Image{}), func() interface{} {
-		return loaders.NewImageLoader(ds)
+		return loaders.NewImageLoader(ds, view)
 	})
 }
 
