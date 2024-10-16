@@ -297,7 +297,7 @@ func (e *Store) purgeNoLock(deploymentID string) {
 		}
 	}
 	for containerID := range e.reverseContainerIDMap[deploymentID] {
-		log.Infof("Removing container %s from containerIDMap", containerID)
+		//log.Infof("Removing container %s from containerIDMap", containerID)
 		delete(e.containerIDMap, containerID)
 	}
 
@@ -380,7 +380,7 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 			e.reverseContainerIDMap[deploymentID] = reverseContainerIDs
 		}
 		reverseContainerIDs[containerID] = struct{}{}
-		log.Infof("Adding container %s to containerIDMap", containerID)
+		//log.Infof("Adding container %s to containerIDMap", containerID)
 		e.containerIDMap[containerID] = metadata
 		mdsForCallback = append(mdsForCallback, metadata)
 	}

@@ -931,15 +931,10 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService, l log
 	}()
 
 	l.Logf("Creating new grpc client")
-	conn, err := grpc.NewClient("",
-		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
-			return listener.Dial()
-		}),
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-	//conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
-	//	return listener.Dial()
-	//}), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// DialContext is deprecated, but when this is called with NewClient, then the connection status is stuck in IDLE state
+	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+		return listener.Dial()
+	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
 		panic(err)
