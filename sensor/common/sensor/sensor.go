@@ -309,6 +309,11 @@ func (s *Sensor) Start() {
 		default:
 			state, grpcErr := s.centralConnectionFactory.ConnectionState()
 			switch state {
+			// Idle means that the connection will be open when first rpc call happens.
+			// We need to trigger a retry to get out of Idle state.
+			case connectivity.Idle:
+				s.stoppedSig.SignalWithErrorf("connection is idle")
+				return
 			case connectivity.Ready:
 				s.changeState(common.SensorComponentEventCentralReachable)
 			default:
@@ -443,6 +448,10 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		state, grpcErr := s.centralConnectionFactory.ConnectionState()
 		log.Infof("Current state: %s", state)
 		switch state {
+		// Idle means that the connection will be open when first rpc call happens, but that leads to failure when connecting
+		case connectivity.Idle:
+			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
+			return errors.New("Connection is in idle state")
 		case connectivity.Ready:
 			s.changeState(common.SensorComponentEventCentralReachable)
 		default:
