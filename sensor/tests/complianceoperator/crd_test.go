@@ -24,9 +24,12 @@ func Test_ComplianceOperatorCRDsDetection(t *testing.T) {
 
 	require.NoError(t, err)
 
+	t.Log("Starting testcase")
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
 		// Wait for the first sync
+		t.Log("Waiting for sync event")
 		testContext.WaitForSyncEvent(t, 10*time.Second)
+		t.Log("Clearing central buffer")
 		testContext.GetFakeCentral().ClearReceivedBuffer()
 
 		// Create the Compliance Operator CRDs
@@ -39,6 +42,7 @@ func Test_ComplianceOperatorCRDsDetection(t *testing.T) {
 		})
 
 		// Sensor should sync again after the CRDs are detected
+		t.Log("Waiting for sync event after detecting CRDs")
 		testContext.WaitForSyncEventf(t, 10*time.Second, "expected restart connection after CRDs are detected")
 		testContext.GetFakeCentral().ClearReceivedBuffer()
 
@@ -46,6 +50,7 @@ func Test_ComplianceOperatorCRDsDetection(t *testing.T) {
 		require.NoError(t, deleteCRDsFn())
 
 		// Sensor should sync again after the CRDs removal is detected
+		t.Log("Waiting for sync event after removing CRDs")
 		testContext.WaitForSyncEventf(t, 10*time.Second, "expected restart connection after CRDs are removed")
 	}))
 
