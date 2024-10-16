@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -29,6 +30,8 @@ type cliEnvironmentImpl struct {
 var (
 	singleton Environment
 	once      sync.Once
+
+	errInvalidCombination = errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
 )
 
 // NewTestCLIEnvironment creates a new CLI environment with the given IO and common.RoxctlHTTPClient.
@@ -136,23 +139,27 @@ func (w colorWriter) Write(p []byte) (int, error) {
 func determineAuthMethod(cliEnv Environment) (auth.Method, error) {
 	if method, err := determineAuthMethodExt(
 		flags.APITokenFileChanged(), flags.PasswordChanged(),
-		flags.APITokenFile() == "", flags.Password() == ""); method != nil || err != nil {
+		flags.APITokenFile() == "", flags.Password() == "", env.TokenEnv.Setting() == ""); method != nil || err != nil {
 		return method, err
 	}
 	return ConfigMethod(cliEnv), nil
 }
 
-func determineAuthMethodExt(tokenFileChanged, passwordChanged, tokenFileNameEmpty, passwordEmpty bool) (auth.Method, error) {
+func determineAuthMethodExt(tokenFileChanged, passwordChanged, tokenFileNameEmpty, passwordEmpty, tokenEmpty bool) (auth.Method, error) {
 	// Prefer command line arguments over environment variables.
 	switch {
 	case tokenFileChanged && tokenFileNameEmpty || passwordChanged && passwordEmpty:
 		utils.Should(errox.InvariantViolation)
 		return nil, nil
-	case tokenFileChanged && passwordChanged || !(tokenFileChanged || passwordChanged || tokenFileNameEmpty || passwordEmpty):
-		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
+	case tokenFileChanged && passwordChanged:
+		return nil, errInvalidCombination
+	case !(tokenFileChanged || passwordChanged || tokenFileNameEmpty || passwordEmpty):
+		return nil, errInvalidCombination
+	case !(tokenFileChanged || passwordChanged || tokenEmpty || passwordEmpty):
+		return nil, errInvalidCombination
 	case passwordChanged || !(passwordEmpty || tokenFileChanged):
 		return auth.BasicAuth(), nil
-	case tokenFileChanged || !tokenFileNameEmpty:
+	case tokenFileChanged || !tokenFileNameEmpty || !tokenEmpty:
 		return auth.TokenAuth(), nil
 	default:
 		return nil, nil
