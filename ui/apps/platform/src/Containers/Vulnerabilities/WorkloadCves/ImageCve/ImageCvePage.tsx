@@ -308,8 +308,7 @@ function ImageCvePage() {
         isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
     const affectedImagesFilteredColumns = filterManagedColumns(
         affectedImagesDefaultColumns,
-        (key: keyof typeof affectedImagesDefaultColumns) =>
-            key !== 'nvdCvss' || isNvdCvssColumnEnabled
+        (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
     );
     const imageTableColumnState = useManagedColumns(
         affectedImagesTableId,

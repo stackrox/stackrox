@@ -54,7 +54,7 @@ function getCurrentColumnConfig<ColumnKey extends string>(
 }
 
 // Helper function to filter columns based on a predicate like feature flag dependency
-// For example, (key: keyof typeof defaultColumns) => key !== 'whatever' || isWhateverEnabled
+// For example, (key) => key !== 'whatever' || isWhateverEnabled
 export function filterManagedColumns<T extends Record<string, InitialColumnConfig>>(
     defaultColumns: T,
     predicate: (key: keyof T) => boolean

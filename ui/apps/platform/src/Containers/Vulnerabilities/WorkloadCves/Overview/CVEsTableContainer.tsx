@@ -82,7 +82,7 @@ function CVEsTableContainer({
         isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
     const filteredColumns = filterManagedColumns(
         defaultColumns,
-        (key: keyof typeof defaultColumns) => key !== 'topNvdCvss' || isNvdCvssColumnEnabled
+        (key) => key !== 'topNvdCvss' || isNvdCvssColumnEnabled
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
 

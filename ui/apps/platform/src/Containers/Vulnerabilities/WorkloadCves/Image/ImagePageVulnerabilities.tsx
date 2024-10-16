@@ -196,7 +196,7 @@ function ImagePageVulnerabilities({
         isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
     const filteredColumns = filterManagedColumns(
         defaultColumns,
-        (key: keyof typeof defaultColumns) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
+        (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
     );
     const managedColumnState = useManagedColumns(tableId, filteredColumns);
 
