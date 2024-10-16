@@ -6,6 +6,7 @@ import {
     Flex,
     FlexItem,
     Form,
+    FormGroup,
     PageSection,
     TextArea,
     TextInput,
@@ -284,18 +285,14 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                     </FormLabelGroup>
                 )}
                 {isIncludeNvdCvssEnabled && (
-                    <FormLabelGroup
-                        label="Optional columns"
-                        fieldId="reportParameters.includeNvdCvss"
-                        errors={formik.errors}
-                    >
+                    <FormGroup label="Optional columns" isInline>
                         <Checkbox
                             label="Include NVD CVSS"
                             id="reportParameters.includeNvdCvss"
                             isChecked={formik.values.reportParameters.includeNvdCvss}
                             onChange={onChange}
                         />
-                    </FormLabelGroup>
+                    </FormGroup>
                 )}
                 <FormLabelGroup
                     label="Configure collection included"
