@@ -56,10 +56,28 @@ test_roxctl_cmd() {
       eecho "Captured output was:"
       eecho "$OUTPUT"
       FAILURES=$((FAILURES + 1))
-  elif echo "$OUTPUT" | grep -q "cannot use basic and token-based authentication at the same time"; then
+  elif echo "$OUTPUT" | grep -q "\[password token-file\] were all set"; then
     echo "[OK] Specifying --token-file and --password produced expected error message"
   else
     eecho "[FAIL] Specifying --token-file and --password produced error did not produce expected error message"
+    eecho "Captured output was:"
+    eecho "$OUTPUT"
+    FAILURES=$((FAILURES + 1))
+  fi
+
+  # Verify that specifying a token file and password at the same time fails.
+  if OUTPUT=$(ROX_API_TOKEN_FILE="$TOKEN_FILE" ROX_ADMIN_PASSWORD="$ROX_PASSWORD" \
+    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    "$@" \
+    2>&1); then
+      eecho "[FAIL] Specifying ROX_API_TOKEN_FILE and ROX_ADMIN_PASSWORD did not produce error"
+      eecho "Captured output was:"
+      eecho "$OUTPUT"
+      FAILURES=$((FAILURES + 1))
+  elif echo "$OUTPUT" | grep -q "cannot use basic and token-based authentication at the same time"; then
+    echo "[OK] Specifying ROX_API_TOKEN_FILE and ROX_ADMIN_PASSWORD produced expected error message"
+  else
+    eecho "[FAIL] Specifying ROX_API_TOKEN_FILE and ROX_ADMIN_PASSWORD did not produce expected error message"
     eecho "Captured output was:"
     eecho "$OUTPUT"
     FAILURES=$((FAILURES + 1))
@@ -91,6 +109,19 @@ test_roxctl_cmd() {
       FAILURES=$((FAILURES + 1))
   fi
 
+  # Verify that a password on the command line has precedence over password in the environment.
+  if OUTPUT=$(ROX_ADMIN_PASSWORD="bad-password" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --password "$ROX_PASSWORD" \
+    "$@" \
+    2>&1); then
+      echo "[OK] --password has precedence over ROX_ADMIN_PASSWORD environment variable"
+  else
+      eecho "[FAIL] Invalid password in ROX_ADMIN_PASSWORD causes failure even though valid password specified with --password"
+      eecho "Captured output was:"
+      eecho "$OUTPUT"
+      FAILURES=$((FAILURES + 1))
+  fi
+
   # Verify that an invalid file specified with --token-file produces a hint to use ROX_API_TOKEN.
   NON_EXISTING="a-non-existing-file-without-slashes"
   if [ -e "$NON_EXISTING" ]; then
@@ -111,6 +142,32 @@ test_roxctl_cmd() {
     eecho "Captured output was:"
     eecho "$OUTPUT"
     FAILURES=$((FAILURES + 1))
+  fi
+
+  # Verify that a password on the command line has precedence over token file in the environment.
+  if OUTPUT=$(ROX_API_TOKEN_FILE="$TOKEN_FILE" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --password "$ROX_PASSWORD" \
+    "$@" \
+    2>&1); then
+      echo "[OK] --password has precedence over ROX_API_TOKEN_FILE environment variable"
+  else
+      eecho "[FAIL] Invalid file in ROX_API_TOKEN_FILE causes failure even though valid password specified with --password"
+      eecho "Captured output was:"
+      eecho "$OUTPUT"
+      FAILURES=$((FAILURES + 1))
+  fi
+
+  # Verify that the token file on the command line has precedence over password in the environment.
+  if OUTPUT=$(ROX_ADMIN_PASSWORD="bad-password" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --token-file "$TOKEN_FILE" \
+    "$@" \
+    2>&1); then
+      echo "[OK] --token-file has precedence over ROX_ADMIN_PASSWORD environment variable"
+  else
+      eecho "[FAIL] Invalid password in ROX_ADMIN_PASSWORD causes failure even though valid token file specified with --token-file"
+      eecho "Captured output was:"
+      eecho "$OUTPUT"
+      FAILURES=$((FAILURES + 1))
   fi
 }
 
