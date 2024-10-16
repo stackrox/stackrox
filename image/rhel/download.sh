@@ -34,6 +34,7 @@ fi
 
 mkdir -p "$output_dir/rpms"
 
+set -x
 if false; then # && [[ "$arch" == "s390x" ]]; then
   dnf install -y --downloadonly --downloaddir=/tmp postgresql postgresql-private-libs \
     || (
