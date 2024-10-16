@@ -107,6 +107,11 @@ spec:
         path: network
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Config-as-Code configuration
+        displayName: Config-as-Code
+        path: configAsCode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: 'Deprecated field. This field will be removed in a future release.
 
           Miscellaneous settings.'

@@ -538,6 +538,9 @@ central:
 #    # sufficient and manual override is required.
 #    configOverride: null
 #
+#configAsCode:
+#  enabled: true
+#  installCRDs: true
 #
 ## EXPERT SETTINGS. You usually do not need to touch those.
 #
@@ -577,4 +580,5 @@ central:
 #monitoring:
 #  # Enables integration with OpenShift platform monitoring.
 #  openshift:
+
 #    enabled: true
