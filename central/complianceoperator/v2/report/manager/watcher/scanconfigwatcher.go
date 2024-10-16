@@ -30,19 +30,19 @@ func GetScanConfigFromScan(ctx context.Context, scan *storage.ComplianceOperator
 // ScanConfigWatcher determines if a ScanConfiguration has running scans or has completed
 type ScanConfigWatcher interface {
 	PushScanResults(results *ScanWatcherResults) error
-	Subscribe(snapshotID string) error
+	Subscribe(snapshot *storage.ComplianceOperatorReportSnapshotV2) error
 	Stop()
 	Finished() concurrency.ReadOnlySignal
 }
 
 // ScanConfigWatcherResults is returned when the watcher detects all the scans are completed
 type ScanConfigWatcherResults struct {
-	Ctx               context.Context
-	WatcherID         string
-	ReportSnapshotIDs []string
-	ScanConfig        *storage.ComplianceOperatorScanConfigurationV2
-	ScanResults       map[string]*ScanWatcherResults
-	Error             error
+	Ctx            context.Context
+	WatcherID      string
+	ReportSnapshot []*storage.ComplianceOperatorReportSnapshotV2
+	ScanConfig     *storage.ComplianceOperatorScanConfigurationV2
+	ScanResults    map[string]*ScanWatcherResults
+	Error          error
 }
 
 type scanConfigWatcherImpl struct {
@@ -63,7 +63,7 @@ type scanConfigWatcherImpl struct {
 }
 
 // NewScanConfigWatcher creates a new ScanConfigWatcher
-func NewScanConfigWatcher(ctx context.Context, watcherID string, sc *storage.ComplianceOperatorScanConfigurationV2, scanDS scan.DataStore, profileDS profileDatastore.DataStore, snapshotDS snapshotDS.DataStore, queue readyQueue[*ScanConfigWatcherResults], snapshotIDs ...string) *scanConfigWatcherImpl {
+func NewScanConfigWatcher(ctx context.Context, watcherID string, sc *storage.ComplianceOperatorScanConfigurationV2, scanDS scan.DataStore, profileDS profileDatastore.DataStore, snapshotDS snapshotDS.DataStore, queue readyQueue[*ScanConfigWatcherResults]) *scanConfigWatcherImpl {
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
 	timeout := NewTimer(defaultScanConfigTimeout)
@@ -77,11 +77,10 @@ func NewScanConfigWatcher(ctx context.Context, watcherID string, sc *storage.Com
 		scanC:      make(chan *ScanWatcherResults),
 		readyQueue: queue,
 		scanConfigResults: &ScanConfigWatcherResults{
-			Ctx:               ctx,
-			WatcherID:         watcherID,
-			ScanConfig:        sc,
-			ReportSnapshotIDs: snapshotIDs,
-			ScanResults:       make(map[string]*ScanWatcherResults),
+			Ctx:         ctx,
+			WatcherID:   watcherID,
+			ScanConfig:  sc,
+			ScanResults: make(map[string]*ScanWatcherResults),
 		},
 		scansToWait: set.NewStringSet(),
 	}
@@ -100,24 +99,13 @@ func (w *scanConfigWatcherImpl) PushScanResults(results *ScanWatcherResults) err
 }
 
 // Subscribe snapshot to the watcher
-func (w *scanConfigWatcherImpl) Subscribe(id string) error {
-	var ctx context.Context
-	concurrency.WithLock(&w.resultsLock, func() {
-		if w.scanConfigResults == nil {
-			return
-		}
-		ctx = w.scanConfigResults.Ctx
-	})
-	snapshot, found, err := w.snapshotDS.GetSnapshot(ctx, id)
-	if err != nil {
-		return err
-	}
-	if !found {
-		return errors.Errorf("snapshot %s not found", id)
-	}
+func (w *scanConfigWatcherImpl) Subscribe(snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
 	var scans []*storage.ComplianceOperatorReportSnapshotV2_Scan
 	concurrency.WithLock(&w.resultsLock, func() {
-		w.scanConfigResults.ReportSnapshotIDs = append(w.scanConfigResults.ReportSnapshotIDs, id)
+		// Here we subscribe the snapshot to the watcher
+		w.scanConfigResults.ReportSnapshot = append(w.scanConfigResults.ReportSnapshot, snapshot)
+		// Scans are appended to the Snapshot. This allows us later to make sure
+		// we do not generate duplicate Report Snapshots if we received an update in the Scan
 		for _, scanResult := range w.scanConfigResults.ScanResults {
 			scans = append(scans, &storage.ComplianceOperatorReportSnapshotV2_Scan{
 				ScanRefId:       scanResult.Scan.GetScanRefId(),
@@ -129,7 +117,12 @@ func (w *scanConfigWatcherImpl) Subscribe(id string) error {
 		return nil
 	}
 	snapshot.Scans = scans
-	return w.snapshotDS.UpsertSnapshot(ctx, snapshot)
+	return concurrency.WithLock1[error](&w.resultsLock, func() error {
+		if err := w.snapshotDS.UpsertSnapshot(w.scanConfigResults.Ctx, snapshot); err != nil {
+			return errors.Wrap(err, "unable to upsert snapshot")
+		}
+		return nil
+	})
 }
 
 // Stop the watcher
@@ -205,18 +198,11 @@ func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) er
 }
 
 func (w *scanConfigWatcherImpl) appendScanToSnapshots(ctx context.Context, scan *storage.ComplianceOperatorScanV2) error {
-	errList := errorhelpers.NewErrorList("for each snapshot")
+	errList := errorhelpers.NewErrorList("update snapshots' scans")
 	concurrency.WithLock(&w.resultsLock, func() {
-		for _, id := range w.scanConfigResults.ReportSnapshotIDs {
-			snapshot, found, err := w.snapshotDS.GetSnapshot(ctx, id)
-			if err != nil {
-				errList.AddError(err)
-				continue
-			}
-			if !found {
-				errList.AddError(errors.Errorf("snapshot %s not found", id))
-				continue
-			}
+		for _, snapshot := range w.scanConfigResults.ReportSnapshot {
+			// The new Scan is appended to the Snapshot. This allows us later to make sure
+			// we do not generate duplicate Report Snapshots if we received an update in the Scan
 			snapshot.Scans = append(snapshot.Scans, &storage.ComplianceOperatorReportSnapshotV2_Scan{
 				ScanRefId:       scan.GetScanRefId(),
 				LastStartedTime: scan.GetLastStartedTime(),

@@ -42,6 +42,8 @@ func initialize() {
 
 	// Purge any orphan report snapshots (reports that were not completed)
 	// This can only happen if central is restarted while reports are still running.
+	// Sensor will send the Scan and CheckResult resources again and Central will
+	// regenerate the Reports, so there isn't any data loss by doing this.
 	searchQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ComplianceOperatorReportState,
 			storage.ComplianceOperatorReportStatus_WAITING.String(),

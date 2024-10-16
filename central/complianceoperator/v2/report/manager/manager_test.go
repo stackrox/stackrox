@@ -130,6 +130,7 @@ func (m *ManagerTestSuite) TestHandleResult() {
 			return []*storage.ComplianceOperatorReportSnapshotV2{}, nil
 		})
 	id, err := watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore)
+	require.NoError(m.T(), err)
 	err = manager.HandleResult(context.Background(), result)
 	assert.NoError(m.T(), err)
 	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
