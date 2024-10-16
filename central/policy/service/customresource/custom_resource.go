@@ -16,10 +16,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//
-//go:generate policy-as-code-helper-wrapper --type=storage.Policy
-//
-
 var (
 	invalidCRDNameCharPattern = regexp.MustCompile(`[^a-z0-9\.\-]`)
 	consecutivePattern        = regexp.MustCompile(`[.-]{2,}`)
