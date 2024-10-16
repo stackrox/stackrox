@@ -23,6 +23,14 @@ import (
 
 var centralHostPort = fmt.Sprintf("central.%s.svc:443", env.Namespace.Setting())
 
+// The config-controller often becomes ready before Central.
+// Therefore it's common for this client to need to try to connect to Central several times before it succeeds.
+// After a while, though, the client should give up and let the pod die in case there is some transient
+// network or platform issue that might be resolved by restarting the container.
+// Note that a restarting container can fail CI tests, so make the retry count high to ensure CI doesn't fail
+// because of this.
+const retryCount int = 100
+
 type perRPCCreds struct {
 	svc         v1.AuthServiceClient
 	metadata    map[string]string
@@ -212,7 +220,7 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 			}
 
 			return innerErr
-		}, retry.Tries(100), retry.WithExponentialBackoff())
+		}, retry.Tries(retryCount), retry.WithExponentialBackoff())
 
 		if err != nil {
 			return nil, errors.Wrap(err, "could not initialize policy client")
