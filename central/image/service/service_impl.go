@@ -570,9 +570,9 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 					logging.String("request_image", request.GetImageName().GetFullName()),
 				)
 
-				if imgExists {
-					// In case we hit an error during enriching, and the image previously existed, we will _not_ upsert it in
-					// central, since it could lead to us overriding an enriched image with a non-enriched image.
+				if imgExists || request.GetRequestId() != "" {
+					// If the image already exists in Central DB or this was an ad-hoc request
+					// further processing is unnecessary, return the error immediately.
 					s.informScanWaiter(request.GetRequestId(), nil, err)
 					return nil, err
 				}
