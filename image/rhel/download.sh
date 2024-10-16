@@ -55,7 +55,7 @@ if false; then # && [[ "$arch" == "s390x" ]]; then
   mv /tmp/postgresql-private-libs-*.rpm "${output_dir}/rpms/postgres-libs.rpm"
   mv /tmp/postgresql-*.rpm "${output_dir}/rpms/postgres.rpm"
 else
-  postgres_arch=${arch}
+  postgres_arch=${arch//s390x/aarch64}
   if [[ "$arch" == "s390x" ]]; then
     postgres_arch=aarch64
   fi
