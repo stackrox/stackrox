@@ -188,12 +188,17 @@ service ComplianceScanConfigurationService {
 
   // GetReportHistory returns a list of snapshots (scan executions) from a given scan configuration.
   rpc GetReportHistory(ComplianceReportHistoryRequest) returns (ComplianceReportHistoryResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/configuration/{id}/reports/history"};
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/{id}/reports/history"};
   }
 
   // GetMyReportHistory returns a list of snapshots (scan executions) executed by the current user from a given scan configuration.
   rpc GetMyReportHistory(ComplianceReportHistoryRequest) returns (ComplianceReportHistoryResponse) {
-    option (google.api.http) = {get: "/v2/compliance/scan/configuration/{id}/reports/my-history"};
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/{id}/reports/my-history"};
+  }
+
+  // DeleteReport deletes a given snapshot (scan execution).
+  rpc DeleteReport(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v2/compliance/scan/configurations/reports/{id}"};
   }
 
   // ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
