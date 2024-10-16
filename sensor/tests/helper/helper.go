@@ -932,10 +932,19 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService, l log
 
 	l.Logf("Creating new grpc client")
 	// DialContext is deprecated, but when this is called with NewClient, then the connection status is stuck in IDLE state
+	// DialContext explicitly states that: "At the end of this method, we kick the channel out of idle, rather than
+	// waiting for the first rpc".
+	// Treating state IDLE as a condition for Sensor to go online results in error:
+	// Communication with Central stopped: opening stream: failed to exit idle mode: dns resolver: missing address. Retrying.
 	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 		return listener.Dial()
 	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
+	//conn, err := grpc.NewClient("",
+	//	grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+	//		return listener.Dial()
+	//	}),
+	//	grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}
