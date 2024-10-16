@@ -3,7 +3,6 @@ package imagecve
 import (
 	"context"
 	"sort"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views"
@@ -73,21 +72,21 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
-	var results []*resourceCountByImageCVESeverity
-	results, err = pgSearch.RunSelectRequestForSchema[resourceCountByImageCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
+	var results []*common.ResourceCountByImageCVESeverity
+	results, err = pgSearch.RunSelectRequestForSchema[common.ResourceCountByImageCVESeverity](queryCtx, v.db, v.schema, common.WithCountBySeverityAndFixabilityQuery(q, search.CVE))
 	if err != nil {
 		return nil, err
 	}
 	if len(results) == 0 {
-		return &resourceCountByImageCVESeverity{}, nil
+		return &common.ResourceCountByImageCVESeverity{}, nil
 	}
 	if len(results) > 1 {
 		err = errors.Errorf("Retrieved multiple rows when only one row is expected for count query %q", q.String())
 		utils.Should(err)
-		return &resourceCountByImageCVESeverity{}, err
+		return &common.ResourceCountByImageCVESeverity{}, err
 	}
 
-	return &resourceCountByImageCVESeverity{
+	return &common.ResourceCountByImageCVESeverity{
 		CriticalSeverityCount:        results[0].CriticalSeverityCount,
 		FixableCriticalSeverityCount: results[0].FixableCriticalSeverityCount,
 
@@ -203,22 +202,6 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 }
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
-	// For pagination and sort to work properly, the filter query to get the CVEs needs to
-	// include the fields we are sorting on.  At this time custom code is required when
-	// sorting on custom sort fields.  For instance counts on the Severity column based on
-	// a value of that column
-	// TODO(ROX-26310): Update the search framework to inject required select.
-	addSeverities := false
-	severitySort := []string{
-		search.CriticalSeverityCount.String(),
-		search.FixableCriticalSeverityCount.String(),
-		search.ImportantSeverityCount.String(),
-		search.FixableImportantSeverityCount.String(),
-		search.ModerateSeverityCount.String(),
-		search.FixableModerateSeverityCount.String(),
-		search.LowSeverityCount.String(),
-		search.FixableLowSeverityCount.String(),
-	}
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
@@ -227,17 +210,14 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 		Fields: []string{search.CVE.String()},
 	}
 
-	// Check to see if a severity sort is in the query
-	for _, severity := range severitySort {
-		if strings.Contains(cloned.GetPagination().String(), severity) {
-			addSeverities = true
-			break
-		}
-	}
-
+	// For pagination and sort to work properly, the filter query to get the CVEs needs to
+	// include the fields we are sorting on.  At this time custom code is required when
+	// sorting on custom sort fields.  For instance counts on the Severity column based on
+	// a value of that column
+	// TODO(ROX-26310): Update the search framework to inject required select.
 	// Add the severity selects if severity is a sort option to ensure we have the filtered
 	// list of CVEs ordered appropriately.
-	if addSeverities {
+	if common.IsSortBySeverityCounts(cloned) {
 		cloned.Selects = append(cloned.Selects,
 			common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
 		)
