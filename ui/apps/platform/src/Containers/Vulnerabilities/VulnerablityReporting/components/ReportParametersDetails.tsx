@@ -29,7 +29,8 @@ function ReportParametersDetails({
     formValues,
 }: ReportParametersDetailsProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isIncludeNvdCvssEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
 
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
@@ -114,7 +115,7 @@ function ReportParametersDetails({
                             {getCVEsDiscoveredSinceText(formValues.reportParameters)}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
-                    {isNvdCvssEnabled && formValues.reportParameters.includeNvdCvss && (
+                    {isIncludeNvdCvssEnabled && formValues.reportParameters.includeNvdCvss && (
                         <DescriptionListGroup>
                             <DescriptionListTerm>Optional columns</DescriptionListTerm>
                             <DescriptionListDescription>

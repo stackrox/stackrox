@@ -29,8 +29,8 @@ import { VulnerabilitySeverityLabel } from '../../types';
 
 export const tableId = 'WorkloadCvesAffectedDeploymentsTable';
 export const defaultColumns = {
-    cvesBySeverity: {
-        title: 'CVEs by severity',
+    imagesBySeverity: {
+        title: 'Images by severity',
         isShownByDefault: true,
     },
     cluster: {
@@ -118,7 +118,7 @@ function AffectedDeploymentsTable({
                 <Tr>
                     <ExpandRowTh />
                     <Th sort={getSortParams('Deployment')}>Deployment</Th>
-                    <Th className={getVisibilityClass('cvesBySeverity')}>
+                    <Th className={getVisibilityClass('imagesBySeverity')}>
                         Images by severity
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
@@ -191,7 +191,7 @@ function AffectedDeploymentsTable({
                                         </Flex>
                                     </Td>
                                     <Td
-                                        className={getVisibilityClass('cvesBySeverity')}
+                                        className={getVisibilityClass('imagesBySeverity')}
                                         modifier="nowrap"
                                         dataLabel="Images by severity"
                                     >

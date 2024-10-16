@@ -142,10 +142,11 @@ function ImageVulnerabilitiesTable({
     const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
 
     const colSpan =
-        (isNvdCvssEnabled ? 7 : 6) +
+        (isNvdCvssColumnEnabled ? 7 : 6) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0) +
@@ -171,7 +172,7 @@ function ImageVulnerabilitiesTable({
                     <Th className={getVisibilityClass('cvss')} sort={getSortParams('CVSS')}>
                         CVSS
                     </Th>
-                    {isNvdCvssEnabled && (
+                    {isNvdCvssColumnEnabled && (
                         <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
                     )}
                     <Th className={getVisibilityClass('affectedComponents')}>
@@ -275,7 +276,7 @@ function ImageVulnerabilitiesTable({
                                     >
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
-                                    {isNvdCvssEnabled && (
+                                    {isNvdCvssColumnEnabled && (
                                         <Td
                                             className={getVisibilityClass('nvdCvss')}
                                             modifier="nowrap"
