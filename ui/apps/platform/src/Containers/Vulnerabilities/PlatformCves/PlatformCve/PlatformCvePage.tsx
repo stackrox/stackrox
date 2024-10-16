@@ -28,8 +28,6 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
-import { DynamicTableLabel } from 'Components/DynamicIcon';
-import { getHasSearchApplied } from 'utils/searchUtils';
 import useURLSort from 'hooks/useURLSort';
 import { getDateTime } from 'utils/dateUtils';
 import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
@@ -88,7 +86,6 @@ function PlatformCvePage() {
     const summaryDataRequest = usePlatformCveSummaryData({ cveId, query });
     const cveMetadata = metadataRequest.data?.platformCVE;
     const cveName = cveMetadata?.cve;
-    const isFiltered = getHasSearchApplied(querySearchFilter);
 
     const tableState = getTableUIState({
         isLoading: affectedClustersRequest.loading,
@@ -191,7 +188,6 @@ function PlatformCvePage() {
                                 <Title headingLevel="h2">
                                     {pluralize(clusterCount, 'cluster')} affected
                                 </Title>
-                                {isFiltered && <DynamicTableLabel />}
                             </Flex>
                         </SplitItem>
                         <SplitItem>

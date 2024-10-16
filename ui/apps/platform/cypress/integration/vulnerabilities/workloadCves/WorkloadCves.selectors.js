@@ -44,7 +44,6 @@ export const selectors = {
         '.pf-v5-c-toolbar button[aria-label="Apply autocomplete input to search"]',
 
     // General selectors
-    filteredViewLabel: '.pf-v5-c-label:contains("Filtered view")',
     iconText: (textContent) => `svg ~ *:contains("${textContent}")`,
     bulkActionMenuToggle: 'button:contains("Bulk actions")',
     menuOption: (optionText) => `*[role="menu"] button:contains("${optionText}")`,

@@ -119,6 +119,6 @@ describe('Workload CVE Deployment Single page', () => {
         cy.get(`*:contains("Low hidden")`);
 
         // Check that table rows are filtered
-        cy.get(selectors.filteredViewLabel);
+        // TODO - Add a better check for this
     });
 });

@@ -184,7 +184,6 @@ function PlatformCvesOverviewPage() {
                                     ? entityCounts.CVE
                                     : entityCounts.Cluster
                             }
-                            isFiltered={isFiltered}
                         >
                             {hasLegacySnoozeAbility && (
                                 <ToolbarItem align={{ default: 'alignRight' }}>

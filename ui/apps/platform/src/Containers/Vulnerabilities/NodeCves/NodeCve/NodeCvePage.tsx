@@ -19,8 +19,6 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import { getTableUIState } from 'utils/getTableUIState';
-import { getHasSearchApplied } from 'utils/searchUtils';
-import { DynamicTableLabel } from 'Components/DynamicIcon';
 
 import {
     SummaryCardLayout,
@@ -90,7 +88,6 @@ function NodeCvePage() {
         defaultSortOption,
         onSort: () => setPage(1),
     });
-    const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
 
     const { metadataRequest, cveData: cveMetadata } = useNodeCveMetadata(cveId);
@@ -181,7 +178,6 @@ function NodeCvePage() {
                                 <Title headingLevel="h2">
                                     {pluralize(nodeCount, 'node')} affected
                                 </Title>
-                                {isFiltered && <DynamicTableLabel />}
                             </Flex>
                         </SplitItem>
                         <SplitItem>

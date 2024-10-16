@@ -3,8 +3,6 @@ import { Divider, Toolbar, ToolbarItem, ToolbarContent, Pagination } from '@patt
 
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 
-import { DynamicTableLabel } from 'Components/DynamicIcon';
-
 export type TableEntityToolbarProps = {
     /** The toolbar component used for searching, filtering, and displaying filter chips */
     filterToolbar: ReactNode;
@@ -14,8 +12,6 @@ export type TableEntityToolbarProps = {
     pagination: UseURLPaginationResult;
     /** The total number of rows in the table controlled by this toolbar */
     tableRowCount: number;
-    /** Whether or not a filter is currently applied to the table */
-    isFiltered: boolean;
     /**
      * Any additional children to be rendered in the toolbar.
      *  These will be rendered between the entityToggleGroup and the pagination.
@@ -31,7 +27,6 @@ function TableEntityToolbar({
     entityToggleGroup,
     pagination,
     tableRowCount,
-    isFiltered,
     children,
 }: TableEntityToolbarProps) {
     const { page, perPage, setPage, setPerPage } = pagination;
@@ -42,11 +37,6 @@ function TableEntityToolbar({
             <Toolbar>
                 <ToolbarContent>
                     <ToolbarItem>{entityToggleGroup}</ToolbarItem>
-                    {isFiltered && (
-                        <ToolbarItem alignSelf="center">
-                            <DynamicTableLabel />
-                        </ToolbarItem>
-                    )}
                     {children}
                     <ToolbarItem align={{ default: 'alignRight' }} variant="pagination">
                         <Pagination

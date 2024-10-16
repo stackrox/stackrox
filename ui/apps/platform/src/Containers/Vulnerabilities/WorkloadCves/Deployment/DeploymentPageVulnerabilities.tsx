@@ -19,7 +19,6 @@ import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import NotFoundMessage from 'Components/NotFoundMessage';
 
-import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SummaryCardLayout,
     SummaryCard,
@@ -297,7 +296,6 @@ function DeploymentPageVulnerabilities({
                                         {pluralize(totalVulnerabilityCount, 'result', 'results')}{' '}
                                         found
                                     </Title>
-                                    {isFiltered && <DynamicTableLabel />}
                                 </Flex>
                             </SplitItem>
                             <SplitItem>

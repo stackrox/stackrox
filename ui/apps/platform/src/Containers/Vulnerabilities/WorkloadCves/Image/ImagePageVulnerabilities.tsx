@@ -22,7 +22,6 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 
-import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SummaryCardLayout,
     SummaryCard,
@@ -289,7 +288,6 @@ function ImagePageVulnerabilities({
                                         {pluralize(totalVulnerabilityCount, 'result', 'results')}{' '}
                                         found
                                     </Title>
-                                    {isFiltered && <DynamicTableLabel />}
                                 </Flex>
                             </SplitItem>
                             <SplitItem>

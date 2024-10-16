@@ -31,7 +31,6 @@ import useAnalytics, {
     WORKLOAD_CVE_FILTER_APPLIED,
 } from 'hooks/useAnalytics';
 
-import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SummaryCardLayout,
     SummaryCard,
@@ -488,7 +487,6 @@ function ImageCvePage() {
                                     }}
                                     onChange={onEntityTypeChange}
                                 />
-                                {isFiltered && <DynamicTableLabel />}
                             </Flex>
                         </SplitItem>
                         <SplitItem>

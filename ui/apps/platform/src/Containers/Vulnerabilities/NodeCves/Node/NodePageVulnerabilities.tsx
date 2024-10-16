@@ -12,12 +12,10 @@ import {
     pluralize,
 } from '@patternfly/react-core';
 
-import { DynamicTableLabel } from 'Components/DynamicIcon';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { getTableUIState } from 'utils/getTableUIState';
-import { getHasSearchApplied } from 'utils/searchUtils';
 
 import BySeveritySummaryCard from 'Containers/Vulnerabilities/components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from 'Containers/Vulnerabilities/WorkloadCves/SummaryCards/CvesByStatusSummaryCard';
@@ -54,7 +52,6 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const query = getRegexScopedQueryString(querySearchFilter);
-    const isFiltered = getHasSearchApplied(querySearchFilter);
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
@@ -136,7 +133,6 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                                         <Skeleton screenreaderText="Loading node vulnerability count" />
                                     )}
                                 </Title>
-                                {isFiltered && <DynamicTableLabel />}
                             </Flex>
                         </SplitItem>
                         <SplitItem>

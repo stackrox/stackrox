@@ -81,7 +81,6 @@ function ImagesTableContainer({
                 entityToggleGroup={entityToggleGroup}
                 pagination={pagination}
                 tableRowCount={rowCount}
-                isFiltered={isFiltered}
             >
                 <ToolbarItem align={{ default: 'alignRight' }}>
                     <ColumnManagementButton managedColumnState={managedColumns} />

@@ -190,7 +190,6 @@ function NodeCvesOverviewPage() {
                                         ? entityCounts.CVE
                                         : entityCounts.Node
                                 }
-                                isFiltered={isFiltered}
                             >
                                 {hasLegacySnoozeAbility && (
                                     <ToolbarItem align={{ default: 'alignRight' }}>
