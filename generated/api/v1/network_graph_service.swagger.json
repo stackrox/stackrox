@@ -496,7 +496,8 @@
         },
         "dstPort": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "may be 0 if not applicable (e.g., icmp)."
         },
         "l4protocol": {
           "$ref": "#/definitions/storageL4Protocol"
