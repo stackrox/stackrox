@@ -62,9 +62,12 @@ func (f *fakeGRPCClient) OverwriteCentralConnection(newConn *grpc.ClientConn) {
 // SetCentralConnectionWithRetries is the implementation of the concurrent function SetCentralConnectionWithRetries
 // that sensor uses to set the gRPC connection to all its components. Present test version simply.
 func (f *fakeGRPCClient) SetCentralConnectionWithRetries(ptr *util.LazyClientConn, _ centralclient.CertLoader) {
+	defer roxlog.Infof("SetCentralConnectionWithRetries: done")
+	roxlog.Infof("SetCentralConnectionWithRetries: waiting for conn mutex")
 	concurrency.WithLock(f.connMtx, func() {
 		ptr.Set(f.conn)
 	})
+	roxlog.Infof("SetCentralConnectionWithRetries: waiting for state mutex")
 	concurrency.WithLock(f.stateMtx, func() {
 		if f.currentState != f.conn.GetState() {
 			roxlog.Infof("State change from %s to %s", f.currentState.String(), f.conn.GetState().String())
