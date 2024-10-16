@@ -746,7 +746,7 @@ func TestSetScoresAndScoreVersions(t *testing.T) {
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
 			vuln := &storage.EmbeddedVulnerability{}
-			err := setScoresAndScorevuln, testcase.cvssMetrics)
+			err := setScoresAndScoreVersions(vuln, testcase.cvssMetrics)
 			if testcase.wantErr {
 				assert.Error(t, err)
 				return
