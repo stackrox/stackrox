@@ -124,7 +124,7 @@ func getCVEsWithExpiredSuppressState(cveStore vulnsStore) ([]string, error) {
 
 	cves := make([]string, 0, len(results))
 	for _, res := range results {
-		cve, _ := cve.IDToParts(res.ID)
+		cve, _, _ := cve.IDToParts(res.ID)
 		cves = append(cves, cve)
 	}
 	return cves, nil
