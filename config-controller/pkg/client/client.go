@@ -29,7 +29,9 @@ var centralHostPort = fmt.Sprintf("central.%s.svc:443", env.Namespace.Setting())
 // network or platform issue that might be resolved by restarting the container.
 // Note that a restarting container can fail CI tests, so make the retry count high to ensure CI doesn't fail
 // because of this.
-const retryCount int = 100
+const (
+	retryCount = 100
+)
 
 type perRPCCreds struct {
 	svc         v1.AuthServiceClient
