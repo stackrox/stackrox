@@ -1,5 +1,8 @@
 import React, { useCallback } from 'react';
 import {
+    Alert,
+    AlertGroup,
+    AlertVariant,
     Card,
     CardBody,
     Divider,
@@ -12,6 +15,7 @@ import {
 
 import {
     ComplianceReportSnapshot,
+    deleteDownloadableComplianceReport,
     fetchComplianceReportHistory,
 } from 'services/ComplianceScanConfigurationService';
 import JobDetails from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/JobDetails';
@@ -26,6 +30,8 @@ import useRestQuery from 'hooks/useRestQuery';
 import useURLSort from 'hooks/useURLSort';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getTableUIState } from 'utils/getTableUIState';
+import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
+import DeleteModal from 'Components/PatternFly/DeleteModal';
 import ConfigDetails from './ConfigDetails';
 import ReportRunStatesFilter, { ensureReportRunStates } from './ReportRunStatesFilter';
 import MyJobsFilter from './MyJobsFilter';
@@ -83,6 +89,18 @@ function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsPr
         error,
         refetch,
     } = useRestQuery(fetchComplianceReportHistoryCallback);
+
+    const {
+        openDeleteDownloadModal,
+        isDeleteDownloadModalOpen,
+        closeDeleteDownloadModal,
+        isDeletingDownload,
+        onDeleteDownload,
+        deleteDownloadError,
+    } = useDeleteDownloadModal({
+        deleteDownloadFunc: deleteDownloadableComplianceReport,
+        onCompleted: refetch,
+    });
 
     const tableState = getTableUIState({
         isLoading,
@@ -170,7 +188,9 @@ function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsPr
                     setSearchFilter({});
                     setPage(1);
                 }}
-                onDeleteDownload={() => {}}
+                onDeleteDownload={(reportJobId: string) => {
+                    openDeleteDownloadModal(reportJobId);
+                }}
                 renderExpandableRowContent={(snapshot: ComplianceReportSnapshot) => {
                     return (
                         <>
@@ -191,6 +211,29 @@ function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsPr
                     );
                 }}
             />
+            <DeleteModal
+                title="Delete downloadable report?"
+                isOpen={isDeleteDownloadModalOpen}
+                onClose={closeDeleteDownloadModal}
+                isDeleting={isDeletingDownload}
+                onDelete={onDeleteDownload}
+            >
+                <AlertGroup>
+                    {deleteDownloadError && (
+                        <Alert
+                            isInline
+                            variant={AlertVariant.danger}
+                            title={deleteDownloadError}
+                            component="p"
+                            className="pf-v5-u-mb-sm"
+                        />
+                    )}
+                </AlertGroup>
+                <p>
+                    All data in this downloadable report will be deleted. Regenerating a
+                    downloadable report will require the download process to start over.
+                </p>
+            </DeleteModal>
         </>
     );
 }

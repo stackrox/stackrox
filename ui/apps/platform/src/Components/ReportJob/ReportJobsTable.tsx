@@ -26,7 +26,7 @@ export type ReportJobsTableProps<T> = {
     getJobId: (data: T) => string;
     getConfigName: (data: T) => string;
     onClearFilters: () => void;
-    onDeleteDownload: (reportId) => void;
+    onDeleteDownload: (reportJobId: string) => void;
     renderExpandableRowContent: (snapshot: T) => React.ReactNode;
 };
 
@@ -38,8 +38,7 @@ const onDownload = (snapshot: Snapshot, jobId: string, configName: string) => ()
     const sanitizedFilename = filename.replaceAll(filenameSanitizerRegex, '_');
     return saveFile({
         method: 'get',
-        // @TODO: We may need to allow passing specific endpoints depending on backend
-        url: `/api/reports/jobs/download?id=${jobId}`,
+        url: `/v2/compliance/scan/configurations/reports/download?id=${jobId}`,
         data: null,
         timeout: 300000,
         name: `${sanitizedFilename}.zip`,

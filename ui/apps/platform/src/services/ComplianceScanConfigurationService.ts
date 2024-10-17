@@ -14,6 +14,7 @@ import { NotifierConfiguration } from './ReportsService.types';
 import { Empty } from './types';
 
 const complianceScanConfigBaseUrl = `${complianceV2Url}/scan/configurations`;
+export const complianceReportDownloadURL = '/v2/compliance/scan/configurations/reports/download';
 
 export type ScheduleBase = {
     hour: number;
@@ -272,7 +273,7 @@ export function fetchComplianceReportHistory({
     );
     return axios
         .get<ReportHistoryResponse>(
-            `/v2/compliance/scan/configuration/${id}/reports/${showMyHistory ? 'my-history' : 'history'}?${params}`
+            `/v2/compliance/scan/configurations/${id}/reports/${showMyHistory ? 'my-history' : 'history'}?${params}`
         )
         .then((response) => {
             return response.data.complianceReportSnapshots;
@@ -280,5 +281,13 @@ export function fetchComplianceReportHistory({
         .catch((error) => {
             Raven.captureException(error);
             return Promise.reject(error);
+        });
+}
+
+export function deleteDownloadableComplianceReport(reportJobId: string) {
+    return axios
+        .delete<Empty>(`/v2/compliance/scan/configurations/reports/${reportJobId}`)
+        .then((response) => {
+            return response.data;
         });
 }
