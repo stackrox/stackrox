@@ -206,6 +206,11 @@ $(image-db-init-d)/db-init-$(image-db-init-ver).dump.zst: | $(image-db-init-d)
 .PHONY: $(image-db-init-t)
 
 ifeq ($(image-db-init-enabled),true)
+$(error Scanner DB init bundles are not updated anymore, and this flag is disabled (use 'force' to force it))
+endif
+
+ifeq ($(image-db-init-enabled),force)
+$(warning Scanner DB init bundles are not updated anymore, but enabling it anyway (force requested))
 $(image-db-init-t): $(image-db-init-d)/db-init-$(image-db-init-ver).dump.zst
 	@echo "+ $@"
 	$(SILENT)cp $^ $@
