@@ -47,6 +47,7 @@ var (
 		"Status",
 		"Remediation",
 	}
+	numberOfTries = 3
 )
 
 type formatBody struct {
@@ -146,7 +147,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceRep
 	reportName := req.ScanConfigName
 
 	log.Infof("Sending email for scan config %s", reportName)
-	go rg.sendEmail(req.Ctx, zipData, formatEmailBody, formatEmailSub, req.Notifiers, reportName, req.SnapshotID)
+	go rg.sendEmail(req.Ctx, zipData, formatEmailBody, formatEmailSub, req.Notifiers, reportName, snapshot)
 	return nil
 }
 
@@ -248,18 +249,7 @@ func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportR
 	return resultEmailComplianceReport
 }
 
-func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration, reportName string, snapshotID string) {
-
-	snapshot, found, err := rg.snapshotDS.GetSnapshot(ctx, snapshotID)
-	if err != nil {
-		log.Errorf("Unable to retrieve snapshot from the store: %v", err)
-		return
-	}
-	if !found {
-		log.Error("Unable to find snapshot in the store")
-		return
-	}
-
+func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData *bytes.Buffer, emailBody *formatBody, formatEmailSub *formatSubject, notifiersList []*storage.NotifierConfiguration, reportName string, snapshot *storage.ComplianceOperatorReportSnapshotV2) {
 	errorList := errorhelpers.NewErrorList("Error sending compliance report email notifications")
 	for _, repNotifier := range notifiersList {
 		nf := rg.notificationProcessor.GetNotifier(ctx, repNotifier.GetId())
@@ -335,7 +325,7 @@ func retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailing
 		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody, reportName)
 	},
 		retry.OnlyRetryableErrors(),
-		retry.Tries(3),
+		retry.Tries(numberOfTries),
 		retry.BetweenAttempts(func(previousAttempt int) {
 			wait := time.Duration(previousAttempt * previousAttempt * 100)
 			time.Sleep(wait * time.Millisecond)
