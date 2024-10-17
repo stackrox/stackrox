@@ -93,7 +93,7 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
         type: 'clairify',
     },
     {
-        categories: 'Scanner',
+        categories: 'Image Scanner + Node Scanner',
         image: logo,
         label: 'Scanner V4',
         type: 'scannerv4',
