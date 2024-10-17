@@ -280,6 +280,16 @@ func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 	return o1 != nil && o2 != nil && o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
 }
 
+func (ds *datastoreImpl) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
+	if ok, err := alertSAC.ReadAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, sac.ErrResourceAccessDenied
+	}
+
+	return ds.storage.GetByQuery(ctx, q)
+}
+
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(alert *storage.Alert) error) error {
 	return ds.storage.WalkByQuery(ctx, q, fn)
 }

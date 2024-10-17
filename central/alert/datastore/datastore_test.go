@@ -165,6 +165,20 @@ func (s *alertDataStoreTestSuite) TestKeyIndexing() {
 	s.NoError(err)
 }
 
+func (s *alertDataStoreTestSuite) TestGetByQuery() {
+	fakeAlert := alerttest.NewFakeAlert()
+
+	s.storage.EXPECT().GetByQuery(s.hasReadCtx, gomock.Any()).Return([]*storage.Alert{fakeAlert}, nil).Times(1)
+	alerts, err := s.dataStore.GetByQuery(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	protoassert.SlicesEqual(s.T(), []*storage.Alert{fakeAlert}, alerts)
+
+	s.storage.EXPECT().GetByQuery(s.hasWriteCtx, gomock.Any()).Return([]*storage.Alert{fakeAlert}, nil).Times(1)
+	alerts, err = s.dataStore.GetByQuery(s.hasWriteCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	protoassert.SlicesEqual(s.T(), []*storage.Alert{fakeAlert}, alerts)
+}
+
 func (s *alertDataStoreTestSuite) TestUpsert_PlatformComponentAndEntityTypeAssignment() {
 	// Case: Resource alert
 	alert := &storage.Alert{
@@ -286,4 +300,10 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleBatchEnforced() {
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	s.Equal(storage.ViolationState_ACTIVE, fakeAlert.GetState())
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestGetByQueryEnforced() {
+	s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Times(0)
+	_, err := s.dataStore.GetByQuery(s.hasNoneCtx, search.EmptyQuery())
+	s.Require().ErrorIs(err, sac.ErrResourceAccessDenied)
 }
