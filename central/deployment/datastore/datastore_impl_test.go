@@ -169,3 +169,39 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
 }
+
+func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignment() {
+	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), platformmatcher.Singleton())
+	ctx := sac.WithAllAccess(context.Background())
+	suite.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()
+
+	// Case: Deployment not matching platform rules
+	deployment := &storage.Deployment{
+		Id:        "id",
+		Namespace: "my-namespace",
+	}
+	expectedDeployment := &storage.Deployment{
+		Id:                "id",
+		Namespace:         "my-namespace",
+		PlatformComponent: false,
+	}
+
+	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
+	err := ds.UpsertDeployment(ctx, deployment)
+	suite.Require().NoError(err)
+
+	// Case: Deployment matching platform rules
+	deployment = &storage.Deployment{
+		Id:        "id",
+		Namespace: "kube-123",
+	}
+	expectedDeployment = &storage.Deployment{
+		Id:                "id",
+		Namespace:         "kube-123",
+		PlatformComponent: true,
+	}
+
+	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
+	err = ds.UpsertDeployment(ctx, deployment)
+	suite.Require().NoError(err)
+}

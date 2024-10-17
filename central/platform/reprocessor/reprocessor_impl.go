@@ -9,6 +9,8 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -20,6 +22,19 @@ var (
 	log = logging.LoggerForModule()
 
 	reprocessorCtx = sac.WithAllAccess(context.Background())
+
+	// TODO ROX(ROX-26659): In absence of explicit violation state filter, alert searcher defaults to only searching alerts in ACTIVE or ATTEMPTED states.
+	// To avoid that we need to apply an explicit violation state filter here.
+	alertsQuery = search.NewQueryBuilder().
+			AddNullField(search.PlatformComponent).
+			AddExactMatches(search.ViolationState,
+			storage.ViolationState_ACTIVE.String(),
+			storage.ViolationState_SNOOZED.String(),
+			storage.ViolationState_RESOLVED.String(),
+			storage.ViolationState_ATTEMPTED.String()).
+		ProtoQuery()
+
+	deploymentsQuery = search.NewQueryBuilder().AddNullField(search.PlatformComponent).ProtoQuery()
 )
 
 type platformReprocessorImpl struct {
@@ -27,6 +42,7 @@ type platformReprocessorImpl struct {
 	deploymentDatastore deploymentDS.DataStore
 	platformMatcher     platformmatcher.PlatformMatcher
 
+	stopSignal concurrency.Signal
 	// isStarted will make sure only one reprocessing routine runs for an instance of reprocessor
 	isStarted atomic.Bool
 }
@@ -39,13 +55,14 @@ func New(alertDatastore alertDS.DataStore,
 		alertDatastore:      alertDatastore,
 		deploymentDatastore: deploymentDatastore,
 		platformMatcher:     platformMatcher,
+		stopSignal:          concurrency.NewSignal(),
 	}
 }
 
 func (pr *platformReprocessorImpl) Start() {
 	swapped := pr.isStarted.CompareAndSwap(false, true)
 	if !swapped {
-		log.Error("Platform reprocessor already running")
+		log.Error("Platform reprocessor was already started")
 		return
 	}
 	go pr.runReprocessing()
@@ -54,8 +71,8 @@ func (pr *platformReprocessorImpl) Start() {
 func (pr *platformReprocessorImpl) Stop() {
 	if !pr.isStarted.Load() {
 		log.Error("Platform reprocessor not started")
-		return
 	}
+	pr.stopSignal.Signal()
 }
 
 func (pr *platformReprocessorImpl) runReprocessing() {
@@ -84,12 +101,11 @@ func (pr *platformReprocessorImpl) runReprocessing() {
 }
 
 func (pr *platformReprocessorImpl) needsReprocessing() (bool, error) {
-	query := search.NewQueryBuilder().AddNullField(search.PlatformComponent).ProtoQuery()
-	numAlerts, err := pr.alertDatastore.Count(reprocessorCtx, query)
+	numAlerts, err := pr.alertDatastore.Count(reprocessorCtx, alertsQuery)
 	if err != nil {
 		return false, err
 	}
-	numDeployments, err := pr.deploymentDatastore.Count(reprocessorCtx, query)
+	numDeployments, err := pr.deploymentDatastore.Count(reprocessorCtx, deploymentsQuery)
 	if err != nil {
 		return false, err
 	}
@@ -97,7 +113,7 @@ func (pr *platformReprocessorImpl) needsReprocessing() (bool, error) {
 }
 
 func (pr *platformReprocessorImpl) reprocessAlerts() error {
-	query := search.EmptyQuery()
+	query := alertsQuery.CloneVT()
 	query.Pagination = &v1.QueryPagination{
 		Limit:  batchSize,
 		Offset: 0,
@@ -109,6 +125,10 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 	}
 
 	for {
+		if pr.stopSignal.IsDone() {
+			log.Info("Stop called, stopping platform reprocessor")
+			break
+		}
 		alerts, err := pr.alertDatastore.SearchRawAlerts(reprocessorCtx, query)
 		if err != nil {
 			return err
@@ -134,7 +154,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 }
 
 func (pr *platformReprocessorImpl) reprocessDeployments() error {
-	query := search.EmptyQuery()
+	query := deploymentsQuery.CloneVT()
 	query.Pagination = &v1.QueryPagination{
 		Limit:  batchSize,
 		Offset: 0,
@@ -146,6 +166,10 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 	}
 
 	for {
+		if pr.stopSignal.IsDone() {
+			log.Info("Stop called, stopping platform reprocessor")
+			break
+		}
 		deps, err := pr.deploymentDatastore.SearchRawDeployments(reprocessorCtx, query)
 		if err != nil {
 			return err
