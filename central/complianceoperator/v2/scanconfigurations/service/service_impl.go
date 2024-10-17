@@ -11,6 +11,7 @@ import (
 	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanSettingBindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
@@ -23,10 +24,10 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -40,7 +41,6 @@ const (
 )
 
 var (
-	log        = logging.LoggerForModule()
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
 			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigurations",
@@ -67,7 +67,7 @@ var (
 // New returns a service object for registering with grpc.
 func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingBindingsDS.DataStore,
 	suiteDS suiteDS.DataStore, manager compliancemanager.Manager, reportManager complianceReportManager.Manager, notifierDS notifierDS.DataStore, profileDS profileDS.DataStore,
-	benchmarkDS benchmarksDS.DataStore, clusterDS clusterDatastore.DataStore) Service {
+	benchmarkDS benchmarksDS.DataStore, clusterDS clusterDatastore.DataStore, snapshotDS snapshotDS.DataStore) Service {
 	return &serviceImpl{
 		scanConfigDS:                    scanConfigDS,
 		complianceScanSettingBindingsDS: scanSettingBindingsDS,
@@ -78,6 +78,7 @@ func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingB
 		profileDS:                       profileDS,
 		benchmarkDS:                     benchmarkDS,
 		clusterDS:                       clusterDS,
+		snapshotDS:                      snapshotDS,
 	}
 }
 
@@ -93,6 +94,7 @@ type serviceImpl struct {
 	profileDS                       profileDS.DataStore
 	benchmarkDS                     benchmarksDS.DataStore
 	clusterDS                       clusterDatastore.DataStore
+	snapshotDS                      snapshotDS.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -274,20 +276,80 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 	}, nil
 }
 
-func (s *serviceImpl) GetReportHistory(_ context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
+func (s *serviceImpl) GetReportHistory(ctx context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
 	if !features.ComplianceReporting.Enabled() {
 		return nil, errors.Wrapf(errox.NotImplemented, "%s not enabled", features.ComplianceReporting.EnvVar())
 	}
-	log.Infof("GetReportHistory for %s", request.Id)
-	return nil, nil
+	if request == nil || request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+	}
+	parsedQuery, err := search.ParseQuery(request.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	conjunctionQuery := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(
+			search.ComplianceOperatorScanConfig,
+			request.GetId(),
+		).ProtoQuery(), parsedQuery)
+
+	paginated.FillPaginationV2(conjunctionQuery, request.GetReportParamQuery().GetPagination(), maxPaginationLimit)
+
+	results, err := s.snapshotDS.SearchSnapshots(ctx, conjunctionQuery)
+	if err != nil {
+		return nil, err
+	}
+	snapshots, err := convertStorageSnapshotsToV2Snapshots(ctx, results, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to convert storage report snapshots to response")
+	}
+	res := &v2.ComplianceReportHistoryResponse{
+		ComplianceReportSnapshots: snapshots,
+	}
+	return res, nil
 }
 
-func (s *serviceImpl) GetMyReportHistory(_ context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
+func (s *serviceImpl) GetMyReportHistory(ctx context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
 	if !features.ComplianceReporting.Enabled() {
 		return nil, errors.Wrapf(errox.NotImplemented, "%s not enabled", features.ComplianceReporting.EnvVar())
 	}
-	log.Infof("GetMyReportHistory for %s", request.Id)
-	return nil, nil
+
+	if request == nil || request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+	}
+
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	parsedQuery, err := search.ParseQuery(request.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	conjunctionQuery := search.ConjunctionQuery(
+		search.NewQueryBuilder().
+			AddExactMatches(search.ComplianceOperatorScanConfig, request.GetId()).
+			AddExactMatches(search.UserID, slimUser.GetId()).
+			ProtoQuery(), parsedQuery)
+
+	paginated.FillPaginationV2(conjunctionQuery, request.GetReportParamQuery().GetPagination(), maxPaginationLimit)
+
+	results, err := s.snapshotDS.SearchSnapshots(ctx, conjunctionQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	snapshots, err := convertStorageSnapshotsToV2Snapshots(ctx, results, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to convert storage report snapshots to response")
+	}
+
+	res := &v2.ComplianceReportHistoryResponse{
+		ComplianceReportSnapshots: snapshots,
+	}
+	return res, nil
 }
 
 func (s *serviceImpl) ListComplianceScanConfigProfiles(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigsProfileResponse, error) {
