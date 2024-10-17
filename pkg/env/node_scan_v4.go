@@ -12,5 +12,5 @@ var (
 	NodeIndexContainerAPI = RegisterSetting("ROX_NODE_INDEX_CONTAINER_API", WithDefault("https://catalog.redhat.com/api/containers/"))
 
 	// NodeIndexMappingURL Defines the endpoint for the RepositoryScanner to download mapping information from
-	NodeIndexMappingURL = RegisterSetting("ROX_NODE_INDEX_MAPPING_URL", WithDefault("https://central.stackrox.svc/api/extensions/scannerdefinitions?file=repo2cpe"))
+	NodeIndexMappingURL = RegisterSetting("ROX_NODE_INDEX_MAPPING_URL", WithDefault("https://sensor.stackrox.svc/scanner/definitions?file=repo2cpe"))
 )
