@@ -53,9 +53,9 @@ func (f *fakeGRPCClient) ConnectionState() (connectivity.State, error) {
 func (f *fakeGRPCClient) OverwriteCentralConnection(newConn *grpc.ClientConn) {
 	concurrency.WithLock(f.connMtx, func() {
 		f.conn = newConn
-	})
-	concurrency.WithLock(f.stateMtx, func() {
-		f.currentState = f.conn.GetState()
+		concurrency.WithLock(f.stateMtx, func() {
+			f.currentState = f.conn.GetState()
+		})
 	})
 }
 
@@ -66,20 +66,23 @@ func (f *fakeGRPCClient) SetCentralConnectionWithRetries(ptr *util.LazyClientCon
 	roxlog.Infof("SetCentralConnectionWithRetries: waiting for conn mutex")
 	concurrency.WithLock(f.connMtx, func() {
 		ptr.Set(f.conn)
-	})
-	roxlog.Infof("SetCentralConnectionWithRetries: waiting for state mutex")
-	concurrency.WithLock(f.stateMtx, func() {
-		if f.currentState != f.conn.GetState() {
-			roxlog.Infof("State change from %s to %s", f.currentState.String(), f.conn.GetState().String())
-			f.currentState = f.conn.GetState()
-		} else {
-			roxlog.Infof("No State change and is %s", f.currentState.String())
-		}
+
+		roxlog.Infof("SetCentralConnectionWithRetries: waiting for state mutex")
+		concurrency.WithLock(f.stateMtx, func() {
+			if f.currentState != f.conn.GetState() {
+				roxlog.Infof("State change from %s to %s", f.currentState.String(), f.conn.GetState().String())
+				f.currentState = f.conn.GetState()
+			} else {
+				roxlog.Infof("No State change and is %s", f.currentState.String())
+			}
+		})
 	})
 }
 
 // Reset signals
 func (f *fakeGRPCClient) Reset() {
 	roxlog.Infof("Resetting fake grpc client")
-	f.currentState = 99
+	concurrency.WithLock(f.stateMtx, func() {
+		f.currentState = 99
+	})
 }
