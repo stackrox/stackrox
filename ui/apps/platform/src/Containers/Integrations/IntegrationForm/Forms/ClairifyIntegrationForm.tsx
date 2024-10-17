@@ -1,5 +1,14 @@
 import React, { ReactElement } from 'react';
-import { Form, PageSection, TextInput, ToggleGroup, ToggleGroupItem } from '@patternfly/react-core';
+import {
+    Alert,
+    AlertVariant,
+    Form,
+    PageSection,
+    Text,
+    TextInput,
+    ToggleGroup,
+    ToggleGroupItem
+} from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
 
@@ -81,6 +90,16 @@ function ClairifyIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
+                <Alert
+                    title="Deprecation notice"
+                    component="p"
+                    variant={AlertVariant.warning}
+                    isInline
+                    className="pf-v5-u-mb-lg"
+                >
+                    <Text>StackRox Scanner will be removed in a future release.</Text>
+                    <Text>It is recommended to use Scanner V4, instead.</Text>
+                </Alert>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup

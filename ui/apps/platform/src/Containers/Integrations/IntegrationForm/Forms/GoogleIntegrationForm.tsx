@@ -1,8 +1,11 @@
 import React, { ReactElement } from 'react';
 import {
+    Alert,
+    AlertVariant,
     Checkbox,
     Form,
     PageSection,
+    Text,
     TextArea,
     TextInput,
     ToggleGroup,
@@ -148,6 +151,23 @@ function GoogleIntegrationForm({
     return (
         <>
             <PageSection variant="light" isFilled hasOverflowScroll>
+                <Alert
+                    title="Deprecation notice"
+                    component="p"
+                    variant={AlertVariant.warning}
+                    isInline
+                    className="pf-v5-u-mb-lg"
+                >
+                    <Text>Google Container Registry will be removed in a future release.</Text>
+                    <Text>
+                        It is recommended to use Google Artifact Registry as a registry
+                        replacement and Scanner V4 as a scanner replacement.
+                    </Text>
+                    <Text>
+                        See https://cloud.google.com/container-registry/docs/deprecations/container-registry-deprecation
+                        for more information.
+                    </Text>
+                </Alert>
                 <FormMessage message={message} />
                 <Form isWidthLimited>
                     <FormLabelGroup
