@@ -31,7 +31,6 @@ import (
 	globalSearch "github.com/stackrox/rox/central/search"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
-	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -444,7 +443,7 @@ func TestImageLabelAutoCompleteSearch(t *testing.T) {
 	imageDatastore := imageDS.GetTestPostgresDataStore(t, testDB.DB)
 	ctx := loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 
-	resolver, _ := SetupTestResolver(t, imageDatastore, imagesView.NewImageView(testDB.DB))
+	resolver, _ := SetupTestResolver(t, imageDatastore)
 	allowAllCtx := SetAuthorizerOverride(ctx, allow.Anonymous())
 
 	// Case: nil labels
