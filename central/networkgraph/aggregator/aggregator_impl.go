@@ -177,6 +177,9 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 		flow = flow.CloneVT()
 		srcEntity, dstEntity = flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity()
 
+		anonymizeIfNoExternalIPs(srcEntity)
+		anonymizeIfNoExternalIPs(dstEntity)
+
 		// If both endpoints are not known external sources, skip processing.
 		if !networkgraph.IsKnownExternalSrc(srcEntity) && !networkgraph.IsKnownExternalSrc(dstEntity) {
 			ret = append(ret, flow)
@@ -219,12 +222,6 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 func updateDupNameExtSrcTracker(entity *storage.NetworkEntityInfo, dupNameExtSrcTracker map[string]string) {
 	if !networkgraph.IsKnownExternalSrc(entity) {
 		return
-	}
-
-	if networkgraph.IsExternalDiscovered(entity) && !features.NetworkGraphExternalIPs.Enabled() {
-		// If this is a discovered entity, but network graph display is disabled
-		// we aggregate into the internet entity
-		*entity = *networkgraph.InternetEntity().ToProto()
 	}
 
 	val, ok := dupNameExtSrcTracker[entity.GetExternalSource().GetName()]
@@ -321,5 +318,16 @@ func normalizeDupNameExtSrcs(entity *storage.NetworkEntityInfo) {
 				},
 			},
 		},
+	}
+}
+
+// Replace the pointed entity with NetworkEntityInfo_INTERNET if:
+// - it is a 'discovered' entity
+// - displaying of 'discovered' entities is disabled
+func anonymizeIfNoExternalIPs(entity *storage.NetworkEntityInfo) {
+	if networkgraph.IsExternalDiscovered(entity) && !features.NetworkGraphExternalIPs.Enabled() {
+		// If this is a discovered entity, but network graph display is disabled
+		// we aggregate into the internet entity
+		*entity = *networkgraph.InternetEntity().ToProto()
 	}
 }
