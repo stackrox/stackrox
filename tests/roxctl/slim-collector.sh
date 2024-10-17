@@ -54,6 +54,8 @@ export ROX_API_TOKEN
 test_collector_image_references_in_deployment_bundles() {
     SLIM_COLLECTOR_FLAG="$1"
     EXPECTED_IMAGE_CONDITION="$2"
+    # Reset the password to use the API token instead.
+    local ROX_ADMIN_PASSWORD=""
 
     CLUSTER_NAME="test-cluster-${RANDOM}-${RANDOM}-${RANDOM}"
     echo "Testing correctness of collector image references for clusters generated with $SLIM_COLLECTOR_FLAG (cluster name is $CLUSTER_NAME)"
