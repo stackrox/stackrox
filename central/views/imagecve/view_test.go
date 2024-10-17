@@ -12,7 +12,6 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/views"
-	"github.com/stackrox/rox/central/views/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
@@ -950,7 +949,7 @@ func compileExpectedAffectedImageIDs(images []*storage.Image, filter *filterImpl
 	return affectedImageIDs
 }
 
-func compileExpectedCountBySeverity(images []*storage.Image, filter *filterImpl) *common.ResourceCountByImageCVESeverity {
+func compileExpectedCountBySeverity(images []*storage.Image, filter *filterImpl) *resourceCountByImageCVESeverity {
 	sevToCVEsMap := make(map[storage.VulnerabilitySeverity]set.Set[string])
 	sevToFixableCVEsMap := make(map[storage.VulnerabilitySeverity]set.Set[string])
 
@@ -980,7 +979,7 @@ func compileExpectedCountBySeverity(images []*storage.Image, filter *filterImpl)
 			}
 		}
 	}
-	return &common.ResourceCountByImageCVESeverity{
+	return &resourceCountByImageCVESeverity{
 		CriticalSeverityCount:        sevToCVEsMap[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality(),
 		FixableCriticalSeverityCount: sevToFixableCVEsMap[storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY].Cardinality(),
 
