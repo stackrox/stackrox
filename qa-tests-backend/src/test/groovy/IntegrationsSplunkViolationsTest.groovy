@@ -24,6 +24,7 @@ import util.SplunkUtil.SplunkDeployment
 import util.Timer
 
 import spock.lang.IgnoreIf
+import spock.lang.Ignore
 import spock.lang.Tag
 
 @Ignore("ROX-26297: Tests started failing regularly recently and need further investigation")
