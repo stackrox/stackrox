@@ -8,6 +8,7 @@ import (
 	deploymentDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -36,11 +37,13 @@ func (s *platformReprocessorImplTestSuite) SetupTest() {
 		alertDatastore:      s.alertDatastore,
 		deploymentDatastore: s.deploymentDatastore,
 		platformMatcher:     platformmatcher.Singleton(),
+		stopSignal:          concurrency.NewSignal(),
 	}
 }
 
 func (s *platformReprocessorImplTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
+	s.reprocessor.stopSignal.Signal()
 }
 
 func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
@@ -72,6 +75,58 @@ func (s *platformReprocessorImplTestSuite) TestRunReprocessing() {
 	s.deploymentDatastore.EXPECT().UpsertDeployment(ctx, expectedDeps[3]).Return(nil).Times(1)
 
 	s.reprocessor.runReprocessing()
+}
+
+func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
+	s.alertDatastore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(6, nil).AnyTimes()
+	s.deploymentDatastore.EXPECT().Count(gomock.Any(), gomock.Any()).Return(4, nil).AnyTimes()
+
+	// CASE : While iterating on alerts, Stop is called on reprocessor
+	proceedAlertLoop := concurrency.NewSignal()
+	inAlertLoop := concurrency.NewSignal()
+	s.alertDatastore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(testAlerts(), nil).Times(1)
+	s.alertDatastore.EXPECT().UpsertAlerts(gomock.Any(), expectedAlerts()).Do(func(_, _ any) {
+		inAlertLoop.Signal()
+		proceedAlertLoop.Wait()
+	}).Return(nil).Times(1)
+
+	// Search and upsert should run on deployment datastore after Stop
+	s.deploymentDatastore.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Times(0)
+	s.deploymentDatastore.EXPECT().UpsertDeployment(gomock.Any(), gomock.Any()).Times(0)
+
+	reprocessor := New(s.alertDatastore, s.deploymentDatastore, platformmatcher.Singleton())
+	reprocessor.Start()
+	// Wait until execution has entered alert reprocessing loop. The loop will pause waiting for proceedAlertLoop signal
+	inAlertLoop.Wait()
+	// Stop reprocessor
+	reprocessor.Stop()
+	// Let the loop proceed
+	proceedAlertLoop.Signal()
+
+	// CASE : While iterating on deployments, Stop is called on reprocessor
+	// Alert reprocessing loop completes successfully
+	s.alertDatastore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(testAlerts(), nil).Times(1)
+	s.alertDatastore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).Return(nil, nil).Times(1)
+	s.alertDatastore.EXPECT().UpsertAlerts(gomock.Any(), expectedAlerts()).Return(nil).Times(1)
+
+	proceedDeploymentLoop := concurrency.NewSignal()
+	inDeploymentLoop := concurrency.NewSignal()
+	// Stop is called when we are in the middle of deployment reprocessing loop. So only a part of the upserts happen
+	s.deploymentDatastore.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Return(testDeployments(), nil).Times(1)
+	s.deploymentDatastore.EXPECT().UpsertDeployment(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	s.deploymentDatastore.EXPECT().UpsertDeployment(gomock.Any(), gomock.Any()).Do(func(_, _ any) {
+		inDeploymentLoop.Signal()
+		proceedDeploymentLoop.Wait()
+	}).Return(nil).Times(1)
+
+	reprocessor = New(s.alertDatastore, s.deploymentDatastore, platformmatcher.Singleton())
+	s.reprocessor.Start()
+	// Wait until execution has entered deployment reprocessing loop. The loop will pause waiting for proceedAlertLoop signal
+	inDeploymentLoop.Wait()
+	// Stop reprocessor
+	s.reprocessor.Stop()
+	// Let the loop proceed
+	proceedDeploymentLoop.Signal()
 }
 
 func testAlerts() []*storage.Alert {
