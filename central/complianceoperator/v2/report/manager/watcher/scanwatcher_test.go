@@ -40,7 +40,7 @@ func handleScanWithAnnotation(id, checkCount string) func(*testing.T, ScanWatche
 	return func(t *testing.T, scanWatcher ScanWatcher) {
 		err := scanWatcher.PushScan(&storage.ComplianceOperatorScanV2{
 			Id:          id,
-			Annotations: map[string]string{checkCountAnnotationKey: checkCount},
+			Annotations: map[string]string{CheckCountAnnotationKey: checkCount},
 		})
 		require.NoError(t, err)
 	}
@@ -293,14 +293,14 @@ func TestGetIDFromResult(t *testing.T) {
 
 	// Invalid format in the annotation
 	result.Annotations = map[string]string{
-		lastScannedAnnotationKey: protocompat.TimestampNow().String(),
+		LastScannedAnnotationKey: protocompat.TimestampNow().String(),
 	}
 	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS)
 	assert.Error(t, err)
 
 	// The timestamp is in the past
 	result.Annotations = map[string]string{
-		lastScannedAnnotationKey: timeNow.AsTime().Add(-10 * time.Second).Format(time.RFC3339Nano),
+		LastScannedAnnotationKey: timeNow.AsTime().Add(-10 * time.Second).Format(time.RFC3339Nano),
 	}
 	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS)
 	assert.Error(t, err)
@@ -309,7 +309,7 @@ func TestGetIDFromResult(t *testing.T) {
 	// The timestamp is in the future
 	futureTime := timeNow.AsTime().Add(10 * time.Second)
 	result.Annotations = map[string]string{
-		lastScannedAnnotationKey: futureTime.Format(time.RFC3339Nano),
+		LastScannedAnnotationKey: futureTime.Format(time.RFC3339Nano),
 	}
 	futureTimeProto, err := protocompat.ConvertTimeToTimestampOrError(futureTime)
 	require.NoError(t, err)
@@ -319,7 +319,7 @@ func TestGetIDFromResult(t *testing.T) {
 
 	// The timestamp is the same
 	result.Annotations = map[string]string{
-		lastScannedAnnotationKey: timeNow.AsTime().Format(time.RFC3339Nano),
+		LastScannedAnnotationKey: timeNow.AsTime().Format(time.RFC3339Nano),
 	}
 	id, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS)
 	assert.NoError(t, err)
