@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
@@ -291,6 +292,27 @@ func TestAggregateExtConnsByName(t *testing.T) {
 	f8x := testutils.GetNetworkFlow(e5x, d2, 8080, storage.L4Protocol_L4_PROTOCOL_UNKNOWN, nil)
 
 	expected := []*storage.NetworkFlow{f2x, f3x, f4, f5, f6x, f8x, f9, f10}
+
+	actual := NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
+
+	assert.Len(t, actual, len(expected))
+	protoassert.ElementsMatch(t, expected, actual)
+}
+
+func TestAnonymizeDiscoveredExtEntities(t *testing.T) {
+	ts1 := time.Now()
+
+	d1 := testutils.GetDeploymentNetworkEntity("d1", "d1")
+
+	discovered_entity := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{35, 187, 144, 4, 32})).ToProto()
+	internet := networkgraph.InternetEntity().ToProto()
+
+	detailed_flow := testutils.GetNetworkFlow(d1, discovered_entity, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
+	anonymized_flow := testutils.GetNetworkFlow(d1, internet, 8000, storage.L4Protocol_L4_PROTOCOL_TCP, &ts1)
+
+	flows := []*storage.NetworkFlow{detailed_flow}
+
+	expected := []*storage.NetworkFlow{anonymized_flow}
 
 	actual := NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
 
