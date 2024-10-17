@@ -7,7 +7,7 @@ import {
     Text,
     TextInput,
     ToggleGroup,
-    ToggleGroupItem
+    ToggleGroupItem,
 } from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
