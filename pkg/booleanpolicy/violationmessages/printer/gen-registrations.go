@@ -30,7 +30,6 @@ const (
 	LivenessProbeDefinedKey         = "livenessProbeDefined"
 	NamespaceKey                    = "namespace"
 	NodePortKey                     = "nodePort"
-	NvdCveKey                       = "nvdCve"
 	PortKey                         = "port"
 	PortExposureKey                 = "portExposure"
 	PrivilegedKey                   = "privileged"
@@ -77,7 +76,6 @@ func init() {
 	registerFunc(LivenessProbeDefinedKey, livenessProbeDefinedPrinter)
 	registerFunc(NamespaceKey, namespacePrinter)
 	registerFunc(NodePortKey, nodePortPrinter)
-	registerFunc(NvdCveKey, nvdCvePrinter)
 	registerFunc(PortKey, portPrinter)
 	registerFunc(PortExposureKey, portExposurePrinter)
 	registerFunc(PrivilegedKey, privilegedPrinter)
