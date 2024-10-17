@@ -76,7 +76,7 @@ func (pc *PolicyAsCodeSuite) SetupSuite() {
 	pc.informerfactory.WaitForCacheSync(pc.stopCh)
 }
 
-func (pc *PolicyAsCodeSuite) TestPolicyAsCode() {
+func (pc *PolicyAsCodeSuite) TestSaveAsCRUpdateDelete() {
 	policy := pc.createPolicyInCentral()
 	pc.policies = append(pc.policies, policy)
 	k8sPolicy := pc.saveAsCustomResource(policy)
@@ -85,6 +85,37 @@ func (pc *PolicyAsCodeSuite) TestPolicyAsCode() {
 	pc.checkPolicyIsDeclarative(policy.Id)
 	pc.updateCRandObserveInCentral(k8sPolicy, policy.Id)
 	pc.deleteCRandObserveInCentral(k8sPolicy, policy.Id)
+}
+
+func (pc *PolicyAsCodeSuite) TestCreateCR() {
+	k8sPolicy := &v1alpha1.SecurityPolicy{
+		Spec: v1alpha1.SecurityPolicySpec{
+			PolicyName:      "test-policy-create",
+			Description:     "This is a description",
+			Categories:      []string{"Vulnerability Management"},
+			Severity:        storage.Severity_MEDIUM_SEVERITY.String(),
+			LifecycleStages: []v1alpha1.LifecycleStage{"DEPLOY"},
+			PolicySections: []v1alpha1.PolicySection{
+				{
+					SectionName: "Section 1",
+					PolicyGroups: []v1alpha1.PolicyGroup{
+						{
+							FieldName: "Days Since CVE Was First Discovered In Image",
+							Values: []v1alpha1.PolicyValue{
+								{
+									Value: "5",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	k8sPolicy.SetName("test-policy-cr")
+	id := pc.createCRandObserveInCentral(k8sPolicy)
+	pc.Require().NotEmpty(id)
+	pc.checkPolicyIsDeclarative(id)
 }
 
 func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
@@ -246,6 +277,26 @@ func (pc *PolicyAsCodeSuite) deleteCRandObserveInCentral(k8sPolicy *v1alpha1.Sec
 			collect.Errorf("Successfully fetched policy %s when it should be deleted", id)
 		}
 	}, time.Second*5, time.Millisecond*30, "Policy CR deletion not propogated to Central")
+}
+
+func (pc *PolicyAsCodeSuite) createCRandObserveInCentral(policyCR *v1alpha1.SecurityPolicy) string {
+	_, err := pc.k8sClient.Update(pc.ctx, pc.toUnstructured(policyCR), metav1.UpdateOptions{})
+	pc.Require().NoError(err)
+
+	var policyId string
+	pc.Require().EventuallyWithT(func(collect *assert.CollectT) {
+		resp, err := pc.centralClient.ListPolicies(pc.ctx, &v1.RawQuery{})
+		if err != nil {
+			collect.Errorf("Failed to list policies: %s", err.Error())
+		}
+		for _, p := range resp.GetPolicies() {
+			if p.GetName() == policyCR.Spec.PolicyName {
+				policyId = p.GetId()
+				break
+			}
+		}
+	}, time.Second*5, time.Millisecond*30)
+	return policyId
 }
 
 func (pc *PolicyAsCodeSuite) TearDownSuite() {
