@@ -15,23 +15,12 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/size"
 	"google.golang.org/grpc"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var centralHostPort = fmt.Sprintf("central.%s.svc:443", env.Namespace.Setting())
-
-// The config-controller often becomes ready before Central.
-// Therefore it's common for this client to need to try to connect to Central several times before it succeeds.
-// After a while, though, the client should give up and let the pod die in case there is some transient
-// network or platform issue that might be resolved by restarting the container.
-// Note that a restarting container can fail CI tests, so make the retry count high to ensure CI doesn't fail
-// because of this.
-const (
-	retryCount = 100
-)
 
 type perRPCCreds struct {
 	svc         v1.AuthServiceClient
@@ -209,28 +198,21 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 	}
 
 	if c.svc == nil {
-		err := retry.WithRetry(func() error {
-			gc, innerErr := newGrpcClient(ctx)
-			if innerErr != nil {
-				getLogger(ctx).Error(innerErr, "Failed to connect to Central")
-			}
-
-			c.svc = gc
-
-			if innerErr = c.EnsureFresh(ctx); innerErr != nil {
-				getLogger(ctx).Error(innerErr, "Failed to initialize client")
-			}
-
-			return innerErr
-		}, retry.Tries(retryCount), retry.WithExponentialBackoff())
-
+		gc, err := newGrpcClient(ctx)
 		if err != nil {
-			return nil, errors.Wrap(err, "could not initialize policy client")
+			getLogger(ctx).Error(err, "Failed to connect to Central")
 		}
-	} else {
+
+		c.svc = gc
+	}
+
+	for {
 		if err := c.EnsureFresh(ctx); err != nil {
 			getLogger(ctx).Error(err, "Failed to initialize client")
+			time.Sleep(time.Second * 5)
+			continue
 		}
+		break
 	}
 
 	return &c, nil
