@@ -1,15 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-    Divider,
-    Pagination,
-    Progress,
-    ProgressMeasureLocation,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
-    Tooltip,
-} from '@patternfly/react-core';
+import { Divider, Pagination, Toolbar, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 import { InnerScrollContainer, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
@@ -20,8 +11,10 @@ import { ComplianceClusterOverallStats } from 'services/ComplianceCommon';
 import { TableUIState } from 'utils/getTableUIState';
 import { getPercentage } from 'utils/mathUtils';
 
+import { CHECK_STATUS_QUERY } from './compliance.coverage.constants';
 import { coverageClusterDetailsPath } from './compliance.coverage.routes';
 import { getStatusCounts, getTimeDifferenceAsPhrase } from './compliance.coverage.utils';
+import ComplianceProgressBar from './components/ComplianceProgressBar';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
@@ -50,14 +43,15 @@ function ProfileClustersTable({
     const { page, perPage, setPage, setPerPage } = pagination;
 
     function isComplianceStatusFiltered() {
-        return Array.isArray(searchFilter['Compliance Check Status']);
+        return CHECK_STATUS_QUERY in searchFilter;
     }
 
     function shouldDisableIcon(statuses) {
-        const statusFilter = searchFilter['Compliance Check Status'];
-        return (
-            Array.isArray(statusFilter) && !statuses.some((status) => statusFilter.includes(status))
-        );
+        const statusFilter = searchFilter[CHECK_STATUS_QUERY];
+        if (!statusFilter) {
+            return false;
+        }
+        return !statuses.some((status) => statusFilter.includes(status));
     }
 
     return (
@@ -193,32 +187,13 @@ function ProfileClustersTable({
                                                 />
                                             </Td>
                                             <Td dataLabel="Compliance">
-                                                {isComplianceStatusFiltered() ? (
-                                                    <div>—</div>
-                                                ) : (
-                                                    <>
-                                                        <Progress
-                                                            id={progressBarId}
-                                                            value={passPercentage}
-                                                            measureLocation={
-                                                                ProgressMeasureLocation.outside
-                                                            }
-                                                            aria-label={`${clusterName} compliance percentage`}
-                                                        />
-                                                        <Tooltip
-                                                            content={
-                                                                <div>
-                                                                    {`${passCount} / ${totalCount} checks are passing for this cluster`}
-                                                                </div>
-                                                            }
-                                                            triggerRef={() =>
-                                                                document.getElementById(
-                                                                    progressBarId
-                                                                ) as HTMLButtonElement
-                                                            }
-                                                        />
-                                                    </>
-                                                )}
+                                                <ComplianceProgressBar
+                                                    ariaLabel={`${clusterName} compliance percentage`}
+                                                    isDisabled={isComplianceStatusFiltered()}
+                                                    passPercentage={passPercentage}
+                                                    progressBarId={progressBarId}
+                                                    tooltipText={`${passCount} / ${totalCount} checks are passing for this cluster`}
+                                                />
                                             </Td>
                                         </Tr>
                                     );

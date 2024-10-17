@@ -3,14 +3,11 @@ import { Link } from 'react-router-dom';
 import {
     Divider,
     Pagination,
-    Progress,
-    ProgressMeasureLocation,
     Text,
     TextVariants,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
-    Tooltip,
 } from '@patternfly/react-core';
 import {
     ExpandableRowContent,
@@ -31,9 +28,10 @@ import { ComplianceCheckResultStatusCount } from 'services/ComplianceCommon';
 import { TableUIState } from 'utils/getTableUIState';
 import { getPercentage } from 'utils/mathUtils';
 
-import { CHECK_NAME_QUERY } from './compliance.coverage.constants';
+import { CHECK_NAME_QUERY, CHECK_STATUS_QUERY } from './compliance.coverage.constants';
 import { coverageCheckDetailsPath } from './compliance.coverage.routes';
 import { getStatusCounts } from './compliance.coverage.utils';
+import ComplianceProgressBar from './components/ComplianceProgressBar';
 import ControlLabels from './components/ControlLabels';
 import ProfilesTableToggleGroup from './components/ProfilesTableToggleGroup';
 import StatusCountIcon from './components/StatusCountIcon';
@@ -74,14 +72,15 @@ function ProfileChecksTable({
     }, [page, perPage, tableState]);
 
     function isComplianceStatusFiltered() {
-        return Array.isArray(searchFilter['Compliance Check Status']);
+        return CHECK_STATUS_QUERY in searchFilter;
     }
 
     function shouldDisableIcon(statuses) {
-        const statusFilter = searchFilter['Compliance Check Status'];
-        return (
-            Array.isArray(statusFilter) && !statuses.some((status) => statusFilter.includes(status))
-        );
+        const statusFilter = searchFilter[CHECK_STATUS_QUERY];
+        if (!statusFilter) {
+            return false;
+        }
+        return !statuses.some((status) => statusFilter.includes(status));
     }
 
     return (
@@ -174,10 +173,10 @@ function ProfileChecksTable({
                                                         {checkName}
                                                     </Link>
                                                     {/*
-                                                grid display is required to prevent the cell from
-                                                expanding to the text length. The Truncate PF component
-                                                is not used here because it displays a tooltip on hover
-                                            */}
+                                                        grid display is required to prevent the cell from
+                                                        expanding to the text length. The Truncate PF component
+                                                        is not used here because it displays a tooltip on hover
+                                                    */}
                                                     <div style={{ display: 'grid' }}>
                                                         <Text
                                                             component={TextVariants.small}
@@ -249,32 +248,13 @@ function ProfileChecksTable({
                                                     />
                                                 </Td>
                                                 <Td dataLabel="Compliance">
-                                                    {isComplianceStatusFiltered() ? (
-                                                        <div>—</div>
-                                                    ) : (
-                                                        <>
-                                                            <Progress
-                                                                id={progressBarId}
-                                                                value={passPercentage}
-                                                                measureLocation={
-                                                                    ProgressMeasureLocation.outside
-                                                                }
-                                                                aria-label={`${checkName} compliance percentage`}
-                                                            />
-                                                            <Tooltip
-                                                                content={
-                                                                    <div>
-                                                                        {`${passCount} / ${totalCount} clusters are passing this check`}
-                                                                    </div>
-                                                                }
-                                                                triggerRef={() =>
-                                                                    document.getElementById(
-                                                                        progressBarId
-                                                                    ) as HTMLButtonElement
-                                                                }
-                                                            />
-                                                        </>
-                                                    )}
+                                                    <ComplianceProgressBar
+                                                        ariaLabel={`${checkName} compliance percentage`}
+                                                        isDisabled={isComplianceStatusFiltered()}
+                                                        passPercentage={passPercentage}
+                                                        progressBarId={progressBarId}
+                                                        tooltipText={`${passCount} / ${totalCount} clusters are passing this check`}
+                                                    />
                                                 </Td>
                                             </Tr>
                                             {isRowExpanded && (
