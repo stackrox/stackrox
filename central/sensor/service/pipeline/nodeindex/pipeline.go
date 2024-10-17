@@ -61,7 +61,7 @@ func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	if !env.NodeIndexEnabled.BooleanSetting() || !features.ScannerV4.Enabled() {
 		// Node Indexing only works correctly when both, itself and Scanner v4 are enabled
-		log.Debugf("Skipping node index message (Node Indexing Enabled: %s, Scanner V4 Enabled: %s",
+		log.Debugf("Skipping node index message (Node Indexing Enabled: %t, Scanner V4 Enabled: %t",
 			env.NodeIndexEnabled.BooleanSetting(), features.ScannerV4.Enabled())
 		return nil
 	}
