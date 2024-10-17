@@ -160,11 +160,12 @@ function GoogleIntegrationForm({
                 >
                     <Text>Google Container Registry will be removed in a future release.</Text>
                     <Text>
-                        It is recommended to use Google Artifact Registry as a registry
-                        replacement and Scanner V4 as a scanner replacement.
+                        It is recommended to use Google Artifact Registry as a registry replacement
+                        and Scanner V4 as a scanner replacement.
                     </Text>
                     <Text>
-                        See https://cloud.google.com/container-registry/docs/deprecations/container-registry-deprecation
+                        See
+                        https://cloud.google.com/container-registry/docs/deprecations/container-registry-deprecation
                         for more information.
                     </Text>
                 </Alert>
