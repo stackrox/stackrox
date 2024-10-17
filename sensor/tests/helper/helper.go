@@ -958,12 +958,6 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService, l log
 	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 		return listener.Dial()
 	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-	//conn, err := grpc.NewClient("",
-	//	grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
-	//		return listener.Dial()
-	//	}),
-	//	grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}
