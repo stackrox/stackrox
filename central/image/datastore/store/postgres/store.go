@@ -362,7 +362,6 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 	}
 
 	for idx, obj := range objs {
-
 		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
 			obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
 			obj.Snoozed = storedCVE.GetSnoozed()

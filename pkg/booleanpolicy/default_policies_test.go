@@ -156,6 +156,7 @@ func (suite *DefaultPoliciesTestSuite) TestNVDCVSSCriteria() {
 	violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
 	require.Len(suite.T(), violations.AlertViolations, 1)
 	require.NoError(suite.T(), err)
+	require.Contains(suite.T(), violations.AlertViolations[0].Message, "NVD CVSS")
 
 }
 
