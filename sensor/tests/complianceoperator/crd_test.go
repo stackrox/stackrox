@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/tests/helper"
@@ -16,13 +17,15 @@ func Test_ComplianceOperatorCRDsDetection(t *testing.T) {
 	t.Setenv(env.ConnectionRetryInitialInterval.EnvVar(), "1s")
 	t.Setenv(env.ConnectionRetryMaxInterval.EnvVar(), "2s")
 
-	c, err := helper.NewContextWithConfig(t, helper.Config{
+	startSensor := concurrency.NewSignal()
+	c, err := helper.NewContextWithConfigAndStart(t, helper.Config{
 		InitialSystemPolicies: nil,
 		CertFilePath:          "../../../tools/local-sensor/certs/",
-	})
-	t.Cleanup(c.Stop)
-
+	}, startSensor.WaitC())
 	require.NoError(t, err)
+
+	t.Cleanup(c.Stop)
+	startSensor.Signal()
 
 	t.Log("Starting testcase")
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
@@ -31,7 +34,6 @@ func Test_ComplianceOperatorCRDsDetection(t *testing.T) {
 		testContext.WaitForSyncEvent(t, 10*time.Second)
 		t.Log("Clearing central buffer")
 		testContext.GetFakeCentral().ClearReceivedBuffer()
-
 		// Create the Compliance Operator CRDs
 		deleteCRDsFn, err := testContext.ApplyWithManifestDir(context.Background(), "../../../tests/complianceoperator/crds", "*")
 		require.NoError(t, err)

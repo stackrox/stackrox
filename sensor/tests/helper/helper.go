@@ -171,8 +171,17 @@ func NewContext(t *testing.T) (*TestContext, error) {
 	return NewContextWithConfig(t, DefaultConfig())
 }
 
-// NewContextWithConfig creates a new test context with custom central configuration.
+// NewContextWithConfig creates a new test context with custom central configuration
+// and starts grpc and sensor immediately
 func NewContextWithConfig(t *testing.T, config Config) (*TestContext, error) {
+	ch := make(chan struct{})
+	close(ch)
+	return NewContextWithConfigAndStart(t, config, ch)
+}
+
+// NewContextWithConfigAndStart creates a new test context with custom central configuration
+// and starts grpc and sensor when signal is received
+func NewContextWithConfigAndStart(t *testing.T, config Config, start <-chan struct{}) (*TestContext, error) {
 	envConfig := envconf.New().WithKubeconfigFile(conf.ResolveKubeConfigFile())
 	r, err := resources.New(envConfig.Client().RESTConfig())
 	if err != nil {
@@ -192,10 +201,17 @@ func NewContextWithConfig(t *testing.T, config Config) (*TestContext, error) {
 			Total:          1,
 		},
 	}
-
-	tc.StartFakeGRPC(config.CentralCaps...)
-	tc.startSensorInstance(t, envConfig, config)
-
+	// Wait for the start signal. This is important, as we want to make sure that
+	// cleanup routines from the previous run are not racing with the start.
+	t.Logf("Waiting for start signal")
+	go func() {
+		<-start
+		t.Logf("Starting fake GRPC")
+		tc.StartFakeGRPC(config.CentralCaps...)
+		t.Logf("Starting sensor")
+		tc.startSensorInstance(t, envConfig, config)
+		t.Logf("Started")
+	}()
 	return &tc, nil
 }
 
@@ -238,6 +254,7 @@ func (c *TestContext) RunTest(t *testing.T, options ...TestRunFunc) {
 
 // Stop test context and sensor.
 func (c *TestContext) Stop() {
+	c.l.Logf("Calling Stop on TestContext")
 	c.stopFn()
 }
 
@@ -903,12 +920,14 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 
 	c.sensorStopped = s.Stopped()
 	c.stopFn = func() {
+		t.Logf("Stopping Sensor")
 		s.Stop()
 		c.fakeCentral.KillSwitch.Done()
 		centralHTTPServer.Close()
 	}
-
+	t.Logf("Running starting Sensor")
 	go s.Start()
+	t.Logf("Waiting for Central connection to be established")
 	c.fakeCentral.ConnectionStarted.Wait()
 }
 
