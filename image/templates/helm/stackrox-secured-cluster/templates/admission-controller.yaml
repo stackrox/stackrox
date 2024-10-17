@@ -53,6 +53,16 @@ spec:
         fsGroup: 4000
       {{- end }}
       serviceAccountName: admission-control
+      initContainers:
+        - name: init-tls-certs
+          image: {{ quote ._rox.image.main.fullRef }}
+          command:
+          - /stackrox/bin/init-tls-certs
+          resources:
+            {{- ._rox.admissionControl._resources | nindent 12 }}
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
       containers:
         - image: {{ quote ._rox.image.main.fullRef }}
           imagePullPolicy: {{ ._rox.admissionControl.imagePullPolicy }}
