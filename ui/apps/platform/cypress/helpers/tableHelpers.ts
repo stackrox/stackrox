@@ -67,7 +67,7 @@ export function assertOnEachRowForColumn(
 
 // Opens the column management modal, resets the columns to default, and saves the changes
 function resetManagedColumns() {
-    cy.get('button:contains("Manage columns")').click();
+    cy.get('button:contains("Columns")').click();
     cy.get('button:contains("Reset to default")').click();
     cy.get('button:contains("Save")').click();
 }
@@ -85,7 +85,7 @@ export function verifyColumnManagement({ tableSelector }: { tableSelector: strin
     resetManagedColumns();
 
     // Open the colum management modal and get the list of columns
-    cy.get('button:contains("Manage columns")').click();
+    cy.get('button:contains("Columns")').click();
     cy.get('.pf-v5-c-modal-box label')
         .then(($labels) => {
             cy.get('.pf-v5-c-modal-box button:contains("Cancel")').click();
@@ -100,7 +100,7 @@ export function verifyColumnManagement({ tableSelector }: { tableSelector: strin
                 cy.get(tableSelector).contains('th', columnLabel).should('be.visible');
 
                 // Hide the column
-                cy.get('button:contains("Manage columns")').click();
+                cy.get('button:contains("Columns")').click();
                 cy.get('label').contains(columnLabel).click();
                 cy.get('button:contains("Save")').click();
 
