@@ -16,7 +16,7 @@ import (
 //go:generate mockgen-wrapper
 type ComplianceReportGenerator interface {
 	// ProcessReportRequest will generate a csv report and send notification via email to attached scan config notifiers.
-	ProcessReportRequest(req *ComplianceReportRequest)
+	ProcessReportRequest(req *ComplianceReportRequest) error
 }
 
 // New will create a new instance of the ReportGenerator

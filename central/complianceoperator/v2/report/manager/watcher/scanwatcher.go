@@ -34,8 +34,8 @@ var (
 
 const (
 	minimumComplianceOperatorVersion = "v1.6.0"
-	checkCountAnnotationKey          = "compliance.openshift.io/check-count"
-	lastScannedAnnotationKey         = "compliance.openshift.io/last-scanned-timestamp"
+	CheckCountAnnotationKey          = "compliance.openshift.io/check-count"
+	LastScannedAnnotationKey         = "compliance.openshift.io/last-scanned-timestamp"
 	defaultChanelSize                = 100
 	defaultTimeout                   = 10 * time.Minute
 )
@@ -107,8 +107,8 @@ func GetWatcherIDFromScan(ctx context.Context, scan *storage.ComplianceOperatorS
 		return "", errors.Wrap(err, "unable to retrieve snapshots from the store")
 	}
 	if len(snapshots) > 0 {
-		// If we have reports with the same start time or newer we do not handle this scan
-		// as it is an old scan, the check results in the db will not be the results of this scan
+		// If we have reports with the same start time or newer, then we do not handle this scan
+		// as it is an old scan, because the check results in the db will not be the results of this scan.
 		// We can land in this situation if CO sends a scan update after the watcher is done, which
 		// could happen because the check-count annotation that we use to determine if the scan is done
 		// is sent before the scan's last update (when it changes its status to COMPLETED).
@@ -136,8 +136,8 @@ func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.Compliance
 	}
 	var startTime string
 	var ok bool
-	if startTime, ok = result.GetAnnotations()[lastScannedAnnotationKey]; !ok {
-		return "", errors.Errorf("%s annotation not found", lastScannedAnnotationKey)
+	if startTime, ok = result.GetAnnotations()[LastScannedAnnotationKey]; !ok {
+		return "", errors.Errorf("%s annotation not found", LastScannedAnnotationKey)
 	}
 	timestamp, err := protocompat.ParseRFC3339NanoTimestamp(startTime)
 	if err != nil {
@@ -174,7 +174,7 @@ type scanWatcherImpl struct {
 
 // NewScanWatcher creates a new ScanWatcher
 func NewScanWatcher(ctx context.Context, watcherID string, queue readyQueue[*ScanWatcherResults]) *scanWatcherImpl {
-	log.Infof("Creating new ScanWatcher with id %s", watcherID)
+	log.Debugf("Creating new ScanWatcher with id %s", watcherID)
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
 	timeout := NewTimer(defaultTimeout)
@@ -258,7 +258,7 @@ func (s *scanWatcherImpl) run(timer Timer) {
 }
 
 func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) error {
-	if checkCountAnnotation, found := scan.GetAnnotations()[checkCountAnnotationKey]; found {
+	if checkCountAnnotation, found := scan.GetAnnotations()[CheckCountAnnotationKey]; found {
 		var numChecks int
 		var err error
 		if numChecks, err = strconv.Atoi(checkCountAnnotation); err != nil {

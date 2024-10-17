@@ -100,37 +100,33 @@ type ResultEmail struct {
 	Clusters   int
 }
 
-func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceReportRequest) {
+func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceReportRequest) error {
 
 	log.Infof("Processing report request %s", req)
 
 	snapshot, found, err := rg.snapshotDS.GetSnapshot(req.Ctx, req.SnapshotID)
 	if err != nil {
-		log.Errorf("Unable to retrieve snapshot from the store: %v", err)
-		return
+		return errors.Wrap(err, "unable to retrieve the snapshot from the store")
 	}
 	if !found {
-		log.Error("Unable to find snapshot in the store")
-		return
+		return errors.New("unable to find snapshot in the store")
 	}
 
 	data := rg.getDataforReport(req)
 
 	zipData, err := format(data.ResultCSVs)
 	if err != nil {
-		log.Errorf("Error zipping compliance reports for scan config %s:%s", req.ScanConfigName, err)
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 		snapshot.GetReportStatus().ErrorMsg = reportUtils.ErrReportGeneration.Error()
 		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
-		if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
-			log.Errorf("Unable to update snapshot: %v", err)
+		if dbErr := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); dbErr != nil {
+			return errors.Wrap(dbErr, "unable to update the snapshot on report generation failure")
 		}
-		return
+		return errors.Wrapf(err, "unable to zip the compliance reports for scan config %s", req.ScanConfigName)
 	}
 	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_GENERATED
 	if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
-		log.Errorf("Unable to update snapshot: %v", err)
-		return
+		return errors.Wrap(err, "unable to update snapshot on report generation success")
 	}
 
 	formatEmailBody := &formatBody{
@@ -151,6 +147,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceRep
 
 	log.Infof("Sending email for scan config %s", reportName)
 	go rg.sendEmail(req.Ctx, zipData, formatEmailBody, formatEmailSub, req.Notifiers, reportName, req.SnapshotID)
+	return nil
 }
 
 // getDataforReport returns map of cluster id and slice of ResultRow
@@ -305,14 +302,14 @@ func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData 
 		snapshot.GetReportStatus().ErrorMsg = reportUtils.ErrSendingEmail.Error()
 		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
 		if err := rg.snapshotDS.UpsertSnapshot(ctx, snapshot); err != nil {
-			log.Errorf("Unable to update snapshot: %v", err)
+			log.Errorf("Unable to update snapshot on send email failure: %v", err)
 		}
 		return
 	}
 	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
 	snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
 	if err := rg.snapshotDS.UpsertSnapshot(ctx, snapshot); err != nil {
-		log.Errorf("Unable to update snapshot: %v", err)
+		log.Errorf("Unable to update snapshot on send email success: %v", err)
 	}
 }
 

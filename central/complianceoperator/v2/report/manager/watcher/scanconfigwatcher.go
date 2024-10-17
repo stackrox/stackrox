@@ -184,9 +184,9 @@ func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) er
 		}
 		w.scansToWait = scans
 		w.totalResults = len(w.scansToWait)
-		log.Infof("Scan config %s needs to wait for %d scans", w.scanConfigResults.ScanConfig.GetScanConfigName(), w.totalResults)
+		log.Debugf("Scan config %s needs to wait for %d scans", w.scanConfigResults.ScanConfig.GetScanConfigName(), w.totalResults)
 	}
-	log.Infof("Scan to handle %s with id %s", result.Scan.GetScanName(), result.Scan.GetId())
+	log.Debugf("Scan to handle %s with id %s", result.Scan.GetScanName(), result.Scan.GetId())
 	if found := w.scansToWait.Remove(fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())); !found {
 		return errors.Errorf("The scan %s should be handle by this watcher", result.Scan.GetId())
 	}
