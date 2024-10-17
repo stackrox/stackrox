@@ -966,8 +966,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
 		"scanTime: Time",
+		"scannerVersion: NodeScan_Scanner!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Scanner(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
@@ -10967,6 +10969,11 @@ func (resolver *nodeScanResolver) ScanTime(ctx context.Context) (*graphql.Time, 
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
+func (resolver *nodeScanResolver) ScannerVersion(ctx context.Context) string {
+	value := resolver.data.GetScannerVersion()
+	return value.String()
+}
+
 func toNodeScan_Note(value *string) storage.NodeScan_Note {
 	if value != nil {
 		return storage.NodeScan_Note(storage.NodeScan_Note_value[*value])
@@ -10981,6 +10988,24 @@ func toNodeScan_Notes(values *[]string) []storage.NodeScan_Note {
 	output := make([]storage.NodeScan_Note, len(*values))
 	for i, v := range *values {
 		output[i] = toNodeScan_Note(&v)
+	}
+	return output
+}
+
+func toNodeScan_Scanner(value *string) storage.NodeScan_Scanner {
+	if value != nil {
+		return storage.NodeScan_Scanner(storage.NodeScan_Scanner_value[*value])
+	}
+	return storage.NodeScan_Scanner(0)
+}
+
+func toNodeScan_Scanners(values *[]string) []storage.NodeScan_Scanner {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.NodeScan_Scanner, len(*values))
+	for i, v := range *values {
+		output[i] = toNodeScan_Scanner(&v)
 	}
 	return output
 }
