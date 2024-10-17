@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils"
+	certtestutils "github.com/stackrox/rox/sensor/kubernetes/certrefresh/testutils"
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
@@ -15,7 +16,7 @@ import (
 
 var (
 	scannerServiceType         = storage.ServiceType_SCANNER_SERVICE
-	serviceCertificate         = createServiceCertificate(scannerServiceType)
+	serviceCertificate         = certtestutils.CreateServiceCertificate(scannerServiceType)
 	emptyPersistedCertificates = make([]*storage.TypedServiceCertificate, 0)
 	certificates               = &storage.TypedServiceCertificateSet{
 		CaPem: make([]byte, 2),
@@ -26,10 +27,10 @@ var (
 	scannersCertificateSet = &storage.TypedServiceCertificateSet{
 		CaPem: make([]byte, 2),
 		ServiceCerts: []*storage.TypedServiceCertificate{
-			createServiceCertificate(storage.ServiceType_SCANNER_SERVICE),
-			createServiceCertificate(storage.ServiceType_SCANNER_DB_SERVICE),
-			createServiceCertificate(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
-			createServiceCertificate(storage.ServiceType_SCANNER_V4_DB_SERVICE),
+			certtestutils.CreateServiceCertificate(storage.ServiceType_SCANNER_SERVICE),
+			certtestutils.CreateServiceCertificate(storage.ServiceType_SCANNER_DB_SERVICE),
+			certtestutils.CreateServiceCertificate(storage.ServiceType_SCANNER_V4_INDEXER_SERVICE),
+			certtestutils.CreateServiceCertificate(storage.ServiceType_SCANNER_V4_DB_SERVICE),
 		},
 	}
 )
@@ -45,7 +46,7 @@ type localScannerCertificateRepoSuite struct {
 func (s *localScannerCertificateRepoSuite) TestCreateSecretsNoCertificatesSuccess() {
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
-	repo := NewServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+	repo := NewServiceCertificatesRepo(certtestutils.SensorOwnerReference(sensorDeployment)[0], namespace, secretsClient)
 
 	persistedCertificates, err := repo.EnsureServiceCertificates(context.Background(), nil)
 	protoassert.SlicesEqual(s.T(), emptyPersistedCertificates, persistedCertificates)
@@ -55,7 +56,7 @@ func (s *localScannerCertificateRepoSuite) TestCreateSecretsNoCertificatesSucces
 func (s *localScannerCertificateRepoSuite) TestEnsureServiceCertificateMissingSecretSuccess() {
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
-	repo := NewServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+	repo := NewServiceCertificatesRepo(certtestutils.SensorOwnerReference(sensorDeployment)[0], namespace, secretsClient)
 
 	persistedCertificates, err := repo.EnsureServiceCertificates(context.Background(), certificates)
 
@@ -68,7 +69,7 @@ func (s *localScannerCertificateRepoSuite) TestEnsureServiceCertificatesForScann
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	ctx := context.Background()
-	repo := NewServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+	repo := NewServiceCertificatesRepo(certtestutils.SensorOwnerReference(sensorDeployment)[0], namespace, secretsClient)
 
 	persistedCertificates, err := repo.EnsureServiceCertificates(ctx, scannersCertificateSet)
 	s.NoError(err)
@@ -86,10 +87,10 @@ func (s *localScannerCertificateRepoSuite) TestEnsureCertificatesScannerV4Ignore
 	clientSet := fake.NewSimpleClientset(sensorDeployment)
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	ctx := context.Background()
-	repo := NewServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
+	repo := NewServiceCertificatesRepo(certtestutils.SensorOwnerReference(sensorDeployment)[0], namespace, secretsClient)
 	scannerV2Certificates := []*storage.TypedServiceCertificate{
-		createServiceCertificate(storage.ServiceType_SCANNER_SERVICE),
-		createServiceCertificate(storage.ServiceType_SCANNER_DB_SERVICE),
+		certtestutils.CreateServiceCertificate(storage.ServiceType_SCANNER_SERVICE),
+		certtestutils.CreateServiceCertificate(storage.ServiceType_SCANNER_DB_SERVICE),
 	}
 
 	persistedCertificates, err := repo.EnsureServiceCertificates(context.Background(), scannersCertificateSet)
@@ -103,30 +104,4 @@ func (s *localScannerCertificateRepoSuite) TestEnsureCertificatesScannerV4Ignore
 	s.ErrorContains(err, "not found")
 	_, err = secretsClient.Get(ctx, scannerV4DbSecretName, metav1.GetOptions{})
 	s.ErrorContains(err, "not found")
-}
-
-func sensorOwnerReference() []metav1.OwnerReference {
-	sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
-	blockOwnerDeletion := false
-	isController := false
-	return []metav1.OwnerReference{
-		{
-			APIVersion:         sensorDeploymentGVK.GroupVersion().String(),
-			Kind:               sensorDeploymentGVK.Kind,
-			Name:               sensorDeployment.GetName(),
-			UID:                sensorDeployment.GetUID(),
-			BlockOwnerDeletion: &blockOwnerDeletion,
-			Controller:         &isController,
-		},
-	}
-}
-
-func createServiceCertificate(serviceType storage.ServiceType) *storage.TypedServiceCertificate {
-	return &storage.TypedServiceCertificate{
-		ServiceType: serviceType,
-		Cert: &storage.ServiceCertificate{
-			CertPem: make([]byte, 0),
-			KeyPem:  make([]byte, 1),
-		},
-	}
 }
