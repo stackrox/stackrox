@@ -137,11 +137,11 @@ func (s *platformReprocessorImplTestSuite) TestStartAndStop() {
 	}).Return(nil).Times(1)
 
 	reprocessor = New(s.alertDatastore, s.deploymentDatastore, platformmatcher.Singleton())
-	s.reprocessor.Start()
+	reprocessor.Start()
 	// Wait until execution has entered deployment reprocessing loop. The loop will pause waiting for proceedAlertLoop signal
 	inDeploymentLoop.Wait()
 	// Stop reprocessor
-	s.reprocessor.Stop()
+	reprocessor.Stop()
 	// Let the loop proceed
 	proceedDeploymentLoop.Signal()
 }
