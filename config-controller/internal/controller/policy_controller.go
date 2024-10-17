@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
@@ -182,11 +181,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrap(err, errMsg)
 	}
 
-	// Requeue successful creates and updates to be reconciled after 4 hours
-	// Reference to comment: https://github.com/kubernetes-sigs/controller-runtime/blob/v0.18.5/pkg/cache/cache.go#L145-L170
-	return ctrl.Result{
-		RequeueAfter: time.Hour * 4,
-	}, retErr
+	return ctrl.Result{}, retErr
 }
 
 // SetupWithManager sets up the controller with the Manager.
