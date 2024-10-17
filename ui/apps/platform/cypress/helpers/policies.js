@@ -150,8 +150,6 @@ export function goToStep3() {
 export function savePolicy() {}
 
 export function importPolicyFromFixture(fileName, contentsInterceptor = (c) => c) {
-    visitPolicies();
-
     return cy.fixture(fileName).then((originalContents) => {
         const contents = contentsInterceptor(originalContents);
         const importedPolicyName = contents.policies[0].name;
