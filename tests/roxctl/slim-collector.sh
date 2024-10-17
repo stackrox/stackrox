@@ -43,19 +43,9 @@ check_image() {
   return $?
 }
 
-# Retrieve API token
-API_TOKEN_JSON="$(curl_central v1/apitokens/generate \
-  -d '{"name": "test", "role": "Admin"}')" \
-  || die "Failed to retrieve Rox API token"
-ROX_API_TOKEN="$(echo "$API_TOKEN_JSON" | jq -er .token)" \
-  || die "Failed to retrieve token from JSON"
-export ROX_API_TOKEN
-
 test_collector_image_references_in_deployment_bundles() {
     SLIM_COLLECTOR_FLAG="$1"
     EXPECTED_IMAGE_CONDITION="$2"
-    # Reset the password to use the API token instead.
-    local ROX_ADMIN_PASSWORD=""
 
     CLUSTER_NAME="test-cluster-${RANDOM}-${RANDOM}-${RANDOM}"
     echo "Testing correctness of collector image references for clusters generated with $SLIM_COLLECTOR_FLAG (cluster name is $CLUSTER_NAME)"
