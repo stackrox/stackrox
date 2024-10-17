@@ -10,26 +10,44 @@ function MyLastJobStatusTh() {
                 <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
                     <FlexItem>
                         <p>
-                            The status of your last requested job from the{' '}
-                            <strong>active job queue</strong>. An <strong>active job queue</strong>{' '}
-                            includes any requested job with the status of <strong>preparing</strong>{' '}
-                            or <strong>waiting</strong> until completed.
+                            Displays the status of your most recent job, whether it is currently
+                            running or has completed. The possible statuses are:
                         </p>
-                    </FlexItem>
-                    <FlexItem>
-                        <p>
-                            <strong>Preparing:</strong>
-                        </p>
-                        <p>Your last requested job is still being processed.</p>
                     </FlexItem>
                     <FlexItem>
                         <p>
                             <strong>Waiting:</strong>
                         </p>
+                        <p>The report job is in the queue.</p>
+                    </FlexItem>
+                    <FlexItem>
                         <p>
-                            Your last requested job is in the queue and waiting to be processed
-                            since other requested jobs are being processed.
+                            <strong>Preparing:</strong>
                         </p>
+                        <p>The report job is being processed.</p>
+                    </FlexItem>
+                    <FlexItem>
+                        <p>
+                            <strong>Ready for download:</strong>
+                        </p>
+                        <p>The report is ready and available for download.</p>
+                    </FlexItem>
+                    <FlexItem>
+                        <p>
+                            <strong>Successfully sent:</strong>
+                        </p>
+                        <p>The report has been successfully emailed.</p>
+                    </FlexItem>
+                    <FlexItem>
+                        <p>
+                            <strong>Error:</strong>
+                        </p>
+                        <p>
+                            There was an issue with the report job. Hover to view the error message.
+                        </p>
+                    </FlexItem>
+                    <FlexItem>
+                        <p>If no recent jobs are available, &quot;None&quot; will be displayed.</p>
                     </FlexItem>
                 </Flex>
             }
