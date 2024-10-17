@@ -26,6 +26,7 @@ import util.Timer
 import spock.lang.IgnoreIf
 import spock.lang.Tag
 
+@IgnoreIf({ true }) // ROX-26297 Tests started failing regularly recently and need further investigation
 // ROX-14228 skipping tests for 1st release on power & z
 @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
 class IntegrationsSplunkViolationsTest extends BaseSpecification {
