@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
@@ -92,10 +93,10 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return errors.WithMessagef(err, "node does not exist: %s", ninv.GetNodeId())
 	}
 
-	// Discard message if NodeScanning v4 and v2 are running in parallel - v4 scans are prioritized in that case.
-	// The message will be kept even if a v4 scan is already persisted for the node if the feature flag for
-	// Scanner v4 has been disabled. This ensures node scans are updated even if a customer falls back to Scanner v2.
-	if node.GetScan() != nil && node.GetScan().GetScannerVersion() == storage.NodeScan_SCANNER_V4 && features.ScannerV4.Enabled() {
+	// Discard a message if NodeScanning v4 and v2 are running in parallel - v4 scans are prioritized in that case.
+	// The message will be kept if any of the two switches is disabled.
+	// This ensures node scans are updated even if a customer falls back to Scanner v2.
+	if features.ScannerV4.Enabled() && env.NodeIndexEnabled.BooleanSetting() {
 		// To prevent resending the inventory, still acknowledge receipt of it
 		sendComplianceAck(ctx, node, ninv, injector)
 		log.Debugf("Discarding v2 NodeScan in favor of v4 NodeScan")
