@@ -18,8 +18,8 @@ type fakeGRPCClient struct {
 	transientErrorSig concurrency.ErrorSignal
 	conn              *grpc.ClientConn
 
+	// connMtx guards the connection and the state (as the state is a connection state)
 	connMtx      *sync.Mutex
-	stateMtx     *sync.Mutex
 	currentState connectivity.State
 }
 
@@ -39,23 +39,20 @@ func MakeFakeConnectionFactory(c *grpc.ClientConn) *fakeGRPCClient {
 		transientErrorSig: concurrency.NewErrorSignal(),
 		okSig:             concurrency.NewSignal(),
 		connMtx:           &sync.Mutex{},
-		stateMtx:          &sync.Mutex{},
 		currentState:      99, // invalid state
 	}
 }
 
 func (f *fakeGRPCClient) ConnectionState() (connectivity.State, error) {
-	f.stateMtx.Lock()
-	defer f.stateMtx.Unlock()
+	f.connMtx.Lock()
+	defer f.connMtx.Unlock()
 	return f.currentState, nil
 }
 
 func (f *fakeGRPCClient) OverwriteCentralConnection(newConn *grpc.ClientConn) {
 	concurrency.WithLock(f.connMtx, func() {
 		f.conn = newConn
-		concurrency.WithLock(f.stateMtx, func() {
-			f.currentState = f.conn.GetState()
-		})
+		f.currentState = newConn.GetState()
 	})
 }
 
@@ -68,21 +65,19 @@ func (f *fakeGRPCClient) SetCentralConnectionWithRetries(ptr *util.LazyClientCon
 		ptr.Set(f.conn)
 
 		roxlog.Infof("SetCentralConnectionWithRetries: waiting for state mutex")
-		concurrency.WithLock(f.stateMtx, func() {
-			if f.currentState != f.conn.GetState() {
-				roxlog.Infof("State change from %s to %s", f.currentState.String(), f.conn.GetState().String())
-				f.currentState = f.conn.GetState()
-			} else {
-				roxlog.Infof("No State change and is %s", f.currentState.String())
-			}
-		})
+		if f.currentState != f.conn.GetState() {
+			roxlog.Infof("State change from %s to %s", f.currentState.String(), f.conn.GetState().String())
+			f.currentState = f.conn.GetState()
+		} else {
+			roxlog.Infof("No State change and is %s", f.currentState.String())
+		}
 	})
 }
 
 // Reset signals
 func (f *fakeGRPCClient) Reset() {
 	roxlog.Infof("Resetting fake grpc client")
-	concurrency.WithLock(f.stateMtx, func() {
+	concurrency.WithLock(f.connMtx, func() {
 		f.currentState = 99
 	})
 }
