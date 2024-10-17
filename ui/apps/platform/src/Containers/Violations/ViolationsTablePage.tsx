@@ -141,9 +141,13 @@ function ViolationsTablePage(): ReactElement {
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
+        const filteredWorkflowFilter = isPlatformComponentsEnabled
+            ? getFilteredWorkflowViewSearchFilter(filteredWorkflowView)
+            : {};
+
         const alertSearchFilter: SearchFilter = {
             ...searchFilter,
-            ...getFilteredWorkflowViewSearchFilter(filteredWorkflowView),
+            ...filteredWorkflowFilter,
             'Violation State': activeViolationStateTab,
         };
 
