@@ -125,4 +125,7 @@ var (
 
 	// ExternalIPs enables storing detailed discovered external IPs
 	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
+
+	// Display NVD CVSS score in reports and graphql.
+	NvdCvss = registerFeature("Display NVD CVSS score", "ROX_NVD_CVSS")
 )
