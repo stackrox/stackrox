@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -16,6 +17,8 @@ import (
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/rhel"
 	rpm2 "github.com/quay/claircore/rpm"
+	"github.com/quay/zlog"
+	"github.com/rs/zerolog"
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/compliance/collection/intervals"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -33,6 +36,16 @@ var (
 	log         = logging.LoggerForModule()
 )
 
+// ClairCore is using zlog and needs separate configuration, as it's logging on debug level by default.
+func configureClairCoreLogging() {
+	l := zerolog.New(os.Stderr)
+	l = l.Level(zerolog.InfoLevel)
+	if os.Getenv("LOGLEVEL") == "DEBUG" {
+		l = l.Level(zerolog.DebugLevel)
+	}
+	zlog.Set(&l)
+}
+
 type NodeIndexerConfig struct {
 	DisableAPI         bool
 	API                string
@@ -41,6 +54,7 @@ type NodeIndexerConfig struct {
 }
 
 func NewNodeIndexerConfigFromEnv() *NodeIndexerConfig {
+	configureClairCoreLogging()
 	return &NodeIndexerConfig{
 		DisableAPI:         false,
 		API:                env.NodeIndexContainerAPI.Setting(), // TODO(ROX-25540): Set in sync with Scanner via Helm charts
