@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 )
 
 var (
@@ -75,7 +76,7 @@ func (r *certificateRequesterImpl) dispatchResponses() {
 
 // RequestCertificates makes a new request for a new set of local scanner certificates from central.
 // This assumes the certificate requester is started, otherwise this returns ErrCertificateRequesterStopped.
-func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
+func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*certrefresh.IssueCertsResponse, error) {
 	requestID := uuid.NewV4().String()
 	receiveC := make(chan *central.IssueLocalScannerCertsResponse, 1)
 	r.requests.Store(requestID, receiveC)
@@ -107,11 +108,30 @@ func (r *certificateRequesterImpl) send(ctx context.Context, requestID string) e
 	}
 }
 
-func receive(ctx context.Context, receiveC <-chan *central.IssueLocalScannerCertsResponse) (*central.IssueLocalScannerCertsResponse, error) {
+func convertToIssueCertsResponse(response *central.IssueLocalScannerCertsResponse) *certrefresh.IssueCertsResponse {
+	if response == nil {
+		return nil
+	}
+
+	res := &certrefresh.IssueCertsResponse{
+		RequestId: response.GetRequestId(),
+	}
+
+	if response.GetError() != nil {
+		errMsg := response.GetError().GetMessage()
+		res.ErrorMessage = &errMsg
+	} else {
+		res.Certificates = response.GetCertificates()
+	}
+
+	return res
+}
+
+func receive(ctx context.Context, receiveC <-chan *central.IssueLocalScannerCertsResponse) (*certrefresh.IssueCertsResponse, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case response := <-receiveC:
-		return response, nil
+		return convertToIssueCertsResponse(response), nil
 	}
 }

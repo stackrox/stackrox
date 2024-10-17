@@ -22,6 +22,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
+	certsDescription                     = "local scanner certificates"
 	startTimeout                         = 6 * time.Minute
 	fetchSensorDeploymentOwnerRefBackoff = wait.Backoff{
 		Duration: 10 * time.Millisecond,
@@ -58,7 +59,7 @@ func NewLocalScannerTLSIssuer(
 		msgToCentralC:                msgToCentralC,
 		msgFromCentralC:              msgFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
-		getCertificateRefresherFn:    newCertificatesRefresher,
+		getCertificateRefresherFn:    certrefresh.NewCertificatesRefresher,
 		getServiceCertificatesRepoFn: NewServiceCertificatesRepo,
 		certRequester:                NewCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
@@ -81,11 +82,11 @@ type localScannerTLSIssuerImpl struct {
 type CertificateRequester interface {
 	Start()
 	Stop()
-	RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
+	RequestCertificates(ctx context.Context) (*certrefresh.IssueCertsResponse, error)
 }
 
-type certificateRefresherGetter func(requestCertificates requestCertificatesFunc, repository certrepo.ServiceCertificatesRepo,
-	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
+type certificateRefresherGetter func(certsDescription string, requestCertificates certrefresh.RequestCertificatesFunc,
+	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
 
 type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo
@@ -111,7 +112,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 
 	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
-	i.certRefresher = i.getCertificateRefresherFn(i.certRequester.RequestCertificates, certsRepo,
+	i.certRefresher = i.getCertificateRefresherFn(certsDescription, i.certRequester.RequestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
 	i.certRequester.Start()

@@ -1,4 +1,4 @@
-package localscanner
+package certrefresh
 
 import (
 	"testing"
@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -29,9 +30,9 @@ func (s *getSecretRenewalTimeSuite) SetupTest() {
 }
 
 func (s *getSecretRenewalTimeSuite) TestGetSecretsCertRenewalTime() {
-	certPEMHours, err := issueCertificatePEM(mtls.WithValidityExpiringInHours())
+	certPEMHours, err := testutils.IssueCertificatePEM(mtls.WithValidityExpiringInHours())
 	s.Require().NoError(err)
-	certPEMDays, err := issueCertificatePEM(mtls.WithValidityExpiringInDays())
+	certPEMDays, err := testutils.IssueCertificatePEM(mtls.WithValidityExpiringInDays())
 	s.Require().NoError(err)
 	certificates := &storage.TypedServiceCertificateSet{
 		CaPem: make([]byte, 0),
@@ -56,25 +57,4 @@ func (s *getSecretRenewalTimeSuite) TestGetSecretsCertRenewalTime() {
 	s.Require().NoError(err)
 	certDuration := time.Until(certRenewalTime)
 	s.LessOrEqual(certDuration, afterOffset/2)
-}
-
-func issueCertificate(serviceType storage.ServiceType, issueOption mtls.IssueCertOption) (*mtls.IssuedCert, error) {
-	ca, err := mtls.CAForSigning()
-	if err != nil {
-		return nil, err
-	}
-	subject := mtls.NewSubject("clusterId", serviceType)
-	cert, err := ca.IssueCertForSubject(subject, issueOption)
-	if err != nil {
-		return nil, err
-	}
-	return cert, err
-}
-
-func issueCertificatePEM(issueOption mtls.IssueCertOption) ([]byte, error) {
-	cert, err := issueCertificate(storage.ServiceType_SCANNER_SERVICE, issueOption)
-	if err != nil {
-		return nil, err
-	}
-	return cert.CertPEM, nil
 }
