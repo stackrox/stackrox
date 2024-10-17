@@ -20,18 +20,20 @@ import (
 	"crypto/tls"
 	"flag"
 	"os"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"time"
 
 	configv1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/config-controller/internal/controller"
 	"github.com/stackrox/rox/config-controller/pkg/client"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -45,7 +47,9 @@ import (
 
 var (
 	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	setupLog = logging.LoggerForModule()
+	// the default resync period for the manager cache is 10 hours if unspecified. We set it
+	resyncPeriod = 4 * time.Hour
 )
 
 func init() {
@@ -128,6 +132,7 @@ func main() {
 			opts.DefaultNamespaces = map[string]cache.Config{
 				env.Namespace.Setting(): {},
 			}
+			opts.SyncPeriod = &resyncPeriod
 			return cache.New(config, opts)
 		},
 	})
@@ -139,7 +144,7 @@ func main() {
 	policyClient, err := client.New(ctx)
 
 	if err != nil {
-		setupLog.Error(err, "Unable to connect to Central")
+		setupLog.Error(err, "unable to connect to Central")
 		os.Exit(1)
 	}
 
@@ -148,7 +153,7 @@ func main() {
 		Scheme:       mgr.GetScheme(),
 		PolicyClient: policyClient,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Policy")
+		setupLog.Error(err, "unable to create controller", "controller", "SecurityPolicy")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
@@ -162,9 +167,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
+	setupLog.Info("Starting manager")
 	if err := mgr.Start(ctx); err != nil {
-		setupLog.Error(err, "problem running manager")
+		setupLog.Error(err, "error starting manager")
 		os.Exit(1)
 	}
 }
