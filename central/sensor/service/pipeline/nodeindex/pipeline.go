@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
@@ -58,8 +59,10 @@ func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	if !features.ScannerV4.Enabled() {
-		// If Scanner V4 is disabled do not run this pipeline
+	if !env.NodeIndexEnabled.BooleanSetting() || !features.ScannerV4.Enabled() {
+		// Node Indexing only works correctly when both, itself and Scanner v4 are enabled
+		log.Debugf("Skipping node index message (Node Indexing Enabled: %s, Scanner V4 Enabled: %s",
+			env.NodeIndexEnabled.BooleanSetting(), features.ScannerV4.Enabled())
 		return nil
 	}
 	event := msg.GetEvent()
