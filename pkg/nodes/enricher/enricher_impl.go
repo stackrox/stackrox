@@ -84,7 +84,7 @@ func (e *enricherImpl) EnrichNode(node *storage.Node) error {
 func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning node %s:%s", node.GetClusterName(), node.GetName()))
 
-	log.Debugf("Enriching Node with Inventory: %t / Index: %t", nodeInventory.GetNodeId() != "", indexReport.GetState() != "")
+	log.Debugf("Enriching Node with Inventory: %t / Index: %t", nodeInventory != nil, indexReport != nil)
 	log.Debugf("Number of known scanners: %d", len(e.scanners))
 
 	scanners := concurrency.WithRLock1(&e.lock, func() []types.NodeScannerWithDataSource {
