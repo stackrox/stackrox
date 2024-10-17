@@ -394,31 +394,44 @@ type Policy struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id              string           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Policy ID,store,hidden" sql:"pk,index=btree"`                   // @gotags: search:"Policy ID,store,hidden" sql:"pk,index=btree"
-	Name            string           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Policy,store" sql:"unique"`               // @gotags: search:"Policy,store" sql:"unique"
-	Description     string           `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty" search:"Description"` // @gotags: search:"Description"
-	Rationale       string           `protobuf:"bytes,4,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	Remediation     string           `protobuf:"bytes,5,opt,name=remediation,proto3" json:"remediation,omitempty"`
-	Disabled        bool             `protobuf:"varint,6,opt,name=disabled,proto3" json:"disabled,omitempty" search:"Disabled"`                                                                         // @gotags: search:"Disabled"
-	Categories      []string         `protobuf:"bytes,7,rep,name=categories,proto3" json:"categories,omitempty" search:"Category,store"`                                                                      // @gotags: search:"Category,store"
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Policy ID,store,hidden" sql:"pk,index=btree"` // @gotags: search:"Policy ID,store,hidden" sql:"pk,index=btree"
+	// Name of the policy.  Must be unique.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Policy,store" sql:"unique"` // @gotags: search:"Policy,store" sql:"unique"
+	// Free-form text description of this policy.
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty" search:"Description"` // @gotags: search:"Description"
+	Rationale   string `protobuf:"bytes,4,opt,name=rationale,proto3" json:"rationale,omitempty"`
+	// Describes how to remediate a violation of this policy.
+	Remediation string `protobuf:"bytes,5,opt,name=remediation,proto3" json:"remediation,omitempty"`
+	// Toggles whether or not this policy will be executing and actively firing alerts.
+	Disabled bool `protobuf:"varint,6,opt,name=disabled,proto3" json:"disabled,omitempty" search:"Disabled"` // @gotags: search:"Disabled"
+	// List of categories that this policy falls under.  Category names must already exist in Central.
+	Categories []string `protobuf:"bytes,7,rep,name=categories,proto3" json:"categories,omitempty" search:"Category,store"` // @gotags: search:"Category,store"
+	// Describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME.
 	LifecycleStages []LifecycleStage `protobuf:"varint,9,rep,packed,name=lifecycle_stages,json=lifecycleStages,proto3,enum=storage.LifecycleStage" json:"lifecycle_stages,omitempty" search:"Lifecycle Stage,store"` // @gotags: search:"Lifecycle Stage,store"
-	EventSource     EventSource      `protobuf:"varint,22,opt,name=event_source,json=eventSource,proto3,enum=storage.EventSource" json:"event_source,omitempty"`
-	Exclusions      []*Exclusion     `protobuf:"bytes,21,rep,name=exclusions,proto3" json:"exclusions,omitempty"`
-	Scope           []*Scope         `protobuf:"bytes,11,rep,name=scope,proto3" json:"scope,omitempty"`
-	Severity        Severity         `protobuf:"varint,12,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty" search:"Severity,store"` // @gotags: search:"Severity,store"
+	// Describes which events should trigger execution of this policy
+	EventSource EventSource `protobuf:"varint,22,opt,name=event_source,json=eventSource,proto3,enum=storage.EventSource" json:"event_source,omitempty"`
+	// Define deployments or images that should be excluded from this policy.
+	Exclusions []*Exclusion `protobuf:"bytes,21,rep,name=exclusions,proto3" json:"exclusions,omitempty"`
+	// Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything.
+	Scope []*Scope `protobuf:"bytes,11,rep,name=scope,proto3" json:"scope,omitempty"`
+	// Defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY.
+	Severity Severity `protobuf:"varint,12,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty" search:"Severity,store"` // @gotags: search:"Severity,store"
 	// FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.
 	// FAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.
 	// FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.
-	EnforcementActions []EnforcementAction    `protobuf:"varint,13,rep,packed,name=enforcement_actions,json=enforcementActions,proto3,enum=storage.EnforcementAction" json:"enforcement_actions,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
-	Notifiers          []string               `protobuf:"bytes,14,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	LastUpdated        *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Policy Last Updated"` // @gotags: search:"Policy Last Updated"
+	// Lists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT.
+	EnforcementActions []EnforcementAction `protobuf:"varint,13,rep,packed,name=enforcement_actions,json=enforcementActions,proto3,enum=storage.EnforcementAction" json:"enforcement_actions,omitempty" search:"Enforcement"` // @gotags: search:"Enforcement"
+	// List of notifier IDs that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found in the Central API.
+	Notifiers   []string               `protobuf:"bytes,14,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Policy Last Updated"` // @gotags: search:"Policy Last Updated"
 	// For internal use only.
 	SORTName string `protobuf:"bytes,16,opt,name=SORT_name,json=SORTName,proto3" json:"SORT_name,omitempty" search:"SORT_Policy,hidden,analyzer=keyword"` // @gotags: search:"SORT_Policy,hidden,analyzer=keyword"
 	// For internal use only.
 	SORTLifecycleStage string `protobuf:"bytes,17,opt,name=SORT_lifecycleStage,json=SORTLifecycleStage,proto3" json:"SORT_lifecycleStage,omitempty" search:"SORT_Lifecycle Stage,hidden"` // @gotags: search:"SORT_Lifecycle Stage,hidden"
 	// For internal use only.
-	SORTEnforcement    bool                         `protobuf:"varint,18,opt,name=SORT_enforcement,json=SORTEnforcement,proto3" json:"SORT_enforcement,omitempty" search:"SORT_Enforcement,hidden"` // @gotags: search:"SORT_Enforcement,hidden"
-	PolicyVersion      string                       `protobuf:"bytes,19,opt,name=policy_version,json=policyVersion,proto3" json:"policy_version,omitempty"`
+	SORTEnforcement bool   `protobuf:"varint,18,opt,name=SORT_enforcement,json=SORTEnforcement,proto3" json:"SORT_enforcement,omitempty" search:"SORT_Enforcement,hidden"` // @gotags: search:"SORT_Enforcement,hidden"
+	PolicyVersion   string `protobuf:"bytes,19,opt,name=policy_version,json=policyVersion,proto3" json:"policy_version,omitempty"`
+	// PolicySections define the violation criteria for this policy.
 	PolicySections     []*PolicySection             `protobuf:"bytes,20,rep,name=policy_sections,json=policySections,proto3" json:"policy_sections,omitempty"`
 	MitreAttackVectors []*Policy_MitreAttackVectors `protobuf:"bytes,23,rep,name=mitre_attack_vectors,json=mitreAttackVectors,proto3" json:"mitre_attack_vectors,omitempty"`
 	// Read-only field. If true, the policy's criteria fields are rendered read-only.
@@ -642,7 +655,8 @@ type PolicySection struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	SectionName  string         `protobuf:"bytes,1,opt,name=section_name,json=sectionName,proto3" json:"section_name,omitempty"`
+	SectionName string `protobuf:"bytes,1,opt,name=section_name,json=sectionName,proto3" json:"section_name,omitempty"`
+	// The set of policies groups that make up this section.  Each group can be considered an individual criterion.
 	PolicyGroups []*PolicyGroup `protobuf:"bytes,3,rep,name=policy_groups,json=policyGroups,proto3" json:"policy_groups,omitempty"`
 }
 
@@ -697,10 +711,14 @@ type PolicyGroup struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	FieldName       string          `protobuf:"bytes,1,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`
+	// Defines which field on a deployment or image this PolicyGroup evaluates.  See https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies for a complete list of possible values.
+	FieldName string `protobuf:"bytes,1,opt,name=field_name,json=fieldName,proto3" json:"field_name,omitempty"`
+	// Determines if the values are combined with an OR or an AND.  Defaults to OR.
 	BooleanOperator BooleanOperator `protobuf:"varint,2,opt,name=boolean_operator,json=booleanOperator,proto3,enum=storage.BooleanOperator" json:"boolean_operator,omitempty"`
-	Negate          bool            `protobuf:"varint,3,opt,name=negate,proto3" json:"negate,omitempty"`
-	Values          []*PolicyValue  `protobuf:"bytes,4,rep,name=values,proto3" json:"values,omitempty"`
+	// Determines if the evaluation of this PolicyGroup is negated.  Default to false.
+	Negate bool `protobuf:"varint,3,opt,name=negate,proto3" json:"negate,omitempty"`
+	// List of values for the specified field
+	Values []*PolicyValue `protobuf:"bytes,4,rep,name=values,proto3" json:"values,omitempty"`
 }
 
 func (x *PolicyGroup) Reset() {
