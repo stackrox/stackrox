@@ -82,16 +82,6 @@ func (pc *PolicyAsCodeSuite) TestSaveAsCRUpdateDelete() {
 
 func (pc *PolicyAsCodeSuite) TestCreateCR() {
 	k8sPolicy := &v1alpha1.SecurityPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-policy-cr",
-			Namespace: "stackrox",
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: "v1alpha1",
-					Kind:       "SecurityPolicy",
-				},
-			},
-		},
 		Spec: v1alpha1.SecurityPolicySpec{
 			PolicyName:      "test-policy-create",
 			Description:     "This is a description",
@@ -115,7 +105,7 @@ func (pc *PolicyAsCodeSuite) TestCreateCR() {
 			},
 		},
 	}
-
+	k8sPolicy.SetName("test-policy-cr")
 	id := pc.createCRandObserveInCentral(k8sPolicy)
 	pc.Require().NotEmpty(id)
 	pc.checkPolicyIsDeclarative(id)
