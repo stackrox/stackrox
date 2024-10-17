@@ -13,7 +13,7 @@ function curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 function roxcurl() {
   local url="$1"
   shift
-  curl --config <(curl_cfg user "admin:${ROX_PASSWORD}") -k "https://${API_ENDPOINT}${url}" "$@"
+  curl --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") -k "https://${API_ENDPOINT}${url}" "$@"
 }
 
 function kcr() {

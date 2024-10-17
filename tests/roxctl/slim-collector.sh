@@ -2,10 +2,10 @@
 
 set -uo pipefail
 
-# This test script requires API_ENDPOINT and ROX_PASSWORD to be set in the environment.
+# This test script requires API_ENDPOINT and ROX_ADMIN_PASSWORD to be set in the environment.
 
 [ -n "$API_ENDPOINT" ]
-[ -n "$ROX_PASSWORD" ]
+[ -n "$ROX_ADMIN_PASSWORD" ]
 
 echo "Using API_ENDPOINT $API_ENDPOINT"
 
@@ -28,7 +28,7 @@ curl_central() {
   url="$1"
   shift
   [[ -n "${url}" ]] || die "No URL specified"
-  curl --retry 5 --retry-connrefused -Sskf --config <(curl_cfg user "admin:${ROX_PASSWORD}") \
+  curl --retry 5 --retry-connrefused -Sskf --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
     "https://${API_ENDPOINT}/${url}" "$@"
 }
 
@@ -42,14 +42,6 @@ check_image() {
   [[ "$image" != *"-slim"* ]]
   return $?
 }
-
-# Retrieve API token
-API_TOKEN_JSON="$(curl_central v1/apitokens/generate \
-  -d '{"name": "test", "role": "Admin"}')" \
-  || die "Failed to retrieve Rox API token"
-ROX_API_TOKEN="$(echo "$API_TOKEN_JSON" | jq -er .token)" \
-  || die "Failed to retrieve token from JSON"
-export ROX_API_TOKEN
 
 test_collector_image_references_in_deployment_bundles() {
     SLIM_COLLECTOR_FLAG="$1"

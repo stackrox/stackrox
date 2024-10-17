@@ -69,7 +69,7 @@ func getHTTPClient() *http.Client {
 func getEnvVars() *testEnvVars {
 	once.Do(func() {
 		envVars = &testEnvVars{}
-		envVars.password = os.Getenv("ROX_PASSWORD")
+		envVars.password = os.Getenv("ROX_ADMIN_PASSWORD")
 		envVars.endpoint = fmt.Sprintf("%s:%s", os.Getenv("API_HOSTNAME"), os.Getenv("API_PORT"))
 	})
 	return envVars

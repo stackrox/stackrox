@@ -14,7 +14,7 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 
 call_curl() {
     local url=$1
-    curl -s --insecure --config <(curl_cfg user "${ROX_USERNAME}:${ROX_PASSWORD}") "$url"
+    curl -s --insecure --config <(curl_cfg user "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}") "$url"
 }
 
 main() {
@@ -22,8 +22,8 @@ main() {
         usage
         exit 1
     fi
-    if [ -z "${ROX_USERNAME}" ] || [ -z "${ROX_PASSWORD}" ]; then
-        echo "ROX_USERNAME and ROX_PASSWORD must be set"
+    if [ -z "${ROX_USERNAME}" ] || [ -z "${ROX_ADMIN_PASSWORD}" ]; then
+        echo "ROX_USERNAME and ROX_ADMIN_PASSWORD must be set"
         exit 1
     fi
 
@@ -46,7 +46,7 @@ main() {
     fi
 
     mkdir -p "${dest}"
-    roxctl -e "${api_endpoint}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central backup --output "${dest}"
+    roxctl -e "${api_endpoint}" --insecure-skip-tls-verify central backup --output "${dest}"
 
     # Pull some data not found from the database
     set +e
