@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
     Card,
     CardBody,
@@ -7,11 +7,12 @@ import {
     Toolbar,
     ToolbarContent,
     ToolbarItem,
+    useInterval,
 } from '@patternfly/react-core';
 
 import {
-    ComplianceScanConfigurationStatus,
     ComplianceReportSnapshot,
+    fetchComplianceReportHistory,
 } from 'services/ComplianceScanConfigurationService';
 import JobDetails from 'Containers/Vulnerabilities/VulnerablityReporting/ViewVulnReport/JobDetails';
 import ReportJobsTable from 'Components/ReportJob/ReportJobsTable';
@@ -21,60 +22,75 @@ import { ensureBoolean, ensureStringArray } from 'utils/ensure';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import { RunState } from 'types/reportJob';
 import useAnalytics from 'hooks/useAnalytics';
+import useRestQuery from 'hooks/useRestQuery';
+import useURLSort from 'hooks/useURLSort';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getTableUIState } from 'utils/getTableUIState';
 import ConfigDetails from './ConfigDetails';
 import ReportRunStatesFilter, { ensureReportRunStates } from './ReportRunStatesFilter';
 import MyJobsFilter from './MyJobsFilter';
 
-function createMockData(scanConfig: ComplianceScanConfigurationStatus) {
-    const snapshots: ComplianceReportSnapshot[] = [
-        {
-            reportJobId: 'ab1c03ae-9707-43d1-932d-f948afb67b53',
-            scanConfigId: scanConfig.id,
-            name: scanConfig.scanName,
-            description: scanConfig.scanConfig.description,
-            reportStatus: {
-                completedAt: '2024-08-27T00:01:40.569402380Z',
-                errorMsg:
-                    "Error sending email notifications:  error: Error sending email for notifier 'fc99e179-57c1-4ba2-8e59-45dbf184c78c': Connection failed",
-                reportNotificationMethod: 'EMAIL',
-                reportRequestType: 'SCHEDULED',
-                runState: 'FAILURE',
-            },
-            reportData: scanConfig,
-            user: {
-                id: 'sso:3e30efee-45f0-49d3-aec1-2861fcb3faf6:c02da449-f1c9-4302-afc7-3cbf450f2e0c',
-                name: 'Test User',
-            },
-            isDownloadAvailable: false,
-        },
-    ];
-    return snapshots;
-}
-
 function getJobId(snapshot: ComplianceReportSnapshot) {
-    return snapshot.scanConfigId;
+    return snapshot.reportJobId;
 }
 
 function getConfigName(snapshot: ComplianceReportSnapshot) {
     return snapshot.name;
 }
 
+const sortOptions = {
+    sortFields: ['Compliance Report Completed Time'],
+    defaultSortOption: { field: 'Compliance Report Completed Time', direction: 'desc' } as const,
+};
+
 type ReportJobsProps = {
-    scanConfig: ComplianceScanConfigurationStatus | undefined;
+    scanConfigId: string;
     isComplianceReportingEnabled: boolean;
 };
 
-function ReportJobs({ scanConfig, isComplianceReportingEnabled }: ReportJobsProps) {
+function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsProps) {
     const { analyticsTrack } = useAnalytics();
 
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
+    const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [isViewingOnlyMyJobs, setIsViewingOnlyMyJobs] = useURLStringUnion('viewOnlyMyJobs', [
         'false',
         'true',
     ]);
 
-    const filteredReportRunStates = ensureStringArray(searchFilter['Report State']);
+    const filteredReportRunStates = ensureStringArray(searchFilter['Compliance Report State']);
+
+    const query = getRequestQueryStringForSearchFilter({
+        'Compliance Report State': filteredReportRunStates,
+    });
+
+    const fetchComplianceReportHistoryCallback = useCallback(
+        () =>
+            fetchComplianceReportHistory({
+                id: scanConfigId,
+                query,
+                page,
+                perPage,
+                sortOption,
+                showMyHistory: isViewingOnlyMyJobs === 'true',
+            }),
+        [isViewingOnlyMyJobs, page, perPage, query, scanConfigId, sortOption]
+    );
+    const {
+        data: complianceScanSnapshots,
+        isLoading,
+        error,
+        refetch,
+    } = useRestQuery(fetchComplianceReportHistoryCallback);
+
+    const tableState = getTableUIState({
+        isLoading,
+        data: complianceScanSnapshots,
+        error,
+        searchFilter,
+        isPolling: true,
+    });
 
     const onReportStatesFilterChange = (_checked: boolean, selectedStatus: RunState) => {
         const isStatusIncluded = filteredReportRunStates.includes(selectedStatus);
@@ -91,7 +107,7 @@ function ReportJobs({ scanConfig, isComplianceReportingEnabled }: ReportJobsProp
         });
         setSearchFilter({
             ...searchFilter,
-            'Report State': newFilters,
+            'Compliance Report State': newFilters,
         });
         setPage(1);
     };
@@ -108,8 +124,7 @@ function ReportJobs({ scanConfig, isComplianceReportingEnabled }: ReportJobsProp
         setPage(1);
     };
 
-    // @TODO: We will eventually make an API request using the scan config id to get the job history
-    const complianceScanSnapshots = scanConfig ? createMockData(scanConfig) : [];
+    useInterval(refetch, 10000);
 
     return (
         <>
@@ -147,10 +162,14 @@ function ReportJobs({ scanConfig, isComplianceReportingEnabled }: ReportJobsProp
                 </ToolbarContent>
             </Toolbar>
             <ReportJobsTable
-                snapshots={complianceScanSnapshots}
+                tableState={tableState}
+                getSortParams={getSortParams}
                 getJobId={getJobId}
                 getConfigName={getConfigName}
-                onClearFilters={() => {}}
+                onClearFilters={() => {
+                    setSearchFilter({});
+                    setPage(1);
+                }}
                 onDeleteDownload={() => {}}
                 renderExpandableRowContent={(snapshot: ComplianceReportSnapshot) => {
                     return (
