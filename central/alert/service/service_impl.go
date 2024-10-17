@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/logging"
 	pkgNotifier "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -37,7 +36,6 @@ import (
 
 var (
 	alertSAC = sac.ForResource(resources.Alert)
-	logger   = logging.LoggerForModule()
 )
 
 const (
@@ -151,7 +149,6 @@ func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequ
 		return nil, err
 	}
 	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
-	logger.Infof("debug alert query %s alerts %s", q, alerts)
 	if err != nil {
 		return nil, err
 	}

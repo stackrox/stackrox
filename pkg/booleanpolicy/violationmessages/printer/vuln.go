@@ -26,7 +26,7 @@ const (
     {{- if .ContainerName }} in container '{{.ContainerName}}'{{end}}
     {{- if .FixedBy}}, resolved by version {{.FixedBy}}{{end}}`
 
-	//CVE-2014-0160 (NVD CVSS 8) (severity Unknown) found in component 'heartbleed' (version 1.2) in container 'nginx'
+	// Example message CVE-2014-0160 (NVD CVSS 8) (severity Unknown) found in component 'heartbleed' (version 1.2) in container 'nginx'
 	nvdcveTemplate = `
     {{- if .FixedBy}}Fixable {{end}}{{.CVE}}{{if .NVDCVSS}} (NVD CVSS {{.NVDCVSS}}){{end}}{{if .Severity}} (severity {{.Severity}}){{end}} found
     {{- if .Component}} in component '{{.Component}}' (version {{.ComponentVersion}}){{end}}

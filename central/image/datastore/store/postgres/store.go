@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"math/rand"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -361,8 +360,6 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 	if err != nil {
 		return err
 	}
-	// for testing only
-	r := rand.New(rand.NewSource(99))
 
 	for idx, obj := range objs {
 
@@ -374,13 +371,12 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 		} else {
 			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
 		}
-		obj.Nvdcvss = r.Float32() * 10
-		obj.NvdScoreVersion = storage.CvssScoreVersion_V2
 
 		serialized, marshalErr := obj.MarshalVT()
 		if marshalErr != nil {
 			return marshalErr
 		}
+
 		inputRows = append(inputRows, []interface{}{
 			obj.GetId(),
 			obj.GetCveBaseInfo().GetCve(),
