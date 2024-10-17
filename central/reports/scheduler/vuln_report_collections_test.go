@@ -15,7 +15,6 @@ import (
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
-	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -63,7 +62,6 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 	imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
 	s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
 		imageDataStore,
-		imagesView.NewImageView(s.testDB.DB),
 		resolvers.CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
 		resolvers.CreateTestImageCVEDatastore(s.T(), s.testDB),
 		resolvers.CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
