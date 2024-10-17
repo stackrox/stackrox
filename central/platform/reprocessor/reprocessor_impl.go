@@ -9,7 +9,6 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -23,18 +22,7 @@ var (
 
 	reprocessorCtx = sac.WithAllAccess(context.Background())
 
-	// TODO ROX(ROX-26659): In absence of explicit violation state filter, alert searcher defaults to only searching alerts in ACTIVE or ATTEMPTED states.
-	// To avoid that we need to apply an explicit violation state filter here.
-	alertsQuery = search.NewQueryBuilder().
-			AddNullField(search.PlatformComponent).
-			AddExactMatches(search.ViolationState,
-			storage.ViolationState_ACTIVE.String(),
-			storage.ViolationState_SNOOZED.String(),
-			storage.ViolationState_RESOLVED.String(),
-			storage.ViolationState_ATTEMPTED.String()).
-		ProtoQuery()
-
-	deploymentsQuery = search.NewQueryBuilder().AddNullField(search.PlatformComponent).ProtoQuery()
+	query = search.NewQueryBuilder().AddNullField(search.PlatformComponent).ProtoQuery()
 )
 
 type platformReprocessorImpl struct {
@@ -101,20 +89,25 @@ func (pr *platformReprocessorImpl) runReprocessing() {
 }
 
 func (pr *platformReprocessorImpl) needsReprocessing() (bool, error) {
-	numAlerts, err := pr.alertDatastore.Count(reprocessorCtx, alertsQuery)
+	q := query.CloneVT()
+	q.Pagination = &v1.QueryPagination{
+		Limit: 1,
+	}
+
+	alerts, err := pr.alertDatastore.GetByQuery(reprocessorCtx, q)
 	if err != nil {
 		return false, err
 	}
-	numDeployments, err := pr.deploymentDatastore.Count(reprocessorCtx, deploymentsQuery)
+	deployments, err := pr.deploymentDatastore.SearchRawDeployments(reprocessorCtx, q)
 	if err != nil {
 		return false, err
 	}
-	return numAlerts > 0 || numDeployments > 0, nil
+	return len(alerts) > 0 || len(deployments) > 0, nil
 }
 
 func (pr *platformReprocessorImpl) reprocessAlerts() error {
-	query := alertsQuery.CloneVT()
-	query.Pagination = &v1.QueryPagination{
+	q := query.CloneVT()
+	q.Pagination = &v1.QueryPagination{
 		Limit:  batchSize,
 		Offset: 0,
 		SortOptions: []*v1.QuerySortOption{
@@ -129,7 +122,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 			log.Info("Stop called, stopping platform reprocessor")
 			break
 		}
-		alerts, err := pr.alertDatastore.SearchRawAlerts(reprocessorCtx, query)
+		alerts, err := pr.alertDatastore.GetByQuery(reprocessorCtx, q)
 		if err != nil {
 			return err
 		}
@@ -148,14 +141,14 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 		if err != nil {
 			return err
 		}
-		query.GetPagination().Offset += int32(len(alerts))
+		q.GetPagination().Offset += int32(len(alerts))
 	}
 	return nil
 }
 
 func (pr *platformReprocessorImpl) reprocessDeployments() error {
-	query := deploymentsQuery.CloneVT()
-	query.Pagination = &v1.QueryPagination{
+	q := query.CloneVT()
+	q.Pagination = &v1.QueryPagination{
 		Limit:  batchSize,
 		Offset: 0,
 		SortOptions: []*v1.QuerySortOption{
@@ -170,7 +163,7 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 			log.Info("Stop called, stopping platform reprocessor")
 			break
 		}
-		deps, err := pr.deploymentDatastore.SearchRawDeployments(reprocessorCtx, query)
+		deps, err := pr.deploymentDatastore.SearchRawDeployments(reprocessorCtx, q)
 		if err != nil {
 			return err
 		}
@@ -188,7 +181,7 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 				return err
 			}
 		}
-		query.GetPagination().Offset += int32(len(deps))
+		q.GetPagination().Offset += int32(len(deps))
 	}
 	return nil
 }
