@@ -70,7 +70,7 @@ spec:
           value: "sensor.stackrox.svc"
         [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
         - name: ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED
-          value: "{{ ._rox.collector.runtime_config.enabled }}"
+          value: "{{ ._rox.collector.runtimeConfig.enabled }}"
         [<- end >]
         {{- include "srox.envVars" (list . "daemonset" "collector" "collector") | nindent 8 }}
         resources:
@@ -117,6 +117,9 @@ spec:
           mountPropagation: HostToContainer
         {{- end }}
         [<- end >]
+        - mountPath: "/etc/stackrox"
+          name: collector-config
+          readOnly: true
       {{- end }}
       - command:
         - stackrox/compliance
@@ -276,3 +279,7 @@ spec:
           path: /run/crio/crio.sock
       {{- end }}
       [<- end >]
+      - name: collector-config
+        configMap:
+          name: collector-config
+          optional: true

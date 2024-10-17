@@ -177,7 +177,7 @@ func expectCentralCall(mockCentral *imageMocks.MockcentralClient, times int, ret
 
 func expectLocalScan(mockLocalScan *imageMocks.MocklocalScan, times int, retValue *storage.Image, retErr error) expectFn {
 	return func() {
-		mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(times).
+		mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any()).Times(times).
 			Return(retValue, retErr)
 	}
 }

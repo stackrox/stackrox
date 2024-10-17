@@ -64,6 +64,7 @@ export type ExternalSourceNetworkEntityInfo = {
         name: string;
         cidr?: string;
         default: boolean; // `default` indicates whether the external source is user-generated or system-generated.
+        discovered: boolean; // `discovered` indicates whether the external source was detected from network traffic.
     };
     type: 'EXTERNAL_SOURCE';
 } & BaseNetworkEntityInfo;

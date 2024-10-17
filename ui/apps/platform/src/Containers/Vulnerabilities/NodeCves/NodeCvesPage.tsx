@@ -22,9 +22,15 @@ function NodeCvesPage() {
         <>
             {hasReadAccessForIntegration && <ScannerV4IntegrationBanner />}
             <Switch>
-                <Route path={vulnerabilitiesNodeCveSinglePath} component={NodeCvePage} />
-                <Route path={vulnerabilitiesNodeSinglePath} component={NodePage} />
-                <Route exact path={vulnerabilitiesNodeCvesPath} component={NodeCvesOverviewPage} />
+                <Route path={vulnerabilitiesNodeCveSinglePath}>
+                    <NodeCvePage />
+                </Route>
+                <Route path={vulnerabilitiesNodeSinglePath}>
+                    <NodePage />
+                </Route>
+                <Route exact path={vulnerabilitiesNodeCvesPath}>
+                    <NodeCvesOverviewPage />
+                </Route>
                 <Route>
                     <PageSection variant="light">
                         <PageTitle title="Node CVEs - Not Found" />

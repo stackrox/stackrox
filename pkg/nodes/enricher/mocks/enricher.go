@@ -12,6 +12,7 @@ package mocks
 import (
 	reflect "reflect"
 
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	storage "github.com/stackrox/rox/generated/storage"
 	types "github.com/stackrox/rox/pkg/scanners/types"
 	gomock "go.uber.org/mock/gomock"
@@ -70,17 +71,17 @@ func (mr *MockNodeEnricherMockRecorder) EnrichNode(node any) *gomock.Call {
 }
 
 // EnrichNodeWithInventory mocks base method.
-func (m *MockNodeEnricher) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error {
+func (m *MockNodeEnricher) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnrichNodeWithInventory", node, nodeInventory)
+	ret := m.ctrl.Call(m, "EnrichNodeWithInventory", node, nodeInventory, indexReport)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EnrichNodeWithInventory indicates an expected call of EnrichNodeWithInventory.
-func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithInventory(node, nodeInventory any) *gomock.Call {
+func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithInventory(node, nodeInventory, indexReport any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithInventory", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNodeWithInventory), node, nodeInventory)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithInventory", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNodeWithInventory), node, nodeInventory, indexReport)
 }
 
 // RemoveNodeIntegration mocks base method.

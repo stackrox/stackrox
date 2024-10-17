@@ -107,7 +107,8 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 
 	// Format results into CSV
-	zippedSCVResult, err := common.Format(deployedImgData, watchedImgData, req.ReportSnapshot.Name)
+	includeNvd := req.ReportSnapshot.GetVulnReportFilters().GetIncludeNvdCvss()
+	zippedSCVResult, err := common.Format(deployedImgData, watchedImgData, req.ReportSnapshot.Name, includeNvd)
 	if err != nil {
 		return err
 	}
@@ -170,8 +171,9 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 				emailSubject = customSubject
 			}
 			emailBodyWithConfigDetails := addReportConfigDetails(emailBody, configDetailsHTML)
+			reportName := req.ReportSnapshot.Name
 			err := rg.retryableSendReportResults(reportNotifier, notifierSnap.GetEmailConfig().GetMailingLists(),
-				zippedCSVData, emailSubject, emailBodyWithConfigDetails)
+				zippedCSVData, emailSubject, emailBodyWithConfigDetails, reportName)
 			if err != nil {
 				errorList.AddError(errors.Errorf("Error sending email for notifier '%s': %s",
 					notifierSnap.GetEmailConfig().GetNotifierId(), err))
@@ -344,9 +346,9 @@ func execQuery[T any](rg *reportGeneratorImpl, gqlQuery, opName, scopeQuery, cve
 /* Utility Functions */
 
 func (rg *reportGeneratorImpl) retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
-	zippedCSVData *bytes.Buffer, emailSubject, emailBody string) error {
+	zippedCSVData *bytes.Buffer, emailSubject, emailBody, baseFilename string) error {
 	return retry.WithRetry(func() error {
-		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody)
+		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody, baseFilename)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),

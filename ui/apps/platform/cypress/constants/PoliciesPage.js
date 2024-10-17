@@ -32,7 +32,7 @@ export const selectors = {
     },
     wizardBtns: {
         step3: '.pf-v5-c-wizard__nav-link:contains("Rules")',
-        step7: '.pf-v5-c-wizard__nav-link:contains("Review")',
+        step6: '.pf-v5-c-wizard__nav-link:contains("Review")',
     },
     step3: {
         defaultPolicyAlert: '[data-testid="default-policy-alert"]',
@@ -84,6 +84,7 @@ export const selectors = {
         },
     },
     importUploadModal: {
+        modalWrapper: '.pf-v5-c-modal-box',
         titleText: '.pf-v5-c-modal-box__title-text:contains("Import policy JSON")',
         fileInput: '.pf-v5-c-file-upload input[type="file"]',
         policyNames: '[data-testid="policies-to-import"] div',

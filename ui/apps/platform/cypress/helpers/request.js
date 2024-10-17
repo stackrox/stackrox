@@ -167,10 +167,11 @@ export function interceptAndWatchRequests(routeMatcherMap, staticResponseMap) {
 
 export function expectRequestedSort(expectedSort) {
     return (variables) => {
-        const { sortOption } = variables.pagination;
-        expect(sortOption).to.deep.equal(
+        const { sortOption, sortOptions } = variables.pagination;
+        const targetSortOption = typeof sortOptions === 'undefined' ? sortOption : sortOptions;
+        expect(targetSortOption).to.deep.equal(
             expectedSort,
-            `Expected sort option ${JSON.stringify(expectedSort)} but received ${JSON.stringify(sortOption)}`
+            `Expected sort option ${JSON.stringify(expectedSort)} but received ${JSON.stringify(targetSortOption)}`
         );
     };
 }

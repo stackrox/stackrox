@@ -16,9 +16,11 @@ import ScanConfigsPage from './Schedules/ScanConfigsPage';
 function ComplianceEnhancedPage() {
     return (
         <Switch>
-            <Route exact path={complianceEnhancedBasePath}>
-                <Redirect to={complianceEnhancedCoveragePath} />
-            </Route>
+            <Route
+                exact
+                path={complianceEnhancedBasePath}
+                render={() => <Redirect to={complianceEnhancedCoveragePath} />}
+            />
             <Route path={complianceEnhancedCoveragePath}>
                 <CoveragePage />
             </Route>

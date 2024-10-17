@@ -50,13 +50,30 @@ func components(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport)
 		}
 
 		component := &storage.EmbeddedImageScanComponent{
-			Name:          pkg.GetName(),
-			Version:       pkg.GetVersion(),
-			Vulns:         vulnerabilities(report.GetVulnerabilities(), vulnIDs),
-			FixedBy:       pkg.GetFixedInVersion(),
-			Source:        source,
-			Location:      location,
-			HasLayerIndex: layerIdx,
+			Name:     pkg.GetName(),
+			Version:  pkg.GetVersion(),
+			Vulns:    vulnerabilities(report.GetVulnerabilities(), vulnIDs),
+			FixedBy:  pkg.GetFixedInVersion(),
+			Source:   source,
+			Location: location,
+		}
+		// DO NOT BLINDLY SET THIS INSIDE THE STRUCT DECLARATION DIRECTLY ABOVE.
+		// IF layerIdx IS nil, IT DOES NOT MEAN HasLayerIndex WILL BE THE SAME nil.
+		// GO CAN SOMETIMES BE ANNOYING AND nil DOES NOT ALWAYS EQUAL nil.
+		// IT IS MUCH SAFER TO ONLY SET HasLayerIndex TO layerIdx WHEN WE KNOW FOR
+		// SURE layerIdx != nil!!!
+		//
+		// See https://go.dev/doc/faq#nil_error for an explanation about this.
+		// For this particular use-case, layerIdx is a pointer to a struct
+		// which implements the interface. Therefore,
+		// even if layerIdx is set to nil, it still of type
+		// *storage.EmbeddedImageScanComponent_LayerIndex.
+		// HasLayerIndex is an interface type, and, according to the docs,
+		// this will only be nil if both the type and value are unset.
+		// If we always set HasLayerIndex to layerIdx, then
+		// it will never be nil, as layerIdx always has a type.
+		if layerIdx != nil {
+			component.HasLayerIndex = layerIdx
 		}
 
 		components = append(components, component)

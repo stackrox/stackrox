@@ -39,6 +39,11 @@ spec:
           - /stackrox/bin/config-controller
         args:
           - --health-probe-bind-address=:8081
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         livenessProbe:
           httpGet:
             path: /healthz
@@ -64,4 +69,16 @@ spec:
           limits:
             cpu: "500m"
             memory: "128Mi"
+        volumeMounts:
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: central-certs-volume
+          readOnly: true
       terminationGracePeriodSeconds: 10
+      volumes:
+      - name: central-certs-volume
+        secret:
+          defaultMode: 420
+          items:
+          - key: ca.pem
+            path: ca.pem
+          secretName: central-tls

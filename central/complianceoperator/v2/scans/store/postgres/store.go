@@ -123,10 +123,11 @@ func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.Complianc
 		protocompat.NilOrTime(obj.GetLastExecutedTime()),
 		obj.GetScanName(),
 		pgutils.NilOrUUID(obj.GetScanRefId()),
+		protocompat.NilOrTime(obj.GetLastStartedTime()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_v2 (Id, ScanConfigName, ClusterId, Profile_ProfileRefId, Status_Result, LastExecutedTime, ScanName, ScanRefId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigName = EXCLUDED.ScanConfigName, ClusterId = EXCLUDED.ClusterId, Profile_ProfileRefId = EXCLUDED.Profile_ProfileRefId, Status_Result = EXCLUDED.Status_Result, LastExecutedTime = EXCLUDED.LastExecutedTime, ScanName = EXCLUDED.ScanName, ScanRefId = EXCLUDED.ScanRefId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_v2 (Id, ScanConfigName, ClusterId, Profile_ProfileRefId, Status_Result, LastExecutedTime, ScanName, ScanRefId, LastStartedTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigName = EXCLUDED.ScanConfigName, ClusterId = EXCLUDED.ClusterId, Profile_ProfileRefId = EXCLUDED.Profile_ProfileRefId, Status_Result = EXCLUDED.Status_Result, LastExecutedTime = EXCLUDED.LastExecutedTime, ScanName = EXCLUDED.ScanName, ScanRefId = EXCLUDED.ScanRefId, LastStartedTime = EXCLUDED.LastStartedTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -152,6 +153,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 		"lastexecutedtime",
 		"scanname",
 		"scanrefid",
+		"laststartedtime",
 		"serialized",
 	}
 
@@ -175,6 +177,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 			protocompat.NilOrTime(obj.GetLastExecutedTime()),
 			obj.GetScanName(),
 			pgutils.NilOrUUID(obj.GetScanRefId()),
+			protocompat.NilOrTime(obj.GetLastStartedTime()),
 			serialized,
 		})
 

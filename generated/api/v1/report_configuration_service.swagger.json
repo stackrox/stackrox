@@ -679,6 +679,9 @@
             "type": "object",
             "$ref": "#/definitions/SimpleAccessScopeRules"
           }
+        },
+        "includeNvdCvss": {
+          "type": "boolean"
         }
       }
     },

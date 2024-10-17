@@ -3,6 +3,7 @@ import qs from 'qs';
 import { ApiSortOption, SearchFilter } from 'types/search';
 import { SortOption } from 'types/table';
 
+import { getPaginationParams } from 'utils/searchUtils';
 import axios from './instance';
 
 import { Pagination } from './types';
@@ -153,8 +154,7 @@ export function getListAdministrationEventsArg({
     sortOption,
 }: GetAdministrationEventResponseArg): ListAdministrationEventsRequest {
     const filter = getAdministrationEventsFilter(searchFilter);
-    const offset = (page - 1) * perPage;
-    const pagination: Pagination = { limit: perPage, offset, sortOption };
+    const pagination = getPaginationParams({ page, perPage, sortOption });
     return { filter, pagination };
 }
 

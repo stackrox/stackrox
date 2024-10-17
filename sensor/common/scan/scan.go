@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"time"
 
 	pkgErrors "github.com/pkg/errors"
@@ -51,13 +52,13 @@ var (
 // LocalScan wraps the functions required for enriching local images. This allows us to inject different values for testing purposes.
 type LocalScan struct {
 	// NOTE: If you change these, make sure to also change the respective values within the tests.
-	scanImg                           func(context.Context, *storage.Image, registryTypes.ImageRegistry, scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error)
-	fetchSignaturesWithRetry          func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
-	scannerClientSingleton            func() scannerclient.ScannerClient
-	getRegistryForImageInNamespace    func(*storage.ImageName, string) (registryTypes.ImageRegistry, error)
-	getGlobalRegistryForImage         func(*storage.ImageName) (registryTypes.ImageRegistry, error)
-	createNoAuthImageRegistry         func(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error)
-	getMatchingCentralRegIntegrations func(*storage.ImageName) []registryTypes.ImageRegistry
+	scanImg                   func(context.Context, *storage.Image, registryTypes.ImageRegistry, scannerclient.ScannerClient) (*scannerclient.ImageAnalysis, error)
+	fetchSignaturesWithRetry  func(context.Context, signatures.SignatureFetcher, *storage.Image, string, registryTypes.Registry) ([]*storage.Signature, error)
+	scannerClientSingleton    func() scannerclient.ScannerClient
+	createNoAuthImageRegistry func(context.Context, *storage.ImageName, registries.Factory) (registryTypes.ImageRegistry, error)
+	getCentralRegistries      func(*storage.ImageName) []registryTypes.ImageRegistry
+	getPullSecretRegistries   func(*storage.ImageName, string, []string) ([]registryTypes.ImageRegistry, error)
+	getGlobalRegistry         func(*storage.ImageName) (registryTypes.ImageRegistry, error)
 
 	// scanSemaphore limits the number of active scans.
 	scanSemaphore        *semaphore.Weighted
@@ -68,10 +69,19 @@ type LocalScan struct {
 	mirrorStore registrymirror.Store
 }
 
+// LocalScanRequest encapsulates request specific fields used when enriching an image local to Sensor.
+type LocalScanRequest struct {
+	ID               string
+	Image            *storage.ContainerImage
+	ImagePullSecrets []string
+	Namespace        string
+	Force            bool
+}
+
 type registryStore interface {
-	GetRegistryForImageInNamespace(*storage.ImageName, string) (registryTypes.ImageRegistry, error)
-	GetGlobalRegistryForImage(*storage.ImageName) (registryTypes.ImageRegistry, error)
-	GetMatchingCentralRegistryIntegrations(*storage.ImageName) []registryTypes.ImageRegistry
+	GetPullSecretRegistries(image *storage.ImageName, namespace string, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error)
+	GetGlobalRegistry(*storage.ImageName) (registryTypes.ImageRegistry, error)
+	GetCentralRegistries(*storage.ImageName) []registryTypes.ImageRegistry
 }
 
 // LocalScanCentralClient interface to central's client
@@ -87,17 +97,17 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		},
 	})
 	return &LocalScan{
-		scanImg:                           scanImage,
-		fetchSignaturesWithRetry:          signatures.FetchImageSignaturesWithRetries,
-		scannerClientSingleton:            scannerclient.GRPCClientSingleton,
-		getRegistryForImageInNamespace:    registryStore.GetRegistryForImageInNamespace,
-		getGlobalRegistryForImage:         registryStore.GetGlobalRegistryForImage,
-		scanSemaphore:                     semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
-		maxSemaphoreWaitTime:              defaultMaxSemaphoreWaitTime,
-		createNoAuthImageRegistry:         createNoAuthImageRegistry,
-		getMatchingCentralRegIntegrations: registryStore.GetMatchingCentralRegistryIntegrations,
-		regFactory:                        regFactory,
-		mirrorStore:                       mirrorStore,
+		scanImg:                   scanImage,
+		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
+		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
+		scanSemaphore:             semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
+		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
+		regFactory:                regFactory,
+		mirrorStore:               mirrorStore,
+		createNoAuthImageRegistry: createNoAuthImageRegistry,
+		getCentralRegistries:      registryStore.GetCentralRegistries,
+		getPullSecretRegistries:   registryStore.GetPullSecretRegistries,
+		getGlobalRegistry:         registryStore.GetGlobalRegistry,
 	}
 }
 
@@ -111,8 +121,8 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 // the OCP global pull secret, or no auth if no registry found.
 //
 // Will return any errors that may occur during scanning or when reaching out to Central.
-func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient LocalScanCentralClient, srcImage *storage.ContainerImage, namespace string, requestID string, force bool) (*storage.Image, error) {
-	err := validateSourceImage(srcImage)
+func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClient LocalScanCentralClient, req *LocalScanRequest) (*storage.Image, error) {
+	err := validateRequest(req)
 	if err != nil {
 		return nil, errors.Join(err, ErrEnrichNotStarted)
 	}
@@ -129,12 +139,13 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 	}
 	defer s.scanSemaphore.Release(1)
 
-	log.Debugf("Enriching image locally %q, namespace %q, requestID %q, force %v", srcImage.GetName().GetFullName(), namespace, requestID, force)
+	srcImage := req.Image
+	log.Debugf("Enriching image locally %q, namespace %q, requestID %q, force %v", srcImage.GetName().GetFullName(), req.Namespace, req.ID, req.Force)
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
 
 	// Enrich image with metadata from one of registries.
-	reg, pullSourceImage := s.getImageWithMetadata(ctx, errorList, namespace, srcImage)
+	reg, pullSourceImage := s.getImageWithMetadata(ctx, errorList, req)
 	if pullSourceImage == nil {
 		// A nil pullSourceImage indicates that the source image and all
 		// mirrors were invalid images.
@@ -160,8 +171,8 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		ImageSignature: &storage.ImageSignature{Signatures: sigs},
 		ImageNotes:     pullSourceImage.GetNotes(),
 		Error:          errorList.String(),
-		RequestId:      requestID,
-		Force:          force,
+		RequestId:      req.ID,
+		Force:          req.Force,
 	})
 	if err != nil {
 		log.Debugf("Unable to enrich image %q: %v", srcImage.GetName().GetFullName(), err)
@@ -177,11 +188,13 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 
 // getImageWithMetadata on success returns the registry used to pull metadata and an image with metadata populated.
 // The image returned may represent the source image or an image from a registry mirror.
-func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhelpers.ErrorList, namespace string, sourceImage *storage.ContainerImage) (registryTypes.ImageRegistry, *storage.Image) {
+func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhelpers.ErrorList, req *LocalScanRequest) (registryTypes.ImageRegistry, *storage.Image) {
+	srcImage := req.Image
+
 	// Obtain the pull sources, which will include mirrors.
-	pullSources := s.getPullSources(sourceImage)
+	pullSources := s.getPullSources(srcImage)
 	if len(pullSources) == 0 {
-		errorList.AddError(pkgErrors.Errorf("zero valid pull sources found for image %q", sourceImage.GetName().GetFullName()))
+		errorList.AddError(pkgErrors.Errorf("zero valid pull sources found for image %q", srcImage.GetName().GetFullName()))
 		return nil, nil
 	}
 
@@ -190,7 +203,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 
 	// For each pull source, obtain the associated registries and attempt to obtain metadata, stopping on first success.
 	for _, pullSource := range pullSources {
-		registries, err := s.getRegistries(ctx, namespace, pullSource.GetName())
+		registries, err := s.getRegistries(ctx, req.Namespace, pullSource.GetName(), req.ImagePullSecrets)
 		if err != nil {
 			log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
 			errs.AddError(err)
@@ -204,10 +217,10 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 		reg := s.enrichImageWithMetadata(ctx, errs, registries, pullSourceImage)
 		if reg != nil {
 			// Successful enrichment.
-			enrichImageDataSource(sourceImage, reg, pullSourceImage)
+			enrichImageDataSource(srcImage, reg, pullSourceImage)
 
-			srcName := sourceImage.GetName().GetFullName()
-			srcID := sourceImage.GetId()
+			srcName := srcImage.GetName().GetFullName()
+			srcID := srcImage.GetId()
 			pullName := pullSourceImage.GetName().GetFullName()
 			pullID := pullSourceImage.GetId()
 			log.Infof("Image %q (%v) enriched with metadata using pull source %q (%v) and integration %q (insecure: %t)", srcName, srcID, pullName, pullID, reg.Name(), reg.Config(ctx).GetInsecure())
@@ -219,7 +232,7 @@ func (s *LocalScan) getImageWithMetadata(ctx context.Context, errorList *errorhe
 	// Attempts for every pull source and registry have failed.
 	errorList.AddErrors(errs.Errors()...)
 
-	image := types.ToImage(sourceImage)
+	image := types.ToImage(srcImage)
 	image.Notes = append(image.Notes, storage.Image_MISSING_METADATA)
 	return nil, image
 }
@@ -238,12 +251,11 @@ func enrichImageDataSource(sourceImage *storage.ContainerImage, reg registryType
 // getRegistries will return registries that match the provided image, starting with image integrations sync'd from Central,
 // then namespace pull secrets, and lastly any global pull secrets (such as the OCP global pull secret). If no registries
 // are found will return a new registry that has no credentials.
-func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName *storage.ImageName) ([]registryTypes.ImageRegistry, error) {
+func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName *storage.ImageName, imagePullSecrets []string) ([]registryTypes.ImageRegistry, error) {
 	var regs []registryTypes.ImageRegistry
 
 	// Add registries from Central's image integrations.
-	centralIntegrations := s.getMatchingCentralRegIntegrations(imgName)
-	if len(centralIntegrations) > 0 {
+	if centralIntegrations := s.getCentralRegistries(imgName); len(centralIntegrations) > 0 {
 		regs = append(regs, centralIntegrations...)
 	}
 
@@ -251,14 +263,14 @@ func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName
 	if namespace != "" {
 		// If namespace provided pull appropriate registry.
 		// An err indicates no registry was found, only append if was no err.
-		if reg, err := s.getRegistryForImageInNamespace(imgName, namespace); err == nil {
-			regs = append(regs, reg)
+		if sRegs, err := s.getPullSecretRegistries(imgName, namespace, imagePullSecrets); err == nil {
+			regs = append(regs, sRegs...)
 		}
 	}
 
 	// Add global pull secret registry.
 	// An err indicates no registry was found, only append if was no err.
-	if reg, err := s.getGlobalRegistryForImage(imgName); err == nil {
+	if reg, err := s.getGlobalRegistry(imgName); err == nil {
 		regs = append(regs, reg)
 	}
 
@@ -277,14 +289,15 @@ func (s *LocalScan) getRegistries(ctx context.Context, namespace string, imgName
 
 func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.ContainerImage {
 	pullSources, err := s.mirrorStore.PullSources(srcImage.GetName().GetFullName())
-	if err != nil {
+	// A not exist error is expected when mirroring is not setup, therefore we do not log it.
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
 		log.Warnf("Error obtaining pull sources: %v", err)
 	}
 
 	if len(pullSources) == 0 {
 		// If no pull source was found due to an error or some other reason, we
 		// default to the source image.
-		log.Debugf("Using source image only for enriching %q", srcImage.GetName().GetFullName())
+		log.Debugf("Using source image only for enriching %q (id: %q)", srcImage.GetName().GetFullName(), srcImage.GetId())
 		return []*storage.ContainerImage{srcImage}
 	}
 
@@ -297,10 +310,23 @@ func (s *LocalScan) getPullSources(srcImage *storage.ContainerImage) []*storage.
 			continue
 		}
 
+		// This ID assignment addresses an edge case where a podspec references an image
+		// by tag (e.g. latest) and the registry contents for that tag change after the pod was
+		// created. We want to ensure that we pull metadata and layers based on the
+		// ID (digest) of the running image instead of what the tag currently represents.
+		// This condition will only be true for mirrors setup via the ImageTagMirrorSet (ITMS) CR.
+		// The other supported CRs, ImageContentSourcePolicy (ICSP) and ImageDigestMirrorSet (IDMS),
+		// will only match IF the podspec references the image by digest, in which case ID
+		// would be populated and this condition never true.
+		if img.GetId() == "" && srcImage.GetId() != "" {
+			log.Debugf("Adding id from source image %q (id: %q) to pull source %q", srcImage.GetName().GetFullName(), srcImage.GetId(), img.GetName().GetFullName())
+			img.Id = srcImage.GetId()
+		}
+
 		cImages = append(cImages, img)
 	}
 
-	log.Debugf("Using %d pull sources for enriching %q: %+v", len(cImages), srcImage.GetName().GetFullName(), cImages)
+	log.Debugf("Using %d pull sources for enriching %q (id: %q): %+v", len(cImages), srcImage.GetName().GetFullName(), srcImage.GetId(), cImages)
 	return cImages
 }
 
@@ -419,19 +445,23 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 	return regFactory.CreateRegistry(ii)
 }
 
-// validateSourceImage will return an error if an image is invalid per local
+// validateRequest will return an error if the request is invalid per local
 // scanning expectations.
-func validateSourceImage(srcImage *storage.ContainerImage) error {
-	if srcImage == nil {
+func validateRequest(req *LocalScanRequest) error {
+	if req == nil {
+		return pkgErrors.New("request is nil")
+	}
+
+	if req.Image == nil {
 		return pkgErrors.New("missing image")
 	}
 
-	if srcImage.GetName() == nil {
+	if req.Image.GetName() == nil {
 		return pkgErrors.New("missing image name")
 	}
 
 	// A fully qualified image is expected at this point.
-	if srcImage.GetName().GetRegistry() == "" {
+	if req.Image.GetName().GetRegistry() == "" {
 		return pkgErrors.New("missing image registry")
 	}
 

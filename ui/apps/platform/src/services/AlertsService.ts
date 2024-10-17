@@ -47,16 +47,28 @@ export function fetchSummaryAlertCounts(
     );
 }
 
+type FetchAlertsArguments = {
+    alertSearchFilter: SearchFilter;
+    sortOption: ApiSortOption;
+    page: number;
+    perPage: number;
+};
+
 /*
  * Fetch a page of list alert objects.
  */
-export function fetchAlerts(
-    searchFilter: SearchFilter,
-    sortOption: ApiSortOption,
-    page: number,
-    pageSize: number
-): CancellableRequest<ListAlert[]> {
-    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
+export function fetchAlerts({
+    alertSearchFilter,
+    sortOption,
+    page,
+    perPage,
+}: FetchAlertsArguments): CancellableRequest<ListAlert[]> {
+    const params = getListQueryParams({
+        searchFilter: alertSearchFilter,
+        sortOption,
+        page,
+        perPage,
+    });
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`, { signal })
@@ -67,9 +79,9 @@ export function fetchAlerts(
 /*
  * Fetch count of alerts.
  */
-export function fetchAlertCount(searchFilter: SearchFilter): CancellableRequest<number> {
+export function fetchAlertCount(alertSearchFilter: SearchFilter): CancellableRequest<number> {
     const params = queryString.stringify(
-        { query: getRequestQueryStringForSearchFilter(searchFilter) },
+        { query: getRequestQueryStringForSearchFilter(alertSearchFilter) },
         { arrayFormat: 'repeat' }
     );
     return makeCancellableAxiosRequest((signal) =>

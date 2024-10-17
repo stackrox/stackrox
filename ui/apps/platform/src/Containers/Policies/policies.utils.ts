@@ -26,6 +26,7 @@ import {
     PolicyGroup,
     PolicyDeploymentExclusion,
     PolicyImageExclusion,
+    ListPolicy,
 } from 'types/policy.proto';
 import { SearchFilter } from 'types/search';
 import { ExtendedPageAction } from 'utils/queryStringUtils';
@@ -69,6 +70,7 @@ export const initialPolicy: ClientPolicy = {
     mitreAttackVectors: [],
     criteriaLocked: false,
     mitreVectorsLocked: false,
+    source: 'IMPERATIVE',
 };
 
 export type PoliciesSearch = {
@@ -181,12 +183,6 @@ export function getExcludedImageNames(exclusions: PolicyExclusion[]): string[] {
         });
 
     return excludedImageNames;
-}
-
-// isDefault
-
-export function formatType(isDefault: boolean): string {
-    return isDefault ? 'System default' : 'User generated';
 }
 
 // lifecycleStages
@@ -313,6 +309,7 @@ const nonStandardNumberFields = [
     'Container CPU Limit',
     'Container Memory Request',
     'Container Memory Limit',
+    'NVD CVSS',
     'Replicas',
     'Severity',
 ];
@@ -710,4 +707,18 @@ export function getEmptyPolicyFieldCard(fieldKey) {
         negate: false,
         fieldKey,
     };
+}
+
+export function getPolicyOriginLabel({
+    isDefault,
+    source,
+}: Pick<ListPolicy, 'isDefault' | 'source'>) {
+    if (isDefault) {
+        return 'System';
+    }
+    return source === 'IMPERATIVE' ? 'Locally managed' : 'Externally managed';
+}
+
+export function isExternalPolicy(policy: ListPolicy) {
+    return policy.source === 'DECLARATIVE';
 }

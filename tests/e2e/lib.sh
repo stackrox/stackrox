@@ -162,6 +162,7 @@ export_test_environment() {
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_NVD_CVSS "${ROX_NVD_CVSS_UI:-true}"
+    ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -185,17 +186,16 @@ deploy_stackrox_operator() {
         info "Deploying ACS operator via midstream images"
         # Retrieving values from json map for operator and iib
         ocp_version=$(kubectl get clusterversion -o=jsonpath='{.items[0].status.desired.version}' | cut -d '.' -f 1,2)
-        OPERATOR_VERSION=$(< operator/midstream/iib.json jq -r '.operator.version')
-        VERSION=$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')
-        #Exporting the above vars
-        export IMAGE_TAG_BASE="brew.registry.redhat.io/rh-osbs/iib"
-        export OPERATOR_VERSION
-        export VERSION
 
-        make -C operator kuttl deploy-via-olm-midstream
+        make -C operator kuttl deploy-via-olm \
+          INDEX_IMG_BASE="brew.registry.redhat.io/rh-osbs/iib" \
+          INDEX_IMG_TAG="$(< operator/midstream/iib.json jq -r --arg version "$ocp_version" '.iibs[$version]')" \
+          INSTALL_CHANNEL="$(< operator/midstream/iib.json jq -r '.operator.channel')" \
+          INSTALL_VERSION="v$(< operator/midstream/iib.json jq -r '.operator.version')"
     else
         info "Deploying ACS operator"
-        ROX_PRODUCT_BRANDING=RHACS_BRANDING make -C operator kuttl deploy-via-olm
+        make -C operator kuttl deploy-via-olm \
+          ROX_PRODUCT_BRANDING=RHACS_BRANDING
     fi
 }
 
@@ -299,6 +299,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NVD_CVSS_UI'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_CLUSTERS_PAGE_MIGRATION_UI'
     customize_envVars+=$'\n        value: "true"'
 
     CENTRAL_YAML_PATH="tests/e2e/yaml/central-cr.envsubst.yaml"
@@ -554,6 +556,10 @@ wait_for_collectors_to_be_operational() {
         return
     fi
 
+    # Ensure collector DaemonSet state is stable
+    kubectl rollout status daemonset collector --namespace "${sensor_namespace}" --timeout=5m --watch=true
+
+    # Check each collector pod readiness.
     local start_time
     start_time="$(date '+%s')"
     local all_ready="false"

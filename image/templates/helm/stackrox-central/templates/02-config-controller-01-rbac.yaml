@@ -14,8 +14,8 @@ rules:
   - apiGroups:
     - config.stackrox.io
     resources:
-    - policies
-    - policies/status
+    - securitypolicies
+    - securitypolicies/status
     verbs:
     - create
     - delete

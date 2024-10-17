@@ -31,7 +31,6 @@ import { ListAlert } from 'types/alert.proto';
 import { TableColumn } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { SearchFilter } from 'types/search';
-
 import { OnSearchCallback } from 'Components/CompoundSearchFilter/types';
 import ResolveConfirmation from './Modals/ResolveConfirmation';
 import ExcludeConfirmation from './Modals/ExcludeConfirmation';
@@ -56,6 +55,7 @@ type ViolationsTablePanelProps = {
     getSortParams: GetSortParams;
     columns: TableColumn[];
     searchFilter: SearchFilter;
+    onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
 };
 
@@ -71,6 +71,7 @@ function ViolationsTablePanel({
     getSortParams,
     columns,
     searchFilter,
+    onFilterChange,
     onSearch,
 }: ViolationsTablePanelProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
@@ -194,7 +195,11 @@ function ViolationsTablePanel({
                     </Alert>
                 ))}
             </AlertGroup>
-            <ViolationsTableSearchFilter searchFilter={searchFilter} onSearch={onSearch} />
+            <ViolationsTableSearchFilter
+                searchFilter={searchFilter}
+                onFilterChange={onFilterChange}
+                onSearch={onSearch}
+            />
             <Divider component="div" />
             <Toolbar>
                 <ToolbarContent>

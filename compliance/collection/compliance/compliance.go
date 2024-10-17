@@ -86,7 +86,7 @@ func (c *Compliance) Start() {
 		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
 
-	if c.nodeScanner.IsActive() { // TODO: This mustn't be depending on a v2 setting
+	if c.nodeScanner.IsActive() || env.NodeIndexEnabled.BooleanSetting() {
 		nodeInventoriesC := c.manageNodeScanLoop(ctx)
 		// sending nodeInventories into output toSensorC
 		for n := range nodeInventoriesC {
@@ -137,25 +137,17 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheHit)
 				}
 			case <-t.C:
-				log.Infof("Scanning node %q", nodeName)
-				msg, err := c.nodeScanner.ScanNode(ctx)
-				if err != nil {
-					log.Errorf("Error running node scan: %v", err)
-				} else {
-					cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
-					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan)
-					c.umh.ObserveSending()
-					c.cache = msg.CloneVT()
-					nodeInventoriesC <- msg
+				if c.nodeScanner.IsActive() {
+					inventory := c.runNodeInventoryScan(ctx)
+					if inventory != nil {
+						nodeInventoriesC <- inventory
+					}
 				}
+
 				if env.NodeIndexEnabled.BooleanSetting() {
-					log.Infof("Creating v4 Node Index Report")
-					report, err := c.nodeIndexer.IndexNode(ctx)
-					if err != nil {
-						log.Errorf("Error creating node index: %v", err)
-					} else {
-						log.Infof("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
-						nodeInventoriesC <- c.createIndexMsg(report)
+					index := c.runNodeIndex(ctx)
+					if index != nil {
+						nodeInventoriesC <- index
 					}
 				}
 				interval := i.Next()
@@ -165,6 +157,32 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 		}
 	}()
 	return nodeInventoriesC
+}
+
+func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCompliance {
+	nodeName := c.nodeNameProvider.GetNodeName()
+	log.Infof("Scanning node %q", nodeName)
+	msg, err := c.nodeScanner.ScanNode(ctx)
+	if err != nil {
+		log.Errorf("Error running node scan: %v", err)
+		return nil
+	}
+	cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
+	cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan)
+	c.umh.ObserveSending()
+	c.cache = msg.CloneVT()
+	return msg
+}
+
+func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance {
+	log.Infof("Creating v4 Node Index Report")
+	report, err := c.nodeIndexer.IndexNode(ctx)
+	if err != nil {
+		log.Errorf("Error creating node index: %v", err)
+		return nil
+	}
+	log.Debugf("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
+	return c.createIndexMsg(report)
 }
 
 func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) {
@@ -284,7 +302,7 @@ func (c *Compliance) manageSendToSensor(ctx context.Context, cli sensor.Complian
 func (c *Compliance) initializeStream(ctx context.Context, cli sensor.ComplianceServiceClient) (sensor.ComplianceService_CommunicateClient, *sensor.MsgToCompliance_ScrapeConfig, error) {
 	eb := backoff.NewExponentialBackOff()
 	eb.MaxInterval = 30 * time.Second
-	eb.MaxElapsedTime = 3 * time.Minute
+	eb.MaxElapsedTime = 15 * time.Minute
 
 	var client sensor.ComplianceService_CommunicateClient
 	var config *sensor.MsgToCompliance_ScrapeConfig

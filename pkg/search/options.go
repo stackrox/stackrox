@@ -135,6 +135,7 @@ var (
 	MemoryRequest                = newFieldLabel("Memory Request (MB)")
 	MountPropagation             = newFieldLabel("Mount Propagation")
 	OrchestratorComponent        = newFieldLabel("Orchestrator Component")
+	PlatformComponent            = newFieldLabel("Platform Component")
 	// PolicyViolated is a fake search field to filter deployments that have violation.
 	// This is handled/supported only by deployments sub-resolver of policy resolver.
 	// Note that 'Policy Violated=false' is not yet supported.
@@ -178,6 +179,7 @@ var (
 	ViolationState = newFieldLabel("Violation State")
 	ViolationTime  = newFieldLabel("Violation Time")
 	Tag            = newFieldLabel("Tag")
+	EntityType     = newFieldLabel("Entity Type")
 
 	// Pod Search fields
 	PodUID   = newFieldLabel("Pod UID")
@@ -237,6 +239,7 @@ var (
 	ComplianceOperatorScanUpdateTime         = newFieldLabel("Compliance Scan Config Last Updated Time")
 	ComplianceOperatorResultCreateTime       = newFieldLabel("Compliance Check Result Created Time")
 	ComplianceOperatorScanLastExecutedTime   = newFieldLabel("Compliance Scan Last Executed Time")
+	ComplianceOperatorScanLastStartedTime    = newFieldLabel("Compliance Scan Last Started Time")
 	ComplianceOperatorRuleType               = newFieldLabel("Compliance Rule Type")
 	ComplianceOperatorScanSettingBindingName = newFieldLabel("Compliance Scan Setting Binding Name")
 	ComplianceOperatorSuiteName              = newFieldLabel("Compliance Suite Name")
@@ -343,7 +346,9 @@ var (
 	ComplianceLastScanMax = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
 
 	// External network sources fields
-	DefaultExternalSource = newFieldLabel("Default External Source")
+	DefaultExternalSource    = newFieldLabel("Default External Source")
+	DiscoveredExternalSource = newFieldLabel("Discovered External Source")
+	ExternalSourceAddress    = newFieldLabel("External Source Address")
 
 	// Report configurations search fields
 	ReportName     = newFieldLabel("Report Name")
@@ -420,6 +425,9 @@ var (
 	IntegrationID   = newFieldLabel("Integration ID")
 	IntegrationName = newFieldLabel("Integration Name")
 	IntegrationType = newFieldLabel("Integration Type")
+
+	// AuthProvider fields.
+	AuthProviderName = newFieldLabel("AuthProvider Name")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")

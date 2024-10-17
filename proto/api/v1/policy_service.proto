@@ -63,13 +63,13 @@ message PolicyError {
   string error = 1;
 }
 
-message ExportPolicyError {
+message PolicyOperationError {
   string policy_id = 1;
   PolicyError error = 2;
 }
 
-message ExportPoliciesErrorList {
-  repeated ExportPolicyError errors = 1;
+message PolicyOperationErrorList {
+  repeated PolicyOperationError errors = 1;
 }
 
 message PolicyFromSearchRequest {

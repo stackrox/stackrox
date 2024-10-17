@@ -32,7 +32,7 @@ import { DynamicTableLabel } from 'Components/DynamicIcon';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import useURLSort from 'hooks/useURLSort';
 import { getDateTime } from 'utils/dateUtils';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { clusterSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';

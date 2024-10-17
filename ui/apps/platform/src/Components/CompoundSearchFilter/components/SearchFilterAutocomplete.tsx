@@ -21,7 +21,7 @@ import SEARCH_AUTOCOMPLETE_QUERY, {
 } from 'queries/searchAutocomplete';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
-import { ensureString } from '../utils/utils';
+import { ensureString } from 'utils/ensure';
 
 type SearchFilterAutocompleteProps = {
     searchCategory: string;
@@ -64,6 +64,16 @@ function getSelectOptions(
             };
         });
         return options;
+    }
+
+    if (filterValue === '') {
+        return [
+            {
+                isDisabled: true,
+                value: filterValue,
+                children: 'No options',
+            },
+        ];
     }
 
     return [
@@ -123,7 +133,7 @@ function SearchFilterAutocomplete({
             ? [autocompleteContextString, autocompleteSearchString].join('+')
             : autocompleteSearchString;
 
-    const { data, loading: isLoading } = useQuery<SearchAutocompleteQueryResponse>(
+    const { data: rawData, loading: isLoading } = useQuery<SearchAutocompleteQueryResponse>(
         SEARCH_AUTOCOMPLETE_QUERY,
         {
             variables: {
@@ -132,6 +142,10 @@ function SearchFilterAutocomplete({
             },
         }
     );
+    // Filter out empty strings
+    const data: SearchAutocompleteQueryResponse = {
+        searchAutocomplete: rawData?.searchAutocomplete?.filter((item) => item !== '') ?? [],
+    };
 
     const selectOptions: SelectOptionProps[] = getSelectOptions(
         data,

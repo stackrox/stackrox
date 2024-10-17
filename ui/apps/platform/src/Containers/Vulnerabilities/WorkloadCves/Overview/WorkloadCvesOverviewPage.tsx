@@ -33,6 +33,7 @@ import {
     getDefaultWorkloadSortOption,
     getDefaultZeroCveSortOption,
     getWorkloadSortFields,
+    syncSeveritySortOption,
 } from 'Containers/Vulnerabilities/utils/sortUtils';
 import useURLSort from 'hooks/useURLSort';
 import {
@@ -50,7 +51,7 @@ import { VulnerabilityState } from 'types/cve.proto';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import LinkShim from 'Components/PatternFly/LinkShim';
 
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,
@@ -173,7 +174,7 @@ function WorkloadCvesOverviewPage() {
 
     const currentVulnerabilityState = useVulnerabilityState();
 
-    const { searchFilter, setSearchFilter } = useURLSearch();
+    const { searchFilter, setSearchFilter: setURLSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
     const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion(
         'entityTab',
@@ -238,9 +239,14 @@ function WorkloadCvesOverviewPage() {
 
     const sort = useURLSort({
         sortFields: getWorkloadSortFields(activeEntityTabKey),
-        defaultSortOption: getDefaultSortOption(activeEntityTabKey),
+        defaultSortOption: getDefaultSortOption(activeEntityTabKey, searchFilter),
         onSort: () => pagination.setPage(1),
     });
+
+    function setSearchFilter(searchFilter: SearchFilter) {
+        setURLSearchFilter(searchFilter);
+        syncSeveritySortOption(searchFilter, sort.sortOption, sort.setSortOption);
+    }
 
     function updateDefaultFilters(values: DefaultFilters) {
         pagination.setPage(1);
@@ -256,7 +262,7 @@ function WorkloadCvesOverviewPage() {
 
     function onEntityTabChange(entityTab: WorkloadEntityTab) {
         pagination.setPage(1);
-        sort.setSortOption(getDefaultSortOption(entityTab));
+        sort.setSortOption(getDefaultSortOption(entityTab, searchFilter));
 
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
@@ -469,6 +475,8 @@ function WorkloadCvesOverviewPage() {
                             </Flex>
                             {activeEntityTabKey === 'CVE' && (
                                 <CVEsTableContainer
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
                                     filterToolbar={filterToolbar}
                                     entityToggleGroup={entityToggleGroup}
                                     rowCount={entityCounts.CVE}
@@ -481,6 +489,8 @@ function WorkloadCvesOverviewPage() {
                             )}
                             {activeEntityTabKey === 'Image' && (
                                 <ImagesTableContainer
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
                                     filterToolbar={filterToolbar}
                                     entityToggleGroup={entityToggleGroup}
                                     rowCount={entityCounts.Image}
@@ -503,6 +513,8 @@ function WorkloadCvesOverviewPage() {
                             )}
                             {activeEntityTabKey === 'Deployment' && (
                                 <DeploymentsTableContainer
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
                                     filterToolbar={filterToolbar}
                                     entityToggleGroup={entityToggleGroup}
                                     rowCount={entityCounts.Deployment}

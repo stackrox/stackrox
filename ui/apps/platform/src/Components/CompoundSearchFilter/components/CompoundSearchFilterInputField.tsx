@@ -8,6 +8,8 @@ import {
 } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
+import CheckboxSelect from 'Components/CheckboxSelect';
+import { ensureString, ensureStringArray } from 'utils/ensure';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
 import { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
@@ -16,16 +18,12 @@ import {
     dateConditionMap,
     ensureConditionDate,
     ensureConditionNumber,
-    ensureString,
-    ensureStringArray,
     getAttribute,
     getEntity,
     hasGroupedSelectOptions,
     hasSelectOptions,
     isSelectType,
 } from '../utils/utils';
-
-import CheckboxSelect from './CheckboxSelect';
 import ConditionNumber from './ConditionNumber';
 import SearchFilterAutocomplete from './SearchFilterAutocomplete';
 import ConditionDate from './ConditionDate';

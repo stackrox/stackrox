@@ -71,17 +71,17 @@ func (mr *MockReportNotifierMockRecorder) ProtoNotifier() *gomock.Call {
 }
 
 // ReportNotify mocks base method.
-func (m *MockReportNotifier) ReportNotify(arg0 context.Context, arg1 *bytes.Buffer, arg2 []string, arg3, arg4 string) error {
+func (m *MockReportNotifier) ReportNotify(arg0 context.Context, arg1 *bytes.Buffer, arg2 []string, arg3, arg4, arg5 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReportNotify", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "ReportNotify", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ReportNotify indicates an expected call of ReportNotify.
-func (mr *MockReportNotifierMockRecorder) ReportNotify(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+func (mr *MockReportNotifierMockRecorder) ReportNotify(arg0, arg1, arg2, arg3, arg4, arg5 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportNotify", reflect.TypeOf((*MockReportNotifier)(nil).ReportNotify), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReportNotify", reflect.TypeOf((*MockReportNotifier)(nil).ReportNotify), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // Test mocks base method.

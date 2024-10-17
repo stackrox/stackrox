@@ -252,7 +252,12 @@
           "type": "string"
         },
         "default": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "`default` indicates whether the external source is user-generated or system-generated."
+        },
+        "discovered": {
+          "type": "boolean",
+          "description": "`discovered` indicates whether the external source is harvested from monitored traffic."
         }
       },
       "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
@@ -304,7 +309,8 @@
       "type": "object",
       "properties": {
         "deploymentId": {
-          "type": "string"
+          "type": "string",
+          "description": "This is the ID of the baseline."
         },
         "clusterId": {
           "type": "string"
@@ -324,7 +330,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkBaselinePeer"
-          }
+          },
+          "description": "A list of peers that will never be added to the baseline.\nFor now, this contains peers that the user has manually removed.\nThis is used to ensure we don't add it back in the event\nwe see the flow again."
         },
         "observationPeriodEnd": {
           "type": "string",

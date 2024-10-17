@@ -625,14 +625,6 @@
         }
       }
     },
-    "ReportStatusReportMethod": {
-      "type": "string",
-      "enum": [
-        "ON_DEMAND",
-        "SCHEDULED"
-      ],
-      "default": "ON_DEMAND"
-    },
     "VulnerabilityReportFiltersFixability": {
       "type": "string",
       "enum": [
@@ -989,12 +981,20 @@
           "type": "string"
         },
         "reportRequestType": {
-          "$ref": "#/definitions/ReportStatusReportMethod"
+          "$ref": "#/definitions/v2ReportStatusReportMethod"
         },
         "reportNotificationMethod": {
           "$ref": "#/definitions/v2NotificationMethod"
         }
       }
+    },
+    "v2ReportStatusReportMethod": {
+      "type": "string",
+      "enum": [
+        "ON_DEMAND",
+        "SCHEDULED"
+      ],
+      "default": "ON_DEMAND"
     },
     "v2ReportStatusResponse": {
       "type": "object",
@@ -1098,6 +1098,9 @@
         "sinceStartDate": {
           "type": "string",
           "format": "date-time"
+        },
+        "includeNvdCvss": {
+          "type": "boolean"
         }
       }
     }

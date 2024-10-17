@@ -42,6 +42,7 @@ type serviceImpl struct {
 	connectionManager *connectionManager
 
 	offlineMode *atomic.Bool
+	stopperLock sync.Mutex
 	stopper     set.Set[concurrency.Stopper]
 }
 
@@ -59,10 +60,12 @@ func (s *serviceImpl) Start() error {
 }
 
 func (s *serviceImpl) Stop(_ error) {
-	for _, stopper := range s.stopper.AsSlice() {
-		stopper.Client().Stop()
-		_ = stopper.Client().Stopped().Wait()
-	}
+	concurrency.WithLock(&s.stopperLock, func() {
+		for _, stopper := range s.stopper.AsSlice() {
+			stopper.Client().Stop()
+			_ = stopper.Client().Stopped().Wait()
+		}
+	})
 }
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
@@ -212,7 +215,9 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 	}
 
 	stopper := concurrency.NewStopper()
-	s.stopper.Add(stopper)
+	concurrency.WithLock(&s.stopperLock, func() {
+		s.stopper.Add(stopper)
+	})
 	go s.startSendingLoop(stopper)
 
 	for {

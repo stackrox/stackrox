@@ -52,7 +52,7 @@ STACKROX_ADMIN_PASSWORD="$(openssl rand -base64 20 | tr -d '/=+')"
 
 echo "Installing stackrox-central-services"
 
-installflags=()
+installflags=('--set' 'central.persistence.none=true')
 if [[ "$SMALL_INSTALL" == "true" ]]; then
     installflags+=('--set' 'central.resources.requests.memory=1Gi')
     installflags+=('--set' 'central.resources.requests.cpu=1')

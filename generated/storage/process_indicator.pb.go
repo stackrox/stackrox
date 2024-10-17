@@ -303,7 +303,7 @@ type ProcessSignal struct {
 	// ID of container associated with this process
 	ContainerId string `protobuf:"bytes,2,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty" search:"Container ID,hidden"` // @gotags: search:"Container ID,hidden"
 	// Process creation time
-	Time *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty" search:"Process Creation Time,hidden"` // @gotags: search:"Process Creation Time,hidden"
+	Time *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty" search:"Process Creation Time,hidden" sql:"index=btree"` // @gotags: search:"Process Creation Time,hidden" sql:"index=btree"
 	// Process name
 	Name string `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty" search:"Process Name"` // @gotags: search:"Process Name"
 	// Process arguments

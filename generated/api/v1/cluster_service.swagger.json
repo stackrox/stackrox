@@ -595,7 +595,8 @@
           "description": "scanner_health_info is filled when the scanner is deployed on a secured cluster (so called \"local scanner\").\nPlease do not confuse this with the default scanner deployment on a central cluster."
         },
         "sensorHealthStatus": {
-          "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
+          "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel",
+          "description": "The following _health_status fields provide aggregated health status of the respective components and are assigned by central."
         },
         "collectorHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"

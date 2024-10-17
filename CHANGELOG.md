@@ -16,9 +16,14 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-25451: Secured Cluster Auto-Upgrader is now enabled for all kind of clusters.
 - ROX-26124: Added a `--with-database-only` only to diagnostic bundle.
   - `roxctl central debug download-diagnostics --with-database-only`
+- ROX-18899: Added Microsoft Sentinel notifier to send alerts and audit logs to Azure Log Analytics Workspace.
 
 ### Removed Features
 
+- The environment variable `ROX_DEPLOYMENT_ENVVAR_SEARCH` has been removed.
+- The environment variable `ROX_DEPLOYMENT_SECRET_SEARCH` has been removed.
+- The environment variable `ROX_DEPLOYMENT_VOLUME_SEARCH` has been removed.
+- The environment variable `ROX_SECRET_FILE_SEARCH` has been removed.
 - The Central PVC stackrox-db will be removed. Existing volumes will be released. Flags for configuring Central attached persistent storage have been removed from roxctl:
   - `roxctl central generate k8s pvc` and `roxctl central generate openshift pvc` no longer have the flags `--name`, `--size`, and `--storage-class`.
   - `roxctl central generate k8s hostpath` and `roxctl central generate openshift hostpath` no longer have the flags `--hostpath`, `--node-selector-key`, and `--node-selector-value`.
@@ -32,14 +37,30 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   This replaces the current format, which allows a string with a signed sequence of decimal numbers,
   each with an optional fraction and a unit suffix (e.g., "300ms", "-1.5h", or "2h45m").
   The currently valid time units "ns", "us" (or "µs"), "ms", "m", and "h" will no longer be supported.
+- ROX-24169: API token authentication has been deprecated by Red Hat OpenShift Cluster Manager. The corresponding cloud source integration now uses service accounts for authentication.
 
 ### Technical Changes
 - ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
-  - To revert back to synchronous TLS checks set `ROX_SENSOR_LAZY_TLS_CHECKS` to `false` on Sensor.
 - ROX-23343: The auto-sensing within the Helm charts for detecting OpenShift clusters has been changed to depend on the `project.openshift.io/v1` APIVersion.
 - ROX-22701: Prevent deleting default policies through the API
-
+- ROX-26422: Central will now include the `id` field in alert notifications and API responses.
 - ROX-20723: Remove monorepo substructure under `ui/` directory and switch from yarn v1 to npm for package management. Use `npm run` in place of `yarn` commands.
+- ROX-26306: Increase minimum Node.js version from `">=18.0.0"` to `"^18.18.0 || >=20.0.0"` for open source community to run `make lint` command in the ui directory.
+    - Node.js 18.18.0 was released on 2023-09-18
+    - Node.js 18 moves from Maintenance to End-of-Life status on 2025-04-30
+    - Node.js 20 moves from Active to Maintenance status on 2024-10-22
+- ROX-20578: Sensor will now store pull secrets by secret name and registry host (instead of only registry host). This will reduce Delegated Scanning authentication failures when multiple secrets exist for the same registry within a namespace and more closely aligns with k8s secret handling.
+  - Setting `ROX_SENSOR_PULL_SECRETS_BY_NAME` to `false` on Sensor will disable this feature and cause secrets to be stored by only registry host.
+- ROX-25981: Scanner V4 now fetches vulnerability data from [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of [Red Hat's OVAL feed](https://security.access.redhat.com/data/oval/v2/) for RPMs installed in RHEL-based image containers.
+  - Fixed vulnerabilities affecting RHEL-based images are no longer identified by the respective RHSA, RHBA, nor RHEA. Instead, they will be identified by CVE.
+    - This will also apply to vulnerabilities obtained from the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) (used for container-first scanning).
+    - This may potentially disrupt policies created around RHSAs.
+  - Scanner V4 now only considers vulnerabilities affecting Red Hat products dated back to 2014.
+    - Previously when reading Red Hat's OVAL data, the vulnerabilities dated back to pre-2000, but ClairCore only reads back to 2014.
+  - Scanner V4 DB requires less space for vulnerability data, and its initialization time has improved from about 1 hour on SSD to about 10 minutes.
+- ROX-26372: `ROX_POSTGRES_VM_STATEMENT_TIMEOUT` env var defaulting to 3 minutes to allow customers to extend the timeout for queries backing VM pages only
+- ROX-26428: Fixed a bug when using delegated scanning where newer image metadata and layers were pulled incorrectly for an older image referenced by tag when the image registry contents have changed since deployment.
+  - Now the metadata and layers pulled will be based on the digest of the image provided by the container runtime (when available) instead of just the tag.
 
 ## [4.5.0]
 
@@ -192,7 +213,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Secret terms that can be removed by setting ROX_DEPLOYMENT_SECRET_SEARCH=false:
     - Secret, Secret Path
 - The following search terms will be disabled in the next release and removed from the secret context in 2 releases. They can be removed in the current release by setting ROX_SECRET_FILE_SEARCH=false:
-  - Secret Type, Cert Expiration,Image Pull Secret Registry
+  - Secret Type, Cert Expiration, Image Pull Secret Registry
 - The `/v1/availableAuthProviders` endpoint will in a future release require authentication and at least READ permission on the `Access` resource.
   Ensure that any flow interacting with it is authenticated and has the proper permissions going forward.
 - The `/v1/tls-challenge` will  require authentication, ensure that all interactions with these endpoints include proper authentication going forward.

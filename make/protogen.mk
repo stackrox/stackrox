@@ -182,7 +182,7 @@ inject-proto-tags: $(PROTOC_GO_INJECT_TAG_BIN)
 cleanup-swagger-json-gotags:
 	@echo "+ $@"
 	$(SILENT)for swagger_json_file in $(shell find $(GENERATED_BASE_PATH) -name '*.swagger.json'); do \
-		jq 'del(.. | select(. | strings | test("@gotags")))' $$swagger_json_file > $$swagger_json_file.tmp; \
+		jq 'del(.. | strings | select(startswith("@gotags:"))) | (.. | strings) |= sub("[[:space:]]*@gotags:.*"; "")' $$swagger_json_file > $$swagger_json_file.tmp; \
 		mv $$swagger_json_file.tmp $$swagger_json_file; \
 	done
 
@@ -215,7 +215,7 @@ endif
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--plugin protoc-gen-go-vtproto="${PROTOC_GEN_GO_VTPROTO_BIN}" \
-		--go-vtproto_opt=features=marshal+unmarshal+size+equal+clone+unmarshal_unsafe \
+		--go-vtproto_opt=features=marshal+size+equal+clone+unmarshal_unsafe \
 		--go-vtproto_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 

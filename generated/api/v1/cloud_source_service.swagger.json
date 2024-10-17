@@ -445,7 +445,16 @@
       "type": "object",
       "properties": {
         "secret": {
-          "type": "string"
+          "type": "string",
+          "description": "Used for single-valued authentication via long-lived tokens."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Used for client authentication in combination with client_secret."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "Used for client authentication in combination with client_id."
         }
       }
     },

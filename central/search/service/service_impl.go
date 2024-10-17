@@ -42,7 +42,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-const maxAutocompleteResults = 10
+const (
+	// auto-complete sets its pagination to 100, reduces the result set by removing duplicates and will return a list of maxAutocompleteResults.
+	// The number was chosen as a reasonably big set of results to try to return 10 results after removing duplicates.
+	// Ideally the auto-complete would guarantee a result set of 10, but the nature of the search framework and SQL-queries
+	// did not make this possible without more investigations.
+	pagination             = 100
+	maxAutocompleteResults = 10
+)
 
 var (
 	categoryToOptionsMultimap = func() map[v1.SearchCategory]search.OptionsMultiMap {
@@ -195,7 +202,7 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 	}
 	// Set the max return size for the query
 	query.Pagination = &v1.QueryPagination{
-		Limit: maxAutocompleteResults,
+		Limit: pagination,
 	}
 
 	if len(categories) == 0 {

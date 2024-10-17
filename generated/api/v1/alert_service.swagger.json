@@ -653,6 +653,16 @@
         }
       }
     },
+    "AlertEntityType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "DEPLOYMENT",
+        "CONTAINER_IMAGE",
+        "RESOURCE"
+      ],
+      "default": "UNSET"
+    },
     "AlertGroupAlertCounts": {
       "type": "object",
       "properties": {
@@ -993,7 +1003,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/AlertViolation"
-          }
+          },
+          "description": "For run-time phase alert, a maximum of 40 violations are retained."
         },
         "processViolation": {
           "$ref": "#/definitions/AlertProcessViolation"
@@ -1011,7 +1022,8 @@
         },
         "resolvedAt": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "The time at which the alert was resolved. Only set if ViolationState is RESOLVED."
         },
         "state": {
           "$ref": "#/definitions/storageViolationState"
@@ -1019,8 +1031,15 @@
         "snoozeTill": {
           "type": "string",
           "format": "date-time"
+        },
+        "platformComponent": {
+          "type": "boolean"
+        },
+        "entityType": {
+          "$ref": "#/definitions/AlertEntityType"
         }
-      }
+      },
+      "title": "Next available tag: 24"
     },
     "storageAlertDeployment": {
       "type": "object",
@@ -1412,7 +1431,8 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageEnforcementAction"
-          }
+          },
+          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates."
         },
         "notifiers": {
           "type": "array",
@@ -1425,13 +1445,16 @@
           "format": "date-time"
         },
         "SORTName": {
-          "type": "string"
+          "type": "string",
+          "description": "For internal use only."
         },
         "SORTLifecycleStage": {
-          "type": "string"
+          "type": "string",
+          "description": "For internal use only."
         },
         "SORTEnforcement": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "For internal use only."
         },
         "policyVersion": {
           "type": "string"

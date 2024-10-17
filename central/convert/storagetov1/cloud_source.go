@@ -31,7 +31,7 @@ func CloudSource(cloudSource *storage.CloudSource) *v1.CloudSource {
 			},
 		}
 	}
-	secrets.ScrubSecretsFromStructWithReplacement(v1CloudSource, secrets.ScrubReplacementStr)
+	secrets.ScrubSecretsFromStructWithReplacement(v1CloudSource, secrets.ScrubReplacementStr, secrets.WithScrubZeroValues(false))
 	return v1CloudSource
 }
 
@@ -41,6 +41,8 @@ func cloudSourceToV1TypeEnum(val storage.CloudSource_Type) v1.CloudSource_Type {
 
 func cloudSourceToV1Credentials(credentials *storage.CloudSource_Credentials) *v1.CloudSource_Credentials {
 	return &v1.CloudSource_Credentials{
-		Secret: credentials.GetSecret(),
+		Secret:       credentials.GetSecret(),
+		ClientId:     credentials.GetClientId(),
+		ClientSecret: credentials.GetClientSecret(),
 	}
 }

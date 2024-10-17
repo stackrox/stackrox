@@ -27,10 +27,10 @@ function setup(defaultSelector, onChange) {
 }
 
 describe(Cypress.spec.relative, () => {
-    it('should render "All entities" option when selector is null', () => {
-        setup({ type: 'All' }, () => {});
+    it('should render "No deployments specified" option when selector is null', () => {
+        setup({ type: 'NoneSpecified' }, () => {});
 
-        cy.findByText('All deployments');
+        cy.findByText('No deployments specified');
     });
 
     it('should allow users to add name selectors', () => {
@@ -48,7 +48,7 @@ describe(Cypress.spec.relative, () => {
 
         const hasRuleValues = (values) => (s) => isEqual(s.resourceSelector.rule.values, values);
 
-        setup({ type: 'All' }, onChange);
+        setup({ type: 'NoneSpecified' }, onChange);
 
         cy.findByLabelText('Select deployments by name or label').click();
         cy.findByText('Deployments with names matching').click();
@@ -121,7 +121,7 @@ describe(Cypress.spec.relative, () => {
         cy.findByLabelText('Delete visa-processor').click();
         cy.findByLabelText('Delete discover-processor').click();
 
-        cy.wrap(state).should('deep.equal', { resourceSelector: { type: 'All' } });
+        cy.wrap(state).should('deep.equal', { resourceSelector: { type: 'NoneSpecified' } });
     });
 
     it('should allow users to add label key/value selectors', () => {
@@ -140,7 +140,7 @@ describe(Cypress.spec.relative, () => {
         const hasRuleValues = (values) => (s) =>
             isEqual(s.resourceSelector.rules[0].values, values);
 
-        setup({ type: 'All' }, onChange);
+        setup({ type: 'NoneSpecified' }, onChange);
 
         cy.findByLabelText('Select deployments by name or label').click();
         cy.findByText('Deployments with labels matching exactly').click();
@@ -248,6 +248,6 @@ describe(Cypress.spec.relative, () => {
         cy.findByLabelText('Delete kubernetes.io/metadata.name=mastercard-processor').click();
         cy.findByLabelText('Delete kubernetes.io/metadata.name=discover-processor').click();
 
-        cy.wrap(state).should('deep.equal', { resourceSelector: { type: 'All' } });
+        cy.wrap(state).should('deep.equal', { resourceSelector: { type: 'NoneSpecified' } });
     });
 });

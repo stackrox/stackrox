@@ -114,6 +114,20 @@ func (mr *MockCveCoreMockRecorder) GetImagesBySeverity() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesBySeverity", reflect.TypeOf((*MockCveCore)(nil).GetImagesBySeverity))
 }
 
+// GetPublishDate mocks base method.
+func (m *MockCveCore) GetPublishDate() *time.Time {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPublishDate")
+	ret0, _ := ret[0].(*time.Time)
+	return ret0
+}
+
+// GetPublishDate indicates an expected call of GetPublishDate.
+func (mr *MockCveCoreMockRecorder) GetPublishDate() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPublishDate", reflect.TypeOf((*MockCveCore)(nil).GetPublishDate))
+}
+
 // GetTopCVSS mocks base method.
 func (m *MockCveCore) GetTopCVSS() float32 {
 	m.ctrl.T.Helper()
@@ -126,6 +140,20 @@ func (m *MockCveCore) GetTopCVSS() float32 {
 func (mr *MockCveCoreMockRecorder) GetTopCVSS() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopCVSS", reflect.TypeOf((*MockCveCore)(nil).GetTopCVSS))
+}
+
+// GetTopNVDCVSS mocks base method.
+func (m *MockCveCore) GetTopNVDCVSS() float32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTopNVDCVSS")
+	ret0, _ := ret[0].(float32)
+	return ret0
+}
+
+// GetTopNVDCVSS indicates an expected call of GetTopNVDCVSS.
+func (mr *MockCveCoreMockRecorder) GetTopNVDCVSS() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopNVDCVSS", reflect.TypeOf((*MockCveCore)(nil).GetTopNVDCVSS))
 }
 
 // MockCveView is a mock of CveView interface.

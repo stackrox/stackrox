@@ -215,6 +215,7 @@ function CheckDetails() {
                         getSortParams={getSortParams}
                         searchFilterConfig={searchFilterConfig}
                         searchFilter={searchFilter}
+                        onFilterChange={setSearchFilter}
                         onSearch={onSearch}
                         onCheckStatusSelect={onCheckStatusSelect}
                         onClearFilters={onClearFilters}

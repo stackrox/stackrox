@@ -1,7 +1,15 @@
+import intersection from 'lodash/intersection';
 import sortBy from 'lodash/sortBy';
-import { ensureExhaustive } from 'utils/type.utils';
+import { ensureExhaustive, isNonEmptyArray, NonEmptyArray } from 'utils/type.utils';
 import { SortAggregate, SortOption } from 'types/table';
-import { WorkloadEntityTab } from '../types';
+import { FieldOption } from 'hooks/useURLSort';
+import { ApiSortOption, SearchFilter } from 'types/search';
+import {
+    vulnerabilitySeverityLabels,
+    VulnerabilitySeverityLabel,
+    WorkloadEntityTab,
+} from '../types';
+import { getAppliedSeverities } from './searchUtils';
 
 export const aggregateByCVSS: SortAggregate = {
     aggregateFunc: 'max',
@@ -21,12 +29,23 @@ export const aggregateByCreatedTime: SortAggregate = {
  * @param entityTab The chosen entity
  * @returns The available sort fields
  */
-export function getWorkloadSortFields(entityTab: WorkloadEntityTab): string[] {
+export function getWorkloadSortFields(entityTab: WorkloadEntityTab): (string | string[])[] {
     switch (entityTab) {
         case 'CVE':
-            return ['CVE', 'CVSS', 'Image Sha', 'CVE Created Time'];
+            return [
+                'CVE',
+                [
+                    'Critical Severity Count',
+                    'Important Severity Count',
+                    'Moderate Severity Count',
+                    'Low Severity Count',
+                ],
+                'CVSS',
+                'Image Sha',
+                'CVE Created Time',
+            ];
         case 'Image':
-            return ['Image', 'Image OS', 'Image created time', 'Image scan time'];
+            return ['Image', 'Image OS', 'Image Created Time', 'Image Scan Time'];
         case 'Deployment':
             return ['Deployment', 'Cluster', 'Namespace', 'Created'];
         default:
@@ -40,10 +59,19 @@ export function getWorkloadSortFields(entityTab: WorkloadEntityTab): string[] {
  * @param entityTab The chosen entity
  * @returns The default sort option
  */
-export function getDefaultWorkloadSortOption(entityTab: WorkloadEntityTab): SortOption {
+export function getDefaultWorkloadSortOption(
+    entityTab: WorkloadEntityTab,
+    searchFilter?: SearchFilter
+): SortOption | NonEmptyArray<SortOption> {
     switch (entityTab) {
         case 'CVE':
-            return { field: 'CVSS', aggregateBy: aggregateByCVSS, direction: 'desc' };
+            // Array.prototype.map does not currently retain the arity of an input tuple, so
+            // we need to cast the return value to a NonEmptyArray<SortOption>. This may be fixed
+            // soon in a future version of TypeScript https://github.com/microsoft/TypeScript/issues/29841
+            return getSeveritySortOptions(getAppliedSeverities(searchFilter ?? {})).map((o) => ({
+                ...o,
+                direction: 'desc',
+            })) as NonEmptyArray<SortOption>;
         case 'Deployment':
             return { field: 'Deployment', direction: 'asc' };
         case 'Image':
@@ -109,4 +137,84 @@ export function getScoreVersionsForTopCVSS(
         .filter(({ cvss }) => cvss.toFixed(1) === topCvss.toFixed(1))
         .map(({ scoreVersion }) => scoreVersion);
     return Array.from(new Set(scoreVersions)).sort();
+}
+
+export function getScoreVersionsForTopNvdCVSS(
+    topNvdCvss: number,
+    scores: { nvdCvss: number; nvdScoreVersion: string }[]
+): string[] {
+    const scoreVersions = scores
+        .filter(({ nvdCvss = 0 }) => nvdCvss.toFixed(1) === topNvdCvss.toFixed(1))
+        .map(({ nvdScoreVersion = 'UNKNOWN_VERSION' }) => nvdScoreVersion);
+    return Array.from(new Set(scoreVersions)).sort();
+}
+
+export const severitySortMap = {
+    Critical: 'Critical Severity Count',
+    Important: 'Important Severity Count',
+    Moderate: 'Moderate Severity Count',
+    Low: 'Low Severity Count',
+} as const;
+
+/**
+ * Given the selected severity filters, return the sort options for the severity column. Severities
+ * that are hidden will not be included in the sort options.
+ *
+ * @param selectedSeverities Severities that have been enabled by the user
+ * @returns A non-empty array of sort options for the severity columns
+ */
+export function getSeveritySortOptions(
+    selectedSeverities: VulnerabilitySeverityLabel[] | undefined
+): NonEmptyArray<FieldOption> {
+    const options = vulnerabilitySeverityLabels
+        .filter((severity) => selectedSeverities?.includes(severity))
+        .map((severity) => ({ field: severitySortMap[severity] }));
+
+    if (isNonEmptyArray(options)) {
+        return options;
+    }
+
+    return [
+        { field: 'Critical Severity Count' },
+        { field: 'Important Severity Count' },
+        { field: 'Moderate Severity Count' },
+        { field: 'Low Severity Count' },
+    ];
+}
+
+/**
+ * If the current sort option is sorting by severity, update the sort option
+ * to match the applied severity filters when the filters change. This is necessary because
+ * the severity multi sort is dynamic and changes based on the applied severity filters, but
+ * does not update the sort fields automatically when the filters change.
+ *
+ * @param searchFilter The updated search filter
+ * @param currentSortOption The current sort option
+ * @param applySort A callback function to apply the new sort option, usually from the useURLSort hook
+ */
+export function syncSeveritySortOption(
+    searchFilter: SearchFilter,
+    currentSortOption: ApiSortOption,
+    applySort: (sort: SortOption | SortOption[]) => void
+) {
+    // Only sync the sort option if the current sort option is sorting by severity. This
+    // is determined by detecting that the current sort option is an array and that it
+    // contains a field that matches a severity.
+    if (
+        !Array.isArray(currentSortOption) ||
+        intersection(
+            currentSortOption.map((s) => s.field),
+            Object.values(severitySortMap)
+        ).length === 0
+    ) {
+        return;
+    }
+
+    const appliedSeverities = getAppliedSeverities(searchFilter);
+    const { reversed } = currentSortOption[0];
+    const direction = reversed ? 'desc' : 'asc';
+    const sortOptions = getSeveritySortOptions(appliedSeverities).map(
+        (option) => ({ ...option, direction }) as const
+    );
+    applySort(sortOptions);
 }

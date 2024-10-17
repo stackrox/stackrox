@@ -889,7 +889,8 @@ func getOptionalQueryParams(opts *debugDumpOptions, u *url.URL) error {
 	if timeSince != "" {
 		t, err := time.Parse(layout, timeSince)
 		if err != nil {
-			return errors.Wrapf(err, "invalid timestamp value: %q\n", t)
+			log.Error(err)
+			return errors.Errorf("invalid time since value: %q\n", url.QueryEscape(timeSince))
 		}
 		opts.since = t
 	} else {

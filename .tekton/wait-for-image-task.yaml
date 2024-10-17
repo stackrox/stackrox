@@ -1,0 +1,31 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: wait-for-image
+  namespace: rh-acs-tenant
+spec:
+  description: Waits until the specified image is found.
+  params:
+  - name: IMAGE
+    description: Image reference.
+    type: string
+  workspaces:
+  - name: pull-secret
+    readOnly: true
+  steps:
+  - name: wait-for-image
+    image: registry.access.redhat.com/ubi9/skopeo@sha256:030d3600f0a0de0486d93b52e82fdc3ef9ceb70ca0696d499547d76705cd277b
+    env:
+    - name: REGISTRY_AUTH_FILE
+      value: "$(workspaces.pull-secret.path)/.dockerconfigjson"
+    script: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      echo "Waiting for image $(params.IMAGE) to become available..."
+      while true; do
+        if skopeo inspect --raw "docker://$(params.IMAGE)"; then
+          break
+        fi
+        sleep 1m
+      done
+      echo "Image $(params.IMAGE) found."

@@ -117,6 +117,9 @@ func MatchFieldQuery(dbField *walker.Field, derivedMetadata *walker.DerivedSearc
 	if dbField.SQLType == "uuid" {
 		dataType = postgres.UUID
 	}
+	if dbField.SQLType == "cidr" {
+		dataType = postgres.CIDR
+	}
 	// Derived types map to functions on a field.  For example,
 	// a CountDerivationType will ultimately produce
 	// count(field_x) as field_x_count.  Similarly
@@ -138,4 +141,8 @@ func MatchFieldQuery(dbField *walker.Field, derivedMetadata *walker.DerivedSearc
 		return nil, err
 	}
 	return qe, nil
+}
+
+func isWildCardOrNullStringQuery(value string) bool {
+	return value == search.WildcardString || value == search.NullString
 }

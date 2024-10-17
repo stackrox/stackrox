@@ -58,7 +58,7 @@ var (
 		allowlist   set.StringSet
 	}{
 		"io/ioutil": {
-			replacement: "https://golang.org/doc/go1.18#ioutil",
+			replacement: "https://golang.org/doc/go1.16#ioutil",
 		},
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",
@@ -85,6 +85,9 @@ var (
 				"github.com/stackrox/rox/pkg/protoconv/resources",
 				"github.com/stackrox/rox/pkg/protoutils",
 			),
+		},
+		"github.com/golang/mock": {
+			replacement: "go.uber.org/mock",
 		},
 		"github.com/magiconair/properties/assert": {
 			replacement: "github.com/stretchr/testify/assert",
@@ -368,9 +371,8 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 		allowedPackages = appendPackageWithChildren(allowedPackages, "tests/bad-ca")
 	}
 
-	if validImportRoot == "config-controller" {
-		// TODO(ROX-25729): Figure out how to wire up a gRPC client in config-controller without requiring these exceptions
-		allowedPackages = appendPackageWithChildren(allowedPackages, "roxctl/common", "roxctl/common/auth", "roxctl/common/io", "roxctl/common/logger", "roxctl/common/printer")
+	if validImportRoot == "pkg" {
+		allowedPackages = appendPackageWithChildren(allowedPackages, "operator/api")
 	}
 
 	for _, imp := range imports {

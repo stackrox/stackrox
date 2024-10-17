@@ -12,7 +12,7 @@ import {
     VulnerabilityExceptionScope,
     VulnerabilityState,
 } from 'services/VulnerabilityExceptionService';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
@@ -26,8 +26,12 @@ import {
     sortCveDistroList,
     getWorkloadSortFields,
     getDefaultWorkloadSortOption,
+    getSeveritySortOptions,
 } from '../../utils/sortUtils';
-import { CVEListQueryResult, cveListQuery } from '../../WorkloadCves/Tables/CVEsTable';
+import {
+    CVEListQueryResult,
+    cveListQuery,
+} from '../../WorkloadCves/Tables/WorkloadCVEOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
@@ -69,11 +73,7 @@ function RequestCVEsTable({
     } = useQuery<CVEListQueryResult>(cveListQuery, {
         variables: {
             query,
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 
@@ -97,9 +97,16 @@ function RequestCVEsTable({
                                 <span className="pf-v5-screen-reader">Row expansion</span>
                             </Th>
                             <Th sort={getSortParams('CVE')}>CVE</Th>
-                            <Th>Images by severity</Th>
+                            <Th
+                                sort={getSortParams(
+                                    'Images By Severity',
+                                    getSeveritySortOptions([])
+                                )}
+                            >
+                                Images by severity
+                            </Th>
                             <Th sort={getSortParams('CVSS', aggregateByCVSS)}>CVSS</Th>
-                            <Th sort={getSortParams('Image sha', aggregateByDistinctCount)}>
+                            <Th sort={getSortParams('Image Sha', aggregateByDistinctCount)}>
                                 Affected images
                             </Th>
                             <Th sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}>

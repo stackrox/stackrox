@@ -1,6 +1,5 @@
 import React, { useState, CSSProperties } from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import initials from 'initials';
@@ -139,4 +138,4 @@ const mapDispatchToProps = (dispatch) => ({
     logout: () => dispatch(authActions.logout()),
 });
 
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(UserMenu));
+export default connect(mapStateToProps, mapDispatchToProps)(UserMenu);

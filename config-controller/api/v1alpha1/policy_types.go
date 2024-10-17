@@ -17,41 +17,277 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
+	"github.com/stackrox/rox/pkg/protocompat"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/stackrox/rox/generated/storage"
 )
 
-// PolicySpec defines the desired state of Policy
-type PolicySpec struct {
-	Policy string `json:"policy,omitempty"`
+// +kubebuilder:validation:Enum=DEPLOY;BUILD;RUNTIME
+type LifecycleStage string
+
+// +kubebuilder:validation:Enum=NOT_APPLICABLE;DEPLOYMENT_EVENT;AUDIT_LOG_EVENT
+type EventSource string
+
+// +kubebuilder:validation:Enum=UNSET_ENFORCEMENT;SCALE_TO_ZERO_ENFORCEMENT;UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT;KILL_POD_ENFORCEMENT;FAIL_BUILD_ENFORCEMENT;FAIL_KUBE_REQUEST_ENFORCEMENT;FAIL_DEPLOYMENT_CREATE_ENFORCEMENT;FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT
+type EnforcementAction string
+
+// SecurityPolicySpec defines the desired state of SecurityPolicy
+type SecurityPolicySpec struct {
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^[^\n\r\$]{5,128}$`
+	PolicyName string `json:"policyName,omitempty"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Pattern=`^[^\$]{0,800}$`
+	Description string `json:"description,omitempty"`
+	Rationale   string `json:"rationale,omitempty"`
+	Remediation string `json:"remediation,omitempty"`
+	Disabled    bool   `json:"disabled,omitempty"`
+	// +kubebuilder:validation:MinItems=1
+	Categories []string `json:"categories,omitempty"`
+	// +kubebuilder:validation:MinItems=1
+	LifecycleStages []LifecycleStage `json:"lifecycleStages,omitempty"`
+	EventSource     EventSource      `json:"eventSource,omitempty"`
+	Exclusions      []Exclusion      `json:"exclusions,omitempty"`
+	Scope           []Scope          `json:"scope,omitempty"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=UNSET_SEVERITY;LOW_SEVERITY;MEDIUM_SEVERITY;HIGH_SEVERITY;CRITICAL_SEVERITY
+	Severity           string              `json:"severity,omitempty"`
+	EnforcementActions []EnforcementAction `json:"enforcementActions,omitempty"`
+	Notifiers          []string            `json:"notifiers,omitempty"`
+	// +kubebuilder:validation:MinItems=1
+	PolicySections     []PolicySection      `json:"policySections,omitempty"`
+	MitreAttackVectors []MitreAttackVectors `json:"mitreAttackVectors,omitempty"`
+	CriteriaLocked     bool                 `json:"criteriaLocked,omitempty"`
+	MitreVectorsLocked bool                 `json:"mitreVectorsLocked,omitempty"`
+	IsDefault          bool                 `json:"isDefault,omitempty"`
 }
 
-// PolicyStatus defines the observed state of Policy
-type PolicyStatus struct {
+type Exclusion struct {
+	Name       string     `json:"name,omitempty"`
+	Deployment Deployment `json:"deployment,omitempty"`
+	Image      Image      `json:"image,omitempty"`
+	// +optional
+	// +kubebuilder:validation:Format="date-time"
+	Expiration string `json:"expiration,omitempty"`
+}
+
+type Deployment struct {
+	Name  string `json:"name,omitempty"`
+	Scope Scope  `json:"scope,omitempty"`
+}
+
+type Image struct {
+	Name string `json:"name,omitempty"`
+}
+
+type Scope struct {
+	Cluster   string `json:"cluster,omitempty"`
+	Namespace string `json:"namespace,omitempty"`
+	Label     Label  `json:"label,omitempty"`
+}
+
+type Label struct {
+	Key   string `json:"key,omitempty"`
+	Value string `json:"value,omitempty"`
+}
+
+type PolicySection struct {
+	SectionName  string        `json:"sectionName,omitempty"`
+	PolicyGroups []PolicyGroup `json:"policyGroups,omitempty"`
+}
+
+type PolicyGroup struct {
+	FieldName string `json:"fieldName,omitempty"`
+	// +kubebuilder:validation:Enum=OR;AND
+	BooleanOperator string        `json:"booleanOperator,omitempty"`
+	Negate          bool          `json:"negate,omitempty"`
+	Values          []PolicyValue `json:"values,omitempty"`
+}
+
+type PolicyValue struct {
+	Value string `json:"value,omitempty"`
+}
+
+type MitreAttackVectors struct {
+	Tactic     string   `json:"tactic,omitempty"`
+	Techniques []string `json:"techniques,omitempty"`
+}
+
+// SecurityPolicyStatus defines the observed state of SecurityPolicy
+type SecurityPolicyStatus struct {
 	Accepted bool   `json:"accepted"`
 	Message  string `json:"message"`
+	PolicyId string `json:"policyId"`
+}
+
+// IsValid runs validation checks against the SecurityPolicy spec
+func (p SecurityPolicySpec) IsValid() (bool, error) {
+	if p.IsDefault {
+		return false, errors.New("isDefault must be false")
+	}
+	return true, nil
+}
+
+// ToProtobuf converts the SecurityPolicy spec into policy proto
+func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
+	proto := storage.Policy{
+		Name:               p.PolicyName,
+		Description:        p.Description,
+		Rationale:          p.Rationale,
+		Remediation:        p.Remediation,
+		Disabled:           p.Disabled,
+		Categories:         p.Categories,
+		Notifiers:          p.Notifiers,
+		PolicyVersion:      policyversion.CurrentVersion().String(),
+		CriteriaLocked:     p.CriteriaLocked,
+		MitreVectorsLocked: p.MitreVectorsLocked,
+		IsDefault:          p.IsDefault,
+		Source:             storage.PolicySource_DECLARATIVE,
+	}
+
+	for _, ls := range p.LifecycleStages {
+		val, found := storage.LifecycleStage_value[string(ls)]
+		if found {
+			proto.LifecycleStages = append(proto.LifecycleStages, storage.LifecycleStage(val))
+		}
+	}
+
+	for _, exclusion := range p.Exclusions {
+		protoExclusion := storage.Exclusion{
+			Name: exclusion.Name,
+		}
+
+		if exclusion.Expiration != "" {
+			protoTS, err := protocompat.ParseRFC3339NanoTimestamp(exclusion.Expiration)
+			if err != nil {
+				return nil
+			}
+			protoExclusion.Expiration = protoTS
+
+		}
+
+		if exclusion.Deployment != (Deployment{}) {
+			protoExclusion.Deployment = &storage.Exclusion_Deployment{
+				Name: exclusion.Deployment.Name,
+			}
+
+			scope := exclusion.Deployment.Scope
+			if scope != (Scope{}) {
+				protoExclusion.Deployment.Scope = &storage.Scope{
+					Cluster:   scope.Cluster,
+					Namespace: scope.Namespace,
+				}
+			}
+
+			if scope.Label != (Label{}) {
+				protoExclusion.Deployment.Scope.Label = &storage.Scope_Label{
+					Key:   scope.Label.Key,
+					Value: scope.Label.Value,
+				}
+			}
+
+		}
+
+		proto.Exclusions = append(proto.Exclusions, &protoExclusion)
+	}
+
+	for _, scope := range p.Scope {
+		protoScope := &storage.Scope{
+			Cluster:   scope.Cluster,
+			Namespace: scope.Namespace,
+		}
+
+		if scope.Label != (Label{}) {
+			protoScope.Label = &storage.Scope_Label{
+				Key:   scope.Label.Key,
+				Value: scope.Label.Value,
+			}
+		}
+
+		proto.Scope = append(proto.Scope, protoScope)
+	}
+
+	val, found := storage.Severity_value[p.Severity]
+	if found {
+		proto.Severity = storage.Severity(val)
+	}
+
+	val, found = storage.EventSource_value[string(p.EventSource)]
+	if found {
+		proto.EventSource = storage.EventSource(val)
+	}
+
+	for _, ea := range p.EnforcementActions {
+		val, found := storage.EnforcementAction_value[string(ea)]
+		if found {
+			proto.EnforcementActions = append(proto.EnforcementActions, storage.EnforcementAction(val))
+		}
+	}
+
+	for _, section := range p.PolicySections {
+		protoSection := &storage.PolicySection{
+			SectionName: section.SectionName,
+		}
+
+		for _, group := range section.PolicyGroups {
+			protoGroup := &storage.PolicyGroup{
+				FieldName: group.FieldName,
+				Negate:    group.Negate,
+			}
+
+			val, found = storage.BooleanOperator_value[group.BooleanOperator]
+			if found {
+				protoGroup.BooleanOperator = storage.BooleanOperator(val)
+			}
+
+			for _, value := range group.Values {
+				protoValue := &storage.PolicyValue{
+					Value: value.Value,
+				}
+				protoGroup.Values = append(protoGroup.Values, protoValue)
+			}
+			protoSection.PolicyGroups = append(protoSection.PolicyGroups, protoGroup)
+		}
+		proto.PolicySections = append(proto.PolicySections, protoSection)
+	}
+
+	for _, mitreAttackVectors := range p.MitreAttackVectors {
+		protoMitreAttackVetor := &storage.Policy_MitreAttackVectors{
+			Tactic:     mitreAttackVectors.Tactic,
+			Techniques: mitreAttackVectors.Techniques,
+		}
+
+		proto.MitreAttackVectors = append(proto.MitreAttackVectors, protoMitreAttackVetor)
+	}
+
+	return &proto
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=sp
 // +kubebuilder:subresource:status
 
-// Policy is the Schema for the policies API
-type Policy struct {
+// SecurityPolicy is the Schema for the policies API
+type SecurityPolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PolicySpec   `json:"spec,omitempty"`
-	Status PolicyStatus `json:"status,omitempty"`
+	Spec   SecurityPolicySpec   `json:"spec,omitempty"`
+	Status SecurityPolicyStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// PolicyList contains a list of Policy
-type PolicyList struct {
+// SecurityPolicyList contains a list of Policy
+type SecurityPolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Policy `json:"items"`
+	Items           []SecurityPolicy `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Policy{}, &PolicyList{})
+	SchemeBuilder.Register(&SecurityPolicy{}, &SecurityPolicyList{})
 }

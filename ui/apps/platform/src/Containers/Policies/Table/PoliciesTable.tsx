@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import {
     Button,
+    Flex,
+    FlexItem,
     PageSection,
     Pagination,
     Toolbar,
@@ -18,7 +20,6 @@ import {
 } from '@patternfly/react-core/deprecated';
 import { Table, Thead, Tbody, Tr, Th, Td, ExpandableRowContent } from '@patternfly/react-table';
 import { CaretDownIcon } from '@patternfly/react-icons';
-import pluralize from 'pluralize';
 
 import { ListPolicy } from 'types/policy.proto';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
@@ -36,15 +37,21 @@ import { UseURLSortResult } from 'hooks/useURLSort';
 import { policiesBasePath } from 'routePaths';
 import { NotifierIntegration } from 'types/notifier.proto';
 import { SearchFilter } from 'types/search';
-import { columns, defaultPolicyLabel, userPolicyLabel } from './PoliciesTable.utils';
+import { columns } from './PoliciesTable.utils';
 import {
     LabelAndNotifierIdsForType,
     formatLifecycleStages,
     formatNotifierCountsWithLabelStrings,
     getLabelAndNotifierIdsForTypes,
+    getPolicyOriginLabel,
+    isExternalPolicy,
 } from '../policies.utils';
 
 import './PoliciesTable.css';
+
+function isExternalPolicySelected(policies: ListPolicy[], selectedIds: string[]): boolean {
+    return policies.filter(({ id }) => selectedIds.includes(id)).some(isExternalPolicy);
+}
 
 type PoliciesTableProps = {
     notifiers: NotifierIntegration[];
@@ -420,9 +427,7 @@ function PoliciesTable({
                                     <Td dataLabel="Status">
                                         <PolicyDisabledIconText isDisabled={disabled} />
                                     </Td>
-                                    <Td dataLabel="Origin">
-                                        {isDefault ? defaultPolicyLabel : userPolicyLabel}
-                                    </Td>
+                                    <Td dataLabel="Origin">{getPolicyOriginLabel(policy)}</Td>
                                     <Td dataLabel="Notifiers">
                                         {notifierCountsWithLabelStrings.length === 0 ? (
                                             '-'
@@ -466,6 +471,7 @@ function PoliciesTable({
                 </Table>
             </PageSection>
             <ConfirmationModal
+                title={`Delete policies? (${deletingIds.length})`}
                 ariaLabel="Confirm delete"
                 confirmText="Delete"
                 isLoading={isDeleting}
@@ -473,8 +479,27 @@ function PoliciesTable({
                 onConfirm={onConfirmDeletePolicy}
                 onCancel={onCancelDeletePolicy}
             >
-                Are you sure you want to delete {deletingIds.length}&nbsp;
-                {pluralize('policy', deletingIds.length)}?
+                {isExternalPolicySelected(policies, deletingIds) ? (
+                    <Flex direction={{ default: 'column' }}>
+                        <FlexItem>
+                            Deleted policies will be removed from the system and will no longer
+                            trigger violations.
+                        </FlexItem>
+                        <FlexItem>
+                            <em>
+                                The current selection includes one or more externally managed
+                                policies that will only be removed from the system temporarily until
+                                the next resync. Locally managed policies will be removed
+                                permanently.
+                            </em>
+                        </FlexItem>
+                    </Flex>
+                ) : (
+                    <>
+                        Deleted policies will be permanently removed from the system and will no
+                        longer trigger violations.
+                    </>
+                )}
             </ConfirmationModal>
             <EnableDisableNotificationModal
                 enableDisableType={enableDisableType}

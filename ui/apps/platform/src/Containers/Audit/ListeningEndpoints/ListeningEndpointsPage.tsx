@@ -205,9 +205,6 @@ function ListeningEndpointsPage() {
                                     perPage={perPage}
                                     onSetPage={(_, newPage) => setPage(newPage)}
                                     onPerPageSelect={(_, newPerPage) => {
-                                        if ((countQuery.data ?? 0) < (page - 1) * newPerPage) {
-                                            setPage(1);
-                                        }
                                         setPerPage(newPerPage);
                                     }}
                                 />
@@ -216,6 +213,8 @@ function ListeningEndpointsPage() {
 
                         <ToolbarGroup className="pf-v5-u-w-100">
                             <SearchFilterChips
+                                searchFilter={searchFilter}
+                                onFilterChange={setSearchFilter}
                                 filterChipGroupDescriptors={[
                                     { displayName: 'Deployment', searchFilterName: 'Deployment' },
                                     { displayName: 'Namespace', searchFilterName: 'Namespace' },

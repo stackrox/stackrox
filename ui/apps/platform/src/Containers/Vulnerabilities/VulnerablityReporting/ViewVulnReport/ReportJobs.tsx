@@ -30,7 +30,7 @@ import {
 import { SelectOption } from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
-import { ReportConfiguration, RunState, runStates } from 'services/ReportsService.types';
+import { ReportConfiguration } from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useSet from 'hooks/useSet';
@@ -49,6 +49,7 @@ import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 
+import { RunState, runStates } from 'types/reportJob';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
@@ -66,6 +67,8 @@ const sortOptions = {
 };
 
 const filenameSanitizerRegex = new RegExp('(:)|(/)|(\\s)', 'gi');
+
+const headingLevel = 'h2';
 
 function ReportJobs({ reportId }: RunHistoryProps) {
     const { currentUser } = useAuthStatus();
@@ -240,7 +243,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                         const reportConfiguration: ReportConfiguration = {
                             id: reportConfigId,
                             name,
-                            description,
+                            description: description ?? '',
                             type: 'VULNERABILITY',
                             vulnReportFilters,
                             notifiers,
@@ -327,7 +330,10 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                 <Flex>
                                                     <FlexItem>
                                                         <JobDetails
-                                                            reportSnapshot={reportSnapshot}
+                                                            reportStatus={reportStatus}
+                                                            isDownloadAvailable={
+                                                                isDownloadAvailable
+                                                            }
                                                         />
                                                     </FlexItem>
                                                     <Divider
@@ -336,6 +342,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                     />
                                                     <FlexItem>
                                                         <ReportParametersDetails
+                                                            headingLevel={headingLevel}
                                                             formValues={formValues}
                                                         />
                                                     </FlexItem>
@@ -345,6 +352,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                                     />
                                                     <FlexItem>
                                                         <NotifierConfigurationView
+                                                            headingLevel={headingLevel}
                                                             customBodyDefault={defaultEmailBody}
                                                             customSubjectDefault={getDefaultEmailSubject(
                                                                 formValues.reportParameters

@@ -142,7 +142,6 @@ message MicrosoftSentinel {
 
   // secret contains the client secret.
   string secret = 4; // @gotags: scrub:"always"
-  // TODO(ROX-25739): Add client certificate
 
   // DataCollectionRuleConfig contains information about the data collection rule which is a config per notifier type.
   message DataCollectionRuleConfig {
@@ -152,6 +151,16 @@ message MicrosoftSentinel {
   }
   DataCollectionRuleConfig alert_dcr_config = 5;
   DataCollectionRuleConfig audit_log_dcr_config = 6;
+
+  // client certificate which is used for authentication
+  message ClientCertAuthConfig {
+    // PEM encoded ASN.1 DER format.
+    string client_cert = 1;
+
+    // PEM encoded PKCS #8, ASN.1 DER format.
+    string private_key = 2; // @gotags: scrub:"always"
+  }
+  ClientCertAuthConfig client_cert_auth_config = 7;
 }
 
 message Syslog {

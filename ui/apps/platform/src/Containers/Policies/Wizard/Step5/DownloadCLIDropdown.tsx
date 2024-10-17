@@ -41,25 +41,25 @@ function DownloadCLIDropdown({ hasBuild }) {
             isOpen={isCLIDropdownOpen}
             onSelect={handleDownloadCLI}
             dropdownItems={[
-                <DropdownItem value="darwin-amd64" component="button">
+                <DropdownItem key="darwin-amd64" value="darwin-amd64" component="button">
                     Mac x86_64
                 </DropdownItem>,
-                <DropdownItem value="darwin-arm64" component="button">
+                <DropdownItem key="darwin-arm64" value="darwin-arm64" component="button">
                     Mac arm_64
                 </DropdownItem>,
-                <DropdownItem value="linux-amd64" component="button">
+                <DropdownItem key="linux-amd64" value="linux-amd64" component="button">
                     Linux x86_64
                 </DropdownItem>,
-                <DropdownItem value="linux-arm64" component="button">
+                <DropdownItem key="linux-arm64" value="linux-arm64" component="button">
                     Linux arm_64
                 </DropdownItem>,
-                <DropdownItem value="linux-ppc64le" component="button">
+                <DropdownItem key="linux-ppc64le" value="linux-ppc64le" component="button">
                     Linux ppc64le
                 </DropdownItem>,
-                <DropdownItem value="linux-s390x" component="button">
+                <DropdownItem key="linux-s390x" value="linux-s390x" component="button">
                     Linux s390x
                 </DropdownItem>,
-                <DropdownItem value="windows-amd64" component="button">
+                <DropdownItem key="windows-amd64" value="windows-amd64" component="button">
                     Windows x86_64
                 </DropdownItem>,
             ]}
