@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/clusters"
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/metrics/telemetry"
+	"github.com/stackrox/rox/central/securedclustercertgen"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -21,8 +21,10 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
+	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	protoconv "github.com/stackrox/rox/pkg/protoconv/certs"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -68,19 +70,29 @@ func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.Serve
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.SensorsOnly().Authorized(ctx, fullMethodName)
+	authorizer := or.Or(idcheck.SensorsOnly(), idcheck.SensorRegistrantsOnly())
+	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
 func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer) error {
+	log.Info("DBG: Communicate")
 	// Get the source cluster's ID.
 	identity, err := authn.IdentityFromContext(server.Context())
 	if err != nil {
 		return err
 	}
 
+	log.Infof("DBG: identity = %v", identity)
 	svc := identity.Service()
-	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
+	log.Infof("DBG: svc = %v", svc)
+	if svc == nil {
 		return errox.NotAuthorized.CausedBy("only sensor may access this API")
+	}
+	svcType := svc.GetType()
+	log.Infof("DBG: svcType = %v", svcType)
+
+	if !(svcType == storage.ServiceType_SENSOR_SERVICE || svcType == storage.ServiceType_REGISTRANT_SERVICE) {
+		return errox.NotAuthorized.CausedByf("only sensor may access this API, unexpected client identity %s", svcType)
 	}
 
 	sensorHello, sensorSupportsHello, err := receiveSensorHello(server)
@@ -93,6 +105,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if err != nil {
 		return err
 	}
+	clusterID := cluster.GetId()
 
 	// Generate a pipeline for the cluster to use.
 	eventPipeline, err := s.pf.PipelineForCluster(server.Context(), cluster.GetId())
@@ -118,11 +131,11 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			capabilities = append(capabilities, centralsensor.ScannerV4Supported)
 		}
 
-		preferences := s.manager.GetConnectionPreference(cluster.GetId())
+		preferences := s.manager.GetConnectionPreference(clusterID)
 
 		// Let's be polite and respond with a greeting from our side.
 		centralHello := &central.CentralHello{
-			ClusterId:        cluster.GetId(),
+			ClusterId:        clusterID,
 			ManagedCentral:   env.ManagedCentral.BooleanSetting(),
 			CentralId:        installInfo.GetId(),
 			Capabilities:     capabilities,
@@ -130,11 +143,12 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		}
 
 		if err := safe.RunE(func() error {
-			certBundle, err := clusters.IssueSecuredClusterCertificates(cluster, sensorHello.GetDeploymentIdentification().GetAppNamespace(), nil)
+			namespace := sensorHello.GetDeploymentIdentification().GetAppNamespace()
+			certificateSet, err := securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID)
 			if err != nil {
 				return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
 			}
-			centralHello.CertBundle = certBundle.FileMap()
+			centralHello.CertBundle = protoconv.ConvertTypedServiceCertificateSetToFileMap(certificateSet)
 			return nil
 		}); err != nil {
 			log.Errorf("Could not include certificate bundle in sensor hello message: %s", err)
@@ -218,8 +232,9 @@ func (s *serviceImpl) getClusterForConnection(sensorHello *central.SensorHello, 
 func receiveSensorHello(server central.SensorService_CommunicateServer) (*central.SensorHello, bool, error) {
 	incomingMD := metautils.ExtractIncoming(server.Context())
 	outMD := metautils.MD{}
-
+	log.Infof("DBG: incomingMD = %v", incomingMD)
 	sensorSupportsHello := incomingMD.Get(centralsensor.SensorHelloMetadataKey) == "true"
+	log.Infof("DBG: sensorSupportsHello = %v", sensorSupportsHello)
 	if sensorSupportsHello {
 		outMD.Set(centralsensor.SensorHelloMetadataKey, "true")
 	}

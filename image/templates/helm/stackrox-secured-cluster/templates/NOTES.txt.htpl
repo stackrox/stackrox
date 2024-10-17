@@ -17,6 +17,14 @@ Secured Cluster Configuration Summary:
   Scanner V4 DB Volume:                        {{ ._rox._scannerV4Volume }}
 {{- end }}
 
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
+{{- if ._rox.crs._enabled }}
+  Bootstrapping Method:                        Cluster Registration Secret (CRS)
+{{- else if ._rox.ca._cert }}
+  Bootstrapping Method:                        Init Bundle
+{{- end }}
+[<- end >]
+
 {{ if ._rox._state.notes -}}
 Please take note of the following:
 {{ range ._rox._state.notes }}
