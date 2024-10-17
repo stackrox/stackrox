@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/nodes/enricher"
 )
@@ -56,7 +57,11 @@ func (p pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetEvent().GetIndexReport() != nil
 }
 
-func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+	if !features.ScannerV4.Enabled() {
+		// If Scanner V4 is disabled do not run this pipeline
+		return nil
+	}
 	event := msg.GetEvent()
 	report := event.GetIndexReport()
 	if report == nil {
@@ -66,37 +71,36 @@ func (p pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.Ms
 		log.Errorf("index report from node %s has unsupported action: %q", event.GetNode().GetName(), event.GetAction())
 		return nil
 	}
-	log.Debugf("received node index report with %d packages from %d content sets for node %s",
-		len(report.GetContents().Packages), len(report.GetContents().Repositories), event.GetId())
-	cr := report.CloneVT()
+	log.Debugf("received node index report for node %s with %d packages from %d content sets",
+		event.GetId(), len(report.GetContents().Packages), len(report.GetContents().Repositories))
+	report = report.CloneVT()
 
-	// Read the node from the database, if not found we fail.
-	node, found, err := p.nodeDatastore.GetNode(ctx, event.GetId())
+	// Query storage for the node this report comes from
+	nodeId := event.GetId()
+	node, found, err := p.nodeDatastore.GetNode(ctx, nodeId)
 	if err != nil {
-		return errors.WithMessagef(err, "fetching node: %s", event.GetId())
+		return errors.WithMessagef(err, "failed to fetch node %s from database", nodeId)
 	}
 	if !found {
-		return errors.WithMessagef(err, "node does not exist: %s", event.GetId())
+		return errors.WithMessagef(err, "node %s not found in datastore", nodeId)
 	}
 
-	// Send the Node and Index Report to Scanner for enrichment
-	err = p.enricher.EnrichNodeWithInventory(node, nil, cr)
+	// Send the Node and Index Report to Scanner for enrichment. The result will be persisted in node.NodeScan
+	err = p.enricher.EnrichNodeWithInventory(node, nil, report)
 	if err != nil {
-		return errors.WithMessagef(err, "enriching node %s with index report", event.GetId())
+		return errors.WithMessagef(err, "enriching node %s with index report", nodeId)
 	}
-	log.Infof("Successfully enriched node %s with index report.", node.GetName())
+	log.Debugf("Successfully enriched node %s with %s report - found %d components (id: %s)",
+		node.GetName(), node.GetScan().GetScannerVersion().String(), len(node.GetScan().GetComponents()), nodeId)
 
-	// TODO(ROX-26089): Update the whole node in the database with the new and previous information after conversion
-	/*
-		err = p.riskManager.CalculateRiskAndUpsertNode(node)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-	*/
+	// Update the whole node in the database with the new and previous information.
+	err = p.riskManager.CalculateRiskAndUpsertNode(node)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
 
 	return nil
-
 }
 
 func (p pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {

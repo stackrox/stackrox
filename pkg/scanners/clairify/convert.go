@@ -94,6 +94,7 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 		ScanTime:        protocompat.TimestampNow(),
 		OperatingSystem: resp.GetOperatingSystem(),
 		Notes:           convertNodeNotes(resp.GetNodeNotes()),
+		ScannerVersion:  storage.NodeScan_SCANNER,
 	}
 	if resp.GetFeatures() == nil {
 		scan.Components = []*storage.EmbeddedNodeScanComponent{
