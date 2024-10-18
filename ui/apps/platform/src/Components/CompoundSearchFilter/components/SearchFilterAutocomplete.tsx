@@ -144,7 +144,7 @@ function SearchFilterAutocomplete({
     );
     // Filter out empty strings
     const data: SearchAutocompleteQueryResponse = {
-        searchAutocomplete: rawData?.searchAutocomplete?.filter((item) => item !== '') ?? [],
+        searchAutocomplete: rawData?.searchAutocomplete?.filter((item) => item !== '').sort() ?? [],
     };
 
     const selectOptions: SelectOptionProps[] = getSelectOptions(
