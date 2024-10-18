@@ -486,6 +486,15 @@ func initializeFieldMetadata() FieldMetadata {
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{})
 
+	f.registerFieldMetadata(fieldnames.NvdCvss, querybuilders.ForNvdCVSS(),
+		violationmessages.VulnContextFields,
+		func(*validateConfiguration) *regexp.Regexp {
+			return comparatorDecimalValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
+		[]RuntimeFieldType{},
+		negationForbidden)
+
 	f.registerFieldMetadata(fieldnames.ExposedNodePort,
 		querybuilders.ForFieldLabel(search.ExposedNodePort),
 		nil,
