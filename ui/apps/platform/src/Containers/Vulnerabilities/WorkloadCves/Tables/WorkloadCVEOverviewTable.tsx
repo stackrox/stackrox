@@ -74,6 +74,10 @@ export const defaultColumns = {
         title: 'First discovered',
         isShownByDefault: true,
     },
+    publishedOn: {
+        title: 'Published',
+        isShownByDefault: true,
+    },
 } as const;
 
 export const cveListQuery = gql`
@@ -101,6 +105,7 @@ export const cveListQuery = gql`
             topCVSS
             affectedImageCount
             firstDiscoveredInSystem
+            publishedOn
             topNvdCVSS
             distroTuples {
                 summary
@@ -136,6 +141,7 @@ export type ImageCVE = {
     topCVSS: number;
     affectedImageCount: number;
     firstDiscoveredInSystem: string | null;
+    publishedOn: string | null;
     topNvdCVSS: number;
     distroTuples: {
         summary: string;
@@ -244,6 +250,12 @@ function WorkloadCVEOverviewTable({
                         First discovered
                         {isFiltered && <DynamicColumnIcon />}
                     </TooltipTh>
+                    <TooltipTh
+                        className={getVisibilityClass('publishedOn')}
+                        tooltip="Time when the CVE was made public and assigned a number"
+                    >
+                        Published
+                    </TooltipTh>
                     {showExceptionDetailsLink && (
                         <TooltipTh tooltip="View information about this exception request">
                             Request details
@@ -271,6 +283,7 @@ function WorkloadCVEOverviewTable({
                                 topNvdCVSS,
                                 affectedImageCount,
                                 firstDiscoveredInSystem,
+                                publishedOn,
                                 distroTuples,
                                 pendingExceptionCount,
                             },
@@ -383,6 +396,12 @@ function WorkloadCVEOverviewTable({
                                             className={getVisibilityClass('firstDiscovered')}
                                         >
                                             <DateDistance date={firstDiscoveredInSystem} />
+                                        </Td>
+                                        <Td
+                                            dataLabel="Published"
+                                            className={getVisibilityClass('publishedOn')}
+                                        >
+                                            <DateDistance date={publishedOn} />
                                         </Td>
                                         {showExceptionDetailsLink && (
                                             <ExceptionDetailsCell
