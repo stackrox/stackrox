@@ -74,6 +74,10 @@ export const defaultColumns = {
         title: 'First discovered',
         isShownByDefault: true,
     },
+    publishedOn: {
+        title: 'Published',
+        isShownByDefault: true,
+    },
 } as const;
 
 export const imageVulnerabilitiesFragment = gql`
@@ -87,6 +91,7 @@ export const imageVulnerabilitiesFragment = gql`
         nvdCvss
         nvdScoreVersion
         discoveredAtImage
+        publishedOn
         pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         imageComponents(query: $query) {
             ...ImageComponentVulnerabilities
@@ -103,6 +108,7 @@ export type ImageVulnerability = {
     nvdCvss: number;
     nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
     discoveredAtImage: string | null;
+    publishedOn: string | null;
     pendingExceptionCount: number;
     imageComponents: ImageComponentVulnerability[];
 };
@@ -180,6 +186,7 @@ function ImageVulnerabilitiesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th className={getVisibilityClass('firstDiscovered')}>First discovered</Th>
+                    <Th className={getVisibilityClass('publishedOn')}>Published</Th>
                     {showExceptionDetailsLink && (
                         <TooltipTh tooltip="View information about this exception request">
                             Request details
@@ -209,6 +216,7 @@ function ImageVulnerabilitiesTable({
                             nvdScoreVersion,
                             imageComponents,
                             discoveredAtImage,
+                            publishedOn,
                             pendingExceptionCount,
                         } = vulnerability;
                         const vulnerabilities = imageComponents.flatMap(
@@ -301,6 +309,12 @@ function ImageVulnerabilitiesTable({
                                         dataLabel="First discovered"
                                     >
                                         <DateDistance date={discoveredAtImage} />
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('publishedOn')}
+                                        dataLabel="Published"
+                                    >
+                                        <DateDistance date={publishedOn} />
                                     </Td>
                                     {showExceptionDetailsLink && (
                                         <ExceptionDetailsCell
