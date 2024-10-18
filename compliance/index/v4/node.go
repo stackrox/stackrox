@@ -57,8 +57,8 @@ func NewNodeIndexerConfigFromEnv() *NodeIndexerConfig {
 	configureClairCoreLogging()
 	return &NodeIndexerConfig{
 		DisableAPI:         false,
-		API:                env.NodeIndexContainerAPI.Setting(), // TODO(ROX-25540): Set in sync with Scanner via Helm charts
-		Repo2CPEMappingURL: env.NodeIndexMappingURL.Setting(),   // TODO(ROX-25540): Set in sync with Scanner via Helm charts
+		API:                env.NodeIndexContainerAPI.Setting(),
+		Repo2CPEMappingURL: env.NodeIndexMappingURL.Setting(),
 		Timeout:            10 * time.Second,
 	}
 }
@@ -112,6 +112,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (r *v4.IndexReport, er
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to coalesce report")
 	}
+	log.Debugf("Finished coalescing report. Report contains %d repositories with %d packages", len(ir.Repositories), len(ir.Packages))
 
 	report = controller.MergeSR(report, []*claircore.IndexReport{ir})
 	report.Success = true
@@ -153,9 +154,6 @@ func runPackageScanner(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		return nil, errors.Wrap(err, "failed to invoke RPM scanner")
 	}
 	pck = filterPackages(ctx, pck)
-	if pck != nil {
-		log.Infof("Num packages found: %d", len(pck))
-	}
 	for i, p := range pck {
 		p.ID = fmt.Sprintf("%d", i)
 	}
@@ -216,9 +214,6 @@ func runRepositoryScanner(ctx context.Context, cfg *NodeIndexerConfig, l *clairc
 	reps, err := sc.Scan(ctx, l)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to scan repositories")
-	}
-	if reps != nil {
-		log.Infof("Num repositories found: %v", len(reps))
 	}
 	for i, r := range reps {
 		r.ID = fmt.Sprintf("%d", i)
