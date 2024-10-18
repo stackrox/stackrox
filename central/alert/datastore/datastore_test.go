@@ -9,6 +9,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/alert/datastore/internal/store/mocks"
 	_ "github.com/stackrox/rox/central/alert/mappings"
 	"github.com/stackrox/rox/central/alerttest"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -56,7 +57,7 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 
 	var err error
-	s.dataStore, err = New(s.storage, s.searcher)
+	s.dataStore, err = New(s.storage, s.searcher, platformmatcher.Singleton())
 	s.Require().NoError(err)
 }
 
@@ -164,6 +165,86 @@ func (s *alertDataStoreTestSuite) TestKeyIndexing() {
 	s.NoError(err)
 }
 
+func (s *alertDataStoreTestSuite) TestGetByQuery() {
+	fakeAlert := alerttest.NewFakeAlert()
+
+	s.storage.EXPECT().GetByQuery(s.hasReadCtx, gomock.Any()).Return([]*storage.Alert{fakeAlert}, nil).Times(1)
+	alerts, err := s.dataStore.GetByQuery(s.hasReadCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	protoassert.SlicesEqual(s.T(), []*storage.Alert{fakeAlert}, alerts)
+
+	s.storage.EXPECT().GetByQuery(s.hasWriteCtx, gomock.Any()).Return([]*storage.Alert{fakeAlert}, nil).Times(1)
+	alerts, err = s.dataStore.GetByQuery(s.hasWriteCtx, search.EmptyQuery())
+	s.Require().NoError(err)
+	protoassert.SlicesEqual(s.T(), []*storage.Alert{fakeAlert}, alerts)
+}
+
+func (s *alertDataStoreTestSuite) TestUpsert_PlatformComponentAndEntityTypeAssignment() {
+	// Case: Resource alert
+	alert := &storage.Alert{
+		Id:     "id",
+		Entity: &storage.Alert_Resource_{Resource: &storage.Alert_Resource{}},
+	}
+	expectedAlert := &storage.Alert{
+		Id:                "id",
+		Entity:            &storage.Alert_Resource_{Resource: &storage.Alert_Resource{}},
+		EntityType:        storage.Alert_RESOURCE,
+		PlatformComponent: false,
+	}
+
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{expectedAlert}).Return(nil).Times(1)
+	err := s.dataStore.UpsertAlert(s.hasWriteCtx, alert)
+	s.Require().NoError(err)
+
+	// Case: Container image alert
+	alert = &storage.Alert{
+		Id:     "id",
+		Entity: &storage.Alert_Image{Image: &storage.ContainerImage{}},
+	}
+	expectedAlert = &storage.Alert{
+		Id:                "id",
+		Entity:            &storage.Alert_Image{Image: &storage.ContainerImage{}},
+		EntityType:        storage.Alert_CONTAINER_IMAGE,
+		PlatformComponent: false,
+	}
+
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{expectedAlert}).Return(nil).Times(1)
+	err = s.dataStore.UpsertAlert(s.hasWriteCtx, alert)
+	s.Require().NoError(err)
+
+	// Case: Deployment alert not matching platform rules
+	alert = &storage.Alert{
+		Id:     "id",
+		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{Namespace: "my-namespace"}},
+	}
+	expectedAlert = &storage.Alert{
+		Id:                "id",
+		Entity:            &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{Namespace: "my-namespace"}},
+		EntityType:        storage.Alert_DEPLOYMENT,
+		PlatformComponent: false,
+	}
+
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{expectedAlert}).Return(nil).Times(1)
+	err = s.dataStore.UpsertAlert(s.hasWriteCtx, alert)
+	s.Require().NoError(err)
+
+	// Case: Deployment alert matching platform rules
+	alert = &storage.Alert{
+		Id:     "id",
+		Entity: &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{Namespace: "openshift-123"}},
+	}
+	expectedAlert = &storage.Alert{
+		Id:                "id",
+		Entity:            &storage.Alert_Deployment_{Deployment: &storage.Alert_Deployment{Namespace: "openshift-123"}},
+		EntityType:        storage.Alert_DEPLOYMENT,
+		PlatformComponent: true,
+	}
+
+	s.storage.EXPECT().UpsertMany(gomock.Any(), []*storage.Alert{expectedAlert}).Return(nil).Times(1)
+	err = s.dataStore.UpsertAlert(s.hasWriteCtx, alert)
+	s.Require().NoError(err)
+}
+
 func TestAlertDataStoreWithSAC(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(alertDataStoreWithSACTestSuite))
@@ -198,7 +279,7 @@ func (s *alertDataStoreWithSACTestSuite) SetupTest() {
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
 	var err error
-	s.dataStore, err = New(s.storage, s.searcher)
+	s.dataStore, err = New(s.storage, s.searcher, platformmatcher.Singleton())
 	s.NoError(err)
 }
 
@@ -219,4 +300,10 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleBatchEnforced() {
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	s.Equal(storage.ViolationState_ACTIVE, fakeAlert.GetState())
+}
+
+func (s *alertDataStoreWithSACTestSuite) TestGetByQueryEnforced() {
+	s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Times(0)
+	_, err := s.dataStore.GetByQuery(s.hasNoneCtx, search.EmptyQuery())
+	s.Require().ErrorIs(err, sac.ErrResourceAccessDenied)
 }
