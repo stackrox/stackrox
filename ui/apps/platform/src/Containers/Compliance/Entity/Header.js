@@ -28,7 +28,7 @@ const EntityHeader = ({
     // Leave raw entity types in case customer depends on this convention for export file name.
     let exportFilename = listEntityType
         ? `${pluralize(listEntityType)} ACROSS ${entityType} "${entityName.toUpperCase()}"`
-        : `${entityType} "${entityId}"`;
+        : `${entityType} "${entityName}"`;
     exportFilename = `${exportFilename} Report`;
     const pdfId = listEntityType ? 'capture-list' : 'capture-dashboard';
 
