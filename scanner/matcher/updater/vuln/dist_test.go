@@ -1,20 +1,20 @@
-package distribution
+package vuln
 
 import (
 	"context"
+	"errors"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
-func TestUpdate(t *testing.T) {
+func TestDistManager(t *testing.T) {
 	ctx := context.Background()
 	store := mocks.NewMockMatcherStore(gomock.NewController(t))
-	u := &Updater{
+	m := &distManager{
 		store: store,
 	}
 
@@ -51,15 +51,18 @@ func TestUpdate(t *testing.T) {
 		},
 	}
 
+	// Get nothing.
+	assert.Nil(t, m.get())
+
 	// Successful fetch.
 	store.EXPECT().Distributions(gomock.Any()).Return(dists, nil)
-	err := u.update(ctx)
+	err := m.update(ctx)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, dists, u.Known())
+	assert.ElementsMatch(t, dists, m.get())
 
 	// Unsuccessful should return same dists as before.
 	store.EXPECT().Distributions(gomock.Any()).Return(nil, errors.New("error"))
-	err = u.update(ctx)
+	err = m.update(ctx)
 	assert.Error(t, err)
-	assert.ElementsMatch(t, dists, u.Known())
+	assert.ElementsMatch(t, dists, m.get())
 }
