@@ -339,7 +339,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		}
 		metrics, err := cvssMetrics(ctx, v, &nvdVuln)
 		if err != nil {
-			zlog.Warn(ctx).
+			zlog.Debug(ctx).
 				Err(err).
 				Str("vuln_id", v.ID).
 				Str("vuln_name", v.Name).
