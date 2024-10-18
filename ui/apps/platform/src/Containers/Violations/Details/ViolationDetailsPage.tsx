@@ -13,6 +13,7 @@ import {
 } from '@patternfly/react-core';
 
 import PolicyDetailContent from 'Containers/Policies/Detail/PolicyDetailContent';
+import { getClientWizardPolicy } from 'Containers/Policies/policies.utils';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
@@ -134,7 +135,7 @@ function ViolationDetailsPage(): ReactElement {
                                     Policy overview
                                 </Title>
                                 <Divider component="div" className="pf-v5-u-pb-md" />
-                                <PolicyDetailContent policy={policy} />
+                                <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
                             </PageSection>
                         </Tab>
                     )}
