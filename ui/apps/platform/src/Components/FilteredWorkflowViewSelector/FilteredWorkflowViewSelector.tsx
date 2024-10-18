@@ -55,14 +55,14 @@ function FilteredWorkflowViewSelector({
         >
             <SelectList style={{ width }}>
                 <SelectOption
-                    value="Application view"
+                    value="Applications view"
                     description="Display findings for application workloads."
                 >
-                    Application view
+                    Applications view
                 </SelectOption>
                 <SelectOption
                     value="Platform view"
-                    description="Display findings for platform components in OpenShift and layered services."
+                    description="Display findings for platform components in OpenShift."
                 >
                     Platform view
                 </SelectOption>
