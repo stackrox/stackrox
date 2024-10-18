@@ -28,7 +28,6 @@ const (
 	AlertService_GetAlertTimeseries_FullMethodName = "/v1.AlertService/GetAlertTimeseries"
 	AlertService_ResolveAlert_FullMethodName       = "/v1.AlertService/ResolveAlert"
 	AlertService_ResolveAlerts_FullMethodName      = "/v1.AlertService/ResolveAlerts"
-	AlertService_SnoozeAlert_FullMethodName        = "/v1.AlertService/SnoozeAlert"
 	AlertService_DeleteAlerts_FullMethodName       = "/v1.AlertService/DeleteAlerts"
 )
 
@@ -54,8 +53,6 @@ type AlertServiceClient interface {
 	ResolveAlert(ctx context.Context, in *ResolveAlertRequest, opts ...grpc.CallOption) (*Empty, error)
 	// ResolveAlertsByQuery marks alerts matching search query as resolved.
 	ResolveAlerts(ctx context.Context, in *ResolveAlertsRequest, opts ...grpc.CallOption) (*Empty, error)
-	// SnoozeAlert is deprecated.
-	SnoozeAlert(ctx context.Context, in *SnoozeAlertRequest, opts ...grpc.CallOption) (*Empty, error)
 	DeleteAlerts(ctx context.Context, in *DeleteAlertsRequest, opts ...grpc.CallOption) (*DeleteAlertsResponse, error)
 }
 
@@ -147,16 +144,6 @@ func (c *alertServiceClient) ResolveAlerts(ctx context.Context, in *ResolveAlert
 	return out, nil
 }
 
-func (c *alertServiceClient) SnoozeAlert(ctx context.Context, in *SnoozeAlertRequest, opts ...grpc.CallOption) (*Empty, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, AlertService_SnoozeAlert_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *alertServiceClient) DeleteAlerts(ctx context.Context, in *DeleteAlertsRequest, opts ...grpc.CallOption) (*DeleteAlertsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteAlertsResponse)
@@ -189,8 +176,6 @@ type AlertServiceServer interface {
 	ResolveAlert(context.Context, *ResolveAlertRequest) (*Empty, error)
 	// ResolveAlertsByQuery marks alerts matching search query as resolved.
 	ResolveAlerts(context.Context, *ResolveAlertsRequest) (*Empty, error)
-	// SnoozeAlert is deprecated.
-	SnoozeAlert(context.Context, *SnoozeAlertRequest) (*Empty, error)
 	DeleteAlerts(context.Context, *DeleteAlertsRequest) (*DeleteAlertsResponse, error)
 }
 
@@ -224,9 +209,6 @@ func (UnimplementedAlertServiceServer) ResolveAlert(context.Context, *ResolveAle
 }
 func (UnimplementedAlertServiceServer) ResolveAlerts(context.Context, *ResolveAlertsRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResolveAlerts not implemented")
-}
-func (UnimplementedAlertServiceServer) SnoozeAlert(context.Context, *SnoozeAlertRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SnoozeAlert not implemented")
 }
 func (UnimplementedAlertServiceServer) DeleteAlerts(context.Context, *DeleteAlertsRequest) (*DeleteAlertsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteAlerts not implemented")
@@ -395,24 +377,6 @@ func _AlertService_ResolveAlerts_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AlertService_SnoozeAlert_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SnoozeAlertRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AlertServiceServer).SnoozeAlert(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AlertService_SnoozeAlert_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AlertServiceServer).SnoozeAlert(ctx, req.(*SnoozeAlertRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _AlertService_DeleteAlerts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteAlertsRequest)
 	if err := dec(in); err != nil {
@@ -469,10 +433,6 @@ var AlertService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResolveAlerts",
 			Handler:    _AlertService_ResolveAlerts_Handler,
-		},
-		{
-			MethodName: "SnoozeAlert",
-			Handler:    _AlertService_SnoozeAlert_Handler,
 		},
 		{
 			MethodName: "DeleteAlerts",
