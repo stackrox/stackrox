@@ -51,7 +51,7 @@ function IntegrationTile({
                     </CardHeader>
                     <CardTitle className="pf-v5-u-color-100" style={{ whiteSpace: 'nowrap' }}>
                         <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                            <span>{label}</span>
+                            <Truncate position="middle" content={label} />
                             {isTechPreview && <TechPreviewLabel />}
                         </Flex>
                     </CardTitle>
