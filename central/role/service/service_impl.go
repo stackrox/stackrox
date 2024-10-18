@@ -10,7 +10,7 @@ import (
 	namespaceDS "github.com/stackrox/rox/central/namespace/datastore"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/accessscope"
@@ -65,8 +65,8 @@ type serviceImpl struct {
 	roleDataStore      datastore.DataStore
 	clusterDataStore   clusterDS.DataStore
 	namespaceDataStore namespaceDS.DataStore
-	clusterSACHelper   sachelper.ClusterSacHelper
-	namespaceSACHelper sachelper.ClusterNamespaceSacHelper
+	clusterSACHelper   sacHelper.ClusterSacHelper
+	namespaceSACHelper sacHelper.ClusterNamespaceSacHelper
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {

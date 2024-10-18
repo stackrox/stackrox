@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	deleDSMocks "github.com/stackrox/rox/central/delegatedregistryconfig/datastore/mocks"
-	sacHelperMocks "github.com/stackrox/rox/central/role/sachelper/mocks"
+	sacHelperMocks "github.com/stackrox/rox/central/sac/helper/mocks"
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"

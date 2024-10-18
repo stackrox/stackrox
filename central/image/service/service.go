@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/administration/events"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -42,7 +42,7 @@ func New(
 	enricher enricher.ImageEnricher,
 	metadataCache cache.ImageMetadata,
 	scanWaiterManager waiter.Manager[*storage.Image],
-	clusterSACHelper sachelper.ClusterSacHelper,
+	clusterSACHelper sacHelper.ClusterSacHelper,
 ) Service {
 	return &serviceImpl{
 		datastore:             datastore,

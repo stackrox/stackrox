@@ -1222,6 +1222,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"label: Scope_Label",
 		"namespace: String!",
 	}))
+	utils.Must(builder.AddType("ScopeObject", []string{
+		"id: ID!",
+		"name: String!",
+	}))
 	utils.Must(builder.AddType("Scope_Label", []string{
 		"key: String!",
 		"value: String!",
@@ -13283,6 +13287,58 @@ func (resolver *scopeResolver) Label(ctx context.Context) (*scope_LabelResolver,
 
 func (resolver *scopeResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
+	return value
+}
+
+type scopeObjectResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *v1.ScopeObject
+}
+
+func (resolver *Resolver) wrapScopeObject(value *v1.ScopeObject, ok bool, err error) (*scopeObjectResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &scopeObjectResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapScopeObjects(values []*v1.ScopeObject, err error) ([]*scopeObjectResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*scopeObjectResolver, len(values))
+	for i, v := range values {
+		output[i] = &scopeObjectResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapScopeObjectWithContext(ctx context.Context, value *v1.ScopeObject, ok bool, err error) (*scopeObjectResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &scopeObjectResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapScopeObjectsWithContext(ctx context.Context, values []*v1.ScopeObject, err error) ([]*scopeObjectResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*scopeObjectResolver, len(values))
+	for i, v := range values {
+		output[i] = &scopeObjectResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *scopeObjectResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *scopeObjectResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
 	return value
 }
 
