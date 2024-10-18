@@ -110,6 +110,56 @@ func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *storage.Deploy
 	return id
 }
 
+func (suite *DefaultPoliciesTestSuite) TestNVDCVSSCriteria() {
+	heartbleedDep := &storage.Deployment{
+		Id: "HEARTBLEEDDEPID",
+		Containers: []*storage.Container{
+			{
+				Name:            "nginx",
+				SecurityContext: &storage.SecurityContext{Privileged: true},
+				Image:           &storage.ContainerImage{Id: "HEARTBLEEDDEPSHA"},
+			},
+		},
+	}
+
+	ts := time.Now().AddDate(0, 0, -5)
+	protoTs, err := protocompat.ConvertTimeToTimestampOrError(ts)
+	require.NoError(suite.T(), err)
+
+	suite.addDepAndImages(heartbleedDep, &storage.Image{
+		Id:   "HEARTBLEEDDEPSHA",
+		Name: &storage.ImageName{FullName: "heartbleed"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, NvdCvss: 8, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"},
+						FirstImageOccurrence: protoTs},
+				}},
+			},
+		},
+	})
+
+	nvdCvssPolicyGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.NvdCvss,
+		Values: []*storage.PolicyValue{
+			{
+				Value: "> 6",
+			},
+		},
+	}
+
+	policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, nvdCvssPolicyGroup)
+
+	deployment := suite.deployments["HEARTBLEEDDEPID"]
+	depMatcher, err := BuildDeploymentMatcher(policy)
+	require.NoError(suite.T(), err)
+	violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
+	require.Len(suite.T(), violations.AlertViolations, 1)
+	require.NoError(suite.T(), err)
+	require.Contains(suite.T(), violations.AlertViolations[0].Message, "NVD CVSS")
+
+}
+
 func (suite *DefaultPoliciesTestSuite) TestFixableAndImageFirstOccurenceCriteria() {
 	heartbleedDep := &storage.Deployment{
 		Id: "HEARTBLEEDDEPID",

@@ -80,6 +80,15 @@ func ForCVE() QueryBuilder {
 	})
 }
 
+// ForNvdCVSS returns a query builder for NVD CVSS scores.
+func ForNvdCVSS() QueryBuilder {
+	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
+		return []*query.FieldQuery{
+			fieldQueryFromGroup(group, search.NVDCVSS, nil),
+		}
+	})
+}
+
 // ForCVSS returns a query builder for CVSS scores.
 func ForCVSS() QueryBuilder {
 	return wrapForVulnMgmt(func(group *storage.PolicyGroup) []*query.FieldQuery {
