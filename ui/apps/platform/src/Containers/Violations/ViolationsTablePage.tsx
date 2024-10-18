@@ -199,6 +199,7 @@ function ViolationsTablePage(): ReactElement {
         perPage,
         activeViolationStateTab,
         filteredWorkflowView,
+        isPlatformComponentsEnabled,
     ]);
 
     // We need to be able to identify which alerts are runtime or attempted, and which are not by id.
@@ -242,6 +243,11 @@ function ViolationsTablePage(): ReactElement {
                         eventKey="RESOLVED"
                         tabContentId={tabContentId}
                         title={<TabTitleText>Resolved</TabTitleText>}
+                    />
+                    <Tab
+                        eventKey="ATTEMPTED"
+                        tabContentId={tabContentId}
+                        title={<TabTitleText>Attempted</TabTitleText>}
                     />
                 </Tabs>
             </PageSection>

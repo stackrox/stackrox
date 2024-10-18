@@ -1,3 +1,3 @@
-export const violationStateTabs = ['ACTIVE', 'RESOLVED'] as const;
+export const violationStateTabs = ['ACTIVE', 'RESOLVED', 'ATTEMPTED'] as const;
 
 export type ViolationStateTab = (typeof violationStateTabs)[number];
