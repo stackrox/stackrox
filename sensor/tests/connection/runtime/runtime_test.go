@@ -61,13 +61,17 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		require.NoError(t, fakeCollector.Start())
 	}
 
+	t.Log("Starting testcase")
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, testContext *helper.TestContext, _ map[string]k8s.Object) {
+		t.Log("Waiting for sync event")
 		testContext.WaitForSyncEvent(t, 2*time.Minute)
 
 		// Wait for collector to connect
 		waitIfRealCollector(30 * time.Second)
 		testContext.GetFakeCentral().ClearReceivedBuffer()
+		t.Log("Stopping Central GRPC")
 		testContext.StopCentralGRPC()
+		t.Log("Central GRPC stopped")
 
 		// Nginx deployment
 		nginxObj := helper.ObjByKind(NginxDeployment.Kind)
@@ -91,6 +95,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		require.NotEqual(t, "", talkIP)
 
 		if !helper.UseRealCollector.BooleanSetting() {
+			t.Log("Using fake collector messages for the test")
 			nginxPodIDs, nginxContainerIDs := c.GetContainerIdsFromDeployment(nginxObj)
 			require.Len(t, nginxPodIDs, 1)
 			require.Len(t, nginxContainerIDs, 1)
@@ -135,16 +140,26 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		require.NoError(t, messagesReceivedSignal.Wait())
 
 		// We need to wait here at least 30s to make sure the network flows are processed
+		t.Log("Messages from Collector received")
+		t.Log("Waiting 60s for Sensor to process the network flows")
 		time.Sleep(60 * time.Second)
 
+		t.Log("Deleting test resources")
 		require.NoError(t, deleteTalk())
 		require.NoError(t, testContext.WaitForResourceDeleted(talkObj))
 		require.NoError(t, deleteNginx())
 		require.NoError(t, testContext.WaitForResourceDeleted(nginxObj))
 		require.NoError(t, deleteService())
 
+		t.Log("Starting GRPC connection to fake Central")
 		testContext.StartFakeGRPC()
-		testContext.WaitForSyncEvent(t, 2*time.Minute)
+		t.Log("Waiting for sync event")
+		gotEvent := testContext.WaitForSyncEvent(t, 2*time.Minute)
+		if gotEvent != nil {
+			t.Log("Sync event received")
+		} else {
+			t.Log("Sync event has not been received for 2 mins")
+		}
 
 		msg, err := testContext.WaitForMessageWithMatcher(func(event *central.MsgFromSensor) bool {
 			return event.GetEvent().GetProcessIndicator().GetDeploymentId() == talkUID &&
@@ -152,8 +167,10 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		}, time.Minute)
 		assert.NoError(t, err)
 		assert.NotNil(t, msg)
+		t.Logf("Expecting Network Flow for %s -> %s", talkUID, nginxUID)
 		msg, err = testContext.WaitForMessageWithMatcher(func(event *central.MsgFromSensor) bool {
 			for _, flow := range event.GetNetworkFlowUpdate().GetUpdated() {
+				t.Logf("Processing Flow: %v - %v", flow.GetProps().GetSrcEntity(), flow.GetProps().GetDstEntity())
 				if flow.GetProps().GetSrcEntity().GetId() == talkUID && flow.GetProps().GetDstEntity().GetId() == nginxUID {
 					return true
 				}
