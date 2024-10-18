@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/testutils"
 	"github.com/stretchr/testify/suite"
 	appsApiv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -30,7 +31,7 @@ var (
 	scannerServiceType         = storage.ServiceType_SCANNER_SERVICE
 	unknownServiceType         = storage.ServiceType_SENSOR_SERVICE
 	emptyPersistedCertificates = make([]*storage.TypedServiceCertificate, 0)
-	serviceCertificate         = createServiceCertificate(scannerServiceType)
+	serviceCertificate         = testutils.CreateServiceCertificate(scannerServiceType)
 	certificates               = &storage.TypedServiceCertificateSet{
 		CaPem: make([]byte, 2),
 		ServiceCerts: []*storage.TypedServiceCertificate{
@@ -97,7 +98,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:            "secret1",
 					Namespace:       namespace,
-					OwnerReferences: sensorOwnerReference(),
+					OwnerReferences: testutils.SensorOwnerReference(sensorDeployment),
 				},
 				Data: map[string][]byte{
 					mtls.CACertFileName: make([]byte, 0),
@@ -107,7 +108,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestGetDifferentCAsFailure() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:            "secret2",
 					Namespace:       namespace,
-					OwnerReferences: sensorOwnerReference(),
+					OwnerReferences: testutils.SensorOwnerReference(sensorDeployment),
 				},
 				Data: map[string][]byte{
 					mtls.CACertFileName: make([]byte, tc.secondCASize),
@@ -246,16 +247,6 @@ func (s *serviceCertificatesRepoSecretsImplSuite) getFirstServiceCertificate(
 	return serviceCerts[0]
 }
 
-func createServiceCertificate(serviceType storage.ServiceType) *storage.TypedServiceCertificate {
-	return &storage.TypedServiceCertificate{
-		ServiceType: serviceType,
-		Cert: &storage.ServiceCertificate{
-			CertPem: make([]byte, 0),
-			KeyPem:  make([]byte, 1),
-		},
-	}
-}
-
 type certSecretsRepoFixture struct {
 	repo          *ServiceCertificatesRepoSecrets
 	secretsClient corev1.SecretInterface
@@ -272,7 +263,7 @@ type certSecretsRepoFixture struct {
 //     for the aforementioned secret in its secrets.
 func (s *serviceCertificatesRepoSecretsImplSuite) newFixture(config certSecretsRepoFixtureConfig) *certSecretsRepoFixture {
 	certificates := certificates.CloneVT()
-	ownerRef := sensorOwnerReference()
+	ownerRef := testutils.SensorOwnerReference(sensorDeployment)
 	if config.secretOwnerRefUID != "" {
 		ownerRef[0].UID = types.UID(config.secretOwnerRefUID)
 	}
@@ -320,22 +311,6 @@ type certSecretsRepoFixtureConfig struct {
 	secretOwnerRefUID string
 }
 
-func sensorOwnerReference() []metav1.OwnerReference {
-	sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
-	blockOwnerDeletion := false
-	isController := false
-	return []metav1.OwnerReference{
-		{
-			APIVersion:         sensorDeploymentGVK.GroupVersion().String(),
-			Kind:               sensorDeploymentGVK.Kind,
-			Name:               sensorDeployment.GetName(),
-			UID:                sensorDeployment.GetUID(),
-			BlockOwnerDeletion: &blockOwnerDeletion,
-			Controller:         &isController,
-		},
-	}
-}
-
 func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
 	secretsClient corev1.SecretInterface) *ServiceCertificatesRepoSecrets {
 
@@ -351,7 +326,7 @@ func newTestRepo(secrets map[storage.ServiceType]*v1.Secret,
 
 	return &ServiceCertificatesRepoSecrets{
 		Secrets:        secretsSpecs,
-		OwnerReference: sensorOwnerReference()[0],
+		OwnerReference: testutils.SensorOwnerReference(sensorDeployment)[0],
 		Namespace:      namespace,
 		SecretsClient:  secretsClient,
 	}
