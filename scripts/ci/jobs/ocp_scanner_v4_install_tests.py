@@ -1,12 +1,12 @@
 #!/usr/bin/env -S python3 -u
 
 """
-Run the Scanner V4 tests in an OCP cluster
+Run the Scanner V4 installation tests in an OCP cluster
 """
 import os
 from runners import ClusterTestRunner
 from clusters import AutomationFlavorsCluster
-from ci_tests import ScannerV4Test
+from ci_tests import ScannerV4InstallTest
 from pre_tests import PreSystemTests
 from post_tests import PostClusterTest, FinalPost
 
@@ -19,11 +19,11 @@ os.environ["ENABLE_OPERATOR_TESTS"] = "true"
 ClusterTestRunner(
     cluster=AutomationFlavorsCluster(),
     pre_test=PreSystemTests(),
-    test=ScannerV4Test(),
+    test=ScannerV4InstallTest(),
     post_test=PostClusterTest(
-        # Stackrox is torn down as part of each test execution so data
+        # StackRox is torn down as part of each test execution so data
         # collection and standard log checks are skipped in this post suite
-        # step. The scanner-v4 test teardown() handles debug collection.
+        # step. The scanner-v4-install test teardown() handles debug collection.
         collect_collector_metrics=False,
         collect_central_artifacts=False,
         check_stackrox_logs=False,
