@@ -68,6 +68,6 @@ func (n *NodeInventoryComponentScanner) ScanNode(ctx context.Context) (*sensor.M
 		Node: result.GetNodeName(),
 		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: inv},
 	}
-	cmetrics.ObserveInventoryProtobufMessage(msg)
+	cmetrics.ObserveInventoryProtobufMessage(msg, cmetrics.ScannerVersionV2)
 	return msg, nil
 }
