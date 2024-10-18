@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	sacHelperMocks "github.com/stackrox/rox/central/role/sachelper/mocks"
+	sacHelperMocks "github.com/stackrox/rox/central/sac/helper/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"

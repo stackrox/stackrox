@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	deleConnection "github.com/stackrox/rox/central/delegatedregistryconfig/util/connection"
 	centralMetrics "github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,7 +29,7 @@ var (
 )
 
 // New creates a new delegator.
-func New(deleRegConfigDS datastore.DataStore, connManager connection.Manager, scanWaiterManager waiter.Manager[*storage.Image], namespaceSACHelper sachelper.ClusterNamespaceSacHelper) *delegatorImpl {
+func New(deleRegConfigDS datastore.DataStore, connManager connection.Manager, scanWaiterManager waiter.Manager[*storage.Image], namespaceSACHelper sacHelper.ClusterNamespaceSacHelper) *delegatorImpl {
 	return &delegatorImpl{
 		deleRegConfigDS:    deleRegConfigDS,
 		connManager:        connManager,
@@ -43,7 +43,7 @@ type delegatorImpl struct {
 	deleRegConfigDS datastore.DataStore
 
 	// namespaceSACHelper for confirming namespace exists and user has access.
-	namespaceSACHelper sachelper.ClusterNamespaceSacHelper
+	namespaceSACHelper sacHelper.ClusterNamespaceSacHelper
 
 	// connManager for sending scan requests to secured clusters and ensuring
 	// clusters are valid for delegation.

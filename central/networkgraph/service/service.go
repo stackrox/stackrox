@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -53,6 +53,6 @@ func newService(store nfDS.ClusterDataStore,
 		clusters:         clusters,
 		graphConfig:      graphConfigDS,
 		networkPolicy:    networkPolicy,
-		clusterSACHelper: sachelper.NewClusterSacHelper(clusters),
+		clusterSACHelper: sacHelper.NewClusterSacHelper(clusters),
 	}
 }
