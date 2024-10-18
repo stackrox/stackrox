@@ -122,7 +122,7 @@ class NetworkGraphUtil {
             }
 
             def graph = NetworkGraphService.getNetworkGraph(since, query)
-            def edges = NetworkGraphUtil.findEdges(graph, sourceId, targetId)
+            def edges = findEdges(graph, sourceId, targetId)
             if (edges != null && edges.size() > 0) {
                 log.debug "Found source ${sourceId} -> target ${targetId} " +
                     "in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
