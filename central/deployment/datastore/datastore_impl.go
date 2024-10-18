@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -301,11 +302,13 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 		return errors.Wrapf(err, "error merging deployment %s", deployment.GetId())
 	}
 
-	match, err := ds.platformMatcher.MatchDeployment(deployment)
-	if err != nil {
-		return err
+	if features.PlatformComponents.Enabled() {
+		match, err := ds.platformMatcher.MatchDeployment(deployment)
+		if err != nil {
+			return err
+		}
+		deployment.PlatformComponent = match
 	}
-	deployment.PlatformComponent = match
 
 	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
 		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
