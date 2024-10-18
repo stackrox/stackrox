@@ -584,7 +584,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 
 		limitedConn := ts.getLimitedCentralConn(ctx, ps, role)
 		service := v1.NewImageServiceClient(limitedConn)
-		_, err := ts.scanWithRetries(t, ctx, service, scanImgReq(ts.ocpInternalImage.TagRef(), withClusterFlag))
+		_, err := ts.scanWithRetries(ctx, service, scanImgReq(ts.ocpInternalImage.TagRef(), withClusterFlag))
 		require.Error(t, err, "scan should fail when user has no namespace access")
 	})
 
@@ -638,7 +638,7 @@ func (ts *DelegatedScanningSuite) TestDeploymentScans() {
 
 		// Pull the image scan from the API and validate it.
 		imageService := v1.NewImageServiceClient(conn)
-		img, err := ts.getImageWithRetries(t, ctx, imageService, &v1.GetImageRequest{Id: image.ID()})
+		img, err := ts.getImageWithRetries(ctx, imageService, &v1.GetImageRequest{Id: image.ID()})
 		require.NoError(t, err)
 		ts.validateImageScan(t, image.IDRef(), img)
 
@@ -723,9 +723,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	}, false, true)
 
 	logf(t, "Enabling delegated scanning for the mirror hosts")
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	deleService := v1.NewDelegatedRegistryConfigServiceClient(conn)
-	_, err = deleService.UpdateConfig(ctx, &v1.DelegatedRegistryConfig{
+	err = ts.updateConfigWithRetries(ctx, &v1.DelegatedRegistryConfig{
 		EnabledFor: v1.DelegatedRegistryConfig_SPECIFIC,
 		Registries: []*v1.DelegatedRegistryConfig_DelegatedRegistry{
 			// These paths are defined via the mirroring CRs in testdata/delegatedscanning/mirrors/*.
@@ -750,6 +748,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 		{"Scan ad-hoc image from mirror via ImageTagMirrorSet", itmsImage.TagRef(), !itmsAvail},
 	}
 
+	conn := centralgrpc.GRPCConnectionToCentral(t)
 	for _, tc := range adhocTCs {
 		ts.Run(tc.desc, func() {
 			t := ts.T()
@@ -805,7 +804,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 			logf(t, "Creating deployment %q with image: %q", tc.deployName, tc.imageStr)
 			setupDeploymentNoWait(t, tc.imageStr, tc.deployName, 1)
 
-			img, err := ts.getImageWithRetries(t, ctx, imageService, &v1.GetImageRequest{Id: tc.imgID})
+			img, err := ts.getImageWithRetries(ctx, imageService, &v1.GetImageRequest{Id: tc.imgID})
 			require.NoError(t, err)
 			ts.validateImageScan(t, tc.imageStr, img)
 
@@ -838,7 +837,7 @@ func (ts *DelegatedScanningSuite) validateImageScan(t *testing.T, imgFullName st
 }
 
 // getImageWithRetries will get an image from the StackRox API, retrying when not found.
-func (ts *DelegatedScanningSuite) getImageWithRetries(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.GetImageRequest) (*storage.Image, error) {
+func (ts *DelegatedScanningSuite) getImageWithRetries(ctx context.Context, service v1.ImageServiceClient, req *v1.GetImageRequest) (*storage.Image, error) {
 	var err error
 	var img *storage.Image
 
@@ -854,22 +853,13 @@ func (ts *DelegatedScanningSuite) getImageWithRetries(t *testing.T, ctx context.
 		return err
 	}
 
-	betweenAttemptsFunc := func(num int) {
-		logf(t, "Image not found, trying again in %s, attempt %d/%d", deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
-		time.Sleep(deleScanDefaultRetryDelay)
-	}
-
-	err = retry.WithRetry(retryFunc,
-		retry.BetweenAttempts(betweenAttemptsFunc),
-		retry.Tries(deleScanDefaultMaxRetries),
-		retry.OnlyRetryableErrors(),
-	)
+	err = ts.withRetries(retryFunc, "Image not found")
 
 	return img, err
 }
 
 // scanWithRetries will scan an image using the StackRox API, retrying when rate limited.
-func (ts *DelegatedScanningSuite) scanWithRetries(t *testing.T, ctx context.Context, service v1.ImageServiceClient, req *v1.ScanImageRequest) (*storage.Image, error) {
+func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v1.ImageServiceClient, req *v1.ScanImageRequest) (*storage.Image, error) {
 	var err error
 	var img *storage.Image
 
@@ -883,18 +873,7 @@ func (ts *DelegatedScanningSuite) scanWithRetries(t *testing.T, ctx context.Cont
 		return err
 	}
 
-	betweenAttemptsFunc := func(num int) {
-		logf(t, "Too many parallel scans, trying again in %s, attempt %d/%d", deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
-		time.Sleep(deleScanDefaultRetryDelay)
-	}
-
-	err = retry.WithRetry(retryFunc,
-		retry.BetweenAttempts(betweenAttemptsFunc),
-		retry.Tries(deleScanDefaultMaxRetries),
-		retry.WithExponentialBackoff(),
-		retry.OnlyRetryableErrors(),
-	)
-
+	err = ts.withRetries(retryFunc, "Too many parallel scans")
 	return img, err
 }
 
@@ -930,10 +909,7 @@ func (ts *DelegatedScanningSuite) getSensorLastLogBytePos(ctx context.Context) i
 func (ts *DelegatedScanningSuite) resetConfig(ctx context.Context) {
 	t := ts.T()
 
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-
-	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
-	_, err := service.UpdateConfig(ctx, &v1.DelegatedRegistryConfig{})
+	err := ts.updateConfigWithRetries(ctx, &v1.DelegatedRegistryConfig{})
 	require.NoError(t, err)
 }
 
@@ -942,9 +918,6 @@ func (ts *DelegatedScanningSuite) resetConfig(ctx context.Context) {
 func (ts *DelegatedScanningSuite) setConfig(ctx context.Context, image deleScanTestImage) {
 	t := ts.T()
 
-	conn := centralgrpc.GRPCConnectionToCentral(t)
-	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
-
 	cfg := &v1.DelegatedRegistryConfig{
 		EnabledFor:       v1.DelegatedRegistryConfig_SPECIFIC,
 		DefaultClusterId: ts.remoteCluster.GetId(),
@@ -952,8 +925,31 @@ func (ts *DelegatedScanningSuite) setConfig(ctx context.Context, image deleScanT
 			{Path: image.Base()},
 		},
 	}
-	_, err := service.UpdateConfig(ctx, cfg)
+
+	err := ts.updateConfigWithRetries(ctx, cfg)
 	require.NoError(t, err)
+}
+
+// updateConfigWithRetries will update the delegated registry config in Central
+// retrying on connection refused error. This was added to reduce flakes in
+// CI.
+func (ts *DelegatedScanningSuite) updateConfigWithRetries(ctx context.Context, cfg *v1.DelegatedRegistryConfig) error {
+	t := ts.T()
+
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	service := v1.NewDelegatedRegistryConfigServiceClient(conn)
+
+	retryFunc := func() error {
+		_, err := service.UpdateConfig(ctx, cfg)
+
+		if err != nil && strings.Contains(err.Error(), "connection refused") {
+			err = retry.MakeRetryable(err)
+		}
+
+		return err
+	}
+
+	return ts.withRetries(retryFunc, "Connection refused by Central attempting to update the delegated registry config")
 }
 
 // resetAccess will revoke API tokens, delete roles, and delete permissions sets
@@ -1020,7 +1016,7 @@ func (ts *DelegatedScanningSuite) executeAndValidateScan(ctx context.Context, co
 
 	// Scan the image via the image service, retrying as needed.
 	service := v1.NewImageServiceClient(conn)
-	img, err := ts.scanWithRetries(t, ctx, service, req)
+	img, err := ts.scanWithRetries(ctx, service, req)
 	require.NoError(t, err)
 
 	// Validate that the image scan looks 'OK'
@@ -1060,8 +1056,23 @@ func (ts *DelegatedScanningSuite) createImageIntegration(dockerConfig *storage.D
 		},
 		Autogenerated: autogenerated,
 	}
-	rii, err := iiService.PostImageIntegration(ctx, ii)
+
+	var err error
+	var rii *storage.ImageIntegration
+
+	retryFunc := func() error {
+		rii, err = iiService.PostImageIntegration(ctx, ii)
+
+		if err != nil && strings.Contains(err.Error(), "connection refused") {
+			err = retry.MakeRetryable(err)
+		}
+
+		return err
+	}
+
+	err = ts.withRetries(retryFunc, "Connection refused by Central attempting to create image integration")
 	require.NoError(t, err)
+
 	if cleanup {
 		t.Cleanup(func() { _, _ = iiService.DeleteImageIntegration(ctx, &v1.ResourceByID{Id: rii.GetId()}) })
 	}
@@ -1099,4 +1110,22 @@ func (ts *DelegatedScanningSuite) waitForHealthyCentralSensorConn() {
 
 	logf(t, "Waiting for Central/Sensor connection to be ready")
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+}
+
+// withRetries will execute retryFunc and retry execution when retryFunc marks the returned
+// error as retriable, statusMsg will be printed between attempts.
+func (ts *DelegatedScanningSuite) withRetries(retryFunc func() error, statusMsg string) error {
+	t := ts.T()
+
+	betweenAttemptsFunc := func(num int) {
+		logf(t, "%s, trying again in %s, attempt %d/%d", statusMsg, deleScanDefaultRetryDelay, num, deleScanDefaultMaxRetries)
+		time.Sleep(deleScanDefaultRetryDelay)
+	}
+
+	return retry.WithRetry(retryFunc,
+		retry.BetweenAttempts(betweenAttemptsFunc),
+		retry.Tries(deleScanDefaultMaxRetries),
+		retry.WithExponentialBackoff(),
+		retry.OnlyRetryableErrors(),
+	)
 }
