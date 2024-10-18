@@ -15,7 +15,7 @@ import (
 	imageIntegrationDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	signatureIntegrationDataStore "github.com/stackrox/rox/central/signatureintegration/datastore"
 	"github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/suppressor"
@@ -45,7 +45,7 @@ func initialize() {
 		delegatedRegistryConfigDS.Singleton(),
 		connection.ManagerSingleton(),
 		scanwaiter.Singleton(),
-		sachelper.NewClusterNamespaceSacHelper(clusterDataStore.Singleton(), namespaceDataStore.Singleton()),
+		sacHelper.NewClusterNamespaceSacHelper(clusterDataStore.Singleton(), namespaceDataStore.Singleton()),
 	)
 
 	ie = imageEnricher.New(imageCVEDataStore.Singleton(), suppressor.Singleton(), imageintegration.Set(),

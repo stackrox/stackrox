@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -96,7 +96,7 @@ type serviceImpl struct {
 	notifierStore    notifierDataStore.DataStore
 	graphEvaluator   graph.Evaluator
 
-	clusterSACHelper sachelper.ClusterSacHelper
+	clusterSACHelper sacHelper.ClusterSacHelper
 
 	policyGenerator generator.Generator
 }

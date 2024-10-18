@@ -11,7 +11,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	"github.com/stackrox/rox/central/sensor/enhancement"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -40,7 +40,7 @@ func New(
 	notifications notifier.Processor,
 	detector deploytime.Detector,
 	policySet detection.PolicySet,
-	clusterSACHelper sachelper.ClusterSacHelper,
+	clusterSACHelper sacHelper.ClusterSacHelper,
 	connManager connection.Manager,
 	broker *enhancement.Broker,
 	netpols networkPolicyDS.DataStore,

@@ -11,7 +11,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	roleDatastore "github.com/stackrox/rox/central/role/datastore"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -530,8 +530,8 @@ func (s *serviceImplTestSuite) SetupSuite() {
 		roleDataStore:      roleStore,
 		clusterDataStore:   clusterStore,
 		namespaceDataStore: namespaceStore,
-		clusterSACHelper:   sachelper.NewClusterSacHelper(clusterStore),
-		namespaceSACHelper: sachelper.NewClusterNamespaceSacHelper(clusterStore, namespaceStore),
+		clusterSACHelper:   sacHelper.NewClusterSacHelper(clusterStore),
+		namespaceSACHelper: sacHelper.NewClusterNamespaceSacHelper(clusterStore, namespaceStore),
 	}
 }
 

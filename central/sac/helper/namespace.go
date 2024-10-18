@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/postgres/schema"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -26,7 +27,7 @@ func listNamespaceNamesInScope(
 	noNamespaces := set.NewStringSet()
 	namespacesInScope := set.NewStringSet()
 	for _, r := range resourcesWithAccess {
-		scope, err := getRequesterScopeForReadPermission(ctx, r)
+		scope, err := sac.GetRequesterScopeForReadPermission(ctx, r)
 		if err != nil {
 			return noNamespaces, partialAccess, err
 		}

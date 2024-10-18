@@ -148,11 +148,16 @@ func (resolver *Resolver) Clusters(ctx context.Context, args PaginatedQuery) ([]
 	return resolver.wrapClustersWithContext(ctx, clusters, err)
 }
 
+<<<<<<< HEAD
 func (resolver *Resolver) clustersForReadPermission(ctx context.Context, args PaginatedQuery, resource permissions.ResourceMetadata) ([]*scopeObjectResolver, error) {
+=======
+func (resolver *Resolver) clustersForPermission(ctx context.Context, args PaginatedQuery, resource permissions.ResourceWithAccess) ([]*scopeObjectResolver, error) {
+>>>>>>> 473073372c (chore(graphql): add query to get cluster IDs and names for compliance)
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
+<<<<<<< HEAD
 	clusterIDs, unrestricted, err := sacHelper.ListClusterIDsInScope(
 		ctx,
 		[]permissions.ResourceWithAccess{permissions.View(resource)},
@@ -160,10 +165,18 @@ func (resolver *Resolver) clustersForReadPermission(ctx context.Context, args Pa
 	if err != nil {
 		return nil, err
 	}
+=======
+	clusterIDs, unrestricted, err := sacHelper.ListClusterIDsInScope(ctx, []permissions.ResourceWithAccess{resource})
+	if err != nil {
+		return nil, err
+	}
+	var elevatedCtx context.Context
+>>>>>>> 473073372c (chore(graphql): add query to get cluster IDs and names for compliance)
 
 	// Elevate context to find all matching clusters.
 	// The access control is enforced by the query restriction to
 	// the cluster IDs in the requester scope.
+<<<<<<< HEAD
 	scopeKeys := [][]sac.ScopeKey{
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		sac.ResourceScopeKeys(resources.Cluster),
@@ -179,6 +192,26 @@ func (resolver *Resolver) clustersForReadPermission(ctx context.Context, args Pa
 		ctx,
 		sac.AllowFixedScopes(scopeKeys...),
 	)
+=======
+	if unrestricted {
+		elevatedCtx = sac.WithGlobalAccessScopeChecker(
+			ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Cluster),
+			),
+		)
+	} else {
+		elevatedCtx = sac.WithGlobalAccessScopeChecker(
+			ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Cluster),
+				sac.ClusterScopeKeys(clusterIDs.AsSlice()...),
+			),
+		)
+	}
+>>>>>>> 473073372c (chore(graphql): add query to get cluster IDs and names for compliance)
 	clusters, err := resolver.ClusterDataStore.SearchRawClusters(elevatedCtx, query)
 	if err != nil {
 		return nil, err

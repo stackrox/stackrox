@@ -15,7 +15,7 @@ import (
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	deploymentMatcher "github.com/stackrox/rox/central/networkpolicies/deployment"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -75,7 +75,7 @@ type serviceImpl struct {
 	networkPolicy  networkPolicyDS.DataStore
 	graphConfig    datastore.DataStore
 
-	clusterSACHelper sachelper.ClusterSacHelper
+	clusterSACHelper sacHelper.ClusterSacHelper
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

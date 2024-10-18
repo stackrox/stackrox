@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	watchedImageDataStore "github.com/stackrox/rox/central/watchedimage/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -110,7 +110,7 @@ type serviceImpl struct {
 
 	scanWaiterManager waiter.Manager[*storage.Image]
 
-	clusterSACHelper sachelper.ClusterSacHelper
+	clusterSACHelper sacHelper.ClusterSacHelper
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
