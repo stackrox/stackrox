@@ -5,7 +5,7 @@ import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import {
     interactAndWaitForConfigurationManagementEntities,
     interactAndWaitForConfigurationManagementEntityInSidePanel,
-    interactAndWaitForConfigurationManagementScan,
+    // interactAndWaitForConfigurationManagementScan,
     visitConfigurationManagementDashboard,
 } from './ConfigurationManagement.helpers';
 import { selectors } from './ConfigurationManagement.selectors';
@@ -284,9 +284,14 @@ describe('Configuration Management Dashboard', () => {
         visitConfigurationManagementDashboard();
 
         // This and the following test assumes that scan results are available
+        // ROX-24912
+        // Comment out for now and assume that scan results are available from compliance tests.
+        // See function for more details.
+        /*
         interactAndWaitForConfigurationManagementScan(() => {
             cy.get('[data-testid="scan-button"]').click();
         });
+        */
 
         interactAndWaitForConfigurationManagementEntities(() => {
             cy.get(selectors.cisStandardsAcrossClusters.widget)
