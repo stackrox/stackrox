@@ -354,7 +354,6 @@ func GetJSONSerializedTestAlertWithDefaults() string {
 		"processes": []
 	},
 	"resolvedAt":null,
-	"snoozeTill":null,
 	"state": "ACTIVE",
 	"time": null,
 	"violations": [

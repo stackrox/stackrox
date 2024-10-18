@@ -34,11 +34,6 @@ message ResolveAlertsRequest {
   string query = 1;
 }
 
-message SnoozeAlertRequest {
-  string id = 1;
-  google.protobuf.Timestamp snooze_till = 2;
-}
-
 message ListAlertsResponse {
   repeated storage.ListAlert alerts = 1;
 }
@@ -151,14 +146,6 @@ service AlertService {
   rpc ResolveAlerts(ResolveAlertsRequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/alerts/resolve"
-      body: "*"
-    };
-  }
-
-  // SnoozeAlert is deprecated.
-  rpc SnoozeAlert(SnoozeAlertRequest) returns (Empty) {
-    option (google.api.http) = {
-      patch: "/v1/alerts/{id}/snooze"
       body: "*"
     };
   }
