@@ -663,7 +663,7 @@ func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, nvdVuln nvdsc
 		// When both NVD and manual data have available NVD CVSS scores, use the NVD score.
 		// And only the NVD score is included in the metrics, as the manual data originates from the same
 		if src == v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
-			preferredCVSS, preferredErr = nvdCVSS(&nvdVuln)
+			preferredCVSS, preferredErr = nvdCVSS(nvdVuln)
 			if preferredCVSS != nil {
 				metrics = append(metrics, preferredCVSS)
 			}
@@ -796,7 +796,7 @@ func sourceFromLinks(links string) v4.VulnerabilityReport_Vulnerability_CVSS_Sou
 }
 
 // nvdCVSS returns cvssValues based on the given vulnerability and the associated NVD item.
-func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+func nvdCVSS(v nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	// Sanity check the NVD data.
 	if v.Metrics == nil || (v.Metrics.CvssMetricV31 == nil && v.Metrics.CvssMetricV30 == nil && v.Metrics.CvssMetricV2 == nil) {
 		return nil, errors.New("no NVD CVSS metrics")
