@@ -1,7 +1,6 @@
 import React, { ReactElement } from 'react';
 import {
     Alert,
-    AlertVariant,
     Form,
     PageSection,
     Text,
@@ -93,11 +92,12 @@ function ClairifyIntegrationForm({
                 <Alert
                     title="Deprecation notice"
                     component="p"
-                    variant={AlertVariant.warning}
+                    variant={'warning'}
                     isInline
                     className="pf-v5-u-mb-lg"
                 >
                     <Text>StackRox Scanner will be removed in a future release.</Text>
+                    <Text>No new enhancements for StackRox Scanner will be done or accepted.</Text>
                     <Text>It is recommended to use Scanner V4, instead.</Text>
                 </Alert>
                 <FormMessage message={message} />

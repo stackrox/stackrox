@@ -1,7 +1,6 @@
 import React, { ReactElement } from 'react';
 import {
     Alert,
-    AlertVariant,
     Checkbox,
     Form,
     PageSection,
@@ -21,6 +20,7 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useIntegrationForm from '../useIntegrationForm';
 import { IntegrationFormProps } from '../integrationFormTypes';
 
@@ -154,7 +154,7 @@ function GoogleIntegrationForm({
                 <Alert
                     title="Deprecation notice"
                     component="p"
-                    variant={AlertVariant.warning}
+                    variant={'warning'}
                     isInline
                     className="pf-v5-u-mb-lg"
                 >
@@ -164,8 +164,16 @@ function GoogleIntegrationForm({
                         and Scanner V4 as a scanner replacement.
                     </Text>
                     <Text>
-                        See
-                        https://cloud.google.com/container-registry/docs/deprecations/container-registry-deprecation
+                        See the{' '}
+                        <ExternalLink>
+                            <a
+                                href="https://cloud.google.com/container-registry/docs/deprecations/container-registry-deprecation"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Container Registry deprecation notice
+                            </a>
+                        </ExternalLink>
                         for more information.
                     </Text>
                 </Alert>
