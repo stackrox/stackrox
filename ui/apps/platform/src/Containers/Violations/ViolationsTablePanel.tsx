@@ -325,11 +325,9 @@ function ViolationsTablePanel({
                                 });
                             }
                             return (
-                                // eslint-disable-next-line react/no-array-index-key
-                                <Tr key={rowIndex}>
+                                <Tr key={id}>
                                     {hasActions && (
                                         <Td
-                                            key={id}
                                             select={{
                                                 rowIndex,
                                                 onSelect,
