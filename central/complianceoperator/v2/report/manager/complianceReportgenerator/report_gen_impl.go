@@ -43,6 +43,8 @@ var (
 		"Cluster",
 		"Status",
 		"Remediation",
+		"Rationale",
+		"Instructions",
 	}
 )
 
@@ -78,13 +80,15 @@ type complianceReportGeneratorImpl struct {
 
 // struct which hold all columns of a row
 type ResultRow struct {
-	ClusterName string
-	CheckName   string
-	Profile     string
-	ControlRef  string
-	Description string
-	Status      string
-	Remediation string
+	ClusterName  string
+	CheckName    string
+	Profile      string
+	ControlRef   string
+	Description  string
+	Status       string
+	Remediation  string
+	Rationale    string
+	Instructions string
 }
 
 type ResultEmail struct {
@@ -146,10 +150,12 @@ func (rg *complianceReportGeneratorImpl) getDataforReport(req *ComplianceReportR
 
 		err := rg.checkResultsDS.WalkByQuery(req.Ctx, parsedQuery, func(checkResult *storage.ComplianceOperatorCheckResultV2) error {
 			row := &ResultRow{
-				ClusterName: checkResult.GetClusterName(),
-				CheckName:   checkResult.GetCheckName(),
-				Description: checkResult.GetDescription(),
-				Status:      checkResult.GetStatus().String(),
+				ClusterName:  checkResult.GetClusterName(),
+				CheckName:    checkResult.GetCheckName(),
+				Description:  checkResult.GetDescription(),
+				Status:       checkResult.GetStatus().String(),
+				Rationale:    checkResult.GetRationale(),
+				Instructions: checkResult.GetInstructions(),
 			}
 			// get profile for the check result
 			q := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanRef, checkResult.GetScanRefId()).ProtoQuery()
@@ -333,6 +339,8 @@ func createCSVInZip(zipWriter *zip.Writer, filename string, res []*ResultRow) er
 				checkRes.ClusterName,
 				checkRes.Status,
 				checkRes.Remediation,
+				checkRes.Rationale,
+				checkRes.Instructions,
 			}
 			csvWriter.AddValue(record)
 		}
