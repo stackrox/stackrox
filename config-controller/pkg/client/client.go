@@ -39,7 +39,7 @@ func (c *perRPCCreds) RequireTransportSecurity() bool {
 }
 
 func (c *perRPCCreds) refreshToken(ctx context.Context) error {
-	log.Info("Refreshing Central API token")
+	log.Debug("Refreshing Central API token")
 	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
 		return errors.WithMessage(err, "error reading service account token file")
@@ -208,9 +208,16 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 		c.svc = gc
 	}
 
+	err := c.EnsureFresh(ctx)
+	if err == nil {
+		return &c, nil
+	}
+
+	// Log the error once and then keep trying silently
+	log.Error(err, "Failed to initialize client. Will continue to retry...")
+
 	for {
 		if err := c.EnsureFresh(ctx); err != nil {
-			log.Error(err, "Failed to initialize client")
 			time.Sleep(time.Second * 5)
 			continue
 		}
