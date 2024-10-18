@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	coreV1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
@@ -702,7 +703,7 @@ func (ts *DelegatedScanningSuite) TestMirrorScans() {
 	// Since Sensor may have started first after the prior node drain, we restart Sensor
 	// so that testing will be able to proceed quicker.
 	logf(t, "Deleting Sensor to speed up ready state")
-	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
+	sensorPod, err := ts.getSensorPodWithRetries(ctx, ts.namespace)
 	require.NoError(t, err)
 	err = ts.k8s.CoreV1().Pods(ts.namespace).Delete(ctx, sensorPod.GetName(), metaV1.DeleteOptions{})
 	require.NoError(t, err)
@@ -896,7 +897,7 @@ func (ts *DelegatedScanningSuite) checkLogsMatch(ctx context.Context, descriptio
 // are matched.
 func (ts *DelegatedScanningSuite) getSensorLastLogBytePos(ctx context.Context) int64 {
 	t := ts.T()
-	sensorPod, err := ts.getSensorPod(ctx, ts.namespace)
+	sensorPod, err := ts.getSensorPodWithRetries(ctx, ts.namespace)
 	require.NoError(t, err)
 
 	fromByte, err := ts.getLastLogBytePos(ctx, ts.namespace, sensorPod.GetName(), sensorPod.Spec.Containers[0].Name)
@@ -1110,6 +1111,24 @@ func (ts *DelegatedScanningSuite) waitForHealthyCentralSensorConn() {
 
 	logf(t, "Waiting for Central/Sensor connection to be ready")
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
+}
+
+func (ts *DelegatedScanningSuite) getSensorPodWithRetries(ctx context.Context, namespace string) (*coreV1.Pod, error) {
+	var err error
+	var pod *coreV1.Pod
+
+	retryFunc := func() error {
+		pod, err = ts.getSensorPod(ctx, namespace)
+
+		if err != nil && strings.Contains(err.Error(), "more than one") {
+			err = retry.MakeRetryable(err)
+		}
+
+		return err
+	}
+
+	err = ts.withRetries(retryFunc, "Found more then one sensor pod")
+	return pod, err
 }
 
 // withRetries will execute retryFunc and retry execution when retryFunc marks the returned
