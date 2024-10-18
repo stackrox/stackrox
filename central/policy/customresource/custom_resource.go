@@ -15,6 +15,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+//
+//go:generate config-as-code-helper-wrapper --type=storage.Policy
+//
+
 const (
 	MaxCustomResourceMetadataNameLength = 253
 )
