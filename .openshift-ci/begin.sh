@@ -47,8 +47,3 @@ if [[ "${JOB_NAME:-}" =~ -eks- ]]; then
     aws sts get-caller-identity | jq -r '.Arn'
     set_ci_shared_export USER_ARNS "$(aws sts get-caller-identity | jq -r '.Arn')"
 fi
-
-if [[ "${JOB_NAME:-}" =~ ocp-.*-scanner-v4-tests.* ]]; then
-    info "Setting worker node type for OCP Scanner V4 tests to e2-standard-16"
-    set_ci_shared_export WORKER_NODE_TYPE e2-standard-16
-fi
