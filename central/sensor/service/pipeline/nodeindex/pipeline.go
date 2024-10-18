@@ -93,8 +93,8 @@ func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSen
 	if err != nil {
 		return errors.WithMessagef(err, "enriching node %s with index report", nodeId)
 	}
-	log.Infof("Scanned index report for node %s - found %d components (id: %s)",
-		nodeDatastore.NodeString(node), len(node.GetScan().GetComponents()), nodeId)
+	log.Infof("Scanned index report and found %d components for node %s",
+		len(node.GetScan().GetComponents()), nodeDatastore.NodeString(node))
 
 	// Update the whole node in the database with the new and previous information.
 	err = p.riskManager.CalculateRiskAndUpsertNode(node)
