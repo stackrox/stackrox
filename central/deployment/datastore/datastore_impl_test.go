@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -171,6 +172,11 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 }
 
 func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignment() {
+	suite.T().Setenv(features.PlatformComponents.EnvVar(), "true")
+	if !features.PlatformComponents.Enabled() {
+		suite.T().Skip("Skip test when ROX_PLATFORM_COMPONENTS disabled")
+		suite.T().SkipNow()
+	}
 	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), platformmatcher.Singleton())
 	ctx := sac.WithAllAccess(context.Background())
 	suite.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()

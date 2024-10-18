@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -264,13 +265,15 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 		return nil
 	}
 
-	for _, alert := range alerts {
-		alert.EntityType = alertutils.GetEntityType(alert)
-		match, err := ds.platformMatcher.MatchAlert(alert)
-		if err != nil {
-			return err
+	if features.PlatformComponents.Enabled() {
+		for _, alert := range alerts {
+			alert.EntityType = alertutils.GetEntityType(alert)
+			match, err := ds.platformMatcher.MatchAlert(alert)
+			if err != nil {
+				return err
+			}
+			alert.PlatformComponent = match
 		}
-		alert.PlatformComponent = match
 	}
 
 	return ds.storage.UpsertMany(ctx, alerts)
@@ -281,12 +284,6 @@ func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 }
 
 func (ds *datastoreImpl) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
-	if ok, err := alertSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, sac.ErrResourceAccessDenied
-	}
-
 	return ds.storage.GetByQuery(ctx, q)
 }
 

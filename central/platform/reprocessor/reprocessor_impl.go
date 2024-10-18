@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync/atomic"
 
+	"github.com/pkg/errors"
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	alertutils "github.com/stackrox/rox/central/alert/utils"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
@@ -22,7 +23,7 @@ var (
 
 	reprocessorCtx = sac.WithAllAccess(context.Background())
 
-	query = search.NewQueryBuilder().AddNullField(search.PlatformComponent).ProtoQuery()
+	unsetPlatformComponentQuery = search.NewQueryBuilder().AddNullField(search.PlatformComponent).ProtoQuery()
 )
 
 type platformReprocessorImpl struct {
@@ -64,49 +65,58 @@ func (pr *platformReprocessorImpl) Stop() {
 }
 
 func (pr *platformReprocessorImpl) runReprocessing() {
-	needsReprocessing, err := pr.needsReprocessing()
-	if err != nil {
-		log.Errorf("Error determining if platform components need reporcessing: %v", err)
-		return
-	}
-
-	if !needsReprocessing {
-		log.Info("Platform components up to date, skipping reprocessing")
-		return
-	}
-
-	err = pr.reprocessAlerts()
+	err := pr.reprocessAlerts()
 	if err != nil {
 		log.Errorf("Error reprocessing alerts with platform rules: %v", err)
-		return
 	}
 
 	err = pr.reprocessDeployments()
 	if err != nil {
 		log.Errorf("Error reprocessing deployments with platform rules: %v", err)
-		return
 	}
 }
 
-func (pr *platformReprocessorImpl) needsReprocessing() (bool, error) {
-	q := query.CloneVT()
+func (pr *platformReprocessorImpl) alertsNeedReprocessing() (bool, error) {
+	// Check if there is atleast one alert where platform component is unset
+	q := unsetPlatformComponentQuery.CloneVT()
 	q.Pagination = &v1.QueryPagination{
 		Limit: 1,
 	}
-
 	alerts, err := pr.alertDatastore.GetByQuery(reprocessorCtx, q)
 	if err != nil {
 		return false, err
+	}
+	return len(alerts) > 0, nil
+}
+
+func (pr *platformReprocessorImpl) deploymentsNeedReprocessing() (bool, error) {
+	// Check if there is atleast one deployment where platform component is unset
+	q := unsetPlatformComponentQuery.CloneVT()
+	q.Pagination = &v1.QueryPagination{
+		Limit: 1,
 	}
 	deployments, err := pr.deploymentDatastore.SearchRawDeployments(reprocessorCtx, q)
 	if err != nil {
 		return false, err
 	}
-	return len(alerts) > 0 || len(deployments) > 0, nil
+	return len(deployments) > 0, nil
 }
 
 func (pr *platformReprocessorImpl) reprocessAlerts() error {
-	q := query.CloneVT()
+	if pr.stopSignal.IsDone() {
+		log.Info("Stop called, stopping platform reprocessor")
+		return nil
+	}
+	needReprocessing, err := pr.alertsNeedReprocessing()
+	if err != nil {
+		return errors.Wrap(err, "Error determining if alerts need reporcessing")
+	}
+	if !needReprocessing {
+		log.Info("Alerts up to date with platform rules, skipping reprocessing")
+		return nil
+	}
+
+	q := unsetPlatformComponentQuery.CloneVT()
 	q.Pagination = &v1.QueryPagination{
 		Limit:  batchSize,
 		Offset: 0,
@@ -147,7 +157,20 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 }
 
 func (pr *platformReprocessorImpl) reprocessDeployments() error {
-	q := query.CloneVT()
+	if pr.stopSignal.IsDone() {
+		log.Info("Stop called, stopping platform reprocessor")
+		return nil
+	}
+	needReprocessing, err := pr.deploymentsNeedReprocessing()
+	if err != nil {
+		return errors.Wrap(err, "Error determining if deployments need reporcessing")
+	}
+	if !needReprocessing {
+		log.Info("Deployments up to date with platform rules, skipping reprocessing")
+		return nil
+	}
+
+	q := unsetPlatformComponentQuery.CloneVT()
 	q.Pagination = &v1.QueryPagination{
 		Limit:  batchSize,
 		Offset: 0,

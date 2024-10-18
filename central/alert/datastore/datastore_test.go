@@ -12,6 +12,7 @@ import (
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -25,7 +26,6 @@ var (
 )
 
 func TestAlertDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(alertDataStoreTestSuite))
 }
 
@@ -180,6 +180,11 @@ func (s *alertDataStoreTestSuite) TestGetByQuery() {
 }
 
 func (s *alertDataStoreTestSuite) TestUpsert_PlatformComponentAndEntityTypeAssignment() {
+	s.T().Setenv(features.PlatformComponents.EnvVar(), "true")
+	if !features.PlatformComponents.Enabled() {
+		s.T().Skip("Skip test when ROX_PLATFORM_COMPONENTS disabled")
+		s.T().SkipNow()
+	}
 	// Case: Resource alert
 	alert := &storage.Alert{
 		Id:     "id",
@@ -300,10 +305,4 @@ func (s *alertDataStoreWithSACTestSuite) TestMarkAlertStaleBatchEnforced() {
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
 	s.Equal(storage.ViolationState_ACTIVE, fakeAlert.GetState())
-}
-
-func (s *alertDataStoreWithSACTestSuite) TestGetByQueryEnforced() {
-	s.storage.EXPECT().GetByQuery(gomock.Any(), gomock.Any()).Times(0)
-	_, err := s.dataStore.GetByQuery(s.hasNoneCtx, search.EmptyQuery())
-	s.Require().ErrorIs(err, sac.ErrResourceAccessDenied)
 }
