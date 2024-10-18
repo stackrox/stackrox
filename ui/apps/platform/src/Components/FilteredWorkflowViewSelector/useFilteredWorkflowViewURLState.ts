@@ -1,9 +1,9 @@
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import { FilteredWorkflowView, filteredWorkflowViews, SetFilteredWorkflowView } from './types';
+import { FilteredWorkflowView, filteredWorkflowViews } from './types';
 
 export type FilteredWorkflowViewURLStateResult = {
     filteredWorkflowView: FilteredWorkflowView;
-    setFilteredWorkflowView: SetFilteredWorkflowView;
+    setFilteredWorkflowView: (value: FilteredWorkflowView) => void;
 };
 
 function useFilteredWorkflowViewURLState(): FilteredWorkflowViewURLStateResult {
@@ -12,7 +12,10 @@ function useFilteredWorkflowViewURLState(): FilteredWorkflowViewURLStateResult {
         filteredWorkflowViews
     );
 
-    return { filteredWorkflowView, setFilteredWorkflowView };
+    return {
+        filteredWorkflowView,
+        setFilteredWorkflowView,
+    };
 }
 
 export default useFilteredWorkflowViewURLState;

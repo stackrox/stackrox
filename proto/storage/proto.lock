@@ -10635,6 +10635,18 @@
             ]
           },
           {
+            "name": "NodeScan.Scanner",
+            "enum_fields": [
+              {
+                "name": "SCANNER"
+              },
+              {
+                "name": "SCANNER_V4",
+                "integer": 1
+              }
+            ]
+          },
+          {
             "name": "NodeInventory.Note",
             "enum_fields": [
               {
@@ -10842,6 +10854,11 @@
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "scanner_version",
+                "type": "Scanner"
               }
             ]
           },

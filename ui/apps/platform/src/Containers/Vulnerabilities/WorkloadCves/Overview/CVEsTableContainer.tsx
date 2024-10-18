@@ -14,7 +14,8 @@ import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/use
 import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
-import { useManagedColumns } from 'hooks/useManagedColumns';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import WorkloadCVEOverviewTable, {
     ImageCVE,
@@ -76,7 +77,14 @@ function CVEsTableContainer({
 
     const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
 
-    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const filteredColumns = filterManagedColumns(
+        defaultColumns,
+        (key) => key !== 'topNvdCvss' || isNvdCvssColumnEnabled
+    );
+    const managedColumnState = useManagedColumns(tableId, filteredColumns);
 
     const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
     const {
@@ -130,37 +138,34 @@ function CVEsTableContainer({
                     <ColumnManagementButton managedColumnState={managedColumnState} />
                 </ToolbarItem>
                 {canSelectRows && (
-                    <>
-                        <ToolbarItem>
-                            <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
-                                <DropdownItem
-                                    key="bulk-defer-cve"
-                                    component="button"
-                                    onClick={() =>
-                                        showModal({
-                                            type: 'DEFERRAL',
-                                            cves: Array.from(selectedCves.values()),
-                                        })
-                                    }
-                                >
-                                    Defer CVEs
-                                </DropdownItem>
-                                <DropdownItem
-                                    key="bulk-mark-false-positive"
-                                    component="button"
-                                    onClick={() =>
-                                        showModal({
-                                            type: 'FALSE_POSITIVE',
-                                            cves: Array.from(selectedCves.values()),
-                                        })
-                                    }
-                                >
-                                    Mark as false positives
-                                </DropdownItem>
-                            </BulkActionsDropdown>
-                        </ToolbarItem>
-                        <ToolbarItem variant="separator" />
-                    </>
+                    <ToolbarItem>
+                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                            <DropdownItem
+                                key="bulk-defer-cve"
+                                component="button"
+                                onClick={() =>
+                                    showModal({
+                                        type: 'DEFERRAL',
+                                        cves: Array.from(selectedCves.values()),
+                                    })
+                                }
+                            >
+                                Defer CVEs
+                            </DropdownItem>
+                            <DropdownItem
+                                key="bulk-mark-false-positive"
+                                component="button"
+                                onClick={() =>
+                                    showModal({
+                                        type: 'FALSE_POSITIVE',
+                                        cves: Array.from(selectedCves.values()),
+                                    })
+                                }
+                            >
+                                Mark as false positives
+                            </DropdownItem>
+                        </BulkActionsDropdown>
+                    </ToolbarItem>
                 )}
             </TableEntityToolbar>
             <Divider component="div" />

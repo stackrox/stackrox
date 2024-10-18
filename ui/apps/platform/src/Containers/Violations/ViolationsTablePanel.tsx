@@ -57,6 +57,7 @@ type ViolationsTablePanelProps = {
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
+    additionalContextFilter: SearchFilter;
 };
 
 function ViolationsTablePanel({
@@ -73,6 +74,7 @@ function ViolationsTablePanel({
     searchFilter,
     onFilterChange,
     onSearch,
+    additionalContextFilter,
 }: ViolationsTablePanelProps): ReactElement {
     const isRouteEnabled = useIsRouteEnabled();
     const { hasReadWriteAccess } = usePermissions();
@@ -199,6 +201,7 @@ function ViolationsTablePanel({
                 searchFilter={searchFilter}
                 onFilterChange={onFilterChange}
                 onSearch={onSearch}
+                additionalContextFilter={additionalContextFilter}
             />
             <Divider component="div" />
             <Toolbar>

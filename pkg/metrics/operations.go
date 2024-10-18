@@ -19,6 +19,7 @@ const (
 	Get
 	GetAll
 	GetMany
+	GetExternalFlowsForDeployment
 	GetFlowsForDeployment
 	GetByQuery
 

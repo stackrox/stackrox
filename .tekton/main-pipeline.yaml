@@ -330,6 +330,10 @@ spec:
     - input: $(params.build-source-image)
       operator: in
       values: [ "true" ]
+    # Pushing source container for main is known to fail a lot with timeout in Quay. See KFLUXBUGS-1508
+    # By trying a few more times, we hope to make this step succeed and not fail the pipeline.
+    # TODO: remove retries once KFLUXBUGS-1508 gets resolved.
+    retries: 3
 
   - name: deprecated-base-image-check
     params:
@@ -430,3 +434,23 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
+
+  - name: rpms-signature-scan
+    params:
+    - name: image-digest
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    - name: image-url
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    taskRef:
+      params:
+      - name: name
+        value: rpms-signature-scan
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-rpms-signature-scan:0.2@sha256:7aa4d3c95e2b963e82fdda392f7cb3d61e3dab035416cf4a3a34e43cf3c9c9b8
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values: ["false"]

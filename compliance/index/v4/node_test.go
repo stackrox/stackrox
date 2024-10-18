@@ -5,12 +5,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/quay/claircore"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -80,6 +82,10 @@ func (s *nodeIndexerSuite) TestConstructLayerIllegalDigest() {
 }
 
 func (s *nodeIndexerSuite) TestRunRespositoryScanner() {
+	cwd, err := os.Getwd()
+	s.NoError(err)
+	s.T().Setenv(mtls.CertFilePathEnvName, path.Join(cwd, "testdata", "certs", "cert.pem"))
+	s.T().Setenv(mtls.KeyFileEnvName, path.Join(cwd, "testdata", "certs", "key.pem"))
 	layer, err := createLayer("testdata")
 	s.NoError(err)
 	server := createTestServer(s.T())
@@ -94,6 +100,10 @@ func (s *nodeIndexerSuite) TestRunRespositoryScanner() {
 }
 
 func (s *nodeIndexerSuite) TestRunRespositoryScannerAnyPath() {
+	cwd, err := os.Getwd()
+	s.NoError(err)
+	s.T().Setenv(mtls.CertFilePathEnvName, path.Join(cwd, "testdata", "certs", "cert.pem"))
+	s.T().Setenv(mtls.KeyFileEnvName, path.Join(cwd, "testdata", "certs", "key.pem"))
 	layer, err := createLayer(s.T().TempDir())
 	s.NoError(err)
 	server := createTestServer(s.T())
@@ -132,10 +142,13 @@ func (s *nodeIndexerSuite) TestRunPackageScannerAnyPath() {
 }
 
 func (s *nodeIndexerSuite) TestIndexerE2E() {
+	cwd, err := os.Getwd()
+	s.NoError(err)
+	s.T().Setenv(mtls.CertFilePathEnvName, path.Join(cwd, "testdata", "certs", "cert.pem"))
+	s.T().Setenv(mtls.KeyFileEnvName, path.Join(cwd, "testdata", "certs", "key.pem"))
 	testdir, err := filepath.Abs("testdata")
 	s.NoError(err)
-	err = os.Setenv("ROX_NODE_INDEX_HOST_PATH", testdir)
-	s.NoError(err)
+	s.T().Setenv("ROX_NODE_INDEX_HOST_PATH", testdir)
 	srv := createTestServer(s.T())
 	defer srv.Close()
 	ni := NewNodeIndexer(createConfig(srv.URL))

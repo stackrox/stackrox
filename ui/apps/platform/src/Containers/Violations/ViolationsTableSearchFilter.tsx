@@ -2,10 +2,13 @@ import React from 'react';
 import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
+import useAnalytics from 'hooks/useAnalytics';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import {
     CompoundSearchFilterConfig,
     OnSearchCallback,
+    OnSearchPayload,
 } from 'Components/CompoundSearchFilter/types';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
@@ -82,14 +85,24 @@ export type ViolationsTableSearchFilterProps = {
     searchFilter: SearchFilter;
     onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
+    additionalContextFilter: SearchFilter;
 };
 
 function ViolationsTableSearchFilter({
     searchFilter,
     onFilterChange,
     onSearch,
+    additionalContextFilter,
 }: ViolationsTableSearchFilterProps) {
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+
+    function onSearchHandler(payload: OnSearchPayload) {
+        onSearch(payload);
+        trackAppliedFilter('Policy Violations Filter Applied', payload);
+    }
 
     return (
         <Toolbar>
@@ -99,7 +112,8 @@ function ViolationsTableSearchFilter({
                         <CompoundSearchFilter
                             config={searchFilterConfig}
                             searchFilter={searchFilter}
-                            onSearch={onSearch}
+                            onSearch={onSearchHandler}
+                            additionalContextFilter={additionalContextFilter}
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
