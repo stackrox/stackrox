@@ -138,37 +138,34 @@ function CVEsTableContainer({
                     <ColumnManagementButton managedColumnState={managedColumnState} />
                 </ToolbarItem>
                 {canSelectRows && (
-                    <>
-                        <ToolbarItem>
-                            <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
-                                <DropdownItem
-                                    key="bulk-defer-cve"
-                                    component="button"
-                                    onClick={() =>
-                                        showModal({
-                                            type: 'DEFERRAL',
-                                            cves: Array.from(selectedCves.values()),
-                                        })
-                                    }
-                                >
-                                    Defer CVEs
-                                </DropdownItem>
-                                <DropdownItem
-                                    key="bulk-mark-false-positive"
-                                    component="button"
-                                    onClick={() =>
-                                        showModal({
-                                            type: 'FALSE_POSITIVE',
-                                            cves: Array.from(selectedCves.values()),
-                                        })
-                                    }
-                                >
-                                    Mark as false positives
-                                </DropdownItem>
-                            </BulkActionsDropdown>
-                        </ToolbarItem>
-                        <ToolbarItem variant="separator" />
-                    </>
+                    <ToolbarItem>
+                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                            <DropdownItem
+                                key="bulk-defer-cve"
+                                component="button"
+                                onClick={() =>
+                                    showModal({
+                                        type: 'DEFERRAL',
+                                        cves: Array.from(selectedCves.values()),
+                                    })
+                                }
+                            >
+                                Defer CVEs
+                            </DropdownItem>
+                            <DropdownItem
+                                key="bulk-mark-false-positive"
+                                component="button"
+                                onClick={() =>
+                                    showModal({
+                                        type: 'FALSE_POSITIVE',
+                                        cves: Array.from(selectedCves.values()),
+                                    })
+                                }
+                            >
+                                Mark as false positives
+                            </DropdownItem>
+                        </BulkActionsDropdown>
+                    </ToolbarItem>
                 )}
             </TableEntityToolbar>
             <Divider component="div" />

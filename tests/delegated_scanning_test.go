@@ -49,7 +49,7 @@ import (
 // These tests require the following env vars to be set:
 // - API_ENDPOINT               - location of the StackRox API.
 // - ROX_USERNAME               - for admin access to the StackRox API.
-// - ROX_PASSWORD               - for admin access to the StackRox API.
+// - ROX_ADMIN_PASSWORD         - for admin access to the StackRox API.
 // - KUBECONFIG                 - for inspecting logs, creating deploys, etc.
 // - QUAY_RHACS_ENG_RO_USERNAME - for reading quay.io/rhacs-eng images.
 // - QUAY_RHACS_ENG_RO_PASSWORD - for reading quay.io/rhacs-eng images.

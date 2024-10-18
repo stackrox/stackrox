@@ -8,10 +8,9 @@ import (
 	imageCVEsDSMocks "github.com/stackrox/rox/central/cve/image/datastore/mocks"
 	imageDSMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageComponentsDSMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
-	imagesView "github.com/stackrox/rox/central/views/images"
-	imagesViewMocks "github.com/stackrox/rox/central/views/images/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -55,7 +54,6 @@ type ImageScanResolverTestSuite struct {
 	mockCtrl *gomock.Controller
 
 	imageDataStore          *imageDSMocks.MockDataStore
-	imageView               *imagesViewMocks.MockImageView
 	imageComponentDataStore *imageComponentsDSMocks.MockDataStore
 	imageCVEDataStore       *imageCVEsDSMocks.MockDataStore
 
@@ -68,12 +66,10 @@ func (s *ImageScanResolverTestSuite) SetupTest() {
 	s.ctx = contextWithImagePerm(s.T(), s.mockCtrl)
 
 	s.imageDataStore = imageDSMocks.NewMockDataStore(s.mockCtrl)
-	s.imageView = imagesViewMocks.NewMockImageView(s.mockCtrl)
-
 	s.imageComponentDataStore = imageComponentsDSMocks.NewMockDataStore(s.mockCtrl)
 	s.imageCVEDataStore = imageCVEsDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.resolver, s.schema = SetupTestResolver(s.T(), s.imageDataStore, s.imageView, s.imageComponentDataStore, s.imageCVEDataStore)
+	s.resolver, s.schema = SetupTestResolver(s.T(), s.imageDataStore, s.imageComponentDataStore, s.imageCVEDataStore)
 }
 
 func (s *ImageScanResolverTestSuite) TearDownTest() {
@@ -86,10 +82,10 @@ func (s *ImageScanResolverTestSuite) TearDownSuite() {
 func (s *ImageScanResolverTestSuite) TestGetImagesWithScan() {
 	// Verify that full image is fetched.
 	img := fixtures.GetImageWithUniqueComponents(5)
-	imageCore := imagesViewMocks.NewMockImageCore(s.mockCtrl)
-	imageCore.EXPECT().GetImageID().Return(img.GetId())
-	s.imageView.EXPECT().Get(gomock.Any(), gomock.Any()).
-		Return([]imagesView.ImageCore{imageCore}, nil)
+	s.imageDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).
+		Return([]search.Result{{
+			ID: img.GetId(),
+		}}, nil)
 	cloned := img.CloneVT()
 	cloned.Scan.Components = nil
 	s.imageDataStore.EXPECT().GetManyImageMetadata(gomock.Any(), gomock.Any()).
@@ -103,10 +99,10 @@ func (s *ImageScanResolverTestSuite) TestGetImagesWithScan() {
 func (s *ImageScanResolverTestSuite) TestGetImagesWithoutScan() {
 	// Verify that full image is not fetched but rather image component and vuln stores are queried.
 	img := fixtures.GetImageWithUniqueComponents(5)
-	imageCore := imagesViewMocks.NewMockImageCore(s.mockCtrl)
-	imageCore.EXPECT().GetImageID().Return(img.GetId())
-	s.imageView.EXPECT().Get(gomock.Any(), gomock.Any()).
-		Return([]imagesView.ImageCore{imageCore}, nil)
+	s.imageDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).
+		Return([]search.Result{{
+			ID: img.GetId(),
+		}}, nil)
 
 	cloned := img.CloneVT()
 	cloned.Scan.Components = nil

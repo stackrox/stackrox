@@ -8,19 +8,21 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/size"
 	"google.golang.org/grpc"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var centralHostPort = fmt.Sprintf("central.%s.svc:443", env.Namespace.Setting())
+var (
+	centralHostPort = fmt.Sprintf("central.%s.svc:443", env.Namespace.Setting())
+	log             = logging.LoggerForModule()
+)
 
 type perRPCCreds struct {
 	svc         v1.AuthServiceClient
@@ -37,7 +39,7 @@ func (c *perRPCCreds) RequireTransportSecurity() bool {
 }
 
 func (c *perRPCCreds) refreshToken(ctx context.Context) error {
-	getLogger(ctx).Info("Refreshing Central API token")
+	log.Info("Refreshing Central API token")
 	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
 		return errors.WithMessage(err, "error reading service account token file")
@@ -200,7 +202,7 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 	if c.svc == nil {
 		gc, err := newGrpcClient(ctx)
 		if err != nil {
-			getLogger(ctx).Error(err, "Failed to connect to Central")
+			log.Error(err, "Failed to connect to Central")
 		}
 
 		c.svc = gc
@@ -208,7 +210,7 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 
 	for {
 		if err := c.EnsureFresh(ctx); err != nil {
-			getLogger(ctx).Error(err, "Failed to initialize client")
+			log.Error(err, "Failed to initialize client")
 			time.Sleep(time.Second * 5)
 			continue
 		}
@@ -232,7 +234,7 @@ func (c *client) GetPolicy(_ context.Context, name string) (*storage.Policy, boo
 }
 
 func (c *client) CreatePolicy(ctx context.Context, policy *storage.Policy) (*storage.Policy, error) {
-	getLogger(ctx).Info("POST", "policyName", policy.Name)
+	log.Infof("Creating policy %q", policy.Name)
 	createdPolicy, err := c.svc.PostPolicy(ctx, policy)
 
 	if err != nil {
@@ -246,7 +248,7 @@ func (c *client) CreatePolicy(ctx context.Context, policy *storage.Policy) (*sto
 }
 
 func (c *client) UpdatePolicy(ctx context.Context, policy *storage.Policy) error {
-	getLogger(ctx).Info("PUT", "policyName", policy.Name)
+	log.Infof("Updating policy %q", policy.Name)
 
 	var existingPolicyName string
 	if id, ok := c.policyNameToIDCache[policy.GetName()]; ok {
@@ -268,7 +270,7 @@ func (c *client) UpdatePolicy(ctx context.Context, policy *storage.Policy) error
 }
 
 func (c *client) DeletePolicy(ctx context.Context, name string) error {
-	getLogger(ctx).Info("DELETE", "policyName", name)
+	log.Infof("Deleting policy %q", name)
 	policyID, ok := c.policyNameToIDCache[name]
 	if !ok {
 		return nil
@@ -292,9 +294,9 @@ func (c *client) FlushCache(ctx context.Context) error {
 		return nil
 	}
 
-	getLogger(ctx).Info("Flushing policy cache")
+	log.Info("Flushing policy cache")
 
-	getLogger(ctx).Info("LIST")
+	log.Debug("Listing policies")
 	allPolicies, err := c.svc.ListPolicies(ctx)
 	if err != nil {
 		return errors.Wrap(err, "Failed to list policies")
@@ -304,7 +306,7 @@ func (c *client) FlushCache(ctx context.Context) error {
 	newPolicyNameToIDCache := make(map[string]string, len(allPolicies))
 
 	for _, listPolicy := range allPolicies {
-		getLogger(ctx).Info("GET", "Name", listPolicy.GetName())
+		log.Debugf("Get policy: %s", listPolicy.GetName())
 		policy, err := c.svc.GetPolicy(ctx, listPolicy.Id)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to fetch policy %s", listPolicy.Id)
@@ -330,8 +332,4 @@ func (c *client) EnsureFresh(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func getLogger(ctx context.Context) logr.Logger {
-	return log.FromContext(ctx).WithName("central-client")
 }

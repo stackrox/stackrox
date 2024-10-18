@@ -44,7 +44,7 @@ function getFilteredWorkflowViewSearchFilter(
     filteredWorkflowView: FilteredWorkflowView
 ): SearchFilter {
     switch (filteredWorkflowView) {
-        case 'Application view':
+        case 'Applications view':
             return {
                 'Platform Component': 'false',
                 'Entity Type': 'DEPLOYMENT',
@@ -106,12 +106,16 @@ function ViolationsTablePage(): ReactElement {
         defaultSortOption,
     });
 
+    const additionalContextFilter = getFilteredWorkflowViewSearchFilter(filteredWorkflowView);
+
     const onSearch = (payload: OnSearchPayload) => {
         onURLSearch(searchFilter, setSearchFilter, payload);
     };
 
     const onChangeFilteredWorkflowView = (value) => {
         setFilteredWorkflowView(value);
+        setSearchFilter({});
+        setPage(1);
         analyticsTrack({ event: 'Filtered Workflow View Selected', properties: { value } });
     };
 
@@ -141,9 +145,13 @@ function ViolationsTablePage(): ReactElement {
 
     // When any of the deps to this effect change, we want to reload the alerts and count.
     useEffect(() => {
+        const filteredWorkflowFilter = isPlatformComponentsEnabled
+            ? getFilteredWorkflowViewSearchFilter(filteredWorkflowView)
+            : {};
+
         const alertSearchFilter: SearchFilter = {
             ...searchFilter,
-            ...getFilteredWorkflowViewSearchFilter(filteredWorkflowView),
+            ...filteredWorkflowFilter,
             'Violation State': activeViolationStateTab,
         };
 
@@ -220,6 +228,8 @@ function ViolationsTablePage(): ReactElement {
                     onSelect={(_e, tab) => {
                         setIsLoadingAlerts(true);
                         setSearchFilter({});
+                        setPage(1);
+                        setFilteredWorkflowView('Applications view');
                         setActiveViolationStateTab(tab);
                     }}
                 >
@@ -274,6 +284,7 @@ function ViolationsTablePage(): ReactElement {
                             searchFilter={searchFilter}
                             onFilterChange={setSearchFilter}
                             onSearch={onSearch}
+                            additionalContextFilter={additionalContextFilter}
                         />
                     </PageSection>
                 )}

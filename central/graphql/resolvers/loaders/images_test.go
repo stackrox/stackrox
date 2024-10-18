@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/image/datastore/mocks"
-	imagesView "github.com/stackrox/rox/central/views/images"
-	imagesViewMocks "github.com/stackrox/rox/central/views/images/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -31,7 +30,6 @@ type ImageLoaderTestSuite struct {
 
 	mockCtrl      *gomock.Controller
 	mockDataStore *mocks.MockDataStore
-	mockView      *imagesViewMocks.MockImageView
 }
 
 func (suite *ImageLoaderTestSuite) SetupTest() {
@@ -39,7 +37,6 @@ func (suite *ImageLoaderTestSuite) SetupTest() {
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockDataStore = mocks.NewMockDataStore(suite.mockCtrl)
-	suite.mockView = imagesViewMocks.NewMockImageView(suite.mockCtrl)
 }
 
 func (suite *ImageLoaderTestSuite) TearDownTest() {
@@ -53,8 +50,7 @@ func (suite *ImageLoaderTestSuite) TestFromID() {
 			"sha1": {Id: sha1},
 			"sha2": {Id: sha2},
 		},
-		ds:        suite.mockDataStore,
-		imageView: suite.mockView,
+		ds: suite.mockDataStore,
 	}
 
 	// Get a preloaded image from id.
@@ -84,8 +80,7 @@ func (suite *ImageLoaderTestSuite) TestFullImageWithID() {
 			"sha1": {Id: sha1},
 			"sha2": {Id: sha2},
 		},
-		ds:        suite.mockDataStore,
-		imageView: suite.mockView,
+		ds: suite.mockDataStore,
 	}
 
 	// Get a preloaded image from id.
@@ -124,8 +119,7 @@ func (suite *ImageLoaderTestSuite) TestFromIDs() {
 			"sha1": {Id: sha1},
 			"sha2": {Id: sha2},
 		},
-		ds:        suite.mockDataStore,
-		imageView: suite.mockView,
+		ds: suite.mockDataStore,
 	}
 
 	// Get a preloaded image from id.
@@ -166,22 +160,20 @@ func (suite *ImageLoaderTestSuite) TestFromQuery() {
 			"sha1": {Id: sha1},
 			"sha2": {Id: sha2},
 		},
-		ds:        suite.mockDataStore,
-		imageView: suite.mockView,
+		ds: suite.mockDataStore,
 	}
 	query := &v1.Query{}
 
 	// Get a preloaded image from id.
-	results := make([]imagesView.ImageCore, 0)
-	core1 := imagesViewMocks.NewMockImageCore(suite.mockCtrl)
-	core1.EXPECT().GetImageID().Return(sha1)
-	results = append(results, core1)
-
-	core2 := imagesViewMocks.NewMockImageCore(suite.mockCtrl)
-	core2.EXPECT().GetImageID().Return(sha2)
-	results = append(results, core2)
-
-	suite.mockView.EXPECT().Get(suite.ctx, query).Return(results, nil)
+	results := []search.Result{
+		{
+			ID: sha1,
+		},
+		{
+			ID: sha2,
+		},
+	}
+	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
 	images, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
@@ -191,20 +183,18 @@ func (suite *ImageLoaderTestSuite) TestFromQuery() {
 	}, images)
 
 	// Get a non-preloaded image from id.
-	results = make([]imagesView.ImageCore, 0)
-	core1 = imagesViewMocks.NewMockImageCore(suite.mockCtrl)
-	core1.EXPECT().GetImageID().Return(sha1)
-	results = append(results, core1)
-
-	core2 = imagesViewMocks.NewMockImageCore(suite.mockCtrl)
-	core2.EXPECT().GetImageID().Return(sha2)
-	results = append(results, core2)
-
-	core3 := imagesViewMocks.NewMockImageCore(suite.mockCtrl)
-	core3.EXPECT().GetImageID().Return(sha3)
-	results = append(results, core3)
-
-	suite.mockView.EXPECT().Get(suite.ctx, query).Return(results, nil)
+	results = []search.Result{
+		{
+			ID: sha1,
+		},
+		{
+			ID: sha2,
+		},
+		{
+			ID: sha3,
+		},
+	}
+	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
 	thirdImage := &storage.Image{Id: "sha3"}
 	suite.mockDataStore.EXPECT().GetManyImageMetadata(suite.ctx, []string{sha3}).
@@ -219,20 +209,18 @@ func (suite *ImageLoaderTestSuite) TestFromQuery() {
 	}, images)
 
 	// Above call should now be preloaded.
-	results = make([]imagesView.ImageCore, 0)
-	core1 = imagesViewMocks.NewMockImageCore(suite.mockCtrl)
-	core1.EXPECT().GetImageID().Return(sha1)
-	results = append(results, core1)
-
-	core2 = imagesViewMocks.NewMockImageCore(suite.mockCtrl)
-	core2.EXPECT().GetImageID().Return(sha2)
-	results = append(results, core2)
-
-	core3 = imagesViewMocks.NewMockImageCore(suite.mockCtrl)
-	core3.EXPECT().GetImageID().Return(sha3)
-	results = append(results, core3)
-
-	suite.mockView.EXPECT().Get(suite.ctx, query).Return(results, nil)
+	results = []search.Result{
+		{
+			ID: sha1,
+		},
+		{
+			ID: sha2,
+		},
+		{
+			ID: sha3,
+		},
+	}
+	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
 	images, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
