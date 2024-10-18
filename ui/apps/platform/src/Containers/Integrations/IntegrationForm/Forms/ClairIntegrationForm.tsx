@@ -1,13 +1,5 @@
 import React, { ReactElement } from 'react';
-import {
-    Alert,
-    AlertVariant,
-    Checkbox,
-    Form,
-    PageSection,
-    Text,
-    TextInput,
-} from '@patternfly/react-core';
+import { Alert, Checkbox, Form, PageSection, Text, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
 
@@ -95,7 +87,7 @@ function ClairIntegrationForm({
                 <Alert
                     title="Deprecation notice"
                     component="p"
-                    variant={AlertVariant.warning}
+                    variant={'warning'}
                     isInline
                     className="pf-v5-u-mb-lg"
                 >
