@@ -712,11 +712,6 @@ func TestMergeRunTimeAlerts(t *testing.T) {
 func TestFindAlert(t *testing.T) {
 	resourceAlerts := []*storage.Alert{getResourceAlerts()[0], fixtures.GetResourceAlert()}
 
-	snoozedAlert := getAlerts()[0].CloneVT()
-	snoozedAlert.State = storage.ViolationState_SNOOZED
-	snoozedResourceAlert := getResourceAlerts()[0].CloneVT()
-	snoozedResourceAlert.State = storage.ViolationState_SNOOZED
-
 	resourceAlertWithAltPolicy := getResourceAlerts()[0].CloneVT()
 	resourceAlertWithAltPolicy.Policy = getPolicies()[0].CloneVT()
 
@@ -737,12 +732,6 @@ func TestFindAlert(t *testing.T) {
 			expected: getAlerts()[0],
 		},
 		{
-			desc:     "Same policy, same deploy, Diff state, No alert found",
-			toFind:   snoozedAlert,
-			alerts:   getAlerts(),
-			expected: nil,
-		},
-		{
 			desc:     "Diff policy, Diff deploy, Same state, No alert found",
 			toFind:   fixtures.GetAlert(),
 			alerts:   getAlerts(),
@@ -754,12 +743,6 @@ func TestFindAlert(t *testing.T) {
 			toFind:   getResourceAlerts()[0],
 			alerts:   resourceAlerts,
 			expected: getResourceAlerts()[0],
-		},
-		{
-			desc:     "Same policy, Same resource, Diff state, No alert found",
-			toFind:   snoozedResourceAlert,
-			alerts:   resourceAlerts,
-			expected: nil,
 		},
 		{
 			desc:     "Diff policy, Same resource, Same state, No alert found",

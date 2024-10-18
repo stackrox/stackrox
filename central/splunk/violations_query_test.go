@@ -73,8 +73,6 @@ func (s *violationsTestSuite) withAlerts(alerts []*storage.Alert, action func(al
 }
 
 func (s *violationsTestSuite) TestQueryReturnsAlertsWithAllStates() {
-	a1 := s.processAlert.CloneVT()
-	a1.State = storage.ViolationState_SNOOZED
 	a2 := s.k8sAlert.CloneVT()
 	a2.State = storage.ViolationState_RESOLVED
 	a3 := s.deployAlert.CloneVT()
@@ -82,7 +80,7 @@ func (s *violationsTestSuite) TestQueryReturnsAlertsWithAllStates() {
 
 	var alertIDs []string
 
-	s.withAlerts(these(a1, a2, a3), func(alertsDS datastore.DataStore) {
+	s.withAlerts(these(a2, a3), func(alertsDS datastore.DataStore) {
 		alertIDs = s.queryAlertsWithCheckpoint(alertsDS, "2000-01-01T00:00:00Z", defaultPaginationSettings.maxAlertsFromQuery)
 	})
 
