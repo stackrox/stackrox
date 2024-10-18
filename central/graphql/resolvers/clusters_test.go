@@ -46,7 +46,7 @@ func TestClustersForPermissions(t *testing.T) {
 
 	testCases := map[string]struct {
 		ctx            context.Context
-		targetResource permissions.ResourceMetadata
+		targetResource permissions.ResourceWithAccess
 
 		expectedStoreValues []*storage.Cluster
 		expectedStoreError  error
@@ -56,7 +56,7 @@ func TestClustersForPermissions(t *testing.T) {
 	}{
 		"Full Access, All cluster retrieved": {
 			ctx:                    sac.WithAllAccess(context.Background()),
-			targetResource:         resources.Compliance,
+			targetResource:         permissions.View(resources.Compliance),
 			expectedStoreValues:    []*storage.Cluster{cluster1, cluster2, cluster3},
 			expectedStoreError:     nil,
 			expectedResolverValues: []*v1.ScopeObject{scopeObject1, scopeObject2, scopeObject3},
@@ -64,7 +64,7 @@ func TestClustersForPermissions(t *testing.T) {
 		},
 		"Full Access, Store error": {
 			ctx:                    sac.WithAllAccess(context.Background()),
-			targetResource:         resources.Compliance,
+			targetResource:         permissions.View(resources.Compliance),
 			expectedStoreValues:    nil,
 			expectedStoreError:     storeInvalidErr,
 			expectedResolverValues: nil,
@@ -78,7 +78,7 @@ func TestClustersForPermissions(t *testing.T) {
 					sac.ResourceScopeKeys(resources.Compliance),
 				),
 			),
-			targetResource:         resources.Compliance,
+			targetResource:         permissions.View(resources.Compliance),
 			expectedStoreValues:    []*storage.Cluster{cluster1, cluster2, cluster3},
 			expectedStoreError:     nil,
 			expectedResolverValues: []*v1.ScopeObject{scopeObject1, scopeObject2, scopeObject3},
@@ -93,10 +93,24 @@ func TestClustersForPermissions(t *testing.T) {
 					sac.ClusterScopeKeys(fixtureconsts.Cluster1),
 				),
 			),
-			targetResource:         resources.Compliance,
+			targetResource:         permissions.View(resources.Compliance),
 			expectedStoreValues:    []*storage.Cluster{cluster1},
 			expectedStoreError:     nil,
 			expectedResolverValues: []*v1.ScopeObject{scopeObject1},
+			expectedResolverError:  nil,
+		},
+		"Unrestricted Read on wrong resource, No cluster retrieved": {
+			ctx: sac.WithGlobalAccessScopeChecker(
+				context.Background(),
+				sac.AllowFixedScopes(
+					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+					sac.ResourceScopeKeys(resources.DeploymentExtension),
+				),
+			),
+			targetResource:         permissions.View(resources.Compliance),
+			expectedStoreValues:    []*storage.Cluster{},
+			expectedStoreError:     nil,
+			expectedResolverValues: []*v1.ScopeObject{},
 			expectedResolverError:  nil,
 		},
 	}
@@ -117,7 +131,7 @@ func TestClustersForPermissions(t *testing.T) {
 			query := PaginatedQuery{}
 			targetResource := testCase.targetResource
 
-			fetchedClusterResolvers, err := mainResolver.clustersForReadPermission(ctx, query, targetResource)
+			fetchedClusterResolvers, err := mainResolver.clustersForPermission(ctx, query, targetResource)
 			if testCase.expectedResolverError != nil {
 				assert.ErrorIs(it, err, testCase.expectedResolverError)
 				assert.Nil(it, fetchedClusterResolvers)
