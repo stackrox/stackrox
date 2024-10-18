@@ -201,7 +201,9 @@ function DeploymentFlows({
                                     'flow',
                                     numAnomalousFlows
                                 )}`}
-                                onToggle={() => toggleAnomalousFlowsExpandable}
+                                onToggle={(e, isExpanded) =>
+                                    toggleAnomalousFlowsExpandable(isExpanded)
+                                }
                                 isExpanded={isAnomalousFlowsExpanded}
                             >
                                 {numAnomalousFlows > 0 ? (
@@ -231,7 +233,9 @@ function DeploymentFlows({
                                     'flow',
                                     numBaselineFlows
                                 )}`}
-                                onToggle={() => toggleBaselineFlowsExpandable}
+                                onToggle={(e, isExpanded) =>
+                                    toggleBaselineFlowsExpandable(isExpanded)
+                                }
                                 isExpanded={isBaselineFlowsExpanded}
                             >
                                 {numBaselineFlows > 0 ? (
