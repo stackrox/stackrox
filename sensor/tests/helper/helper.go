@@ -118,6 +118,10 @@ func ObjByKind(kind string) k8s.Object {
 	}
 }
 
+type logger interface {
+	Logf(format string, args ...any)
+}
+
 // TestCallback represents the test case function written in the go test file.
 type TestCallback func(t *testing.T, testContext *TestContext, objects map[string]k8s.Object)
 
@@ -126,6 +130,7 @@ type TestCallback func(t *testing.T, testContext *TestContext, objects map[strin
 // messages emitted by Sensor. Each Go test should use a single TestContext instance to manage cluster interaction
 // and assertions.
 type TestContext struct {
+	l                logger
 	r                *resources.Resources
 	env              *envconf.Config
 	fakeCentral      *centralDebug.FakeService
@@ -166,8 +171,17 @@ func NewContext(t *testing.T) (*TestContext, error) {
 	return NewContextWithConfig(t, DefaultConfig())
 }
 
-// NewContextWithConfig creates a new test context with custom central configuration.
+// NewContextWithConfig creates a new test context with custom central configuration
+// and starts grpc and sensor immediately
 func NewContextWithConfig(t *testing.T, config Config) (*TestContext, error) {
+	ch := make(chan struct{})
+	close(ch)
+	return NewContextWithConfigAndStart(t, config, ch)
+}
+
+// NewContextWithConfigAndStart creates a new test context with custom central configuration
+// and starts grpc and sensor when signal is received
+func NewContextWithConfigAndStart(t *testing.T, config Config, start <-chan struct{}) (*TestContext, error) {
 	envConfig := envconf.New().WithKubeconfigFile(conf.ResolveKubeConfigFile())
 	r, err := resources.New(envConfig.Client().RESTConfig())
 	if err != nil {
@@ -175,6 +189,7 @@ func NewContextWithConfig(t *testing.T, config Config) (*TestContext, error) {
 	}
 
 	tc := TestContext{
+		l:                t,
 		r:                r,
 		env:              envConfig,
 		centralStopped:   atomic.Bool{},
@@ -186,10 +201,17 @@ func NewContextWithConfig(t *testing.T, config Config) (*TestContext, error) {
 			Total:          1,
 		},
 	}
-
-	tc.StartFakeGRPC(config.CentralCaps...)
-	tc.startSensorInstance(t, envConfig, config)
-
+	// Wait for the start signal. This is important, as we want to make sure that
+	// cleanup routines from the previous run are not racing with the start.
+	t.Logf("Waiting for start signal")
+	go func() {
+		<-start
+		t.Logf("Starting fake GRPC")
+		tc.StartFakeGRPC(config.CentralCaps...)
+		t.Logf("Starting sensor")
+		tc.startSensorInstance(t, envConfig, config)
+		t.Logf("Started")
+	}()
 	return &tc, nil
 }
 
@@ -232,6 +254,7 @@ func (c *TestContext) RunTest(t *testing.T, options ...TestRunFunc) {
 
 // Stop test context and sensor.
 func (c *TestContext) Stop() {
+	c.l.Logf("Calling Stop on TestContext")
 	c.stopFn()
 }
 
@@ -312,7 +335,7 @@ func (c *TestContext) StartFakeGRPC(centralCaps ...string) {
 	fakeCentral.EnableDeduperState(c.config.SendDeduperState)
 	fakeCentral.SetDeduperState(c.deduperState)
 
-	conn, shutdown := createConnectionAndStartServer(fakeCentral)
+	conn, shutdown := createConnectionAndStartServer(fakeCentral, c.l)
 
 	// grpcFactory will be nil on the first run of the testContext
 	if c.grpcFactory == nil {
@@ -897,16 +920,18 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 
 	c.sensorStopped = s.Stopped()
 	c.stopFn = func() {
+		t.Logf("Stopping Sensor")
 		s.Stop()
 		c.fakeCentral.KillSwitch.Done()
 		centralHTTPServer.Close()
 	}
-
+	t.Logf("Running starting Sensor")
 	go s.Start()
+	t.Logf("Waiting for Central connection to be established")
 	c.fakeCentral.ConnectionStarted.Wait()
 }
 
-func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grpc.ClientConn, func()) {
+func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService, l logger) (*grpc.ClientConn, func()) {
 	buffer := 1024 * 1024
 	listener := bufconn.Listen(buffer)
 
@@ -915,14 +940,24 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService) (*grp
 
 	go func() {
 		utils.IgnoreError(func() error {
-			return fakeCentral.ServerPointer.Serve(listener)
+			l.Logf("Starting fake Central server")
+			err := fakeCentral.ServerPointer.Serve(listener)
+			if err != nil {
+				l.Logf("failed to start fake Central server: %v", err)
+			}
+			return err
 		})
 	}()
 
+	l.Logf("Creating new grpc client")
+	// DialContext is deprecated, but when this is called with NewClient, then the connection status is stuck in IDLE state
+	// DialContext explicitly states that: "At the end of this method, we kick the channel out of idle, rather than
+	// waiting for the first rpc".
+	// Treating state IDLE as a condition for Sensor to go online results in error:
+	// Communication with Central stopped: opening stream: failed to exit idle mode: dns resolver: missing address. Retrying.
 	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 		return listener.Dial()
 	}), grpc.WithTransportCredentials(insecure.NewCredentials()))
-
 	if err != nil {
 		panic(err)
 	}
