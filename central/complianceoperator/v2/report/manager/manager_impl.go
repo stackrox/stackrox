@@ -198,7 +198,15 @@ func (m *managerImpl) runReports() {
 			return
 		case req := <-m.reportRequests:
 			go func() {
-				if err := m.handleReportRequest(req); err != nil {
+				wasGenerated, err := m.handleReportRequest(req)
+				// If the report was generated or the returned with an error we need to
+				// delete the scan configuration entry from runningReportConfigs
+				if err != nil || wasGenerated {
+					m.mu.Lock()
+					defer m.mu.Unlock()
+					delete(m.runningReportConfigs, req.scanConfig.GetId())
+				}
+				if err != nil {
 					log.Errorf("unable to handle the report request: %v", err)
 				}
 			}()
@@ -206,16 +214,12 @@ func (m *managerImpl) runReports() {
 	}
 }
 
-func (m *managerImpl) handleReportRequest(request *reportRequest) error {
+func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) {
 	if err := m.concurrencySem.Acquire(context.Background(), 1); err != nil {
-		return errors.Wrap(err, "unable acquiring semaphore to run new report")
+		return false, errors.Wrap(err, "unable acquiring semaphore to run new report")
 	}
-	defer func() {
-		defer m.concurrencySem.Release(1)
-		m.mu.Lock()
-		defer m.mu.Unlock()
-		delete(m.runningReportConfigs, request.scanConfig.GetId())
-	}()
+	defer m.concurrencySem.Release(1)
+
 	log.Infof("Executing report %q at %v", request.scanConfig.GetId(), time.Now().Format(time.RFC822))
 	var w watcher.ScanConfigWatcher
 	concurrency.WithLock(&m.watchingScanConfigsLock, func() {
@@ -238,27 +242,31 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) error {
 		User: request.scanConfig.GetModifiedBy(),
 	}
 	if w == nil {
+		// The report is going to be generated now
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
 		if err := m.snapshotDataStore.UpsertSnapshot(request.ctx, snapshot); err != nil {
-			return errors.Wrap(err, "unable to upsert snapshot on report preparation")
+			return false, errors.Wrap(err, "unable to upsert snapshot on report preparation")
 		}
 		request.snapshotID = snapshot.GetReportId()
 		m.generateReportNoLock(request)
-		return nil
+		return true, nil
 	}
+	// There is a ScanConfigWatcher running for this Scan Configuration.
+	// This means we cannot generate the report at this moment.
+	// We subscribe to the watcher to later generate the report once it's finished.
 	if err := w.Subscribe(snapshot); err != nil {
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
 		snapshot.GetReportStatus().ErrorMsg = utils.ErrUnableToSubscribeToWatcher.Error()
 		if dbErr := m.snapshotDataStore.UpsertSnapshot(request.ctx, snapshot); dbErr != nil {
-			return errors.Wrap(dbErr, "unable to upsert snapshot on watcher subscription failure")
+			return false, errors.Wrap(dbErr, "unable to upsert snapshot on watcher subscription failure")
 		}
-		return errors.New("unable to subscribe to the scan configuration watcher")
+		return false, errors.New("unable to subscribe to the scan configuration watcher")
 	}
 	if err := m.snapshotDataStore.UpsertSnapshot(request.ctx, snapshot); err != nil {
-		return errors.Wrap(err, "unable to upsert snapshot on report waiting")
+		return false, errors.Wrap(err, "unable to upsert snapshot on report waiting")
 	}
-	return nil
+	return false, nil
 }
 
 // HandleScan starts a new ScanWatcher if needed and pushes the scan to it
@@ -327,26 +335,26 @@ func (m *managerImpl) handleReadyScan() {
 		case <-m.stopper.Flow().StopRequested():
 			return
 		default:
-			if scanResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanResult != nil {
+			if scanWatcherResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanWatcherResult != nil {
 				// At the moment we simply do not start the ScanConfigWatcher if there are errors in the ScanWatchers.
 				// There are many reasons why a ScanWatcher might fail like, for example, the Scan was deleted mid-execution.
 				// If this happens, we will generate many ReportSnapshots with timeouts. Until we implement a way to
 				// distinguish legitimate failures (CO not reporting back), we log the error not create the Report.
-				if scanResult.Error != nil {
-					log.Errorf("The scanResults returned with an error: %v", scanResult.Error)
+				if scanWatcherResult.Error != nil {
+					log.Errorf("The scanResults returned with an error: %v", scanWatcherResult.Error)
 					continue
 				}
-				log.Debugf("Scan %s done with %d checks", scanResult.Scan.GetScanName(), len(scanResult.CheckResults))
-				w, err := m.getScanConfigWatcher(scanResult.Ctx, scanResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
+				log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
+				w, err := m.getScanConfigWatcher(scanWatcherResult.Ctx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
 				if err != nil {
 					log.Errorf("Unable to create the ScanConfigWatcher: %v", err)
 					continue
 				}
-				if err := w.PushScanResults(scanResult); err != nil {
-					log.Errorf("Unable to push scan %s: %v", scanResult.Scan.GetScanName(), err)
+				if err := w.PushScanResults(scanWatcherResult); err != nil {
+					log.Errorf("Unable to push scan %s: %v", scanWatcherResult.Scan.GetScanName(), err)
 				}
 				concurrency.WithLock(&m.watchingScansLock, func() {
-					delete(m.watchingScans, scanResult.WatcherID)
+					delete(m.watchingScans, scanWatcherResult.WatcherID)
 				})
 			}
 		}
@@ -420,12 +428,12 @@ func (m *managerImpl) handleReadyScanConfig() {
 		case <-m.stopper.Flow().StopRequested():
 			return
 		default:
-			if result := m.scanConfigReadyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); result != nil {
-				log.Debugf("Scan Config %s done with %d scans and %d reports", result.ScanConfig.GetScanConfigName(), len(result.ScanResults), len(result.ReportSnapshot))
+			if scanConfigWatcherResult := m.scanConfigReadyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanConfigWatcherResult != nil {
+				log.Debugf("Scan Config %s done with %d scans and %d reports", scanConfigWatcherResult.ScanConfig.GetScanConfigName(), len(scanConfigWatcherResult.ScanResults), len(scanConfigWatcherResult.ReportSnapshot))
 				concurrency.WithLock(&m.watchingScanConfigsLock, func() {
-					delete(m.watchingScanConfigs, result.WatcherID)
+					delete(m.watchingScanConfigs, scanConfigWatcherResult.WatcherID)
 				})
-				go m.generateReportsFromWatcherResults(result)
+				m.generateReportsFromWatcherResults(scanConfigWatcherResult)
 			}
 		}
 	}
@@ -434,7 +442,7 @@ func (m *managerImpl) handleReadyScanConfig() {
 func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConfigWatcherResults) {
 	for _, snapshot := range result.ReportSnapshot {
 		if err := m.validateScanConfigResults(result); err != nil {
-			snapshot.ReportStatus.RunState = storage.ComplianceOperatorReportStatus_FAILURE
+			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 			snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
 			snapshot.GetReportStatus().ErrorMsg = utils.ErrScanWatchersFailed.Error()
 			if err := m.snapshotDataStore.UpsertSnapshot(result.Ctx, snapshot); err != nil {
@@ -442,7 +450,7 @@ func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConf
 			}
 			continue
 		}
-		snapshot.ReportStatus.RunState = storage.ComplianceOperatorReportStatus_PREPARING
+		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PREPARING
 		if err := m.snapshotDataStore.UpsertSnapshot(result.Ctx, snapshot); err != nil {
 			log.Errorf("Unable to upsert the snapshot %s: %v", snapshot.GetReportId(), err)
 			continue
@@ -452,19 +460,27 @@ func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConf
 			scanConfig: result.ScanConfig,
 			snapshotID: snapshot.GetReportId(),
 		}
-		if err := m.handleReportScheduled(generateReportReq); err != nil {
+		isOnDemand := snapshot.GetReportStatus().GetReportRequestType() == storage.ComplianceOperatorReportStatus_ON_DEMAND
+		if err := m.handleReportScheduled(generateReportReq, isOnDemand); err != nil {
 			log.Errorf("Unable to handle the report: %v", err)
 		}
 	}
 }
 
-func (m *managerImpl) handleReportScheduled(request *reportRequest) error {
+func (m *managerImpl) handleReportScheduled(request *reportRequest, isOnDemand bool) error {
 	if err := m.concurrencySem.Acquire(context.Background(), 1); err != nil {
 		return errors.Wrap(err, "Error acquiring semaphore to run new report")
 	}
-	defer m.concurrencySem.Release(1)
-
-	m.generateReportNoLock(request)
+	go func() {
+		defer m.concurrencySem.Release(1)
+		m.generateReportNoLock(request)
+		// Only delete from the runningReportConfigs if the snapshots was generated through the UI
+		if isOnDemand {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+			delete(m.runningReportConfigs, request.scanConfig.GetId())
+		}
+	}()
 	return nil
 }
 

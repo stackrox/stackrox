@@ -15,6 +15,7 @@ import (
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -72,6 +73,7 @@ func (m *ManagerTestSuite) TearDownTest() {
 }
 
 func (m *ManagerTestSuite) TestHandleReportRequest() {
+	m.T().Setenv(env.ReportExecutionMaxConcurrency.EnvVar(), "1")
 	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.reportGen)
 	ctx := context.Background()
 	manager.Start()
