@@ -125,7 +125,7 @@ class Env {
         }
         LOG.debug System.getenv().toMapString()
 
-        if (isEnvVarEmpty("ROX_PASSWORD")) {
+        if (isEnvVarEmpty("ROX_ADMIN_PASSWORD")) {
             if (isEnvVarEmpty("CLUSTER")) {
                 envVars.put("CLUSTER", inferOrchestratorType().toString())
             }
@@ -140,7 +140,7 @@ class Env {
             }
 
             if (password != null) {
-                envVars.put("ROX_PASSWORD", password)
+                envVars.put("ROX_ADMIN_PASSWORD", password)
             }
         }
 
@@ -154,7 +154,7 @@ class Env {
     }
 
     static String mustGetPassword() {
-        return mustGet("ROX_PASSWORD")
+        return mustGet("ROX_ADMIN_PASSWORD")
     }
 
     static int mustGetPort() {
