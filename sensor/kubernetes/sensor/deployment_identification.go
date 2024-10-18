@@ -101,9 +101,9 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 	return errResult
 }
 
-// fetchDeploymentIdentification retrieves the identifying information for this sensor deployment, using a mixture of
+// FetchDeploymentIdentification retrieves the identifying information for this sensor deployment, using a mixture of
 // secret mounts and information from the Kubernetes API server.
-func fetchDeploymentIdentification(ctx context.Context, k8sClient kubernetes.Interface) *storage.SensorDeploymentIdentification {
+func FetchDeploymentIdentification(ctx context.Context, k8sClient kubernetes.Interface) *storage.SensorDeploymentIdentification {
 	ctx, cancel := context.WithTimeout(ctx, fetchClusterIdentificationTimeout)
 	defer cancel()
 

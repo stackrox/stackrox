@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/clusterinit/store"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 )
 
@@ -23,16 +24,9 @@ type InitBundleWithMeta struct {
 	Meta       *storage.InitBundleMeta
 }
 
-// CRS contains a Cluster Registration Secret.
-type CRS struct {
-	CAs  []string `json:"CAs"`
-	Cert string   `json:"cert"`
-	Key  string   `json:"key"`
-}
-
 // CRSWithMeta contains a CRS alongside its meta data.
 type CRSWithMeta struct {
-	CRS  *CRS
+	CRS  *crs.CRS
 	Meta *storage.InitBundleMeta
 }
 
