@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/size"
 	"google.golang.org/grpc"
 )
@@ -23,16 +22,6 @@ import (
 var (
 	centralHostPort = fmt.Sprintf("central.%s.svc:443", env.Namespace.Setting())
 	log             = logging.LoggerForModule()
-)
-
-// The config-controller often becomes ready before Central.
-// Therefore it's common for this client to need to try to connect to Central several times before it succeeds.
-// After a while, though, the client should give up and let the pod die in case there is some transient
-// network or platform issue that might be resolved by restarting the container.
-// Note that a restarting container can fail CI tests, so make the retry count high to ensure CI doesn't fail
-// because of this.
-const (
-	retryCount = 100
 )
 
 type perRPCCreds struct {
@@ -50,7 +39,7 @@ func (c *perRPCCreds) RequireTransportSecurity() bool {
 }
 
 func (c *perRPCCreds) refreshToken(ctx context.Context) error {
-	log.Info("Refreshing Central API token")
+	log.Debug("Refreshing Central API token")
 	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 	if err != nil {
 		return errors.WithMessage(err, "error reading service account token file")
@@ -211,28 +200,28 @@ func New(ctx context.Context, opts ...clientOptions) (CachedPolicyClient, error)
 	}
 
 	if c.svc == nil {
-		err := retry.WithRetry(func() error {
-			gc, innerErr := newGrpcClient(ctx)
-			if innerErr != nil {
-				log.Error(innerErr, "Failed to connect to Central")
-			}
-
-			c.svc = gc
-
-			if innerErr = c.EnsureFresh(ctx); innerErr != nil {
-				log.Error(innerErr, "Failed to initialize client")
-			}
-
-			return innerErr
-		}, retry.Tries(retryCount), retry.WithExponentialBackoff())
-
+		gc, err := newGrpcClient(ctx)
 		if err != nil {
-			return nil, errors.Wrap(err, "could not initialize policy client")
+			log.Error(err, "Failed to connect to Central")
 		}
-	} else {
+
+		c.svc = gc
+	}
+
+	err := c.EnsureFresh(ctx)
+	if err == nil {
+		return &c, nil
+	}
+
+	// Log the error once and then keep trying silently
+	log.Error(err, "Failed to initialize client. Will continue to retry...")
+
+	for {
 		if err := c.EnsureFresh(ctx); err != nil {
-			log.Error(err, "Failed to initialize client")
+			time.Sleep(time.Second * 5)
+			continue
 		}
+		break
 	}
 
 	return &c, nil
