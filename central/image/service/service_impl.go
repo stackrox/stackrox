@@ -568,6 +568,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 					// to help troubleshoot potential image name or caching issues log the request's image
 					// name as well.
 					logging.String("request_image", request.GetImageName().GetFullName()),
+					logging.String("request_id", request.GetRequestId()),
 				)
 
 				if imgExists || request.GetRequestId() != "" {
