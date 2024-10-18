@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 )
 
 // UUID in a universally unique identifier. The type is a wrapper around the uuid library.
@@ -32,7 +32,7 @@ func Equal(u1 UUID, u2 UUID) bool {
 
 // Bytes returns bytes slice representation of UUID.
 func (u UUID) Bytes() []byte {
-	return u.uuid.Bytes()
+	return u.uuid[:16]
 }
 
 // String returns the canonical string representation of UUID:
@@ -127,7 +127,7 @@ func FromStringOrPanic(input string) UUID {
 // NewV4 returns random generated UUID.
 func NewV4() UUID {
 	return UUID{
-		uuid: uuid.Must(uuid.NewV4()),
+		uuid: uuid.New(),
 	}
 }
 
@@ -142,14 +142,14 @@ func NewV5FromNonUUIDs(ns, name string) UUID {
 		panic(err)
 	}
 	return UUID{
-		uuid: uuid.NewV5(nsUUID, name),
+		uuid: uuid.NewSHA1(nsUUID, []byte(name)),
 	}
 }
 
 // NewV5 returns UUID based on SHA-1 hash of namespace UUID and name.
 func NewV5(ns UUID, name string) UUID {
 	return UUID{
-		uuid: uuid.NewV5(ns.uuid, name),
+		uuid: uuid.NewSHA1(ns.uuid, []byte(name)),
 	}
 }
 
