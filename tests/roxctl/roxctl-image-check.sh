@@ -1,8 +1,8 @@
 #! /usr/bin/env bash
 
-# This test script requires ROX_PASSWORD to be set in the environment.
+# This test script requires ROX_ADMIN_PASSWORD to be set in the environment.
 
-[ -n "$ROX_PASSWORD" ]
+[ -n "$ROX_ADMIN_PASSWORD" ]
 
 FAILURES=0
 
@@ -14,7 +14,7 @@ test_roxctl_cmd() {
   echo "Testing command: roxctl image check --image " "$@"
 
   # Verify image check.
-  if OUTPUT=$(roxctl --insecure-skip-tls-verify --insecure -p "$ROX_PASSWORD" image check --image \
+  if OUTPUT=$(roxctl --insecure-skip-tls-verify --insecure image check --image \
     "$@" \
     2>&1); then
       echo "[OK] roxctl image check " "$@" " works"
