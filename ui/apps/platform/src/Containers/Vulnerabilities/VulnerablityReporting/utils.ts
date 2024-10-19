@@ -58,6 +58,7 @@ export function getReportConfigurationFromFormValues(
         fixability,
         severities: reportParameters.cveSeverities,
         imageTypes: reportParameters.imageType,
+        includeNvdCvss: reportParameters.includeNvdCvss,
     };
     let vulnReportFilters: VulnerabilityReportFilters;
     if (reportParameters.cvesDiscoveredSince === 'SINCE_LAST_REPORT') {
@@ -186,6 +187,7 @@ export function getReportFormValuesFromConfiguration(
             imageType: vulnReportFilters.imageTypes,
             cvesDiscoveredSince,
             cvesDiscoveredStartDate,
+            includeNvdCvss: vulnReportFilters.includeNvdCvss,
             reportScope: {
                 id: resourceScope.collectionScope.collectionId,
                 name: resourceScope.collectionScope.collectionName,

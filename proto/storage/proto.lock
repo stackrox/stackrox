@@ -328,6 +328,26 @@
             ]
           },
           {
+            "name": "Alert.EntityType",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              },
+              {
+                "name": "DEPLOYMENT",
+                "integer": 1
+              },
+              {
+                "name": "CONTAINER_IMAGE",
+                "integer": 2
+              },
+              {
+                "name": "RESOURCE",
+                "integer": 3
+              }
+            ]
+          },
+          {
             "name": "ListAlert.ResourceType",
             "enum_fields": [
               {
@@ -481,6 +501,16 @@
                 "id": 12,
                 "name": "snooze_till",
                 "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 22,
+                "name": "platform_component",
+                "type": "bool"
+              },
+              {
+                "id": 23,
+                "name": "entity_type",
+                "type": "EntityType"
               }
             ],
             "reserved_ids": [
@@ -6473,6 +6503,11 @@
                 "id": 29,
                 "name": "risk_score",
                 "type": "float"
+              },
+              {
+                "id": 35,
+                "name": "platform_component",
+                "type": "bool"
               }
             ],
             "maps": [
@@ -10600,6 +10635,18 @@
             ]
           },
           {
+            "name": "NodeScan.Scanner",
+            "enum_fields": [
+              {
+                "name": "SCANNER"
+              },
+              {
+                "name": "SCANNER_V4",
+                "integer": 1
+              }
+            ]
+          },
+          {
             "name": "NodeInventory.Note",
             "enum_fields": [
               {
@@ -10807,6 +10854,11 @@
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "scanner_version",
+                "type": "Scanner"
               }
             ]
           },

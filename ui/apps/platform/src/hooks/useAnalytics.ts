@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { Telemetry } from 'types/config.proto';
 
+import { Telemetry } from 'types/config.proto';
 import { selectors } from 'reducers';
 import { UnionFrom, tupleTypeGuard } from 'utils/type.utils';
 
@@ -56,6 +56,16 @@ export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm
 // policy violations
 
 export const FILTERED_WORKFLOW_VIEW_SELECTED = 'Filtered Workflow View Selected';
+export const POLICY_VIOLATIONS_FILTER_APPLIED = 'Policy Violations Filter Applied';
+
+// compliance
+
+export const COMPLIANCE_REPORT_DOWNLOAD_GENERATION_TRIGGERED =
+    'Compliance Report Download Generation Triggered';
+export const COMPLIANCE_REPORT_MANUAL_SEND_TRIGGERED = 'Compliance Report Manual Send Triggered';
+export const COMPLIANCE_REPORT_JOBS_TABLE_VIEWED = 'Compliance Report Jobs Table Viewed';
+export const COMPLIANCE_REPORT_JOBS_VIEW_TOGGLED = 'Compliance Report Jobs View Toggled';
+export const COMPLIANCE_REPORT_RUN_STATE_FILTERED = 'Compliance Report Run State Filtered';
 
 /**
  * Boolean fields should be tracked with 0 or 1 instead of true/false. This
@@ -78,6 +88,11 @@ export const searchCategoriesWithFilter = [
     'CLUSTER CVE FIXABLE',
     'CVSS',
     'Node Top CVSS',
+    'Category',
+    'Severity',
+    'Lifecycle Stage',
+    'Resource Type',
+    'Inactive Deployment',
 ] as const;
 
 export const isSearchCategoryWithFilter = tupleTypeGuard(searchCategoriesWithFilter);
@@ -297,6 +312,56 @@ export type AnalyticsEvent =
           event: typeof FILTERED_WORKFLOW_VIEW_SELECTED;
           properties: {
               value: 'Application view' | 'Platform view' | 'Full view';
+          };
+      }
+    /**
+     * Tracks each time the user applies a filter on the Policy Violations page.
+     * We only track the value of the applied filter when it does not represent
+     * specifics of a customer environment.
+     */
+    | {
+          event: typeof POLICY_VIOLATIONS_FILTER_APPLIED;
+          properties: { category: string; filter: string } | { category: string };
+      }
+    /**
+     * Tracks each time the user generates a compliance report download
+     */
+    | {
+          event: typeof COMPLIANCE_REPORT_DOWNLOAD_GENERATION_TRIGGERED;
+          properties: {
+              source: 'Table row' | 'Details page';
+          };
+      }
+    /**
+     * Tracks each time the user sends a compliance report manually
+     */
+    | {
+          event: typeof COMPLIANCE_REPORT_MANUAL_SEND_TRIGGERED;
+          properties: {
+              source: 'Table row' | 'Details page';
+          };
+      }
+    /**
+     * Tracks each time the user views the compliance report jobs table
+     */
+    | typeof COMPLIANCE_REPORT_JOBS_TABLE_VIEWED
+    /**
+     * Tracks each time the user clicks the "View only my jobs" toggle
+     */
+    | {
+          event: typeof COMPLIANCE_REPORT_JOBS_VIEW_TOGGLED;
+          properties: {
+              view: 'My jobs';
+              state: true | false;
+          };
+      }
+    /**
+     * Tracks each time the user filters by report run state
+     */
+    | {
+          event: typeof COMPLIANCE_REPORT_RUN_STATE_FILTERED;
+          properties: {
+              value: ('WAITING' | 'PREPARING' | 'GENERATED' | 'DELIVERED' | 'FAILURE')[];
           };
       };
 

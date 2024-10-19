@@ -54,6 +54,21 @@ func (mr *MockStoreMockRecorder) AddAuthProvider(ctx, authProvider any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAuthProvider", reflect.TypeOf((*MockStore)(nil).AddAuthProvider), ctx, authProvider)
 }
 
+// AuthProviderExistsWithName mocks base method.
+func (m *MockStore) AuthProviderExistsWithName(ctx context.Context, name string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AuthProviderExistsWithName", ctx, name)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AuthProviderExistsWithName indicates an expected call of AuthProviderExistsWithName.
+func (mr *MockStoreMockRecorder) AuthProviderExistsWithName(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AuthProviderExistsWithName", reflect.TypeOf((*MockStore)(nil).AuthProviderExistsWithName), ctx, name)
+}
+
 // GetAllAuthProviders mocks base method.
 func (m *MockStore) GetAllAuthProviders(ctx context.Context) ([]*storage.AuthProvider, error) {
 	m.ctrl.T.Helper()

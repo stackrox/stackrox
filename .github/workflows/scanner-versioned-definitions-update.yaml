@@ -257,6 +257,11 @@ jobs:
         branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
         # Replace / with -, so the branch name isn't truncated when pushed to GCS.
         dir=${branch////-}
+        case "$dir" in
+        dev|1.0.0)
+          echo "Error: branch $dir is protected. Choose a different branch name."
+          exit 1
+        esac
         mkdir -p "$dir"
         cp -r "definitions/${{ github.event.pull_request.number }}/." "$dir/"
         gsutil -m cp -r "$dir" "gs://scanner-v4-test/vulnerability-bundles/"
@@ -295,9 +300,11 @@ jobs:
         ls -lr definitions_files
         for dir in definitions_files/*; do
           if [ -d "$dir" ]; then
+            echo "Copy $dir"
             gsutil -m cp -r "$dir" gs://definitions.stackrox.io/v4/vulnerability-bundles/
           fi
         done
+        echo "Copy upstream dev (dev) to downstream dev (1.0.0)"
         gsutil cp -r gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
 
     - name: Copy v1 to pre-versioned bundles
@@ -307,19 +314,22 @@ jobs:
         multi=gs://definitions.stackrox.io/v4/vulnerability-bundles/v1/vulnerabilities.zip
         # Parse all supported pre-4.6 releases and copy the versioned bundle v1 to ensure
         # these releases get updates.
-        grep -E "^[0-9]\.[0-9]+\.[0-9]+$" scanner/updater/version/RELEASE_VERSION | while read -r release; do
+        grep -E "^4\.(4|5)\.[0-9]+$" scanner/updater/version/RELEASE_VERSION | while read -r release; do
           case "$release" in
           4.4.*)
             gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
             ;;
-          4.5*)
+          4.5.*)
             gsutil cp "$single" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
             gsutil cp "$multi" "gs://definitions.stackrox.io/v4/vulnerability-bundles/$release/"
             ;;
           *)
-            echo "Error: Unrecognized release version '$release'. Skipping..."
+            echo "Should not happen!"
+            echo "Error: unexpected release version: $release"
+            echo "Ignoring..."
             ;;
           esac
+          echo "Copied v1 into $release"
         done
 
   send-notification:

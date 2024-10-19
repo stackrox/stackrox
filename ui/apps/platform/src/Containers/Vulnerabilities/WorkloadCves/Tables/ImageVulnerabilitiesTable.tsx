@@ -27,6 +27,11 @@ import DateDistance from 'Components/DateDistance';
 import ExpandRowTh from 'Components/ExpandRowTh';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { TableUIState } from 'utils/getTableUIState';
+import {
+    generateVisibilityForColumns,
+    getHiddenColumnCount,
+    ManagedColumns,
+} from 'hooks/useManagedColumns';
 import { getIsSomeVulnerabilityFixable } from '../../utils/vulnerabilityUtils';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import ImageComponentVulnerabilitiesTable, {
@@ -42,6 +47,34 @@ import CVESelectionTd from '../../components/CVESelectionTd';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
+
+export const tableId = 'WorkloadCvesImageVulnerabilitiesTable';
+export const defaultColumns = {
+    cveSeverity: {
+        title: 'CVE severity',
+        isShownByDefault: true,
+    },
+    cveStatus: {
+        title: 'CVE status',
+        isShownByDefault: true,
+    },
+    cvss: {
+        title: 'CVSS',
+        isShownByDefault: true,
+    },
+    nvdCvss: {
+        title: 'NVD CVSS',
+        isShownByDefault: true,
+    },
+    affectedComponents: {
+        title: 'Affected components',
+        isShownByDefault: true,
+    },
+    firstDiscovered: {
+        title: 'First discovered',
+        isShownByDefault: true,
+    },
+} as const;
 
 export const imageVulnerabilitiesFragment = gql`
     ${imageComponentVulnerabilitiesFragment}
@@ -88,6 +121,7 @@ export type ImageVulnerabilitiesTableProps = {
         numAffectedImages: number;
     }) => IAction[];
     onClearFilters: () => void;
+    tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
 
 function ImageVulnerabilitiesTable({
@@ -100,18 +134,23 @@ function ImageVulnerabilitiesTable({
     vulnerabilityState,
     createTableActions,
     onClearFilters,
+    tableConfig,
 }: ImageVulnerabilitiesTableProps) {
+    const getVisibilityClass = generateVisibilityForColumns(tableConfig);
+    const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
     const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
 
     const colSpan =
-        (isNvdCvssEnabled ? 7 : 6) +
+        (isNvdCvssColumnEnabled ? 7 : 6) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
-        (showExceptionDetailsLink ? 1 : 0);
+        (showExceptionDetailsLink ? 1 : 0) +
+        -hiddenColumnCount;
 
     return (
         <Table variant="compact">
@@ -120,18 +159,27 @@ function ImageVulnerabilitiesTable({
                     <ExpandRowTh />
                     {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
                     <Th sort={getSortParams('CVE')}>CVE</Th>
-                    <Th sort={getSortParams('Severity')}>CVE severity</Th>
-                    <Th>
+                    <Th
+                        className={getVisibilityClass('cveSeverity')}
+                        sort={getSortParams('Severity')}
+                    >
+                        CVE severity
+                    </Th>
+                    <Th className={getVisibilityClass('cveStatus')}>
                         CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th sort={getSortParams('CVSS')}>CVSS</Th>
-                    {isNvdCvssEnabled && <Th>NVD CVSS</Th>}
-                    <Th>
+                    <Th className={getVisibilityClass('cvss')} sort={getSortParams('CVSS')}>
+                        CVSS
+                    </Th>
+                    {isNvdCvssColumnEnabled && (
+                        <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
+                    )}
+                    <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th>First discovered</Th>
+                    <Th className={getVisibilityClass('firstDiscovered')}>First discovered</Th>
                     {showExceptionDetailsLink && (
                         <TooltipTh tooltip="View information about this exception request">
                             Request details
@@ -203,33 +251,55 @@ function ImageVulnerabilitiesTable({
                                             </Link>
                                         </PendingExceptionLabelLayout>
                                     </Td>
-                                    <Td modifier="nowrap" dataLabel="CVE severity">
+                                    <Td
+                                        className={getVisibilityClass('cveSeverity')}
+                                        modifier="nowrap"
+                                        dataLabel="CVE severity"
+                                    >
                                         {isVulnerabilitySeverity(severity) && (
                                             <VulnerabilitySeverityIconText severity={severity} />
                                         )}
                                     </Td>
-                                    <Td modifier="nowrap" dataLabel="CVE status">
+                                    <Td
+                                        className={getVisibilityClass('cveStatus')}
+                                        modifier="nowrap"
+                                        dataLabel="CVE status"
+                                    >
                                         <VulnerabilityFixableIconText
                                             isFixable={isFixableInImage}
                                         />
                                     </Td>
-                                    <Td modifier="nowrap" dataLabel="CVSS">
+                                    <Td
+                                        className={getVisibilityClass('cvss')}
+                                        modifier="nowrap"
+                                        dataLabel="CVSS"
+                                    >
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
-                                    {isNvdCvssEnabled && (
-                                        <Td modifier="nowrap" dataLabel="NVD CVSS">
+                                    {isNvdCvssColumnEnabled && (
+                                        <Td
+                                            className={getVisibilityClass('nvdCvss')}
+                                            modifier="nowrap"
+                                            dataLabel="NVD CVSS"
+                                        >
                                             <CvssFormatted
                                                 cvss={nvdCvss ?? 0}
                                                 scoreVersion={nvdScoreVersion ?? 'UNKNOWN_VERSION'}
                                             />
                                         </Td>
                                     )}
-                                    <Td dataLabel="Affected components">
+                                    <Td
+                                        className={getVisibilityClass('affectedComponents')}
+                                        dataLabel="Affected components"
+                                    >
                                         {imageComponents.length === 1
                                             ? imageComponents[0].name
                                             : `${imageComponents.length} components`}
                                     </Td>
-                                    <Td dataLabel="First discovered">
+                                    <Td
+                                        className={getVisibilityClass('firstDiscovered')}
+                                        dataLabel="First discovered"
+                                    >
                                         <DateDistance date={discoveredAtImage} />
                                     </Td>
                                     {showExceptionDetailsLink && (

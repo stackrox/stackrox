@@ -37,7 +37,7 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,
@@ -45,6 +45,8 @@ import {
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
+import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
 import {
     SearchOption,
     IMAGE_SEARCH_OPTION,
@@ -69,12 +71,16 @@ import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
 import AffectedImagesTable, {
     ImageForCve,
     imagesForCveFragment,
+    tableId as affectedImagesTableId,
+    defaultColumns as affectedImagesDefaultColumns,
 } from '../Tables/AffectedImagesTable';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import AffectedDeploymentsTable, {
     DeploymentForCve,
     deploymentsForCveFragment,
+    tableId as affectedDeploymentsTableId,
+    defaultColumns as affectedDeploymentsDefaultColumns,
 } from '../Tables/AffectedDeploymentsTable';
 import AffectedImages from '../SummaryCards/AffectedImages';
 import BySeveritySummaryCard, {
@@ -298,6 +304,22 @@ function ImageCvePage() {
         skip: entityTab !== 'Deployment',
     });
 
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const affectedImagesFilteredColumns = filterManagedColumns(
+        affectedImagesDefaultColumns,
+        (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
+    );
+    const imageTableColumnState = useManagedColumns(
+        affectedImagesTableId,
+        affectedImagesFilteredColumns
+    );
+
+    const deploymentTableColumnState = useManagedColumns(
+        affectedDeploymentsTableId,
+        affectedDeploymentsDefaultColumns
+    );
+
     const imageCount = summaryRequest.data?.imageCount ?? 0;
     const deploymentCount = summaryRequest.data?.deploymentCount ?? 0;
 
@@ -460,7 +482,10 @@ function ImageCvePage() {
                 </div>
                 <Divider />
                 <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1">
-                    <Split className="pf-v5-u-px-lg pf-v5-u-py-md pf-v5-u-align-items-baseline">
+                    <Split
+                        hasGutter
+                        className="pf-v5-u-px-lg pf-v5-u-py-md pf-v5-u-align-items-baseline"
+                    >
                         <SplitItem isFilled>
                             <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                 <EntityTypeToggleGroup
@@ -473,6 +498,18 @@ function ImageCvePage() {
                                 />
                                 {isFiltered && <DynamicTableLabel />}
                             </Flex>
+                        </SplitItem>
+                        <SplitItem>
+                            {entityTab === 'Image' && (
+                                <ColumnManagementButton
+                                    managedColumnState={imageTableColumnState}
+                                />
+                            )}
+                            {entityTab === 'Deployment' && (
+                                <ColumnManagementButton
+                                    managedColumnState={deploymentTableColumnState}
+                                />
+                            )}
                         </SplitItem>
                         <SplitItem>
                             <Pagination
@@ -496,6 +533,7 @@ function ImageCvePage() {
                                 cve={cveId}
                                 vulnerabilityState={currentVulnerabilityState}
                                 onClearFilters={onClearFilters}
+                                tableConfig={imageTableColumnState.columns}
                             />
                         )}
                         {entityTab === 'Deployment' && (
@@ -509,6 +547,7 @@ function ImageCvePage() {
                                 cve={cveId}
                                 vulnerabilityState={currentVulnerabilityState}
                                 onClearFilters={onClearFilters}
+                                tableConfig={deploymentTableColumnState.columns}
                             />
                         )}
                     </div>

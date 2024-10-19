@@ -33,7 +33,7 @@ import KeyValueListModal from 'Components/KeyValueListModal';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     clusterSearchFilterConfig,
     namespaceSearchFilterConfig,

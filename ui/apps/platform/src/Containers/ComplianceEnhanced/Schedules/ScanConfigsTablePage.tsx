@@ -37,6 +37,7 @@ import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import {
+    complianceReportDownloadURL,
     ComplianceScanConfigurationStatus,
     deleteComplianceScanConfiguration,
     listComplianceScanConfigurations,
@@ -50,6 +51,7 @@ import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 import MyLastJobStatusTh from 'Components/ReportJob/MyLastJobStatusTh';
 import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
+import useAnalytics from 'hooks/useAnalytics';
 import { DEFAULT_COMPLIANCE_PAGE_SIZE, SCAN_CONFIG_NAME_QUERY } from '../compliance.constants';
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import {
@@ -85,6 +87,7 @@ function ScanConfigsTablePage({
     isComplianceReportingEnabled,
 }: ScanConfigsTablePageProps): React.ReactElement {
     const { currentUser } = useAuthStatus();
+    const { analyticsTrack } = useAnalytics();
 
     const [scanConfigsToDelete, setScanConfigsToDelete] = useState<
         ComplianceScanConfigurationStatus[]
@@ -178,6 +181,10 @@ function ScanConfigsTablePage({
         clearAlertObj();
         runComplianceReport(scanConfigResponse.id, 'EMAIL')
             .then(() => {
+                analyticsTrack({
+                    event: 'Compliance Report Manual Send Triggered',
+                    properties: { source: 'Table row' },
+                });
                 setAlertObj({
                     type: 'success',
                     title: 'Successfully requested to send a report',
@@ -196,6 +203,10 @@ function ScanConfigsTablePage({
         clearAlertObj();
         runComplianceReport(scanConfigResponse.id, 'DOWNLOAD')
             .then(() => {
+                analyticsTrack({
+                    event: 'Compliance Report Download Generation Triggered',
+                    properties: { source: 'Table row' },
+                });
                 setAlertObj({
                     type: 'success',
                     title: 'The report generation has started and will be available for download once complete',
@@ -247,7 +258,7 @@ function ScanConfigsTablePage({
                                 snapshot={snapshot}
                                 isLoadingSnapshots={isLoadingSnapshots}
                                 currentUserId={currentUser.userId}
-                                baseDownloadURL="" // TODO: Put the correct URL here
+                                baseDownloadURL={complianceReportDownloadURL}
                             />
                         </Td>
                     )}

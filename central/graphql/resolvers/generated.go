@@ -53,12 +53,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"clusterName: String!",
 		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
+		"entityType: Alert_EntityType!",
 		"firstOccurred: Time",
 		"id: ID!",
 		"image: ContainerImage",
 		"lifecycleStage: LifecycleStage!",
 		"namespace: String!",
 		"namespaceId: String!",
+		"platformComponent: Boolean!",
 		"policy: Policy",
 		"processViolation: Alert_ProcessViolation",
 		"resolvedAt: Time",
@@ -95,6 +97,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"action: EnforcementAction!",
 		"message: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_EntityType(0)))
 	utils.Must(builder.AddType("Alert_ProcessViolation", []string{
 		"message: String!",
 		"processes: [ProcessIndicator]!",
@@ -572,6 +575,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"namespace: String!",
 		"namespaceId: String!",
 		"orchestratorComponent: Boolean!",
+		"platformComponent: Boolean!",
 		"podLabels: [Label!]!",
 		"ports: [PortConfig]!",
 		"priority: Int!",
@@ -962,8 +966,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
 		"scanTime: Time",
+		"scannerVersion: NodeScan_Scanner!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Scanner(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
@@ -1930,6 +1936,12 @@ func (resolver *alertResolver) Enforcement(ctx context.Context) (*alert_Enforcem
 	return resolver.root.wrapAlert_Enforcement(value, true, nil)
 }
 
+func (resolver *alertResolver) EntityType(ctx context.Context) string {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetEntityType()
+	return value.String()
+}
+
 func (resolver *alertResolver) FirstOccurred(ctx context.Context) (*graphql.Time, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetFirstOccurred()
@@ -1967,6 +1979,12 @@ func (resolver *alertResolver) Namespace(ctx context.Context) string {
 func (resolver *alertResolver) NamespaceId(ctx context.Context) string {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetNamespaceId()
+	return value
+}
+
+func (resolver *alertResolver) PlatformComponent(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetPlatformComponent()
 	return value
 }
 
@@ -2259,6 +2277,24 @@ func (resolver *alert_EnforcementResolver) Action(ctx context.Context) string {
 func (resolver *alert_EnforcementResolver) Message(ctx context.Context) string {
 	value := resolver.data.GetMessage()
 	return value
+}
+
+func toAlert_EntityType(value *string) storage.Alert_EntityType {
+	if value != nil {
+		return storage.Alert_EntityType(storage.Alert_EntityType_value[*value])
+	}
+	return storage.Alert_EntityType(0)
+}
+
+func toAlert_EntityTypes(values *[]string) []storage.Alert_EntityType {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Alert_EntityType, len(*values))
+	for i, v := range *values {
+		output[i] = toAlert_EntityType(&v)
+	}
+	return output
 }
 
 type alert_ProcessViolationResolver struct {
@@ -6995,6 +7031,12 @@ func (resolver *deploymentResolver) OrchestratorComponent(ctx context.Context) b
 	return value
 }
 
+func (resolver *deploymentResolver) PlatformComponent(ctx context.Context) bool {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetPlatformComponent()
+	return value
+}
+
 func (resolver *deploymentResolver) PodLabels(ctx context.Context) labels {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetPodLabels()
@@ -10927,6 +10969,11 @@ func (resolver *nodeScanResolver) ScanTime(ctx context.Context) (*graphql.Time, 
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
+func (resolver *nodeScanResolver) ScannerVersion(ctx context.Context) string {
+	value := resolver.data.GetScannerVersion()
+	return value.String()
+}
+
 func toNodeScan_Note(value *string) storage.NodeScan_Note {
 	if value != nil {
 		return storage.NodeScan_Note(storage.NodeScan_Note_value[*value])
@@ -10941,6 +10988,24 @@ func toNodeScan_Notes(values *[]string) []storage.NodeScan_Note {
 	output := make([]storage.NodeScan_Note, len(*values))
 	for i, v := range *values {
 		output[i] = toNodeScan_Note(&v)
+	}
+	return output
+}
+
+func toNodeScan_Scanner(value *string) storage.NodeScan_Scanner {
+	if value != nil {
+		return storage.NodeScan_Scanner(storage.NodeScan_Scanner_value[*value])
+	}
+	return storage.NodeScan_Scanner(0)
+}
+
+func toNodeScan_Scanners(values *[]string) []storage.NodeScan_Scanner {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.NodeScan_Scanner, len(*values))
+	for i, v := range *values {
+		output[i] = toNodeScan_Scanner(&v)
 	}
 	return output
 }

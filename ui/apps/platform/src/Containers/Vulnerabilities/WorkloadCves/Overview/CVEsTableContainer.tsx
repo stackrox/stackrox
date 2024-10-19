@@ -13,8 +13,17 @@ import { getTableUIState } from 'utils/getTableUIState';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
 import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
-import CVEsTable, { ImageCVE, cveListQuery, unfilteredImageCountQuery } from '../Tables/CVEsTable';
+import WorkloadCVEOverviewTable, {
+    ImageCVE,
+    cveListQuery,
+    defaultColumns,
+    tableId,
+    unfilteredImageCountQuery,
+} from '../Tables/WorkloadCVEOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import { getStatusesForExceptionCount } from '../../utils/searchUtils';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
@@ -68,6 +77,15 @@ function CVEsTableContainer({
 
     const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
 
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const filteredColumns = filterManagedColumns(
+        defaultColumns,
+        (key) => key !== 'topNvdCvss' || isNvdCvssColumnEnabled
+    );
+    const managedColumnState = useManagedColumns(tableId, filteredColumns);
+
     const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
     const {
         exceptionRequestModalOptions,
@@ -116,38 +134,38 @@ function CVEsTableContainer({
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
             >
+                <ToolbarItem align={{ default: 'alignRight' }}>
+                    <ColumnManagementButton managedColumnState={managedColumnState} />
+                </ToolbarItem>
                 {canSelectRows && (
-                    <>
-                        <ToolbarItem align={{ default: 'alignRight' }}>
-                            <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
-                                <DropdownItem
-                                    key="bulk-defer-cve"
-                                    component="button"
-                                    onClick={() =>
-                                        showModal({
-                                            type: 'DEFERRAL',
-                                            cves: Array.from(selectedCves.values()),
-                                        })
-                                    }
-                                >
-                                    Defer CVEs
-                                </DropdownItem>
-                                <DropdownItem
-                                    key="bulk-mark-false-positive"
-                                    component="button"
-                                    onClick={() =>
-                                        showModal({
-                                            type: 'FALSE_POSITIVE',
-                                            cves: Array.from(selectedCves.values()),
-                                        })
-                                    }
-                                >
-                                    Mark as false positives
-                                </DropdownItem>
-                            </BulkActionsDropdown>
-                        </ToolbarItem>
-                        <ToolbarItem align={{ default: 'alignRight' }} variant="separator" />
-                    </>
+                    <ToolbarItem>
+                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                            <DropdownItem
+                                key="bulk-defer-cve"
+                                component="button"
+                                onClick={() =>
+                                    showModal({
+                                        type: 'DEFERRAL',
+                                        cves: Array.from(selectedCves.values()),
+                                    })
+                                }
+                            >
+                                Defer CVEs
+                            </DropdownItem>
+                            <DropdownItem
+                                key="bulk-mark-false-positive"
+                                component="button"
+                                onClick={() =>
+                                    showModal({
+                                        type: 'FALSE_POSITIVE',
+                                        cves: Array.from(selectedCves.values()),
+                                    })
+                                }
+                            >
+                                Mark as false positives
+                            </DropdownItem>
+                        </BulkActionsDropdown>
+                    </ToolbarItem>
                 )}
             </TableEntityToolbar>
             <Divider component="div" />
@@ -156,7 +174,7 @@ function CVEsTableContainer({
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >
-                <CVEsTable
+                <WorkloadCVEOverviewTable
                     tableState={tableState}
                     unfilteredImageCount={imageCountData?.imageCount || 0}
                     getSortParams={getSortParams}
@@ -170,6 +188,7 @@ function CVEsTableContainer({
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
+                    columnVisibilityState={managedColumnState.columns}
                 />
             </div>
         </>

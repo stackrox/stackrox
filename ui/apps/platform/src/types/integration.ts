@@ -51,6 +51,7 @@ export type NotifierIntegrationType =
     | 'email'
     | 'generic'
     | 'jira'
+    | 'microsoftSentinel'
     | 'pagerduty'
     | 'slack'
     | 'splunk'

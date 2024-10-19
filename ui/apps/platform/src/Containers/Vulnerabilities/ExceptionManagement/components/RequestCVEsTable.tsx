@@ -28,7 +28,10 @@ import {
     getDefaultWorkloadSortOption,
     getSeveritySortOptions,
 } from '../../utils/sortUtils';
-import { CVEListQueryResult, cveListQuery } from '../../WorkloadCves/Tables/CVEsTable';
+import {
+    CVEListQueryResult,
+    cveListQuery,
+} from '../../WorkloadCves/Tables/WorkloadCVEOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getWorkloadEntityPagePath } from '../../utils/searchUtils';

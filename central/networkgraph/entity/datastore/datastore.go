@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -15,6 +16,7 @@ type EntityDataStore interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	// This getter does not respect the current graph configuration.
 	GetEntity(ctx context.Context, id string) (*storage.NetworkEntity, bool, error)
+	GetEntityByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error)
 	// This getter respects the current graph configuration.
 	GetAllEntitiesForCluster(ctx context.Context, clusterID string) ([]*storage.NetworkEntity, error)
 	// This getter respects the current graph configuration.

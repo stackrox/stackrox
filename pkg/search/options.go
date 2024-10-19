@@ -135,6 +135,7 @@ var (
 	MemoryRequest                = newFieldLabel("Memory Request (MB)")
 	MountPropagation             = newFieldLabel("Mount Propagation")
 	OrchestratorComponent        = newFieldLabel("Orchestrator Component")
+	PlatformComponent            = newFieldLabel("Platform Component")
 	// PolicyViolated is a fake search field to filter deployments that have violation.
 	// This is handled/supported only by deployments sub-resolver of policy resolver.
 	// Note that 'Policy Violated=false' is not yet supported.
@@ -178,6 +179,7 @@ var (
 	ViolationState = newFieldLabel("Violation State")
 	ViolationTime  = newFieldLabel("Violation Time")
 	Tag            = newFieldLabel("Tag")
+	EntityType     = newFieldLabel("Entity Type")
 
 	// Pod Search fields
 	PodUID   = newFieldLabel("Pod UID")
@@ -423,6 +425,9 @@ var (
 	IntegrationID   = newFieldLabel("Integration ID")
 	IntegrationName = newFieldLabel("Integration Name")
 	IntegrationType = newFieldLabel("Integration Type")
+
+	// AuthProvider fields.
+	AuthProviderName = newFieldLabel("AuthProvider Name")
 
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")

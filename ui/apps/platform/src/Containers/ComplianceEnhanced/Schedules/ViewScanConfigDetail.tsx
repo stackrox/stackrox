@@ -31,6 +31,7 @@ import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import ReportJobsHelpAction from 'Components/ReportJob/ReportJobsHelpAction';
 import { jobContextTabs } from 'Components/ReportJob/types';
+import useAnalytics from 'hooks/useAnalytics';
 import ScanConfigActionDropdown from './ScanConfigActionDropdown';
 import ConfigDetails from './components/ConfigDetails';
 import ReportJobs from './components/ReportJobs';
@@ -57,6 +58,8 @@ function ViewScanConfigDetail({
     error = null,
 }: ViewScanConfigDetailProps): React.ReactElement {
     const { scanConfigId } = useParams();
+    const { analyticsTrack } = useAnalytics();
+
     const [activeScanConfigTab, setActiveScanConfigTab] = useURLStringUnion(
         'scanConfigTab',
         jobContextTabs
@@ -81,7 +84,6 @@ function ViewScanConfigDetail({
                     type: 'success',
                     title: 'Successfully triggered a re-scan',
                 });
-                // TODO verify is lastExecutedTime expected to change? therefore, refetch?
             })
             .catch((error) => {
                 setAlertObj({
@@ -99,6 +101,10 @@ function ViewScanConfigDetail({
         clearAlertObj();
         runComplianceReport(scanConfigResponse.id, 'EMAIL')
             .then(() => {
+                analyticsTrack({
+                    event: 'Compliance Report Manual Send Triggered',
+                    properties: { source: 'Details page' },
+                });
                 setAlertObj({
                     type: 'success',
                     title: 'Successfully requested to send a report',
@@ -117,6 +123,10 @@ function ViewScanConfigDetail({
         clearAlertObj();
         runComplianceReport(scanConfigResponse.id, 'DOWNLOAD')
             .then(() => {
+                analyticsTrack({
+                    event: 'Compliance Report Download Generation Triggered',
+                    properties: { source: 'Details page' },
+                });
                 setAlertObj({
                     type: 'success',
                     title: 'The report generation has started and will be available for download once complete',
@@ -190,6 +200,9 @@ function ViewScanConfigDetail({
                         activeKey={activeScanConfigTab}
                         onSelect={(_e, tab) => {
                             setActiveScanConfigTab(tab);
+                            if (tab === 'ALL_REPORT_JOBS') {
+                                analyticsTrack('Compliance Report Jobs Table Viewed');
+                            }
                         }}
                         aria-label="Scan schedule details tabs"
                     >
@@ -221,10 +234,10 @@ function ViewScanConfigDetail({
                     </Card>
                 </PageSection>
             )}
-            {activeScanConfigTab === 'ALL_REPORT_JOBS' && (
+            {activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (
                 <PageSection isCenterAligned id={allReportJobsTabId}>
                     <ReportJobs
-                        scanConfig={scanConfig}
+                        scanConfigId={scanConfig.id}
                         isComplianceReportingEnabled={isComplianceReportingEnabled}
                     />
                 </PageSection>

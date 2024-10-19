@@ -9,6 +9,7 @@ import {
     ToggleGroupItem,
 } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { GoogleImageIntegration } from 'types/imageIntegration.proto';
 
@@ -103,9 +104,10 @@ function GoogleIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GoogleImageIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.config = { ...formInitialValues.config, ...initialValues };
+        merge(formInitialValues.config, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.config.google.serviceAccount = '';

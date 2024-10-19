@@ -64,6 +64,7 @@ function ConditionDate({ value, onChange, onSearch }: ConditionDateProps) {
                 dateFormat={getDate}
                 dateParse={dateParse}
                 placeholder="MM/DD/YYYY"
+                invalidFormatText="Enter valid date: MM/DD/YYYY"
             />
             <Button
                 variant="control"

@@ -182,6 +182,7 @@ export const mountPropagationCriteriaName = 'Mount Propagation';
     defaultValue: the default value to set, if provided
     disabled: disables the field entirely
     reverse: will reverse boolean value on store
+    infoText: optional short text for title of info Alert element in card body of policy field in wizard
     featureFlagDependency: optional property to filter descriptor by feature flags enabled or disabled
  */
 
@@ -219,6 +220,7 @@ type BaseDescriptor = {
     name: string;
     shortName: string;
     longName?: string;
+    infoText?: string;
     category: string;
     type: DescriptorType;
     disabled?: boolean;
@@ -487,6 +489,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         shortName: 'NVD CVSS',
         longName:
             'Common Vulnerability Scoring System (CVSS) score from National Vulnerability Database (NVD)',
+        infoText: 'NVD CVSS scores require Scanner V4',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'group',
         subComponents: [
