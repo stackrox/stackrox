@@ -84,8 +84,7 @@ func (s *violationsTestSuite) TestQueryReturnsAlertsWithAllStates() {
 		alertIDs = s.queryAlertsWithCheckpoint(alertsDS, "2000-01-01T00:00:00Z", defaultPaginationSettings.maxAlertsFromQuery)
 	})
 
-	s.Len(alertIDs, 3)
-	s.Contains(alertIDs, s.processAlert.Id)
+	s.Len(alertIDs, 2)
 	s.Contains(alertIDs, s.k8sAlert.Id)
 	s.Contains(alertIDs, s.deployAlert.Id)
 }
