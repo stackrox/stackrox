@@ -10,59 +10,41 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$"))
+      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
+      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
   labels:
     appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: operator-bundle
+    appstudio.openshift.io/component: collector
     pipelines.appstudio.openshift.io/type: build
-  name: operator-bundle-build
+  name: collector-full-retag
   namespace: rh-acs-tenant
 
 spec:
 
   params:
-  - name: dockerfile
-    value: operator/konflux.bundle.Dockerfile
   - name: git-url
     value: '{{repo_url}}'
-  # TODO(ROX-24530): return expiration for non-released images to 13w
   - name: image-expires-after
-    value: '52w'
+    value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/stackrox-operator-bundle
-  - name: operator-image-repo
-    value: quay.io/rhacs-eng/stackrox-operator
+    value: quay.io/rhacs-eng/collector
+  - name: base-image-repo
+    value: quay.io/rhacs-eng/collector
+  - name: base-image-tag-makefile-target
+    value: collector-tag
   - name: revision
     value: '{{revision}}'
-  - name: rebuild
-    value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: 'true'
-  - name: prefetch-input
-    value: ''
-  - name: build-source-image
-    value: 'true'
-  - name: clone-depth
-    value: '0'
-  - name: clone-fetch-tags
-    value: 'true'
 
   workspaces:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
-  - name: quay-auth
-    secret:
-      secretName: quay-io-rhacs-eng-rw
 
   pipelineRef:
-    name: operator-bundle-pipeline
+    name: retag-pipeline
 
   timeouts:
-    # The tasks regularly takes 1h to finish. Due to recently hit timeouts,
-    # let's try with 30m more.
-    tasks: 1h30m
+    tasks: 1h
     # Reserve time for final tasks to run.
     finally: 10m
-    pipeline: 1h40m
+    pipeline: 1h10m
