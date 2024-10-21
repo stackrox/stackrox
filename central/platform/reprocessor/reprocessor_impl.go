@@ -104,7 +104,7 @@ func (pr *platformReprocessorImpl) deploymentsNeedReprocessing() (bool, error) {
 
 func (pr *platformReprocessorImpl) reprocessAlerts() error {
 	if pr.stopSignal.IsDone() {
-		log.Info("Stop called, stopping platform reprocessor")
+		log.Debug("Stop called, stopping platform reprocessor")
 		return nil
 	}
 	needReprocessing, err := pr.alertsNeedReprocessing()
@@ -112,7 +112,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 		return errors.Wrap(err, "Error determining if alerts need reporcessing")
 	}
 	if !needReprocessing {
-		log.Info("Alerts up to date with platform rules, skipping reprocessing")
+		log.Debug("Alerts up to date with platform rules, skipping reprocessing")
 		return nil
 	}
 
