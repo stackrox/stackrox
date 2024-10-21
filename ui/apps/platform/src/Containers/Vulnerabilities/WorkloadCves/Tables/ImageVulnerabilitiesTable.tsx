@@ -185,8 +185,12 @@ function ImageVulnerabilitiesTable({
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th className={getVisibilityClass('firstDiscovered')}>First discovered</Th>
-                    <Th className={getVisibilityClass('publishedOn')}>Published</Th>
+                    <Th className={getVisibilityClass('firstDiscovered')} modifier="nowrap">
+                        First discovered
+                    </Th>
+                    <Th className={getVisibilityClass('publishedOn')} modifier="nowrap">
+                        Published
+                    </Th>
                     {showExceptionDetailsLink && (
                         <TooltipTh tooltip="View information about this exception request">
                             Request details
@@ -314,7 +318,11 @@ function ImageVulnerabilitiesTable({
                                         className={getVisibilityClass('publishedOn')}
                                         dataLabel="Published"
                                     >
-                                        <DateDistance date={publishedOn} />
+                                        {publishedOn ? (
+                                            <DateDistance date={publishedOn} />
+                                        ) : (
+                                            'Not available'
+                                        )}
                                     </Td>
                                     {showExceptionDetailsLink && (
                                         <ExceptionDetailsCell

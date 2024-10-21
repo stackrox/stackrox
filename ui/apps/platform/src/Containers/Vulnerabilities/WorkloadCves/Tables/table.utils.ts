@@ -286,7 +286,9 @@ export function formatVulnerabilityData(
                     !!vulnImageMap.imageMetadataContext
             );
 
-        const publishedOnDate = parse(allVulnerabilities[0].publishedOn || '');
+        const publishedOnDate = allVulnerabilities[0].publishedOn
+            ? parse(allVulnerabilities[0].publishedOn)
+            : null;
 
         return {
             vulnerabilityId,

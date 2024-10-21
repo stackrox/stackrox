@@ -215,7 +215,11 @@ function DeploymentVulnerabilitiesTable({
                                         modifier="nowrap"
                                         dataLabel="Published"
                                     >
-                                        <DateDistance date={publishedOn} />
+                                        {publishedOn ? (
+                                            <DateDistance date={publishedOn} />
+                                        ) : (
+                                            'Not available'
+                                        )}
                                     </Td>
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>

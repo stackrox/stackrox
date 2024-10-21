@@ -394,14 +394,20 @@ function WorkloadCVEOverviewTable({
                                         <Td
                                             dataLabel="First discovered"
                                             className={getVisibilityClass('firstDiscovered')}
+                                            modifier="nowrap"
                                         >
                                             <DateDistance date={firstDiscoveredInSystem} />
                                         </Td>
                                         <Td
                                             dataLabel="Published"
                                             className={getVisibilityClass('publishedOn')}
+                                            modifier="nowrap"
                                         >
-                                            <DateDistance date={publishedOn} />
+                                            {publishedOn ? (
+                                                <DateDistance date={publishedOn} />
+                                            ) : (
+                                                'Not available'
+                                            )}
                                         </Td>
                                         {showExceptionDetailsLink && (
                                             <ExceptionDetailsCell
