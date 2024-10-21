@@ -58,7 +58,8 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 	var fakeCollector *collector.FakeCollector
 	if !helper.UseRealCollector.BooleanSetting() {
 		fakeCollector = collector.NewFakeCollector(collector.WithDefaultConfig().WithCertsPath(config.CertFilePath))
-		require.NoError(t, fakeCollector.Start())
+		t.Logf("Starting fake collector (requires sensor to be up and running)")
+		require.NoErrorf(t, fakeCollector.Start(), "Could not start fake collector")
 	}
 
 	t.Log("Starting testcase")

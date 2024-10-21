@@ -4,9 +4,11 @@ import (
 	"os"
 	"path"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -66,12 +68,22 @@ func (c *FakeCollector) Start() error {
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_FILE", path.Join(c.config.certsPath, "/caCert.pem")))
 	utils.CrashOnError(os.Setenv("ROX_MTLS_CA_KEY_FILE", path.Join(c.config.certsPath, "/caKey.pem")))
 
-	if err := c.networkFlowManager.start(c.config.sensorAddress); err != nil {
-		return err
+	if err := retry.WithRetry(func() error {
+		log.Infof("Attempting to start network flow manager...")
+		return c.networkFlowManager.start(c.config.sensorAddress)
+	}, retry.Tries(10), retry.WithExponentialBackoff()); err != nil {
+		return errors.Wrap(err, "starting network flow manager for fake collector")
 	}
-	if err := c.signalManager.start(c.config.sensorAddress); err != nil {
-		return err
+	log.Infof("Network flow manager started")
+
+	if err := retry.WithRetry(func() error {
+		log.Infof("Attempting to start signal manager...")
+		return c.signalManager.start(c.config.sensorAddress)
+	}, retry.Tries(5)); err != nil {
+		return errors.Wrap(err, "starting signal manager for fake collector")
 	}
+	log.Infof("Signal manager started")
+
 	return nil
 }
 

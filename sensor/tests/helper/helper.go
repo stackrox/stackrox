@@ -210,7 +210,7 @@ func NewContextWithConfigAndStart(t *testing.T, config Config, start <-chan stru
 		tc.StartFakeGRPC(config.CentralCaps...)
 		t.Logf("Starting sensor")
 		tc.startSensorInstance(t, envConfig, config)
-		t.Logf("Started")
+		t.Logf("Sensor started")
 	}()
 	return &tc, nil
 }
@@ -320,6 +320,7 @@ func (c *TestContext) RestartFakeCentralConnection(centralCaps ...string) {
 
 // StartFakeGRPC will start a gRPC server to act as Central.
 func (c *TestContext) StartFakeGRPC(centralCaps ...string) {
+	defer c.l.Logf("Fake GRPC start triggered")
 	c.deduperStateLock.Lock()
 	defer c.deduperStateLock.Unlock()
 	c.centralStopped.Store(false)
@@ -341,6 +342,7 @@ func (c *TestContext) StartFakeGRPC(centralCaps ...string) {
 	if c.grpcFactory == nil {
 		c.grpcFactory = centralDebug.MakeFakeConnectionFactory(conn)
 	} else {
+		c.l.Logf("Overwriting Central connection")
 		c.grpcFactory.OverwriteCentralConnection(conn)
 	}
 
