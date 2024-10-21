@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	ScannerVersionV2 = "2"
-	ScannerVersionV4 = "4"
+	ScannerVersionV2 = "Stackrox Scanner"
+	ScannerVersionV4 = "Scanner V4"
 )
 
 var (
@@ -59,6 +59,8 @@ var (
 			"node_name",
 			// Whether the inventory run was completed successfully
 			"error",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	indexDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -66,13 +68,15 @@ var (
 		Subsystem: metrics.ComplianceSubsystem.String(),
 		Name:      "index_duration_seconds",
 		Help:      "Generation duration for Node IndexReports (per Node) in seconds",
-		Buckets:   []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 50, 100, 500, 1000},
+		Buckets:   []float64{0.1, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 50, 100, 500, 1000},
 	},
 		[]string{
 			// The Node this scan belongs to
 			"node_name",
 			// Whether the inventory run was completed successfully
 			"error",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	callToNodeInventoryDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -87,6 +91,8 @@ var (
 			"node_name",
 			// Whether the inventory run was completed successfully
 			"error",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	rescanInterval = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -123,17 +129,21 @@ var (
 		[]string{
 			// The Node this scan belongs to
 			"node_name",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	indexesTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
-		Name:      "index_total",
+		Name:      "index_reports_total",
 		Help:      "Number of generated node index reports since container start",
 	},
 		[]string{
 			// The Node this scan belongs to
 			"node_name",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	inventoryTransmissions = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -212,24 +222,27 @@ func ObserveNodeIndexReport(report *v4.IndexReport, nodeName string) {
 // ObserveNodeInventoryCallDuration observes the metric.
 func ObserveNodeInventoryCallDuration(d time.Duration, nodeName string, e error) {
 	callToNodeInventoryDuration.With(prometheus.Labels{
-		"node_name": nodeName,
-		"error":     strconv.FormatBool(e != nil),
+		"node_name":       nodeName,
+		"error":           strconv.FormatBool(e != nil),
+		"scanner_version": ScannerVersionV2,
 	}).Observe(d.Seconds())
 }
 
 // ObserveScanDuration observes the metric.
 func ObserveScanDuration(d time.Duration, nodeName string, e error) {
 	scanDuration.With(prometheus.Labels{
-		"node_name": nodeName,
-		"error":     strconv.FormatBool(e != nil),
+		"node_name":       nodeName,
+		"error":           strconv.FormatBool(e != nil),
+		"scanner_version": ScannerVersionV2,
 	}).Observe(d.Seconds())
 }
 
 // ObserveIndexDuration observes the metric.
 func ObserveIndexDuration(d time.Duration, nodeName string, e error) {
 	indexDuration.With(prometheus.Labels{
-		"node_name": nodeName,
-		"error":     strconv.FormatBool(e != nil),
+		"node_name":       nodeName,
+		"error":           strconv.FormatBool(e != nil),
+		"scanner_version": ScannerVersionV4,
 	}).Observe(d.Seconds())
 }
 
@@ -243,14 +256,16 @@ func ObserveRescanInterval(d time.Duration, nodeName string) {
 // ObserveScansTotal observed the metric
 func ObserveScansTotal(nodeName string) {
 	scansTotal.With(prometheus.Labels{
-		"node_name": nodeName,
+		"node_name":       nodeName,
+		"scanner_version": ScannerVersionV2,
 	}).Inc()
 }
 
 // ObserveIndexesTotal observed the metric
 func ObserveIndexesTotal(nodeName string) {
 	indexesTotal.With(prometheus.Labels{
-		"node_name": nodeName,
+		"node_name":       nodeName,
+		"scanner_version": ScannerVersionV4,
 	}).Inc()
 }
 
