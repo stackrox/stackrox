@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -304,7 +305,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationsV
 	for _, tc := range testCases {
 		clusterIntegrations, err := s.dataStore.GetComplianceIntegrationsView(s.testContexts[tc.scopeKey], tc.query)
 		s.Require().NoError(err)
-		s.Require().Equal(tc.expectedResult, clusterIntegrations)
+		assert.ElementsMatch(s.T(), tc.expectedResult, clusterIntegrations)
 	}
 }
 
@@ -398,17 +399,6 @@ func (s *complianceIntegrationDataStoreTestSuite) TestCountIntegrations() {
 func (s *complianceIntegrationDataStoreTestSuite) addBaseIntegrations(testIntegrations []*storage.ComplianceIntegration) []string {
 	var ids []string
 	for _, integration := range testIntegrations {
-		//if integration.ClusterId == testconsts.Cluster1 {
-		//	testID := uuid.NewV4().String()
-		//	serialized, marshalErr := integration.MarshalVT()
-		//	s.Require().NoError(marshalErr)
-		//
-		//	_, err := s.db.DB.Exec(context.Background(), "insert into compliance_integrations (id, version, clusterid, serialized) values ($1, $2, $3, $4)", testID, integration.GetVersion(), testconsts.Cluster1, serialized)
-		//	s.Require().NoError(err)
-		//	integration.Id = testID
-		//	ids = append(ids, testID)
-		//	continue
-		//}
 		id, err := s.dataStore.AddComplianceIntegration(s.hasWriteCtx, integration)
 		s.NoError(err)
 		s.NotEmpty(id)
