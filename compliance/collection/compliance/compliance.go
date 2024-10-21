@@ -181,7 +181,6 @@ func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance
 		log.Errorf("Error creating node index: %v", err)
 		return nil
 	}
-	log.Debugf("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
 	return c.createIndexMsg(report)
 }
 
