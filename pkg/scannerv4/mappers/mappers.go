@@ -91,6 +91,8 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	}
 	filterPackages(r.Packages, r.Environments, r.PackageVulnerabilities)
 	nvdVulns, err := nvdVulnerabilities(r.Enrichments)
+	fmt.Println("nvd enrichments: >>>>")
+	fmt.Println(r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
 	}
@@ -330,12 +332,10 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		fmt.Println(v)
 		if nvdCVEs, ok := nvdVulns[v.ID]; ok {
 			if v, ok := nvdCVEs[name]; ok {
-				fmt.Println(v)
 				nvdVuln = *v
 			} else {
 				// Pick the first one as a fallback.
 				for _, v := range nvdCVEs {
-					fmt.Println(v)
 					nvdVuln = *v
 					break
 				}
