@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-const batchSize = 5000
+const batchSize = 10
 
 var (
 	log = logging.LoggerForModule()
