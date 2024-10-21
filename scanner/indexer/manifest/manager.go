@@ -143,9 +143,9 @@ func (m *Manager) runGC(ctx context.Context) error {
 		return err
 	}
 	if len(ms) > 0 {
-		zlog.Debug(ctx).Strs("deleted_manifests", ms).Msg("deleted expired manifest metadata")
+		zlog.Debug(ctx).Strs("deleted_manifest_metadata", ms).Msg("deleted expired manifest metadata")
 	}
-	zlog.Info(ctx).Int("deleted_manifests", len(ms)).Msg("deleted expired manifest metadata")
+	zlog.Info(ctx).Int("deleted_manifest_metadata", len(ms)).Msg("deleted expired manifest metadata")
 
 	return nil
 }

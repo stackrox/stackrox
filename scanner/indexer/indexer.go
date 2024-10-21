@@ -37,6 +37,8 @@ import (
 	"github.com/quay/claircore/rpm"
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
@@ -46,14 +48,32 @@ import (
 	"github.com/stackrox/rox/scanner/internal/version"
 )
 
-const (
-	// sevenDays represents seven days (in seconds).
-	// 7 days * 24 hours/day * 60 minutes/hour * 60 seconds/minute = 604,800 seconds
-	sevenDays = 604800
-	// twentyThreeDays represents twenty-three days (in seconds).
-	// 23 days * 24 hours/day * 60 minutes/hour * 60 seconds/minute = 1,987,200 seconds
-	twentyThreeDays = 1987200
+var (
+	// minManifestDeleteStart is the minimum amount of time in the future to consider deleting manifests.
+	minManifestDeleteStart = minManifestDeleteIntervalStart()
+	// minManifestDeleteDuration is the minimum amount of time of the interval for considering deleting manifests.
+	minManifestDeleteDuration = minManifestDeleteIntervalDuration()
 )
+
+// minManifestDeleteIntervalStart returns the minimum manifest deletion interval start.
+// For release builds: 1 day
+// For dev builds: 1 minute
+func minManifestDeleteIntervalStart() time.Duration {
+	if buildinfo.ReleaseBuild {
+		return 24 * time.Hour
+	}
+	return time.Minute
+}
+
+// minManifestDeleteIntervalDuration returns the minimum duration of the manifest deletion interval.
+// For release builds: 2 days
+// For dev builds: 2 minutes
+func minManifestDeleteIntervalDuration() time.Duration {
+	if buildinfo.ReleaseBuild {
+		return 2 * 24 * time.Hour
+	}
+	return 2 * time.Minute
+}
 
 // ecosystems specifies the package ecosystems to use for indexing.
 func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
@@ -134,6 +154,8 @@ type localIndexer struct {
 
 	metadataStore   postgres.IndexerMetadataStore
 	manifestManager *manifest.Manager
+	deleteIntervalStart    int64
+	deleteIntervalDuration int64
 }
 
 // NewIndexer creates a new indexer.
@@ -221,6 +243,17 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 	}()
 
+	deleteIntervalStart := env.ScannerV4ManifestDeleteStart.DurationSetting()
+	if deleteIntervalStart < minManifestDeleteStart {
+		zlog.Warn(ctx).Msgf("configured manifest delete interval (%v) start is too small: setting to %v", deleteIntervalStart, minManifestDeleteStart)
+		deleteIntervalStart = minManifestDeleteStart
+	}
+	deleteIntervalDuration := env.ScannerV4ManifestDeleteDuration.DurationSetting()
+	if deleteIntervalDuration < minManifestDeleteDuration {
+		zlog.Warn(ctx).Msgf("configured manifest delete interval (%v) duration is too small: setting to %v", deleteIntervalDuration, minManifestDeleteDuration)
+		deleteIntervalDuration = minManifestDeleteDuration
+	}
+
 	success = true
 	return &localIndexer{
 		libIndex:        indexer,
@@ -231,6 +264,8 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 
 		metadataStore:   metadataStore,
 		manifestManager: manifestManager,
+		deleteIntervalStart: int64(deleteIntervalDuration.Seconds()),
+		deleteIntervalDuration: int64(deleteIntervalDuration.Seconds()),
 	}, nil
 }
 
@@ -369,12 +404,19 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 		return nil, err
 	}
 
-	err = i.metadataStore.StoreManifest(ctx, manifestDigest.String(), randomExpiry(time.Now()))
+	err = i.metadataStore.StoreManifest(ctx, manifestDigest.String(), i.randomExpiry(time.Now()))
 	if err != nil {
 		return nil, err
 	}
 
 	return ir, nil
+}
+
+// randomExpiry generates a random time.Time within the manifest deletion interval.
+func (i *localIndexer) randomExpiry(now time.Time) time.Time {
+	// now + a random number of seconds between zero and twenty-three days + seven days
+	expirySec := now.Unix() + rand.Int64N(i.deleteIntervalDuration) + i.deleteIntervalStart
+	return time.Unix(expirySec, 0)
 }
 
 func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.Authenticator, timeout time.Duration, insecure bool) (*http.Client, error) {
@@ -563,11 +605,4 @@ func GetDigestFromReference(ref name.Reference, auth authn.Authenticator) (name.
 		return name.Digest{}, fmt.Errorf("internal error: %w", err)
 	}
 	return dRef, nil
-}
-
-// randomExpiry generates a random time.Time between seven and thirty days from now
-func randomExpiry(now time.Time) time.Time {
-	// now + a random number of seconds between zero and twenty-three days + seven days
-	expirySec := now.Unix() + rand.Int64N(twentyThreeDays) + sevenDays
-	return time.Unix(expirySec, 0)
 }
