@@ -11,13 +11,12 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/util/retry"
 )
 
 var (
@@ -104,7 +103,8 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 		return i.abortStart(errors.New("already started"))
 	}
 
-	sensorOwnerReference, fetchSensorDeploymentErr := i.fetchSensorDeploymentOwnerRef(ctx, fetchSensorDeploymentOwnerRefBackoff)
+	sensorOwnerReference, fetchSensorDeploymentErr := certrefresh.FetchSensorDeploymentOwnerRef(ctx, i.sensorPodName,
+		i.sensorNamespace, i.k8sClient, fetchSensorDeploymentOwnerRefBackoff)
 	if fetchSensorDeploymentErr != nil {
 		return i.abortStart(errors.Wrap(fetchSensorDeploymentErr, "fetching sensor deployment"))
 	}
@@ -173,78 +173,4 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 		// messages not supported by this component are ignored because unknown messages types are handled by the central receiver.
 		return nil
 	}
-}
-
-func (i *localScannerTLSIssuerImpl) fetchSensorDeploymentOwnerRef(ctx context.Context, backoff wait.Backoff) (*metav1.OwnerReference, error) {
-	if i.sensorPodName == "" {
-		return nil, errors.New("fetching sensor deployment: empty pod name")
-	}
-
-	podsClient := i.k8sClient.CoreV1().Pods(i.sensorNamespace)
-	sensorPodMeta, getPodErr := i.getObjectMetaWithRetries(ctx, backoff, func(ctx context.Context) (metav1.Object, error) {
-		pod, err := podsClient.Get(ctx, i.sensorPodName, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		return pod.GetObjectMeta(), nil
-	})
-	if getPodErr != nil {
-		return nil, errors.Wrapf(getPodErr, "fetching sensor pod with name %q", i.sensorPodName)
-	}
-	podOwners := sensorPodMeta.GetOwnerReferences()
-	if len(podOwners) != 1 {
-		return nil, errors.Errorf("pod %q has unexpected owners %v",
-			i.sensorPodName, podOwners)
-	}
-	podOwnerName := podOwners[0].Name
-
-	replicaSetClient := i.k8sClient.AppsV1().ReplicaSets(i.sensorNamespace)
-	ownerReplicaSetMeta, getReplicaSetErr := i.getObjectMetaWithRetries(ctx, backoff,
-		func(ctx context.Context) (metav1.Object, error) {
-			replicaSet, err := replicaSetClient.Get(ctx, podOwnerName, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
-			}
-			return replicaSet.GetObjectMeta(), nil
-		})
-	if getReplicaSetErr != nil {
-		return nil, errors.Wrapf(getReplicaSetErr, "fetching owner replica set with name %q", podOwnerName)
-	}
-	replicaSetOwners := ownerReplicaSetMeta.GetOwnerReferences()
-	if len(replicaSetOwners) != 1 {
-		return nil, errors.Errorf("replica set %q has unexpected owners %v",
-			ownerReplicaSetMeta.GetName(),
-			replicaSetOwners)
-	}
-	replicaSetOwner := replicaSetOwners[0]
-
-	blockOwnerDeletion := false
-	isController := false
-	return &metav1.OwnerReference{
-		APIVersion:         replicaSetOwner.APIVersion,
-		Kind:               replicaSetOwner.Kind,
-		Name:               replicaSetOwner.Name,
-		UID:                replicaSetOwner.UID,
-		BlockOwnerDeletion: &blockOwnerDeletion,
-		Controller:         &isController,
-	}, nil
-}
-
-func (i *localScannerTLSIssuerImpl) getObjectMetaWithRetries(
-	ctx context.Context,
-	backoff wait.Backoff,
-	getObject func(context.Context) (metav1.Object, error),
-) (metav1.Object, error) {
-	var object metav1.Object
-	getErr := retry.OnError(backoff, func(err error) bool {
-		return !k8sErrors.IsNotFound(err)
-	}, func() error {
-		newObject, err := getObject(ctx)
-		if err == nil {
-			object = newObject
-		}
-		return err
-	})
-
-	return object, getErr
 }
