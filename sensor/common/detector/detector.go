@@ -297,8 +297,11 @@ func (d *detectorImpl) ProcessPolicySync(ctx context.Context, sync *central.Poli
 // ProcessReassessPolicies clears the image caches and resets the deduper
 func (d *detectorImpl) ProcessReassessPolicies() error {
 	log.Debug("Reassess Policies triggered")
-	// Clear the image caches and make all the deployments flow back through by clearing out the hash
-	d.enricher.imageCache.RemoveAll()
+	if tmpEmptyImageCachePolicies.BooleanSetting() {
+		log.Debug("Clearing image cache")
+		// Clear the image caches and make all the deployments flow back through by clearing out the hash
+		d.enricher.imageCache.RemoveAll()
+	}
 	if d.admCtrlSettingsMgr != nil {
 		d.admCtrlSettingsMgr.FlushCache()
 	}
@@ -350,7 +353,10 @@ func (d *detectorImpl) ProcessReprocessDeployments() error {
 		// Would prefer to do a targeted flush
 		d.admCtrlSettingsMgr.FlushCache()
 	}
-	d.enricher.imageCache.RemoveAll()
+	if tmpEmptyImageCacheDeployments.BooleanSetting() {
+		log.Debug("Clearing image cache")
+		d.enricher.imageCache.RemoveAll()
+	}
 	d.admissionCacheNeedsFlush = false
 	d.deduper.reset()
 	return nil
