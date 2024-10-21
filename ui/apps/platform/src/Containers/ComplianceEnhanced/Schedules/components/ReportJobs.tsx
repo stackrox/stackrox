@@ -88,7 +88,7 @@ function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsPr
         isLoading,
         error,
         refetch,
-    } = useRestQuery(fetchComplianceReportHistoryCallback);
+    } = useRestQuery(fetchComplianceReportHistoryCallback, { clearErrorBeforeRequest: false });
 
     const {
         openDeleteDownloadModal,
