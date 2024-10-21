@@ -347,7 +347,7 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 				Str("severity", v.Severity).
 				Msg("missing severity and/or CVSS score(s): proceeding with partial values")
 		}
-		if v.ID == "CVE-2017-18349" {
+		if v.ID == "CVE-2017-18349" || v.Name == "CVE-2017-18349" {
 			fmt.Println("Output: >>>>")
 			fmt.Println(v)
 			fmt.Println(nvdVuln)
