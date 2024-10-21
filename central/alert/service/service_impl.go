@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -25,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	pkgNotifier "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/processbaseline"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -39,8 +37,6 @@ var (
 )
 
 const (
-	badSnoozeErrorMsg = "'snooze_till' timestamp must be at a future time"
-
 	maxListAlertsReturned = 1000
 	alertResolveBatchSize = 100
 )
@@ -57,7 +53,6 @@ var (
 		},
 		user.With(permissions.Modify(resources.Alert)): {
 			"/v1.AlertService/ResolveAlert",
-			"/v1.AlertService/SnoozeAlert",
 			"/v1.AlertService/ResolveAlerts",
 			"/v1.AlertService/DeleteAlerts",
 		},
@@ -386,9 +381,6 @@ func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.A
 	b := batcher.New(len(alerts), alertResolveBatchSize)
 	for start, end, valid := b.Next(); valid; start, end, valid = b.Next() {
 		for _, alert := range alerts[start:end] {
-			if state != storage.ViolationState_SNOOZED {
-				alert.SnoozeTill = nil
-			}
 			alert.State = state
 		}
 		err := s.dataStore.UpsertAlerts(ctx, alerts[start:end])
@@ -404,9 +396,6 @@ func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.A
 }
 
 func (s *serviceImpl) changeAlertState(ctx context.Context, alert *storage.Alert, state storage.ViolationState) error {
-	if state != storage.ViolationState_SNOOZED {
-		alert.SnoozeTill = nil
-	}
 	alert.State = state
 	err := s.dataStore.UpsertAlert(ctx, alert)
 	if err != nil {
@@ -415,30 +404,6 @@ func (s *serviceImpl) changeAlertState(ctx context.Context, alert *storage.Alert
 	}
 	s.notifier.ProcessAlert(ctx, alert)
 	return nil
-}
-
-func (s *serviceImpl) SnoozeAlert(ctx context.Context, req *v1.SnoozeAlertRequest) (*v1.Empty, error) {
-	if req.GetSnoozeTill() == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "'snooze_till' cannot be nil")
-	}
-	if protoconv.ConvertTimestampToTimeOrNow(req.GetSnoozeTill()).Before(time.Now()) {
-		return nil, errors.Wrap(errox.InvalidArgs, badSnoozeErrorMsg)
-	}
-	alert, exists, err := s.dataStore.GetAlert(ctx, req.GetId())
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", req.GetId())
-	}
-	alert.SnoozeTill = req.GetSnoozeTill()
-	err = s.changeAlertState(ctx, alert, storage.ViolationState_SNOOZED)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-	return &v1.Empty{}, nil
 }
 
 // DeleteAlerts is a maintenance function that deletes alerts from the store

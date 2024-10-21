@@ -57,7 +57,7 @@ func TestPagerDutyTest(t *testing.T) {
 func TestPagerDutyAckAlert(t *testing.T) {
 	p := getPagerDuty(t)
 	alert := fixtures.GetAlert()
-	alert.State = storage.ViolationState_SNOOZED
+	alert.State = storage.ViolationState_ACTIVE
 	assert.NoError(t, p.AckAlert(context.Background(), alert))
 }
 

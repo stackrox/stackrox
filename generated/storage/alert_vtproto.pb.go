@@ -290,7 +290,6 @@ func (m *Alert) CloneVT() *Alert {
 	r.FirstOccurred = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FirstOccurred).CloneVT())
 	r.ResolvedAt = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.ResolvedAt).CloneVT())
 	r.State = m.State
-	r.SnoozeTill = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.SnoozeTill).CloneVT())
 	r.PlatformComponent = m.PlatformComponent
 	r.EntityType = m.EntityType
 	if m.Entity != nil {
@@ -936,9 +935,6 @@ func (this *Alert) EqualVT(that *Alert) bool {
 		return false
 	}
 	if this.State != that.State {
-		return false
-	}
-	if !(*timestamppb1.Timestamp)(this.SnoozeTill).EqualVT((*timestamppb1.Timestamp)(that.SnoozeTill)) {
 		return false
 	}
 	if !this.ProcessViolation.EqualVT(that.ProcessViolation) {
@@ -2095,16 +2091,6 @@ func (m *Alert) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x6a
 	}
-	if m.SnoozeTill != nil {
-		size, err := (*timestamppb1.Timestamp)(m.SnoozeTill).MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
-		i--
-		dAtA[i] = 0x62
-	}
 	if m.State != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.State))
 		i--
@@ -3011,10 +2997,6 @@ func (m *Alert) SizeVT() (n int) {
 	}
 	if m.State != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.State))
-	}
-	if m.SnoozeTill != nil {
-		l = (*timestamppb1.Timestamp)(m.SnoozeTill).SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	if m.ProcessViolation != nil {
 		l = m.ProcessViolation.SizeVT()
@@ -5604,42 +5586,6 @@ func (m *Alert) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-		case 12:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field SnoozeTill", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.SnoozeTill == nil {
-				m.SnoozeTill = &timestamppb.Timestamp{}
-			}
-			if err := (*timestamppb1.Timestamp)(m.SnoozeTill).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
 		case 13:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ProcessViolation", wireType)
