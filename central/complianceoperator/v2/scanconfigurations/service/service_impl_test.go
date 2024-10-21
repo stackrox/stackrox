@@ -6,10 +6,12 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	blobDSMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	benchmarkMocks "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore/mocks"
 	managerMocks "github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager/mocks"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
+	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	reportManagerMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	scanSettingBindingMocks "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore/mocks"
@@ -94,6 +96,8 @@ type ComplianceScanConfigServiceTestSuite struct {
 	profileDS                   *profileDatastore.MockDataStore
 	clusterDatastore            *clusterDatastoreMocks.MockDataStore
 	benchmarkDS                 *benchmarkMocks.MockDataStore
+	snapshotDS                  *snapshotMocks.MockDataStore
+	blobDS                      *blobDSMocks.MockDatastore
 	service                     Service
 }
 
@@ -117,7 +121,9 @@ func (s *ComplianceScanConfigServiceTestSuite) SetupTest() {
 	s.profileDS = profileDatastore.NewMockDataStore(s.mockCtrl)
 	s.clusterDatastore = clusterDatastoreMocks.NewMockDataStore(s.mockCtrl)
 	s.benchmarkDS = benchmarkMocks.NewMockDataStore(s.mockCtrl)
-	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.notifierDS, s.profileDS, s.benchmarkDS, s.clusterDatastore)
+	s.snapshotDS = snapshotMocks.NewMockDataStore(s.mockCtrl)
+	s.blobDS = blobDSMocks.NewMockDatastore(s.mockCtrl)
+	s.service = New(s.scanConfigDatastore, s.scanSettingBindingDatastore, s.suiteDataStore, s.manager, s.reportManager, s.notifierDS, s.profileDS, s.benchmarkDS, s.clusterDatastore, s.snapshotDS, s.blobDS)
 }
 
 func (s *ComplianceScanConfigServiceTestSuite) TearDownTest() {
@@ -649,7 +655,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
 		ScanConfigName: "scan-config-1",
 	}
 	s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, validScanConfigID).Return(validScanConfig, true, nil)
-	s.reportManager.EXPECT().SubmitReportRequest(allAccessContext, validScanConfig).Return(nil)
+	s.reportManager.EXPECT().SubmitReportRequest(allAccessContext, validScanConfig, storage.ComplianceOperatorReportStatus_EMAIL).Return(nil)
 
 	resp, err := s.service.RunReport(allAccessContext, &v2.ComplianceRunReportRequest{ScanConfigId: validScanConfigID})
 	s.Require().NoError(err)
