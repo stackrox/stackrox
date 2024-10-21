@@ -1326,7 +1326,7 @@ type ImageCVE struct {
 	// Deprecated: Marked as deprecated in storage/cve.proto.
 	SnoozeExpiry *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=snooze_expiry,json=snoozeExpiry,proto3" json:"snooze_expiry,omitempty" search:"CVE Snooze Expiry,hidden"` // @gotags: search:"CVE Snooze Expiry,hidden"
 	// nvdcvss stores cvss score for a cve from NVD
-	Nvdcvss float32 `protobuf:"fixed32,10,opt,name=nvdcvss,proto3" json:"nvdcvss,omitempty" search:"NVD CVSS"` // @gotags: search:"NVD CVSS",store"
+	Nvdcvss float32 `protobuf:"fixed32,10,opt,name=nvdcvss,proto3" json:"nvdcvss,omitempty" search:"NVD CVSS,store"` // @gotags: search:"NVD CVSS,store"
 	// cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
 	CvssMetrics     []*CVSSScore     `protobuf:"bytes,11,rep,name=cvss_metrics,json=cvssMetrics,proto3" json:"cvss_metrics,omitempty"`
 	NvdScoreVersion CvssScoreVersion `protobuf:"varint,12,opt,name=nvd_score_version,json=nvdScoreVersion,proto3,enum=storage.CvssScoreVersion" json:"nvd_score_version,omitempty"`
