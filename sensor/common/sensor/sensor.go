@@ -412,11 +412,11 @@ func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
 	}
 }
 
-func wrapOrNewError(err error, message string) error {
+func wrapOrNewErrorf(err error, format string, args ...interface{}) error {
 	if err == nil {
-		return errors.New(message)
+		return errors.Errorf(format, args...)
 	}
-	return errors.Wrap(err, message)
+	return errors.Wrapf(err, format, args...)
 }
 
 func (s *Sensor) notifySyncDone(syncDone *concurrency.Signal, centralCommunication CentralCommunication) {
@@ -454,10 +454,12 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			return errors.New("Connection is in idle state")
 		case connectivity.Ready:
 			s.changeState(common.SensorComponentEventCentralReachable)
+		case connectivity.Connecting:
+			// Do nothing, let it connect
 		default:
 			s.changeState(common.SensorComponentEventOfflineMode)
 			// Save the error before retrying
-			err := wrapOrNewError(grpcErr, "communication stopped")
+			err := wrapOrNewErrorf(grpcErr, "current connectivity state %s does not allow to go online", state)
 			// Connection is still broken, report and try again
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
 			return err
@@ -500,12 +502,12 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
 			// checked to probe connection state.
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
-			return wrapOrNewError(s.centralCommunication.Stopped().Err(), "communication stopped")
+			return wrapOrNewErrorf(s.centralCommunication.Stopped().Err(), "communication stopped (stopped signal)")
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
 			log.Info("Received stop signal from Sensor. Stopping without retrying")
 			s.centralCommunication.Stop(nil)
-			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
+			return backoff.Permanent(wrapOrNewErrorf(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
 	}, exponential, func(err error, d time.Duration) {
 		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
