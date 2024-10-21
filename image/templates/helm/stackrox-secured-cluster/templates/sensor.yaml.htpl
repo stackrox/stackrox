@@ -53,6 +53,85 @@ spec:
         fsGroup: 4000
       {{- end }}
       serviceAccountName: sensor
+      initContainers:
+{{- if ._rox.crs._enabled }}
+      - image: {{ ._rox.image.main.fullRef | quote }}
+        imagePullPolicy: {{ ._rox.sensor.imagePullPolicy | quote }}
+        name: crs
+        command:
+          - kubernetes-sensor
+        resources:
+          {{- ._rox.sensor._resources | nindent 10 }}
+        args:
+        - ensure-cluster-registered
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        env:
+        - name: ROX_MEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: ROX_CENTRAL_ENDPOINT
+          value: {{ ._rox.centralEndpoint }}
+        [<- if (not .KubectlOutput) >]
+        - name: ROX_HELM_CLUSTER_CONFIG_FP
+          value: {{ quote ._rox._configFP }}
+        {{- if ._rox._scannerV4Enabled }}
+        - name: ROX_SCANNER_V4
+          value: "true"
+        {{- end }}
+        [<- end >]
+        - name: ROX_MTLS_CRS_FILE
+          value: /run/secrets/stackrox.io/crs/crs
+        - name: ROX_CRS_TMP_DIR
+          value: /run/secrets/stackrox.io/crs-tmp
+        {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
+        volumeMounts:
+        - name: sensor-etc-ssl-volume
+          mountPath: /etc/ssl/
+        - name: sensor-etc-pki-volume
+          mountPath: /etc/pki/ca-trust/
+        - name: crs-tmp
+          mountPath: /run/secrets/stackrox.io/crs-tmp/
+        - name: crs
+          mountPath: /run/secrets/stackrox.io/crs/
+          readOnly: true
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
+        - name: cache
+          mountPath: /var/cache/stackrox
+        {{- if ._rox.env.openshift }}
+        - name: sensor-bound-sa-token
+          mountPath: /var/run/secrets/openshift/serviceaccount
+        {{- end }}
+        [<- if not .KubectlOutput >]
+        - name: helm-cluster-config
+          mountPath: /run/secrets/stackrox.io/helm-cluster-config/
+          readOnly: true
+        - name: helm-effective-cluster-name
+          mountPath: /run/secrets/stackrox.io/helm-effective-cluster-name/
+          readOnly: true
+        [<- end >]
+        {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+{{- end }}
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy }}
@@ -144,6 +223,9 @@ spec:
         - name: certs
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
+        - name: crs
+          mountPath: /run/secrets/stackrox.io/crs/
+          readOnly: true
         - name: additional-ca-volume
           mountPath: /usr/local/share/ca-certificates/
           readOnly: true
@@ -171,6 +253,7 @@ spec:
       - name: certs
         secret:
           secretName: sensor-tls
+          optional: true
           items:
           - key: sensor-cert.pem
             path: cert.pem
@@ -178,6 +261,13 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      - name: crs-tmp
+        emptyDir:
+          medium: Memory
+      - name: crs
+        secret:
+          secretName: cluster-registration-secret
+          optional: true
       - name: sensor-etc-ssl-volume
         emptyDir: {}
       - name: sensor-etc-pki-volume
