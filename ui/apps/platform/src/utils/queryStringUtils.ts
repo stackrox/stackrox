@@ -6,7 +6,7 @@ export type BasePageAction = 'create' | 'edit';
 export type ExtendedPageAction = BasePageAction | 'clone' | 'generate';
 
 export function getQueryObject(search: string): qs.ParsedQs {
-    return qs.parse(search, { ignoreQueryPrefix: true });
+    return qs.parse(search, { ignoreQueryPrefix: true, arrayLimit: 200 });
 }
 
 export function getQueryString<T>(
