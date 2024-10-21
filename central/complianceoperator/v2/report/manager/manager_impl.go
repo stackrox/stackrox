@@ -336,6 +336,9 @@ func (m *managerImpl) handleReadyScan() {
 			return
 		default:
 			if scanWatcherResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanWatcherResult != nil {
+				concurrency.WithLock(&m.watchingScansLock, func() {
+					delete(m.watchingScans, scanWatcherResult.WatcherID)
+				})
 				// At the moment we simply do not start the ScanConfigWatcher if there are errors in the ScanWatchers.
 				// There are many reasons why a ScanWatcher might fail like, for example, the Scan was deleted mid-execution.
 				// If this happens, we will generate many ReportSnapshots with timeouts. Until we implement a way to
@@ -353,9 +356,6 @@ func (m *managerImpl) handleReadyScan() {
 				if err := w.PushScanResults(scanWatcherResult); err != nil {
 					log.Errorf("Unable to push scan %s: %v", scanWatcherResult.Scan.GetScanName(), err)
 				}
-				concurrency.WithLock(&m.watchingScansLock, func() {
-					delete(m.watchingScans, scanWatcherResult.WatcherID)
-				})
 			}
 		}
 	}

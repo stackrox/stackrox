@@ -235,6 +235,8 @@ func (s *scanWatcherImpl) run(timer Timer) {
 		select {
 		case <-s.ctx.Done():
 			log.Infof("Stopping scan watcher for scan")
+			s.scanResults.Error = ErrScanTimeout
+			s.readyQueue.Push(s.scanResults)
 			return
 		case <-timer.C():
 			log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())

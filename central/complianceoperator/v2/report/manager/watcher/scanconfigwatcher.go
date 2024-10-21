@@ -145,6 +145,10 @@ func (w *scanConfigWatcherImpl) run(timer Timer) {
 		select {
 		case <-w.ctx.Done():
 			log.Infof("Stopping scan config watcher")
+			concurrency.WithLock(&w.resultsLock, func() {
+				w.scanConfigResults.Error = ScanConfigTimeoutError
+				w.readyQueue.Push(w.scanConfigResults)
+			})
 			return
 		case <-timer.C():
 			concurrency.WithLock(&w.resultsLock, func() {
