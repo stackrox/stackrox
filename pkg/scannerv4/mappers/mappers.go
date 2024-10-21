@@ -337,6 +337,9 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 				}
 			}
 		}
+		fmt.Println("Output: >>>>")
+		fmt.Println(v)
+		fmt.Println(nvdVuln)
 		metrics, err := cvssMetrics(ctx, v, &nvdVuln)
 		if err != nil {
 			zlog.Debug(ctx).
@@ -346,11 +349,6 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 				Str("vuln_updater", v.Updater).
 				Str("severity", v.Severity).
 				Msg("missing severity and/or CVSS score(s): proceeding with partial values")
-		}
-		if v.ID == "CVE-2017-18349" || v.Name == "CVE-2017-18349" {
-			fmt.Println("Output: >>>>")
-			fmt.Println(v)
-			fmt.Println(nvdVuln)
 		}
 		var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
 		if len(metrics) > 0 {
