@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -29,6 +30,7 @@ type DataStore interface {
 	SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error)
 	SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error)
 
+	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.Alert, error)
 	WalkByQuery(ctx context.Context, q *v1.Query, db func(d *storage.Alert) error) error
 	WalkAll(ctx context.Context, fn func(alert *storage.ListAlert) error) error
 	GetAlert(ctx context.Context, id string) (*storage.Alert, bool, error)
@@ -43,12 +45,13 @@ type DataStore interface {
 }
 
 // New returns a new soleInstance of DataStore using the input store, and searcher.
-func New(alertStore store.Store, searcher search.Searcher) (DataStore, error) {
+func New(alertStore store.Store, searcher search.Searcher, platformMatcher platformmatcher.PlatformMatcher) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:    alertStore,
-		searcher:   searcher,
-		keyedMutex: concurrency.NewKeyedMutex(mutexPoolSize),
-		keyFence:   concurrency.NewKeyFence(),
+		storage:         alertStore,
+		searcher:        searcher,
+		keyedMutex:      concurrency.NewKeyedMutex(mutexPoolSize),
+		keyFence:        concurrency.NewKeyFence(),
+		platformMatcher: platformMatcher,
 	}
 	return ds, nil
 }
@@ -58,5 +61,5 @@ func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error)
 	alertStore := pgStore.New(pool)
 	searcher := search.New(alertStore)
 
-	return New(alertStore, searcher)
+	return New(alertStore, searcher, platformmatcher.Singleton())
 }
