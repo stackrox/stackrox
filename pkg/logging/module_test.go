@@ -3,7 +3,7 @@ package logging
 import (
 	"testing"
 
-	"github.com/gofrs/uuid"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -63,20 +63,20 @@ func TestModuleSetLogLevel(t *testing.T) {
 }
 
 func TestModuleRefCountingWorks(t *testing.T) {
-	module := newModule(uuid.Must(uuid.NewV4()).String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
+	module := newModule(uuid.New().String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
 	module.ref()
 	assert.False(t, module.unref())
 	assert.True(t, module.unref())
 }
 
 func TestLoggerCreatedFromModuleReferencesModule(t *testing.T) {
-	module := newModule(uuid.Must(uuid.NewV4()).String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
+	module := newModule(uuid.New().String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
 	logger := module.Logger()
 	assert.Equal(t, module, logger.module)
 }
 
 func TestRegistryPurgesModulesWithRefCountOfZero(t *testing.T) {
-	name := uuid.Must(uuid.NewV4()).String()
+	name := uuid.New().String()
 	modules.getOrAddModule(name)
 	modules.unrefModule(name)
 
@@ -85,7 +85,7 @@ func TestRegistryPurgesModulesWithRefCountOfZero(t *testing.T) {
 
 func TestLoggerCreatedFromModuleUpdatesLogLevel(t *testing.T) {
 	for zapLevel := range validLevels {
-		module := newModule(uuid.Must(uuid.NewV4()).String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
+		module := newModule(uuid.New().String(), zap.NewAtomicLevelAt(zapcore.InfoLevel))
 		logger := module.Logger()
 		module.SetLogLevel(zapLevel)
 		assert.True(t, logger.SugaredLogger().Desugar().Core().Enabled(zapLevel))
@@ -95,7 +95,7 @@ func TestLoggerCreatedFromModuleUpdatesLogLevel(t *testing.T) {
 }
 
 func TestLoggerLevelUpdatesWithGlobalLevel(t *testing.T) {
-	module := ModuleForName(uuid.Must(uuid.NewV4()).String())
+	module := ModuleForName(uuid.New().String())
 	logger := module.Logger()
 	level := GetGlobalLogLevel()
 
