@@ -126,20 +126,17 @@ func (e *enricherImpl) enrichNodeWithScanner(node *storage.Node, nodeInventory *
 	var scan *storage.NodeScan
 	var err error
 
-	var scannerVersion int
-
 	scanStartTime := time.Now()
 	if scanner.Type() == types.ScannerV4 {
 		scan, err = scanner.GetNodeInventoryScan(node, nil, indexReport)
-		scannerVersion = 4
+		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
+		e.metrics.SetNodeInventoryNumberComponents(len(indexReport.GetContents().GetPackages()), node.GetClusterName(), node.GetName(), scanner.Name())
 	} else {
 		scan, err = scanner.GetNodeInventoryScan(node, nodeInventory, nil)
-		scannerVersion = 2
+		e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
+		e.metrics.SetNodeInventoryNumberComponents(len(nodeInventory.GetComponents().GetRhelComponents()), node.GetClusterName(), node.GetName(), scanner.Name())
 	}
 
-	e.metrics.SetScanDurationTime(scanStartTime, scanner.Name(), err)
-	e.metrics.SetNodeInventoryNumberComponents(len(nodeInventory.GetComponents().GetRhelComponents()), node.GetClusterName(), node.GetName())
-	e.metrics.SetNodeScanScannerVersion(scannerVersion, node.GetClusterName(), node.GetName())
 	if err != nil {
 		return errors.Wrapf(err, "Error scanning '%s:%s' with scanner %q", node.GetClusterName(), node.GetName(), scanner.Name())
 	}
