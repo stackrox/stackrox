@@ -11,6 +11,8 @@ import (
 )
 
 func (i *indexerMetadataStore) MigrateManifests(ctx context.Context) ([]string, error) {
+	// Though i.store is not used, directly, here, it is used as a signal
+	// that the manifest table is expected to exist.
 	if i.store == nil {
 		return nil, errors.New("indexer store not defined")
 	}
@@ -18,8 +20,7 @@ func (i *indexerMetadataStore) MigrateManifests(ctx context.Context) ([]string, 
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.MigrateManifests")
 
 	// insertMissingManifests inserts missing manifests from the manifest table into manifest_metadata,
-	// and it sets the expiration time to some random time in the future between seven days from now
-	// and thirty days from now.
+	// and it sets the expiration time to some random time in the future between seven and thirty days from now.
 	const insertMissingManifests = `
 		INSERT INTO manifest_metadata (manifest_id, expiration)
 		SELECT m.hash, (now() AT TIME ZONE 'utc') + (make_interval(days => 23) * random()) + make_interval(days => 7)
@@ -46,10 +47,6 @@ func (i *indexerMetadataStore) MigrateManifests(ctx context.Context) ([]string, 
 	if err := rows.Err(); err != nil {
 		zlog.Warn(ctx).Err(err).Msg("reading manifest rows")
 	}
-	if len(missingManifests) > 0 {
-		zlog.Debug(ctx).Strs("migrated_manifests", missingManifests).Msg("migrated missing manifest metadata")
-	}
-	zlog.Info(ctx).Int("migrated_manifests", len(missingManifests)).Msg("migrated missing manifest metadata")
 
 	return missingManifests, nil
 }

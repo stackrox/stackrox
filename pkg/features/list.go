@@ -125,4 +125,7 @@ var (
 
 	// ExternalIPs enables storing detailed discovered external IPs
 	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
+
+	// ScannerV4ReIndex enables Scanner V4 manifest re-indexing.
+	ScannerV4ReIndex = registerFeature("Scanner V4 will re-index and delete unused manifests", "ROX_SCANNER_V4_REINDEX", enabled)
 )

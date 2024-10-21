@@ -5,6 +5,7 @@ import (
 	"embed"
 
 	"github.com/remind101/migrate"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 const (
@@ -16,11 +17,15 @@ const (
 )
 
 // IndexerMigrations lists the indexer migrations, in order.
-var IndexerMigrations = []migrate.Migration{
-	{
-		ID: 1,
-		Up: runFile("indexer/01-init.sql"),
-	},
+var IndexerMigrations []migrate.Migration
+
+func init() {
+	if features.ScannerV4ReIndex.Enabled() {
+		IndexerMigrations = append(IndexerMigrations, migrate.Migration{
+			ID: 1,
+			Up: runFile("indexer/01-init.sql"),
+		})
+	}
 }
 
 // MatcherMigrations lists the matcher migrations, in order.

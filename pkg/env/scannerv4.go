@@ -24,4 +24,12 @@ var (
 	// ScannerV4ManifestGCInterval specifies the interval between manifest garbage collection runs.
 	// The manifest garbage collector runs periodically to check for expired manifests and then delete them.
 	ScannerV4ManifestGCInterval = registerDurationSetting("ROX_SCANNER_V4_MANIFEST_GC_INTERVAL", 6*time.Hour)
+
+	// ScannerV4ManifestDeleteStart specifies the start of the interval in which manifests will be deleted.
+	// Default: 7 days
+	ScannerV4ManifestDeleteStart = registerDurationSetting("ROX_SCANNER_V4_MANIFEST_DELETE_INTERVAL_START", 7 * 24 * time.Hour)
+
+	// ScannerV4ManifestDeleteDuration specifies the duration of the interval (not inclusive) in which manifests will be deleted.
+	// Default: 23 days
+	ScannerV4ManifestDeleteDuration = registerDurationSetting("ROX_SCANNER_V4_MANIFEST_DELETE_DURATION", 23 * 24 * time.Hour)
 )

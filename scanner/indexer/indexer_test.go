@@ -192,9 +192,14 @@ func TestRandomExpiry(t *testing.T) {
 	sevenDays := now.Add(7 * 24 * time.Hour)
 	thirtyDays := now.Add(30 * 24 * time.Hour)
 
+	i := &localIndexer{
+		deleteIntervalStart: int64((7 * 24 * time.Hour).Seconds()),
+		deleteIntervalDuration: int64((23 * 24 * time.Hour).Seconds()),
+	}
+
 	const iterations = 1000
 	for range iterations {
-		expiry := randomExpiry(now)
+		expiry := i.randomExpiry(now)
 		assert.False(t, expiry.Before(sevenDays))
 		assert.True(t, expiry.Before(thirtyDays))
 	}
