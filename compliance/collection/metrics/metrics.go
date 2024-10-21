@@ -146,6 +146,7 @@ var (
 			"scanner_version",
 		})
 
+	// TODO(ROX-26699): Duplicate and rename metric
 	inventoryTransmissions = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
