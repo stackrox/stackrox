@@ -1311,7 +1311,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
-		"when manual vulnerability with NVD link, do not get NVD data again": {
+		"when manual vulnerability with NVD link, prioritize NVD data": {
 			ccVulnerabilities: map[string]*claircore.Vulnerability{
 				"foo": {
 					ID:       "foo",
@@ -1332,6 +1332,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 									CvssData: &nvdschema.CVSSV31{
 										Version:      "3.1",
 										VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+										BaseScore:    10,
 									},
 								},
 							},
@@ -1348,8 +1349,8 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					Severity: "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
 					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-							BaseScore: 9.3,
-							Vector:    "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							BaseScore: 10,
 						},
 						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 						Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
@@ -1357,8 +1358,8 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
 						{
 							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-								BaseScore: 9.3,
-								Vector:    "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+								BaseScore: 10,
 							},
 							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
 							Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
