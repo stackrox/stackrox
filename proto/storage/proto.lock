@@ -390,10 +390,6 @@
                 "name": "ACTIVE"
               },
               {
-                "name": "SNOOZED",
-                "integer": 1
-              },
-              {
                 "name": "RESOLVED",
                 "integer": 2
               },
@@ -401,6 +397,12 @@
                 "name": "ATTEMPTED",
                 "integer": 3
               }
+            ],
+            "reserved_ids": [
+              1
+            ],
+            "reserved_names": [
+              "SNOOZED"
             ]
           }
         ],
@@ -498,11 +500,6 @@
                 "type": "ViolationState"
               },
               {
-                "id": 12,
-                "name": "snooze_till",
-                "type": "google.protobuf.Timestamp"
-              },
-              {
                 "id": 22,
                 "name": "platform_component",
                 "type": "bool"
@@ -514,7 +511,11 @@
               }
             ],
             "reserved_ids": [
+              12,
               14
+            ],
+            "reserved_names": [
+              "snooze_till"
             ],
             "messages": [
               {
