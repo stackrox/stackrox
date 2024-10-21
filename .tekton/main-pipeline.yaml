@@ -444,7 +444,7 @@ spec:
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
-      value: $(tasks.build-container-amd64.results.IMAGE_URL)
+      value: $(tasks.build-image-index.results.IMAGE_URL)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
