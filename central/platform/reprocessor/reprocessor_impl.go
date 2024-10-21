@@ -118,13 +118,7 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 
 	q := unsetPlatformComponentQuery.CloneVT()
 	q.Pagination = &v1.QueryPagination{
-		Limit:  batchSize,
-		Offset: 0,
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field: search.AlertID.String(),
-			},
-		},
+		Limit: batchSize,
 	}
 
 	for {
@@ -151,8 +145,8 @@ func (pr *platformReprocessorImpl) reprocessAlerts() error {
 		if err != nil {
 			return err
 		}
-		q.GetPagination().Offset += int32(len(alerts))
 	}
+	log.Info("Done reprocessing alerts with platform rules")
 	return nil
 }
 
@@ -172,13 +166,7 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 
 	q := unsetPlatformComponentQuery.CloneVT()
 	q.Pagination = &v1.QueryPagination{
-		Limit:  batchSize,
-		Offset: 0,
-		SortOptions: []*v1.QuerySortOption{
-			{
-				Field: search.DeploymentID.String(),
-			},
-		},
+		Limit: batchSize,
 	}
 
 	for {
@@ -204,7 +192,7 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 				return err
 			}
 		}
-		q.GetPagination().Offset += int32(len(deps))
 	}
+	log.Info("Done reprocessing deployments with platform rules")
 	return nil
 }
