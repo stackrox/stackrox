@@ -109,9 +109,9 @@ func (c *Compliance) Start() {
 	log.Info("Successfully closed Sensor communication")
 }
 
-func (c *Compliance) createIndexMsg(report *v4.IndexReport) *sensor.MsgFromCompliance {
+func (c *Compliance) createIndexMsg(report *v4.IndexReport, nodeName string) *sensor.MsgFromCompliance {
 	return &sensor.MsgFromCompliance{
-		Node: c.nodeNameProvider.GetNodeName(),
+		Node: nodeName,
 		Msg:  &sensor.MsgFromCompliance_IndexReport{IndexReport: report},
 	}
 }
@@ -130,11 +130,11 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 			case _, ok := <-c.umh.RetryCommand():
 				if c.cache == nil {
 					log.Debug("Requested to retry but cache is empty. Resetting scan timer.")
-					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss)
+					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV2)
 					t.Reset(time.Second)
 				} else if ok {
 					nodeInventoriesC <- c.cache
-					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheHit)
+					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV2)
 				}
 			case <-t.C:
 				if c.nodeScanner.IsActive() {
@@ -168,7 +168,7 @@ func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCo
 		return nil
 	}
 	cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
-	cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan)
+	cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan, cmetrics.ScannerVersionV2)
 	c.umh.ObserveSending()
 	c.cache = msg.CloneVT()
 	return msg
@@ -176,13 +176,22 @@ func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCo
 
 func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance {
 	log.Infof("Creating v4 Node Index Report")
+	nodeName := c.nodeNameProvider.GetNodeName()
+	cmetrics.ObserveIndexesTotal(nodeName)
+	startTime := time.Now()
 	report, err := c.nodeIndexer.IndexNode(ctx)
+	duration := time.Since(startTime)
+	cmetrics.ObserveIndexDuration(duration, nodeName, err)
 	if err != nil {
 		log.Errorf("Error creating node index: %v", err)
 		return nil
 	}
+	cmetrics.ObserveNodeIndexReport(report, nodeName)
 	log.Debugf("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
-	return c.createIndexMsg(report)
+	msg := c.createIndexMsg(report, nodeName)
+	cmetrics.ObserveInventoryProtobufMessage(msg, cmetrics.ScannerVersionV4)
+	cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan, cmetrics.ScannerVersionV4)
+	return msg
 }
 
 func (c *Compliance) manageStream(ctx context.Context, cli sensor.ComplianceServiceClient, sig *concurrency.Signal, toSensorC <-chan *sensor.MsgFromCompliance) {
