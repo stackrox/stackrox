@@ -168,12 +168,16 @@ func (r *resolverImpl) runPullAndResolve() {
 		if ref == nil {
 			continue
 		}
+		log.Debugf("runPullAndResolve processing item refID %s", ref.id)
+
 		msg := component.NewEvent()
 		msg.Context = ref.context
 		msg.DeploymentTiming = ref.deploymentTiming
 		if r.resolveDeployment(msg, ref) {
+			log.Debugf("runPullAndResolve resolveDeployment for refID %s returned true", ref.id)
 			r.outputQueue.Send(msg)
 		}
+		log.Debugf("runPullAndResolve done processing refID %s", ref.id)
 	}
 }
 
@@ -189,6 +193,7 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 			// Runs the deployment resolution. This callback will fetch all the deployment IDs that are affected by
 			// the resource event.
 			referenceIds := deploymentReference.Reference(r.storeProvider.Deployments())
+			log.Debugf("processMessage: Resolver is processing msg with refIDs %v", referenceIds)
 
 			for _, id := range referenceIds {
 				ref := &deploymentRef{
@@ -200,15 +205,22 @@ func (r *resolverImpl) processMessage(msg *component.ResourceEvent) {
 					forceDetection:   deploymentReference.ForceDetection,
 				}
 				if features.SensorAggregateDeploymentReferenceOptimization.Enabled() && r.deploymentRefQueue != nil {
+					log.Debugf("processMessage: Pushing refID %s to deploymentRefQueue", id)
 					r.deploymentRefQueue.Push(ref)
 				} else {
+					log.Debugf("processMessage: Running resolveDeployment for refID %s", id)
 					r.resolveDeployment(msg, ref)
 				}
 			}
 		}
 
 	}
-
+	ids := ""
+	for i, reference := range msg.DeploymentReferences {
+		referenceIds := reference.Reference(r.storeProvider.Deployments())
+		ids += fmt.Sprintf("[%d]=%v; ", i, referenceIds)
+	}
+	log.Debugf("processMessage: sending to output queue msg with IDs %s", ids)
 	r.outputQueue.Send(msg)
 }
 

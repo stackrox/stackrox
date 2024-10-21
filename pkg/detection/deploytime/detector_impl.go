@@ -1,6 +1,7 @@
 package deploytime
 
 import (
+	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy"
@@ -24,13 +25,17 @@ func (d *detectorImpl) Detect(ctx DetectionContext, enhancedDeployment booleanpo
 		if compiled.Policy().GetDisabled() {
 			return nil
 		}
+		log.Debugf("detectorImpl: Detect: checking policy %s for deployment %s", compiled.Policy().GetName(), enhancedDeployment.Deployment.GetName())
+
 		for _, filter := range filters {
 			if !filter(compiled.Policy()) {
+				log.Debugf("detectorImpl: Detect: policy %s for deployment %s - exiting due to filter", compiled.Policy().GetName(), enhancedDeployment.Deployment.GetName())
 				return nil
 			}
 		}
 		// Check predicate on deployment.
 		if !compiled.AppliesTo(enhancedDeployment.Deployment) {
+			log.Debugf("detectorImpl: Detect: policy %s for deployment %s - policy does not apply", compiled.Policy().GetName(), enhancedDeployment.Deployment.GetName())
 			return nil
 		}
 
