@@ -294,7 +294,7 @@ Then go to https://localhost:8000/ in your web browser.
 
 - **Pull request guidelines**: [contributing.md](./.github/contributing.md)
 
-- **Go coding style guide**: [go-coding-style.md](./.github/go-coding-style.md) 
+- **Go coding style guide**: [go-coding-style.md](./.github/go-coding-style.md)
 
 ### Quickstart
 

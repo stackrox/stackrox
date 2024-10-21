@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
@@ -136,8 +137,14 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 		return nil
 	}
 
-	if h.configHandler.GetHelmManagedConfig() != nil && !h.configHandler.GetHelmManagedConfig().GetNotHelmManaged() {
-		upgradesNotSupportedErr := errors.New("Cluster is Helm-managed and does not support auto-upgrades")
+	if h.configHandler.GetHelmManagedConfig() != nil {
+		var upgradesNotSupportedErr error
+		switch h.configHandler.GetHelmManagedConfig().GetManagedBy() {
+		case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
+			upgradesNotSupportedErr = errors.New("Cluster is Helm-managed and does not support auto-upgrades")
+		case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
+			upgradesNotSupportedErr = errors.New("Cluster is Operator-managed and does not support auto-upgrades")
+		}
 		go h.rejectUpgradeRequest(trigger, upgradesNotSupportedErr)
 		go h.deleteUpgraderDeployments()
 		h.currentProcess = nil
