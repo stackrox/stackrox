@@ -30,9 +30,9 @@ import useLocalStorage from 'hooks/useLocalStorage';
 import { SearchFilter } from 'types/search';
 import { vulnerabilityNamespaceViewPath } from 'routePaths';
 import {
-    getDefaultWorkloadSortOption,
+    getWorkloadCveOverviewDefaultSortOption,
     getDefaultZeroCveSortOption,
-    getWorkloadSortFields,
+    getWorkloadCveOverviewSortFields,
     syncSeveritySortOption,
 } from 'Containers/Vulnerabilities/utils/sortUtils';
 import useURLSort from 'hooks/useURLSort';
@@ -197,7 +197,7 @@ function WorkloadCvesOverviewPage() {
         : getZeroCveScopedQueryString(querySearchFilter);
 
     const getDefaultSortOption = isViewingWithCves
-        ? getDefaultWorkloadSortOption
+        ? getWorkloadCveOverviewDefaultSortOption
         : getDefaultZeroCveSortOption;
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
@@ -238,7 +238,7 @@ function WorkloadCvesOverviewPage() {
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
     const sort = useURLSort({
-        sortFields: getWorkloadSortFields(activeEntityTabKey),
+        sortFields: getWorkloadCveOverviewSortFields(activeEntityTabKey),
         defaultSortOption: getDefaultSortOption(activeEntityTabKey, searchFilter),
         onSort: () => pagination.setPage(1),
     });
@@ -294,7 +294,7 @@ function WorkloadCvesOverviewPage() {
         // Reset all filters, sorting, and pagination and apply to the current history entry
         setActiveEntityTabKey('CVE');
         setSearchFilter({});
-        sort.setSortOption(getDefaultWorkloadSortOption('CVE'));
+        sort.setSortOption(getWorkloadCveOverviewDefaultSortOption('CVE'));
         pagination.setPage(1);
         setObservedCveMode('WITH_CVES');
 
