@@ -454,7 +454,7 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 			ID:                                "",
 			Version:                           "2",
 			OperatorInstalled:                 pointers.Bool(true),
-			OperatorStatus:                    Pointer(storage.COStatus_HEALTHY),
+			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterID:                         testconsts.Cluster1,
 			ClusterName:                       "cluster1",
 			Type:                              1,
@@ -464,7 +464,7 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 			ID:                                "",
 			ClusterID:                         testconsts.Cluster2,
 			Version:                           "2",
-			OperatorStatus:                    Pointer(storage.COStatus_HEALTHY),
+			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterName:                       "cluster2",
 			Type:                              2,
 			StatusProviderMetadataClusterType: 2,
@@ -474,7 +474,7 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 			ID:                                "",
 			ClusterID:                         testconsts.Cluster3,
 			Version:                           "2",
-			OperatorStatus:                    Pointer(storage.COStatus_HEALTHY),
+			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterName:                       "cluster3",
 			Type:                              5,
 			StatusProviderMetadataClusterType: 5,
@@ -483,8 +483,4 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 	}
 
 	return integrations
-}
-
-func Pointer[T any](d T) *T {
-	return &d
 }
