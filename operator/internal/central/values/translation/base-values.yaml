@@ -43,7 +43,5 @@ scannerV4:
       generate: false
     serviceTLS:
       generate: false
-configAsCode:
-  installCRDs: false
 allowNonstandardReleaseName: true
 allowNonstandardNamespace: true

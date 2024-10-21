@@ -1,4 +1,0 @@
-{{- include "srox.init" . -}}
-{{- if ._rox.configAsCode.installCRDs }}
-{{ .Files.Get "internal/config.stackrox.io_securitypolicies.yaml" }}
-{{- end }}

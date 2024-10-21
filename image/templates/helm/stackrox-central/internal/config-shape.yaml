@@ -172,7 +172,6 @@ allowUnsupportedHelmVersion: null # bool
 enableOpenShiftMonitoring: null # bool
 configAsCode:
   enabled: null # bool
-  installCRDs: null # bool
 monitoring:
   openshift:
     enabled: null # bool

@@ -540,7 +540,6 @@ central:
 #
 #configAsCode:
 #  enabled: true
-#  installCRDs: true
 #
 ## EXPERT SETTINGS. You usually do not need to touch those.
 #
