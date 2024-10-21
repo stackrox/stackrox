@@ -304,7 +304,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationsV
 	for _, tc := range testCases {
 		clusterIntegrations, err := s.dataStore.GetComplianceIntegrationsView(s.testContexts[tc.scopeKey], tc.query)
 		s.Require().NoError(err)
-		s.Require().Equal(tc.expectedResult, clusterIntegrations)
+		protoassert.SlicesEqual(tc.expectedResult, clusterIntegrations)
 	}
 }
 
