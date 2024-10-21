@@ -63,8 +63,8 @@ func TestProcessor_LoopDoesNothingIfAllSucceed(t *testing.T) {
 	loop := notifier.NewLoop(ns, time.Hour)
 
 	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
-	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
-	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(4)
+	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(3)
+	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(3)
 
 	processor.UpdateNotifier(ctx, mockAlertNotifier)
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
@@ -116,8 +116,8 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	loop := notifier.NewLoop(ns, time.Hour)
 
 	// Add the notifiers to the processor. (Called once on insert, and once for each alert processed)
-	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(4)
-	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(4)
+	mockAlertNotifier.EXPECT().ProtoNotifier().Return(alertNotfierProto).Times(3)
+	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto).Times(3)
 
 	processor.UpdateNotifier(ctx, mockAlertNotifier)
 	processor.UpdateNotifier(ctx, mockResolvableNotifier)
@@ -149,8 +149,6 @@ func TestProcessor_LoopHandlesFailures(t *testing.T) {
 	// Retry previous failures. (All of the calls)
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), activeAlert).Return(nil)
 	mockResolvableNotifier.EXPECT().AlertNotify(ctx, activeAlert).Return(nil)
-
-	mockResolvableNotifier.EXPECT().ProtoNotifier().Return(resolvableAlertNotfierProto)
 
 	mockAlertNotifier.EXPECT().AlertNotify(gomock.Any(), attemptedAlert).Return(nil)
 	mockResolvableNotifier.EXPECT().AlertNotify(ctx, attemptedAlert).Return(nil)
