@@ -314,6 +314,10 @@ defaults:
         tag: [< required "" .ScannerV4ImageTag >]
     exposeMonitoring: false
 
+  configAsCode:
+    enabled: true
+    installCRDs: true
+
   network:
     enableNetworkPolicies: true
 
