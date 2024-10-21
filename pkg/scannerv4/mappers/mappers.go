@@ -326,12 +326,16 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		// Find the related NVD vuln for this vulnerability name, let it be empty if no
 		// NVD vuln for that name was found.
 		var nvdVuln nvdschema.CVEAPIJSON20CVEItem
+		fmt.Println("Output: >>>>")
+		fmt.Println(v)
 		if nvdCVEs, ok := nvdVulns[v.ID]; ok {
 			if v, ok := nvdCVEs[name]; ok {
+				fmt.Println(v)
 				nvdVuln = *v
 			} else {
 				// Pick the first one as a fallback.
 				for _, v := range nvdCVEs {
+					fmt.Println(v)
 					nvdVuln = *v
 					break
 				}
@@ -791,7 +795,6 @@ func sourceFromLinks(links string) v4.VulnerabilityReport_Vulnerability_CVSS_Sou
 // nvdCVSS returns cvssValues based on the given vulnerability and the associated NVD item.
 func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	fmt.Println("nvd Vuln: >>>>")
-	fmt.Println(v)
 	// Sanity check the NVD data.
 	if v.Metrics == nil || (v.Metrics.CvssMetricV31 == nil && v.Metrics.CvssMetricV30 == nil && v.Metrics.CvssMetricV2 == nil) {
 		return nil, errors.New("no NVD CVSS metrics")
@@ -803,23 +806,23 @@ func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerab
 	}
 
 	if len(v.Metrics.CvssMetricV30) > 0 {
-		fmt.Println(v.Metrics.CvssMetricV30[0])
 		if cvssv30 := v.Metrics.CvssMetricV30[0]; cvssv30 != nil && cvssv30.CvssData != nil {
 			values.v3Score = float32(cvssv30.CvssData.BaseScore)
+			fmt.Println(cvssv30.CvssData.BaseScore)
 			values.v3Vector = cvssv30.CvssData.VectorString
 		}
 	}
 	// If there is both CVSS 3.0 and 3.1 data, use 3.1.
 	if len(v.Metrics.CvssMetricV31) > 0 {
-		fmt.Println(v.Metrics.CvssMetricV31[0])
 		if cvssv31 := v.Metrics.CvssMetricV31[0]; cvssv31 != nil && cvssv31.CvssData != nil {
+			fmt.Println(cvssv31.CvssData.BaseScore)
 			values.v3Score = float32(cvssv31.CvssData.BaseScore)
 			values.v3Vector = cvssv31.CvssData.VectorString
 		}
 	}
 	if len(v.Metrics.CvssMetricV2) > 0 {
-		fmt.Println(v.Metrics.CvssMetricV2[0])
 		if cvssv2 := v.Metrics.CvssMetricV2[0]; cvssv2 != nil && cvssv2.CvssData != nil {
+			fmt.Println(cvssv2.CvssData.BaseScore)
 			values.v2Score = float32(cvssv2.CvssData.BaseScore)
 			values.v2Vector = cvssv2.CvssData.VectorString
 		}
