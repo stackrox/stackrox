@@ -16,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-const batchSize = 10
+const batchSize = 5000
 
 var (
 	log = logging.LoggerForModule()
@@ -104,7 +104,7 @@ func (pr *platformReprocessorImpl) deploymentsNeedReprocessing() (bool, error) {
 
 func (pr *platformReprocessorImpl) reprocessAlerts() error {
 	if pr.stopSignal.IsDone() {
-		log.Debug("Stop called, stopping platform reprocessor")
+		log.Info("Stop called, stopping platform reprocessor")
 		return nil
 	}
 	needReprocessing, err := pr.alertsNeedReprocessing()
@@ -160,7 +160,7 @@ func (pr *platformReprocessorImpl) reprocessDeployments() error {
 		return errors.Wrap(err, "Error determining if deployments need reporcessing")
 	}
 	if !needReprocessing {
-		log.Info("Deployments up to date with platform rules, skipping reprocessing")
+		log.Debug("Deployments up to date with platform rules, skipping reprocessing")
 		return nil
 	}
 
