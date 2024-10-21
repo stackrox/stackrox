@@ -10,6 +10,7 @@ import (
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -43,8 +44,8 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 			view: &datastore.IntegrationDetails{
 				ID:                                testID,
 				Version:                           "22",
-				OperatorInstalled:                 true,
-				OperatorStatus:                    storage.COStatus_HEALTHY,
+				OperatorInstalled:                 pointers.Bool(true),
+				OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 				ClusterID:                         fixtureconsts.Cluster1,
 				ClusterName:                       mockClusterName,
 				Type:                              storage.ClusterType_OPENSHIFT_CLUSTER,
@@ -76,8 +77,8 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 			view: &datastore.IntegrationDetails{
 				ID:                                testID,
 				Version:                           "22",
-				OperatorInstalled:                 true,
-				OperatorStatus:                    storage.COStatus_HEALTHY,
+				OperatorInstalled:                 pointers.Bool(true),
+				OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 				ClusterID:                         testconsts.Cluster1,
 				ClusterName:                       mockClusterName,
 				Type:                              storage.ClusterType_OPENSHIFT_CLUSTER,

@@ -24,3 +24,7 @@ func Int(i int) *int {
 func String(s string) *string {
 	return &s
 }
+
+func Pointer[T any](d T) *T {
+	return &d
+}
