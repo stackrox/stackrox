@@ -1445,9 +1445,10 @@ func Test_vulnerabilityName(t *testing.T) {
 			expected: "CVE-2023-47248",
 		},
 		"when rhel updater then RHEL over CVE": {
-			name:     "CVE-2023-25762",
-			links:    "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
-			expected: "CVE-2023-25762",
+			name:  "CVE-2023-25762",
+			links: "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
+			// TODO(ROX-26672): This should be CVE-2023-25762 once we stop showing RHSAs as the top-level vuln name.
+			expected: "RHSA-2023:1866",
 			updater:  "rhel-vex",
 		},
 		"when not rhel updater then CVE over RHEL": {
@@ -1464,7 +1465,8 @@ func Test_vulnerabilityName(t *testing.T) {
 			name:     "RHSA-2024:2941",
 			updater:  "rhel-container-updater",
 			links:    "https://access.redhat.com/errata/RHSA-2024:2941 https://access.redhat.com/security/cve/CVE-2024-29180",
-			expected: "CVE-2024-29180",
+			// TODO(ROX-26672): This should be CVE-2024-29180 once we stop showing RHSAs as the top-level vuln name.
+			expected: "RHSA-2024:2941",
 		},
 	}
 	for name, testcase := range testcases {
