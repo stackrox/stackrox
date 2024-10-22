@@ -370,6 +370,7 @@ export type AnalyticsEvent =
           event: typeof COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED;
           properties: {
               success: true | false;
+              errorMessage: string;
           };
       }
     | {

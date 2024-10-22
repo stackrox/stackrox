@@ -73,6 +73,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                 event: COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
                 properties: {
                     success: true,
+                    errorMessage: '',
                 },
             });
             history.push(complianceEnhancedSchedulesPath);
@@ -81,6 +82,7 @@ function ScanConfigWizardForm({ initialFormValues }: ScanConfigWizardFormProps):
                 event: COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED,
                 properties: {
                     success: false,
+                    errorMessage: getAxiosErrorMessage(error),
                 },
             });
             setCreateScanConfigError(getAxiosErrorMessage(error));
