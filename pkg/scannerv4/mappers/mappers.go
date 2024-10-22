@@ -596,6 +596,9 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 			m := make(map[string]*nvdschema.CVEAPIJSON20CVEItem)
 			for idx := range list {
 				vulnData := list[idx]
+				// Print vulnData basic information
+				fmt.Printf("CVE ID: %s, Last Modified: %s, Published: %s\n",
+					vulnData.ID, vulnData.LastModified, vulnData.Published)
 				if vulnData.Metrics != nil {
 					printCveMetrics(vulnData.Metrics)
 				}
