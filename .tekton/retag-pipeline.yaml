@@ -99,7 +99,6 @@ spec:
   - name: git-auth
 
   tasks:
-  # TODO(ROX-24468): verify source and dependencies provenance
 
   - name: clone-repository
     params:
