@@ -55,10 +55,10 @@ spec:
     description: Suffix that's appended to generated image tags.
     name: image-tag-suffix
     type: string
-  - description: Input Image Repository
+  - description: Input Image Repository.
     name: input-image-repo
     type: string
-  - description: Makefile target to execute in order to determine input image tag.
+  - description: Makefile target to execute in order to determine the input image's tag.
     name: input-image-tag-makefile-target
     type: string
 
