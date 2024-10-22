@@ -61,6 +61,11 @@ spec:
   - description: Makefile target to execute in order to determine input image tag.
     name: input-image-tag-makefile-target
     type: string
+  - default: "false"
+    # TODO(ROX-26721): delete this param after SCANNER_VERSION is updated to 2.34.x-103-g8c2cc6eb26 or later.
+    description: Controls whether a failure during copying image with sources is ok to ignore.
+    name: tolerate-sources-image-copy-failure
+    type: string
   # TODO(ROX-24468): Figure if image-expires-after is copied.
 
   # Common params for all retagging pipelines.
@@ -160,5 +165,7 @@ spec:
       value: $(params.output-image-repo)
     - name: OUTPUT_IMAGE_TAG
       value: $(tasks.determine-output-image-tag.results.IMAGE_TAG)
+    - name: TOLERATE_SOURCES_IMAGE_COPY_FAILURE
+      value: $(params.tolerate-sources-image-copy-failure)
     taskRef:
       name: retag-image
