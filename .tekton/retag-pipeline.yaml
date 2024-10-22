@@ -61,7 +61,6 @@ spec:
   - description: Makefile target to execute in order to determine input image tag.
     name: input-image-tag-makefile-target
     type: string
-  # TODO(ROX-24468): Figure if image-expires-after is copied.
 
   # Common params for all retagging pipelines.
   - default: "false"
