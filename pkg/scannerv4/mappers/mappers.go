@@ -91,8 +91,6 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	}
 	filterPackages(r.Packages, r.Environments, r.PackageVulnerabilities)
 	nvdVulns, err := nvdVulnerabilities(r.Enrichments)
-	fmt.Println("nvd enrichments: >>>>")
-	fmt.Println(r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
 	}
@@ -591,17 +589,23 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 	// Returns a map of maps keyed by CVE ID due to enrichment matching on multiple
 	// vulnerability fields, potentially including unrelated records--we assume the
 	// caller will know how to filter what is relevant.
+	fmt.Println("nvd enrichments: >>>>")
 	ret := make(map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem)
 	for ccVulnID, list := range items {
 		if len(list) > 0 {
 			m := make(map[string]*nvdschema.CVEAPIJSON20CVEItem)
 			for idx := range list {
 				vulnData := list[idx]
-				m[vulnData.ID] = &vulnData
+				fmt.Printf("%+v\n", vulnData)
+
+				// Copy the value of vulnData to avoid pointer reuse issue
+				vulnCopy := vulnData
+				m[vulnData.ID] = &vulnCopy
 			}
 			ret[ccVulnID] = m
 		}
 	}
+
 	return ret, nil
 }
 
