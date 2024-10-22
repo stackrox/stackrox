@@ -450,13 +450,13 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 func (m *networkFlowManager) enrichAndSend() {
 	currentConns, currentEndpoints := m.currentEnrichedConnsAndEndpoints()
 
-	log.Infof("enrichAndSend: m.enrichedConnsLastSentState: %+v", m.enrichedConnsLastSentState)
-	log.Infof("enrichAndSend: m.enrichedEndpointsLastSentState: %+v", m.enrichedEndpointsLastSentState)
+	log.Debugf("enrichAndSend: m.enrichedConnsLastSentState: %+v", m.enrichedConnsLastSentState)
+	log.Debugf("enrichAndSend: m.enrichedEndpointsLastSentState: %+v", m.enrichedEndpointsLastSentState)
 
 	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
 	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
-	log.Infof("enrichAndSend: updatedConns: %+v", updatedConns)
-	log.Infof("enrichAndSend: updatedEndpoints: %+v", updatedEndpoints)
+	log.Debugf("enrichAndSend: updatedConns: %+v", updatedConns)
+	log.Debugf("enrichAndSend: updatedEndpoints: %+v", updatedEndpoints)
 
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
 		return
@@ -479,18 +479,18 @@ func (m *networkFlowManager) enrichAndSend() {
 		m.policyDetector.ProcessNetworkFlow(detectionContext, flow)
 	}
 
-	log.Infof("Sending flow update to central: %v", protoToSend)
+	log.Debugf("Sending flow update to central: %v", protoToSend)
 	if m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
 	}) {
-		log.Info("Flow has been enqueued in sensorUpdates")
+		log.Debug("Flow has been enqueued in sensorUpdates")
 		m.updateConnectionStates(currentConns, currentEndpoints)
 		metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
 		metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
 	} else {
-		log.Info("Flow has NOT been enqueued in sensorUpdates")
+		log.Debug("Flow has NOT been enqueued in sensorUpdates")
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 }
@@ -523,15 +523,15 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 
-	log.Infof("enrichConnection: conn=%+v, status=%+v", *conn, *status)
+	log.Debugf("enrichConnection: conn=%+v, status=%+v", *conn, *status)
 
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
-	log.Infof("enrichConnection: container %s found?=%t", conn.containerID, ok)
+	log.Debugf("enrichConnection: container %s found?=%t", conn.containerID, ok)
 	if !ok {
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
-		log.Infof("enrichConnection: timeElapsedSinceFirstSeen=%s", timeElapsedSinceFirstSeen.String())
+		log.Debugf("enrichConnection: timeElapsedSinceFirstSeen=%s", timeElapsedSinceFirstSeen.String())
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
-			log.Infof("enrichConnection: timeElapsedSinceFirstSeen is longer than maxContainerResolutionWaitPeriod=%s", maxContainerResolutionWaitPeriod.String())
+			log.Debugf("enrichConnection: timeElapsedSinceFirstSeen is longer than maxContainerResolutionWaitPeriod=%s", maxContainerResolutionWaitPeriod.String())
 			if activeConn, found := m.activeConnections[*conn]; found {
 				enrichedConnections[*activeConn] = timestamp.Now()
 				log.Debugf("Expiring connection %q. Reason: more time has elapsed than %s",
@@ -857,7 +857,7 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConn
 	for i, conn := range allHostConns {
 		concurrency.WithLock(&conn.mutex, func() {
 			for c, status := range conn.connections {
-				log.Infof("currentEnrichedConnsAndEndpoints: allHostConns: [%d]: host=%s conn=%+v, status=%+v",
+				log.Debugf("currentEnrichedConnsAndEndpoints: allHostConns: [%d]: host=%s conn=%+v, status=%+v",
 					i, conn.hostname, c, *status)
 
 			}
@@ -982,13 +982,9 @@ func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo
 		}
 		m.connectionsByHost[hostname] = conns
 	}
-	for host, connections := range m.connectionsByHost {
+	for _, connections := range m.connectionsByHost {
 		if connections.connections == nil {
-			log.Infof("RegisterCollector: connections.connections for hostname %s is nil", host)
 			continue
-		}
-		for conn, status := range connections.connections {
-			log.Infof("RegisterCollector: connection for host [%s]: %s, status: %v", host, conn.String(), status)
 		}
 	}
 
@@ -1024,7 +1020,6 @@ func (m *networkFlowManager) deleteHostConnections(hostname string) {
 		return
 	}
 	flowMetrics.HostConnectionsRemoved.Add(float64(len(conns.connections)))
-	log.Infof("deleteHostConnections: deleting connection for host: %s", hostname)
 	delete(m.connectionsByHost, hostname)
 }
 

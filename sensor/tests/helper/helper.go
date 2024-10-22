@@ -927,7 +927,7 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 		c.fakeCentral.KillSwitch.Done()
 		centralHTTPServer.Close()
 	}
-	t.Logf("Running starting Sensor")
+	t.Logf("Asynchronously starting Sensor...")
 	go s.Start()
 	t.Logf("Waiting for Central connection to be established")
 	c.fakeCentral.ConnectionStarted.Wait()
