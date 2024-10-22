@@ -63,10 +63,13 @@ jobs:
         env:
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
+          set -x
           set -uo pipefail
           release="${{github.event.inputs.version}}"
           patch="${release%%*.}"
           named_release_patch="${release}"
+          pwd
+          ls -la
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             check-jira-issues \
             "${{needs.properties.outputs.jira-projects}}" \
