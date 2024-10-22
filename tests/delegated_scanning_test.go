@@ -942,12 +942,7 @@ func (ts *DelegatedScanningSuite) updateConfigWithRetries(ctx context.Context, c
 
 	retryFunc := func() error {
 		_, err := service.UpdateConfig(ctx, cfg)
-
-		if err != nil && strings.Contains(err.Error(), "connection refused") {
-			err = retry.MakeRetryable(err)
-		}
-
-		return err
+		return ts.retryConnectionRefused(err)
 	}
 
 	return ts.withRetries(retryFunc, "Connection refused by Central attempting to update the delegated registry config")
@@ -1063,12 +1058,7 @@ func (ts *DelegatedScanningSuite) createImageIntegration(dockerConfig *storage.D
 
 	retryFunc := func() error {
 		rii, err = iiService.PostImageIntegration(ctx, ii)
-
-		if err != nil && strings.Contains(err.Error(), "connection refused") {
-			err = retry.MakeRetryable(err)
-		}
-
-		return err
+		return ts.retryConnectionRefused(err)
 	}
 
 	err = ts.withRetries(retryFunc, "Connection refused by Central attempting to create image integration")
@@ -1113,6 +1103,8 @@ func (ts *DelegatedScanningSuite) waitForHealthyCentralSensorConn() {
 	waitUntilCentralSensorConnectionIs(t, ctx, storage.ClusterHealthStatus_HEALTHY)
 }
 
+// getSensorPodWithRetries will retry calls to getSensorPod when more than one pod
+// is detected.
 func (ts *DelegatedScanningSuite) getSensorPodWithRetries(ctx context.Context, namespace string) (*coreV1.Pod, error) {
 	var err error
 	var pod *coreV1.Pod
@@ -1147,4 +1139,18 @@ func (ts *DelegatedScanningSuite) withRetries(retryFunc func() error, statusMsg 
 		retry.WithExponentialBackoff(),
 		retry.OnlyRetryableErrors(),
 	)
+}
+
+// retryConnectionRefused will return err wrapped in a retryable if it is
+// a connection refused error.
+func (ts *DelegatedScanningSuite) retryConnectionRefused(err error) error {
+	if err == nil {
+		return err
+	}
+
+	if strings.Contains(err.Error(), "connection refused") {
+		return retry.MakeRetryable(err)
+	}
+
+	return err
 }
