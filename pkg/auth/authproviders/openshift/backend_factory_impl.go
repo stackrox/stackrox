@@ -39,6 +39,8 @@ func (f *factory) CreateBackend(_ context.Context, id string, _ []string, config
 	return f.newBackend(id, f.callbackURLPath, config)
 }
 
+func (f *factory) CleanupBackend(_ string) {}
+
 func (f *factory) ProcessHTTPRequest(_ http.ResponseWriter, r *http.Request) (providerID string, clientState string, err error) {
 	if r.URL.Path != f.callbackURLPath {
 		return "", "", httputil.NewError(http.StatusNotFound, "Not Found")
