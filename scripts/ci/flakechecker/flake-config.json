@@ -1,0 +1,58 @@
+[
+  {
+    "_comment": "Flake for compatibility tests with Central 4.4",
+    "match_job_name": "pull-ci-stackrox-stackrox-master-gke-version-compatibility-tests",
+    "ratio_job_name": "branch-ci-stackrox-stackrox-master-merge-gke-version-compatibility-tests",
+    "test_name_regex": ".*Central-v400\\.4\\.\\d+_Sensor-v.*",
+    "classname": "AutocompleteTest",
+    "ratio_threshold": 5
+  },
+  {
+    "_comment": "Flake for compatibility tests with Central 4.4",
+    "match_job_name": "pull-ci-stackrox-stackrox-master-gke-version-compatibility-tests",
+    "ratio_job_name": "branch-ci-stackrox-stackrox-master-merge-gke-version-compatibility-tests",
+    "test_name_regex": ".*Central-v400\\.4\\.\\d+_Sensor-v.*",
+    "classname": "SummaryTest",
+    "ratio_threshold": 15
+  },
+  {
+    "_comment": "Flake for compatibility tests with Central 4.4",
+    "match_job_name": "pull-ci-stackrox-stackrox-master-gke-version-compatibility-tests",
+    "ratio_job_name": "branch-ci-stackrox-stackrox-master-merge-gke-version-compatibility-tests",
+    "test_name_regex": "central: 400\\.4\\.\\d+, sensor: .*",
+    "classname": "CentralSensorVersionCompatibility",
+    "ratio_threshold": 15
+  },
+  {
+    "_comment": "Flake for compatibility tests with Central 4.5",
+    "match_job_name": "pull-ci-stackrox-stackrox-master-gke-version-compatibility-tests",
+    "ratio_job_name": "branch-ci-stackrox-stackrox-master-merge-gke-version-compatibility-tests",
+    "test_name_regex": ".*Central-v400\\.5\\.\\d+_Sensor-v.*",
+    "classname": "AutocompleteTest",
+    "ratio_threshold": 5
+  },
+  {
+    "_comment": "Flake for compatibility tests with Central 4.5",
+    "match_job_name": "pull-ci-stackrox-stackrox-master-gke-version-compatibility-tests",
+    "ratio_job_name": "branch-ci-stackrox-stackrox-master-merge-gke-version-compatibility-tests",
+    "test_name_regex": ".*Central-v400\\.5\\.\\d+_Sensor-v.*",
+    "classname": "SummaryTest",
+    "ratio_threshold": 15
+  },
+  {
+    "_comment": "Flake for compatibility tests with Central 4.5",
+    "match_job_name": "pull-ci-stackrox-stackrox-master-gke-version-compatibility-tests",
+    "ratio_job_name": "branch-ci-stackrox-stackrox-master-merge-gke-version-compatibility-tests",
+    "test_name_regex": "central: 400\\.5\\.\\d+, sensor: .*",
+    "classname": "CentralSensorVersionCompatibility",
+    "ratio_threshold": 15
+  },
+  {
+    "_comment": "Flake for UI E2E",
+    "match_job_name": "pull-ci-stackrox-stackrox-master-gke-ui-e2e-tests",
+    "ratio_job_name": "branch-ci-stackrox-stackrox-master-merge-gke-ui-e2e-tests",
+    "test_name_regex": "clicking the \"CIS Standard Across Clusters\" widget's \"failing controls\" link should take you to the controls list and filter by failing controls",
+    "classname": "Configuration Management Dashboard clicking the \"CIS Standard Across Clusters\" widget's \"failing controls\" link should take you to the controls list and filter by failing controls",
+    "ratio_threshold": 5
+  }
+]
