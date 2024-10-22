@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Full version A.B.C
+        description: Full version X.Y.Z
         required: true
         default: 1.0.0
         type: string
