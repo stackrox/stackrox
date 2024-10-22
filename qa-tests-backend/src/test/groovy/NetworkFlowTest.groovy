@@ -254,6 +254,9 @@ class NetworkFlowTest extends BaseSpecification {
         String targetUid = deployments.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
         String sourceUid = deployments.find { it.name == SINGLECONNECTIONSOURCE }?.deploymentUid
+        log.info "${targetUid}"
+        log.info "${sourceUid}"
+        sleep 100000
         assert sourceUid != null
 
         when:
@@ -475,11 +478,11 @@ class NetworkFlowTest extends BaseSpecification {
         String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
         assert deploymentUid != null
 
-        expect:
-        "Check for edge in network graph"
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
+
+        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA)
     }
 
     @Tag("NetworkFlowVisualization")
