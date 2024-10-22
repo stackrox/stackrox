@@ -744,11 +744,11 @@ jobs:
             > results.sarif
           cat results.sarif
 
-      - name: Upload roxctl scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          category: ${{ matrix.image }}
-          sarif_file: results.sarif
+      # - name: Upload roxctl scan results to GitHub Security tab
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     category: ${{ matrix.image }}
+      #     sarif_file: results.sarif
 
   slack-on-build-failure:
     env:
