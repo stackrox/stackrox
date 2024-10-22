@@ -222,7 +222,7 @@ func runRepositoryScanner(ctx context.Context, cfg *NodeIndexerConfig, l *clairc
 }
 
 func constructLayer(ctx context.Context, digest string, hostPath string) (*claircore.Layer, error) {
-	log.Infof("Realizing mount path: %s", hostPath)
+	log.Debugf("Realizing mount path: %s", hostPath)
 	desc := &claircore.LayerDescription{
 		Digest:    digest,
 		URI:       hostPath,
