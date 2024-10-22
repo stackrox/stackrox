@@ -59,6 +59,12 @@ jobs:
     needs: [properties]
     runs-on: ubuntu-latest
     steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{needs.variables.outputs.branch}}
+          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+
       - name: Query JIRA
         env:
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
