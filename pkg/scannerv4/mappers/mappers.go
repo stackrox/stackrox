@@ -596,7 +596,9 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 			m := make(map[string]*nvdschema.CVEAPIJSON20CVEItem)
 			for idx := range list {
 				vulnData := list[idx]
-				fmt.Printf("%+v\n", vulnData)
+				if vulnData.Metrics != nil {
+					printCveMetrics(vulnData.Metrics)
+				}
 
 				// Copy the value of vulnData to avoid pointer reuse issue
 				vulnCopy := vulnData
@@ -607,6 +609,54 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 	}
 
 	return ret, nil
+}
+
+func printCveMetrics(metrics *nvdschema.CVEAPIJSON20CVEItemMetrics) {
+	if metrics == nil {
+		fmt.Println("No CVE Metrics available")
+		return
+	}
+
+	fmt.Println("=== CVE Metrics ===")
+	// Print CVSS v2 Metrics
+	if len(metrics.CvssMetricV2) > 0 {
+		fmt.Println("-- CVSS v2 Metrics --")
+		for _, cvssv2 := range metrics.CvssMetricV2 {
+			if cvssv2.CvssData != nil {
+				fmt.Printf("Base Score: %.1f, Vector: %s, Severity: %s\n",
+					cvssv2.CvssData.BaseScore, cvssv2.CvssData.VectorString, cvssv2.BaseSeverity)
+			}
+			fmt.Printf("Exploitability Score: %.1f, Impact Score: %.1f\n",
+				cvssv2.ExploitabilityScore, cvssv2.ImpactScore)
+		}
+	}
+
+	// Print CVSS v3.0 Metrics
+	if len(metrics.CvssMetricV30) > 0 {
+		fmt.Println("-- CVSS v3.0 Metrics --")
+		for _, cvssv30 := range metrics.CvssMetricV30 {
+			if cvssv30.CvssData != nil {
+				fmt.Printf("Base Score: %.1f, Vector: %s, Severity: %s\n",
+					cvssv30.CvssData.BaseScore, cvssv30.CvssData.VectorString, cvssv30.CvssData.BaseSeverity)
+			}
+			fmt.Printf("Exploitability Score: %.1f, Impact Score: %.1f\n",
+				cvssv30.ExploitabilityScore, cvssv30.ImpactScore)
+		}
+	}
+
+	// Print CVSS v3.1 Metrics
+	if len(metrics.CvssMetricV31) > 0 {
+		fmt.Println("-- CVSS v3.1 Metrics --")
+		for _, cvssv31 := range metrics.CvssMetricV31 {
+			if cvssv31.CvssData != nil {
+				fmt.Printf("Base Score: %.1f, Vector: %s, Severity: %s\n",
+					cvssv31.CvssData.BaseScore, cvssv31.CvssData.VectorString, cvssv31.CvssData.BaseSeverity)
+			}
+			fmt.Printf("Exploitability Score: %.1f, Impact Score: %.1f\n",
+				cvssv31.ExploitabilityScore, cvssv31.ImpactScore)
+		}
+	}
+	fmt.Println("====================")
 }
 
 // filterPackages filters out packages from the given map.
