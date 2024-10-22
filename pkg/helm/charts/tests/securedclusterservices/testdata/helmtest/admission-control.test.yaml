@@ -131,3 +131,33 @@ tests:
       expect: |
         .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
         .deployments["admission-control"].spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
+
+- name: "Admission Controller namespace selector"
+  tests:
+    - name: "default namespace selector"
+      values:
+        admissionControl:
+          listenOnCreates: true
+          listenOnEvents: false
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[].namespaceSelector.matchExpressions | assertThat(length == 1)
+    - name: "override namespace selector"
+      values:
+        admissionControl:
+          listenOnCreates: true
+          listenOnEvents: false
+          namespaceSelector:
+            matchExpressions:
+            - key: namespace.metadata.stackrox.io/name
+              operator: NotIn
+              values:
+                - default
+            - key: namespace.metadata.stackrox.io/name
+              operator: NotIn
+              values:
+                - stackrox2
+                - kube-system
+                - kube-public
+                - istio-system
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[].namespaceSelector.matchExpressions | assertThat(length == 2)
