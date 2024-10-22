@@ -59,12 +59,11 @@ spec:
         echo "Copying image from ${input_url} ..."
         echo "... to ${output_url} ..."
 
-        skopeo copy \
-          --retry-times="${SKOPEO_RETRIES}" \
-          --all \
-          --preserve-digests \
-          "docker://${input_url}" \
-          "docker://${output_url}"
+        # cosign copies not just cosign artifacts but also images and it understands and copies index images.
+        # --force argument is needed to prevent the command failing when it runs into (partial) previous copies with
+        # errors like the following.
+        #   Error: image "quay.io/rhacs-eng/collector:sha256-4b509fdf27761150a5a5ce519f087bc6d69af9d886a63f67f70b1e293643ea19" already exists. Use `-f` to overwrite
+        cosign copy --force "${input_url}" "${output_url}"
       }
 
       function get_digest() {
