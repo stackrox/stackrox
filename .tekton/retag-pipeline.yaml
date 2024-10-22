@@ -81,7 +81,6 @@ spec:
     type: string
 
   results:
-  # TODO(ROX-24468): verify this is sufficient for creating a new Snapshot
   - description: ""
     name: IMAGE_URL
     value: $(tasks.retag-image.results.IMAGE_URL)
