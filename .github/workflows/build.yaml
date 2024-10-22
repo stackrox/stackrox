@@ -727,10 +727,18 @@ jobs:
           endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Install roxctl
-        uses: stackrox/roxctl-installer-action@v1
-        with:
-          central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
-          central-token: ${{ env.ROX_API_TOKEN }}
+        run: |
+          # Use roxctl code from this branch
+          if [[ ! -f bin/linux_amd64/roxctl ]]; then
+            make cli
+          fi
+          make cli-install
+
+      # - name: Install roxctl
+      #   uses: stackrox/roxctl-installer-action@v1
+      #   with:
+      #     central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
+      #     central-token: ${{ env.ROX_API_TOKEN }}
 
       - name: Scan images for vulnerabilities
         run: |
