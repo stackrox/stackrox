@@ -12,10 +12,16 @@ on:
         required: true
         default: 1.0.0
         type: string
+      dry-run:
+        description: Dry-run
+        required: false
+        default: true
+        type: boolean
 
 env:
   main_branch: ${{github.event.repository.default_branch}}
   script_url: /repos/${{github.repository}}/contents/.github/workflows/scripts/common.sh?ref=${{ github.ref_name }}
+  DRY_RUN: ${{ fromJSON('["true", "false"]')[github.event.inputs.dry-run != 'true'] }}
   ACCEPT_RAW: "Accept: application/vnd.github.v3.raw"
   GH_TOKEN: ${{ github.token }}
   GH_NO_UPDATE_NOTIFIER: 1
@@ -25,6 +31,7 @@ jobs:
   properties:
     runs-on: ubuntu-latest
     outputs:
+      slack-channel: ${{ fromJSON(format('["{0}","{1}"]', steps.fetch.outputs.dry-slack-channel, steps.fetch.outputs.slack-channel))[github.event.inputs.dry-run != 'true'] }}
       jira-projects: ${{ steps.fetch.outputs.jira-projects }}
     steps:
       - name: Read workflow properties file
