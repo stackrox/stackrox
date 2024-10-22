@@ -371,7 +371,6 @@ func (pc *PolicyAsCodeSuite) TearDownSuite() {
 		})
 		pc.Require().NoError(err)
 	}
-	
 	// TODO: Remove finalizers if delete fails
 	pc.Require().NoError(pc.k8sClient.DeleteCollection(pc.ctx, metav1.DeleteOptions{}, metav1.ListOptions{
 		LabelSelector: "test=policy-as-code",
