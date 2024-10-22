@@ -62,8 +62,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
         with:
-          ref: ${{needs.variables.outputs.branch}}
-          token: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Query JIRA
         env:
