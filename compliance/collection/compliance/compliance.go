@@ -161,7 +161,6 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 
 func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCompliance {
 	nodeName := c.nodeNameProvider.GetNodeName()
-	log.Infof("Scanning node %q", nodeName)
 	msg, err := c.nodeScanner.ScanNode(ctx)
 	if err != nil {
 		log.Errorf("Error running node scan: %v", err)
@@ -175,8 +174,8 @@ func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCo
 }
 
 func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance {
-	log.Infof("Creating v4 Node Index Report")
 	nodeName := c.nodeNameProvider.GetNodeName()
+	log.Infof("Creating v4 Node Index report for node %s", nodeName)
 	cmetrics.ObserveIndexesTotal(nodeName)
 	startTime := time.Now()
 	report, err := c.nodeIndexer.IndexNode(ctx)
