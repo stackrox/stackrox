@@ -59,7 +59,7 @@ jobs:
         run: |
           release="${{github.event.inputs.version}}"
           named_release_patch="${release}"
-          patch="${release%%*.}"
+          patch="${release##*.}"
           release="${release%.*}"
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             check-jira-issues \
