@@ -72,8 +72,9 @@ jobs:
           set -x
           set -uo pipefail
           release="${{github.event.inputs.version}}"
-          patch="${release%%*.}"
           named_release_patch="${release}"
+          patch="${release%%*.}"
+          release="${release%.*}"
           pwd
           ls -la
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
@@ -88,6 +89,6 @@ jobs:
           grep -v '^set [\-eo]' "${script_url}" | bash -s -- \
             check-jira-issues \
             "${{needs.properties.outputs.jira-projects}}" \
-            "${release:-4.6.0}" \
+            "${release:-4.6}" \
             "${patch:-0}" \
             "${named_release_patch:-4.6.0}"
