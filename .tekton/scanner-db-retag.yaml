@@ -32,9 +32,6 @@ spec:
     value: quay.io/rhacs-eng/scanner-db
   - name: input-image-tag-makefile-target
     value: scanner-tag
-  - name: tolerate-sources-image-copy-failure
-    # TODO(ROX-26721): delete this param after SCANNER_VERSION is updated to 2.34.x-103-g8c2cc6eb26 or later.
-    value: "true"
 
   workspaces:
   - name: git-auth
