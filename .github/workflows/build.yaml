@@ -729,7 +729,14 @@ jobs:
       - name: Install roxctl
         run: |
           # Use roxctl code from this branch
-          roxctl --version || make cli
+          set +e
+          roxctl version || make cli || (
+            echo $PATH
+            for dir in ~/.local/bin /usr/local/bin /usr/local/go/bin ~/bin; do
+              cp bin/linux_amd64/roxctl "${dir}"/ || continue
+              roxctl version && break
+            done
+          )
 
       # - name: Install roxctl
       #   uses: stackrox/roxctl-installer-action@v1
