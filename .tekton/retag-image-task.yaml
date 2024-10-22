@@ -9,7 +9,7 @@ spec:
     Copies input image to the desired repo with the desired tag.
     Handles index images that reference per-arch images.
     TODO: Copies attached `cosign` and `oras` artifacts.
-    TODO: Copies source images that are logically linked to the input image digest.
+    Copies source images that are logically linked to the input image digest.
   params:
   - name: INPUT_IMAGE_REPO
     description: Repository of the input image
@@ -23,6 +23,14 @@ spec:
   - name: OUTPUT_IMAGE_TAG
     description: Repository of the output image
     type: string
+  - name: TOLERATE_SOURCES_IMAGE_COPY_FAILURE
+    # TODO(ROX-26721): delete this param after SCANNER_VERSION is updated to 2.34.x-103-g8c2cc6eb26 or later.
+    description: |
+      Controls whether a failure during copying image with sources is ok to ignore.
+      Exists merely for scanner V2 images until SCANNER_VERSION points at or after
+      https://github.com/stackrox/scanner/commit/8c2cc6eb2612da3402267a751f186b1c65703038
+    type: string
+    default: "false"
   results:
   - name: IMAGE_DIGEST
     description: Digest of the output image; should be the same as of the input one
@@ -84,6 +92,26 @@ spec:
 
       echo "Checking if the input image digest ${INPUT_DIGEST} is the same as the output image digest ${OUTPUT_DIGEST} ..."
       [[ "${INPUT_DIGEST}" == "${OUTPUT_DIGEST}" ]]
+
+      # This handles the image with source code, not to be confused with the input image itself.
+      echo "Copying the image with sources ..."
+      # Tag determination borrowed from
+      # https://github.com/konflux-ci/release-service-catalog/blob/92dabb8a31c42669ab9b6ccce831487727514059/tasks/push-snapshot/push-snapshot.yaml#L158
+      SOURCES_IMAGE_TAG="${INPUT_DIGEST/:/-}.src"
+      INPUT_SOURCES_IMAGE_URL="$(params.INPUT_IMAGE_REPO):${SOURCES_IMAGE_TAG}"
+      OUTPUT_SOURCES_IMAGE_URL="$(params.OUTPUT_IMAGE_REPO):${SOURCES_IMAGE_TAG}"
+      if [[ "${INPUT_SOURCES_IMAGE_URL}" == "${OUTPUT_SOURCES_IMAGE_URL}" ]]; then
+        # This is the case when we retag in the same repo.
+        echo "Repo of image with sources would not change and so the image does not need to be copied."
+      elif ! copy_image "${INPUT_SOURCES_IMAGE_URL}" "${OUTPUT_SOURCES_IMAGE_URL}"; then
+        # TODO(ROX-26721): simplify after SCANNER_VERSION is updated to 2.34.x-103-g8c2cc6eb26 or later.
+        if [[ "$(params.TOLERATE_SOURCES_IMAGE_COPY_FAILURE)" == "true" ]]; then
+          >&2 echo "Sources image copying failed but TOLERATE_SOURCES_IMAGE_COPY_FAILURE allows to proceed."
+        else
+          >&2 echo "Sources image copying failed."
+          exit 6
+        fi
+      fi
 
       echo "Done"
       
