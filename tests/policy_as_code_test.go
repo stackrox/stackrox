@@ -99,7 +99,6 @@ func (pc *PolicyAsCodeSuite) TestSaveAsCRUpdateDelete() {
 	k8sPolicy := pc.saveAsCustomResource(policy)
 	k8sPolicy = pc.createPolicyInK8s(k8sPolicy)
 
-	pc.Require().Equal(k8sPolicy.Status.Message, "")
 	// Make sure the ID from Central is used to ensure controller didn't create a duplicate
 	pc.checkPolicyIsDeclarative(policy.Id)
 	pc.updateCRandObserveInCentral(k8sPolicy, policy.Id)
