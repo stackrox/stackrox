@@ -730,7 +730,10 @@ jobs:
         run: |
           # Use roxctl code from this branch
           set +e
-          roxctl version || make cli || (
+          if [[ ! -f bin/linux_amd64/roxctl ]]; then
+            make cli
+          fi
+          roxctl version || (
             echo $PATH
             for dir in ~/.local/bin /usr/local/bin /usr/local/go/bin ~/bin; do
               cp bin/linux_amd64/roxctl "${dir}"/ || continue
