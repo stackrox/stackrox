@@ -86,7 +86,7 @@ func NewStoreWithMemory(numTicks uint16) *Store {
 func (e *Store) initMaps() {
 	e.historyMutex.Lock()
 	defer e.historyMutex.Unlock()
-	log.Info("Cleaning containerIDMap")
+	log.Debug("Cleaning containerIDMap")
 	e.ipMap = make(map[net.IPAddress]map[string]struct{})
 	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{})
 	e.containerIDMap = make(map[string]ContainerMetadata)
@@ -424,7 +424,7 @@ func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 func (e *Store) LookupByContainerID(containerID string) (ContainerMetadata, bool) {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
-	log.Infof("Searching for container %s in containerIDMap", containerID)
+	log.Debugf("Searching for container %s in containerIDMap", containerID)
 	metadata, ok := e.containerIDMap[containerID]
 	return metadata, ok
 }
