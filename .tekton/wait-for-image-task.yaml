@@ -9,15 +9,9 @@ spec:
   - name: IMAGE
     description: Image reference.
     type: string
-  workspaces:
-  - name: pull-secret
-    readOnly: true
   steps:
   - name: wait-for-image
     image: registry.access.redhat.com/ubi9/skopeo@sha256:030d3600f0a0de0486d93b52e82fdc3ef9ceb70ca0696d499547d76705cd277b
-    env:
-    - name: REGISTRY_AUTH_FILE
-      value: "$(workspaces.pull-secret.path)/.dockerconfigjson"
     script: |
       #!/usr/bin/env bash
       set -euo pipefail
