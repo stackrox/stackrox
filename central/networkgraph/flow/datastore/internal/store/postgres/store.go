@@ -21,6 +21,7 @@ import (
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"gorm.io/gorm"
 )
@@ -145,6 +146,8 @@ var (
 	deleteTimeout = env.PostgresDefaultNetworkFlowDeleteTimeout.DurationSetting()
 
 	queryTimeout = env.PostgresDefaultNetworkFlowQueryTimeout.DurationSetting()
+
+	orphanedEntitiesPruningBatchSize = 4096
 )
 
 // FlowStore stores all of the flows for a single cluster.
@@ -641,28 +644,35 @@ func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlow
 	// srcFlows contains flows where src is the deployment,
 	// so prune external flows based on the dst entity
 	if len(srcFlows) != 0 {
-		entities := make([]string, 0, len(srcFlows))
-		for _, flow := range srcFlows {
-			entities = append(entities, flow.GetProps().GetDstEntity().GetId())
-		}
+		err := utils.BatchProcess(srcFlows, orphanedEntitiesPruningBatchSize, func(flows []*storage.NetworkFlow) error {
+			entities := make([]string, 0, len(flows))
+			for _, flow := range flows {
+				entities = append(entities, flow.GetProps().GetDstEntity().GetId())
+			}
 
-		pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesSrcStmt, s.partitionName)
-		err := s.pruneEntities(ctx, pruneStmt, entities)
+			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesSrcStmt, s.partitionName)
+			return s.pruneEntities(ctx, pruneStmt, entities)
+		})
 		if err != nil {
-			return nil
+			return err
 		}
 	}
 
 	// dstFlows contains flows where dst is the deployment,
 	// so prune external flows based on the src entity
-	if len(dstFlows) == 0 {
-		entities := make([]string, 0, len(dstFlows))
-		for _, flow := range dstFlows {
-			entities = append(entities, flow.GetProps().GetSrcEntity().GetId())
-		}
+	if len(dstFlows) != 0 {
+		err := utils.BatchProcess(dstFlows, orphanedEntitiesPruningBatchSize, func(flows []*storage.NetworkFlow) error {
+			entities := make([]string, 0, len(flows))
+			for _, flow := range flows {
+				entities = append(entities, flow.GetProps().GetSrcEntity().GetId())
+			}
 
-		pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesDstStmt, s.partitionName)
-		return s.pruneEntities(ctx, pruneStmt, entities)
+			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesDstStmt, s.partitionName)
+			return s.pruneEntities(ctx, pruneStmt, entities)
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
