@@ -147,7 +147,8 @@ message Alert {
   google.protobuf.Timestamp resolved_at = 17; // @gotags: sensorhash:"ignore"
 
   ViolationState state = 11; // @gotags: search:"Violation State,store" sql:"index=btree"
-  google.protobuf.Timestamp snooze_till = 12;
+  reserved 12;
+  reserved "snooze_till";
   reserved 14; // was tags
 
   bool platform_component = 22; // @gotags: search:"Platform Component"
@@ -237,7 +238,8 @@ message ListAlertDeployment {
 
 enum ViolationState {
   ACTIVE = 0;
-  SNOOZED = 1;
+  reserved 1;
+  reserved "SNOOZED";
   RESOLVED = 2;
   ATTEMPTED = 3;
 }
