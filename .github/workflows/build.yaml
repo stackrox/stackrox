@@ -729,10 +729,7 @@ jobs:
       - name: Install roxctl
         run: |
           # Use roxctl code from this branch
-          if [[ ! -f bin/linux_amd64/roxctl ]]; then
-            make cli
-          fi
-          make cli-install
+          roxctl --version || make cli
 
       # - name: Install roxctl
       #   uses: stackrox/roxctl-installer-action@v1
