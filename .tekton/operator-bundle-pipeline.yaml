@@ -411,7 +411,6 @@ spec:
       - RELATED_IMAGE_COLLECTOR_FULL=$(params.collector-full-image-repo)@$(tasks.wait-for-collector-full-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_ROXCTL=$(params.roxctl-image-repo)@$(tasks.wait-for-roxctl-image.results.IMAGE_DIGEST)
       - RELATED_IMAGE_CENTRAL_DB=$(params.central-db-image-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)
-
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
