@@ -143,7 +143,9 @@ func TestScanWatcherCancel(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 		t.Error("timeout waiting for the watcher to stop")
 	}
-	assert.Equal(t, 0, readyTestQueue.Len())
+	assert.Equal(t, 1, readyTestQueue.Len())
+	result := readyTestQueue.Pull()
+	assert.ErrorIs(t, result.Error, ErrScanContextCancelled)
 }
 
 func TestScanWatcherStop(t *testing.T) {
@@ -158,7 +160,9 @@ func TestScanWatcherStop(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 		t.Error("timeout waiting for the watcher to stop")
 	}
-	assert.Equal(t, 0, readyTestQueue.Len())
+	assert.Equal(t, 1, readyTestQueue.Len())
+	result := readyTestQueue.Pull()
+	assert.ErrorIs(t, result.Error, ErrScanContextCancelled)
 }
 
 func TestScanWatcherTimeout(t *testing.T) {

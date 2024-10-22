@@ -191,7 +191,9 @@ func TestScanConfigWatcherCancel(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 		t.Error("timeout waiting for the watcher to stop")
 	}
-	assert.Equal(t, 0, resultQueue.Len())
+	assert.Equal(t, 1, resultQueue.Len())
+	result := resultQueue.Pull()
+	assert.ErrorIs(t, result.Error, ErrScanConfigContextCancelled)
 }
 
 func TestScanConfigWatcherStop(t *testing.T) {
@@ -218,7 +220,9 @@ func TestScanConfigWatcherStop(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 		t.Error("timeout waiting for the watcher to stop")
 	}
-	assert.Equal(t, 0, resultQueue.Len())
+	assert.Equal(t, 1, resultQueue.Len())
+	result := resultQueue.Pull()
+	assert.ErrorIs(t, result.Error, ErrScanConfigContextCancelled)
 }
 
 type testTimer struct {
@@ -281,7 +285,7 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 	// We should have a result in the queue with an error
 	require.Equal(t, 1, resultQueue.Len())
 	result := resultQueue.Pull()
-	assert.Error(t, result.Error)
+	assert.ErrorIs(t, result.Error, ErrScanConfigTimeout)
 }
 
 func TestScanConfigWatcherSubscribe(t *testing.T) {
@@ -333,4 +337,38 @@ func TestScanConfigWatcherSubscribe(t *testing.T) {
 		}
 		assert.Truef(t, found, "the Snapshot with id %s was not found", id)
 	}
+}
+
+func TestScanConfigWatcherGetScans(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	scanDS := scanMocks.NewMockDataStore(ctrl)
+	profileDS := profileDatastore.NewMockDataStore(ctrl)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
+			return &storage.ComplianceOperatorReportSnapshotV2{}, true, nil
+		})
+	snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().
+		DoAndReturn(func(_, _ any) error { return nil })
+	watcherID := "sc-id"
+	scanConfig := &storage.ComplianceOperatorScanConfigurationV2{
+		Id: watcherID,
+	}
+	resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
+	scanConfigWatcher := NewScanConfigWatcher(context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
+	scans := scanConfigWatcher.GetScans()
+	require.Len(t, scans, 0)
+
+	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
+	require.Eventually(t, func() bool {
+		return len(scanConfigWatcher.GetScans()) == 1
+	}, 200*time.Millisecond, 10*time.Millisecond)
+
+	handleScanResults("scan-1")(t, scanConfigWatcher)
+	require.Eventually(t, func() bool {
+		return resultsQueue.Len() != 0
+	}, 200*time.Millisecond, 10*time.Millisecond)
+
+	scans = scanConfigWatcher.GetScans()
+	require.Len(t, scans, 2)
 }

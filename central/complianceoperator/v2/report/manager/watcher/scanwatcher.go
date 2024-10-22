@@ -24,6 +24,7 @@ var (
 	log                                              = logging.LoggerForModule()
 	ErrScanAlreadyHandled                            = errors.New("the scan is already handled")
 	ErrScanTimeout                                   = errors.New("scan watcher timed out")
+	ErrScanContextCancelled                          = errors.New("scan watcher context cancelled")
 	ErrComplianceOperatorNotInstalled                = errors.New("compliance operator is not installed")
 	ErrComplianceOperatorVersion                     = errors.New("compliance operator version")
 	ErrComplianceOperatorIntegrationDataStore        = errors.New("unable to retrieve compliance operator integration")
@@ -235,6 +236,8 @@ func (s *scanWatcherImpl) run(timer Timer) {
 		select {
 		case <-s.ctx.Done():
 			log.Infof("Stopping scan watcher for scan")
+			s.scanResults.Error = ErrScanContextCancelled
+			s.readyQueue.Push(s.scanResults)
 			return
 		case <-timer.C():
 			log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())

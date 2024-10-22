@@ -150,11 +150,13 @@ func (m *managerImpl) Stop() {
 			scanWatcher.Stop()
 			<-scanWatcher.Finished().Done()
 		}
+		m.watchingScans = make(map[string]watcher.ScanWatcher)
 	})
 	concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 		for _, scanConfigWatcher := range m.watchingScanConfigs {
 			scanConfigWatcher.Stop()
 		}
+		m.watchingScanConfigs = make(map[string]watcher.ScanConfigWatcher)
 	})
 	m.stopper.Client().Stop()
 	err := m.stopper.Client().Stopped().Wait()
@@ -263,6 +265,9 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 		}
 		return false, errors.New("unable to subscribe to the scan configuration watcher")
 	}
+	if scans := w.GetScans(); len(scans) > 0 {
+		snapshot.Scans = scans
+	}
 	if err := m.snapshotDataStore.UpsertSnapshot(request.ctx, snapshot); err != nil {
 		return false, errors.Wrap(err, "unable to upsert snapshot on report waiting")
 	}
@@ -336,6 +341,9 @@ func (m *managerImpl) handleReadyScan() {
 			return
 		default:
 			if scanWatcherResult := m.readyQueue.PullBlocking(m.stopper.LowLevel().GetStopRequestSignal()); scanWatcherResult != nil {
+				concurrency.WithLock(&m.watchingScansLock, func() {
+					delete(m.watchingScans, scanWatcherResult.WatcherID)
+				})
 				// At the moment we simply do not start the ScanConfigWatcher if there are errors in the ScanWatchers.
 				// There are many reasons why a ScanWatcher might fail like, for example, the Scan was deleted mid-execution.
 				// If this happens, we will generate many ReportSnapshots with timeouts. Until we implement a way to
@@ -345,30 +353,33 @@ func (m *managerImpl) handleReadyScan() {
 					continue
 				}
 				log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
-				w, err := m.getScanConfigWatcher(scanWatcherResult.Ctx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
+				w, scanConfig, wasAlreadyRunning, err := m.getScanConfigWatcher(scanWatcherResult.Ctx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
 				if err != nil {
 					log.Errorf("Unable to create the ScanConfigWatcher: %v", err)
 					continue
 				}
+				if !wasAlreadyRunning {
+					if err := m.createAutomaticSnapshotAndSubscribe(scanWatcherResult.Ctx, scanConfig, w); err != nil {
+						log.Errorf("Unable to create the snapshot: %v", err)
+						continue
+					}
+				}
 				if err := w.PushScanResults(scanWatcherResult); err != nil {
 					log.Errorf("Unable to push scan %s: %v", scanWatcherResult.Scan.GetScanName(), err)
 				}
-				concurrency.WithLock(&m.watchingScansLock, func() {
-					delete(m.watchingScans, scanWatcherResult.WatcherID)
-				})
 			}
 		}
 	}
 }
 
 // getScanConfigWatcher returns the ScanConfigWatcher of a given scan
-func (m *managerImpl) getScanConfigWatcher(ctx context.Context, results *watcher.ScanWatcherResults, ds scanConfigurationDS.DataStore, queue *queue.Queue[*watcher.ScanConfigWatcherResults]) (watcher.ScanConfigWatcher, error) {
+func (m *managerImpl) getScanConfigWatcher(ctx context.Context, results *watcher.ScanWatcherResults, ds scanConfigurationDS.DataStore, queue *queue.Queue[*watcher.ScanConfigWatcherResults]) (watcher.ScanConfigWatcher, *storage.ComplianceOperatorScanConfigurationV2, bool, error) {
 	sc, err := watcher.GetScanConfigFromScan(ctx, results.Scan, ds)
 	if err != nil {
-		return nil, errors.Errorf("unable to get scan config id: %v", err)
+		return nil, nil, false, errors.Errorf("unable to get scan config id: %v", err)
 	}
 	if sc == nil {
-		return nil, errors.Errorf("ScanConfiguration not found for scan %s", results.Scan.GetScanName())
+		return nil, nil, false, errors.Errorf("ScanConfiguration not found for scan %s", results.Scan.GetScanName())
 	}
 	var w watcher.ScanConfigWatcher
 	var watcherIsRunning bool
@@ -379,14 +390,15 @@ func (m *managerImpl) getScanConfigWatcher(ctx context.Context, results *watcher
 			m.watchingScanConfigs[sc.GetId()] = w
 		}
 	})
-	// If the watcher is running return it
-	if watcherIsRunning {
-		return w, nil
-	}
+	return w, sc, watcherIsRunning, nil
+}
+
+// createAutomaticSnapshotAndSubscribe creates a snapshot for an automatic report (not on-demand)
+func (m *managerImpl) createAutomaticSnapshotAndSubscribe(ctx context.Context, sc *storage.ComplianceOperatorScanConfigurationV2, w watcher.ScanConfigWatcher) error {
 	// If there aren't any notifiers configured we cannot report
 	if len(sc.GetNotifiers()) == 0 {
 		log.Warnf("The scan configuration %s has not configured notifiers", sc.GetScanConfigName())
-		return w, utils.ErrNoNotifiersConfigured
+		return utils.ErrNoNotifiersConfigured
 	}
 	// If the watcher is not running we need to create a new snapshot
 	snapshot := &storage.ComplianceOperatorReportSnapshotV2{
@@ -402,20 +414,23 @@ func (m *managerImpl) getScanConfigWatcher(ctx context.Context, results *watcher
 		},
 		User: sc.GetModifiedBy(),
 	}
-	if err := m.snapshotDataStore.UpsertSnapshot(ctx, snapshot); err != nil {
-		return nil, errors.Wrap(err, "unable to upsert the snapshot")
-	}
 	if err := w.Subscribe(snapshot); err != nil {
 		log.Errorf("Unable to subscribe to the scan configuration watcher")
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
 		snapshot.GetReportStatus().ErrorMsg = utils.ErrUnableToSubscribeToWatcher.Error()
 		if err := m.snapshotDataStore.UpsertSnapshot(ctx, snapshot); err != nil {
-			return nil, errors.Wrap(err, "unable to upsert the snapshot")
+			return errors.Wrap(err, "unable to upsert the snapshot")
 		}
-		return nil, errors.Wrap(err, utils.ErrUnableToSubscribeToWatcher.Error())
+		return errors.Wrap(err, utils.ErrUnableToSubscribeToWatcher.Error())
 	}
-	return w, nil
+	if scans := w.GetScans(); len(scans) > 0 {
+		snapshot.Scans = scans
+	}
+	if err := m.snapshotDataStore.UpsertSnapshot(ctx, snapshot); err != nil {
+		return errors.Wrap(err, "unable to upsert the snapshot")
+	}
+	return nil
 }
 
 // handleReadyScanConfig pulls scan configs that are ready to be reported
