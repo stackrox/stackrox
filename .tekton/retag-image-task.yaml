@@ -8,7 +8,7 @@ spec:
   description: |
     Copies input image to the desired repo with the desired tag.
     Handles index images that reference per-arch images.
-    TODO: Copies attached `cosign` and `oras` artifacts.
+    Copies attached `cosign` and `oras` artifacts.
     Copies source images that are logically linked to the input image digest.
   params:
   - name: INPUT_IMAGE_REPO
@@ -64,6 +64,8 @@ spec:
         # errors like the following.
         #   Error: image "quay.io/rhacs-eng/collector:sha256-4b509fdf27761150a5a5ce519f087bc6d69af9d886a63f67f70b1e293643ea19" already exists. Use `-f` to overwrite
         cosign copy --force "${input_url}" "${output_url}"
+
+        oras cp --recursive "${input_url}" "${output_url}"
       }
 
       function get_digest() {
