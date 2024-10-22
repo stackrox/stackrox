@@ -99,6 +99,7 @@ func (pc *PolicyAsCodeSuite) TestSaveAsCRUpdateDelete() {
 	k8sPolicy := pc.saveAsCustomResource(policy)
 	k8sPolicy = pc.createPolicyInK8s(k8sPolicy)
 
+	pc.Require().Equal(k8sPolicy.Status.Message, "")
 	// Make sure the ID from Central is used to ensure controller didn't create a duplicate
 	pc.checkPolicyIsDeclarative(policy.Id)
 	pc.updateCRandObserveInCentral(k8sPolicy, policy.Id)
@@ -136,9 +137,16 @@ func (pc *PolicyAsCodeSuite) TestCreateCR() {
 		Version: "v1alpha1",
 		Kind:    "SecurityPolicy",
 	})
-	id := pc.createCRandObserveInCentral(k8sPolicy)
+	id := pc.createCRAndObserveInCentral(k8sPolicy)
 	pc.Require().NotEmpty(id)
 	pc.checkPolicyIsDeclarative(id)
+
+	// Add the policy to the policy set so it can be deleted at teardown
+	policy, err := pc.policyClient.GetPolicy(pc.ctx, &v1.ResourceByID{
+		Id: id,
+	})
+	pc.Require().NoError(err)
+	pc.policies = append(pc.policies, policy)
 }
 
 func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
@@ -321,7 +329,7 @@ func (pc *PolicyAsCodeSuite) deleteCRandObserveInCentral(k8sPolicy *v1alpha1.Sec
 	}, time.Second*5, time.Millisecond*30, "Policy CR deletion not propogated to Central")
 }
 
-func (pc *PolicyAsCodeSuite) createCRandObserveInCentral(policyCR *v1alpha1.SecurityPolicy) string {
+func (pc *PolicyAsCodeSuite) createCRAndObserveInCentral(policyCR *v1alpha1.SecurityPolicy) string {
 	_, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(policyCR), metav1.CreateOptions{})
 	pc.Require().NoError(err)
 
