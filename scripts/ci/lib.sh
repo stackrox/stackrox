@@ -68,6 +68,8 @@ ci_exit_trap() {
     done
 
     handle_dangling_processes
+
+    gate_flaky_tests "${exit_code}"
 }
 
 # handle_dangling_processes() - The OpenShift CI ci-operator will not complete a
@@ -1645,6 +1647,38 @@ post_process_test_results() {
         save_test_metrics "${csv_output}"
     } || true
     set -u
+}
+
+gate_flaky_tests() {
+    local exit_code="$1"
+
+    if [[ "${exit_code}" == "0" ]]; then
+        exit "${exit_code}"
+    fi
+
+    # Prepare flakechecker
+    git -C /tmp clone --depth=1 --branch "mtodor/add-flakechecker" https://github.com/stackrox/junit2jira.git /tmp/junit2jira-flakechecker
+    (cd /tmp/junit2jira-flakechecker && go build  -o . ./...)
+
+    setup_gcp || echo "setup_gcp called"
+
+    # Run flakechecker for failed test
+    local config_file="${SCRIPTS_ROOT}/scripts/ci/flakechecker/flake-config.yml"
+    if /tmp/junit2jira-flakechecker/flakechecker -config-file "${config_file}" -job-name "${JOB_NAME}" -junit-reports-dir "${ARTIFACT_DIR}"; then
+      # Flakechecker exits successfully IF AND ONLY IF it finds a NON-EMPTY set of test failures in the
+      # JUnit report, AND ALL these test failures are found to be known flaky tests defined in flake-config.yml file.
+      # And the recent failure ratio for found failed tests is below threshold defined in flake-config.yml.
+      #
+      # In this case, we change the overall exit code of the job to success, hoping that the failure was only
+      # due to the tests flaky behavior (and not some other issue in the test job).
+      exit 0
+    else
+      # Flakechecker fails in case it identified test failures which do not qualify for suppression, OR
+      # in case there were no test failures at all in the JUnit report (a sign of problems elsewhere in the test job).
+      #
+      # In this case we keep the exit code as it was.
+      exit "${exit_code}"
+    fi
 }
 
 make_prow_job_link() {
