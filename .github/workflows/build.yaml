@@ -749,6 +749,7 @@ jobs:
             > results.sarif
           cat results.sarif
 
+      # TODO: re-enable roxctl scan results upload once quota issue has been resolved
       # - name: Upload roxctl scan results to GitHub Security tab
       #   uses: github/codeql-action/upload-sarif@v3
       #   with:

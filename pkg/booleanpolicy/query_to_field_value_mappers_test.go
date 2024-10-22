@@ -225,6 +225,22 @@ func (s *SearchMapperTestSuite) TestConvertCVSS() {
 	s.testMapSearchString(search.CVSS, searchTerms, expectedGroup, false, true)
 }
 
+func (s *SearchMapperTestSuite) TestConvertNVDCVSS() {
+	searchTerms := []string{">88", "7644"}
+	expectedGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.NvdCvss,
+		Values: []*storage.PolicyValue{
+			{
+				Value: "> 88",
+			},
+			{
+				Value: "7644",
+			},
+		},
+	}
+	s.testMapSearchString(search.NVDCVSS, searchTerms, expectedGroup, false, true)
+}
+
 func (s *SearchMapperTestSuite) TestConvertCPUCoresLimit() {
 	searchTerms := []string{"5", "<7", ">=98"}
 	expectedGroup := &storage.PolicyGroup{

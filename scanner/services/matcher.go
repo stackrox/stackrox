@@ -145,17 +145,18 @@ func (s *matcherService) RegisterServiceHandler(_ context.Context, _ *runtime.Se
 }
 
 func (s *matcherService) notes(ctx context.Context, vr *v4.VulnerabilityReport) []v4.VulnerabilityReport_Note {
-	if len(vr.Contents.Distributions) != 1 {
+	dists := vr.GetContents().GetDistributions()
+	if len(dists) != 1 {
 		return []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN}
 	}
 
-	dists := s.matcher.GetKnownDistributions(ctx)
-	dist := vr.Contents.Distributions[0]
-	dID := dist.GetDid()
+	dist := dists[0]
+	distID := dist.GetDid()
 	versionID := dist.GetVersionId()
-	known := slices.ContainsFunc(dists, func(dist claircore.Distribution) bool {
+	knownDists := s.matcher.GetKnownDistributions(ctx)
+	known := slices.ContainsFunc(knownDists, func(dist claircore.Distribution) bool {
 		vID := mappers.VersionID(&dist)
-		return dist.DID == dID && vID == versionID
+		return distID == dist.DID && versionID == vID
 	})
 	if !known {
 		return []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED}
