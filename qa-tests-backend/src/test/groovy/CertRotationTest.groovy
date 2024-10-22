@@ -32,10 +32,6 @@ import spock.lang.Tag
 @IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
 class CertRotationTest extends BaseSpecification {
 
-    private static final String CLUSTER_VERSION_MANAGED_BY_HELM_ERROR =
-          "cluster is Helm-managed and does not support auto upgrades; "+
-          "use 'helm upgrade' or a Helm-aware CD pipeline for upgrades"
-
     def generateCerts(String path, String expectedFileName, JsonObject data = null) {
         def resp = DirectHTTPService.post(path, data)
         assert resp.getResponseCode() == 200
@@ -250,8 +246,10 @@ class CertRotationTest extends BaseSpecification {
             SensorUpgradeService.triggerCertRotation(cluster.getId())
         } catch (StatusRuntimeException exc) {
             caughtException = true
-            // Assume that CI installation is done by Helm
-            assert exc.status.description.contains(CLUSTER_VERSION_MANAGED_BY_HELM_ERROR)
+            // Cluster in CI can be installed either by Helm or Operator. The two possibilities are:
+            // "Helm controls the secured cluster version"
+            // "Operator controls the secured cluster version"
+            assert exc.status.description.contains("controls the secured cluster version")
         }
         assert caughtException
     }
