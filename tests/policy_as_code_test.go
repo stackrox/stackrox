@@ -136,6 +136,10 @@ func (pc *PolicyAsCodeSuite) TestCreateCR() {
 		Version: "v1alpha1",
 		Kind:    "SecurityPolicy",
 	})
+	k8sPolicy.SetLabels(map[string]string{
+		"test": "policy-as-code",
+	})
+
 	id := pc.createCRAndObserveInCentral(k8sPolicy)
 	pc.Require().NotEmpty(id)
 	pc.checkPolicyIsDeclarative(id)
@@ -359,13 +363,15 @@ func (pc *PolicyAsCodeSuite) TearDownSuite() {
 		pc.Require().NoError(err)
 	}
 
-	log.Infof("Deleting notifier with name \"%s\"", pc.notifier.Name)
-	_, err := pc.notifierClient.DeleteNotifier(pc.ctx, &v1.DeleteNotifierRequest{
-		Id:    pc.notifier.Id,
-		Force: true,
-	})
-	pc.Require().NoError(err)
-
+	if pc.notifier != nil {
+		log.Infof("Deleting notifier with name \"%s\"", pc.notifier.Name)
+		_, err := pc.notifierClient.DeleteNotifier(pc.ctx, &v1.DeleteNotifierRequest{
+			Id:    pc.notifier.Id,
+			Force: true,
+		})
+		pc.Require().NoError(err)
+	}
+	
 	// TODO: Remove finalizers if delete fails
 	pc.Require().NoError(pc.k8sClient.DeleteCollection(pc.ctx, metav1.DeleteOptions{}, metav1.ListOptions{
 		LabelSelector: "test=policy-as-code",
