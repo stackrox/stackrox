@@ -38,6 +38,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   each with an optional fraction and a unit suffix (e.g., "300ms", "-1.5h", or "2h45m").
   The currently valid time units "ns", "us" (or "µs"), "ms", "m", and "h" will no longer be supported.
 - ROX-24169: API token authentication has been deprecated by Red Hat OpenShift Cluster Manager. The corresponding cloud source integration now uses service accounts for authentication.
+- ROX-26669: StackRox Scanner is now deprecated. Users should use Scanner V4, instead, for all image scanning needs. StackRox Scanner is still required for full Node and Orchestrator scanning, though.
+- ROX-26670: Google Container Registry integration is now deprecated. Users should use Artifact Registry as a registry replacement and Scanner V4 as a scanner replacement.
 
 ### Technical Changes
 - ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
