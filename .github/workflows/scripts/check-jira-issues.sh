@@ -50,12 +50,11 @@ comment_on_issues_list() {
 }
 
 comment_on_single_issue() {
+    message_body=${2:-Release $NAMED_RELEASE_PATCH is ongoing. Please update the status of this issue and notify the release engineer.}
     curl --fail --output /dev/null -sSL -X POST \
         -H "Authorization: Bearer $JIRA_TOKEN" \
         -H "Content-Type: application/json" \
-        --data "{\"body\": \
-\"Release $NAMED_RELEASE_PATCH is ongoing. \
-Please update the status of this issue and notify the release engineer.\"}" \
+        --data "{\"body\": \"${message_body}\"}" \
         "https://issues.redhat.com/rest/api/2/issue/$1/comment"
 }
 
