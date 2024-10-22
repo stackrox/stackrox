@@ -45,6 +45,7 @@ func TestTranslate(t *testing.T) {
 	scannerV4ComponentDefault := platform.ScannerV4ComponentDefault
 	monitoringExposeEndpointEnabled := platform.ExposeEndpointEnabled
 	monitoringExposeEndpointDisabled := platform.ExposeEndpointDisabled
+	configAsCodeComponentEnabled := platform.ConfigAsCodeComponentEnabled
 	telemetryEndpoint := "endpoint"
 	telemetryKey := "key"
 	telemetryDisabledKey := map[string]interface{}{
@@ -389,7 +390,7 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 						ConfigAsCode: &platform.ConfigAsCodeSpec{
-							Enabled: pointer.Bool(true),
+							ComponentPolicy: &configAsCodeComponentEnabled,
 						},
 						Customize: &platform.CustomizeSpec{
 							Labels: map[string]string{

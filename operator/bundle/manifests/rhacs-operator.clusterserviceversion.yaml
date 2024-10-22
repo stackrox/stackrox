@@ -462,6 +462,9 @@ spec:
       - description: Storage API key. If not set, telemetry is disabled.
         displayName: Key
         path: central.telemetry.storage.key
+      - description: If you want to deploy Config as Code components set this to "Enabled"
+        displayName: Config as Code component
+        path: configAsCode.configAsCodeComponent
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels

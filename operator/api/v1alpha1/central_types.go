@@ -607,8 +607,22 @@ const (
 )
 
 type ConfigAsCodeSpec struct {
-	Enabled *bool `json:"enabled,omitempty"`
+	// If you want to deploy Config as Code components set this to "Enabled"
+	//+kubebuilder:default=Enabled
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Config as Code component"
+	ComponentPolicy *ConfigAsCodeComponentPolicy `json:"configAsCodeComponent,omitempty"`
 }
+
+// ConfigAsCodeComponentPolicy is a type for values of spec.scannerV4.scannerComponent
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type ConfigAsCodeComponentPolicy string
+
+const (
+	// ConfigAsCodeComponentEnabled explicitly enables the Config as Code component.
+	ConfigAsCodeComponentEnabled ConfigAsCodeComponentPolicy = "Enabled"
+	// ConfigAsCodeComponentDisabled explicitly disables the Config as Code component.
+	ConfigAsCodeComponentDisabled ConfigAsCodeComponentPolicy = "Disabled"
+)
 
 // -------------------------------------------------------------
 // Status
