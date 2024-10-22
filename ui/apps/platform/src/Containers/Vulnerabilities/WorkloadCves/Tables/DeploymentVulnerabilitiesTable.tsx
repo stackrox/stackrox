@@ -186,14 +186,14 @@ function DeploymentVulnerabilitiesTable({
                                     <Td
                                         className={getVisibilityClass('cveSeverity')}
                                         modifier="nowrap"
-                                        dataLabel="Severity"
+                                        dataLabel="CVE severity"
                                     >
                                         <VulnerabilitySeverityIconText severity={severity} />
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cveStatus')}
                                         modifier="nowrap"
-                                        dataLabel="CVE Status"
+                                        dataLabel="CVE status"
                                     >
                                         <VulnerabilityFixableIconText isFixable={isFixable} />
                                     </Td>
