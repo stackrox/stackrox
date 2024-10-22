@@ -102,6 +102,7 @@ export const imageCveMetadataQuery = gql`
         imageCVE(cve: $cve) {
             cve
             firstDiscoveredInSystem
+            publishedOn
             distroTuples {
                 summary
                 link

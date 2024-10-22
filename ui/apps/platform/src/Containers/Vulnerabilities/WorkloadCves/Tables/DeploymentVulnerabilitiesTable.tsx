@@ -49,6 +49,10 @@ export const defaultColumns = {
         title: 'First discovered',
         isShownByDefault: true,
     },
+    publishedOn: {
+        title: 'Published',
+        isShownByDefault: true,
+    },
 } as const;
 
 export const deploymentWithVulnerabilitiesFragment = gql`
@@ -62,6 +66,7 @@ export const deploymentWithVulnerabilitiesFragment = gql`
             vulnerabilityId: id
             cve
             operatingSystem
+            publishedOn
             summary
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
             images(query: $query) {
@@ -119,6 +124,7 @@ function DeploymentVulnerabilitiesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th className={getVisibilityClass('firstDiscovered')}>First discovered</Th>
+                    <Th className={getVisibilityClass('publishedOn')}>Published</Th>
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -138,6 +144,7 @@ function DeploymentVulnerabilitiesTable({
                             images,
                             affectedComponentsText,
                             discoveredAtImage,
+                            publishedOn,
                             pendingExceptionCount,
                         } = vulnerability;
                         const isExpanded = expandedRowSet.has(vulnerabilityId);
@@ -202,6 +209,17 @@ function DeploymentVulnerabilitiesTable({
                                         dataLabel="First discovered"
                                     >
                                         <DateDistance date={discoveredAtImage} />
+                                    </Td>
+                                    <Td
+                                        className={getVisibilityClass('publishedOn')}
+                                        modifier="nowrap"
+                                        dataLabel="Published"
+                                    >
+                                        {publishedOn ? (
+                                            <DateDistance date={publishedOn} />
+                                        ) : (
+                                            'Not available'
+                                        )}
                                     </Td>
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
