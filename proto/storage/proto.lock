@@ -17810,6 +17810,11 @@
                 "name": "cvss_metrics",
                 "type": "CVSSScore",
                 "is_repeated": true
+              },
+              {
+                "id": 22,
+                "name": "nvd_cvss",
+                "type": "float"
               }
             ],
             "reserved_ids": [
