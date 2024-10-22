@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/reports/common"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -82,7 +83,10 @@ func (s *serviceImpl) convertV2VulnReportFiltersToProto(filters *apiV2.Vulnerabi
 	ret := &storage.VulnerabilityReportFilters{
 		Fixability:       storage.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
 		AccessScopeRules: accessScopeRules,
-		IncludeNvdCvss:   filters.GetIncludeNvdCvss(),
+	}
+	if features.NvdCvss.Enabled() {
+		ret.IncludeNvdCvss = filters.GetIncludeNvdCvss()
+
 	}
 
 	for _, severity := range filters.GetSeverities() {
@@ -220,8 +224,11 @@ func (s *serviceImpl) convertProtoVulnReportFiltersToV2(filters *storage.Vulnera
 	}
 
 	ret := &apiV2.VulnerabilityReportFilters{
-		Fixability:     apiV2.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
-		IncludeNvdCvss: filters.GetIncludeNvdCvss(),
+		Fixability: apiV2.VulnerabilityReportFilters_Fixability(filters.GetFixability()),
+	}
+
+	if features.NvdCvss.Enabled() {
+		ret.IncludeNvdCvss = filters.GetIncludeNvdCvss()
 	}
 
 	for _, severity := range filters.GetSeverities() {
