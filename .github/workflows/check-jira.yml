@@ -63,6 +63,6 @@ jobs:
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
             check-jira-issues \
             "${{needs.properties.outputs.jira-projects}}" \
-            "${release}" \
-            "${patch}" \
-            "${named_release_patch}"
+            "${release:-4.6.0}" \
+            "${patch:-0}" \
+            "${named_release_patch:-4.6.0}"
