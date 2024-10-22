@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/namespace"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -157,7 +156,7 @@ func (resolver *Resolver) ComplianceClusters(ctx context.Context, args Paginated
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.clustersForPermission(ctx, args, permissions.View(resources.Compliance))
+	return resolver.clustersForReadPermission(ctx, args, resources.Compliance)
 }
 
 // ComplianceDeploymentCount returns count of deployments that have compliance run on them

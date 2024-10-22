@@ -149,38 +149,33 @@ func (resolver *Resolver) Clusters(ctx context.Context, args PaginatedQuery) ([]
 	return resolver.wrapClustersWithContext(ctx, clusters, err)
 }
 
-func (resolver *Resolver) clustersForPermission(ctx context.Context, args PaginatedQuery, resource permissions.ResourceWithAccess) ([]*scopeObjectResolver, error) {
+func (resolver *Resolver) clustersForReadPermission(ctx context.Context, args PaginatedQuery, resource permissions.ResourceMetadata) ([]*scopeObjectResolver, error) {
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
 	}
-	clusterIDs, unrestricted, err := sacHelper.ListClusterIDsInScope(ctx, []permissions.ResourceWithAccess{resource})
+	clusterIDs, unrestricted, err := sacHelper.ListClusterIDsInScope(
+		ctx,
+		[]permissions.ResourceWithAccess{permissions.View(resource)},
+	)
 	if err != nil {
 		return nil, err
 	}
-	var elevatedCtx context.Context
 
 	// Elevate context to find all matching clusters.
 	// The access control is enforced by the query restriction to
 	// the cluster IDs in the requester scope.
-	if unrestricted {
-		elevatedCtx = sac.WithGlobalAccessScopeChecker(
-			ctx,
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.Cluster),
-			),
-		)
-	} else {
-		elevatedCtx = sac.WithGlobalAccessScopeChecker(
-			ctx,
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.Cluster),
-				sac.ClusterScopeKeys(clusterIDs.AsSlice()...),
-			),
-		)
+	scopeKeys := [][]sac.ScopeKey{
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+		sac.ResourceScopeKeys(resources.Cluster),
 	}
+	if !unrestricted {
+		scopeKeys = append(scopeKeys, sac.ClusterScopeKeys(clusterIDs.AsSlice()...))
+	}
+	elevatedCtx := sac.WithGlobalAccessScopeChecker(
+		ctx,
+		sac.AllowFixedScopes(scopeKeys...),
+	)
 	clusters, err := resolver.ClusterDataStore.SearchRawClusters(elevatedCtx, query)
 	if err != nil {
 		return nil, err
