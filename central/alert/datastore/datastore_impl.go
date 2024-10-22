@@ -8,12 +8,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	alertutils "github.com/stackrox/rox/central/alert/utils"
 	"github.com/stackrox/rox/central/metrics"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -32,10 +35,11 @@ var (
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
 // objects.
 type datastoreImpl struct {
-	storage    store.Store
-	searcher   search.Searcher
-	keyedMutex *concurrency.KeyedMutex
-	keyFence   concurrency.KeyFence
+	storage         store.Store
+	searcher        search.Searcher
+	keyedMutex      *concurrency.KeyedMutex
+	keyFence        concurrency.KeyFence
+	platformMatcher platformmatcher.PlatformMatcher
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchCommon.Result, error) {
@@ -260,11 +264,27 @@ func (ds *datastoreImpl) updateAlertNoLock(ctx context.Context, alerts ...*stora
 	if len(alerts) == 0 {
 		return nil
 	}
+
+	if features.PlatformComponents.Enabled() {
+		for _, alert := range alerts {
+			alert.EntityType = alertutils.GetEntityType(alert)
+			match, err := ds.platformMatcher.MatchAlert(alert)
+			if err != nil {
+				return err
+			}
+			alert.PlatformComponent = match
+		}
+	}
+
 	return ds.storage.UpsertMany(ctx, alerts)
 }
 
 func hasSameScope(o1, o2 sac.NamespaceScopedObject) bool {
 	return o1 != nil && o2 != nil && o1.GetClusterId() == o2.GetClusterId() && o1.GetNamespace() == o2.GetNamespace()
+}
+
+func (ds *datastoreImpl) GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.Alert, error) {
+	return ds.storage.GetByQuery(ctx, q)
 }
 
 func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(alert *storage.Alert) error) error {
