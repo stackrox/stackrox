@@ -69,6 +69,7 @@ jobs:
         env:
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         run: |
+          set +e
           set -x
           set -uo pipefail
           release="${{github.event.inputs.version}}"
@@ -77,6 +78,15 @@ jobs:
           pwd
           ls -la
           gh api -H "$ACCEPT_RAW" "${{env.script_url}}" | bash -s -- \
+            check-jira-issues \
+            "${{needs.properties.outputs.jira-projects}}" \
+            "${release:-4.6.0}" \
+            "${patch:-0}" \
+            "${named_release_patch:-4.6.0}"
+          script_url=${{env.script_url}}
+          script_url=${script_url%%\?*}
+          script_url=${script_url##*contents\/}
+          grep -v '^set [\-eo]' "${script_url}" | bash -s -- \
             check-jira-issues \
             "${{needs.properties.outputs.jira-projects}}" \
             "${release:-4.6.0}" \
