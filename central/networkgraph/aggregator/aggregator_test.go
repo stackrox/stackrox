@@ -299,7 +299,7 @@ func TestAggregateExtConnsByName(t *testing.T) {
 	protoassert.ElementsMatch(t, expected, actual)
 }
 
-func TestAnonymizeDiscoveredExtEntities(t *testing.T) {
+func TestAggregateExtConnsByNameAnonymizeDiscoveredExtEntities(t *testing.T) {
 	ts1 := time.Now()
 
 	d1 := testutils.GetDeploymentNetworkEntity("d1", "d1")
@@ -318,4 +318,38 @@ func TestAnonymizeDiscoveredExtEntities(t *testing.T) {
 
 	assert.Len(t, actual, len(expected))
 	protoassert.ElementsMatch(t, expected, actual)
+}
+
+func TestAnonymizeDiscoveredEntity(t *testing.T) {
+	type TestSetEntry struct {
+		name     string
+		input    *storage.NetworkEntityInfo
+		expected *storage.NetworkEntityInfo
+	}
+
+	testSet := []TestSetEntry{
+		{
+			name:     "Deployment",
+			input:    testutils.GetDeploymentNetworkEntity("d1", "d1"),
+			expected: testutils.GetDeploymentNetworkEntity("d1", "d1"),
+		},
+		{
+			name:     "NonDiscoveredExternalEntity",
+			input:    testutils.GetExtSrcNetworkEntityInfo("cluster1__e1", "google", "net1", false),
+			expected: testutils.GetExtSrcNetworkEntityInfo("cluster1__e1", "google", "net1", false),
+		},
+		{
+			name:     "DiscoveredExternalEntity",
+			input:    networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{35, 187, 144, 4, 32})).ToProto(),
+			expected: networkgraph.InternetEntity().ToProto(), // <- anonymization
+		},
+	}
+
+	for _, testEntry := range testSet {
+		t.Run(testEntry.name, func(t *testing.T) {
+			actual := anonymizeDiscoveredEntity(testEntry.input)
+
+			protoassert.Equal(t, testEntry.expected, actual)
+		})
+	}
 }
