@@ -727,6 +727,9 @@ jobs:
           endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Docker login
+        env:
+          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
           ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
 
