@@ -99,20 +99,6 @@ func TestClustersForPermissions(t *testing.T) {
 			expectedResolverValues: []*v1.ScopeObject{scopeObject1},
 			expectedResolverError:  nil,
 		},
-		"Unrestricted Read on wrong resource, No cluster retrieved": {
-			ctx: sac.WithGlobalAccessScopeChecker(
-				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.DeploymentExtension),
-				),
-			),
-			targetResource:         resources.Compliance,
-			expectedStoreValues:    []*storage.Cluster{},
-			expectedStoreError:     nil,
-			expectedResolverValues: []*v1.ScopeObject{},
-			expectedResolverError:  nil,
-		},
 	}
 
 	for testName, testCase := range testCases {
@@ -149,4 +135,24 @@ func TestClustersForPermissions(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("Unrestricted Read on wrong resource, No cluster retrieved", func(it *testing.T) {
+		mockCtrl := gomock.NewController(it)
+		defer mockCtrl.Finish()
+		clusterStore := clusterMocks.NewMockDataStore(mockCtrl)
+		mainResolver := &Resolver{ClusterDataStore: clusterStore}
+
+		ctx := sac.WithGlobalAccessScopeChecker(
+			context.Background(),
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.DeploymentExtension),
+			),
+		)
+		query := PaginatedQuery{}
+		targetResource := resources.Compliance
+		fetchedClusterResolvers, err := mainResolver.clustersForReadPermission(ctx, query, targetResource)
+		assert.NoError(it, err)
+		assert.Empty(it, fetchedClusterResolvers)
+	})
 }
