@@ -10,7 +10,7 @@ message HelmManagedConfigInit {
   storage.CompleteClusterConfig cluster_config = 1;
   string cluster_name = 2;
   string cluster_id = 3;
-  bool not_helm_managed = 4 [deprecated = true]; // Only taken into account if managed_by is UNKNOWN.
+  reserved 4; // was not_helm_managed
   storage.ManagerType managed_by = 5;
 }
 
