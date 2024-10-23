@@ -68,7 +68,7 @@ function ReportJobsTable<T extends Snapshot>({
                         Completed
                     </Th>
                     <Th width={25}>Status</Th>
-                    <Th width={50}>Requestor</Th>
+                    <Th width={50}>Requester</Th>
                     <Th>
                         <span className="pf-v5-screen-reader">Row actions</span>
                     </Th>
