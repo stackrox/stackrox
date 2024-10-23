@@ -23,7 +23,9 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"golang.org/x/sync/semaphore"
 )
@@ -354,6 +356,9 @@ func (m *managerImpl) handleReadyScan() {
 				}
 				log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
 				w, scanConfig, wasAlreadyRunning, err := m.getScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
+				if errors.Is(err, watcher.ErrScanAlreadyHandled) {
+					continue
+				}
 				if err != nil {
 					log.Errorf("Unable to create the ScanConfigWatcher: %v", err)
 					continue
@@ -383,13 +388,29 @@ func (m *managerImpl) getScanConfigWatcher(ctx context.Context, results *watcher
 	}
 	var w watcher.ScanConfigWatcher
 	var watcherIsRunning bool
-	concurrency.WithLock(&m.watchingScanConfigsLock, func() {
+	err = concurrency.WithLock1[error](&m.watchingScanConfigsLock, func() error {
 		if w, watcherIsRunning = m.watchingScanConfigs[sc.GetId()]; !watcherIsRunning {
+			query := search.NewQueryBuilder().
+				AddExactMatches(search.ComplianceOperatorScanRef, results.Scan.GetScanRefId()).
+				AddTimeRangeField(search.ComplianceOperatorScanLastStartedTime, results.Scan.GetLastStartedTime().AsTime(), timestamp.InfiniteFuture.GoTime()).
+				ProtoQuery()
+			snapshot, err := m.snapshotDataStore.SearchSnapshots(m.automaticReportingCtx, query)
+			if err != nil {
+				return errors.Wrap(err, "unable to retrieve snapshots from the store")
+			}
+			if len(snapshot) > 0 {
+				// We already handled a scan newer than this one, we ignore this scanResults
+				return watcher.ErrScanAlreadyHandled
+			}
 			log.Debugf("Staring config watcher %s", sc.GetId())
 			w = watcher.NewScanConfigWatcher(m.automaticReportingCtx, ctx, sc.GetId(), sc, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, queue)
 			m.watchingScanConfigs[sc.GetId()] = w
 		}
+		return nil
 	})
+	if err != nil {
+		return nil, nil, false, err
+	}
 	return w, sc, watcherIsRunning, nil
 }
 
@@ -454,7 +475,7 @@ func (m *managerImpl) handleReadyScanConfig() {
 func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConfigWatcherResults) {
 	for _, snapshot := range result.ReportSnapshot {
 		if err := m.validateScanConfigResults(result); err != nil {
-			if dbErr := utils.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, utils.ErrScanWatchersFailed, m.snapshotDataStore); dbErr != nil {
+			if dbErr := utils.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, err, m.snapshotDataStore); dbErr != nil {
 				log.Errorf("Unable to upsert the snapshot %s: %v", snapshot.GetReportId(), err)
 			}
 			continue
@@ -496,13 +517,26 @@ func (m *managerImpl) handleReportScheduled(request *reportRequest, isOnDemand b
 
 func (m *managerImpl) validateScanConfigResults(result *watcher.ScanConfigWatcherResults) error {
 	if result.Error != nil {
-		return result.Error
+		if errors.Is(result.Error, watcher.ErrScanConfigTimeout) {
+			return utils.ErrScanConfigWatcherTimeout
+		}
+		return utils.ErrScanWatchersFailed
 	}
 
 	errList := errorhelpers.NewErrorList("Scan result errors")
 	for _, scanResult := range result.ScanResults {
 		if scanResult.Error != nil {
-			errList.AddErrors(scanResult.Error)
+			if errors.Is(scanResult.Error, watcher.ErrScanTimeout) {
+				err := errors.Errorf("The Scan %s in cluster %s timeout", scanResult.Scan.GetScanName(), scanResult.Scan.GetClusterId())
+				select {
+				case <-scanResult.SensorCtx.Done():
+					errList.AddError(errors.Wrap(err, "Sensor disconnected during the scan"))
+				default:
+					errList.AddError(err)
+				}
+				continue
+			}
+			errList.AddErrors(errors.Errorf("Failed to report on Scan %s in cluster %s", scanResult.Scan.GetScanName(), scanResult.Scan.GetClusterId()))
 		}
 	}
 
