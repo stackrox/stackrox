@@ -25,7 +25,7 @@ func Test_getMessageType(t *testing.T) {
 func Test_makeContext(t *testing.T) {
 	opts := telemeter.ApplyOptions([]telemeter.Option{
 		telemeter.WithUserID("userID"),
-		telemeter.WithClient("clientID", "clientType"),
+		telemeter.WithClient("clientID", "clientType", "clientVersion"),
 		telemeter.WithGroups("groupA", "groupA_id1"),
 		telemeter.WithGroups("groupA", "groupA_id2"),
 		telemeter.WithGroups("groupB", "groupB_id"),
@@ -36,6 +36,7 @@ func Test_makeContext(t *testing.T) {
 	ctx := s.makeContext(opts)
 	assert.Equal(t, "clientID", ctx.Device.Id)
 	assert.Equal(t, "clientType", ctx.Device.Type)
+	assert.Equal(t, "clientVersion", ctx.Device.Version)
 
 	require.Contains(t, ctx.Extra, "groups")
 	require.Contains(t, ctx.Extra["groups"], "groupA")
@@ -47,7 +48,7 @@ func Test_makeContext(t *testing.T) {
 	assert.Equal(t, "test Server", ctx.Device.Type)
 
 	ctx = s.makeContext(telemeter.ApplyOptions([]telemeter.Option{
-		telemeter.WithClient("clientID", "clientType")}))
+		telemeter.WithClient("clientID", "clientType", "clientVersion")}))
 	assert.Equal(t, "clientType Server", ctx.Device.Type)
 }
 
@@ -72,20 +73,20 @@ func Test_getIDs(t *testing.T) {
 			anonymousID: "clientID",
 		}},
 		{opts: []telemeter.Option{
-			telemeter.WithClient("anotherID", "clientType"),
+			telemeter.WithClient("anotherID", "clientType", "clientVersion"),
 		}, expected: result{
 			userID:      "",
 			anonymousID: "anotherID",
 		}},
 		{opts: []telemeter.Option{
 			telemeter.WithUserID("userID"),
-			telemeter.WithClient("anotherID", "clientType"),
+			telemeter.WithClient("anotherID", "clientType", "clientVersion"),
 		}, expected: result{
 			userID:      "userID",
 			anonymousID: "",
 		}},
 		{opts: []telemeter.Option{
-			telemeter.WithClient("anotherID", "clientType"),
+			telemeter.WithClient("anotherID", "clientType", "clientVersion"),
 			telemeter.WithUserID("userID"),
 		}, expected: result{
 			userID:      "userID",
@@ -109,7 +110,7 @@ func Test_Group(t *testing.T) {
 		atomic.AddInt32(&i, 1)
 	}))
 
-	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
 
 	tt.Group(nil, telemeter.WithGroups("Test", "test-group-id"))
 	tt.Stop()
@@ -124,7 +125,7 @@ func Test_GroupWithProps(t *testing.T) {
 		atomic.AddInt32(&i, 1)
 	}))
 
-	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
 
 	ch := make(chan time.Time, 2)
 	ch <- time.Time{}
@@ -142,7 +143,7 @@ func Test_GroupWithProps(t *testing.T) {
 }
 
 func Test_makeMessageID(t *testing.T) {
-	tt := NewTelemeter("test-key", "url", "client-id", "client-type", 0, 1)
+	tt := NewTelemeter("test-key", "url", "client-id", "client-type", "client-version", 0, 1)
 
 	props := map[string]any{
 		"key":  "value",
@@ -190,7 +191,7 @@ func Test_makeMessageID(t *testing.T) {
 		assert.NotEqual(t, id1, id2)
 	})
 	t.Run("Different ID with different client and user", func(t *testing.T) {
-		id1 := tt.makeMessageID("test event", props, prefixed(telemeter.WithClient("same", "same")))
+		id1 := tt.makeMessageID("test event", props, prefixed(telemeter.WithClient("same", "same", "same")))
 		id2 := tt.makeMessageID("test event", props, prefixed(telemeter.WithUserID("same")))
 		assert.NotEqual(t, id1, id2)
 	})
@@ -250,7 +251,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 	defer s.Close()
 
 	t.Run("only one message", func(t *testing.T) {
-		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
 		for i := 0; i < 5; i++ {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("today"))
 		}
@@ -260,7 +261,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 	t.Run("one message after cache expiry", func(t *testing.T) {
 		tc.add(time.Hour)
 		tc.add(time.Second)
-		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
 		for i := 0; i < 5; i++ {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("today"))
 		}
@@ -268,7 +269,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 		assert.Equal(t, int32(2), i, "Track calls had to issue one more message")
 	})
 	t.Run("different prefix", func(t *testing.T) {
-		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
 		for i := 0; i < 5; i++ {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("tomorrow"))
 		}
@@ -276,7 +277,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 		assert.Equal(t, int32(3), i, "Track calls had to issue one more message")
 	})
 	t.Run("different event", func(t *testing.T) {
-		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", 0, 1)
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
 		for i := 0; i < 5; i++ {
 			tt.Identify(nil, telemeter.WithNoDuplicates("tomorrow"))
 		}

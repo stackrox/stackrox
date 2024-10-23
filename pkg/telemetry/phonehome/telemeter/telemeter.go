@@ -6,6 +6,7 @@ type CallOptions struct {
 	AnonymousID     string
 	ClientID        string
 	ClientType      string
+	ClientVersion   string
 	MessageIDPrefix string
 
 	// [group type: [group id]]
@@ -35,13 +36,14 @@ func WithUserID(userID string) Option {
 }
 
 // WithClient allows for modifying the ClientID and ClientType call options.
-func WithClient(clientID string, clientType string) Option {
+func WithClient(clientID string, clientType, clientVersion string) Option {
 	return func(o *CallOptions) {
 		if o.UserID == "" {
 			o.AnonymousID = clientID
 		}
 		o.ClientID = clientID
 		o.ClientType = clientType
+		o.ClientVersion = clientVersion
 	}
 }
 

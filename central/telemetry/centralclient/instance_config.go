@@ -77,14 +77,15 @@ func getInstanceConfig(id string, key string) (*phonehome.Config, map[string]any
 			// batch. Setting BatchSize to 1, instead of default 250, may reduce
 			// the number of (none) values, appearing on Amplitude charts, by
 			// introducing a slight delay between consequent events.
-			BatchSize:    1,
-			ClientID:     id,
-			ClientName:   "Central",
-			GroupType:    "Tenant",
-			GroupID:      tenantID,
-			StorageKey:   key,
-			Endpoint:     env.TelemetryEndpoint.Setting(),
-			PushInterval: env.TelemetryFrequency.DurationSetting(),
+			BatchSize:     1,
+			ClientID:      id,
+			ClientName:    "Central",
+			ClientVersion: version.GetMainVersion(),
+			GroupType:     "Tenant",
+			GroupID:       tenantID,
+			StorageKey:    key,
+			Endpoint:      env.TelemetryEndpoint.Setting(),
+			PushInterval:  env.TelemetryFrequency.DurationSetting(),
 		}, map[string]any{
 			"Image Flavor":       defaults.GetImageFlavorNameFromEnv(),
 			"Central version":    version.GetMainVersion(),
