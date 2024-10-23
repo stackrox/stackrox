@@ -25,7 +25,7 @@ spec:
   - name: dockerfile
     value: image/roxctl/konflux.Dockerfile
   - name: git-url
-    value: '{{repo_url}}'
+    value: '{{source_url}}'
   - name: image-expires-after
     # TODO(ROX-24530): return expiration for non-released images to 13w
     value: '52w'
