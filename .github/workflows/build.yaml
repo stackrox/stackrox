@@ -677,6 +677,7 @@ jobs:
         directory: 'junit-reports'
 
   scan-images-with-roxctl:
+    if: github.event_name == 'push'
     needs:
       - build-and-push-main
       - build-and-push-operator
@@ -704,11 +705,6 @@ jobs:
             "stackrox-operator",
           ]
     steps:
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          debug: true
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -726,33 +722,11 @@ jobs:
         with:
           endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
-      - name: Docker login
-        env:
-          QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
-          QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
-        run: |
-          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
-
       - name: Install roxctl
-        run: |
-          # Use roxctl code from this branch
-          set +e
-          set -x
-          tag="quay.io/stackrox-io/roxctl:$(make --quiet --no-print-directory tag)"
-          tag=${tag%:latest}
-          id=$(docker create -t "${tag}")
-          docker cp ${id}:/roxctl ./roxctlbin
-          echo "$PATH"
-          for dir in /usr/local/bin /usr/local/go/bin ~/.local/bin ~/bin; do
-            cp ./roxctlbin "${dir}"/roxctl || continue
-            roxctl version && break
-          done
-
-      # - name: Install roxctl
-      #   uses: stackrox/roxctl-installer-action@v1
-      #   with:
-      #     central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
-      #     central-token: ${{ env.ROX_API_TOKEN }}
+        uses: stackrox/roxctl-installer-action@v1
+        with:
+          central-endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
+          central-token: ${{ env.ROX_API_TOKEN }}
 
       - name: Scan images for vulnerabilities
         run: |
@@ -760,17 +734,17 @@ jobs:
           if [[ ${{ matrix.image }} =~ "operator" ]]; then
             release_tag=$(make -C operator --silent tag)
           fi
-          set -x
           roxctl image scan --retries=10 --retry-delay=15 --force --severity=CRITICAL,IMPORTANT --output=sarif \
             --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
             > results.sarif
           cat results.sarif
 
-      - name: Upload roxctl scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          category: ${{ matrix.image }}
-          sarif_file: results.sarif
+      # TODO: re-enable roxctl scan results upload once quota issue has been resolved
+      # - name: Upload roxctl scan results to GitHub Security tab
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     category: ${{ matrix.image }}
+      #     sarif_file: results.sarif
 
   slack-on-build-failure:
     env:
