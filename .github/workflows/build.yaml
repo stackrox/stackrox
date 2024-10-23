@@ -726,17 +726,22 @@ jobs:
         with:
           endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
+      - name: Docker login
+        run: |
+          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
+
+      - name: Push images
       - name: Install roxctl
         run: |
           # Use roxctl code from this branch
           set +e
           set -x
           tag="$(make --quiet --no-print-directory tag)"
-          docker run --rm -v "$PWD":/workdir -t "$tag" bash -c 'roxctl version; cp $(which roxctl) /workdir/'
+          docker run --rm -v "$PWD":/workdir -t "$tag" bash -c 'roxctl version; cp $(which roxctl) /workdir/roxctlbin'
           ./roxctl version || (
             echo "$PATH"
             for dir in /usr/local/bin /usr/local/go/bin ~/.local/bin ~/bin; do
-              cp ./roxctl "${dir}"/ || continue
+              cp ./roxctlbin "${dir}"/roxctl || continue
               roxctl version && break
             done
           )
