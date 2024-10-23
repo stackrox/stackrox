@@ -138,7 +138,7 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	}
 
 	// Stop and cleanup the upgrader early if upgrades are not supported by the current installation method.
-	if err := upgradesSupported(h.configHandler); err != nil {
+	if err := upgradesSupported(h.configHandler.GetHelmManagedConfig()); err != nil {
 		go h.rejectUpgradeRequest(trigger, err)
 		go h.deleteUpgraderDeployments()
 		h.currentProcess = nil
