@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -105,10 +106,10 @@ func (pc *PolicyAsCodeSuite) TestSaveAsCRUpdateDelete() {
 	pc.deleteCRandObserveInCentral(k8sPolicy, policy.Id)
 }
 
-func (pc *PolicyAsCodeSuite) TestCreateCR() {
+func createBasePolicyStruct(name string) *v1alpha1.SecurityPolicy {
 	k8sPolicy := &v1alpha1.SecurityPolicy{
 		Spec: v1alpha1.SecurityPolicySpec{
-			PolicyName:      "test-policy-create",
+			PolicyName:      name,
 			Description:     "This is a description",
 			Categories:      []string{"Vulnerability Management"},
 			Severity:        storage.Severity_MEDIUM_SEVERITY.String(),
@@ -130,7 +131,7 @@ func (pc *PolicyAsCodeSuite) TestCreateCR() {
 			},
 		},
 	}
-	k8sPolicy.SetName("test-policy-cr")
+	k8sPolicy.SetName(name)
 	k8sPolicy.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "config.stackrox.io",
 		Version: "v1alpha1",
@@ -140,6 +141,11 @@ func (pc *PolicyAsCodeSuite) TestCreateCR() {
 		"test": "policy-as-code",
 	})
 
+	return k8sPolicy
+}
+
+func (pc *PolicyAsCodeSuite) TestCreateCR() {
+	k8sPolicy := createBasePolicyStruct("test-policy-create")
 	id := pc.createCRAndObserveInCentral(k8sPolicy)
 	pc.Require().NotEmpty(id)
 	pc.checkPolicyIsDeclarative(id)
@@ -150,6 +156,80 @@ func (pc *PolicyAsCodeSuite) TestCreateCR() {
 	})
 	pc.Require().NoError(err)
 	pc.policies = append(pc.policies, policy)
+}
+
+func (pc *PolicyAsCodeSuite) TestCreateDefaultCR() {
+	k8sPolicy := createBasePolicyStruct("90-Day Image Age")
+	k8sPolicy.SetName("90-day-image-age")
+	ch, watchStop := pc.watch(k8sPolicy.GetName())
+	defer watchStop()
+	_, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(k8sPolicy), metav1.CreateOptions{})
+	pc.Require().NoError(err)
+
+	message := "status never udpated"
+	timer := time.NewTimer(time.Second * 5)
+	for {
+		select {
+		case <-timer.C:
+			pc.FailNowf("Policy never marked as rejected as duplicate of default policy", message+": %s", k8sPolicy.Spec.PolicyName)
+		case p := <-ch:
+			if !p.Status.Accepted && strings.Contains(p.Status.Message, "existing default policy with the same name") {
+				return
+			}
+			message = p.Status.Message
+		}
+	}
+}
+
+func (pc *PolicyAsCodeSuite) TestRenameToDefaultCR() {
+	k8sPolicy := createBasePolicyStruct("rename-to-default-test")
+	ch, watchStop := pc.watch(k8sPolicy.GetName())
+	defer watchStop()
+
+	u, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(k8sPolicy), metav1.CreateOptions{})
+	pc.Require().NoError(err)
+	pc.fromUnstructured(u, k8sPolicy)
+
+	message := "status never udpated"
+	timer := time.NewTimer(time.Second * 5)
+	for {
+		accepted := false
+		select {
+		case <-timer.C:
+			pc.FailNowf("Policy never marked as accepted", message+": %s", k8sPolicy.Spec.PolicyName)
+		case p := <-ch:
+			accepted = p.Status.Accepted
+			message = p.Status.Message
+		}
+
+		if accepted {
+			break
+		}
+	}
+
+	k8sPolicy.Spec.PolicyName = "90-Day Image Age"
+	pc.Require().EventuallyWithT(func(collect *assert.CollectT) {
+		_, err = pc.k8sClient.Update(pc.ctx, pc.toUnstructured(k8sPolicy), metav1.UpdateOptions{})
+		assert.NoError(collect, err)
+		u, err = pc.k8sClient.Get(pc.ctx, k8sPolicy.GetName(), metav1.GetOptions{})
+		pc.fromUnstructured(u, k8sPolicy)
+		k8sPolicy.Spec.PolicyName = "90-Day Image Age"
+	}, time.Second*5, time.Millisecond*30)
+
+	timer = time.NewTimer(time.Second * 5)
+	for {
+		var policy *v1alpha1.SecurityPolicy
+		select {
+		case <-timer.C:
+			pc.FailNowf("Policy never marked as duplicate of default policy", message+": %s", k8sPolicy.Spec.PolicyName)
+		case p := <-ch:
+			policy = p
+		}
+
+		if !policy.Status.Accepted && strings.Contains(policy.Status.Message, "existing default policy with the same name") {
+			break
+		}
+	}
 }
 
 func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
@@ -236,7 +316,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInK8s(toCreate *v1alpha1.SecurityPolicy
 		"test": "policy-as-code",
 	}
 
-	ch, watchStop := pc.watch()
+	ch, watchStop := pc.watch(toCreate.GetName())
 	defer watchStop()
 
 	_, err := pc.k8sClient.Create(pc.ctx, pc.toUnstructured(toCreate), metav1.CreateOptions{})
@@ -257,12 +337,14 @@ func (pc *PolicyAsCodeSuite) createPolicyInK8s(toCreate *v1alpha1.SecurityPolicy
 	}
 }
 
-func (pc *PolicyAsCodeSuite) watch() (chan *v1alpha1.SecurityPolicy, func()) {
+func (pc *PolicyAsCodeSuite) watch(name string) (chan *v1alpha1.SecurityPolicy, func()) {
 	ch := make(chan *v1alpha1.SecurityPolicy)
 	reg, err := pc.informer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(oldObj, newObj interface{}) {
 			p := pc.toPolicy(newObj)
-			ch <- p
+			if p.GetName() == name {
+				ch <- p
+			}
 		},
 	})
 	pc.Require().NoError(err)
@@ -285,6 +367,10 @@ func (pc *PolicyAsCodeSuite) toUnstructured(i interface{}) *unstructured.Unstruc
 	m, err := runtime.DefaultUnstructuredConverter.ToUnstructured(i)
 	pc.Require().NoError(err)
 	return &unstructured.Unstructured{Object: m}
+}
+
+func (pc *PolicyAsCodeSuite) fromUnstructured(u *unstructured.Unstructured, i interface{}) {
+	pc.Require().NoError(runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, i))
 }
 
 func (pc *PolicyAsCodeSuite) checkPolicyIsDeclarative(id string) {
