@@ -132,7 +132,7 @@ func TestScanConfigWatcher(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
-			scanConfigWatcher := NewScanConfigWatcher(ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
+			scanConfigWatcher := NewScanConfigWatcher(ctx, ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
 			for _, id := range tCase.snapshotIDs {
 				require.NoError(t, scanConfigWatcher.Subscribe(&storage.ComplianceOperatorReportSnapshotV2{ReportId: id}))
 			}
@@ -183,7 +183,7 @@ func TestScanConfigWatcherCancel(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
-	scanConfigWatcher := NewScanConfigWatcher(ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
+	scanConfigWatcher := NewScanConfigWatcher(ctx, ctx, watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
 	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
 	cancel()
 	select {
@@ -212,7 +212,7 @@ func TestScanConfigWatcherStop(t *testing.T) {
 		Id: watcherID,
 	}
 	resultQueue := queue.NewQueue[*ScanConfigWatcherResults]()
-	scanConfigWatcher := NewScanConfigWatcher(context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
+	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultQueue)
 	handleInitialScanResults("scan-0", scanDS, profileDS, 2)(t, scanConfigWatcher)
 	scanConfigWatcher.Stop()
 	select {
@@ -258,6 +258,7 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 	}
 	scanConfigWatcher := &scanConfigWatcherImpl{
 		ctx:                 ctx,
+		sensorCtx:           ctx,
 		cancel:              cancel,
 		stopped:             &finishedSignal,
 		scanDS:              scanDS,
@@ -265,6 +266,7 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 		snapshotDS:          snapshotDS,
 		scanWatcherResoutsC: make(chan *ScanWatcherResults),
 		scanConfigResults: &ScanConfigWatcherResults{
+			SensorCtx: ctx,
 			WatcherID: "id",
 			ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{
 				Id: "id",
@@ -306,7 +308,7 @@ func TestScanConfigWatcherSubscribe(t *testing.T) {
 	resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
 	scanIDs := []string{"scan-0", "scan-1", "scan-2"}
 	snapshotIDS := []string{"snapshot-0", "snapshot-1"}
-	scanConfigWatcher := NewScanConfigWatcher(context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
+	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
 	err := scanConfigWatcher.Subscribe(&storage.ComplianceOperatorReportSnapshotV2{ReportId: snapshotIDS[0]})
 	assert.NoError(t, err)
 	handleInitialScanResults(scanIDs[0], scanDS, profileDS, len(scanIDs))(t, scanConfigWatcher)
@@ -355,7 +357,7 @@ func TestScanConfigWatcherGetScans(t *testing.T) {
 		Id: watcherID,
 	}
 	resultsQueue := queue.NewQueue[*ScanConfigWatcherResults]()
-	scanConfigWatcher := NewScanConfigWatcher(context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
+	scanConfigWatcher := NewScanConfigWatcher(context.Background(), context.Background(), watcherID, scanConfig, scanDS, profileDS, snapshotDS, resultsQueue)
 	scans := scanConfigWatcher.GetScans()
 	require.Len(t, scans, 0)
 

@@ -106,7 +106,7 @@ func TestScanWatcher(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			resultQueue := queue.NewQueue[*ScanWatcherResults]()
-			scanWatcher := NewScanWatcher(ctx, watcherID, resultQueue)
+			scanWatcher := NewScanWatcher(ctx, ctx, watcherID, resultQueue)
 			for _, event := range tCase.events {
 				event(t, scanWatcher)
 			}
@@ -134,7 +134,7 @@ func TestScanWatcherCancel(t *testing.T) {
 	watcherID := "id"
 	ctx, cancel := context.WithCancel(context.Background())
 	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
-	scanWatcher := NewScanWatcher(ctx, watcherID, readyTestQueue)
+	scanWatcher := NewScanWatcher(ctx, ctx, watcherID, readyTestQueue)
 	handleScan("id-1")(t, scanWatcher)
 	handleResult("id-1")(t, scanWatcher)
 	cancel()
@@ -151,7 +151,7 @@ func TestScanWatcherCancel(t *testing.T) {
 func TestScanWatcherStop(t *testing.T) {
 	watcherID := "id"
 	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
-	scanWatcher := NewScanWatcher(context.Background(), watcherID, readyTestQueue)
+	scanWatcher := NewScanWatcher(context.Background(), context.Background(), watcherID, readyTestQueue)
 	handleScan("id-1")(t, scanWatcher)
 	handleResult("id-1")(t, scanWatcher)
 	scanWatcher.Stop()
@@ -176,12 +176,14 @@ func TestScanWatcherTimeout(t *testing.T) {
 	}
 	scanWatcher := &scanWatcherImpl{
 		ctx:        ctx,
+		sensorCtx:  ctx,
 		cancel:     cancel,
 		scanC:      make(chan *storage.ComplianceOperatorScanV2),
 		resultC:    make(chan *storage.ComplianceOperatorCheckResultV2),
 		stopped:    &finishedSignal,
 		readyQueue: readyTestQueue,
 		scanResults: &ScanWatcherResults{
+			SensorCtx:    ctx,
 			WatcherID:    "id",
 			CheckResults: set.NewStringSet(),
 		},
