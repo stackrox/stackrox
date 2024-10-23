@@ -36,9 +36,9 @@ spec:
     script: |
       #!/usr/bin/env bash
       set -euo pipefail
-      
+
       SKOPEO_RETRIES=5
-      
+
       function copy_image() {
         local -r input_url="${1}"
         local -r output_url="${2}"
@@ -71,7 +71,7 @@ spec:
 
       INPUT_URL="$(params.INPUT_IMAGE_REPO):$(params.INPUT_IMAGE_TAG)"
       OUTPUT_URL="$(params.OUTPUT_IMAGE_REPO):$(params.OUTPUT_IMAGE_TAG)"
-      
+
       # This copies the images themselves.
       # It also handles the case when the image is index on top of arch-specific containers in which case arch-specific
       # containers are also copied (but not tags of arch-specific containers if they were additionally tagged).
@@ -101,7 +101,7 @@ spec:
       fi
 
       echo "Done"
-      
+
       echo -n "${OUTPUT_DIGEST}" | tee "$(results.IMAGE_DIGEST.path)"; echo
       echo -n "${OUTPUT_URL}" | tee "$(results.IMAGE_URL.path)"; echo
       # build-image-index task provides both tag and the digest in the IMAGE_REF. We follow its example.
