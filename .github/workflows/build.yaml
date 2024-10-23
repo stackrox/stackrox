@@ -738,7 +738,8 @@ jobs:
           # Use roxctl code from this branch
           set +e
           set -x
-          tag="$(make --quiet --no-print-directory tag)"
+          tag="quay.io/stackrox-io/roxctl:$(make --quiet --no-print-directory tag)"
+          tag=${tag%:latest}
           docker run --rm -v "$PWD":/workdir -t "$tag" bash -c 'roxctl version; cp $(which roxctl) /workdir/roxctlbin'
           ./roxctl version || (
             echo "$PATH"
