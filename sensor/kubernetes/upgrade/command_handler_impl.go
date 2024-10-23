@@ -137,18 +137,12 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 		return nil
 	}
 
-	if h.configHandler.GetHelmManagedConfig() != nil {
-		var upgradesNotSupportedErr error
-		switch h.configHandler.GetHelmManagedConfig().GetManagedBy() {
-		case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
-			upgradesNotSupportedErr = errors.New("Cluster is Helm-managed and does not support auto-upgrades")
-		case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
-			upgradesNotSupportedErr = errors.New("Cluster is Operator-managed and does not support auto-upgrades")
-		}
-		go h.rejectUpgradeRequest(trigger, upgradesNotSupportedErr)
+	// Stop and cleanup the upgrader early if upgrades are not supported by the current installation method.
+	if err := upgradesSupported(h.configHandler); err != nil {
+		go h.rejectUpgradeRequest(trigger, err)
 		go h.deleteUpgraderDeployments()
 		h.currentProcess = nil
-		return upgradesNotSupportedErr
+		return err
 	}
 
 	newProc, err := newProcess(trigger, h.checkInClient, h.baseK8sRESTConfig)
@@ -161,6 +155,19 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	go newProc.Run()
 	go h.waitForTermination(newProc)
 
+	return nil
+}
+
+// upgradesSupported nil if upgrades are supported, otherwise it returns an error with a reason.
+func upgradesSupported(confH config.Handler) error {
+	if confH.GetHelmManagedConfig() != nil {
+		switch confH.GetHelmManagedConfig().GetManagedBy() {
+		case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
+			return errors.New("Cluster is Helm-managed and does not support auto-upgrades")
+		case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
+			return errors.New("Cluster is Operator-managed and does not support auto-upgrades")
+		}
+	}
 	return nil
 }
 
