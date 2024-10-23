@@ -181,9 +181,15 @@ func (a *aggregateExternalConnByNameImpl) Aggregate(flows []*storage.NetworkFlow
 			continue
 		}
 
-		// Anonymize entities inside the flow as needed
-		flowProps.SrcEntity = anonymizeIfNoExternalIPs(flowProps.SrcEntity, features.NetworkGraphExternalIPs.Enabled())
-		flowProps.DstEntity = anonymizeIfNoExternalIPs(flowProps.DstEntity, features.NetworkGraphExternalIPs.Enabled())
+		// With the addition of the External-IPs feature, 'discovered' external entities can now be the source/destination
+		// of network-flows, and they will likely be numerous.
+		// Since the network-graph is not ready yet to display a large amount of external-entities, we aggregate 'discovered'
+		// entities under the control of the NetworkGraphExternalIPs feature-flag (enabling it is experimental).
+		// Aggregation is achieved by anonymizing 'discovered' entities (replacing them by the Internet entity).
+		if !features.NetworkGraphExternalIPs.Enabled() {
+			flowProps.SrcEntity = anonymizeDiscoveredEntity(flowProps.SrcEntity)
+			flowProps.DstEntity = anonymizeDiscoveredEntity(flowProps.DstEntity)
+		}
 
 		srcEntity, dstEntity = flowProps.SrcEntity, flowProps.DstEntity
 
@@ -328,12 +334,10 @@ func normalizeDupNameExtSrcs(entity *storage.NetworkEntityInfo) {
 	}
 }
 
-// Return NetworkEntityInfo_INTERNET iif:
-// - entity is a 'discovered' external entity
-// - displaying of 'discovered' entities in the network-graph is disabled
+// Return NetworkEntityInfo_INTERNET if entity is a 'discovered' external entity
 // Otherwise, return entity.
-func anonymizeIfNoExternalIPs(entity *storage.NetworkEntityInfo, externalIPs bool) *storage.NetworkEntityInfo {
-	if networkgraph.IsExternalDiscovered(entity) && !externalIPs {
+func anonymizeDiscoveredEntity(entity *storage.NetworkEntityInfo) *storage.NetworkEntityInfo {
+	if networkgraph.IsExternalDiscovered(entity) {
 		return networkgraph.InternetEntity().ToProto()
 	}
 	return entity
