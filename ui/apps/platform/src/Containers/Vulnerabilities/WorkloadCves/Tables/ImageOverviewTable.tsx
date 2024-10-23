@@ -17,6 +17,7 @@ import {
     getHiddenColumnCount,
     ManagedColumns,
 } from 'hooks/useManagedColumns';
+import { getSeveritySortOptions } from 'Containers/Vulnerabilities/utils/sortUtils';
 import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel, WatchStatus } from '../../types';
@@ -153,6 +154,10 @@ function ImageOverviewTable({
                         <TooltipTh
                             className={getVisibilityClass('cvesBySeverity')}
                             tooltip="CVEs by severity across this image"
+                            sort={getSortParams(
+                                'CVEs By Severity',
+                                getSeveritySortOptions(filteredSeverities)
+                            )}
                         >
                             CVEs by severity
                             {isFiltered && <DynamicColumnIcon />}
