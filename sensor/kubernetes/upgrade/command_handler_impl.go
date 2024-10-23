@@ -158,10 +158,10 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	return nil
 }
 
-// upgradesSupported nil if upgrades are supported, otherwise it returns an error with a reason.
-func upgradesSupported(confH config.Handler) error {
-	if confH.GetHelmManagedConfig() != nil {
-		switch confH.GetHelmManagedConfig().GetManagedBy() {
+// upgradesSupported returns nil if upgrades are supported, otherwise it returns an error with a reason.
+func upgradesSupported(helmManagedConfig *central.HelmManagedConfigInit) error {
+	if helmManagedConfig != nil {
+		switch helmManagedConfig.GetManagedBy() {
 		case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
 			return errors.New("Cluster is Helm-managed and does not support auto-upgrades")
 		case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
