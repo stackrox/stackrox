@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator"
@@ -23,7 +24,9 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"golang.org/x/sync/semaphore"
 )
@@ -31,6 +34,10 @@ import (
 var (
 	log         = logging.LoggerForModule()
 	maxRequests = 100
+)
+
+const (
+	defaultMaxErrors = 4
 )
 
 type reportRequest struct {
@@ -41,10 +48,11 @@ type reportRequest struct {
 }
 
 type managerImpl struct {
-	scanConfigDataStore scanConfigurationDS.DataStore
-	scanDataStore       scanDS.DataStore
-	profileDataStore    profileDatastore.DataStore
-	snapshotDataStore   snapshotDS.DataStore
+	scanConfigDataStore  scanConfigurationDS.DataStore
+	scanDataStore        scanDS.DataStore
+	profileDataStore     profileDatastore.DataStore
+	snapshotDataStore    snapshotDS.DataStore
+	integrationDataStore complianceIntegrationDS.DataStore
 
 	runningReportConfigs map[string]*reportRequest
 	// channel for report job requests
@@ -75,12 +83,13 @@ type managerImpl struct {
 	scanConfigReadyQueue *queue.Queue[*watcher.ScanConfigWatcherResults]
 }
 
-func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, profileDataStore profileDatastore.DataStore, snapshotDatastore snapshotDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
+func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataStore, profileDataStore profileDatastore.DataStore, snapshotDatastore snapshotDS.DataStore, complianceIntegration complianceIntegrationDS.DataStore, reportGen reportGen.ComplianceReportGenerator) Manager {
 	return &managerImpl{
 		scanConfigDataStore:   scanConfigDS,
 		scanDataStore:         scanDataStore,
 		profileDataStore:      profileDataStore,
 		snapshotDataStore:     snapshotDatastore,
+		integrationDataStore:  complianceIntegration,
 		stopper:               concurrency.NewStopper(),
 		runningReportConfigs:  make(map[string]*reportRequest, maxRequests),
 		reportRequests:        make(chan *reportRequest, maxRequests),
@@ -344,16 +353,11 @@ func (m *managerImpl) handleReadyScan() {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
 				})
-				// At the moment we simply do not start the ScanConfigWatcher if there are errors in the ScanWatchers.
-				// There are many reasons why a ScanWatcher might fail like, for example, the Scan was deleted mid-execution.
-				// If this happens, we will generate many ReportSnapshots with timeouts. Until we implement a way to
-				// distinguish legitimate failures (CO not reporting back), we log the error not create the Report.
-				if scanWatcherResult.Error != nil {
-					log.Errorf("The scanResults returned with an error: %v", scanWatcherResult.Error)
-					continue
-				}
 				log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
 				w, scanConfig, wasAlreadyRunning, err := m.getScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
+				if errors.Is(err, watcher.ErrScanAlreadyHandled) {
+					continue
+				}
 				if err != nil {
 					log.Errorf("Unable to create the ScanConfigWatcher: %v", err)
 					continue
@@ -381,15 +385,29 @@ func (m *managerImpl) getScanConfigWatcher(ctx context.Context, results *watcher
 	if sc == nil {
 		return nil, nil, false, errors.Errorf("ScanConfiguration not found for scan %s", results.Scan.GetScanName())
 	}
-	var w watcher.ScanConfigWatcher
-	var watcherIsRunning bool
-	concurrency.WithLock(&m.watchingScanConfigsLock, func() {
-		if w, watcherIsRunning = m.watchingScanConfigs[sc.GetId()]; !watcherIsRunning {
-			log.Debugf("Staring config watcher %s", sc.GetId())
+	w, watcherIsRunning := concurrency.WithLock2[watcher.ScanConfigWatcher, bool](&m.watchingScanConfigsLock, func() (watcher.ScanConfigWatcher, bool) {
+		w, watcherIsRunning := m.watchingScanConfigs[sc.GetId()]
+		return w, watcherIsRunning
+	})
+	if !watcherIsRunning {
+		query := search.NewQueryBuilder().
+			AddExactMatches(search.ComplianceOperatorScanRef, results.Scan.GetScanRefId()).
+			AddTimeRangeField(search.ComplianceOperatorScanLastStartedTime, results.Scan.GetLastStartedTime().AsTime(), timestamp.InfiniteFuture.GoTime()).
+			ProtoQuery()
+		snapshot, err := m.snapshotDataStore.SearchSnapshots(m.automaticReportingCtx, query)
+		if err != nil {
+			return nil, nil, false, errors.Wrap(err, "unable to retrieve snapshots from the store")
+		}
+		if len(snapshot) > 0 {
+			// We already handled a scan newer than this one, we ignore this scanResults
+			return nil, nil, false, watcher.ErrScanAlreadyHandled
+		}
+		log.Debugf("Staring config watcher %s", sc.GetId())
+		concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 			w = watcher.NewScanConfigWatcher(m.automaticReportingCtx, ctx, sc.GetId(), sc, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, queue)
 			m.watchingScanConfigs[sc.GetId()] = w
-		}
-	})
+		})
+	}
 	return w, sc, watcherIsRunning, nil
 }
 
@@ -454,7 +472,7 @@ func (m *managerImpl) handleReadyScanConfig() {
 func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConfigWatcherResults) {
 	for _, snapshot := range result.ReportSnapshot {
 		if err := m.validateScanConfigResults(result); err != nil {
-			if dbErr := utils.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, utils.ErrScanWatchersFailed, m.snapshotDataStore); dbErr != nil {
+			if dbErr := utils.UpdateSnapshotOnError(m.automaticReportingCtx, snapshot, err, m.snapshotDataStore); dbErr != nil {
 				log.Errorf("Unable to upsert the snapshot %s: %v", snapshot.GetReportId(), err)
 			}
 			continue
@@ -496,13 +514,39 @@ func (m *managerImpl) handleReportScheduled(request *reportRequest, isOnDemand b
 
 func (m *managerImpl) validateScanConfigResults(result *watcher.ScanConfigWatcherResults) error {
 	if result.Error != nil {
-		return result.Error
+		if errors.Is(result.Error, watcher.ErrScanConfigTimeout) {
+			return utils.ErrScanConfigWatcherTimeout
+		}
+		return utils.ErrScanWatchersFailed
 	}
 
 	errList := errorhelpers.NewErrorList("Scan result errors")
 	for _, scanResult := range result.ScanResults {
 		if scanResult.Error != nil {
-			errList.AddErrors(scanResult.Error)
+			// To not overwhelm the UI we only report a max number of errors
+			if len(errList.Errors()) > defaultMaxErrors {
+				break
+			}
+			err := errors.Errorf("The report for the scan %s in cluster %s could not be generated.", scanResult.Scan.GetScanName(), scanResult.Scan.GetClusterId())
+			if errors.Is(scanResult.Error, watcher.ErrScanTimeout) {
+				healthErr := watcher.IsComplianceOperatorHealthy(m.automaticReportingCtx, scanResult.Scan.GetClusterId(), m.integrationDataStore)
+				if errors.Is(healthErr, watcher.ErrComplianceOperatorNotInstalled) {
+					errList.AddError(errors.Wrap(err, watcher.ErrComplianceOperatorNotInstalled.Error()))
+					continue
+				}
+				if errors.Is(healthErr, watcher.ErrComplianceOperatorVersion) {
+					errList.AddError(errors.Wrap(err, "compliance operator version is not 1.6.0 or greater"))
+					continue
+				}
+
+				err = errors.Wrap(err, "scan timeout")
+				select {
+				case <-scanResult.SensorCtx.Done():
+					err = errors.Wrap(err, "Sensor disconnected during the scan")
+				default:
+				}
+			}
+			errList.AddErrors(err)
 		}
 	}
 

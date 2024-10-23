@@ -8,4 +8,5 @@ var (
 	ErrUnableToSubscribeToWatcher = errors.New("unable to subscribe to scan watcher")
 	ErrNoNotifiersConfigured      = errors.New("no notifiers configured")
 	ErrScanWatchersFailed         = errors.New("scan watchers failed")
+	ErrScanConfigWatcherTimeout   = errors.New("timeout waiting for the scans to finish")
 )
