@@ -16,7 +16,6 @@ import {
     EmptyState,
     EmptyStateIcon,
     EmptyStateBody,
-    EmptyStateVariant,
     Text,
     Alert,
     AlertVariant,
@@ -278,7 +277,7 @@ function VulnReportsPage() {
                                 </div>
                             )}
                             {fetchError && (
-                                <EmptyState variant={EmptyStateVariant.sm}>
+                                <EmptyState variant="sm">
                                     <EmptyStateHeader
                                         titleText="Unable to get vulnerability reports"
                                         icon={

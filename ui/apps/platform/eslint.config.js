@@ -20,6 +20,7 @@ const { browser: browserGlobals, jest: jestGlobals, node: nodeGlobals } = requir
 
 const pluginAccessibility = require('./eslint-plugins/pluginAccessibility');
 const pluginGeneric = require('./eslint-plugins/pluginGeneric');
+const pluginPatternFly = require('./eslint-plugins/pluginPatternFly');
 
 const parserAndOptions = {
     parser: parserTypeScriptESLint,
@@ -534,12 +535,14 @@ module.exports = [
             accessibility: pluginAccessibility,
             generic: pluginGeneric,
             import: pluginImport,
+            patternfly: pluginPatternFly,
             react: pluginReact,
             'react-hooks': pluginReactHooks,
         },
         rules: {
             ...pluginAccessibility.configs.recommended.rules,
             ...pluginGeneric.configs.recommended.rules,
+            ...pluginPatternFly.configs.recommended.rules,
 
             'no-restricted-imports': [
                 'error',
