@@ -43,6 +43,10 @@ func MakeFakeConnectionFactory(c *grpc.ClientConn) *fakeGRPCClient {
 	}
 }
 
+func (f *fakeGRPCClient) StopSignal() concurrency.ReadOnlyErrorSignal {
+	return &f.stopSig
+}
+
 func (f *fakeGRPCClient) ConnectionState() (connectivity.State, error) {
 	f.connMtx.Lock()
 	defer f.connMtx.Unlock()
