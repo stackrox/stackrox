@@ -73,6 +73,7 @@ func (pc *PolicyAsCodeSuite) SetupSuite() {
 	conn := centralgrpc.GRPCConnectionToCentral(pc.T())
 	pc.policyClient = v1.NewPolicyServiceClient(conn)
 	pc.notifierClient = v1.NewNotifierServiceClient(conn)
+	pc.notifier = pc.createNotifierInCentral()
 
 	pc.centralHTTPClient = centralgrpc.HTTPClientForCentral(pc.T())
 
@@ -91,12 +92,7 @@ func (pc *PolicyAsCodeSuite) SetupSuite() {
 
 func (pc *PolicyAsCodeSuite) TestSaveAsCRUpdateDelete() {
 	policy := pc.createPolicyInCentral()
-
-	notifier := pc.createNotifierInCentral()
-	policy.Notifiers = []string{notifier.GetId()}
-
 	pc.policies = append(pc.policies, policy)
-	pc.notifier = notifier
 	k8sPolicy := pc.saveAsCustomResource(policy)
 	k8sPolicy = pc.createPolicyInK8s(k8sPolicy)
 
@@ -146,6 +142,7 @@ func createBasePolicyStruct(name string) *v1alpha1.SecurityPolicy {
 
 func (pc *PolicyAsCodeSuite) TestCreateCR() {
 	k8sPolicy := createBasePolicyStruct("test-policy-create")
+	k8sPolicy.Spec.Notifiers = []string{pc.notifier.GetId()}
 	id := pc.createCRAndObserveInCentral(k8sPolicy)
 	pc.Require().NotEmpty(id)
 	pc.checkPolicyIsDeclarative(id)
@@ -240,6 +237,7 @@ func (pc *PolicyAsCodeSuite) createPolicyInCentral() *storage.Policy {
 			Name:            policyName,
 			Description:     "This is a description",
 			Categories:      []string{"Vulnerability Management"},
+			Notifiers:       []string{pc.notifier.GetId()},
 			Severity:        storage.Severity_MEDIUM_SEVERITY,
 			LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 			PolicySections: []*storage.PolicySection{{
