@@ -28,6 +28,7 @@ var (
 		search.AddCapabilities:               newMapper(fieldnames.AddCaps, directMap),
 		search.CVE:                           newMapper(fieldnames.CVE, directMap),
 		search.CVSS:                          newMapper(fieldnames.CVSS, criteriaMap),
+		search.NVDCVSS:                       newMapper(fieldnames.NvdCvss, criteriaMap),
 		search.CPUCoresLimit:                 newMapper(fieldnames.ContainerCPULimit, criteriaMap),
 		search.CPUCoresRequest:               newMapper(fieldnames.ContainerCPURequest, criteriaMap),
 		search.MemoryLimit:                   newMapper(fieldnames.ContainerMemLimit, criteriaMap),

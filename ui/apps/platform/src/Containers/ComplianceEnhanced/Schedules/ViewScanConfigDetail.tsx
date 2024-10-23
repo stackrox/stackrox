@@ -185,6 +185,7 @@ function ViewScanConfigDetail({
                                 title={alertObj.title}
                                 component="p"
                                 variant={alertObj.type}
+                                isInline
                                 className="pf-v5-u-mb-lg pf-v5-u-mx-lg"
                                 actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                             >
