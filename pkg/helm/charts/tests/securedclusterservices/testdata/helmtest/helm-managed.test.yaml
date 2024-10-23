@@ -12,13 +12,11 @@ tests:
     set:
       helmManaged: true
     expect: |
-      helmClusterConfig | assertThat(.notHelmManaged == false)
       helmClusterConfig | assertThat(.managedBy == "MANAGER_TYPE_HELM_CHART")
   - name: "with false setting"
     set:
       helmManaged: false
     expect: |
-      helmClusterConfig | assertThat(.notHelmManaged == true)
       helmClusterConfig | assertThat(.managedBy == "MANAGER_TYPE_MANUAL")
 
 - name: "Explicitly set fingerprint should be as expected"
@@ -28,13 +26,18 @@ tests:
   set:
     meta.configFingerprintOverride: "test-fpr"
 
-- name: "Operator-installed instance should"
+- name: "Operator-installed instance should have managedBy=MANAGER_TYPE_KUBERNETES_OPERATOR"
   set:
     managedBy: MANAGER_TYPE_KUBERNETES_OPERATOR
   tests:
-  - name: "be not Helm-managed"
-    expect: |
-      helmClusterConfig | assertThat(.notHelmManaged == true)
   - name: "be managed by operator"
     expect: |
       helmClusterConfig | assertThat(.managedBy == "MANAGER_TYPE_KUBERNETES_OPERATOR")
+
+- name: "Helm-installed instance should have managedBy=MANAGER_TYPE_HELM_CHART"
+  set:
+    managedBy: MANAGER_TYPE_HELM_CHART
+  tests:
+  - name: "be managed by operator"
+    expect: |
+      helmClusterConfig | assertThat(.managedBy == "MANAGER_TYPE_HELM_CHART")
