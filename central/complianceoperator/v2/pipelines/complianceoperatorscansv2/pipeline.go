@@ -85,6 +85,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
+		log.Infof("============================== DELETE SCAN: %s", event.GetId())
 		return s.v2Datastore.DeleteScan(ctx, event.GetId())
 	default:
 		scan := internaltov2storage.ComplianceOperatorScanObject(complianceScanObject, clusterID)
