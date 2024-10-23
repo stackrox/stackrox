@@ -727,6 +727,7 @@ jobs:
           endpoint: ${{ vars.ACS_DOGFOODING_CENTRAL_URL }}
 
       - name: Docker login
+        id: docker-login
         env:
           QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -734,20 +735,20 @@ jobs:
           ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
 
       - name: Install roxctl
+        needs: docker-login
         run: |
           # Use roxctl code from this branch
           set +e
           set -x
           tag="quay.io/stackrox-io/roxctl:$(make --quiet --no-print-directory tag)"
           tag=${tag%:latest}
-          docker run --rm -v "$PWD":/workdir -t "$tag" bash -c 'roxctl version; cp $(which roxctl) /workdir/roxctlbin'
-          ./roxctl version || (
-            echo "$PATH"
-            for dir in /usr/local/bin /usr/local/go/bin ~/.local/bin ~/bin; do
-              cp ./roxctlbin "${dir}"/roxctl || continue
-              roxctl version && break
-            done
-          )
+          id=$(docker create -t "${tag}")
+          docker cp ${id}:/roxctl ./roxctlbin
+          echo "$PATH"
+          for dir in /usr/local/bin /usr/local/go/bin ~/.local/bin ~/bin; do
+            cp ./roxctlbin "${dir}"/roxctl || continue
+            roxctl version && break
+          done
 
       # - name: Install roxctl
       #   uses: stackrox/roxctl-installer-action@v1
