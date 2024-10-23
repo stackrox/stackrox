@@ -730,7 +730,6 @@ jobs:
         run: |
           ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
 
-      - name: Push images
       - name: Install roxctl
         run: |
           # Use roxctl code from this branch
