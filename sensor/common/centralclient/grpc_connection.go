@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -20,6 +21,7 @@ import (
 // more easily mocked when writing unit/integration tests.
 type CentralConnectionFactory interface {
 	SetCentralConnectionWithRetries(ptr *util.LazyClientConn, certLoader CertLoader)
+	StopSignal() concurrency.ReadOnlyErrorSignal
 	ConnectionState() (connectivity.State, error)
 }
 
@@ -28,6 +30,7 @@ type centralConnectionFactoryImpl struct {
 	currentState connectivity.State
 	lastError    error
 	stateMux     *sync.Mutex
+	stopSignal   concurrency.ErrorSignal
 }
 
 // NewCentralConnectionFactory returns a factory that can create a gRPC stream between Sensor and Central.
@@ -37,6 +40,7 @@ func NewCentralConnectionFactory(centralClient *Client) CentralConnectionFactory
 		currentState: connectivity.State(99),
 		lastError:    nil,
 		stateMux:     &sync.Mutex{},
+		stopSignal:   concurrency.NewErrorSignal(),
 	}
 }
 
@@ -55,6 +59,11 @@ func (f *centralConnectionFactoryImpl) changeState(state connectivity.State, err
 		return true
 	}
 	return false
+}
+
+// StopSignal returns a concurrency.ReadOnlyErrorSignal that alerts if there is an error trying to establish gRPC connection.
+func (f *centralConnectionFactoryImpl) StopSignal() concurrency.ReadOnlyErrorSignal {
+	return &f.stopSignal
 }
 
 func (f *centralConnectionFactoryImpl) pingCentral() error {
@@ -78,12 +87,13 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 // f.okSignal is used if the connection is successful and f.stopSignal if the
 // connection failed to start. Hence, both signals are reset here.
 func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn, certLoader CertLoader) {
+	f.stopSignal.Reset()
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
 	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
 	if err := f.pingCentral(); err != nil {
 		log.Errorf("checking central status failed: %v", err)
-		f.changeState(connectivity.Shutdown, errors.Wrap(err, "checking central status failed"))
+		f.stopSignal.SignalWithError(errors.Wrap(err, "checking central status failed"))
 		return
 	}
 

@@ -482,6 +482,10 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		exponential.Reset()
 		log.Infof("Waiting for sensor or central communication to stop...")
 		select {
+		case <-s.centralConnectionFactory.StopSignal().WaitC():
+			log.Infof("CentralConnectionFactory stopped")
+			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
+			return wrapOrNewErrorf(s.centralCommunication.Stopped().Err(), "communication stopped (stopped signal)")
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
 				if errors.Is(err, errCantReconcile) {
