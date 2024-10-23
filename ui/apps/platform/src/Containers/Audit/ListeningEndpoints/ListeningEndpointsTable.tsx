@@ -114,7 +114,7 @@ function ListeningEndpointsTable({
                             </Td>
                             <Td dataLabel="Cluster">{cluster}</Td>
                             <Td dataLabel="Namespace">{namespace}</Td>
-                            <Td dataLabel="Listening endpoints count">{count}</Td>
+                            <Td dataLabel="Count">{count}</Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>
                             <Td colSpan={5}>
