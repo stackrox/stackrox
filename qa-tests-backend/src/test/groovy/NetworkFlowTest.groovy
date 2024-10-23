@@ -484,7 +484,7 @@ class NetworkFlowTest extends BaseSpecification {
            "runtime_config.yaml": """
 networking:
     externalIps:
-        enable: true
+        enable: false
 """
         ]
 
