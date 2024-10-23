@@ -170,6 +170,10 @@ func (resolver *Resolver) clustersForReadPermission(ctx context.Context, args Pa
 		sac.ResourceScopeKeys(resources.Cluster),
 	}
 	if !unrestricted {
+		if clusterIDs.Cardinality() == 0 {
+			// No clusters in scope, avoid storage round-trip
+			return []*scopeObjectResolver{}, nil
+		}
 		scopeKeys = append(scopeKeys, sac.ClusterScopeKeys(clusterIDs.AsSlice()...))
 	}
 	elevatedCtx := sac.WithGlobalAccessScopeChecker(

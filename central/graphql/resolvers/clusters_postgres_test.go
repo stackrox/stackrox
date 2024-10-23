@@ -44,7 +44,7 @@ func (s *graphQLClusterTestSuite) SetupSuite() {
 
 	ctx := sac.WithAllAccess(context.Background())
 	for i := 0; i < 6; i++ {
-		cluster := fixtures.GetCluster(fmt.Sprintf("Test cluster %d", i))
+		cluster := fixtures.GetCluster(fmt.Sprintf("Test cluster %d", i+1))
 		id, addErr := clusterDataStore.AddCluster(ctx, cluster)
 		s.Require().NoError(addErr)
 		cluster.Id = id
@@ -116,10 +116,15 @@ func (s *graphQLClusterTestSuite) TestClustersForPermission() {
 		"Disallowed Read on target resource, no cluster retrieved": {
 			ctx: sac.WithGlobalAccessScopeChecker(
 				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.Compliance),
-					sac.ClusterScopeKeys(),
+				sac.TestScopeCheckerCoreFromFullScopeMap(
+					s.T(),
+					sac.TestScopeMap{
+						storage.Access_READ_ACCESS: map[permissions.Resource]*sac.TestResourceScope{
+							resources.Compliance.Resource: {
+								Included: false,
+							},
+						},
+					},
 				),
 			),
 			targetResource:       resources.Compliance,
