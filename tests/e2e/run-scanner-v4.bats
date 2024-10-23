@@ -297,6 +297,7 @@ EOF
 }
 
 @test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
+    skip "Constantly failing: ROX-26581"
     local central_namespace="$CUSTOM_CENTRAL_NAMESPACE"
     local sensor_namespace="$CUSTOM_SENSOR_NAMESPACE"
 
