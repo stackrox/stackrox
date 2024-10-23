@@ -51,7 +51,7 @@ type ScanWatcher interface {
 
 // ScanWatcherResults is returned when the watcher detects that the scan is completed.
 type ScanWatcherResults struct {
-	Ctx          context.Context
+	SensorCtx    context.Context
 	WatcherID    string
 	Scan         *storage.ComplianceOperatorScanV2
 	CheckResults set.StringSet
@@ -162,11 +162,12 @@ type readyQueue[T comparable] interface {
 }
 
 type scanWatcherImpl struct {
-	ctx     context.Context
-	cancel  func()
-	scanC   chan *storage.ComplianceOperatorScanV2
-	resultC chan *storage.ComplianceOperatorCheckResultV2
-	stopped *concurrency.Signal
+	ctx       context.Context
+	sensorCtx context.Context
+	cancel    func()
+	scanC     chan *storage.ComplianceOperatorScanV2
+	resultC   chan *storage.ComplianceOperatorCheckResultV2
+	stopped   *concurrency.Signal
 
 	readyQueue  readyQueue[*ScanWatcherResults]
 	scanResults *ScanWatcherResults
@@ -174,20 +175,21 @@ type scanWatcherImpl struct {
 }
 
 // NewScanWatcher creates a new ScanWatcher
-func NewScanWatcher(ctx context.Context, watcherID string, queue readyQueue[*ScanWatcherResults]) *scanWatcherImpl {
+func NewScanWatcher(ctx, sensorCtx context.Context, watcherID string, queue readyQueue[*ScanWatcherResults]) *scanWatcherImpl {
 	log.Debugf("Creating new ScanWatcher with id %s", watcherID)
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
 	timeout := NewTimer(defaultTimeout)
 	ret := &scanWatcherImpl{
 		ctx:        watcherCtx,
+		sensorCtx:  sensorCtx,
 		cancel:     cancel,
 		scanC:      make(chan *storage.ComplianceOperatorScanV2, defaultChanelSize),
 		resultC:    make(chan *storage.ComplianceOperatorCheckResultV2, defaultChanelSize),
 		stopped:    &finishedSignal,
 		readyQueue: queue,
 		scanResults: &ScanWatcherResults{
-			Ctx:          ctx,
+			SensorCtx:    ctx,
 			WatcherID:    watcherID,
 			CheckResults: set.NewStringSet(),
 		},
