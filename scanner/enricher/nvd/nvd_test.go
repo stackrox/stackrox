@@ -135,11 +135,12 @@ func TestFetch(t *testing.T) {
 				if err != nil {
 					t.Fatalf("wanted nil error")
 				}
-				enrichments := map[string]*driver.EnrichmentRecord{}
+				enrichments := make(map[string]driver.EnrichmentRecord)
 				dec := json.NewDecoder(rc)
-				var e *driver.EnrichmentRecord
+				var e driver.EnrichmentRecord
 				for err = dec.Decode(&e); err == nil; err = dec.Decode(&e) {
 					enrichments[e.Tags[0]] = e
+					e = driver.EnrichmentRecord{}
 				}
 				if !errors.Is(err, io.EOF) {
 					t.Fatalf("wanted EOF, found: %v", err)
@@ -147,11 +148,23 @@ func TestFetch(t *testing.T) {
 				// Look for some CVEs.
 				_, ok := enrichments["CVE-2023-50612"]
 				if !ok {
-					t.Fatalf("CVE-2023-50612 not found")
+					t.Fatal("CVE-2023-50612 not found")
 				}
 				_, ok = enrichments["CVE-2023-50609"]
 				if !ok {
-					t.Fatalf("CVE-2023-50609 not found")
+					t.Fatal("CVE-2023-50609 not found")
+				}
+				enrichment, ok := enrichments["CVE-2017-18349"]
+				if !ok {
+					t.Fatal("CVE-2017-18349 not found")
+				}
+				var item schema.CVEAPIJSON20CVEItem
+				if err := json.Unmarshal(enrichment.Enrichment, &item); err != nil {
+					t.Fatalf("could not unmarshal CVE-2017-18349 enrichment: %v", err)
+				}
+				t.Logf("CVE-2017-18349: %s - %+#v", item.ID, item.Metrics)
+				if item.Metrics == nil || item.Metrics.CvssMetricV31 != nil {
+					t.Fatal("unexpected values for CVE-2017-18349")
 				}
 			},
 		},
