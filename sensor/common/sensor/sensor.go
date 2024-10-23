@@ -456,6 +456,8 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			s.changeState(common.SensorComponentEventCentralReachable)
 		case connectivity.Connecting:
 			// Do nothing, let it connect
+			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
+			return errors.New("Connection is in connecting state")
 		default:
 			s.changeState(common.SensorComponentEventOfflineMode)
 			// Save the error before retrying
@@ -464,7 +466,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
 			return err
 		}
-		log.Infof("Post select")
+		log.Infof("Connection state change handled")
 
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
@@ -478,6 +480,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		go s.notifySyncDone(&syncDone, centralCommunication)
 		// Reset the exponential back-off if the connection succeeds
 		exponential.Reset()
+		log.Infof("Waiting for sensor or central communication to stop...")
 		select {
 		case <-s.centralCommunication.Stopped().WaitC():
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
