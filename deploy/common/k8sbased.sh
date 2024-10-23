@@ -151,6 +151,10 @@ function launch_central {
         prompt_if_central_exists "${central_namespace}"
     fi
 
+    echo "Installing SecurityPolicy CRD..."
+
+    kubectl apply -f config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml
+
     echo "Generating central config..."
 
     local EXTRA_ARGS=()
