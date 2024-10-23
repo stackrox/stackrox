@@ -1596,6 +1596,13 @@ gate_flaky_tests() {
     git -C /tmp clone --depth=1 --branch "mtodor/add-flakechecker" https://github.com/stackrox/junit2jira.git /tmp/junit2jira-flakechecker
     (cd /tmp/junit2jira-flakechecker && go build  -o . ./...)
 
+    echo "Pre: GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}"
+    setup_gcp
+    echo "Post: GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}"
+    if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS}" ]]; then
+        echo "File: ${GOOGLE_APPLICATION_CREDENTIALS} not found"
+    fi
+
     # Run flakechecker for failed test
     local config_file="${SCRIPTS_ROOT}/scripts/ci/flakechecker/flake-config.json"
     /tmp/junit2jira-flakechecker/flakechecker --config-file "${config_file}" --job-name "${JOB_NAME}" -junit-reports-dir "${ARTIFACT_DIR}" || exit "${exit_code}"
