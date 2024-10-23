@@ -39,7 +39,7 @@ func TestEnsureServiceCertificates(t *testing.T) {
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	ctx := context.Background()
 
-	repo := NewServiceCertificatesRepo(sensorOwnerReference(sensorDeployment)[0], namespace, secretsClient)
+	repo := NewServiceCertificatesRepo(sensorOwnerReference(sensorDeployment), namespace, secretsClient)
 	persistedCertificates, err := repo.EnsureServiceCertificates(ctx, securedClusterCertificateSet)
 
 	assert.NoError(t, err)
@@ -56,19 +56,17 @@ func TestEnsureServiceCertificates(t *testing.T) {
 	}
 }
 
-func sensorOwnerReference(sensorDeployment *appsApiv1.Deployment) []metav1.OwnerReference {
+func sensorOwnerReference(sensorDeployment *appsApiv1.Deployment) metav1.OwnerReference {
 	sensorDeploymentGVK := sensorDeployment.GroupVersionKind()
 	blockOwnerDeletion := false
 	isController := false
-	return []metav1.OwnerReference{
-		{
-			APIVersion:         sensorDeploymentGVK.GroupVersion().String(),
-			Kind:               sensorDeploymentGVK.Kind,
-			Name:               sensorDeployment.GetName(),
-			UID:                sensorDeployment.GetUID(),
-			BlockOwnerDeletion: &blockOwnerDeletion,
-			Controller:         &isController,
-		},
+	return metav1.OwnerReference{
+		APIVersion:         sensorDeploymentGVK.GroupVersion().String(),
+		Kind:               sensorDeploymentGVK.Kind,
+		Name:               sensorDeployment.GetName(),
+		UID:                sensorDeployment.GetUID(),
+		BlockOwnerDeletion: &blockOwnerDeletion,
+		Controller:         &isController,
 	}
 }
 

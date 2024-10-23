@@ -11,13 +11,13 @@ const (
 	// These secret names follow a different convention than our legacy secrets (e.g. sensor-tls, scanner-tls etc.),
 	// so that they can both exist in parallel. This is in order to not create conflicts with automations of existing
 	// deployments that might provide those legacy secrets.
-	sensorSecretName           = "tls-cert-sensor"             // #nosec G101 not a hardcoded credentials
-	collectorSecretName        = "tls-cert-collector"          // #nosec G101 not a hardcoded credentials
-	admissionControlSecretName = "tls-cert-admission-control"  // #nosec G101 not a hardcoded credentials
-	scannerSecretName          = "tls-cert-scanner"            // #nosec G101 not a hardcoded credentials
-	scannerDbSecretName        = "tls-cert-scanner-db"         // #nosec G101 not a hardcoded credentials
-	scannerV4IndexerSecretName = "tls-cert-scanner-v4-indexer" // #nosec G101 not a hardcoded credentials
-	scannerV4DbSecretName      = "tls-cert-scanner-v4-db-tls"  // #nosec G101 not a hardcoded credentials
+	sensorSecretName           = "tls-cert-sensor"             // #nosec G101 not a hardcoded credential
+	collectorSecretName        = "tls-cert-collector"          // #nosec G101 not a hardcoded credential
+	admissionControlSecretName = "tls-cert-admission-control"  // #nosec G101 not a hardcoded credential
+	scannerSecretName          = "tls-cert-scanner"            // #nosec G101 not a hardcoded credential
+	scannerDbSecretName        = "tls-cert-scanner-db"         // #nosec G101 not a hardcoded credential
+	scannerV4IndexerSecretName = "tls-cert-scanner-v4-indexer" // #nosec G101 not a hardcoded credential
+	scannerV4DbSecretName      = "tls-cert-scanner-v4-db-tls"  // #nosec G101 not a hardcoded credential
 )
 
 // NewServiceCertificatesRepo creates a new ServiceCertificatesRepoSecrets that persists certificates for

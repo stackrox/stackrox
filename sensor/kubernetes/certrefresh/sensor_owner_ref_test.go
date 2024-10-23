@@ -147,7 +147,7 @@ func TestFetchSensorDeploymentOwnerRef(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ownerRef, err := FetchSensorDeploymentOwnerRef(context.TODO(), tt.podName, tt.namespace, tt.k8sClient, backoff)
+			ownerRef, err := FetchSensorDeploymentOwnerRef(context.Background(), tt.podName, tt.namespace, tt.k8sClient, backoff)
 
 			if tt.expectedErr {
 				assert.Error(t, err)
