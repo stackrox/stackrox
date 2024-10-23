@@ -45,6 +45,7 @@ ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" S
 
 ENV GOFLAGS=""
 ENV CGO_ENABLED=1
+ENV GOEXPERIMENT=strictfipsruntime
 # TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
 # ENV GOTAGS="release"
