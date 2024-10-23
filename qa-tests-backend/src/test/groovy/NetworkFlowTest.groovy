@@ -62,6 +62,8 @@ class NetworkFlowTest extends BaseSpecification {
 
     static final private String SOCAT_DEBUG = "-d -d -v"
 
+    static final private CONFIG_MAP_NAME = "collector-config"
+
     // Target deployments
     @Shared
     private List<Deployment> targetDeployments
@@ -478,11 +480,45 @@ class NetworkFlowTest extends BaseSpecification {
         String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
         assert deploymentUid != null
 
+        def Map<String, String> CONFIG_MAP_DATA = [
+           "runtime_config.yaml": """
+networking:
+    externalIps:
+        enable: true
+"""
+        ]
+
+        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
+
+	sleep 60000
+
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
         assert edges
 
-        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA)
+        CONFIG_MAP_DATA = [
+           "runtime_config.yaml": """
+networking:
+    externalIps:
+        enable: true
+"""
+       ]
+        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+
+        assert waitForEdgeToBeClosed(edges.get(0), 165)
+        edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+
+        CONFIG_MAP_DATA = [
+           "runtime_config.yaml": """
+networking:
+    externalIps:
+        enable: false
+"""
+       ]
+
+        orchestrator.createConfigMap(CONFIG_MAP_NAME, CONFIG_MAP_DATA, "stackrox")
+        assert waitForEdgeUpdate(edges.get(0), 90)
     }
 
     @Tag("NetworkFlowVisualization")
