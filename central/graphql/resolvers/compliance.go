@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -66,6 +67,7 @@ func InitCompliance() {
 			schema.AddExtraResolver("ComplianceControl", "complianceControlNodes(query: String): [Node!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlFailingNodes(query: String): [Node!]!"),
 			schema.AddExtraResolver("ComplianceControl", "complianceControlPassingNodes(query: String): [Node!]!"),
+			schema.AddQuery("complianceClusters(query: String, pagination: Pagination): [ScopeObject!]!"),
 		)
 	})
 }
@@ -146,6 +148,15 @@ func (resolver *Resolver) ComplianceClusterCount(ctx context.Context, args RawQu
 	}
 	scope := []storage.ComplianceAggregation_Scope{storage.ComplianceAggregation_CLUSTER}
 	return resolver.getComplianceEntityCount(ctx, args, scope)
+}
+
+// ComplianceClusters returns a graphql resolver for the clusters in Compliance scope
+func (resolver *Resolver) ComplianceClusters(ctx context.Context, args PaginatedQuery) ([]*scopeObjectResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ComplianceClusters")
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	return resolver.clustersForReadPermission(ctx, args, resources.Compliance)
 }
 
 // ComplianceDeploymentCount returns count of deployments that have compliance run on them
