@@ -48,10 +48,10 @@ type ScanConfigWatcherResults struct {
 }
 
 type scanConfigWatcherImpl struct {
-	ctx     context.Context
-	cancel  func()
-	scanC   chan *ScanWatcherResults
-	stopped *concurrency.Signal
+	ctx                 context.Context
+	cancel              func()
+	scanWatcherResoutsC chan *ScanWatcherResults
+	stopped             *concurrency.Signal
 
 	scanDS     scan.DataStore
 	profileDS  profileDatastore.DataStore
@@ -70,14 +70,14 @@ func NewScanConfigWatcher(ctx context.Context, watcherID string, sc *storage.Com
 	finishedSignal := concurrency.NewSignal()
 	timeout := NewTimer(defaultScanConfigTimeout)
 	ret := &scanConfigWatcherImpl{
-		ctx:        watcherCtx,
-		cancel:     cancel,
-		stopped:    &finishedSignal,
-		scanDS:     scanDS,
-		profileDS:  profileDS,
-		snapshotDS: snapshotDS,
-		scanC:      make(chan *ScanWatcherResults),
-		readyQueue: queue,
+		ctx:                 watcherCtx,
+		cancel:              cancel,
+		stopped:             &finishedSignal,
+		scanDS:              scanDS,
+		profileDS:           profileDS,
+		snapshotDS:          snapshotDS,
+		scanWatcherResoutsC: make(chan *ScanWatcherResults),
+		readyQueue:          queue,
 		scanConfigResults: &ScanConfigWatcherResults{
 			Ctx:         ctx,
 			WatcherID:   watcherID,
@@ -95,12 +95,13 @@ func (w *scanConfigWatcherImpl) PushScanResults(results *ScanWatcherResults) err
 	select {
 	case <-w.ctx.Done():
 		return errors.New("The watcher is stopped")
-	case w.scanC <- results:
+	case w.scanWatcherResoutsC <- results:
 		return nil
 	}
 }
 
-// Subscribe snapshot to the watcher
+// Subscribe snapshot to the watcher. A subscribed snapshot is a snapshots that
+// needs to be updated from 'WAITING' to 'PREPARING' once the ScanConfigWatcher finishes.
 func (w *scanConfigWatcherImpl) Subscribe(snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
 	if w.scanConfigResults == nil {
 		return errors.New("the scan config results are nil")
@@ -162,7 +163,7 @@ func (w *scanConfigWatcherImpl) run(timer Timer) {
 				w.readyQueue.Push(w.scanConfigResults)
 			})
 			return
-		case result := <-w.scanC:
+		case result := <-w.scanWatcherResoutsC:
 			if err := w.handleScanResults(result); err != nil {
 				log.Errorf("Unable to handle scan results %s: %v", result.Scan.GetScanName(), err)
 				concurrency.WithLock(&w.resultsLock, func() {

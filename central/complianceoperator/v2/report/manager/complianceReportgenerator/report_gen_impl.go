@@ -47,7 +47,6 @@ var (
 		"Status",
 		"Remediation",
 	}
-	numberOfTries = 3
 )
 
 type formatBody struct {
@@ -62,6 +61,8 @@ type formatBody struct {
 const (
 	DATA_NOT_AVAILABLE = "Data Not Available"
 	NO_REMEDIATION     = "No Remediation Available"
+
+	defaultNumberOfTriesOnEmailSend = 3
 )
 
 type formatSubject struct {
@@ -71,14 +72,15 @@ type formatSubject struct {
 }
 
 type complianceReportGeneratorImpl struct {
-	checkResultsDS        checkResults.DataStore
-	notificationProcessor notifier.Processor
-	scanDS                scanDS.DataStore
-	profileDS             profileDS.DataStore
-	remediationDS         remediationDS.DataStore
-	benchmarkDS           benchmarksDS.DataStore
-	complianceRuleDS      complianceRuleDS.DataStore
-	snapshotDS            snapshotDataStore.DataStore
+	checkResultsDS           checkResults.DataStore
+	notificationProcessor    notifier.Processor
+	scanDS                   scanDS.DataStore
+	profileDS                profileDS.DataStore
+	remediationDS            remediationDS.DataStore
+	benchmarkDS              benchmarksDS.DataStore
+	complianceRuleDS         complianceRuleDS.DataStore
+	snapshotDS               snapshotDataStore.DataStore
+	numberOfTriesOnEmailSend int
 }
 
 // struct which hold all columns of a row
@@ -117,10 +119,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceRep
 
 	zipData, err := format(data.ResultCSVs)
 	if err != nil {
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
-		snapshot.GetReportStatus().ErrorMsg = reportUtils.ErrReportGeneration.Error()
-		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
-		if dbErr := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); dbErr != nil {
+		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, reportUtils.ErrReportGeneration, rg.snapshotDS); dbErr != nil {
 			return errors.Wrap(dbErr, "unable to update the snapshot on report generation failure")
 		}
 		return errors.Wrapf(err, "unable to zip the compliance reports for scan config %s", req.ScanConfigName)
@@ -278,7 +277,7 @@ func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData 
 		if customSubject != "" {
 			emailSubject = customSubject
 		}
-		err = retryableSendReportResults(reportNotifier, repNotifier.GetEmailConfig().GetMailingLists(),
+		err = retryableSendReportResults(rg.numberOfTriesOnEmailSend, reportNotifier, repNotifier.GetEmailConfig().GetMailingLists(),
 			zipData, emailSubject, body, reportName)
 		if err != nil {
 			errorList.AddError(errors.Errorf("Error sending compliance report email for notifier %s: %s",
@@ -288,10 +287,7 @@ func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData 
 
 	if !errorList.Empty() {
 		log.Errorf("Error in sending email to notifiers %s", errorList)
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
-		snapshot.GetReportStatus().ErrorMsg = reportUtils.ErrSendingEmail.Error()
-		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
-		if err := rg.snapshotDS.UpsertSnapshot(ctx, snapshot); err != nil {
+		if err := reportUtils.UpdateSnapshotOnError(ctx, snapshot, reportUtils.ErrSendingEmail, rg.snapshotDS); err != nil {
 			log.Errorf("Unable to update snapshot on send email failure: %v", err)
 		}
 		return
@@ -319,8 +315,11 @@ func formatEmailBodywithDetails(subject string, data *formatBody) (string, error
 	return templates.ExecuteToString(tmpl, data)
 }
 
-func retryableSendReportResults(reportNotifier notifiers.ReportNotifier, mailingList []string,
+func retryableSendReportResults(numberOfTries int, reportNotifier notifiers.ReportNotifier, mailingList []string,
 	zippedCSVData *bytes.Buffer, emailSubject, emailBody, reportName string) error {
+	if numberOfTries < 1 {
+		numberOfTries = defaultNumberOfTriesOnEmailSend
+	}
 	return retry.WithRetry(func() error {
 		return reportNotifier.ReportNotify(reportGenCtx, zippedCSVData, mailingList, emailSubject, emailBody, reportName)
 	},

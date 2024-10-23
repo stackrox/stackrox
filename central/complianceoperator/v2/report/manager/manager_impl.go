@@ -185,7 +185,7 @@ func (m *managerImpl) generateReportNoLock(req *reportRequest) {
 		Ctx:            req.ctx,
 		SnapshotID:     req.snapshotID,
 	}
-	logging.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
+	log.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
 	if err := m.reportGen.ProcessReportRequest(repRequest); err != nil {
 		log.Errorf("unable to process the report request: %v", err)
 	}
@@ -257,10 +257,7 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 	// This means we cannot generate the report at this moment.
 	// We subscribe to the watcher to later generate the report once it's finished.
 	if err := w.Subscribe(snapshot); err != nil {
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
-		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
-		snapshot.GetReportStatus().ErrorMsg = utils.ErrUnableToSubscribeToWatcher.Error()
-		if dbErr := m.snapshotDataStore.UpsertSnapshot(request.ctx, snapshot); dbErr != nil {
+		if dbErr := utils.UpdateSnapshotOnError(request.ctx, snapshot, utils.ErrUnableToSubscribeToWatcher, m.snapshotDataStore); dbErr != nil {
 			return false, errors.Wrap(dbErr, "unable to upsert snapshot on watcher subscription failure")
 		}
 		return false, errors.New("unable to subscribe to the scan configuration watcher")
@@ -416,11 +413,8 @@ func (m *managerImpl) createAutomaticSnapshotAndSubscribe(ctx context.Context, s
 	}
 	if err := w.Subscribe(snapshot); err != nil {
 		log.Errorf("Unable to subscribe to the scan configuration watcher")
-		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
-		snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
-		snapshot.GetReportStatus().ErrorMsg = utils.ErrUnableToSubscribeToWatcher.Error()
-		if err := m.snapshotDataStore.UpsertSnapshot(ctx, snapshot); err != nil {
-			return errors.Wrap(err, "unable to upsert the snapshot")
+		if dbErr := utils.UpdateSnapshotOnError(ctx, snapshot, utils.ErrUnableToSubscribeToWatcher, m.snapshotDataStore); dbErr != nil {
+			return errors.Wrap(dbErr, "unable to upsert the snapshot")
 		}
 		return errors.Wrap(err, utils.ErrUnableToSubscribeToWatcher.Error())
 	}
@@ -457,10 +451,7 @@ func (m *managerImpl) handleReadyScanConfig() {
 func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConfigWatcherResults) {
 	for _, snapshot := range result.ReportSnapshot {
 		if err := m.validateScanConfigResults(result); err != nil {
-			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
-			snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()
-			snapshot.GetReportStatus().ErrorMsg = utils.ErrScanWatchersFailed.Error()
-			if err := m.snapshotDataStore.UpsertSnapshot(result.Ctx, snapshot); err != nil {
+			if dbErr := utils.UpdateSnapshotOnError(result.Ctx, snapshot, utils.ErrScanWatchersFailed, m.snapshotDataStore); dbErr != nil {
 				log.Errorf("Unable to upsert the snapshot %s: %v", snapshot.GetReportId(), err)
 			}
 			continue

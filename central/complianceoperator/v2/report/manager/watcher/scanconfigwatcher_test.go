@@ -257,13 +257,13 @@ func TestScanConfigWatcherTimeout(t *testing.T) {
 		ch: timeoutC,
 	}
 	scanConfigWatcher := &scanConfigWatcherImpl{
-		ctx:        ctx,
-		cancel:     cancel,
-		stopped:    &finishedSignal,
-		scanDS:     scanDS,
-		profileDS:  profileDS,
-		snapshotDS: snapshotDS,
-		scanC:      make(chan *ScanWatcherResults),
+		ctx:                 ctx,
+		cancel:              cancel,
+		stopped:             &finishedSignal,
+		scanDS:              scanDS,
+		profileDS:           profileDS,
+		snapshotDS:          snapshotDS,
+		scanWatcherResoutsC: make(chan *ScanWatcherResults),
 		scanConfigResults: &ScanConfigWatcherResults{
 			WatcherID: "id",
 			ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{

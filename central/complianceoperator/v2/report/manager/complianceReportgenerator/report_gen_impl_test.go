@@ -14,10 +14,10 @@ import (
 	ruleMocks "github.com/stackrox/rox/central/complianceoperator/v2/rules/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -67,11 +67,6 @@ func (s *ComplainceReportingTestSuite) TestFormatReport() {
 }
 
 func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
-	// GetSnapshot data store error
-	s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
-			return nil, false, errors.New("some error")
-		})
 	request := &ComplianceReportRequest{
 		ScanConfigID: "scan-config-1",
 		SnapshotID:   "snapshot-1",
@@ -88,136 +83,119 @@ func (s *ComplainceReportingTestSuite) TestProcessReportRequest() {
 			},
 		},
 	}
-	s.Require().Error(s.reportGen.ProcessReportRequest(request))
 
-	// Snapshot not found
-	s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
-			return nil, false, nil
-		})
-	s.Require().Error(s.reportGen.ProcessReportRequest(request))
+	s.Run("GetSnapshots data store error", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(nil, false, errors.New("some error"))
+		s.Require().Error(s.reportGen.ProcessReportRequest(request))
+	})
 
-	// Fail to upsert Snapshot
-	s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
-			return &storage.ComplianceOperatorReportSnapshotV2{
+	s.Run("Snapshot not found", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(nil, false, nil)
+		s.Require().Error(s.reportGen.ProcessReportRequest(request))
+	})
+
+	s.Run("Fail to upsert Snapshot", func() {
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
-			}, true, nil
-		})
-	s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-		DoAndReturn(func(_, _, _ any) error {
-			return nil
-		})
-	s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-			s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
-			return errors.New("some error")
-		})
-	s.Require().Error(s.reportGen.ProcessReportRequest(request))
-
-	// Fail to grab notifiers
-	wg := &sync.WaitGroup{}
-	wg.Add(2)
-	s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
-			return &storage.ComplianceOperatorReportSnapshotV2{
-				ReportStatus: &storage.ComplianceOperatorReportStatus{},
-			}, true, nil
-		})
-	s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-		DoAndReturn(func(_, _, _ any) error {
-			return nil
-		})
-	gomock.InOrder(
+			}, true, nil)
+		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
+			Return(nil)
 		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
 				s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
-				wg.Done()
-				return nil
-			}),
-		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
-			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-				s.Require().Equal(storage.ComplianceOperatorReportStatus_FAILURE, snapshot.GetReportStatus().GetRunState())
-				wg.Done()
-				return nil
-			}),
-	)
-	s.notifierProcessor.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Times(len(request.Notifiers)).
-		DoAndReturn(func(_, _ any) notifiers.Notifier {
-			return nil
-		})
-	s.Require().NoError(s.reportGen.ProcessReportRequest(request))
-	handleWaitGroup(s.T(), wg, 500*time.Millisecond, "send email failure")
+				return errors.New("some error")
+			})
+		s.Require().Error(s.reportGen.ProcessReportRequest(request))
+	})
 
-	// Fail to notify
-	numberOfTries = 1
-	wg = &sync.WaitGroup{}
-	wg.Add(3)
-	s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
-			return &storage.ComplianceOperatorReportSnapshotV2{
+	s.Run("Fail to grab the notifiers", func() {
+		wg := concurrency.NewWaitGroup(2)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
-			}, true, nil
-		})
-	s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-		DoAndReturn(func(_, _, _ any) error {
-			return nil
-		})
-	gomock.InOrder(
-		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
-			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-				s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
-				wg.Done()
-				return nil
-			}),
-		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
-			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-				s.Require().Equal(storage.ComplianceOperatorReportStatus_FAILURE, snapshot.GetReportStatus().GetRunState())
-				wg.Done()
-				return nil
-			}),
-	)
-	s.notifierProcessor.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Times(len(request.Notifiers)).
-		DoAndReturn(func(_, _ any) notifiers.Notifier {
-			return &fakeNotifierAlwaysFail{wg}
-		})
-	s.Require().NoError(s.reportGen.ProcessReportRequest(request))
-	handleWaitGroup(s.T(), wg, 500*time.Millisecond, "send email failure")
+			}, true, nil)
+		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
+			Return(nil)
+		gomock.InOrder(
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
+				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+					s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
+					wg.Add(-1)
+					return nil
+				}),
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
+				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+					s.Require().Equal(storage.ComplianceOperatorReportStatus_FAILURE, snapshot.GetReportStatus().GetRunState())
+					wg.Add(-1)
+					return nil
+				}),
+		)
+		s.notifierProcessor.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Times(len(request.Notifiers)).
+			Return(nil)
+		s.Require().NoError(s.reportGen.ProcessReportRequest(request))
+		handleWaitGroup(s.T(), &wg, 500*time.Millisecond, "send email failure")
+	})
 
-	// Notify success
-	numberOfTries = 1
-	wg = &sync.WaitGroup{}
-	wg.Add(3)
-	s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(_, _ any) (*storage.ComplianceOperatorReportSnapshotV2, bool, error) {
-			return &storage.ComplianceOperatorReportSnapshotV2{
+	s.Run("Fail to notify", func() {
+		s.reportGen.numberOfTriesOnEmailSend = 1
+		wg := concurrency.NewWaitGroup(3)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
 				ReportStatus: &storage.ComplianceOperatorReportStatus{},
-			}, true, nil
-		})
-	s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
-		DoAndReturn(func(_, _, _ any) error {
-			return nil
-		})
-	gomock.InOrder(
-		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
-			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-				s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
-				wg.Done()
-				return nil
-			}),
-		s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
-			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-				s.Require().Equal(storage.ComplianceOperatorReportStatus_DELIVERED, snapshot.GetReportStatus().GetRunState())
-				wg.Done()
-				return nil
-			}),
-	)
-	s.notifierProcessor.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Times(len(request.Notifiers)).
-		DoAndReturn(func(_, _ any) notifiers.Notifier {
-			return &fakeNotifierAlwaysSuccess{wg}
-		})
-	s.Require().NoError(s.reportGen.ProcessReportRequest(request))
-	handleWaitGroup(s.T(), wg, 5*time.Second, "send email failure")
+			}, true, nil)
+		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
+			Return(nil)
+		gomock.InOrder(
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
+				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+					s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
+					wg.Add(-1)
+					return nil
+				}),
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
+				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+					s.Require().Equal(storage.ComplianceOperatorReportStatus_FAILURE, snapshot.GetReportStatus().GetRunState())
+					wg.Add(-1)
+					return nil
+				}),
+		)
+		s.notifierProcessor.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Times(len(request.Notifiers)).
+			Return(&fakeNotifierAlwaysFail{&wg})
+		s.Require().NoError(s.reportGen.ProcessReportRequest(request))
+		handleWaitGroup(s.T(), &wg, 500*time.Millisecond, "send email failure")
+	})
+
+	s.Run("Notify success", func() {
+		s.reportGen.numberOfTriesOnEmailSend = 1
+		wg := concurrency.NewWaitGroup(3)
+		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), gomock.Any()).Times(1).
+			Return(&storage.ComplianceOperatorReportSnapshotV2{
+				ReportStatus: &storage.ComplianceOperatorReportStatus{},
+			}, true, nil)
+		s.checkResultsDS.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).Times(len(request.ClusterIDs)).
+			Return(nil)
+		gomock.InOrder(
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
+				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+					s.Require().Equal(storage.ComplianceOperatorReportStatus_GENERATED, snapshot.GetReportStatus().GetRunState())
+					wg.Add(-1)
+					return nil
+				}),
+			s.snapshotDS.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
+				DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
+					s.Require().Equal(storage.ComplianceOperatorReportStatus_DELIVERED, snapshot.GetReportStatus().GetRunState())
+					wg.Add(-1)
+					return nil
+				}),
+		)
+		s.notifierProcessor.EXPECT().GetNotifier(gomock.Any(), gomock.Any()).Times(len(request.Notifiers)).
+			Return(&fakeNotifierAlwaysSuccess{&wg})
+		s.Require().NoError(s.reportGen.ProcessReportRequest(request))
+		handleWaitGroup(s.T(), &wg, 5*time.Second, "send email failure")
+	})
 }
 
 func (s *ComplainceReportingTestSuite) getReportData() map[string][]*ResultRow {
@@ -244,22 +222,17 @@ func (s *ComplainceReportingTestSuite) getReportData() map[string][]*ResultRow {
 	return results
 }
 
-func handleWaitGroup(t *testing.T, wg *sync.WaitGroup, timeout time.Duration, msg string) {
-	c := make(chan struct{})
-	go func() {
-		defer close(c)
-		wg.Wait()
-	}()
+func handleWaitGroup(t *testing.T, wg *concurrency.WaitGroup, timeout time.Duration, msg string) {
 	select {
-	case <-c:
 	case <-time.After(timeout):
 		t.Errorf("timeout waiting for %s", msg)
 		t.Fail()
+	case <-wg.Done():
 	}
 }
 
 type fakeNotifierAlwaysSuccess struct {
-	wg *sync.WaitGroup
+	wg *concurrency.WaitGroup
 }
 
 func (f *fakeNotifierAlwaysSuccess) Close(_ context.Context) error {
@@ -273,12 +246,12 @@ func (f *fakeNotifierAlwaysSuccess) Test(_ context.Context) *notifiers.NotifierE
 }
 
 func (f *fakeNotifierAlwaysSuccess) ReportNotify(_ context.Context, _ *bytes.Buffer, _ []string, _, _, _ string) error {
-	f.wg.Done()
+	f.wg.Add(-1)
 	return nil
 }
 
 type fakeNotifierAlwaysFail struct {
-	wg *sync.WaitGroup
+	wg *concurrency.WaitGroup
 }
 
 func (f *fakeNotifierAlwaysFail) Close(_ context.Context) error {
@@ -292,6 +265,6 @@ func (f *fakeNotifierAlwaysFail) Test(_ context.Context) *notifiers.NotifierErro
 }
 
 func (f *fakeNotifierAlwaysFail) ReportNotify(_ context.Context, _ *bytes.Buffer, _ []string, _, _, _ string) error {
-	f.wg.Done()
+	f.wg.Add(-1)
 	return errors.New("some error")
 }
