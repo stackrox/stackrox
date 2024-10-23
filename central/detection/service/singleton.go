@@ -9,7 +9,7 @@ import (
 	networkpolicyDatastore "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	"github.com/stackrox/rox/central/sensor/enhancement"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
@@ -34,7 +34,7 @@ func initialize() {
 		processor.Singleton(),
 		deploytime.SingletonDetector(),
 		deploytime.SingletonPolicySet(),
-		sachelper.NewClusterSacHelper(clusterDS),
+		sacHelper.NewClusterSacHelper(clusterDS),
 		connection.ManagerSingleton(),
 		enhancement.BrokerSingleton(),
 		networkpolicyDatastore.Singleton(),

@@ -75,7 +75,7 @@ func (h *clusterSACHelperImpl) GetClustersForPermissions(
 	pagination *v1.Pagination,
 ) ([]*v1.ScopeObject, error) {
 	resourcesWithAccess := listReadPermissions(requestedPermissions, permissions.ClusterScope)
-	clusterIDsInScope, hasFullAccess, err := listClusterIDsInScope(ctx, resourcesWithAccess)
+	clusterIDsInScope, hasFullAccess, err := ListClusterIDsInScope(ctx, resourcesWithAccess)
 	if err != nil {
 		return nil, err
 	}

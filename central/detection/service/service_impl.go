@@ -19,7 +19,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -111,7 +111,7 @@ type serviceImpl struct {
 
 	detector deploytime.Detector
 
-	clusterSACHelper sachelper.ClusterSacHelper
+	clusterSACHelper sacHelper.ClusterSacHelper
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

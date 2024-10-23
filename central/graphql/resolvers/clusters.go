@@ -12,11 +12,15 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/policy/matcher"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
@@ -143,6 +147,53 @@ func (resolver *Resolver) Clusters(ctx context.Context, args PaginatedQuery) ([]
 
 	clusters, err := resolver.ClusterDataStore.SearchRawClusters(ctx, query)
 	return resolver.wrapClustersWithContext(ctx, clusters, err)
+}
+
+func (resolver *Resolver) clustersForPermission(ctx context.Context, args PaginatedQuery, resource permissions.ResourceWithAccess) ([]*scopeObjectResolver, error) {
+	query, err := args.AsV1QueryOrEmpty()
+	if err != nil {
+		return nil, err
+	}
+	clusterIDs, unrestricted, err := sacHelper.ListClusterIDsInScope(ctx, []permissions.ResourceWithAccess{resource})
+	if err != nil {
+		return nil, err
+	}
+	var elevatedCtx context.Context
+
+	// Elevate context to find all matching clusters.
+	// The access control is enforced by the query restriction to
+	// the cluster IDs in the requester scope.
+	if unrestricted {
+		elevatedCtx = sac.WithGlobalAccessScopeChecker(
+			ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Cluster),
+			),
+		)
+	} else {
+		elevatedCtx = sac.WithGlobalAccessScopeChecker(
+			ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Cluster),
+				sac.ClusterScopeKeys(clusterIDs.AsSlice()...),
+			),
+		)
+	}
+	clusters, err := resolver.ClusterDataStore.SearchRawClusters(elevatedCtx, query)
+	if err != nil {
+		return nil, err
+	}
+	scopeObjects := make([]*v1.ScopeObject, 0, len(clusters))
+	for _, cluster := range clusters {
+		scopeObject := &v1.ScopeObject{
+			Id:   cluster.GetId(),
+			Name: cluster.GetName(),
+		}
+		scopeObjects = append(scopeObjects, scopeObject)
+	}
+	return resolver.wrapScopeObjectsWithContext(ctx, scopeObjects, err)
 }
 
 // ClusterCount returns count of all clusters across infrastructure

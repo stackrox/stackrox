@@ -15,7 +15,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
-	"github.com/stackrox/rox/central/role/sachelper"
+	sacHelper "github.com/stackrox/rox/central/sac/helper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -54,7 +54,7 @@ func New(storage npDS.DataStore,
 		notifierStore:    notifierStore,
 		clusterStore:     clusterStore,
 		graphEvaluator:   graphEvaluator,
-		clusterSACHelper: sachelper.NewClusterSacHelper(clusterStore),
+		clusterSACHelper: sacHelper.NewClusterSacHelper(clusterStore),
 		policyGenerator:  generator.New(storage, deployments, namespacesStore, globalFlowDataStore, networkTreeMgr, networkBaselines),
 	}
 }
