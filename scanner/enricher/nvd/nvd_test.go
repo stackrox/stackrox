@@ -137,10 +137,12 @@ func TestFetch(t *testing.T) {
 				}
 				enrichments := make(map[string]driver.EnrichmentRecord)
 				dec := json.NewDecoder(rc)
-				var e driver.EnrichmentRecord
-				for err = dec.Decode(&e); err == nil; err = dec.Decode(&e) {
+				for {
+					var e driver.EnrichmentRecord
+					if err = dec.Decode(&e); err != nil {
+						break
+					}
 					enrichments[e.Tags[0]] = e
-					e = driver.EnrichmentRecord{}
 				}
 				if !errors.Is(err, io.EOF) {
 					t.Fatalf("wanted EOF, found: %v", err)
@@ -162,7 +164,6 @@ func TestFetch(t *testing.T) {
 				if err := json.Unmarshal(enrichment.Enrichment, &item); err != nil {
 					t.Fatalf("could not unmarshal CVE-2017-18349 enrichment: %v", err)
 				}
-				t.Logf("CVE-2017-18349: %s - %+#v", item.ID, item.Metrics)
 				if item.Metrics == nil || item.Metrics.CvssMetricV31 != nil {
 					t.Fatal("unexpected values for CVE-2017-18349")
 				}
