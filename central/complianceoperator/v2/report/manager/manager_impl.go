@@ -108,7 +108,7 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 		ctx:                context.WithoutCancel(ctx),
 		notificationMethod: method,
 	}
-	log.Infof("Submitting report for scan config %s at %v with method %s for execution with req %v.", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822), method.String(), *req)
+	log.Infof("Submitting report for scan config %s at %s with method %s", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822), method.String())
 	select {
 	case m.reportRequests <- req:
 		m.runningReportConfigs[scanConfig.GetId()] = req

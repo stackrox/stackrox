@@ -74,16 +74,16 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 
 	status := snapshot.GetReportStatus()
 	if status.GetReportNotificationMethod() != storage.ComplianceOperatorReportStatus_DOWNLOAD {
-		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Errorf("Report %s did not generated a downloaded report", id))
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Errorf("This report %s cannot be delivered using the download method", id))
 		return
 	}
 
 	switch status.GetRunState() {
 	case storage.ComplianceOperatorReportStatus_FAILURE:
-		httputil.WriteGRPCStyleError(w, codes.FailedPrecondition, errors.Errorf("Report %s failed", id))
+		httputil.WriteGRPCStyleError(w, codes.FailedPrecondition, errors.Errorf("Report %s failed: %s", id, status.GetErrorMsg()))
 		return
 	case storage.ComplianceOperatorReportStatus_WAITING, storage.ComplianceOperatorReportStatus_PREPARING:
-		httputil.WriteGRPCStyleError(w, codes.Unavailable, errors.Errorf("Report %s is not ready for download", id))
+		httputil.WriteGRPCStyleError(w, codes.Unavailable, errors.Errorf("Report %s is not yet ready for download", id))
 		return
 	}
 
@@ -101,7 +101,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !exists {
-		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.Errorf("Report %s is not available to download", id))
+		httputil.WriteGRPCStyleError(w, codes.NotFound, errors.Errorf("The download of report %s is unavailable", id))
 		return
 	}
 
@@ -110,13 +110,17 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Length", fmt.Sprint(buf.Len()))
 	_, err = w.Write(buf.Bytes())
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.New("Unable to attach the download to the response"))
+		return
+	}
 
 	writeSnapshotCtx := sac.WithGlobalAccessScopeChecker(ctx,
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Compliance)),
 	)
-	if err == nil && status.GetRunState() == storage.ComplianceOperatorReportStatus_GENERATED {
+	if status.GetRunState() == storage.ComplianceOperatorReportStatus_GENERATED {
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_DELIVERED
 		err = h.snapshotDataStore.UpsertSnapshot(writeSnapshotCtx, snapshot)
 		if err != nil {
@@ -128,7 +132,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 func parseReportID(r *http.Request) (string, error) {
 	err := r.ParseForm()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "unable to parse the request form")
 	}
 	var id string
 	if id = r.Form.Get("id"); id == "" {
