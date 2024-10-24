@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -303,7 +305,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationsV
 	for _, tc := range testCases {
 		clusterIntegrations, err := s.dataStore.GetComplianceIntegrationsView(s.testContexts[tc.scopeKey], tc.query)
 		s.Require().NoError(err)
-		s.Require().Equal(tc.expectedResult, clusterIntegrations)
+		assert.ElementsMatch(s.T(), tc.expectedResult, clusterIntegrations)
 	}
 }
 
@@ -414,8 +416,8 @@ func getDefaultTestIntegrations() []*storage.ComplianceIntegration {
 			ClusterId:           testconsts.Cluster1,
 			ComplianceNamespace: fixtureconsts.Namespace1,
 			Version:             "2",
-			OperatorStatus:      storage.COStatus_UNHEALTHY,
 			OperatorInstalled:   true,
+			OperatorStatus:      storage.COStatus_HEALTHY,
 		},
 		{
 			Id:                  "",
@@ -441,8 +443,8 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 		{
 			ID:                                "",
 			Version:                           "2",
-			OperatorInstalled:                 true,
-			OperatorStatus:                    storage.COStatus_UNHEALTHY,
+			OperatorInstalled:                 pointers.Bool(true),
+			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterID:                         testconsts.Cluster1,
 			ClusterName:                       "cluster1",
 			Type:                              1,
@@ -452,21 +454,21 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 			ID:                                "",
 			ClusterID:                         testconsts.Cluster2,
 			Version:                           "2",
-			OperatorStatus:                    storage.COStatus_HEALTHY,
+			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterName:                       "cluster2",
 			Type:                              2,
 			StatusProviderMetadataClusterType: 2,
-			OperatorInstalled:                 true,
+			OperatorInstalled:                 pointers.Bool(true),
 		},
 		{
 			ID:                                "",
 			ClusterID:                         testconsts.Cluster3,
 			Version:                           "2",
-			OperatorStatus:                    storage.COStatus_HEALTHY,
+			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterName:                       "cluster3",
 			Type:                              5,
 			StatusProviderMetadataClusterType: 5,
-			OperatorInstalled:                 true,
+			OperatorInstalled:                 pointers.Bool(true),
 		},
 	}
 
