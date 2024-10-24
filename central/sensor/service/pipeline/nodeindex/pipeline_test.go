@@ -1,6 +1,7 @@
 package nodeindex
 
 import (
+	"context"
 	"testing"
 
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
@@ -22,7 +23,7 @@ func TestPipelineWithEmptyIndex(t *testing.T) {
 	p := &pipelineImpl{}
 	expectedError := "unexpected resource type"
 
-	err := p.Run(nil, "", nil, nil)
+	err := p.Run(context.Background(), "", nil, nil)
 
 	assert.Contains(t, err.Error(), expectedError)
 }
@@ -34,7 +35,7 @@ func TestPipelineWithIncorrectAction(t *testing.T) {
 	msg := createMsg()
 	msg.GetEvent().Action = central.ResourceAction_REMOVE_RESOURCE
 
-	err := p.Run(nil, "", msg, nil)
+	err := p.Run(context.Background(), "", msg, nil)
 
 	assert.Nil(t, err)
 }
@@ -63,7 +64,7 @@ func TestPipelineEnrichesAndUpserts(t *testing.T) {
 	msg := createMsg()
 	msg.GetEvent().Action = central.ResourceAction_UNSET_ACTION_RESOURCE
 
-	err := p.Run(nil, "", msg, nil)
+	err := p.Run(context.Background(), "", msg, nil)
 
 	assert.Nil(t, err)
 }
