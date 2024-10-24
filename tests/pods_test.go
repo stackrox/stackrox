@@ -1,10 +1,11 @@
-//go:build test_e2e
+//go:build test_e2e || test_compatibility
 
 package tests
 
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -37,6 +38,13 @@ type Event struct {
 func TestPod(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
+
+	if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
+		log.Infof("Skipping TestPod because env var \"COLLECTION_METHOD\" is set to \"NO_COLLECTION\"\n" +
+			"This is expected to only happen when Sensor version is 3.74.x (support exception within compatibility tests)")
+		return
+	}
+
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
 	client := createK8sClient(testT)
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
@@ -61,27 +69,33 @@ func TestPod(testT *testing.T) {
 		// Verify the container count.
 		require.Equal(retryT, int32(2), pod.ContainerCount)
 
-		// Verify the events.
-		var loopCount int
-		var events []Event
-		for {
-			events = getEvents(retryT, pod)
-			log.Infof("%d: Events: %+v", loopCount, events)
-			if len(events) == 4 {
-				break
+		if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
+			log.Infof("Skipping parts of TestPod that relate to events because env var \"COLLECTION_METHOD\" is " +
+				"set to \"NO_COLLECTION\"\n. This is expected to only happen when Sensor version is 3.74.x " +
+				"(support exception within compatibility tests)")
+		} else {
+			// Verify the events.
+			var loopCount int
+			var events []Event
+			for {
+				events = getEvents(retryT, pod)
+				log.Infof("%d: Events: %+v", loopCount, events)
+				if len(events) == 4 {
+					break
+				}
+				loopCount++
+				require.LessOrEqual(retryT, loopCount, 20)
+				time.Sleep(4 * time.Second)
 			}
-			loopCount++
-			require.LessOrEqual(retryT, loopCount, 20)
-			time.Sleep(4 * time.Second)
+
+			// Expecting processes: nginx, sh, date, sleep
+			eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
+			expected := []string{"/bin/date", "/bin/sh", "/bin/sleep", "/usr/sbin/nginx"}
+
+			log.Infof("Event names: %+v", eventNames)
+			log.Infof("Expected name: %+v", expected)
+			require.ElementsMatch(retryT, eventNames, expected)
 		}
-
-		// Expecting processes: nginx, sh, date, sleep
-		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
-		expected := []string{"/bin/date", "/bin/sh", "/bin/sleep", "/usr/sbin/nginx"}
-
-		log.Infof("Event names: %+v", eventNames)
-		log.Infof("Expected name: %+v", expected)
-		require.ElementsMatch(retryT, eventNames, expected)
 
 		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
 		log.Infof("Pod start comparison: %s vs %s", pod.Started, events[0].Timestamp.Time)
