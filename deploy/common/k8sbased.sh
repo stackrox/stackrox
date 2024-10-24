@@ -153,7 +153,8 @@ function launch_central {
 
     echo "Installing SecurityPolicy CRD..."
 
-    kubectl apply -f config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml
+    crd_path=$(realpath "$(git rev-parse --show-toplevel)/config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml")
+    kubectl apply -f $crd_path
 
     echo "Generating central config..."
 
