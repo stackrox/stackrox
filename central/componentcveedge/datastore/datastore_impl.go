@@ -3,10 +3,12 @@ package datastore
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stackrox/rox/central/componentcveedge/search"
 	"github.com/stackrox/rox/central/componentcveedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	pg "github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -49,4 +51,34 @@ func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (ds *datastoreImpl) UpsertMany(
+	db pg.DB,
+	ctx context.Context,
+	objs []*storage.ComponentCVEEdge,
+) error {
+	tx, _ := db.Begin(ctx)
+
+	_, err := tx.CopyFrom(ctx,
+		pgx.Identifier{"image_component_cve_edges"},
+		[]string{"id", "isfixable", "fixedby", "imagecomponentid", "imagecveid", "serialized"},
+
+		pgx.CopyFromSlice(len(objs), func(i int) ([]any, error) {
+			obj := objs[i]
+			serialized, _ := obj.Marshal()
+			return []any{
+				obj.Id,
+				obj.IsFixable,
+				obj.HasFixedBy,
+				obj.ImageComponentId,
+				obj.ImageCveId,
+				serialized,
+			}, nil
+		}),
+	)
+
+	tx.Commit(ctx)
+
+	return err
 }

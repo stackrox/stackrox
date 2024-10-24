@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
+	pg "github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -24,6 +25,7 @@ type DataStore interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Get(ctx context.Context, id string) (*storage.ComponentCVEEdge, bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
+	UpsertMany(db pg.DB, ctx context.Context, objs []*storage.ComponentCVEEdge) error
 }
 
 // New returns a new instance of a DataStore.

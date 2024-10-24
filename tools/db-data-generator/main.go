@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
+	componentCVEEdgeDataStore "github.com/stackrox/rox/central/componentcveedge/datastore"
 	imageCVEPostgresStore "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	dDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
@@ -640,15 +641,15 @@ func genImageCVEEdge(
 }
 
 func genComponentCVEEdge(
-	image *storage.Image,
+	component *storage.ImageComponent,
 	cve *storage.ImageCVE,
-) *storage.ImageCVEEdge {
+) *storage.ComponentCVEEdge {
 
-	return &storage.ImageCVEEdge{
-		Id:         uuid.New().String(),
-		ImageId:    image.Id,
-		ImageCveId: cve.Id,
-		State:      storage.VulnerabilityState(rand.Intn(3)),
+	return &storage.ComponentCVEEdge{
+		Id:               uuid.New().String(),
+		IsFixable:        true,
+		ImageComponentId: component.Id,
+		ImageCveId:       cve.Id,
 	}
 }
 
@@ -678,6 +679,7 @@ func main() {
 	var imageCVEPgStore imageCVEPostgresStore.Store
 	var imageComponentEdgeStore imageComponentEdgeDataStore.DataStore
 	var imageCVEEdgeStore imageCVEEdgeDataStore.DataStore
+	var componentCVEEdgeStore componentCVEEdgeDataStore.DataStore
 
 	var db postgres.DB
 	var err error
@@ -750,6 +752,8 @@ func main() {
 		imageCVEEdgePgStore := imageCVEEdgeDataStore.NewStorage(db)
 		imageCVEEdgeStore = imageCVEEdgeDataStore.New(imageCVEEdgePgStore, nil)
 
+		componentCVEEdgePgStore := componentCVEEdgeDataStore.NewStorage(db)
+		componentCVEEdgeStore = componentCVEEdgeDataStore.New(componentCVEEdgePgStore, nil)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -797,10 +801,13 @@ func main() {
 	}
 
 	imageCVEEdges := []*storage.ImageCVEEdge{}
+	componentCVEEdges := []*storage.ComponentCVEEdge{}
 	for i := 0; i < *nrImageCVEs; i++ {
-		image := images[rand.Intn(len(images))]
+		image := images[i]
+		component := imageComponents[i]
 		cve := imageCVEs[i]
 		imageCVEEdges = append(imageCVEEdges, genImageCVEEdge(image, cve))
+		componentCVEEdges = append(componentCVEEdges, genComponentCVEEdge(component, cve))
 	}
 
 	//for _, image := range images {
@@ -816,6 +823,8 @@ func main() {
 	imageComponentEdgeStore.UpsertMany(db, lifecycleMgmt, imageComponentEdges)
 
 	imageCVEEdgeStore.UpsertMany(db, lifecycleMgmt, imageCVEEdges)
+
+	componentCVEEdgeStore.UpsertMany(db, lifecycleMgmt, componentCVEEdges)
 
 	for i := 0; i < *nrDeployments; i++ {
 		fmt.Printf("Insert deployment %s\n", deployments[i].Id)

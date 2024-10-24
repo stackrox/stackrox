@@ -3,7 +3,9 @@ package datastore
 import (
 	pgStore "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
 	"github.com/stackrox/rox/central/componentcveedge/search"
+	"github.com/stackrox/rox/central/componentcveedge/store"
 	"github.com/stackrox/rox/central/globaldb"
+	pg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -23,4 +25,8 @@ func initialize() {
 func Singleton() DataStore {
 	once.Do(initialize)
 	return ad
+}
+
+func NewStorage(db pg.DB) store.Store {
+	return pgStore.New(db)
 }
