@@ -3,7 +3,6 @@ package common
 import (
 	"archive/zip"
 	"bytes"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -172,11 +171,7 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	var reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv",
-		makeSafeFileName(configName),
-		time.Now().UTC().Format("02_January_2006"))
-
-	zipFile, err := zipWriter.Create(reportName)
+	zipFile, err := zipWriter.Create(makeFileName(configName, time.Now()))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
 	}
@@ -196,21 +191,29 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 	}, nil
 }
 
-func makeSafeFileName(configName string) string {
-	if len(configName) > 80 {
-		configName = configName[0:80]
+func makeFileName(configName string, timestamp time.Time) string {
+	var builder strings.Builder
+	builder.WriteString("RHACS_Vulnerability_Report")
+	if len(configName) > 0 {
+		builder.WriteRune('_')
+		replaceUnsafeRunes(&builder, configName)
 	}
+	builder.WriteRune('_')
+	builder.WriteString(timestamp.UTC().Format("02_January_2006"))
+	builder.WriteString(".csv")
+	return builder.String()
+}
+
+func replaceUnsafeRunes(builder *strings.Builder, configName string) {
 	const allowedSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
 	const replacementRune = '_'
-
-	var builder strings.Builder
-	for _, char := range configName {
+	length := min(80, len(configName))
+	for _, char := range configName[0:length] {
 		if !strings.ContainsRune(allowedSet, char) {
 			char = replacementRune
 		}
 		builder.WriteRune(char)
 	}
-	return builder.String()
 }
 
 // GetClusterName returns name of cluster containing the Deployment
