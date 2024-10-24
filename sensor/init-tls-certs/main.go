@@ -39,9 +39,11 @@ func copyFiles(files []string, destDir string) error {
 		if err != nil {
 			return err
 		}
-		if err = os.WriteFile(path.Join(destinationDir, path.Base(file)), content, 0666); err != nil {
+		destPath := path.Join(destDir, path.Base(file))
+		if err = os.WriteFile(destPath, content, 0666); err != nil {
 			return err
 		}
+		log.Printf("Copied %q to %q", file, destPath)
 	}
 	return nil
 }
@@ -57,6 +59,7 @@ func waitForSource() ([]string, error) {
 		var files []string
 		err = filepath.WalkDir(realSource, func(path string, d fs.DirEntry, err error) error {
 			if strings.HasPrefix(path, ".") {
+				log.Printf("Ignoring hidden file %q", path)
 				return nil
 			}
 			realFile, err := filepath.EvalSymlinks(path)
@@ -69,10 +72,11 @@ func waitForSource() ([]string, error) {
 				log.Printf("Ignoring file %q: %s", realFile, err)
 				return nil
 			}
-			if !st.IsDir() {
-				log.Printf("Found file %q", realFile)
-				files = append(files, realFile)
+			if st.IsDir() {
+				return nil
 			}
+			log.Printf("Found file %q (%q)", path, realFile)
+			files = append(files, realFile)
 			return nil
 		})
 		if err != nil {
