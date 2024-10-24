@@ -84,17 +84,24 @@ func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMet
 	// Attempt initialization since Metadata interacts with the registry.
 	l.lazyInit()
 
-	// initError and registry are modified while the
+	err := l.getInitError()
+	if err != nil {
+		return nil, err
+	}
+
+	// At this point lazy init has successfully completed.
+	return l.registry.Metadata(image)
+}
+
+func (l *lazyTLSCheckRegistry) getInitError() error {
+	// initError is modified while the
 	// write lock is held, to avoid a race grab the
 	// read lock.
+
 	l.initializedMutex.RLock()
 	defer l.initializedMutex.RUnlock()
 
-	if l.initError != nil {
-		return nil, l.initError
-	}
-
-	return l.registry.Metadata(image)
+	return l.initError
 }
 
 func (l *lazyTLSCheckRegistry) Name() string {
