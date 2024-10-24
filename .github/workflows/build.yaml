@@ -704,10 +704,10 @@ jobs:
             "stackrox-operator",
           ]
     steps:
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          debug: true
+      # - name: Initialize CodeQL
+      #   uses: github/codeql-action/init@v3
+      #   with:
+      #     debug: true
 
       - name: Checkout
         uses: actions/checkout@v4
