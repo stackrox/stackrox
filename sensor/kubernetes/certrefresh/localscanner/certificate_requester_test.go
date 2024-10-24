@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrequester"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -120,7 +121,7 @@ func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T
 type certificateRequesterFixture struct {
 	sendC                chan *message.ExpiringMessage
 	receiveC             chan *central.IssueLocalScannerCertsResponse
-	requester            CertificateRequester
+	requester            certrequester.CertificateRequester
 	interceptedRequestID *atomic.Value
 	ctx                  context.Context
 	cancelCtx            context.CancelFunc

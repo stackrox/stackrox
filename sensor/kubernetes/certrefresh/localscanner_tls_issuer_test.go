@@ -1,4 +1,4 @@
-package localscanner
+package certrefresh
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrequester"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -39,12 +39,11 @@ var (
 	sensorReplicasetName = "sensor-replicaset"
 	sensorPodName        = "sensor-pod"
 
-	namespace        = "stackrox-ns"
 	errForced        = errors.New("forced error")
 	sensorDeployment = &appsApiv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sensor-deployment",
-			Namespace: namespace,
+			Namespace: sensorNamespace,
 		},
 	}
 )
@@ -525,9 +524,9 @@ func (m *certificateRequesterMock) Start() {
 func (m *certificateRequesterMock) Stop() {
 	m.Called()
 }
-func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*certrefresh.IssueCertsResponse, error) {
+func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*certrequester.IssueCertsResponse, error) {
 	args := m.Called(ctx)
-	return args.Get(0).(*certrefresh.IssueCertsResponse), args.Error(1)
+	return args.Get(0).(*certrequester.IssueCertsResponse), args.Error(1)
 }
 
 type certificateRefresherMock struct {
@@ -553,7 +552,7 @@ type componentGetterMock struct {
 	mock.Mock
 }
 
-func (m *componentGetterMock) getCertificateRefresher(certsDescription string, requestCertificates certrefresh.RequestCertificatesFunc,
+func (m *componentGetterMock) getCertificateRefresher(certsDescription string, requestCertificates requestCertificatesFunc,
 	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
 	args := m.Called(certsDescription, requestCertificates, repository, timeout, backoff)
 	return args.Get(0).(concurrency.RetryTicker)
@@ -577,17 +576,4 @@ func (m *certsRepoMock) GetServiceCertificates(ctx context.Context) (*storage.Ty
 func (m *certsRepoMock) EnsureServiceCertificates(ctx context.Context, certificates *storage.TypedServiceCertificateSet) ([]*storage.TypedServiceCertificate, error) {
 	args := m.Called(ctx, certificates)
 	return certificates.ServiceCerts, args.Error(0)
-}
-
-func issueCertificate(serviceType storage.ServiceType, issueOption mtls.IssueCertOption) (*mtls.IssuedCert, error) {
-	ca, err := mtls.CAForSigning()
-	if err != nil {
-		return nil, err
-	}
-	subject := mtls.NewSubject("clusterId", serviceType)
-	cert, err := ca.IssueCertForSubject(subject, issueOption)
-	if err != nil {
-		return nil, err
-	}
-	return cert, err
 }
