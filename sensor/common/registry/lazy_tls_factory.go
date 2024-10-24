@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/rhel"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 var (
@@ -63,6 +64,8 @@ func (e *lazyFactory) CreateRegistry(source *storage.ImageIntegration, options .
 	}
 
 	return &lazyTLSCheckRegistry{
+		id:               uuid.NewV4().String(),
+		name:             source.GetName(),
 		source:           source,
 		creator:          creator,
 		creatorOptions:   options,

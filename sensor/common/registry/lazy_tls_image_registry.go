@@ -5,17 +5,21 @@ import (
 	"errors"
 	"net/http"
 	"sync/atomic"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // lazyTLSCheckRegistry is a wrapper around a registry that performs
 // TLS checks on first Metadata invocation.
 type lazyTLSCheckRegistry struct {
+	id   string
+	name string
 	// source, dataSource, etc. mirror post initialization fields from
 	// pkg/registries/docker/docker.go. These fields are provided
 	// during construction and are assumed to be valid.
@@ -37,8 +41,9 @@ type lazyTLSCheckRegistry struct {
 	tlsCheckCache *tlsCheckCacheImpl
 
 	// initialized tracks whether lazy initialization has completed.
-	initialized      atomic.Uint32
-	initializedMutex sync.RWMutex
+	initialized atomic.Uint32
+	// initializedMutex sync.RWMutex
+	initializedMutex sync.DaveRWMutex
 
 	// initError holds the most recent initialization error.
 	initError error
@@ -49,9 +54,16 @@ var _ types.ImageRegistry = (*lazyTLSCheckRegistry)(nil)
 // Config will NOT trigger initialization, however after successful
 // initialization the values may change.
 func (l *lazyTLSCheckRegistry) Config(ctx context.Context) *types.Config {
+	rid := uuid.NewV4().String()
+	log.Debugf("Config %q (trace %q, span %q) start", l.name, l.id, rid)
+	start := time.Now()
+	defer func() {
+		log.Debugf("Config %q (trace %q, span %q) took %v", l.name, l.id, rid, time.Since(start))
+	}()
+
 	// registry is modified while the write lock is held,
 	// to avoid a race grab the read lock.
-	l.initializedMutex.RLock()
+	l.initializedMutex.RLock(l.id, rid)
 	defer l.initializedMutex.RUnlock()
 
 	if l.registry != nil {
@@ -68,6 +80,12 @@ func (l *lazyTLSCheckRegistry) Config(ctx context.Context) *types.Config {
 }
 
 func (l *lazyTLSCheckRegistry) DataSource() *storage.DataSource {
+	rid := uuid.NewV4().String()
+	log.Debugf("DataSource %q (trace %q, span %q) start", l.name, l.id, rid)
+	start := time.Now()
+	defer func() {
+		log.Debugf("DataSource %q (trace %q, span %q) took %v", l.name, l.id, rid, time.Since(start))
+	}()
 	return l.dataSource
 }
 
@@ -77,17 +95,30 @@ func (l *lazyTLSCheckRegistry) HTTPClient() *http.Client {
 }
 
 func (l *lazyTLSCheckRegistry) Match(image *storage.ImageName) bool {
+	rid := uuid.NewV4().String()
+	log.Debugf("Match %q (trace %q, span %q) start", l.name, l.id, rid)
+	start := time.Now()
+	defer func() {
+		log.Debugf("Match %q (trace %q, span %q) took %v", l.name, l.id, rid, time.Since(start))
+	}()
 	return urlfmt.TrimHTTPPrefixes(l.registryHostname) == image.GetRegistry()
 }
 
 func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
+	rid := uuid.NewV4().String()
+	log.Debugf("Metadata %q (trace %q, span %q) start", l.name, l.id, rid)
+	start := time.Now()
+	defer func() {
+		log.Debugf("Metadata %q (trace %q, span %q) took %v", l.name, l.id, rid, time.Since(start))
+	}()
+
 	// Attempt initialization since Metadata interacts with the registry.
 	l.lazyInit()
 
 	// initError and registry are modified while the
 	// write lock is held, to avoid a race grab the
 	// read lock.
-	l.initializedMutex.RLock()
+	l.initializedMutex.RLock(l.id, rid)
 	defer l.initializedMutex.RUnlock()
 
 	if l.initError != nil {
@@ -98,18 +129,30 @@ func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMet
 }
 
 func (l *lazyTLSCheckRegistry) Name() string {
+	rid := uuid.NewV4().String()
+	log.Debugf("Name %q (trace %q, span %q) start", l.name, l.id, rid)
+	start := time.Now()
+	defer func() {
+		log.Debugf("Name %q (trace %q, span %q) took %v", l.name, l.id, rid, time.Since(start))
+	}()
 	// source is modified while the write lock is held,
 	// to avoid a race grab the read lock.
-	l.initializedMutex.RLock()
+	l.initializedMutex.RLock(l.id, rid)
 	defer l.initializedMutex.RUnlock()
 
 	return l.source.GetName()
 }
 
 func (l *lazyTLSCheckRegistry) Source() *storage.ImageIntegration {
+	rid := uuid.NewV4().String()
+	log.Debugf("Source %q (trace %q, span %q) start", l.name, l.id, rid)
+	start := time.Now()
+	defer func() {
+		log.Debugf("Source %q (trace %q, span %q) took %v", l.name, l.id, rid, time.Since(start))
+	}()
 	// source is modified while the write lock is held,
 	// to avoid a race grab the read lock.
-	l.initializedMutex.RLock()
+	l.initializedMutex.RLock(l.id, rid)
 	defer l.initializedMutex.RUnlock()
 
 	return l.source
@@ -124,15 +167,29 @@ func (l *lazyTLSCheckRegistry) Test() error {
 // underlying registry.  The concurrency mechanisms are based of
 // https://cs.opensource.google/go/go/+/refs/tags/go1.22.5:src/sync/once.go;l=48
 func (l *lazyTLSCheckRegistry) lazyInit() {
+	rid := uuid.NewV4().String()
+	log.Debugf("lazyInit %q (trace %q, span %q) start", l.name, l.id, rid)
+	start := time.Now()
+	defer func() {
+		log.Debugf("lazyInit %q (trace %q, span %q) outer took %v", l.name, l.id, rid, time.Since(start))
+	}()
+
 	if l.isInitialized() {
+		log.Debugf("lazyInit %q (trace %q, span %q) PRE lock short-circuit", l.name, l.id, rid)
 		return
 	}
 
-	l.initializedMutex.Lock()
-	defer l.initializedMutex.Unlock()
+	l.initializedMutex.Lock(l.id, rid)
+	defer l.initializedMutex.Unlock(l.id, rid)
+
+	innerstart := time.Now()
+	defer func() {
+		log.Debugf("lazyInit %q (trace %q, span %q) inner took %v", l.name, l.id, rid, time.Since(innerstart))
+	}()
 
 	// Short-circuit if another goroutine completed initialization.
 	if l.isInitialized() {
+		log.Debugf("lazyInit %q (trace %q, span %q) post lock short-circuit", l.name, l.id, rid)
 		return
 	}
 
@@ -168,7 +225,7 @@ func (l *lazyTLSCheckRegistry) lazyInit() {
 	if l.initError != nil {
 		log.Warnf("Lazy init failed for %q (%s), secure: %t: %v", l.source.GetName(), l.source.GetId(), secure, l.initError)
 	} else {
-		log.Debugf("Lazy init success for %q (%s), secure: %t", l.source.GetName(), l.source.GetId(), secure)
+		log.Debugf("Lazy init success for %q (%s), secure: %t -- %q (trace %q, span %q)", l.source.GetName(), l.source.GetId(), secure, l.name, l.id, rid)
 	}
 }
 
