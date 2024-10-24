@@ -677,7 +677,6 @@ jobs:
         directory: 'junit-reports'
 
   scan-images-with-roxctl:
-    if: github.event_name == 'push'
     needs:
       - build-and-push-main
       - build-and-push-operator
@@ -705,6 +704,11 @@ jobs:
             "stackrox-operator",
           ]
     steps:
+      # - name: Initialize CodeQL
+      #   uses: github/codeql-action/init@v3
+      #   with:
+      #     debug: true
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -734,17 +738,23 @@ jobs:
           if [[ ${{ matrix.image }} =~ "operator" ]]; then
             release_tag=$(make -C operator --silent tag)
           fi
+          release_tag=4.0.0
           roxctl image scan --retries=10 --retry-delay=15 --force --severity=CRITICAL,IMPORTANT --output=sarif \
             --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
             > results.sarif
           cat results.sarif
 
-      # TODO: re-enable roxctl scan results upload once quota issue has been resolved
-      # - name: Upload roxctl scan results to GitHub Security tab
-      #   uses: github/codeql-action/upload-sarif@v3
-      #   with:
-      #     category: ${{ matrix.image }}
-      #     sarif_file: results.sarif
+      - name: Upload roxctl scan results to GitHub Security tab number one
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          category: ${{ matrix.image }}
+          sarif_file: results.sarif
+
+      - name: oijoaijafoijUpload roxctl scan results to GitHub Security tab number two
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          category: ${{ matrix.image }}
+          sarif_file: results.sarif
 
   slack-on-build-failure:
     env:
