@@ -35,6 +35,7 @@ export const deploymentComponentVulnerabilitiesFragment = gql`
             scoreVersion
             fixedByVersion
             discoveredAtImage
+            publishedOn
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
     }

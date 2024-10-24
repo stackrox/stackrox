@@ -132,14 +132,6 @@ func SendFlowMessage(fakeCollector *collector.FakeCollector,
 							Port:        port,
 						},
 					},
-				},
-			},
-		},
-	})
-	fakeCollector.SendFakeNetworkFlow(&sensor.NetworkConnectionInfoMessage{
-		Msg: &sensor.NetworkConnectionInfoMessage_Info{
-			Info: &sensor.NetworkConnectionInfo{
-				UpdatedConnections: []*sensor.NetworkConnection{
 					{
 						SocketFamily: socketFamily,
 						Protocol:     protocol,

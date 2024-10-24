@@ -28,7 +28,7 @@ const IntegrationsHealth = ({ integrations }: Props): ReactElement => {
                         <Td dataLabel="Label" modifier="breakWord" data-testid="label">
                             {label}
                         </Td>
-                        <Td dataLabel="Error" modifier="breakWord" data-testid="error-message">
+                        <Td dataLabel="Error message" modifier="breakWord">
                             {errorMessage.length === 0 ? '-' : errorMessage}
                         </Td>
                         <Td dataLabel="Date">{getDateTime(lastTimestamp)}</Td>

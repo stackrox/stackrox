@@ -124,6 +124,7 @@ func (s *ImageCVEViewTestSuite) SetupSuite() {
 					},
 				}
 				vuln.CvssMetrics = []*storage.CVSSScore{cvssScore}
+				vuln.NvdCvss = 10
 			}
 		}
 		s.Require().NoError(imageStore.UpsertImage(ctx, image))

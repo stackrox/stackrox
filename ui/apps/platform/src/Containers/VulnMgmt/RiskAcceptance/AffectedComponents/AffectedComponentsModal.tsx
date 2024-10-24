@@ -120,10 +120,7 @@ function AffectedComponentsModal({
                                     <Td dataLabel="Fixed in">{component.fixedIn || '-'}</Td>
                                 </Tr>
                                 <Tr isExpanded={isComponentExpanded(component)}>
-                                    <Td
-                                        dataLabel="Dockerfile line where component is added"
-                                        colSpan={4}
-                                    >
+                                    <Td colSpan={4}>
                                         <ExpandableRowContent>
                                             <CodeBlock>
                                                 <Grid hasGutter>

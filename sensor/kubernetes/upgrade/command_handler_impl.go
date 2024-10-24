@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
@@ -136,12 +137,12 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 		return nil
 	}
 
-	if h.configHandler.GetHelmManagedConfig() != nil && !h.configHandler.GetHelmManagedConfig().GetNotHelmManaged() {
-		upgradesNotSupportedErr := errors.New("Cluster is Helm-managed and does not support auto-upgrades")
-		go h.rejectUpgradeRequest(trigger, upgradesNotSupportedErr)
+	// Stop and cleanup the upgrader early if upgrades are not supported by the current installation method.
+	if err := upgradesSupported(h.configHandler.GetHelmManagedConfig()); err != nil {
+		go h.rejectUpgradeRequest(trigger, err)
 		go h.deleteUpgraderDeployments()
 		h.currentProcess = nil
-		return upgradesNotSupportedErr
+		return err
 	}
 
 	newProc, err := newProcess(trigger, h.checkInClient, h.baseK8sRESTConfig)
@@ -154,6 +155,19 @@ func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
 	go newProc.Run()
 	go h.waitForTermination(newProc)
 
+	return nil
+}
+
+// upgradesSupported returns nil if upgrades are supported, otherwise it returns an error with a reason.
+func upgradesSupported(helmManagedConfig *central.HelmManagedConfigInit) error {
+	if helmManagedConfig != nil {
+		switch helmManagedConfig.GetManagedBy() {
+		case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
+			return errors.New("Cluster is Helm-managed and does not support auto-upgrades")
+		case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
+			return errors.New("Cluster is Operator-managed and does not support auto-upgrades")
+		}
+	}
 	return nil
 }
 

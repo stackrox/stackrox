@@ -76,7 +76,11 @@ const ScannerStatus = ({ healthStatus, isList = false }: ScannerStatusProps) => 
         return isList ? (
             <Tooltip
                 content={
-                    <DetailedTooltipContent title="Scanner Health Information" body={infoElement} />
+                    <DetailedTooltipContent
+                        body={infoElement}
+                        footer="*active scanner only"
+                        title="Scanner Health Information"
+                    />
                 }
             >
                 <div className="inline">{healthStatusElement}</div>

@@ -165,7 +165,7 @@ function ApprovedFalsePositivesTable({
                             <Th modifier="fitContent">Scope</Th>
                             <Th>Impacted entities</Th>
                             <Th>Comments</Th>
-                            <Th>Requestor</Th>
+                            <Th>Requester</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
@@ -210,7 +210,7 @@ function ApprovedFalsePositivesTable({
                                             cve={row.cves.cves[0]}
                                         />
                                     </Td>
-                                    <Td dataLabel="Requestor">{row.requestor.name}</Td>
+                                    <Td dataLabel="Requester">{row.requestor.name}</Td>
                                     <Td className="pf-v5-u-text-align-right">
                                         <ApprovedFalsePositiveActionsColumn
                                             row={row}

@@ -10,6 +10,7 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imagePG "github.com/stackrox/rox/central/image/datastore/store/postgres"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -40,7 +41,7 @@ func TestGetActiveImageIDs(t *testing.T) {
 	defer pool.Close()
 
 	imageDS = imageDatastore.NewWithPostgres(imagePG.New(pool, false, concurrency.NewKeyFence()), nil, ranking.ImageRanker(), ranking.ComponentRanker())
-	deploymentsDS, err = deploymentDatastore.New(pool, nil, nil, nil, nil, nil, filter.NewFilter(5, 5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentsDS, err = deploymentDatastore.New(pool, nil, nil, nil, nil, nil, filter.NewFilter(5, 5, []int{5}), ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
 	require.NoError(t, err)
 
 	loop := NewLoop(nil, nil, nil, deploymentsDS, imageDS, nil, nil, nil, nil).(*loopImpl)
