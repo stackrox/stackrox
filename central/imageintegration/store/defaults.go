@@ -7,7 +7,6 @@ import (
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
-	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 )
 
@@ -171,10 +170,6 @@ var (
 	DelayedIntegrations = []DelayedIntegration{
 		makeDelayedIntegration(defaultScanner, func() scanners.Creator {
 			_, creator := clairify.Creator(nil)
-			return creator
-		}),
-		makeDelayedIntegration(DefaultScannerV4Integration, func() scanners.Creator {
-			_, creator := scannerv4.Creator(nil)
 			return creator
 		}),
 	}
