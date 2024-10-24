@@ -63,6 +63,12 @@ spec:
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
+          volumeMounts:
+          - name: certs-legacy
+            mountPath: /tmp/certs-legacy
+            readOnly: true
+          - name: certs
+            mountPath: /tmp/certs
       containers:
         - image: {{ quote ._rox.image.main.fullRef }}
           imagePullPolicy: {{ ._rox.admissionControl.imagePullPolicy }}
@@ -123,6 +129,8 @@ spec:
             {{- include "srox.injectedCABundleVolumeMount" . | nindent 12 }}
       volumes:
         - name: certs
+          emptyDir: {}
+        - name: certs-legacy
           secret:
             secretName: admission-control-tls
             optional: true
