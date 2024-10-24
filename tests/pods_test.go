@@ -5,6 +5,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -37,6 +38,13 @@ type Event struct {
 func TestPod(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
+
+	if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
+		log.Infof("Skipping TestPod because env var \"COLLECTION_METHOD\" is set to \"NO_COLLECTION\"\n" +
+			"This is expected to only happen when Sensor version is 3.74.x (support exception within compatibility tests)")
+		return
+	}
+
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
 	client := createK8sClient(testT)
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {

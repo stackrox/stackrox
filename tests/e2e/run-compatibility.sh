@@ -51,7 +51,7 @@ _run_compatibility_tests() {
     export SENSOR_HELM_DEPLOY=true
     export ROX_ACTIVE_VULN_REFRESH_INTERVAL=1m
     export ROX_NETPOL_FIELDS=true
-    export ROX_SENSOR_UPGRADER_ENABLED="false"
+    export ROX_SENSOR_UPGRADER_ENABLED=false
 
     test_preamble
     setup_deployment_env false false
