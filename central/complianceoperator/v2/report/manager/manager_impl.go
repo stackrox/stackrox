@@ -33,9 +33,10 @@ var (
 )
 
 type reportRequest struct {
-	scanConfig *storage.ComplianceOperatorScanConfigurationV2
-	ctx        context.Context
-	snapshotID string
+	scanConfig         *storage.ComplianceOperatorScanConfigurationV2
+	ctx                context.Context
+	snapshotID         string
+	notificationMethod storage.ComplianceOperatorReportStatus_NotificationMethod
 }
 
 type managerImpl struct {
@@ -90,7 +91,7 @@ func New(scanConfigDS scanConfigurationDS.DataStore, scanDataStore scanDS.DataSt
 	}
 }
 
-func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2) error {
+func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *storage.ComplianceOperatorScanConfigurationV2, method storage.ComplianceOperatorReportStatus_NotificationMethod) error {
 	if !features.ComplianceReporting.Enabled() {
 		return nil
 	}
@@ -103,10 +104,11 @@ func (m *managerImpl) SubmitReportRequest(ctx context.Context, scanConfig *stora
 	}
 
 	req := &reportRequest{
-		scanConfig: scanConfig,
-		ctx:        context.WithoutCancel(ctx),
+		scanConfig:         scanConfig,
+		ctx:                context.WithoutCancel(ctx),
+		notificationMethod: method,
 	}
-	log.Infof("Submitting report for scan config %s at %v for execution with req %v.", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822), *req)
+	log.Infof("Submitting report for scan config %s at %s with method %s", scanConfig.GetScanConfigName(), time.Now().Format(time.RFC822), method.String())
 	select {
 	case m.reportRequests <- req:
 		m.runningReportConfigs[scanConfig.GetId()] = req
@@ -177,13 +179,14 @@ func (m *managerImpl) generateReportNoLock(req *reportRequest) {
 	}
 
 	repRequest := &reportGen.ComplianceReportRequest{
-		ScanConfigName: req.scanConfig.GetScanConfigName(),
-		ScanConfigID:   req.scanConfig.GetId(),
-		Profiles:       profiles,
-		ClusterIDs:     clusterIds,
-		Notifiers:      req.scanConfig.GetNotifiers(),
-		Ctx:            req.ctx,
-		SnapshotID:     req.snapshotID,
+		ScanConfigName:     req.scanConfig.GetScanConfigName(),
+		ScanConfigID:       req.scanConfig.GetId(),
+		Profiles:           profiles,
+		ClusterIDs:         clusterIds,
+		Notifiers:          req.scanConfig.GetNotifiers(),
+		Ctx:                req.ctx,
+		SnapshotID:         req.snapshotID,
+		NotificationMethod: req.notificationMethod,
 	}
 	log.Infof("Executing report request for scan config %q", req.scanConfig.GetId())
 	if err := m.reportGen.ProcessReportRequest(repRequest); err != nil {
@@ -227,9 +230,6 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 	concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 		w = m.watchingScanConfigs[request.scanConfig.GetId()]
 	})
-	// These will be modified in a follow-up PR
-	reportType := storage.ComplianceOperatorReportStatus_ON_DEMAND
-	notificationMethod := storage.ComplianceOperatorReportStatus_EMAIL
 	snapshot := &storage.ComplianceOperatorReportSnapshotV2{
 		ReportId:            uuid.NewV4().String(),
 		ScanConfigurationId: request.scanConfig.GetId(),
@@ -238,8 +238,8 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 		ReportStatus: &storage.ComplianceOperatorReportStatus{
 			RunState:                 storage.ComplianceOperatorReportStatus_WAITING,
 			StartedAt:                protocompat.TimestampNow(),
-			ReportRequestType:        reportType,
-			ReportNotificationMethod: notificationMethod,
+			ReportRequestType:        storage.ComplianceOperatorReportStatus_ON_DEMAND,
+			ReportNotificationMethod: request.notificationMethod,
 		},
 		User: request.scanConfig.GetModifiedBy(),
 	}
@@ -462,9 +462,10 @@ func (m *managerImpl) generateReportsFromWatcherResults(result *watcher.ScanConf
 			continue
 		}
 		generateReportReq := &reportRequest{
-			ctx:        result.Ctx,
-			scanConfig: result.ScanConfig,
-			snapshotID: snapshot.GetReportId(),
+			ctx:                result.Ctx,
+			scanConfig:         result.ScanConfig,
+			snapshotID:         snapshot.GetReportId(),
+			notificationMethod: snapshot.GetReportStatus().GetReportNotificationMethod(),
 		}
 		isOnDemand := snapshot.GetReportStatus().GetReportRequestType() == storage.ComplianceOperatorReportStatus_ON_DEMAND
 		if err := m.handleReportScheduled(generateReportReq, isOnDemand); err != nil {
