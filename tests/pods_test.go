@@ -70,7 +70,6 @@ func TestPod(testT *testing.T) {
 			log.Infof("Skipping parts of TestPod that relate to events because env var \"COLLECTION_METHOD\" is " +
 				"set to \"NO_COLLECTION\"\n. This is expected to only happen when Sensor version is 3.74.x " +
 				"(support exception within compatibility tests)")
-			return
 		} else {
 			// Verify the container count.
 			require.Equal(retryT, int32(2), pod.ContainerCount)
