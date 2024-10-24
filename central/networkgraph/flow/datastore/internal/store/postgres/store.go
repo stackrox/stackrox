@@ -624,7 +624,7 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	if features.ExternalIPs.Enabled() {
+	if features.ExternalIPs.Enabled() || env.ExternalIPsPruning.BooleanSetting() {
 		// We are adding a return statement to retrieve the pruned flows. They are useful
 		// to limit the pruning of 'discovered' entities to only potential new orphans.
 		pruneStmt := fmt.Sprintf(pruneNetworkFlowsSrcStmt+pruneNetworkFlowsReturnStmt, s.partitionName)
