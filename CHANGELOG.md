@@ -64,6 +64,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-26428: Fixed a bug when using delegated scanning where newer image metadata and layers were pulled incorrectly for an older image referenced by tag when the image registry contents have changed since deployment.
   - Now the metadata and layers pulled will be based on the digest of the image provided by the container runtime (when available) instead of just the tag.
 - ROX-26748: Replaced 'unsafe' characters in the CSV report file name.
+- The endpoint `/v2/compliance/scan/configurations/reports/run` method has changed from `PUT` to `POST`.
 
 ## [4.5.0]
 
