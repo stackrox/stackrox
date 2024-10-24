@@ -21,10 +21,8 @@ var (
 		Jitter:   0.1,
 		Steps:    3,
 	}
-	sensorPodName   = "sensor-pod"
-	sensorNamespace = "stackrox-ns"
-	replicaSetName  = "sensor-replica-set"
-	deploymentName  = "sensor-deployment"
+	replicaSetName = "sensor-replica-set"
+	deploymentName = "sensor-deployment"
 )
 
 func createTestPod(podName, namespace, ownerName string) *corev1.Pod {

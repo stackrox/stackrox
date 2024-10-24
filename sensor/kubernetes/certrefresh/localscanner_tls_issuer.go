@@ -1,4 +1,4 @@
-package localscanner
+package certrefresh
 
 import (
 	"context"
@@ -11,8 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrequester"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/localscanner"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
@@ -22,6 +23,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
+	certsDescription                     = "local scanner certificates"
 	startTimeout                         = 6 * time.Minute
 	fetchSensorDeploymentOwnerRefBackoff = wait.Backoff{
 		Duration: 10 * time.Millisecond,
@@ -59,8 +61,8 @@ func NewLocalScannerTLSIssuer(
 		msgFromCentralC:              msgFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
-		getServiceCertificatesRepoFn: NewServiceCertificatesRepo,
-		certRequester:                NewCertificateRequester(msgToCentralC, msgFromCentralC),
+		getServiceCertificatesRepoFn: localscanner.NewServiceCertificatesRepo,
+		certRequester:                localscanner.NewCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
 }
 
@@ -73,19 +75,12 @@ type localScannerTLSIssuerImpl struct {
 	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
-	certRequester                CertificateRequester
+	certRequester                certrequester.CertificateRequester
 	certRefresher                concurrency.RetryTicker
 }
 
-// CertificateRequester requests a new set of local scanner certificates from central.
-type CertificateRequester interface {
-	Start()
-	Stop()
-	RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error)
-}
-
-type certificateRefresherGetter func(requestCertificates requestCertificatesFunc, repository certrepo.ServiceCertificatesRepo,
-	timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
+type certificateRefresherGetter func(certsDescription string, requestCertificates requestCertificatesFunc,
+	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
 
 type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo
@@ -103,7 +98,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 		return i.abortStart(errors.New("already started"))
 	}
 
-	sensorOwnerReference, fetchSensorDeploymentErr := certrefresh.FetchSensorDeploymentOwnerRef(ctx, i.sensorPodName,
+	sensorOwnerReference, fetchSensorDeploymentErr := FetchSensorDeploymentOwnerRef(ctx, i.sensorPodName,
 		i.sensorNamespace, i.k8sClient, fetchSensorDeploymentOwnerRefBackoff)
 	if fetchSensorDeploymentErr != nil {
 		return i.abortStart(errors.Wrap(fetchSensorDeploymentErr, "fetching sensor deployment"))
@@ -111,7 +106,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 
 	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
-	i.certRefresher = i.getCertificateRefresherFn(i.certRequester.RequestCertificates, certsRepo,
+	i.certRefresher = i.getCertificateRefresherFn(certsDescription, i.certRequester.RequestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
 	i.certRequester.Start()

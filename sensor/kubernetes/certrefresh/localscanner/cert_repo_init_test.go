@@ -9,11 +9,19 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
+	appsApiv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
 var (
+	namespace        = "stackrox-ns"
+	sensorDeployment = &appsApiv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sensor-deployment",
+			Namespace: namespace,
+		},
+	}
 	scannerServiceType         = storage.ServiceType_SCANNER_SERVICE
 	serviceCertificate         = createServiceCertificate(scannerServiceType)
 	emptyPersistedCertificates = make([]*storage.TypedServiceCertificate, 0)
