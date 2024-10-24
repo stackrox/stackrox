@@ -388,6 +388,9 @@ func convertStorageSnapshotsToV2Snapshots(ctx context.Context, snapshots []*stor
 		if err != nil {
 			return nil, errors.Wrapf(err, "Unable to convert storage compliance operator report snapshot %s to response", snapshot.GetName())
 		}
+		if converted == nil {
+			continue
+		}
 		retSnapshots = append(retSnapshots, converted)
 	}
 	return retSnapshots, nil

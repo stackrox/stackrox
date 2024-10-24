@@ -664,7 +664,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
 func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 	s.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
 	if !features.ComplianceReporting.Enabled() {
-		s.T().Skipf("Skip test when the compliance reporting feature flag is disabled")
+		s.T().Skipf("compliance reporting feature flag is disabled")
 		s.T().SkipNow()
 	}
 
@@ -746,7 +746,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 func (s *ComplianceScanConfigServiceTestSuite) TestGetMyReportHistory() {
 	s.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
 	if !features.ComplianceReporting.Enabled() {
-		s.T().Skipf("Skip test when the compliance reporting feature flag is disabled")
+		s.T().Skipf("compliance reporting feature flag is disabled")
 		s.T().SkipNow()
 	}
 
@@ -785,6 +785,18 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetMyReportHistory() {
 		s.Require().NoError(err)
 		s.Require().Len(res.GetComplianceReportSnapshots(), 0)
 	})
+
+	s.Run("Snapshot search found nil snapshots", func() {
+		scanConfigID := "scan-config-1"
+		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
+
+		s.snapshotDS.EXPECT().SearchSnapshots(ctx, gomock.Any()).Return([]*storage.ComplianceOperatorReportSnapshotV2{nil, nil}, nil)
+
+		res, err := s.service.GetMyReportHistory(ctx, &v2.ComplianceReportHistoryRequest{Id: scanConfigID})
+		s.Require().NoError(err)
+		s.Require().Len(res.GetComplianceReportSnapshots(), 0)
+	})
+
 	s.Run("Success", func() {
 		scanConfigID := "scan-config-1"
 		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
