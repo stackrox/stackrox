@@ -75,6 +75,85 @@ const rules = {
             };
         },
     },
+    'Td-defaultColumns': {
+        // Require that Td element has key and title from defaultColumns configuration.
+        // That is, if Td element has props for column management:
+        // className={getVisibilityClass('whichever')}
+        // dataLabel="Whatever"
+        // Then defaultColumns has whichever: {title: "Whatever"} property.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that Td element has key and title from defaultColumns configuration',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (node.name?.name === 'Td') {
+                        const classNameJSXAttribute = node.attributes.find(
+                            (attribute) =>
+                                attribute.name?.name === 'className' &&
+                                attribute.value?.expression?.callee?.name ===
+                                    'getVisibilityClass' &&
+                                attribute.value?.expression?.arguments?.length === 1 &&
+                                typeof attribute.value.expression.arguments[0]?.value === 'string'
+                        );
+                        if (classNameJSXAttribute) {
+                            const ancestors = context.sourceCode.getAncestors(node);
+                            const defaultColumnsVariableDeclaration = ancestors[0]?.body?.find(
+                                (item) =>
+                                    item?.declaration?.declarations?.[0]?.id?.name ===
+                                    'defaultColumns'
+                            );
+                            if (!defaultColumnsVariableDeclaration) {
+                                context.report({
+                                    node,
+                                    message: `Td has className={getVisibilityClass(…)} but file does not have defaultColumns`,
+                                });
+                            } else {
+                                const argument =
+                                    classNameJSXAttribute.value.expression.arguments[0].value;
+                                const defaultColumnProperty =
+                                    defaultColumnsVariableDeclaration.declaration.declarations[0].init?.expression?.properties?.find(
+                                        (property) => property.key?.name === argument
+                                    );
+                                if (!defaultColumnProperty) {
+                                    context.report({
+                                        node,
+                                        message: `Td has className={getVisibilityClass("${argument}")} but argument is not a key in defaultColumns`,
+                                    });
+                                } else {
+                                    const dataLabelAttribute = node.attributes.find(
+                                        (attribute) =>
+                                            attribute.name?.name === 'dataLabel' &&
+                                            typeof attribute.value?.value === 'string'
+                                    );
+                                    // Another rule reports absence of dataLabel prop in Td element.
+                                    if (dataLabelAttribute) {
+                                        const dataLabel = dataLabelAttribute.value.value;
+                                        const title = defaultColumnProperty.value?.properties?.find(
+                                            (property) => property.key?.name === 'title'
+                                        )?.value?.value;
+                                        // TypeScript reports absence of title property in default column property.
+                                        if (dataLabel !== title) {
+                                            // Another rule reports inconsistency between Td dataLabel and Th text.
+                                            context.report({
+                                                node,
+                                                message: `Td has dataLabel="${dataLabel}" but defaultColumns has ${argument}: {title: "${title}"}`,
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
     'anchor-target-rel': {
         // Require props for consistent behavior and security of external links.
         meta: {
