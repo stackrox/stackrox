@@ -398,6 +398,12 @@ func convertStorageSnapshotsToV2Snapshots(ctx context.Context, snapshots []*stor
 	return retSnapshots, nil
 }
 
+func shallCheckDownload(reportStatus *storage.ComplianceOperatorReportStatus) bool {
+	runState := reportStatus.GetRunState()
+	return reportStatus.GetReportNotificationMethod() == storage.ComplianceOperatorReportStatus_DOWNLOAD &&
+		(runState == storage.ComplianceOperatorReportStatus_GENERATED || runState == storage.ComplianceOperatorReportStatus_DELIVERED)
+}
+
 func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2,
 	configDS complianceDS.DataStore, bindingDS bindingsDS.DataStore, suiteDS suiteDS.DataStore, notifierDS notifierDS.DataStore, blobDS blobDS.Datastore) (*v2.ComplianceReportSnapshot, error) {
 	if snapshot == nil {
@@ -415,18 +421,15 @@ func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.C
 		return nil, errors.Wrap(err, "Unable to convert ScanConfiguration to ScanStatus")
 	}
 	isDownloadReady := false
-	if snapshot.GetReportStatus().GetReportNotificationMethod() == storage.ComplianceOperatorReportStatus_DOWNLOAD {
-		if snapshot.GetReportStatus().GetRunState() == storage.ComplianceOperatorReportStatus_GENERATED ||
-			snapshot.GetReportStatus().GetRunState() == storage.ComplianceOperatorReportStatus_DELIVERED {
-			blobName := common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshot.GetReportId())
-			query := search.NewQueryBuilder().AddExactMatches(search.BlobName, blobName).ProtoQuery()
-			blobResults, err := blobDS.Search(ctx, query)
-			if err != nil {
-				log.Errorf("unable to retrieve blob from the DataStore: %v", err)
-			}
-			blobs := search.ResultsToIDSet(blobResults)
-			isDownloadReady = blobs.Contains(blobName)
+	if shallCheckDownload(snapshot.GetReportStatus()) {
+		blobName := common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshot.GetReportId())
+		query := search.NewQueryBuilder().AddExactMatches(search.BlobName, blobName).ProtoQuery()
+		blobResults, err := blobDS.Search(ctx, query)
+		if err != nil {
+			log.Errorf("unable to retrieve blob from the DataStore: %v", err)
 		}
+		blobs := search.ResultsToIDSet(blobResults)
+		isDownloadReady = blobs.Contains(blobName)
 	}
 	retSnapshot := &v2.ComplianceReportSnapshot{
 		ReportJobId:  snapshot.GetReportId(),
