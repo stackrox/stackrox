@@ -11,6 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/sync"
+	"google.golang.org/grpc/connectivity"
 )
 
 // CentralConnectionFactory is responsible for establishing a gRPC connection between sensor
@@ -20,30 +22,43 @@ import (
 type CentralConnectionFactory interface {
 	SetCentralConnectionWithRetries(ptr *util.LazyClientConn, certLoader CertLoader)
 	StopSignal() concurrency.ReadOnlyErrorSignal
-	OkSignal() concurrency.ReadOnlySignal
+	ConnectionState() (connectivity.State, error)
 }
 
 type centralConnectionFactoryImpl struct {
-	httpClient *Client
-
-	stopSignal concurrency.ErrorSignal
-	okSignal   concurrency.Signal
+	httpClient   *Client
+	currentState connectivity.State
+	lastError    error
+	stateMux     *sync.Mutex
+	stopSignal   concurrency.ErrorSignal
 }
 
 // NewCentralConnectionFactory returns a factory that can create a gRPC stream between Sensor and Central.
 func NewCentralConnectionFactory(centralClient *Client) CentralConnectionFactory {
 	return &centralConnectionFactoryImpl{
-		httpClient: centralClient,
-
-		okSignal:   concurrency.NewSignal(),
-		stopSignal: concurrency.NewErrorSignal(),
+		httpClient:   centralClient,
+		currentState: connectivity.State(99),
+		lastError:    nil,
+		stateMux:     &sync.Mutex{},
+		stopSignal:   concurrency.NewErrorSignal(),
 	}
 }
 
-// OkSignal returns a concurrency.ReadOnlySignal that is sends signal once connection object is successfully established
-// and the util.LazyClientConn pointer is swapped.
-func (f *centralConnectionFactoryImpl) OkSignal() concurrency.ReadOnlySignal {
-	return &f.okSignal
+func (f *centralConnectionFactoryImpl) ConnectionState() (connectivity.State, error) {
+	f.stateMux.Lock()
+	defer f.stateMux.Unlock()
+	return f.currentState, f.lastError
+}
+
+func (f *centralConnectionFactoryImpl) changeState(state connectivity.State, err error) bool {
+	f.stateMux.Lock()
+	defer f.stateMux.Unlock()
+	if f.currentState != state || !errors.Is(f.lastError, err) {
+		f.currentState = state
+		f.lastError = err
+		return true
+	}
+	return false
 }
 
 // StopSignal returns a concurrency.ReadOnlyErrorSignal that alerts if there is an error trying to establish gRPC connection.
@@ -72,13 +87,7 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 // f.okSignal is used if the connection is successful and f.stopSignal if the
 // connection failed to start. Hence, both signals are reset here.
 func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn, certLoader CertLoader) {
-	// Both signals should not be in a triggered state at the same time.
-	// If we run into this situation something went wrong with the handling of these signals.
-	if f.stopSignal.IsDone() && f.okSignal.IsDone() {
-		log.Warn("Unexpected: the stopSignal and the okSignal are both triggered")
-	}
 	f.stopSignal.Reset()
-	f.okSignal.Reset()
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
 	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
@@ -112,11 +121,11 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {
 		log.Errorf("creating the gRPC client: %v", err)
-		f.stopSignal.SignalWithErrorWrap(err, "creating the gRPC client")
+		f.changeState(centralConnection.GetState(), errors.Wrap(err, "creating the gRPC client failed"))
 		return
 	}
 
 	conn.Set(centralConnection)
-	f.okSignal.Signal()
+	f.changeState(centralConnection.GetState(), nil)
 	log.Info("Initial gRPC connection with central successful")
 }
