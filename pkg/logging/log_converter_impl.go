@@ -53,6 +53,8 @@ func (z *zapLogConverter) Convert(msg string, level string, module string, conte
 			if field.Key == errCodeField {
 				errCode = field.String
 			}
+		} else {
+			thisModuleLogger.Debugf("dropped field from logging context: %+v", c)
 		}
 	}
 

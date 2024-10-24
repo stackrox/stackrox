@@ -347,7 +347,8 @@ func updateImageFromRequest(existingImg *storage.Image, reqImgName *storage.Imag
 // Any occurred error will be logged, and the given image will be modified, after execution it will contain the enriched
 // image data (i.e. scan results, signature data etc.).
 func (s *serviceImpl) enrichImage(ctx context.Context, img *storage.Image, fetchOpt enricher.FetchOption,
-	request *v1.ScanImageInternalRequest) error {
+	request *v1.ScanImageInternalRequest,
+) error {
 	enrichmentContext := enricher.EnrichmentContext{
 		FetchOpt: fetchOpt,
 		Internal: true,
@@ -534,12 +535,17 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 				return internalScanRespFromImage(existingImg), nil
 			}
 
-			log.Debugw("Scan cache ignored enriching image with vulnerabilities",
+			log.Debugw("Scan cache ignored enriching image with vulnerabilitiesXXX",
 				logging.ImageName(existingImg.GetName().GetFullName()),
 				logging.ImageID(imgID),
 				logging.String("request_image", request.GetImageName().GetFullName()),
 				logging.Bool("force_scan_update", forceScanUpdate),
 				logging.Bool("force_sig_verification_update", forceSigVerificationUpdate),
+				logging.Any("force_scan_update-any", forceScanUpdate),
+				logging.Any("force_sig_verification_update-any", forceSigVerificationUpdate),
+			)
+			log.Warnf("forceScanUpdate = %+v, forceSigVerificationUpdate = %+v",
+				forceScanUpdate, forceSigVerificationUpdate,
 			)
 		}
 	}
