@@ -535,14 +535,16 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 				return internalScanRespFromImage(existingImg), nil
 			}
 
-			log.Debugw("Scan cache ignored enriching image with vulnerabilities",
+			log.Debugw("Scan cache ignored enriching image with vulnerabilitiesXXX",
 				logging.ImageName(existingImg.GetName().GetFullName()),
 				logging.ImageID(imgID),
 				logging.String("request_image", request.GetImageName().GetFullName()),
 				logging.Bool("force_scan_update", forceScanUpdate),
 				logging.Bool("force_sig_verification_update", forceSigVerificationUpdate),
+				logging.Any("force_scan_update-any", forceScanUpdate),
+				logging.Any("force_sig_verification_update-any", forceSigVerificationUpdate),
 			)
-			log.Debugf("forceScanUpdate = %+v, forceSigVerificationUpdate = %+v",
+			log.Warnf("forceScanUpdate = %+v, forceSigVerificationUpdate = %+v",
 				forceScanUpdate, forceSigVerificationUpdate,
 			)
 		}
