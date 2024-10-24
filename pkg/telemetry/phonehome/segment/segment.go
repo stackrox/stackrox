@@ -6,6 +6,8 @@ import (
 
 	"github.com/mitchellh/hashstructure/v2"
 	segment "github.com/segmentio/analytics-go/v3"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -54,7 +56,7 @@ func (*logOnFailure) Failure(msg segment.Message, err error) {
 
 // NewTelemeter creates and initializes a Segment telemeter instance.
 // Default interval is 5s, default batch size is 250.
-func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Duration, batchSize int) *segmentTelemeter {
+func NewTelemeter(key, endpoint, clientID, clientType, clientVersion string, interval time.Duration, batchSize int) *segmentTelemeter {
 	segmentConfig := segment.Config{
 		Endpoint:  endpoint,
 		Interval:  interval,
@@ -63,10 +65,18 @@ func NewTelemeter(key, endpoint, clientID, clientType string, interval time.Dura
 		Logger:    &logWrapper{internal: log},
 		Callback:  &logOnFailure{},
 		DefaultContext: &segment.Context{
+			// Client specific data, which can be overridden with WithClient:
 			Device: segment.DeviceInfo{
-				Id:   clientID,
-				Type: clientType,
+				Id:      clientID,
+				Type:    clientType,
+				Version: clientVersion,
 			},
+			// Static data of the actual sender:
+			App: segment.AppInfo{
+				Version: clientVersion,
+				Build:   buildinfo.BuildFlavor,
+			},
+			UserAgent: clientconn.GetUserAgent(),
 		},
 	}
 
@@ -165,8 +175,9 @@ func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Contex
 			ctx = &segment.Context{}
 		}
 		ctx.Device = segment.DeviceInfo{
-			Id:   o.ClientID,
-			Type: o.ClientType,
+			Id:      o.ClientID,
+			Type:    o.ClientType,
+			Version: o.ClientVersion,
 		}
 	}
 
