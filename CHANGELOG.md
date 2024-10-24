@@ -63,6 +63,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-26372: `ROX_POSTGRES_VM_STATEMENT_TIMEOUT` env var defaulting to 3 minutes to allow customers to extend the timeout for queries backing VM pages only
 - ROX-26428: Fixed a bug when using delegated scanning where newer image metadata and layers were pulled incorrectly for an older image referenced by tag when the image registry contents have changed since deployment.
   - Now the metadata and layers pulled will be based on the digest of the image provided by the container runtime (when available) instead of just the tag.
+- The endpoint `/v2/compliance/scan/configurations/reports/run` method has changed from `PUT` to `POST`.
 
 ## [4.5.0]
 
