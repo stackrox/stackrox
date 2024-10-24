@@ -417,7 +417,7 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *v2.ResourceByID) (*
 
 	status := snapshot.GetReportStatus()
 	if status.GetReportNotificationMethod() != storage.ComplianceOperatorReportStatus_DOWNLOAD {
-		return nil, errors.Wrapf(errox.InvalidArgs, "The Report Snapshot %s did not generate a downloadable report", req.GetId())
+		return nil, errors.Wrapf(errox.InvalidArgs, "The Report %s is not downloadable and cannot be deleted", req.GetId())
 	}
 	switch status.GetRunState() {
 	case storage.ComplianceOperatorReportStatus_FAILURE:
@@ -434,6 +434,7 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *v2.ResourceByID) (*
 			sac.ResourceScopeKeys(resources.Administration)),
 	)
 	if err = s.blobDS.Delete(ctx, blobName); err != nil {
+		log.Errorf("Unable to delete the downloadable report: %v", err)
 		return nil, errors.Wrap(errox.InvariantViolation, "Unable to delete the downloadable report")
 	}
 

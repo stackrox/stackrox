@@ -884,7 +884,7 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetMyReportHistory() {
 func (s *ComplianceScanConfigServiceTestSuite) TestDeleteReport() {
 	s.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
 	if !features.ComplianceReporting.Enabled() {
-		s.T().Skipf("Skip test when the compliance reporting feature flag is disabled")
+		s.T().Skipf("compliance reporting feature flag is disabled")
 		s.T().SkipNow()
 	}
 
