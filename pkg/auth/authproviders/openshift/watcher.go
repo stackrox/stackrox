@@ -28,6 +28,8 @@ func registerBackend(b *backend) {
 	defer backendRegistryMutex.Unlock()
 
 	backendRegistry[b.id] = b
+	log.Info("Registered backend ", b.id)
+	log.Info("Backend registry size: ", len(backendRegistry))
 }
 
 func listRegisteredBackends() []*backend {
