@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-    ExpandableSectionVariant,
     ExpandableSection,
     Flex,
     FlexItem,
@@ -75,7 +74,7 @@ function ProfileDetailsHeader({
                         isExpanded={isExpanded}
                         toggleText={isExpanded ? 'Show less' : 'Show more'}
                         truncateMaxLines={5}
-                        variant={ExpandableSectionVariant.truncate}
+                        variant="truncate"
                         onToggle={onToggleDescription}
                     >
                         {description}

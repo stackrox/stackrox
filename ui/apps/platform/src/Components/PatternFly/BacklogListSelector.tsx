@@ -4,7 +4,6 @@ import {
     Button,
     EmptyState,
     EmptyStateIcon,
-    EmptyStateVariant,
     Flex,
     FormGroup,
     EmptyStateHeader,
@@ -94,7 +93,7 @@ function BacklogTable<Item>({
                     </Tbody>
                 </Table>
             ) : (
-                <EmptyState variant={EmptyStateVariant.xs}>
+                <EmptyState variant="xs">
                     <EmptyStateHeader icon={<EmptyStateIcon icon={CubesIcon} />} />
                     <EmptyStateFooter>
                         <p>No items remaining</p>
