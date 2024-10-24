@@ -169,7 +169,7 @@ function FalsePositiveCVEsTable({
                         <Th>Fixable</Th>
                         <Th sort={getSortParams('Severity')}>Severity</Th>
                         <Th modifier="fitContent">Scope</Th>
-                        <Th>Affected Components</Th>
+                        <Th>Affected components</Th>
                         <Th>Comments</Th>
                         <Th>Approver</Th>
                     </Tr>

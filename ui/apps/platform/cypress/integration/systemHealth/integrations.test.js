@@ -134,7 +134,7 @@ describe('System Health Integrations fixtures', () => {
             'Error scanning "docker.io/library/nginx:latest" with scanner "Stackrox Scanner": dial tcp 10.0.1.229:5432: connect: connection refused';
         const itemSelector = getCardBodyDescendantSelector('Image Integrations', 'tbody tr:first');
         cy.get(`${itemSelector} td[data-label="Name"]`).should('have.text', name);
-        cy.get(`${itemSelector} td[data-label="Error"]`).should('have.text', errorMessage);
+        cy.get(`${itemSelector} td[data-label="Error message"]`).should('have.text', errorMessage);
     });
 
     it('should have a list with 1 declarative configuration error', () => {
@@ -158,7 +158,10 @@ describe('System Health Integrations fixtures', () => {
         const { widgets } = selectors.integrations;
         const itemSelector = `${widgets.declarativeConfigs} tr:first`;
         cy.get(`${itemSelector} td[data-label="Name"]`).should('have.text', healthName);
-        cy.get(`${itemSelector} td[data-label="Error"]`).should('have.text', errorMessageText);
+        cy.get(`${itemSelector} td[data-label="Error message"]`).should(
+            'have.text',
+            errorMessageText
+        );
     });
 
     it('should have no declarative configuration errors displayed', () => {

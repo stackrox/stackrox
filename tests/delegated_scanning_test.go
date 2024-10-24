@@ -227,6 +227,9 @@ func (ts *DelegatedScanningSuite) TearDownSuite() {
 	// Changing the log level may result in pod restarts and logs lost.
 	ts.handleFailure()
 
+	// Reset the delegated scanning config back so that other tests are not impacted.
+	ts.resetConfig(ctx)
+
 	// Reset the log level back to its original value so that other e2e tests are
 	// not impacted by the additional logging.
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
