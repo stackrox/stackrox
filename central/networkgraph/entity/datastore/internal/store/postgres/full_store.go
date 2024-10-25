@@ -20,12 +20,12 @@ const (
 	pruneOrphanExternalNetworkEntitiesSrcStmt = `DELETE FROM %s entity WHERE NOT EXISTS
 		(SELECT 1 FROM %s flow WHERE flow.Props_SrcEntity_Type = 4
 		AND flow.Props_SrcEntity_Id = entity.Info_Id
-		AND entity.Info_ExternalSource_Learned = true);`
+		AND entity.Info_ExternalSource_Discovered = true);`
 
 	pruneOrphanExternalNetworkEntitiesDstStmt = `DELETE FROM %s entity WHERE NOT EXISTS
 		(SELECT 1 FROM %s flow WHERE flow.Props_DstEntity_Type = 4
 		AND flow.Props_DstEntity_Id = entity.Info_Id
-		AND entity.Info_ExternalSource_Learned = true);`
+		AND entity.Info_ExternalSource_Discovered = true);`
 )
 
 var (
