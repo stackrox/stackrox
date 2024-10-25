@@ -424,7 +424,6 @@ func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 func (e *Store) LookupByContainerID(containerID string) (ContainerMetadata, bool) {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
-	log.Debugf("Searching for container %s in containerIDMap", containerID)
 	metadata, ok := e.containerIDMap[containerID]
 	return metadata, ok
 }

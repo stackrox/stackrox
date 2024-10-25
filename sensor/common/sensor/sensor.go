@@ -455,7 +455,6 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			s.changeState(common.SensorComponentEventCentralReachable)
 		case connectivity.Connecting:
 			// Do nothing, let it connect
-			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
 			return errors.New("Connection is in connecting state")
 		default:
 			s.changeState(common.SensorComponentEventOfflineMode)
