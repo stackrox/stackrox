@@ -592,7 +592,12 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 }
 
 func (g *garbageCollectorImpl) removeOrphanedNetworkEntities() {
-	g.networkentities.RemoveOrphanedEntities(pruningCtx)
+	err := g.networkentities.RemoveOrphanedEntities(pruningCtx)
+
+	if err != nil {
+		log.Errorf("[Pruning] error removing orphaned network entities: %v", err)
+		return
+	}
 }
 
 func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {
