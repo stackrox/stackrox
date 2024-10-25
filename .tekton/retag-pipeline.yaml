@@ -41,18 +41,17 @@ spec:
       resolver: bundles
 
   params:
-  - description: Source Repository URL
+  - description: Source Repository URL.
     name: git-url
     type: string
-  - default: ""
-    description: Revision of the Source Repository
+  - description: Revision of the Source Repository.
     name: revision
     type: string
-  - description: Output Image Repository
+  - description: Output Image Repository.
     name: output-image-repo
     type: string
   - default: "-fast"
-    description: Suffix that's appended to generated image tags.
+    description: Suffix that's appended to generated image tags (both input and output).
     name: image-tag-suffix
     type: string
   - description: Input Image Repository.
@@ -63,10 +62,6 @@ spec:
     type: string
 
   # Common params for all retagging pipelines.
-  - default: "false"
-    description: Skip checks against built image
-    name: skip-checks
-    type: string
   - default: "0"
     description: Depth of the git clone in number of commits. Use "1" for shallow clone. Use "0" for deep clone, i.e. to fetch all commits.
     name: clone-depth
