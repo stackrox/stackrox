@@ -461,6 +461,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		}
 
 		// At this point, we know that connection factory reported that connection is up.
+		// However, it is too early to go online, as the setup of central communication may still fail.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
 		centralCommunication := NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
@@ -473,7 +474,15 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 
 		// Reset the exponential back-off if the connection succeeds
 		exponential.Reset()
+
+		// Start a goroutine that will periodically check the gRPC state
+		// and transition to online only when gRPC state is READY.
+		ctx, cancel := context.WithTimeout(context.Background(), exponential.InitialInterval)
+		defer cancel()
+		go s.goOnlineWhenGRPCReady(ctx)
+
 		log.Debugf("Waiting for sensor-central communication to stop...")
+		// This will block until the connection crashes, or we call stop.
 		shallRetry, err := s.waitForConnectionStop()
 		if shallRetry {
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
@@ -488,6 +497,22 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 
 	if err != nil {
 		log.Warnf("Backoff returned error: %s", err)
+	}
+}
+
+func (s *Sensor) goOnlineWhenGRPCReady(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Second):
+			state, _ := s.centralConnectionFactory.ConnectionState()
+			if state == connectivity.Ready {
+				s.changeState(common.SensorComponentEventCentralReachable)
+				return
+			}
+			log.Debugf("Not going online: connection state=%s", state)
+		}
 	}
 }
 
