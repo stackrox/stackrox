@@ -7,6 +7,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
@@ -18,6 +19,7 @@ import (
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	types "github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -67,7 +70,7 @@ var (
 // New returns a service object for registering with grpc.
 func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingBindingsDS.DataStore,
 	suiteDS suiteDS.DataStore, manager compliancemanager.Manager, reportManager complianceReportManager.Manager, notifierDS notifierDS.DataStore, profileDS profileDS.DataStore,
-	benchmarkDS benchmarksDS.DataStore, clusterDS clusterDatastore.DataStore, snapshotDS snapshotDS.DataStore) Service {
+	benchmarkDS benchmarksDS.DataStore, clusterDS clusterDatastore.DataStore, snapshotDS snapshotDS.DataStore, blobDS blobDS.Datastore) Service {
 	return &serviceImpl{
 		scanConfigDS:                    scanConfigDS,
 		complianceScanSettingBindingsDS: scanSettingBindingsDS,
@@ -79,6 +82,7 @@ func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingB
 		benchmarkDS:                     benchmarkDS,
 		clusterDS:                       clusterDS,
 		snapshotDS:                      snapshotDS,
+		blobDS:                          blobDS,
 	}
 }
 
@@ -95,6 +99,7 @@ type serviceImpl struct {
 	benchmarkDS                     benchmarksDS.DataStore
 	clusterDS                       clusterDatastore.DataStore
 	snapshotDS                      snapshotDS.DataStore
+	blobDS                          blobDS.Datastore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -176,8 +181,38 @@ func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req
 	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required for deletion")
 	}
+	// Snapshots get deleted with the ScanConfiguration we need to delete the BlobData before
+	query := search.NewQueryBuilder().
+		AddExactMatches(
+			search.ComplianceOperatorScanConfig,
+			req.GetId(),
+		).
+		AddExactMatches(
+			search.ComplianceOperatorReportNotificationMethod,
+			storage.ComplianceOperatorReportStatus_DOWNLOAD.String(),
+		).
+		AddExactMatches(
+			search.ComplianceOperatorReportState,
+			storage.ComplianceOperatorReportStatus_DELIVERED.String(),
+			storage.ComplianceOperatorReportStatus_GENERATED.String(),
+		).ProtoQuery()
+	snapshots, err := s.snapshotDS.SearchSnapshots(ctx, query)
+	if err != nil {
+		return nil, errors.Wrap(errox.InvariantViolation, "Unable to find the Report Snapshots asociated with the scan config")
+	}
+	blobCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)),
+	)
+	for _, snapshot := range snapshots {
+		blobName := common.GetComplianceReportBlobPath(req.GetId(), snapshot.GetReportId())
+		if err := s.blobDS.Delete(blobCtx, blobName); err != nil {
+			return nil, errors.Wrap(errox.InvariantViolation, "Unable to delete the report asociated with the scan config")
+		}
+	}
 
-	err := s.manager.DeleteScan(ctx, req.GetId())
+	err = s.manager.DeleteScan(ctx, req.GetId())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to delete scan config: %v", err)
 	}
@@ -260,7 +295,12 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 		return nil, errors.Errorf("failed to retrieve compliance scan configuration with id %q.", request.GetScanConfigId())
 	}
 
-	err = s.reportManager.SubmitReportRequest(ctx, scanConfig)
+	notificationMethod, err := convertNotificationMethodToStorage(request.GetReportNotificationMethod())
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.reportManager.SubmitReportRequest(ctx, scanConfig, notificationMethod)
 	if err != nil {
 		return &v2.ComplianceRunReportResponse{
 			RunState:    v2.ComplianceRunReportResponse_ERROR,
@@ -299,7 +339,7 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, request *v2.Complian
 	if err != nil {
 		return nil, err
 	}
-	snapshots, err := convertStorageSnapshotsToV2Snapshots(ctx, results, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
+	snapshots, err := convertStorageSnapshotsToV2Snapshots(ctx, results, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS, s.blobDS)
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to convert storage report snapshots to response")
 	}
@@ -341,7 +381,7 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, request *v2.Compli
 		return nil, err
 	}
 
-	snapshots, err := convertStorageSnapshotsToV2Snapshots(ctx, results, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS)
+	snapshots, err := convertStorageSnapshotsToV2Snapshots(ctx, results, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS, s.blobDS)
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to convert storage report snapshots to response")
 	}
