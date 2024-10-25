@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/x509"
 	"net/http"
-	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -444,9 +443,9 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 
 	s.reconcile.Store(true)
 	err := backoff.RetryNotify(func() error {
-		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		state, grpcErr := s.centralConnectionFactory.ConnectionState()
-		log.Infof("Current state: %s", state)
+		log.Infof("Attempting connection setup (client reconciliation = %t). Current state: %s",
+			s.reconcile.Load(), state)
 		switch state {
 		// Idle means that the connection will be open when first rpc call happens, but that leads to failure when connecting
 		case connectivity.Idle:
@@ -466,7 +465,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
 			return err
 		}
-		log.Infof("Connection state change handled")
+		log.Debugf("Connection state change handled")
 
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
@@ -480,7 +479,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		go s.notifySyncDone(&syncDone, centralCommunication)
 		// Reset the exponential back-off if the connection succeeds
 		exponential.Reset()
-		log.Infof("Waiting for sensor or central communication to stop...")
+		log.Debugf("Waiting for sensor-central communication to stop...")
 		select {
 		case <-s.centralConnectionFactory.StopSignal().WaitC():
 			// This case handles situation where we assume that gRPC connection has no blockers to get to the READY state,

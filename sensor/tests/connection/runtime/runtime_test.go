@@ -141,8 +141,7 @@ func Test_SensorIntermediateRuntimeEvents(t *testing.T) {
 		require.NoError(t, messagesReceivedSignal.Wait())
 
 		// We need to wait here at least 30s to make sure the network flows are processed
-		t.Log("Messages from Collector received")
-		t.Log("Waiting 60s for Sensor to process the network flows")
+		t.Log("Messages from Collector received. Waiting 60s for Sensor to process the network flows")
 		time.Sleep(60 * time.Second)
 
 		t.Log("Deleting test resources")

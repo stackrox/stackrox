@@ -13,10 +13,8 @@ import (
 var roxlog = roxLogging.LoggerForModule()
 
 type fakeGRPCClient struct {
-	okSig             concurrency.Signal
-	stopSig           concurrency.ErrorSignal
-	transientErrorSig concurrency.ErrorSignal
-	conn              *grpc.ClientConn
+	stopSig concurrency.ErrorSignal
+	conn    *grpc.ClientConn
 
 	// connMtx guards the connection and the state (as the state is a connection state)
 	connMtx      *sync.Mutex
@@ -32,14 +30,11 @@ type FakeGRPCFactory interface {
 
 // MakeFakeConnectionFactory creates the fake gRPC client object given a gRPC connection.
 func MakeFakeConnectionFactory(c *grpc.ClientConn) *fakeGRPCClient {
-	roxlog.Infof("Making new fake connection factory (this resets signals)")
 	return &fakeGRPCClient{
-		conn:              c,
-		stopSig:           concurrency.NewErrorSignal(),
-		transientErrorSig: concurrency.NewErrorSignal(),
-		okSig:             concurrency.NewSignal(),
-		connMtx:           &sync.Mutex{},
-		currentState:      99, // invalid state
+		conn:         c,
+		stopSig:      concurrency.NewErrorSignal(),
+		connMtx:      &sync.Mutex{},
+		currentState: 99, // invalid state
 	}
 }
 
@@ -65,12 +60,10 @@ func (f *fakeGRPCClient) OverwriteCentralConnection(newConn *grpc.ClientConn) {
 // SetCentralConnectionWithRetries is the implementation of the concurrent function SetCentralConnectionWithRetries
 // that sensor uses to set the gRPC connection to all its components. Present test version simply.
 func (f *fakeGRPCClient) SetCentralConnectionWithRetries(ptr *util.LazyClientConn, _ centralclient.CertLoader) {
-	defer roxlog.Infof("SetCentralConnectionWithRetries: done")
-	roxlog.Infof("SetCentralConnectionWithRetries: waiting for conn mutex")
+	// We use info-logging here, as this code is used only by local-sensor (i.e., not executed in production).
 	concurrency.WithLock(f.connMtx, func() {
 		ptr.Set(f.conn)
 
-		roxlog.Infof("SetCentralConnectionWithRetries: waiting for state mutex")
 		if f.currentState != f.conn.GetState() {
 			roxlog.Infof("State change from %s to %s", f.currentState.String(), f.conn.GetState().String())
 			f.currentState = f.conn.GetState()
@@ -82,7 +75,6 @@ func (f *fakeGRPCClient) SetCentralConnectionWithRetries(ptr *util.LazyClientCon
 
 // Reset signals
 func (f *fakeGRPCClient) Reset() {
-	roxlog.Infof("Resetting fake grpc client")
 	concurrency.WithLock(f.connMtx, func() {
 		f.currentState = 99
 	})

@@ -22,9 +22,10 @@ func Test_ComplianceOperatorCRDsDetection(t *testing.T) {
 		InitialSystemPolicies: nil,
 		CertFilePath:          "../../../tools/local-sensor/certs/",
 	}, startSensor.WaitC())
+	t.Cleanup(c.Stop)
 	require.NoError(t, err)
 
-	t.Cleanup(c.Stop)
+	t.Log("Starting sensor")
 	startSensor.Signal()
 
 	t.Log("Starting testcase")

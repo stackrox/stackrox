@@ -201,11 +201,13 @@ func NewContextWithConfigAndStart(t *testing.T, config Config, start <-chan stru
 			Total:          1,
 		},
 	}
-	// Wait for the start signal. This is important, as we want to make sure that
-	// cleanup routines from the previous run are not racing with the start.
+	// Wait for the start signal.
+	// This is to make sure that cleanup routines from the previous run
+	// are not racing with the start of the current run.
 	t.Logf("Waiting for start signal")
 	go func() {
 		<-start
+		t.Logf("Start signal received")
 		t.Logf("Starting fake GRPC")
 		tc.StartFakeGRPC(config.CentralCaps...)
 		t.Logf("Starting sensor")
@@ -952,10 +954,10 @@ func createConnectionAndStartServer(fakeCentral *centralDebug.FakeService, l log
 	}()
 
 	l.Logf("Creating new grpc client")
-	// DialContext is deprecated, but when this is called with NewClient, then the connection status is stuck in IDLE state
+	// DialContext is deprecated, but when we use NewClient, then the connection status is stuck in IDLE state.
 	// DialContext explicitly states that: "At the end of this method, we kick the channel out of idle, rather than
 	// waiting for the first rpc".
-	// Treating state IDLE as a condition for Sensor to go online results in error:
+	// Treating state IDLE as a sufficient condition for Sensor going Online results in error:
 	// Communication with Central stopped: opening stream: failed to exit idle mode: dns resolver: missing address. Retrying.
 	conn, err := grpc.DialContext(context.Background(), "", grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 		return listener.Dial()

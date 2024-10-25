@@ -862,15 +862,6 @@ func (m *networkFlowManager) enrichProcessesListening(hostConns *hostConnections
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConnIndicator]timestamp.MicroTS, map[containerEndpointIndicator]timestamp.MicroTS) {
 	allHostConns := m.getAllHostConnections()
-	for i, conn := range allHostConns {
-		concurrency.WithLock(&conn.mutex, func() {
-			for c, status := range conn.connections {
-				log.Debugf("currentEnrichedConnsAndEndpoints: allHostConns: [%d]: host=%s conn=%+v, status=%+v",
-					i, conn.hostname, c, *status)
-
-			}
-		})
-	}
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
 	enrichedEndpoints := make(map[containerEndpointIndicator]timestamp.MicroTS)
@@ -878,7 +869,7 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (map[networkConn
 		m.enrichHostConnections(hostConns, enrichedConnections)
 		m.enrichHostContainerEndpoints(hostConns, enrichedEndpoints)
 	}
-	log.Infof("currentEnrichedConnsAndEndpoints: enrichedConnections: %+v", enrichedConnections)
+	log.Debugf("Current enriched connections: %+v", enrichedConnections)
 
 	return enrichedConnections, enrichedEndpoints
 }
@@ -989,11 +980,6 @@ func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo
 			endpoints:   make(map[containerEndpoint]*connStatus),
 		}
 		m.connectionsByHost[hostname] = conns
-	}
-	for _, connections := range m.connectionsByHost {
-		if connections.connections == nil {
-			continue
-		}
 	}
 
 	conns.mutex.Lock()
