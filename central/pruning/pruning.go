@@ -36,6 +36,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
@@ -347,7 +348,9 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 	g.markOrphanedAlertsAsResolved()
 	g.removeOrphanedNetworkFlows(clusterIDSet)
 
-	g.removeOrphanedNetworkEntities()
+	if features.ExternalIPs.Enabled() || env.ExternalIPsPruning.BooleanSetting() {
+		g.removeOrphanedNetworkEntities()
+	}
 
 	g.removeOrphanedPods()
 	g.removeOrphanedNodes()
