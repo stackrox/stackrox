@@ -362,8 +362,7 @@ clean-proto-generated-srcs:
 config-controller-gen:
 	make -C config-controller/ manifests
 	make -C config-controller/ generate
-	echo -e '{{- include "srox.init" . -}}' > image/templates/helm/stackrox-central/templates/00-securitypolicies-crd.yaml
-	cat config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml >> image/templates/helm/stackrox-central/templates/00-securitypolicies-crd.yaml
+	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml image/templates/helm/stackrox-central/crds
 
 .PHONY: generated-srcs
 generated-srcs: go-generated-srcs config-controller-gen

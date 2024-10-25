@@ -297,7 +297,6 @@ EOF
 }
 
 @test "Fresh installation of HEAD Helm charts with Scanner v4 enabled in multi-namespace mode" {
-    skip "Constantly failing: ROX-26581"
     local central_namespace="$CUSTOM_CENTRAL_NAMESPACE"
     local sensor_namespace="$CUSTOM_SENSOR_NAMESPACE"
 
@@ -384,14 +383,6 @@ EOF
 }
 
 @test "[Operator] Fresh multi-namespace installation with Scanner V4 enabled" {
-    skip "ROX-26581: Operator installation to custom namespace fails"
-    # Reason for failure:
-    # Unable to continue with install:
-    # CustomResourceDefinition "securitypolicies.config.stackrox.io" in namespace "" exists and cannot be imported
-    # into the current release:
-    # invalid ownership metadata; annotation validation error: key "meta.helm.sh/release-namespace"
-    # must equal "stackrox-central": current value is "stackrox"
-
     if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
         skip "This test is currently only supported on OpenShift"
     fi
@@ -420,14 +411,6 @@ EOF
 }
 
 @test "[Operator] Upgrade multi-namespace installation" {
-    skip "ROX-26581: Operator installation to custom namespace fails"
-    # Reason for failure:
-    # Unable to continue with install:
-    # CustomResourceDefinition "securitypolicies.config.stackrox.io" in namespace "" exists and cannot be imported
-    # into the current release:
-    # invalid ownership metadata; annotation validation error: key "meta.helm.sh/release-namespace"
-    # must equal "stackrox-central": current value is "stackrox"
-
     if [[ "${ORCHESTRATOR_FLAVOR:-}" != "openshift" ]]; then
         skip "This test is currently only supported on OpenShift"
     fi
