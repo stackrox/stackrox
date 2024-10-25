@@ -40,7 +40,7 @@ var (
 func configureClairCoreLogging() {
 	l := zerolog.New(os.Stderr)
 	l = l.Level(zerolog.InfoLevel)
-	if os.Getenv("LOGLEVEL") == "DEBUG" {
+	if logging.GetGlobalLogLevel().CapitalString() == "DEBUG" {
 		l = l.Level(zerolog.DebugLevel)
 	}
 	zlog.Set(&l)

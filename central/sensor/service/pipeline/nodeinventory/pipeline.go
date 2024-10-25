@@ -99,7 +99,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	if features.ScannerV4.Enabled() && env.NodeIndexEnabled.BooleanSetting() {
 		// To prevent resending the inventory, still acknowledge receipt of it
 		sendComplianceAck(ctx, node, ninv, injector)
-		log.Debugf("Discarding v2 NodeScan in favor of v4 NodeScan")
+		log.Debug("Discarding v2 NodeScan in favor of v4 NodeScan")
 		return nil
 	}
 
