@@ -36,7 +36,6 @@ import {
     systemHealthPath,
     violationsBasePath,
     vulnManagementPath,
-    vulnManagementRiskAcceptancePath,
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
     vulnerabilitiesWorkloadCvesPath,
@@ -225,12 +224,6 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                     routeKey: 'vulnerability-management',
                     isActive: (pathname) =>
                         Boolean(matchPath(pathname, { vulnManagementPath, exact: true })),
-                },
-                {
-                    type: 'link',
-                    content: 'Risk Acceptance',
-                    path: vulnManagementRiskAcceptancePath,
-                    routeKey: 'vulnerability-management/risk-acceptance',
                 },
             ],
         },
