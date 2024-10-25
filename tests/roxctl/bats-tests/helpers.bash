@@ -343,7 +343,7 @@ has_flag_collision_warning() {
 }
 
 roxctl_authenticated() {
-  roxctl-development --insecure-skip-tls-verify -e "$API_ENDPOINT" -p "$ROX_PASSWORD" "$@"
+  roxctl-development --insecure-skip-tls-verify -e "$API_ENDPOINT" "$@"
 }
 
 yaml_valid() {

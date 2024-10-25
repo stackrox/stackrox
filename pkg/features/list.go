@@ -102,13 +102,13 @@ var (
 	SensorSingleScanPerImage = registerFeature("Sensor will only allow a single active scan per image", "ROX_SENSOR_SINGLE_SCAN", enabled)
 
 	// MicrosoftSentinelNotifier enables the Microsoft Sentinel notifier.
-	MicrosoftSentinelNotifier = registerFeature("Enable the Microsoft Sentinel notifier", "ROX_MICROSOFT_SENTINEL")
+	MicrosoftSentinelNotifier = registerFeature("Enable the Microsoft Sentinel notifier", "ROX_MICROSOFT_SENTINEL", enabled)
 
 	// ScanScheduleReportJobs enables support for compliance scan schedule report jobs
 	ScanScheduleReportJobs = registerFeature("Enables support for compliance scan schedule report jobs", "ROX_SCAN_SCHEDULE_REPORT_JOBS")
 
 	// PlatformComponents introduces the concept of platform collections and filtered views across the app.
-	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS")
+	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS", enabled)
 
 	// Display NVD CVSS score in UI.
 	NvdCvssUI = registerFeature("Display NVD CVSS score in UI", "ROX_NVD_CVSS_UI")
@@ -125,4 +125,7 @@ var (
 
 	// ExternalIPs enables storing detailed discovered external IPs
 	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
+
+	// NetworkGraphExternalIPs enables displaying external (discovered) entities in the network graph
+	NetworkGraphExternalIPs = registerFeature("Enables display of external IPs in the network graph UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS")
 )

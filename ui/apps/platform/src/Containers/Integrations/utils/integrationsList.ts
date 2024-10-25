@@ -12,6 +12,7 @@ import googleregistry from 'images/google-container.svg';
 import ibm from 'images/ibm-ccr.svg';
 import jira from 'images/jira.svg';
 import logo from 'images/StackRox-integration-logo.svg';
+import microsoftSentinel from 'images/microsoft_sentinel.svg';
 import nexus from 'images/nexus.svg';
 import pagerduty from 'images/pagerduty.svg';
 import quay from 'images/quay.svg';
@@ -89,7 +90,7 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
     {
         categories: 'Image Scanner + Node Scanner',
         image: logo,
-        label: 'StackRox Scanner',
+        label: '[DEPRECATED] StackRox Scanner',
         type: 'clairify',
     },
     {
@@ -114,7 +115,7 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
     {
         categories: 'Registry + Scanner',
         image: googleregistry,
-        label: 'Google Container Registry',
+        label: '[DEPRECATED] Google Container Registry',
         type: 'google',
     },
     {
@@ -246,6 +247,12 @@ export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = 
         image: syslog,
         label: 'Syslog',
         type: 'syslog',
+    },
+    {
+        image: microsoftSentinel,
+        label: 'Micrsoft Sentinel',
+        type: 'microsoftSentinel',
+        featureFlagDependency: ['ROX_MICROSOFT_SENTINEL'],
     },
 ];
 

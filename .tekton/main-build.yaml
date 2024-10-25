@@ -25,7 +25,7 @@ spec:
   - name: dockerfile
     value: image/rhel/konflux.Dockerfile
   - name: git-url
-    value: '{{repo_url}}'
+    value: '{{source_url}}'
   - name: image-expires-after
     # TODO(ROX-24530): return expiration for non-released images to 13w
     value: '52w'
@@ -121,11 +121,3 @@ spec:
           memory: 3Gi
         requests:
           memory: 3Gi
-  - pipelineTaskName: clamav-scan
-    stepSpecs:
-    # Provision more CPU to speed up ClamAV scan compared to the defaults.
-    # https://github.com/redhat-appstudio/build-definitions/blob/main/task/clamav-scan/0.1/clamav-scan.yaml#L48
-    - name: extract-and-scan-image
-      computeResources:
-        requests:
-          cpu: 1

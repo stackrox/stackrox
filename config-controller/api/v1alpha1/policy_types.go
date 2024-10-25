@@ -291,6 +291,7 @@ func (p SecurityPolicySpec) ToProtobuf() *storage.Policy {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=sp
 // +kubebuilder:subresource:status
 
 // SecurityPolicy is the Schema for the policies API

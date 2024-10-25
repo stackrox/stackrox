@@ -1,15 +1,16 @@
 import { useState } from 'react';
 
 import useModal from 'hooks/useModal';
-import { deleteDownloadableReport } from 'services/ReportsService';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import { Empty } from 'services/types';
 
 export type UseDeleteDownloadModalProps = {
+    deleteDownloadFunc: (reportId: string) => Promise<Empty>;
     onCompleted: () => void;
 };
 
 export type UseDeleteDownloadModalResult = {
-    openDeleteDownloadModal: (reportId: string) => void;
+    openDeleteDownloadModal: (reportJobId: string) => void;
     isDeleteDownloadModalOpen: boolean;
     closeDeleteDownloadModal: () => void;
     isDeletingDownload: boolean;
@@ -18,16 +19,17 @@ export type UseDeleteDownloadModalResult = {
 };
 
 function useDeleteDownloadModal({
+    deleteDownloadFunc,
     onCompleted,
 }: UseDeleteDownloadModalProps): UseDeleteDownloadModalResult {
     const { isModalOpen, openModal, closeModal } = useModal();
-    const [reportIdToDeleteDownload, setReportIdToDeleteDownload] = useState<string>('');
+    const [reportJobIdToDeleteDownload, setReportIdToDeleteDownload] = useState<string>('');
     const [isDeletingDownload, setIsDeletingDownload] = useState(false);
     const [deleteDownloadError, setDeleteDownloadError] = useState<string | null>(null);
 
-    function openDeleteDownloadModal(reportId: string) {
+    function openDeleteDownloadModal(reportJobId: string) {
         openModal();
-        setReportIdToDeleteDownload(reportId);
+        setReportIdToDeleteDownload(reportJobId);
     }
 
     function closeDeleteDownloadModal() {
@@ -39,7 +41,7 @@ function useDeleteDownloadModal({
 
     function onDeleteDownload() {
         setIsDeletingDownload(true);
-        deleteDownloadableReport(reportIdToDeleteDownload)
+        deleteDownloadFunc(reportJobIdToDeleteDownload)
             .then(() => {
                 closeDeleteDownloadModal();
                 onCompleted();

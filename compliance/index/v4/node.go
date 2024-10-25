@@ -3,6 +3,7 @@ package v4
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -19,7 +20,9 @@ import (
 	"github.com/stackrox/rox/compliance/collection/intervals"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 )
 
@@ -157,8 +160,29 @@ func filterPackages(_ context.Context, pck []*claircore.Package) []*claircore.Pa
 	return filtered
 }
 
+func createClient() (*http.Client, error) {
+	clientCert, err := mtls.LeafCertificateFromFile()
+	if err != nil {
+		return nil, errors.Wrap(err, "obtaining client certificate")
+	}
+	tlsConf := &tls.Config{
+		InsecureSkipVerify: true,
+		Certificates:       []tls.Certificate{clientCert},
+	}
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConf,
+			Proxy:           proxy.FromConfig(),
+		},
+		Timeout: 30 * time.Second,
+	}, nil
+}
+
 func runRepositoryScanner(ctx context.Context, cfg *NodeIndexerConfig, l *claircore.Layer) ([]*claircore.Repository, error) {
-	c := http.DefaultClient
+	c, err := createClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating repository scanner http client - check TLS config")
+	}
 	sc := rhel.RepositoryScanner{}
 	config := rhel.RepositoryScannerConfig{
 		DisableAPI:         cfg.DisableAPI,

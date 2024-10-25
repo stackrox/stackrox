@@ -5,9 +5,15 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/metrics"
+)
+
+const (
+	ScannerVersionV2 = "Stackrox Scanner"
+	ScannerVersionV4 = "Scanner V4"
 )
 
 var (
@@ -22,6 +28,8 @@ var (
 			"node_name",
 			// The OS name and version of the Node
 			"os_namespace",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	numberOfContentSets = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -35,6 +43,8 @@ var (
 			"node_name",
 			// The OS name and version of the Node
 			"os_namespace",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	scanDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -49,6 +59,24 @@ var (
 			"node_name",
 			// Whether the inventory run was completed successfully
 			"error",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
+		})
+
+	indexDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "index_duration_seconds",
+		Help:      "Generation duration for Node IndexReports (per Node) in seconds",
+		Buckets:   []float64{0.1, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 50, 100, 500, 1000},
+	},
+		[]string{
+			// The Node this scan belongs to
+			"node_name",
+			// Whether the inventory run was completed successfully
+			"error",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	callToNodeInventoryDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -63,6 +91,8 @@ var (
 			"node_name",
 			// Whether the inventory run was completed successfully
 			"error",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	rescanInterval = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -86,6 +116,8 @@ var (
 		[]string{
 			// The Node this scan belongs to
 			"node_name",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
 	scansTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -97,8 +129,24 @@ var (
 		[]string{
 			// The Node this scan belongs to
 			"node_name",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 
+	indexesTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "index_reports_total",
+		Help:      "Number of generated node index reports since container start",
+	},
+		[]string{
+			// The Node this scan belongs to
+			"node_name",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
+		})
+
+	// TODO(ROX-26699): Duplicate and rename metric
 	inventoryTransmissions = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
@@ -109,6 +157,8 @@ var (
 			// The Node this scan belongs to
 			"node_name",
 			"transmission_type",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
 		})
 )
 
@@ -125,8 +175,9 @@ func ObserveNodeInventoryScan(inventory *storage.NodeInventory) {
 		rhelPackageCount = len(components.GetRhelComponents())
 	}
 	numberOfRHELPackages.With(prometheus.Labels{
-		"node_name":    inventory.GetNodeName(),
-		"os_namespace": components.GetNamespace(),
+		"node_name":       inventory.GetNodeName(),
+		"os_namespace":    components.GetNamespace(),
+		"scanner_version": ScannerVersionV2,
 	}).Set(float64(rhelPackageCount))
 
 	rhelContentSets := 0
@@ -134,24 +185,65 @@ func ObserveNodeInventoryScan(inventory *storage.NodeInventory) {
 		rhelContentSets = len(components.GetRhelContentSets())
 	}
 	numberOfContentSets.With(prometheus.Labels{
-		"node_name":    inventory.GetNodeName(),
-		"os_namespace": components.GetNamespace(),
+		"node_name":       inventory.GetNodeName(),
+		"os_namespace":    components.GetNamespace(),
+		"scanner_version": ScannerVersionV2,
+	}).Set(float64(rhelContentSets))
+}
+
+// ObserveNodeIndexReport observes the metric for Scanner v4.
+func ObserveNodeIndexReport(report *v4.IndexReport, nodeName string) {
+	rhelPackageCount := 0
+	contents := report.GetContents()
+
+	if contents == nil {
+		return
+	}
+
+	if contents.GetPackages() != nil {
+		rhelPackageCount = len(contents.GetPackages())
+	}
+	numberOfRHELPackages.With(prometheus.Labels{
+		"node_name":       nodeName,
+		"os_namespace":    "", // Not available in node index
+		"scanner_version": ScannerVersionV4,
+	}).Set(float64(rhelPackageCount))
+
+	rhelContentSets := 0
+	if contents.GetRepositories() != nil {
+		rhelContentSets = len(contents.GetRepositories())
+	}
+	numberOfContentSets.With(prometheus.Labels{
+		"node_name":       nodeName,
+		"os_namespace":    "", // Not available in node index
+		"scanner_version": ScannerVersionV4,
 	}).Set(float64(rhelContentSets))
 }
 
 // ObserveNodeInventoryCallDuration observes the metric.
 func ObserveNodeInventoryCallDuration(d time.Duration, nodeName string, e error) {
 	callToNodeInventoryDuration.With(prometheus.Labels{
-		"node_name": nodeName,
-		"error":     strconv.FormatBool(e != nil),
+		"node_name":       nodeName,
+		"error":           strconv.FormatBool(e != nil),
+		"scanner_version": ScannerVersionV2,
 	}).Observe(d.Seconds())
 }
 
 // ObserveScanDuration observes the metric.
 func ObserveScanDuration(d time.Duration, nodeName string, e error) {
 	scanDuration.With(prometheus.Labels{
-		"node_name": nodeName,
-		"error":     strconv.FormatBool(e != nil),
+		"node_name":       nodeName,
+		"error":           strconv.FormatBool(e != nil),
+		"scanner_version": ScannerVersionV2,
+	}).Observe(d.Seconds())
+}
+
+// ObserveIndexDuration observes the metric.
+func ObserveIndexDuration(d time.Duration, nodeName string, e error) {
+	indexDuration.With(prometheus.Labels{
+		"node_name":       nodeName,
+		"error":           strconv.FormatBool(e != nil),
+		"scanner_version": ScannerVersionV4,
 	}).Observe(d.Seconds())
 }
 
@@ -165,14 +257,24 @@ func ObserveRescanInterval(d time.Duration, nodeName string) {
 // ObserveScansTotal observed the metric
 func ObserveScansTotal(nodeName string) {
 	scansTotal.With(prometheus.Labels{
-		"node_name": nodeName,
+		"node_name":       nodeName,
+		"scanner_version": ScannerVersionV2,
+	}).Inc()
+}
+
+// ObserveIndexesTotal observed the metric
+func ObserveIndexesTotal(nodeName string) {
+	indexesTotal.With(prometheus.Labels{
+		"node_name":       nodeName,
+		"scanner_version": ScannerVersionV4,
 	}).Inc()
 }
 
 // ObserveInventoryProtobufMessage observes the metric.
-func ObserveInventoryProtobufMessage(cmsg *sensor.MsgFromCompliance) {
+func ObserveInventoryProtobufMessage(cmsg *sensor.MsgFromCompliance, scannerVersion string) {
 	protobufMessageSize.With(prometheus.Labels{
-		"node_name": cmsg.GetNode(),
+		"node_name":       cmsg.GetNode(),
+		"scanner_version": scannerVersion,
 	}).Observe(float64(cmsg.SizeVT()))
 }
 
@@ -190,10 +292,11 @@ const (
 )
 
 // ObserveNodeInventorySending observes the metric.
-func ObserveNodeInventorySending(nodeName string, sendingType InventoryTransmission) {
+func ObserveNodeInventorySending(nodeName string, sendingType InventoryTransmission, scannerVersion string) {
 	inventoryTransmissions.With(prometheus.Labels{
 		"node_name":         nodeName,
 		"transmission_type": string(sendingType),
+		"scanner_version":   scannerVersion,
 	}).Inc()
 }
 
@@ -206,5 +309,7 @@ func init() {
 		protobufMessageSize,
 		rescanInterval,
 		scanDuration,
-		scansTotal)
+		indexDuration,
+		scansTotal,
+		indexesTotal)
 }

@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	scannerSecretName          = "scanner-tls"            // #nosec G101 not a hardcoded credentials
-	scannerDbSecretName        = "scanner-db-tls"         // #nosec G101 not a hardcoded credentials
-	scannerV4IndexerSecretName = "scanner-v4-indexer-tls" // #nosec G101 not a hardcoded credentials
-	scannerV4DbSecretName      = "scanner-v4-db-tls"      // #nosec G101 not a hardcoded credentials
+	scannerSecretName          = "scanner-tls"            // #nosec G101 not a hardcoded credential
+	scannerDbSecretName        = "scanner-db-tls"         // #nosec G101 not a hardcoded credential
+	scannerV4IndexerSecretName = "scanner-v4-indexer-tls" // #nosec G101 not a hardcoded credential
+	scannerV4DbSecretName      = "scanner-v4-db-tls"      // #nosec G101 not a hardcoded credential
 )
 
 // NewServiceCertificatesRepo creates a new ServiceCertificatesRepoSecrets that persists certificates for

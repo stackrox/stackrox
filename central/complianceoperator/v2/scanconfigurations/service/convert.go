@@ -4,10 +4,12 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	bindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -37,6 +39,24 @@ var (
 		storage.Schedule_DAILY:   v2.Schedule_DAILY,
 		storage.Schedule_WEEKLY:  v2.Schedule_WEEKLY,
 		storage.Schedule_MONTHLY: v2.Schedule_MONTHLY,
+	}
+
+	storageReportRunStateToV2 = map[storage.ComplianceOperatorReportStatus_RunState]v2.ComplianceReportStatus_RunState{
+		storage.ComplianceOperatorReportStatus_WAITING:   v2.ComplianceReportStatus_WAITING,
+		storage.ComplianceOperatorReportStatus_PREPARING: v2.ComplianceReportStatus_PREPARING,
+		storage.ComplianceOperatorReportStatus_GENERATED: v2.ComplianceReportStatus_GENERATED,
+		storage.ComplianceOperatorReportStatus_DELIVERED: v2.ComplianceReportStatus_DELIVERED,
+		storage.ComplianceOperatorReportStatus_FAILURE:   v2.ComplianceReportStatus_FAILURE,
+	}
+
+	storageReportRequestTypeToV2 = map[storage.ComplianceOperatorReportStatus_RunMethod]v2.ComplianceReportStatus_ReportMethod{
+		storage.ComplianceOperatorReportStatus_ON_DEMAND: v2.ComplianceReportStatus_ON_DEMAND,
+		storage.ComplianceOperatorReportStatus_SCHEDULED: v2.ComplianceReportStatus_SCHEDULED,
+	}
+
+	storageReportNotificationMethodToV2 = map[storage.ComplianceOperatorReportStatus_NotificationMethod]v2.NotificationMethod{
+		storage.ComplianceOperatorReportStatus_EMAIL:    v2.NotificationMethod_EMAIL,
+		storage.ComplianceOperatorReportStatus_DOWNLOAD: v2.NotificationMethod_DOWNLOAD,
 	}
 )
 
@@ -357,4 +377,92 @@ func convertStorageScanConfigToV2ScanStatuses(ctx context.Context,
 	}
 
 	return scanStatuses, nil
+}
+
+func convertStorageSnapshotsToV2Snapshots(ctx context.Context, snapshots []*storage.ComplianceOperatorReportSnapshotV2,
+	configDS complianceDS.DataStore, bindingDS bindingsDS.DataStore, suiteDS suiteDS.DataStore, notifierDS notifierDS.DataStore, blobDS blobDS.Datastore) ([]*v2.ComplianceReportSnapshot, error) {
+	if snapshots == nil {
+		return nil, nil
+	}
+	retSnapshots := make([]*v2.ComplianceReportSnapshot, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		converted, err := convertStorageSnapshotToV2Snapshot(ctx, snapshot, configDS, bindingDS, suiteDS, notifierDS, blobDS)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Unable to convert storage compliance operator report snapshot %s to response", snapshot.GetName())
+		}
+		if converted == nil {
+			continue
+		}
+		retSnapshots = append(retSnapshots, converted)
+	}
+	return retSnapshots, nil
+}
+
+func shallCheckDownload(reportStatus *storage.ComplianceOperatorReportStatus) bool {
+	runState := reportStatus.GetRunState()
+	return reportStatus.GetReportNotificationMethod() == storage.ComplianceOperatorReportStatus_DOWNLOAD &&
+		(runState == storage.ComplianceOperatorReportStatus_GENERATED || runState == storage.ComplianceOperatorReportStatus_DELIVERED)
+}
+
+func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2,
+	configDS complianceDS.DataStore, bindingDS bindingsDS.DataStore, suiteDS suiteDS.DataStore, notifierDS notifierDS.DataStore, blobDS blobDS.Datastore) (*v2.ComplianceReportSnapshot, error) {
+	if snapshot == nil {
+		return nil, nil
+	}
+	config, found, err := configDS.GetScanConfiguration(ctx, snapshot.GetScanConfigurationId())
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to retrieve the ScanConfiguration")
+	}
+	if !found {
+		return nil, errors.New("ScanConfiguration not found")
+	}
+	configStatus, err := convertStorageScanConfigToV2ScanStatus(ctx, config, configDS, bindingDS, suiteDS, notifierDS)
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to convert ScanConfiguration to ScanStatus")
+	}
+	isDownloadReady := false
+	if shallCheckDownload(snapshot.GetReportStatus()) {
+		blobName := common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshot.GetReportId())
+		query := search.NewQueryBuilder().AddExactMatches(search.BlobName, blobName).ProtoQuery()
+		blobResults, err := blobDS.Search(ctx, query)
+		if err != nil {
+			log.Errorf("unable to retrieve blob from the DataStore: %v", err)
+		}
+		blobs := search.ResultsToIDSet(blobResults)
+		isDownloadReady = blobs.Contains(blobName)
+	}
+	retSnapshot := &v2.ComplianceReportSnapshot{
+		ReportJobId:  snapshot.GetReportId(),
+		ScanConfigId: snapshot.GetScanConfigurationId(),
+		Name:         snapshot.GetName(),
+		Description:  snapshot.GetDescription(),
+		ReportStatus: &v2.ComplianceReportStatus{
+			RunState:                 storageReportRunStateToV2[snapshot.GetReportStatus().GetRunState()],
+			StartedAt:                snapshot.GetReportStatus().GetStartedAt(),
+			CompletedAt:              snapshot.GetReportStatus().GetCompletedAt(),
+			ErrorMsg:                 snapshot.GetReportStatus().GetErrorMsg(),
+			ReportRequestType:        storageReportRequestTypeToV2[snapshot.GetReportStatus().GetReportRequestType()],
+			ReportNotificationMethod: storageReportNotificationMethodToV2[snapshot.GetReportStatus().GetReportNotificationMethod()],
+		},
+		ReportData: configStatus,
+		User: &v2.SlimUser{
+			Id:   snapshot.GetUser().GetId(),
+			Name: snapshot.GetUser().GetName(),
+		},
+		IsDownloadAvailable: isDownloadReady,
+	}
+	return retSnapshot, nil
+}
+
+func convertNotificationMethodToStorage(method v2.NotificationMethod) (storage.ComplianceOperatorReportStatus_NotificationMethod, error) {
+	var ret storage.ComplianceOperatorReportStatus_NotificationMethod
+	switch method {
+	case v2.NotificationMethod_EMAIL:
+		ret = storage.ComplianceOperatorReportStatus_EMAIL
+	case v2.NotificationMethod_DOWNLOAD:
+		ret = storage.ComplianceOperatorReportStatus_DOWNLOAD
+	default:
+		return ret, errors.New("unknown notification method")
+	}
+	return ret, nil
 }

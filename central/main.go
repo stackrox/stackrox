@@ -119,6 +119,7 @@ import (
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
 	pingService "github.com/stackrox/rox/central/ping/service"
+	platformReprocessor "github.com/stackrox/rox/central/platform/reprocessor"
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyHandler "github.com/stackrox/rox/central/policy/handlers"
@@ -364,6 +365,10 @@ func startServices() {
 	administrationUsageInjector.Singleton().Start()
 	gcp.Singleton().Start()
 	administrationEventHandler.Singleton().Start()
+
+	if features.PlatformComponents.Enabled() {
+		platformReprocessor.Singleton().Start()
+	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -882,6 +887,15 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		})
 	}
 
+	if features.ComplianceEnhancements.Enabled() && features.ComplianceReporting.Enabled() {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/v2/compliance/scan/configurations/reports/download",
+			Authorizer:    user.With(permissions.Modify(resources.Compliance)),
+			ServerHandler: complianceScanSettings.NewDownloadHandler(),
+			Compression:   true,
+		})
+	}
+
 	debugRoutes := utils.IfThenElse(env.ManagedCentral.BooleanSetting(), []routes.CustomRoute{}, debugRoutes())
 	customRoutes = append(customRoutes, debugRoutes...)
 	return
@@ -942,6 +956,11 @@ func waitForTerminationSignal() {
 	if features.ComplianceReporting.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{complianceReportManager.Singleton(), "compliance reports manager"})
+	}
+
+	if features.PlatformComponents.Enabled() {
+		stoppables = append(stoppables,
+			stoppableWithName{platformReprocessor.Singleton(), "platform components reprocessor"})
 	}
 
 	var wg sync.WaitGroup

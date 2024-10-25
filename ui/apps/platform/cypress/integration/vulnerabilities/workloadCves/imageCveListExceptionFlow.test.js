@@ -56,7 +56,8 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
         });
     });
 
-    it('should defer multiple selected CVEs', () => {
+    // TODO ROX-26706 - Unskip this test and rework to handle the case where multiple CVEs are not available via the API
+    it.skip('should defer multiple selected CVEs', () => {
         visitAnyImageSinglePage().then((image) => {
             selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);
@@ -89,7 +90,8 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
         });
     });
 
-    it('should mark multiple selected CVEs as false positive', () => {
+    // TODO ROX-26706 - Unskip this test and rework to handle the case where multiple CVEs are not available via the API
+    it.skip('should mark multiple selected CVEs as false positive', () => {
         visitAnyImageSinglePage().then((image) => {
             selectMultipleCvesForException('FALSE_POSITIVE').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);

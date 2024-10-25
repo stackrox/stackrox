@@ -38,6 +38,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   each with an optional fraction and a unit suffix (e.g., "300ms", "-1.5h", or "2h45m").
   The currently valid time units "ns", "us" (or "µs"), "ms", "m", and "h" will no longer be supported.
 - ROX-24169: API token authentication has been deprecated by Red Hat OpenShift Cluster Manager. The corresponding cloud source integration now uses service accounts for authentication.
+- ROX-26669: StackRox Scanner is now deprecated. Users should use Scanner V4, instead, for all image scanning needs. StackRox Scanner is still required for full Node and Orchestrator scanning, though.
+- ROX-26670: Google Container Registry integration is now deprecated. Users should use Artifact Registry as a registry replacement and Scanner V4 as a scanner replacement.
 
 ### Technical Changes
 - ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
@@ -61,6 +63,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-26372: `ROX_POSTGRES_VM_STATEMENT_TIMEOUT` env var defaulting to 3 minutes to allow customers to extend the timeout for queries backing VM pages only
 - ROX-26428: Fixed a bug when using delegated scanning where newer image metadata and layers were pulled incorrectly for an older image referenced by tag when the image registry contents have changed since deployment.
   - Now the metadata and layers pulled will be based on the digest of the image provided by the container runtime (when available) instead of just the tag.
+- ROX-26748: Replaced 'unsafe' characters in the CSV report file name.
 
 ## [4.5.0]
 

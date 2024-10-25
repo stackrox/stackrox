@@ -37,6 +37,7 @@ import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import {
+    complianceReportDownloadURL,
     ComplianceScanConfigurationStatus,
     deleteComplianceScanConfiguration,
     listComplianceScanConfigurations,
@@ -257,7 +258,7 @@ function ScanConfigsTablePage({
                                 snapshot={snapshot}
                                 isLoadingSnapshots={isLoadingSnapshots}
                                 currentUserId={currentUser.userId}
-                                baseDownloadURL="" // TODO: Put the correct URL here
+                                baseDownloadURL={complianceReportDownloadURL}
                             />
                         </Td>
                     )}

@@ -4,6 +4,7 @@ import { ColumnManagementModal } from '@patternfly/react-component-groups';
 import { Button } from '@patternfly/react-core';
 
 import { ColumnConfig, ManagedColumns } from 'hooks/useManagedColumns';
+import { CogIcon } from '@patternfly/react-icons';
 
 export type ColumnManagementButtonProps<ColumnKey extends string> = {
     managedColumnState: ManagedColumns<ColumnKey>;
@@ -32,6 +33,7 @@ function ColumnManagementButton<ColumnKey extends string>({
                 onClose={() => setOpen(false)}
             />
             <Button
+                icon={<CogIcon />}
                 onClick={() => setOpen(true)}
                 variant="secondary"
                 countOptions={{
@@ -39,7 +41,7 @@ function ColumnManagementButton<ColumnKey extends string>({
                     count: enabledColumnCount,
                 }}
             >
-                Manage columns
+                Columns
             </Button>
         </>
     );

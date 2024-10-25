@@ -7,9 +7,11 @@ import (
 	"github.com/pkg/errors"
 	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/ranking"
 	riskMocks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -56,7 +58,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker)
+	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, platformmatcher.Singleton())
 
 	deployments := []*storage.Deployment{
 		{
@@ -105,7 +107,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 }
 
 func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
-	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil)
+	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil, platformmatcher.Singleton())
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Not a cronjob so no merging
@@ -167,4 +169,45 @@ func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
 	suite.storage.EXPECT().Get(ctx, "id").Return(returnedDep, true, nil)
 	suite.NoError(ds.mergeCronJobs(ctx, dep))
 	protoassert.Equal(suite.T(), expectedDep, dep)
+}
+
+func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignment() {
+	suite.T().Setenv(features.PlatformComponents.EnvVar(), "true")
+	if !features.PlatformComponents.Enabled() {
+		suite.T().Skip("Skip test when ROX_PLATFORM_COMPONENTS disabled")
+		suite.T().SkipNow()
+	}
+	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), platformmatcher.Singleton())
+	ctx := sac.WithAllAccess(context.Background())
+	suite.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()
+
+	// Case: Deployment not matching platform rules
+	deployment := &storage.Deployment{
+		Id:        "id",
+		Namespace: "my-namespace",
+	}
+	expectedDeployment := &storage.Deployment{
+		Id:                "id",
+		Namespace:         "my-namespace",
+		PlatformComponent: false,
+	}
+
+	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
+	err := ds.UpsertDeployment(ctx, deployment)
+	suite.Require().NoError(err)
+
+	// Case: Deployment matching platform rules
+	deployment = &storage.Deployment{
+		Id:        "id",
+		Namespace: "kube-123",
+	}
+	expectedDeployment = &storage.Deployment{
+		Id:                "id",
+		Namespace:         "kube-123",
+		PlatformComponent: true,
+	}
+
+	suite.storage.EXPECT().Upsert(gomock.Any(), expectedDeployment).Return(nil).Times(1)
+	err = ds.UpsertDeployment(ctx, deployment)
+	suite.Require().NoError(err)
 }
