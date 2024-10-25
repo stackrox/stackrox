@@ -446,25 +446,19 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		state, grpcErr := s.centralConnectionFactory.ConnectionState()
 		log.Infof("Attempting connection setup (client reconciliation = %t). Current state: %s",
 			s.reconcile.Load(), state)
+
 		switch state {
-		// Idle means that the connection will be open when first rpc call happens, but that leads to failure when connecting
-		case connectivity.Idle:
-			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
-			return errors.New("Connection is in idle state")
+		case connectivity.Idle, connectivity.Connecting:
+			// Do not change online/offline mode
 		case connectivity.Ready:
 			s.changeState(common.SensorComponentEventCentralReachable)
-		case connectivity.Connecting:
-			// Do nothing, let it connect
-			return errors.New("Connection is in connecting state")
 		default:
 			s.changeState(common.SensorComponentEventOfflineMode)
-			// Save the error before retrying
-			err := wrapOrNewErrorf(grpcErr, "current connectivity state %s does not allow to go online", state)
 			// Connection is still broken, report and try again
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
-			return err
+			// Save the error before retrying
+			return wrapOrNewErrorf(grpcErr, "current connectivity state %s does not allow to go online", state)
 		}
-		log.Debugf("Connection state change handled")
 
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
@@ -476,49 +470,16 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		})
 		centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
 		go s.notifySyncDone(&syncDone, centralCommunication)
+
 		// Reset the exponential back-off if the connection succeeds
 		exponential.Reset()
 		log.Debugf("Waiting for sensor-central communication to stop...")
-		select {
-		case <-s.centralConnectionFactory.StopSignal().WaitC():
-			// This case handles situation where we assume that gRPC connection has no blockers to get to the READY state,
-			// but the ping to Central (sent over HTTP) failed and thus the gRPC connection should be retried.
-			log.Infof("CentralConnectionFactory stopped: %v", s.centralConnectionFactory.StopSignal().Err())
+		shallRetry, err := s.waitForConnectionStop()
+		if shallRetry {
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
-			return wrapOrNewErrorf(s.centralCommunication.Stopped().Err(), "communication stopped (stopped signal)")
-		case <-s.centralCommunication.Stopped().WaitC():
-			// This case handles situations in which:
-			// - an attempt to send a message to Central over gRPC failed with error,
-			// - centralCommunication.Stop() was called arbitrarily.
-			if err := s.centralCommunication.Stopped().Err(); err != nil {
-				if errors.Is(err, errCantReconcile) {
-					if errors.Is(err, errLargePayload) {
-						log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation." +
-							"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'")
-					} else {
-						log.Warnf("Sensor cannot reconcile due to: %v", err)
-					}
-					s.reconcile.Store(false)
-				}
-				log.Infof("Communication with Central stopped with error: %v. Retrying.", err)
-			} else {
-				log.Info("Communication with Central stopped without error. Retrying.")
-			}
-			// Communication either ended or there was an error. Either way we should retry.
-			// Send notification to all components that we are running in offline mode
-			s.changeState(common.SensorComponentEventOfflineMode)
-			s.reconnect.Store(true)
-			// Trigger goroutine that will attempt the connection.
-			// s.centralConnectionFactory.StopSignal() and ConnectionState() should be
-			// checked to probe connection state.
-			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
-			return wrapOrNewErrorf(s.centralCommunication.Stopped().Err(), "communication stopped (stopped signal)")
-		case <-s.stoppedSig.WaitC():
-			// This means sensor was signaled to finish, this error shouldn't be retried
-			log.Info("Received stop signal from Sensor. Stopping without retrying")
-			s.centralCommunication.Stop(nil)
-			return backoff.Permanent(wrapOrNewErrorf(s.stoppedSig.Err(), "received sensor stop signal"))
+			return err
 		}
+		return backoff.Permanent(err)
 	}, exponential, func(err error, d time.Duration) {
 		log.Infof("Central communication stopped: %s. Retrying after %s...", err, d.Round(time.Second))
 	})
@@ -527,6 +488,47 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 
 	if err != nil {
 		log.Warnf("Backoff returned error: %s", err)
+	}
+}
+
+func (s *Sensor) waitForConnectionStop() (shallRetry bool, err error) {
+	select {
+	case <-s.centralConnectionFactory.StopSignal().WaitC():
+		// This case handles situation where we assume that gRPC connection has no blockers to get to the READY state,
+		// but the ping to Central (sent over HTTP) failed and thus the gRPC connection should be retried.
+		log.Infof("CentralConnectionFactory stopped: %v", s.centralConnectionFactory.StopSignal().Err())
+		return true, wrapOrNewErrorf(s.centralCommunication.Stopped().Err(), "communication stopped (stopped signal)")
+	case <-s.centralCommunication.Stopped().WaitC():
+		// This case handles situations in which:
+		// - an attempt to send a message to Central over gRPC failed with error,
+		// - centralCommunication.Stop() was called arbitrarily.
+		if err := s.centralCommunication.Stopped().Err(); err != nil {
+			if errors.Is(err, errCantReconcile) {
+				if errors.Is(err, errLargePayload) {
+					log.Warnf("Deduper payload is too large for sensor to handle. Sensor will reconnect without client reconciliation." +
+						"Consider increasing the maximum receive message size in sensor 'ROX_GRPC_MAX_MESSAGE_SIZE'")
+				} else {
+					log.Warnf("Sensor cannot reconcile due to: %v", err)
+				}
+				s.reconcile.Store(false)
+			}
+			log.Infof("Communication with Central stopped with error: %v. Retrying.", err)
+		} else {
+			log.Info("Communication with Central stopped without error. Retrying.")
+		}
+		// Communication either ended or there was an error. Either way we should retry.
+		// Send notification to all components that we are running in offline mode
+		s.changeState(common.SensorComponentEventOfflineMode)
+		s.reconnect.Store(true)
+		// Trigger goroutine that will attempt the connection.
+		// s.centralConnectionFactory.StopSignal() and ConnectionState() should be
+		// checked to probe connection state.
+		return true, wrapOrNewErrorf(s.centralCommunication.Stopped().Err(), "communication stopped (stopped signal)")
+	case <-s.stoppedSig.WaitC():
+		// This means sensor was signaled to finish, this error shouldn't be retried
+		log.Info("Received stop signal from Sensor. Stopping without retrying")
+		s.centralCommunication.Stop(nil)
+		return false, wrapOrNewErrorf(s.stoppedSig.Err(), "received sensor stop signal")
 	}
 }
 
