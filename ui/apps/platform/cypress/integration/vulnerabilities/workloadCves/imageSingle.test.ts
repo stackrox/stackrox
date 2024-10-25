@@ -25,12 +25,6 @@ import { selectors } from './WorkloadCves.selectors';
 describe('Workload CVE Image Single page', () => {
     withAuth();
 
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
-
     function visitFirstImage(): Promise<string> {
         visitWorkloadCveOverview();
 
