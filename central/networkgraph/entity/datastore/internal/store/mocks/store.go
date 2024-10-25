@@ -130,6 +130,21 @@ func (mr *MockEntityStoreMockRecorder) GetIDs(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIDs", reflect.TypeOf((*MockEntityStore)(nil).GetIDs), ctx)
 }
 
+// RemoveOrphanedEntities mocks base method.
+func (m *MockEntityStore) RemoveOrphanedEntities(ctx context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveOrphanedEntities", ctx)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RemoveOrphanedEntities indicates an expected call of RemoveOrphanedEntities.
+func (mr *MockEntityStoreMockRecorder) RemoveOrphanedEntities(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveOrphanedEntities", reflect.TypeOf((*MockEntityStore)(nil).RemoveOrphanedEntities), ctx)
+}
+
 // Upsert mocks base method.
 func (m *MockEntityStore) Upsert(ctx context.Context, entity *storage.NetworkEntity) error {
 	m.ctrl.T.Helper()

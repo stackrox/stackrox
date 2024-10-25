@@ -221,6 +221,21 @@ func (mr *MockEntityDataStoreMockRecorder) RegisterCluster(ctx, clusterID any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterCluster", reflect.TypeOf((*MockEntityDataStore)(nil).RegisterCluster), ctx, clusterID)
 }
 
+// RemoveOrphanedEntities mocks base method.
+func (m *MockEntityDataStore) RemoveOrphanedEntities(ctx context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveOrphanedEntities", ctx)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RemoveOrphanedEntities indicates an expected call of RemoveOrphanedEntities.
+func (mr *MockEntityDataStoreMockRecorder) RemoveOrphanedEntities(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveOrphanedEntities", reflect.TypeOf((*MockEntityDataStore)(nil).RemoveOrphanedEntities), ctx)
+}
+
 // UpdateExternalNetworkEntity mocks base method.
 func (m *MockEntityDataStore) UpdateExternalNetworkEntity(ctx context.Context, entity *storage.NetworkEntity, skipPush bool) error {
 	m.ctrl.T.Helper()
