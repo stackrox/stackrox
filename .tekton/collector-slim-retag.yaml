@@ -42,7 +42,7 @@ spec:
     name: retag-pipeline
 
   timeouts:
-    tasks: 1h
+    tasks: 30m
     # Reserve time for final tasks to run.
     finally: 10m
-    pipeline: 1h10m
+    pipeline: 40m
