@@ -315,7 +315,7 @@ func RemoteCertLoader(httpClient *Client) CertLoader {
 	return func() []*x509.Certificate {
 		certs, err := httpClient.GetTLSTrustedCerts(context.Background())
 		if err != nil {
-			log.Warnf("Error fetching centrals TLS certs: %s", err)
+			log.Errorf("Error fetching centrals TLS certs: %s", err)
 		}
 		return certs
 	}
