@@ -416,3 +416,12 @@ func GetGlobalNetwork(s *platform.GlobalNetworkSpec) *ValuesBuilder {
 	}
 	return &sv
 }
+
+// GetConfigAsCode converts a *platform.GetConfigAsCodeSpec into a *ValuesBuilder.
+func GetConfigAsCode(c *platform.ConfigAsCodeSpec) *ValuesBuilder {
+	sv := NewValuesBuilder()
+	if c.ComponentPolicy != nil {
+		sv.SetBoolValue("enabled", *c.ComponentPolicy == v1alpha1.ConfigAsCodeComponentEnabled)
+	}
+	return &sv
+}

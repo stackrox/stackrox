@@ -594,6 +594,18 @@ spec:
                       type: object
                     type: array
                 type: object
+              configAsCode:
+                description: Config-as-Code configuration.
+                properties:
+                  configAsCodeComponent:
+                    default: Enabled
+                    description: If you want to deploy the Config as Code component,
+                      set this to "Enabled"
+                    enum:
+                    - Enabled
+                    - Disabled
+                    type: string
+                type: object
               customize:
                 description: Customizations to apply on all Central Services components.
                 properties:

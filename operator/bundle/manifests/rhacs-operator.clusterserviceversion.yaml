@@ -107,6 +107,11 @@ spec:
         path: network
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Config-as-Code configuration.
+        displayName: Config-as-Code
+        path: configAsCode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: 'Deprecated field. This field will be removed in a future release.
 
           Miscellaneous settings.'
@@ -457,6 +462,10 @@ spec:
       - description: Storage API key. If not set, telemetry is disabled.
         displayName: Key
         path: central.telemetry.storage.key
+      - description: If you want to deploy the Config as Code component, set this
+          to "Enabled"
+        displayName: Config as Code component
+        path: configAsCode.configAsCodeComponent
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
