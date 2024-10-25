@@ -87,7 +87,15 @@ spec:
   - description: ""
     name: IMAGE_DIGEST
     value: $(tasks.retag-image.results.IMAGE_DIGEST)
-  # TODO(ROX-24468): figure if we should preserve the original values
+
+  # CHAINS-GIT_* values will be entered in a Snapshot and into the image attestation data (cosign artifact).
+  # The values passed here will overwrite the values provided at the time when the input containers were built.
+  # E.g. the original git url 'git+https://github.com/stackrox/scanner.git' will be changed to
+  # 'git+https://github.com/stackrox/stackrox.git'.
+  # It is unclear from searches and inquiries, however, how these values are used and whether the overwriting would have
+  # any negative effects. E.g. see https://redhat-internal.slack.com/archives/C04PZ7H0VA8/p1729697134648409
+  # Since figuring the original values is somewhat more laborious, the suggestion is to keep doing what we do until that
+  # causes problems.
   - description: ""
     name: CHAINS-GIT_URL
     value: $(tasks.clone-repository.results.url)
