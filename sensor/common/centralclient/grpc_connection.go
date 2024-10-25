@@ -80,20 +80,21 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 	return f.httpClient.GetGRPCPreferences(ctx)
 }
 
-// SetCentralConnectionWithRetries will set conn pointer once the connection is ready.
+// SetCentralConnectionWithRetries will set conn pointer once the connection has a chance to be ready.
 // This function is supposed to be called asynchronously and allows sensor components to be
 // started with an empty util.LazyClientConn. The pointer will be swapped once this
-// func finishes.
-// f.okSignal is used if the connection is successful and f.stopSignal if the
-// connection failed to start. Hence, both signals are reset here.
+// func finishes. The f.stopSignal is raised if the connection failed to start.
+// Executing entire function (not returning early) does not guarantee that the connection is ready -
+// it shows that there are no blockers for the connection to become ready soon.
 func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn, certLoader CertLoader) {
+	// Reset signal state from previous attempts
 	f.stopSignal.Reset()
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
 	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
 	if err := f.pingCentral(); err != nil {
-		log.Errorf("checking central status failed: %v", err)
-		f.stopSignal.SignalWithError(errors.Wrap(err, "checking central status failed"))
+		log.Errorf("pinging central over HTTP failed: %v", err)
+		f.stopSignal.SignalWithError(errors.Wrap(err, "pinging central over HTTP failed"))
 		return
 	}
 
@@ -109,6 +110,7 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	}
 
 	var maxGRPCSize int
+	log.Info("Getting Central gRPC preferences over HTTP...")
 	if p, err := f.getCentralGRPCPreferences(); err != nil {
 		maxGRPCSize = env.MaxMsgSizeSetting.IntegerSetting()
 		log.Warnf("Couldn't get gRPC preferences from central (%s). Using sensor env config (%d): %s", gRPCPreferences, maxGRPCSize, err)
@@ -127,5 +129,5 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 
 	conn.Set(centralConnection)
 	f.changeState(centralConnection.GetState(), nil)
-	log.Info("Initial gRPC connection with central successful")
+	log.Infof("Initial gRPC connection with central state: %s", centralConnection.GetState())
 }

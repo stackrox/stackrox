@@ -181,15 +181,6 @@ func (c *sensorConnection) multiplexedPush(ctx context.Context, msg *central.Msg
 	queue.Push(msg)
 }
 
-func getSensorMessageTypeString(msg *central.MsgFromSensor) string {
-	messageType := reflectutils.Type(msg.GetMsg())
-	var eventType string
-	if msg.GetEvent() != nil {
-		eventType = event.GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())
-	}
-	return fmt.Sprintf("%s_%s", messageType, eventType)
-}
-
 func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.SensorService_CommunicateServer) {
 	queues := make(map[string]*dedupingqueue.DedupingQueue[string])
 	for !c.stopSig.IsDone() {
@@ -204,7 +195,7 @@ func (c *sensorConnection) runRecv(ctx context.Context, grpcServer central.Senso
 			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
 		}
-		metrics.SetGRPCLastMessageSizeReceived(getSensorMessageTypeString(msg), float64(msg.SizeVT()))
+		metrics.SetGRPCLastMessageSizeReceived(event.GetSensorMessageTypeString(msg), float64(msg.SizeVT()))
 		c.multiplexedPush(ctx, msg, queues)
 	}
 }

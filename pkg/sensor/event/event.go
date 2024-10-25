@@ -8,6 +8,15 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
+func GetSensorMessageTypeString(msg *central.MsgFromSensor) string {
+	messageType := reflectutils.Type(msg.GetMsg())
+	var eventType string
+	if msg.GetEvent() != nil {
+		eventType = GetEventTypeWithoutPrefix(msg.GetEvent().GetResource())
+	}
+	return fmt.Sprintf("%s_%s", messageType, eventType)
+}
+
 // GetEventTypeWithoutPrefix trims the *central.SensorEvent_ from the event type
 func GetEventTypeWithoutPrefix(i interface{}) string {
 	return stringutils.GetAfter(reflectutils.Type(i), "_")

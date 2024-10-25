@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/process/normalize"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sensor/event"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -339,7 +341,7 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventResourceSyncFinished:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
 			if m.initialSync.CompareAndSwap(false, true) {
-				log.Info("Resetting enricher ticker - inital sync false -> true")
+				log.Debug("Resetting enricher ticker after inital sync")
 				m.enricherTicker.Reset(tickerTime)
 			}
 			return
@@ -347,7 +349,7 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 		m.resetContext()
 		m.resetLastSentState()
 		m.centralReady.Signal()
-		log.Info("Resetting enricher ticker - sync finished")
+		log.Debug("Resetting enricher ticker after central ready signal")
 		m.enricherTicker.Reset(tickerTime)
 	case common.SensorComponentEventOfflineMode:
 		if features.SensorCapturesIntermediateEvents.Enabled() {
@@ -383,7 +385,8 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 			// They will still be processed by the detection engine for newer entities, but
 			// sensor will not keep ordered updates indefinitely in memory.
 
-			log.Infof("Message %+v cannot be enqueued", msg)
+			log.Debugf("Message %s cannot be enqueued for sending to Central",
+				event.GetSensorMessageTypeString(msg))
 			return false
 		}
 	} else {
@@ -426,7 +429,7 @@ func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 		case <-m.stopper.Flow().StopRequested():
 			return
 		case <-tickerC:
-			log.Info("enriching connections tick")
+			log.Debug("Enriching connections tick")
 			if !features.SensorCapturesIntermediateEvents.Enabled() && !m.centralReady.IsDone() {
 				log.Info("Sensor is in offline mode: skipping enriching until connection is back up")
 				continue
@@ -459,6 +462,7 @@ func (m *networkFlowManager) enrichAndSend() {
 	log.Debugf("enrichAndSend: updatedEndpoints: %+v", updatedEndpoints)
 
 	if len(updatedConns)+len(updatedEndpoints) == 0 {
+		log.Debugf("Not sending update to central: no connections and no endpoints were updated")
 		return
 	}
 
@@ -479,18 +483,16 @@ func (m *networkFlowManager) enrichAndSend() {
 		m.policyDetector.ProcessNetworkFlow(detectionContext, flow)
 	}
 
-	log.Debugf("Sending flow update to central: %v", protoToSend)
+	log.Debugf("Sending %d updated flows and %d updated endpoints to central",
+		len(protoToSend.Updated), len(protoToSend.UpdatedEndpoints))
 	if m.sendToCentral(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_NetworkFlowUpdate{
 			NetworkFlowUpdate: protoToSend,
 		},
 	}) {
-		log.Debug("Flow has been enqueued in sensorUpdates")
 		m.updateConnectionStates(currentConns, currentEndpoints)
 		metrics.IncrementTotalNetworkFlowsSentCounter(len(protoToSend.Updated))
 		metrics.IncrementTotalNetworkEndpointsSentCounter(len(protoToSend.UpdatedEndpoints))
-	} else {
-		log.Debug("Flow has NOT been enqueued in sensorUpdates")
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 }
@@ -519,37 +521,46 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
-func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
+func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) (reasons []string) {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
-	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
+	reasons = []string{fmt.Sprintf("cannot find container ID %s", conn.containerID)}
 
-	log.Debugf("enrichConnection: conn=%+v, status=%+v", *conn, *status)
-
-	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
-	log.Debugf("enrichConnection: container %s found?=%t", conn.containerID, ok)
-	if !ok {
-		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
-		log.Debugf("enrichConnection: timeElapsedSinceFirstSeen=%s", timeElapsedSinceFirstSeen.String())
-		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
-			log.Debugf("enrichConnection: timeElapsedSinceFirstSeen is longer than maxContainerResolutionWaitPeriod=%s", maxContainerResolutionWaitPeriod.String())
-			if activeConn, found := m.activeConnections[*conn]; found {
-				enrichedConnections[*activeConn] = timestamp.Now()
-				log.Debugf("Expiring connection %q. Reason: more time has elapsed than %s",
-					conn.String(), maxContainerResolutionWaitPeriod.String())
-				delete(m.activeConnections, *conn)
-				flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
-				return
-			}
-			status.rotten = true
-			// Only increment metric once the connection is marked rotten
-			flowMetrics.ContainerIDMisses.Inc()
-			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
+	// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
+	if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+		reasons = append(reasons, fmt.Sprintf("more time has elapsed than %s",
+			maxContainerResolutionWaitPeriod.String()))
+		if activeConn, found := m.activeConnections[*conn]; found {
+			now := timestamp.Now()
+			log.Debugf("Updating last seen %d for enriched connection %q", now, conn.String())
+			enrichedConnections[*activeConn] = now
+			log.Debugf("Marking connection %q as inactive. Reasons: %s",
+				conn.String(), strings.Join(reasons, "; "))
+			delete(m.activeConnections, *conn)
+			flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+			return
 		}
+		reasons = append(reasons, fmt.Sprintf("connection is inactive"))
+		status.rotten = true
+		// Only increment metric once the connection is marked rotten
+		flowMetrics.ContainerIDMisses.Inc()
+		log.Debugf("Marking connection %q as rotten.", conn.String())
+	}
+	return reasons
+}
+
+func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
+	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
+	if !ok {
+		reasons := m.handleContainerNotFound(conn, status, enrichedConnections)
+		log.Debugf("Not enriching connection %q. Reasons: %s",
+			conn.String(), strings.Join(reasons, "; "))
 		return
 	}
 
 	var lookupResults []clusterentities.LookupResult
 	var isInternet = false
+	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
+	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 
 	// Check if the remote address represents the de-facto INTERNET entity.
 	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
@@ -579,7 +590,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
 		if isFresh && conn.remote.IPAndPort.Address.IsValid() {
-			log.Debugf("Cluster entity not found, but connection %q is fresh and has valid IP", conn.String())
+			log.Debugf("Not enriching connection %q: Cannot find Cluster entity for remote %q, "+
+				"but connection is fresh and has valid remote IP. Will retry on connection next update from collector.",
+				conn.String(), conn.remote.String())
 			return
 		}
 
@@ -589,7 +602,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 
 		if isFresh {
-			log.Debugf("Cluster entity not found, but connection %q is fresh", conn.String())
+			log.Debugf("Not enriching connection %q: Cluster entity not found, but connection is fresh. "+
+				"Will retry on connection next update from collector.", conn.String())
 			return
 		}
 
@@ -665,7 +679,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if conn.incoming {
 			// Only report incoming connections from outside the cluster. These are already taken care of by the
 			// corresponding outgoing connection from the other end.
-			log.Debugf("Skipping enriching connection %q because it originates outside of the cluster", conn.String())
+			log.Debugf("Not enriching connection %q: it originates outside of the cluster", conn.String())
 			return
 		}
 	}
@@ -688,19 +702,13 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			// Multiple connections from a collector can result in a single enriched connection
 			// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
 			if oldTS, found := enrichedConnections[indicator]; !found || oldTS < status.lastSeen {
-				if !found {
-					log.Debugf("Connection %q not found in previously enriched connections", conn.String())
-				} else {
-					log.Debugf("Connection %q - updating lastSeen", conn.String())
-				}
+				log.Debugf("Updating last seen %d for enriched connection %q", status.lastSeen, conn.String())
 				enrichedConnections[indicator] = status.lastSeen
 				if features.SensorCapturesIntermediateEvents.Enabled() {
 					if status.lastSeen == timestamp.InfiniteFuture {
 						m.activeConnections[*conn] = &indicator
-						log.Debugf("Connection %q: adding to active connections", conn.String())
 						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
 					} else {
-						log.Debugf("Connection %q: removing from active connections", conn.String())
 						delete(m.activeConnections, *conn)
 						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
 					}

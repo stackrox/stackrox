@@ -43,6 +43,8 @@ func MakeFakeConnectionFactory(c *grpc.ClientConn) *fakeGRPCClient {
 	}
 }
 
+// StopSignal is raised when there is an error during establishing gRPC connection.
+// It should be used to trigger another retry in cases when the connection cannot self-heal.
 func (f *fakeGRPCClient) StopSignal() concurrency.ReadOnlyErrorSignal {
 	return &f.stopSig
 }

@@ -483,10 +483,15 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		log.Infof("Waiting for sensor or central communication to stop...")
 		select {
 		case <-s.centralConnectionFactory.StopSignal().WaitC():
-			log.Infof("CentralConnectionFactory stopped")
+			// This case handles situation where we assume that gRPC connection has no blockers to get to the READY state,
+			// but the ping to Central (sent over HTTP) failed and thus the gRPC connection should be retried.
+			log.Infof("CentralConnectionFactory stopped: %v", s.centralConnectionFactory.StopSignal().Err())
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
 			return wrapOrNewErrorf(s.centralCommunication.Stopped().Err(), "communication stopped (stopped signal)")
 		case <-s.centralCommunication.Stopped().WaitC():
+			// This case handles situations in which:
+			// - an attempt to send a message to Central over gRPC failed with error,
+			// - centralCommunication.Stop() was called arbitrarily.
 			if err := s.centralCommunication.Stopped().Err(); err != nil {
 				if errors.Is(err, errCantReconcile) {
 					if errors.Is(err, errLargePayload) {
@@ -496,17 +501,17 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 						log.Warnf("Sensor cannot reconcile due to: %v", err)
 					}
 					s.reconcile.Store(false)
-					log.Infof("Communication with Central stopped with error: %v. Retrying.", err)
 				}
-				log.Infof("Communication with Central stopped: %v. Retrying.", err)
+				log.Infof("Communication with Central stopped with error: %v. Retrying.", err)
 			} else {
-				log.Info("Communication with Central stopped. Retrying.")
+				log.Info("Communication with Central stopped without error. Retrying.")
 			}
 			// Communication either ended or there was an error. Either way we should retry.
 			// Send notification to all components that we are running in offline mode
 			s.changeState(common.SensorComponentEventOfflineMode)
 			s.reconnect.Store(true)
-			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
+			// Trigger goroutine that will attempt the connection.
+			// s.centralConnectionFactory.StopSignal() and ConnectionState() should be
 			// checked to probe connection state.
 			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
 			return wrapOrNewErrorf(s.centralCommunication.Stopped().Err(), "communication stopped (stopped signal)")
