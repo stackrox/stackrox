@@ -501,11 +501,13 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 }
 
 func (s *Sensor) goOnlineWhenGRPCReady(ctx context.Context) {
+	timer := time.NewTimer(time.Second)
+	defer timer.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(time.Second):
+		case <-timer.C:
 			state, _ := s.centralConnectionFactory.ConnectionState()
 			if state == connectivity.Ready {
 				s.changeState(common.SensorComponentEventCentralReachable)
