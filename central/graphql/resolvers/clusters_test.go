@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -17,87 +16,26 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestClustersForPermissions(t *testing.T) {
-	cluster1 := &storage.Cluster{
-		Id:   fixtureconsts.Cluster1,
-		Name: "Cluster 1",
-	}
-	scopeObject1 := &v1.ScopeObject{
-		Id:   fixtureconsts.Cluster1,
-		Name: "Cluster 1",
-	}
-	cluster2 := &storage.Cluster{
-		Id:   fixtureconsts.Cluster2,
-		Name: "Cluster 2",
-	}
-	scopeObject2 := &v1.ScopeObject{
-		Id:   fixtureconsts.Cluster2,
-		Name: "Cluster 2",
-	}
-	cluster3 := &storage.Cluster{
-		Id:   fixtureconsts.Cluster3,
-		Name: "Cluster 3",
-	}
-	scopeObject3 := &v1.ScopeObject{
-		Id:   fixtureconsts.Cluster3,
-		Name: "Cluster 3",
-	}
+func TestClustersForPermissionsWithMock(t *testing.T) {
 	storeInvalidErr := errox.InvalidArgs.CausedBy("Wrong arguments")
 
 	testCases := map[string]struct {
 		ctx            context.Context
 		targetResource permissions.ResourceMetadata
 
-		expectedStoreValues []*storage.Cluster
-		expectedStoreError  error
+		mockStoreValues []*storage.Cluster
+		mockStoreError  error
 
 		expectedResolverValues []*v1.ScopeObject
 		expectedResolverError  error
 	}{
-		"Full Access, All cluster retrieved": {
-			ctx:                    sac.WithAllAccess(context.Background()),
-			targetResource:         resources.Compliance,
-			expectedStoreValues:    []*storage.Cluster{cluster1, cluster2, cluster3},
-			expectedStoreError:     nil,
-			expectedResolverValues: []*v1.ScopeObject{scopeObject1, scopeObject2, scopeObject3},
-			expectedResolverError:  nil,
-		},
 		"Full Access, Store error": {
 			ctx:                    sac.WithAllAccess(context.Background()),
 			targetResource:         resources.Compliance,
-			expectedStoreValues:    nil,
-			expectedStoreError:     storeInvalidErr,
+			mockStoreValues:        nil,
+			mockStoreError:         storeInvalidErr,
 			expectedResolverValues: nil,
 			expectedResolverError:  storeInvalidErr,
-		},
-		"Unrestricted Read on target resource, All clusters retrieved": {
-			ctx: sac.WithGlobalAccessScopeChecker(
-				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.Compliance),
-				),
-			),
-			targetResource:         resources.Compliance,
-			expectedStoreValues:    []*storage.Cluster{cluster1, cluster2, cluster3},
-			expectedStoreError:     nil,
-			expectedResolverValues: []*v1.ScopeObject{scopeObject1, scopeObject2, scopeObject3},
-			expectedResolverError:  nil,
-		},
-		"Partial Read on target resource, All allowed clusters retrieved": {
-			ctx: sac.WithGlobalAccessScopeChecker(
-				context.Background(),
-				sac.AllowFixedScopes(
-					sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-					sac.ResourceScopeKeys(resources.Compliance),
-					sac.ClusterScopeKeys(fixtureconsts.Cluster1),
-				),
-			),
-			targetResource:         resources.Compliance,
-			expectedStoreValues:    []*storage.Cluster{cluster1},
-			expectedStoreError:     nil,
-			expectedResolverValues: []*v1.ScopeObject{scopeObject1},
-			expectedResolverError:  nil,
 		},
 	}
 
@@ -111,7 +49,7 @@ func TestClustersForPermissions(t *testing.T) {
 			clusterStore.EXPECT().
 				SearchRawClusters(gomock.Any(), gomock.Any()).
 				Times(1).
-				Return(testCase.expectedStoreValues, testCase.expectedStoreError)
+				Return(testCase.mockStoreValues, testCase.mockStoreError)
 
 			ctx := testCase.ctx
 			query := PaginatedQuery{}
@@ -135,24 +73,4 @@ func TestClustersForPermissions(t *testing.T) {
 			}
 		})
 	}
-
-	t.Run("Unrestricted Read on wrong resource, No cluster retrieved", func(it *testing.T) {
-		mockCtrl := gomock.NewController(it)
-		defer mockCtrl.Finish()
-		clusterStore := clusterMocks.NewMockDataStore(mockCtrl)
-		mainResolver := &Resolver{ClusterDataStore: clusterStore}
-
-		ctx := sac.WithGlobalAccessScopeChecker(
-			context.Background(),
-			sac.AllowFixedScopes(
-				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
-				sac.ResourceScopeKeys(resources.DeploymentExtension),
-			),
-		)
-		query := PaginatedQuery{}
-		targetResource := resources.Compliance
-		fetchedClusterResolvers, err := mainResolver.clustersForReadPermission(ctx, query, targetResource)
-		assert.NoError(it, err)
-		assert.Empty(it, fetchedClusterResolvers)
-	})
 }
