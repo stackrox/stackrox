@@ -146,12 +146,27 @@ var (
 			"scanner_version",
 		})
 
-	// TODO(ROX-26699): Duplicate and rename metric
 	inventoryTransmissions = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.ComplianceSubsystem.String(),
 		Name:      "inventory_transmissions_total",
 		Help:      "Number of node inventory scans sent to sensor",
+	},
+		[]string{
+			// The Node this scan belongs to
+			"node_name",
+			"transmission_type",
+			// The version of Scanner this metric was generated for
+			"scanner_version",
+		})
+
+	// nodePackageReportTransmissions is the new version of inventoryTransmissions that carries a more generic name.
+	// inventoryTransmissions is kept for backwards compatibility so we still get metrics from older clusters.
+	nodePackageReportTransmissions = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.ComplianceSubsystem.String(),
+		Name:      "node_package_reports_total",
+		Help:      "Number of total v2 node inventory scans and v4 index reports sent to sensor",
 	},
 		[]string{
 			// The Node this scan belongs to
@@ -300,10 +315,20 @@ func ObserveNodeInventorySending(nodeName string, sendingType InventoryTransmiss
 	}).Inc()
 }
 
+// ObserveNodePackageReportTransmissions observes the metric.
+func ObserveNodePackageReportTransmissions(nodeName string, sendingType InventoryTransmission, scannerVersion string) {
+	nodePackageReportTransmissions.With(prometheus.Labels{
+		"node_name":         nodeName,
+		"transmission_type": string(sendingType),
+		"scanner_version":   scannerVersion,
+	}).Inc()
+}
+
 func init() {
 	prometheus.MustRegister(
 		callToNodeInventoryDuration,
 		inventoryTransmissions,
+		nodePackageReportTransmissions,
 		numberOfRHELPackages,
 		numberOfContentSets,
 		protobufMessageSize,
