@@ -153,6 +153,9 @@ function launch_central {
 
     echo "Installing SecurityPolicy CRD..."
 
+    # Manifest instllation does not include this CRD, so we need to install it in this script.
+    # Helm would install the CRD, but since we add it here, Helm won't touch it.
+    # Note that Helm is VERY conservative in that it will NEVER update a CRD, so applying a CRD here in this script is a divergence from Helm behavior!
     crd_path=$(realpath "$(git rev-parse --show-toplevel)/config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml")
     kubectl apply -f "$crd_path"
 
