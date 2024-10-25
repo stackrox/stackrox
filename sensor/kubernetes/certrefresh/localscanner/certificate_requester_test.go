@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrequester"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -191,10 +192,14 @@ func TestConvertToIssueCertsResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := convertToIssueCertsResponse(tt.input)
+
 			if tt.expectedResult == nil {
 				assert.Nil(t, result)
 			} else {
-				assert.Equal(t, tt.expectedResult, result)
+				assert.Equal(t, tt.expectedResult.RequestId, result.RequestId)
+				assert.Equal(t, tt.expectedResult.ErrorMessage, result.ErrorMessage)
+				// Must use proto.Equal for the Certificates field
+				assert.True(t, proto.Equal(tt.expectedResult.Certificates, result.Certificates), "Certificates should match")
 			}
 		})
 	}
