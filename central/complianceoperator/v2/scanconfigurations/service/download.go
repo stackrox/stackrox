@@ -46,7 +46,7 @@ func (h *downloadHandler) handle(w http.ResponseWriter, r *http.Request) {
 
 	id, err := parseReportID(r)
 	if err != nil {
-		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, err)
+		httputil.WriteGRPCStyleError(w, codes.InvalidArgument, errors.Wrap(err, "error parsing report ID"))
 		return
 	}
 
