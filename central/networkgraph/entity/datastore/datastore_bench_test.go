@@ -36,7 +36,7 @@ func BenchmarkNetEntityCreates(b *testing.B) {
 		db := pgtest.ForT(b)
 		defer db.Teardown(b)
 
-		store := postgres.New(db.DB)
+		store := postgres.NewFullStore(db.DB)
 
 		treeMgr := networktree.Singleton()
 		defer treeMgr.DeleteNetworkTree(ctx, "c1")
@@ -67,7 +67,7 @@ func BenchmarkNetEntityCreateBatch(b *testing.B) {
 		db := pgtest.ForT(b)
 		defer db.Teardown(b)
 
-		store := postgres.New(db.DB)
+		store := postgres.NewFullStore(db.DB)
 
 		ds := NewEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), networktree.Singleton(), connection.ManagerSingleton())
 
@@ -90,7 +90,7 @@ func BenchmarkNetEntityUpdates(b *testing.B) {
 	db := pgtest.ForT(b)
 	defer db.Teardown(b)
 
-	store := postgres.New(db.DB)
+	store := postgres.NewFullStore(db.DB)
 	ds := NewEntityDataStore(store, mocks.NewMockDataStore(mockCtrl), networktree.Singleton(), connection.ManagerSingleton())
 
 	entities, err := testutils.GenRandomExtSrcNetworkEntity(pkgNet.IPv4, 10000, "c1")

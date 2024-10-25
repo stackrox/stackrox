@@ -79,7 +79,7 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.db = pgtest.ForT(suite.T())
 
-	suite.store = postgres.New(suite.db.DB)
+	suite.store = postgres.NewFullStore(suite.db.DB)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.graphConfig = graphConfigMocks.NewMockDataStore(suite.mockCtrl)

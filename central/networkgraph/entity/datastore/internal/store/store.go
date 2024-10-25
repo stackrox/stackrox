@@ -25,4 +25,6 @@ type EntityStore interface {
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storage.NetworkEntity) error) error
 
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error)
+
+	RemoveOrphanedEntities(ctx context.Context) error
 }

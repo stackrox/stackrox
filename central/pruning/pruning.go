@@ -16,6 +16,7 @@ import (
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
 	"github.com/stackrox/rox/central/metrics"
+	networkEntityDatastore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	networkFlowDatastore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
@@ -92,6 +93,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 	processes processDatastore.DataStore,
 	processbaseline processBaselineDatastore.DataStore,
 	networkflows networkFlowDatastore.ClusterDataStore,
+	networkentities networkEntityDatastore.EntityDataStore,
 	config configDatastore.DataStore,
 	imageComponents imageComponentDatastore.DataStore,
 	risks riskDataStore.DataStore,
@@ -116,6 +118,7 @@ func newGarbageCollector(alerts alertDatastore.DataStore,
 		processes:       processes,
 		processbaseline: processbaseline,
 		networkflows:    networkflows,
+		networkentities: networkentities,
 		config:          config,
 		risks:           risks,
 		vulnReqs:        vulnReqs,
@@ -145,6 +148,7 @@ type garbageCollectorImpl struct {
 	processes       processDatastore.DataStore
 	processbaseline processBaselineDatastore.DataStore
 	networkflows    networkFlowDatastore.ClusterDataStore
+	networkentities networkEntityDatastore.EntityDataStore
 	config          configDatastore.DataStore
 	risks           riskDataStore.DataStore
 	vulnReqs        vulnReqDataStore.DataStore
@@ -342,6 +346,8 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 
 	g.markOrphanedAlertsAsResolved()
 	g.removeOrphanedNetworkFlows(clusterIDSet)
+
+	g.removeOrphanedNetworkEntities()
 
 	g.removeOrphanedPods()
 	g.removeOrphanedNodes()
@@ -583,6 +589,10 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 	wg.Wait()
 
 	log.Info("[Network Flow pruning] Completed")
+}
+
+func (g *garbageCollectorImpl) removeOrphanedNetworkEntities() {
+	g.networkentities.RemoveOrphanedEntities(pruningCtx)
 }
 
 func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {

@@ -32,5 +32,7 @@ type EntityDataStore interface {
 	DeleteExternalNetworkEntity(ctx context.Context, id string) error
 	DeleteExternalNetworkEntitiesForCluster(ctx context.Context, clusterID string) error
 
+	RemoveOrphanedEntities(ctx context.Context) error
+
 	RegisterCluster(ctx context.Context, clusterID string)
 }

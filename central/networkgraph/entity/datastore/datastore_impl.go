@@ -66,7 +66,7 @@ func NewEntityDataStore(storage store.EntityStore, graphConfig graphConfigDS.Dat
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (EntityDataStore, error) {
-	dbstore := pgStore.New(pool)
+	dbstore := pgStore.NewFullStore(pool)
 	graphConfigStore, err := graphConfigDS.GetTestPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func GetTestPostgresDataStore(t *testing.T, pool postgres.DB) (EntityDataStore, 
 
 // GetBenchPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetBenchPostgresDataStore(t testing.TB, pool postgres.DB) (EntityDataStore, error) {
-	dbstore := pgStore.New(pool)
+	dbstore := pgStore.NewFullStore(pool)
 	graphConfigStore, err := graphConfigDS.GetBenchPostgresDataStore(t, pool)
 	if err != nil {
 		return nil, err
@@ -444,6 +444,16 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	go ds.doPushExternalNetworkEntitiesToSensor(clusterID)
 
 	return nil
+}
+
+func (ds *dataStoreImpl) RemoveOrphanedEntities(ctx context.Context) error {
+	if ok, err := ds.writeAllowed(ctx, "__glob"); err != nil {
+		return err
+	} else if !ok {
+		return sac.ErrResourceAccessDenied
+	}
+
+	return ds.storage.RemoveOrphanedEntities(ctx)
 }
 
 func (ds *dataStoreImpl) validateNoCIDRUpdate(ctx context.Context, newEntity *storage.NetworkEntity) (bool, error) {
