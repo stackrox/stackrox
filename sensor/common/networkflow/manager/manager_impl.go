@@ -539,7 +539,7 @@ func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *c
 			flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
 			return
 		}
-		reasons = append(reasons, fmt.Sprintf("connection is inactive"))
+		reasons = append(reasons, "connection is inactive")
 		status.rotten = true
 		// Only increment metric once the connection is marked rotten
 		flowMetrics.ContainerIDMisses.Inc()
