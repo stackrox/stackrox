@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	coIntegrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
+	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -206,28 +207,47 @@ func TestScanWatcherTimeout(t *testing.T) {
 
 func TestGetIDFromScan(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	ds := snapshotMocks.NewMockDataStore(ctrl)
-	_, err := GetWatcherIDFromScan(testDBAccess, nil, ds, nil)
+	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	scanConfigDS := scanConfigMocks.NewMockDataStore(ctrl)
+	_, err := GetWatcherIDFromScan(testDBAccess, nil, snapshotDS, scanConfigDS, nil)
 	assert.Error(t, err)
 	scan := &storage.ComplianceOperatorScanV2{}
-	_, err = GetWatcherIDFromScan(testDBAccess, scan, ds, nil)
+	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.Error(t, err)
 	scan.ClusterId = "cluster-1"
-	_, err = GetWatcherIDFromScan(testDBAccess, scan, ds, nil)
+	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.Error(t, err)
 	scan.Id = "scan-1"
-	_, err = GetWatcherIDFromScan(testDBAccess, scan, ds, nil)
+	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.Error(t, err)
 	assert.Equal(t, ErrComplianceOperatorScanMissingLastStartedFiled, err)
 	timeNow := protocompat.TimestampNow()
 	scan.LastStartedTime = timeNow
-	ds.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).
+	scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Times(1).
+		Return(nil, errors.New("some error"))
+	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
+	assert.Error(t, err)
+
+	scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).Times(1).
+		Return([]*storage.ComplianceOperatorScanConfigurationV2{}, nil)
+	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
+	assert.Error(t, err)
+
+	scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+		Return(
+			[]*storage.ComplianceOperatorScanConfigurationV2{
+				{
+					Id: "scan-config-id",
+				},
+			}, nil,
+		)
+	snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorReportSnapshotV2, error) {
 			return nil, errors.New("db error")
 		})
-	_, err = GetWatcherIDFromScan(testDBAccess, scan, ds, nil)
+	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.Error(t, err)
-	ds.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).
+	snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorReportSnapshotV2, error) {
 			return []*storage.ComplianceOperatorReportSnapshotV2{
 				{
@@ -235,18 +255,18 @@ func TestGetIDFromScan(t *testing.T) {
 				},
 			}, nil
 		})
-	_, err = GetWatcherIDFromScan(testDBAccess, scan, ds, nil)
+	_, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.Error(t, err)
 	assert.Equal(t, ErrScanAlreadyHandled, err)
-	ds.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(2).
+	snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(2).
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorReportSnapshotV2, error) {
 			return []*storage.ComplianceOperatorReportSnapshotV2{}, nil
 		})
-	id, err := GetWatcherIDFromScan(testDBAccess, scan, ds, nil)
+	id, err := GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("%s:%s:%s", scan.ClusterId, scan.Id, scan.LastStartedTime), id)
 	timeNow = protocompat.TimestampNow()
-	id, err = GetWatcherIDFromScan(testDBAccess, scan, ds, timeNow)
+	id, err = GetWatcherIDFromScan(testDBAccess, scan, snapshotDS, scanConfigDS, timeNow)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("%s:%s:%s", scan.ClusterId, scan.Id, timeNow), id)
 }
@@ -256,13 +276,22 @@ func TestGetIDFromResult(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	scanDS := mocks.NewMockDataStore(ctrl)
 	snapshotDS := snapshotMocks.NewMockDataStore(ctrl)
+	scanConfigDS := scanConfigMocks.NewMockDataStore(ctrl)
 
 	snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorReportSnapshotV2, error) {
 			return []*storage.ComplianceOperatorReportSnapshotV2{}, nil
 		})
+	scanConfigDS.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+		Return(
+			[]*storage.ComplianceOperatorScanConfigurationV2{
+				{
+					Id: "scan-config-id",
+				},
+			}, nil,
+		)
 
-	_, err := GetWatcherIDFromCheckResult(testDBAccess, nil, scanDS, snapshotDS)
+	_, err := GetWatcherIDFromCheckResult(testDBAccess, nil, scanDS, snapshotDS, scanConfigDS)
 	assert.Error(t, err)
 
 	// Error querying the Scan DataStore
@@ -271,7 +300,7 @@ func TestGetIDFromResult(t *testing.T) {
 			return nil, errors.New("db error")
 		})
 	result := &storage.ComplianceOperatorCheckResultV2{}
-	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS)
+	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.Error(t, err)
 
 	// No Scan retrieved
@@ -279,7 +308,7 @@ func TestGetIDFromResult(t *testing.T) {
 		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
 			return nil, nil
 		})
-	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS)
+	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.Error(t, err)
 
 	// Scan retrieved successfully
@@ -294,21 +323,21 @@ func TestGetIDFromResult(t *testing.T) {
 			}, nil
 		})
 	// Empty annotation
-	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS)
+	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.Error(t, err)
 
 	// Invalid format in the annotation
 	result.Annotations = map[string]string{
 		LastScannedAnnotationKey: protocompat.TimestampNow().String(),
 	}
-	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS)
+	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.Error(t, err)
 
 	// The timestamp is in the past
 	result.Annotations = map[string]string{
 		LastScannedAnnotationKey: timeNow.AsTime().Add(-10 * time.Second).Format(time.RFC3339Nano),
 	}
-	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS)
+	_, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.Error(t, err)
 	assert.Error(t, ErrComplianceOperatorReceivedOldCheckResult)
 
@@ -319,7 +348,7 @@ func TestGetIDFromResult(t *testing.T) {
 	}
 	futureTimeProto, err := protocompat.ConvertTimeToTimestampOrError(futureTime)
 	require.NoError(t, err)
-	id, err := GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS)
+	id, err := GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("cluster-1:scan-1:%s", futureTimeProto.String()), id)
 
@@ -327,7 +356,7 @@ func TestGetIDFromResult(t *testing.T) {
 	result.Annotations = map[string]string{
 		LastScannedAnnotationKey: timeNow.AsTime().Format(time.RFC3339Nano),
 	}
-	id, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS)
+	id, err = GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("cluster-1:scan-1:%s", timeNow.String()), id)
 }

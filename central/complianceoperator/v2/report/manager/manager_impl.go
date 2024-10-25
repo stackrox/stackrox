@@ -288,7 +288,7 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	if !features.ComplianceReporting.Enabled() {
 		return nil
 	}
-	id, err := watcher.GetWatcherIDFromScan(m.automaticReportingCtx, scan, m.snapshotDataStore, nil)
+	id, err := watcher.GetWatcherIDFromScan(m.automaticReportingCtx, scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorScanMissingLastStartedFiled) {
 			log.Debugf("The scan is missing the LastStartedField: %v", err)
@@ -320,7 +320,7 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 	if !features.ComplianceReporting.Enabled() {
 		return nil
 	}
-	id, err := watcher.GetWatcherIDFromCheckResult(m.automaticReportingCtx, result, m.scanDataStore, m.snapshotDataStore)
+	id, err := watcher.GetWatcherIDFromCheckResult(m.automaticReportingCtx, result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
 	if err != nil {
 		if errors.Is(err, watcher.ErrComplianceOperatorReceivedOldCheckResult) {
 			log.Debugf("The CheckResult is older than the current scan in the store")

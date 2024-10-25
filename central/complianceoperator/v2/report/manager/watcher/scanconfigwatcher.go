@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -199,11 +200,22 @@ func (w *scanConfigWatcherImpl) handleScanResults(result *ScanWatcherResults) er
 		log.Debugf("Scan config %s needs to wait for %d scans", w.scanConfigResults.ScanConfig.GetScanConfigName(), w.totalResults)
 	}
 	log.Debugf("Scan to handle %s with id %s", result.Scan.GetScanName(), result.Scan.GetId())
+	scanResultKey := fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())
 	if found := w.scansToWait.Remove(fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())); !found {
-		return errors.Errorf("The scan %s should be handle by this watcher", result.Scan.GetId())
+		newScanResult := result.Scan
+		var timestampCmpResult int
+		concurrency.WithLock(&w.resultsLock, func() {
+			if prevScanResult, ok := w.scanConfigResults.ScanResults[scanResultKey]; ok {
+				timestampCmpResult = protocompat.CompareTimestamps(prevScanResult.Scan.GetLastStartedTime(), newScanResult.GetLastStartedTime())
+			}
+		})
+		if timestampCmpResult > 0 {
+			// We already handled a newer scan, so we can ignore this scan.
+			return nil
+		}
 	}
 	concurrency.WithLock(&w.resultsLock, func() {
-		w.scanConfigResults.ScanResults[fmt.Sprintf("%s:%s", result.Scan.GetClusterId(), result.Scan.GetId())] = result
+		w.scanConfigResults.ScanResults[scanResultKey] = result
 	})
 
 	return w.appendScanToSnapshots(w.ctx, result.Scan)

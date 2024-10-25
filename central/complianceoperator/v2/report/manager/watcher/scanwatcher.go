@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
+	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -77,7 +78,7 @@ func IsComplianceOperatorHealthy(ctx context.Context, clusterID string, complian
 }
 
 // GetWatcherIDFromScan given a Scan, returns a unique ID for the watcher
-func GetWatcherIDFromScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2, snapshotDataStore snapshotDS.DataStore, overrideTimestamp *protocompat.Timestamp) (string, error) {
+func GetWatcherIDFromScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2, snapshotDataStore snapshotDS.DataStore, scanConfigDataStore scanConfigDS.DataStore, overrideTimestamp *protocompat.Timestamp) (string, error) {
 	if scan == nil {
 		return "", errors.New("nil scan")
 	}
@@ -96,6 +97,16 @@ func GetWatcherIDFromScan(ctx context.Context, scan *storage.ComplianceOperatorS
 	}
 	if overrideTimestamp != nil {
 		startTime = overrideTimestamp
+	}
+	scanConfigQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfigName, scan.GetScanConfigName()).
+		ProtoQuery()
+	scanConfigs, err := scanConfigDataStore.GetScanConfigurations(ctx, scanConfigQuery)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to retrieve the scan configuration from the store")
+	}
+	if len(scanConfigs) == 0 {
+		return "", errors.New("this scan is not handle by a scan configuration")
 	}
 	// If there is a snapshot with the same timestamp or newer we shouldn't handle this scan since we already handle a newer one
 	query := search.NewQueryBuilder().
@@ -118,7 +129,7 @@ func GetWatcherIDFromScan(ctx context.Context, scan *storage.ComplianceOperatorS
 }
 
 // GetWatcherIDFromCheckResult given a CheckResult, returns a unique ID for the watcher
-func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2, scanDataStore scanDS.DataStore, snapshotDataStore snapshotDS.DataStore) (string, error) {
+func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2, scanDataStore scanDS.DataStore, snapshotDataStore snapshotDS.DataStore, scanConfigDataStore scanConfigDS.DataStore) (string, error) {
 	if result == nil {
 		return "", errors.New("nil check result")
 	}
@@ -150,9 +161,9 @@ func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.Compliance
 	if timestampCmpResult > 0 {
 		// In this case the timestamp from the check is newer which means the scans has not yet arrived
 		// to sensor's pipeline. We need to create the watcher with the new timestamp
-		return GetWatcherIDFromScan(ctx, scans[0], snapshotDataStore, timestamp)
+		return GetWatcherIDFromScan(ctx, scans[0], snapshotDataStore, scanConfigDataStore, timestamp)
 	}
-	return GetWatcherIDFromScan(ctx, scans[0], snapshotDataStore, nil)
+	return GetWatcherIDFromScan(ctx, scans[0], snapshotDataStore, scanConfigDataStore, nil)
 }
 
 // readyQueue represents the expected queue interface to push the results
