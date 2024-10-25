@@ -28,6 +28,7 @@ const (
 	ComplianceScanConfigurationService_RunReport_FullMethodName                               = "/v2.ComplianceScanConfigurationService/RunReport"
 	ComplianceScanConfigurationService_GetReportHistory_FullMethodName                        = "/v2.ComplianceScanConfigurationService/GetReportHistory"
 	ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName                      = "/v2.ComplianceScanConfigurationService/GetMyReportHistory"
+	ComplianceScanConfigurationService_DeleteReport_FullMethodName                            = "/v2.ComplianceScanConfigurationService/DeleteReport"
 	ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName        = "/v2.ComplianceScanConfigurationService/ListComplianceScanConfigProfiles"
 	ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName = "/v2.ComplianceScanConfigurationService/ListComplianceScanConfigClusterProfiles"
 )
@@ -56,6 +57,8 @@ type ComplianceScanConfigurationServiceClient interface {
 	GetReportHistory(ctx context.Context, in *ComplianceReportHistoryRequest, opts ...grpc.CallOption) (*ComplianceReportHistoryResponse, error)
 	// GetMyReportHistory returns a list of snapshots (scan executions) executed by the current user from a given scan configuration.
 	GetMyReportHistory(ctx context.Context, in *ComplianceReportHistoryRequest, opts ...grpc.CallOption) (*ComplianceReportHistoryResponse, error)
+	// DeleteReport deletes a given snapshot (scan execution).
+	DeleteReport(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
 	ListComplianceScanConfigProfiles(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanConfigsProfileResponse, error)
 	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
@@ -160,6 +163,16 @@ func (c *complianceScanConfigurationServiceClient) GetMyReportHistory(ctx contex
 	return out, nil
 }
 
+func (c *complianceScanConfigurationServiceClient) DeleteReport(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, ComplianceScanConfigurationService_DeleteReport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *complianceScanConfigurationServiceClient) ListComplianceScanConfigProfiles(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanConfigsProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListComplianceScanConfigsProfileResponse)
@@ -204,6 +217,8 @@ type ComplianceScanConfigurationServiceServer interface {
 	GetReportHistory(context.Context, *ComplianceReportHistoryRequest) (*ComplianceReportHistoryResponse, error)
 	// GetMyReportHistory returns a list of snapshots (scan executions) executed by the current user from a given scan configuration.
 	GetMyReportHistory(context.Context, *ComplianceReportHistoryRequest) (*ComplianceReportHistoryResponse, error)
+	// DeleteReport deletes a given snapshot (scan execution).
+	DeleteReport(context.Context, *ResourceByID) (*Empty, error)
 	// ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
 	ListComplianceScanConfigProfiles(context.Context, *RawQuery) (*ListComplianceScanConfigsProfileResponse, error)
 	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
@@ -243,6 +258,9 @@ func (UnimplementedComplianceScanConfigurationServiceServer) GetReportHistory(co
 }
 func (UnimplementedComplianceScanConfigurationServiceServer) GetMyReportHistory(context.Context, *ComplianceReportHistoryRequest) (*ComplianceReportHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMyReportHistory not implemented")
+}
+func (UnimplementedComplianceScanConfigurationServiceServer) DeleteReport(context.Context, *ResourceByID) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteReport not implemented")
 }
 func (UnimplementedComplianceScanConfigurationServiceServer) ListComplianceScanConfigProfiles(context.Context, *RawQuery) (*ListComplianceScanConfigsProfileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListComplianceScanConfigProfiles not implemented")
@@ -432,6 +450,24 @@ func _ComplianceScanConfigurationService_GetMyReportHistory_Handler(srv interfac
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ComplianceScanConfigurationService_DeleteReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResourceByID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceScanConfigurationServiceServer).DeleteReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceScanConfigurationService_DeleteReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceScanConfigurationServiceServer).DeleteReport(ctx, req.(*ResourceByID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
@@ -510,6 +546,10 @@ var ComplianceScanConfigurationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMyReportHistory",
 			Handler:    _ComplianceScanConfigurationService_GetMyReportHistory_Handler,
+		},
+		{
+			MethodName: "DeleteReport",
+			Handler:    _ComplianceScanConfigurationService_DeleteReport_Handler,
 		},
 		{
 			MethodName: "ListComplianceScanConfigProfiles",
