@@ -23,7 +23,6 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	certsDescription                     = "local scanner certificates"
 	startTimeout                         = 6 * time.Minute
 	fetchSensorDeploymentOwnerRefBackoff = wait.Backoff{
 		Duration: 10 * time.Millisecond,
@@ -106,7 +105,7 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 
 	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
-	i.certRefresher = i.getCertificateRefresherFn(certsDescription, i.certRequester.RequestCertificates, certsRepo,
+	i.certRefresher = i.getCertificateRefresherFn("local scanner certificates", i.certRequester.RequestCertificates, certsRepo,
 		certRefreshTimeout, i.certRefreshBackoff)
 
 	i.certRequester.Start()
