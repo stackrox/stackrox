@@ -11,4 +11,14 @@ var (
 	ComplianceScanRetries = RegisterIntegerSetting("ROX_COMPLIANCE_SCAN_RETRY_COUNT", 2)
 	// ComplianceStrictNodeScan defines if scans can proceed if the scan should fail if any node cannot be scanned
 	ComplianceStrictNodeScan = RegisterBooleanSetting("ROX_COMPLIANCE_STRICT_NODE_SCAN", true)
+
+	// ComplianceScanWatcherTimeout defines the timeout for a compliance scan watcher.
+	// If the scan results have not been received by then, it will be aborted.
+	// The default is 40 mins.
+	ComplianceScanWatcherTimeout = registerDurationSetting("ROX_COMPLIANCE_SCAN_WATCHER_TIMEOUT", 40*time.Minute)
+
+	// ComplianceScanScheduleWatcherTimeout defines the timeout for a compliance scan schedule watcher.
+	// If the scan results of all scans associated with the schedule have not been received by then, it will be aborted.
+	// The default is 45 mins.
+	ComplianceScanScheduleWatcherTimeout = registerDurationSetting("ROX_COMPLIANCE_SCAN_SCHEDULE_WATCHER_TIMEOUT", 45*time.Minute)
 )

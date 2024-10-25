@@ -11,6 +11,7 @@ import (
 	scan "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -20,7 +21,6 @@ import (
 var (
 	ErrScanConfigTimeout          = errors.New("scan config watcher timed out")
 	ErrScanConfigContextCancelled = errors.New("scan config watcher context cancelled")
-	defaultScanConfigTimeout      = defaultTimeout * 2
 )
 
 // GetScanConfigFromScan returns the ScanConfiguration associated with the given scan
@@ -69,7 +69,7 @@ type scanConfigWatcherImpl struct {
 func NewScanConfigWatcher(ctx, sensorCtx context.Context, watcherID string, sc *storage.ComplianceOperatorScanConfigurationV2, scanDS scan.DataStore, profileDS profileDatastore.DataStore, snapshotDS snapshotDS.DataStore, queue readyQueue[*ScanConfigWatcherResults]) *scanConfigWatcherImpl {
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
-	timeout := NewTimer(defaultScanConfigTimeout)
+	timeout := NewTimer(env.ComplianceScanScheduleWatcherTimeout.DurationSetting())
 	ret := &scanConfigWatcherImpl{
 		ctx:                 watcherCtx,
 		sensorCtx:           sensorCtx,

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/pkg/errors"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
@@ -12,6 +11,7 @@ import (
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
@@ -38,7 +38,6 @@ const (
 	CheckCountAnnotationKey          = "compliance.openshift.io/check-count"
 	LastScannedAnnotationKey         = "compliance.openshift.io/last-scanned-timestamp"
 	defaultChanelSize                = 100
-	defaultTimeout                   = 10 * time.Minute
 )
 
 // ScanWatcher determines if a scan is running or has completed.
@@ -179,7 +178,7 @@ func NewScanWatcher(ctx, sensorCtx context.Context, watcherID string, queue read
 	log.Debugf("Creating new ScanWatcher with id %s", watcherID)
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
-	timeout := NewTimer(defaultTimeout)
+	timeout := NewTimer(env.ComplianceScanWatcherTimeout.DurationSetting())
 	ret := &scanWatcherImpl{
 		ctx:        watcherCtx,
 		sensorCtx:  sensorCtx,
