@@ -113,7 +113,8 @@ spec:
       - description: Storage API endpoint.
         displayName: Endpoint
         path: central.telemetry.storage.endpoint
-      - description: If you want to deploy Config as Code components set this to "Enabled"
+      - description: If you want to deploy the Config as Code component, set this
+          to "Enabled"
         displayName: Config as Code component
         path: configAsCode.configAsCodeComponent
       - description: Custom labels to set on all managed objects.
@@ -496,7 +497,7 @@ spec:
         path: network
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Config-as-Code configuration
+      - description: Config-as-Code configuration.
         displayName: Config-as-Code
         path: configAsCode
         x-descriptors:

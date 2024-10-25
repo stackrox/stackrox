@@ -595,12 +595,12 @@ spec:
                     type: array
                 type: object
               configAsCode:
-                description: Config-as-Code configuration
+                description: Config-as-Code configuration.
                 properties:
                   configAsCodeComponent:
                     default: Enabled
-                    description: If you want to deploy Config as Code components set
-                      this to "Enabled"
+                    description: If you want to deploy the Config as Code component,
+                      set this to "Enabled"
                     enum:
                     - Enabled
                     - Disabled
