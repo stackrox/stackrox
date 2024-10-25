@@ -12,27 +12,27 @@ spec:
     Copies source images that are logically linked to the input image digest.
   params:
   - name: INPUT_IMAGE_REPO
-    description: Repository of the input image
+    description: Repository of the input image.
     type: string
   - name: INPUT_IMAGE_TAG
-    description: Tag of the input image
+    description: Tag of the input image.
     type: string
   - name: OUTPUT_IMAGE_REPO
-    description: Repository of the output image
+    description: Repository of the output image.
     type: string
   - name: OUTPUT_IMAGE_TAG
-    description: Repository of the output image
+    description: Repository of the output image.
     type: string
   results:
   - name: IMAGE_DIGEST
-    description: Digest of the output image; should be the same as of the input one
+    description: Digest of the output image (will be the same as of the input one).
   - name: IMAGE_URL
-    description: Image repository and tag of the output image
+    description: Image repository and tag of the output image.
   - name: IMAGE_REF
-    description: Image reference of the output image containing both the repository and the digest
+    description: Image reference of the output image containing both the repository, the tag and the digest.
   steps:
-  - name: copy-image
-    image: quay.io/konflux-ci/release-service-utils:latest@sha256:48b31c88616f47328da613092e62b54b30cfbc7b3eb972d213db7b696f8edbf7
+  - name: retag-image
+    image: quay.io/konflux-ci/release-service-utils:latest@sha256:0fdaefe6748962003e24f3faede4edf1abbea63112c6ad973654a0726aafb9b8
     script: |
       #!/usr/bin/env bash
       set -euo pipefail
@@ -51,7 +51,7 @@ spec:
         echo "Copying image from ${input_url} ..."
         echo "... to ${output_url} ..."
 
-        # cosign copies not just cosign artifacts but also images and it understands and copies index images.
+        # cosign copies not just cosign artifacts but also images. It understands and copies index images.
         # --force argument is needed to prevent the command failing when it runs into (partial) previous copies with
         # errors like the following.
         #   Error: image "quay.io/rhacs-eng/collector:sha256-4b509fdf27761150a5a5ce519f087bc6d69af9d886a63f67f70b1e293643ea19" already exists. Use `-f` to overwrite
@@ -95,7 +95,7 @@ spec:
       OUTPUT_SOURCES_IMAGE_URL="$(params.OUTPUT_IMAGE_REPO):${SOURCES_IMAGE_TAG}"
       if [[ "${INPUT_SOURCES_IMAGE_URL}" == "${OUTPUT_SOURCES_IMAGE_URL}" ]]; then
         # This is the case when we retag in the same repo.
-        echo "Repo of image with sources would not change and so the image does not need to be copied."
+        echo "The repo of the image with sources would not change and so the image does not need to be copied."
       else
         copy_image "${INPUT_SOURCES_IMAGE_URL}" "${OUTPUT_SOURCES_IMAGE_URL}"
       fi
