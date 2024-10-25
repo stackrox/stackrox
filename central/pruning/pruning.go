@@ -350,6 +350,8 @@ func (g *garbageCollectorImpl) removeOrphanedResources() {
 
 	if features.ExternalIPs.Enabled() || env.ExternalIPsPruning.BooleanSetting() {
 		g.removeOrphanedNetworkEntities()
+	} else {
+		log.Info("[Entity pruning] disabled")
 	}
 
 	g.removeOrphanedPods()
@@ -595,12 +597,15 @@ func (g *garbageCollectorImpl) removeOrphanedNetworkFlows(clusters set.FrozenStr
 }
 
 func (g *garbageCollectorImpl) removeOrphanedNetworkEntities() {
-	err := g.networkentities.RemoveOrphanedEntities(pruningCtx)
+
+	affectedRows, err := g.networkentities.RemoveOrphanedEntities(pruningCtx)
 
 	if err != nil {
-		log.Errorf("[Pruning] error removing orphaned network entities: %v", err)
+		log.Errorf("[Entity pruning] error removing orphaned network entities: %v", err)
 		return
 	}
+
+	log.Infof("[Entity pruning] Found %d orphaned entities", affectedRows)
 }
 
 func (g *garbageCollectorImpl) collectImages(config *storage.PrivateConfig) {

@@ -26,5 +26,5 @@ type EntityStore interface {
 
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error)
 
-	RemoveOrphanedEntities(ctx context.Context) error
+	RemoveOrphanedEntities(ctx context.Context) (int64, error)
 }

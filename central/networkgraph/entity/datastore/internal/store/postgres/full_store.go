@@ -47,23 +47,28 @@ type fullStoreImpl struct {
 }
 
 // RemoveOrphanedEntities prunes 'discovered' external entities that are not referenced by any flow.
-func (f *fullStoreImpl) RemoveOrphanedEntities(ctx context.Context) error {
+func (f *fullStoreImpl) RemoveOrphanedEntities(ctx context.Context) (int64, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkEntitiesPruning")
 
 	pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesSrcStmt, networkEntitiesTable, networkFlowsTable)
-	err := f.pruneEntities(ctx, pruneStmt)
+	srcRows, err := f.pruneEntities(ctx, pruneStmt)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	pruneStmt = fmt.Sprintf(pruneOrphanExternalNetworkEntitiesDstStmt, networkEntitiesTable, networkFlowsTable)
-	return f.pruneEntities(ctx, pruneStmt)
+	dstRows, err := f.pruneEntities(ctx, pruneStmt)
+	if err != nil {
+		return 0, err
+	}
+
+	return srcRows + dstRows, nil
 }
 
-func (f *fullStoreImpl) pruneEntities(ctx context.Context, deleteStmt string) error {
+func (f *fullStoreImpl) pruneEntities(ctx context.Context, deleteStmt string) (int64, error) {
 	conn, err := f.db.Acquire(ctx)
 	if err != nil {
-		return nil
+		return 0, err
 	}
 
 	defer conn.Release()
@@ -71,9 +76,10 @@ func (f *fullStoreImpl) pruneEntities(ctx context.Context, deleteStmt string) er
 	ctx, cancel := context.WithTimeout(ctx, queryTimeout)
 	defer cancel()
 
-	if _, err := conn.Exec(ctx, deleteStmt); err != nil {
-		return err
+	commandTag, err := conn.Exec(ctx, deleteStmt)
+	if err != nil {
+		return 0, err
 	}
 
-	return nil
+	return commandTag.RowsAffected(), nil
 }

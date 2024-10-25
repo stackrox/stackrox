@@ -446,11 +446,11 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 	return nil
 }
 
-func (ds *dataStoreImpl) RemoveOrphanedEntities(ctx context.Context) error {
+func (ds *dataStoreImpl) RemoveOrphanedEntities(ctx context.Context) (int64, error) {
 	if ok, err := ds.writeAllowed(ctx, "__glob"); err != nil {
-		return err
+		return 0, err
 	} else if !ok {
-		return sac.ErrResourceAccessDenied
+		return 0, sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.RemoveOrphanedEntities(ctx)
