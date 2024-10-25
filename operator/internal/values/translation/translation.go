@@ -417,7 +417,7 @@ func GetGlobalNetwork(s *platform.GlobalNetworkSpec) *ValuesBuilder {
 	return &sv
 }
 
-// GetConfigAsCode converts *platform.GetConfigAsCodeSpec into *ValuesBuilder
+// GetConfigAsCode converts a *platform.GetConfigAsCodeSpec into a *ValuesBuilder.
 func GetConfigAsCode(c *platform.ConfigAsCodeSpec) *ValuesBuilder {
 	sv := NewValuesBuilder()
 	if c.ComponentPolicy != nil {

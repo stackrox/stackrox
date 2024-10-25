@@ -579,5 +579,4 @@ central:
 #monitoring:
 #  # Enables integration with OpenShift platform monitoring.
 #  openshift:
-
 #    enabled: true

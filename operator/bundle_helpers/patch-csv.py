@@ -97,7 +97,7 @@ def patch_csv(csv_doc, version, operator_image, first_version, related_images_mo
         "version": "v1alpha1",
         "kind": "SecurityPolicy",
         "displayName": "Security Policy",
-        "description": "SecurityPolicy is the Schema for the policies API",
+        "description": "SecurityPolicy is the schema for the policies API.",
         "resources": [{
             "kind": "Deployment",
             "name": "",
