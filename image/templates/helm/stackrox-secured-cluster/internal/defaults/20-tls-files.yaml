@@ -3,7 +3,7 @@
 #
 # A user can specify either references to files (with a "@" prefix - note that this requires changing the chart,
 # as Helm only allows accessing files that are part of the chart), or PEM-encoded certificates and keys directly.
-
+generateTLS: true
 ca:
   cert: "@?secrets/ca.pem"
 

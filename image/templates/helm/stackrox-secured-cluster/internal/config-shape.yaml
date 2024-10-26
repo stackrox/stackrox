@@ -6,6 +6,7 @@ registryOverride: null # string
 exposeMonitoring: null # bool
 createUpgraderServiceAccount: null # string
 helmManaged: null
+generateTLS: null # bool
 createSecrets: null
 additionalCAs: null # [obj]
 imagePullSecrets:
@@ -72,6 +73,9 @@ env:
     names: null # [string]
 ca:
   cert: null # string
+  existingSecret: 
+    name: null #string
+    cert: null #string
 sensor:
   imagePullPolicy: null # string
   endpoint: null # string
@@ -80,6 +84,10 @@ sensor:
   serviceTLS:
     cert: null # string
     key: null # string
+    existingSecret:
+      name: null #string
+      cert: null #string
+      key: null #string    
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
@@ -107,6 +115,10 @@ admissionControl:
   serviceTLS:
     cert: null # string
     key: null # string
+    existingSecret:
+      name: null #string
+      cert: null #string
+      key: null #string 
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   tolerations: null # [dict]
@@ -126,6 +138,10 @@ collector:
   serviceTLS:
     cert: null # string
     key: null # string
+    existingSecret:
+      name: null #string
+      cert: null #string
+      key: null #string 
   exposeMonitoring: null # bool
   nodeSelector: null # string | dict
   priorityClassName: null # string

@@ -237,6 +237,23 @@ spec:
       - hostPath:
           path: /dev
         name: dev-ro
+      {{- if not $._rox.generateTLS }}
+      - name: certs
+        projected:
+          sources:
+          - secret:
+              name: {{ $._rox.ca.existingSecret.name }}
+              items:
+                - key: {{ $._rox.ca.existingSecret.cert }}
+                  path: ca.pem
+          - secret:
+              name: {{ $._rox.collector.serviceTLS.existingSecret.name }}
+              items:
+                - key: {{ $._rox.collector.serviceTLS.existingSecret.cert }}
+                  path: cert.pem
+                - key: {{ $._rox.collector.serviceTLS.existingSecret.key }}
+                  path: key.pem
+      {{- else }}
       - name: certs
         secret:
           secretName: collector-tls
@@ -247,6 +264,7 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      {{- end }}
       - hostPath:
           path: /
         name: host-root-ro

@@ -1,0 +1,42 @@
+values:
+  imagePullSecrets:
+    allowNone: true
+  central:
+    db:
+      external: true
+      existingSecret:
+        name: existing-central-db-password
+        key: password
+      source:
+        connectionString: host=external-central-db port=5432 dbname=central_active user=central
+  scanner:
+    db:
+      external: true
+      connectionString: host=external-scanner-db port=5432 dbname=scanner user=postgres
+      existingSecret: 
+        name: existing-scanner-db-password
+        key: password
+tests:
+  - name: "Should generate central-external-db configmap and mount to central deployment"
+    expect: |
+      .deployments.central | .spec.template.spec.volumes | map(select(.name == "central-external-db-volume")) | assertThat(. != null)
+      .deployments.central | .spec.template.spec.containers[0].volumeMounts | map(select(.name == "central-external-db-volume")) | assertThat(. != null)
+  - name: "Should mount existing secret to the central deployment"
+    expect: |
+      .deployments.central | .spec.template.spec.containers[0].volumeMounts | map(select(.name == "existing-central-db-password")) | assertThat(. != null)
+      .deployments.central | .spec.template.spec.volumes | map(select(.name == "existing-central-db-password")) | assertThat(. != null)
+  - name: "Should update the scanner config with the external db host"
+    expect: |
+      .configmaps["scanner-config"].data["config.yaml"] | assertThat(. | contains("external-scanner-db"))
+  - name: "Should mount existing secret to scanner deployment"
+    expect: |
+      .deployments.scanner | .spec.template.spec.containers[0].volumeMounts | map(select(.name == "existing-scanner-db-password")) | assertThat(. != null)
+      .deployments.scanner | .spec.template.spec.volumes | map(select(.name == "existing-scanner-db-password")) | assertThat(. != null)
+  - name: "Should not create database secrets"
+    expect: |
+      .objects | map(select(.kind == "Secret" and .metadata.name == "central-db-password")) | assertThat(length == 0)
+      .objects | map(select(.kind == "Secret" and .metadata.name == "scanner-db-password")) | assertThat(length == 0)
+  - name: "Should not create chart managed databases"
+    expect: |
+      .objects | map(select(.kind == "Deployment" and .metadata.name == "central-db")) | assertThat(length == 0)
+      .objects | map(select(.kind == "Deployment" and .metadata.name == "scanner-db")) | assertThat(length == 0)
