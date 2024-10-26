@@ -1449,7 +1449,7 @@
           "items": {
             "type": "string"
           },
-          "description": "List of notifier IDs that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found in the Central API."
+          "description": "List of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API."
         },
         "lastUpdated": {
           "type": "string",

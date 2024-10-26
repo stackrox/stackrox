@@ -153,16 +153,17 @@ spec:
                   are rendered read-only.
                 type: boolean
               notifiers:
-                description: Notifiers is a list of notifier IDs that should be triggered
-                  when a violation from this policy is identified.  IDs should be
-                  in the form of a UUID and are found in the Central API.
+                description: Notifiers is a list of IDs of the notifiers that should
+                  be triggered when a violation from this policy is identified.  IDs
+                  should be in the form of a UUID and are found through the Central
+                  API.
                 items:
                   type: string
                 type: array
               policyName:
                 description: PolicyName is the name of the policy as it appears in
-                  Central.  Note that changing this value will rename the policy in
-                  Central.  This field must be unique.
+                  the API and UI.  Note that changing this value will rename the policy
+                  as stored in the database.  This field must be unique.
                 pattern: ^[^\n\r\$]{5,128}$
                 type: string
               policySections:
