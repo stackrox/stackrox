@@ -38,7 +38,7 @@ type EnforcementAction string
 type SecurityPolicySpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Pattern=`^[^\n\r\$]{5,128}$`
-	// PolicyName is the name of the policy as it appears in Central.  Note that changing this value will rename the policy in Central.  This field must be unique.
+	// PolicyName is the name of the policy as it appears in the API and UI.  Note that changing this value will rename the policy as stored in the database.  This field must be unique.
 	PolicyName string `json:"policyName"`
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Pattern=`^[^\$]{0,800}$`
@@ -67,7 +67,7 @@ type SecurityPolicySpec struct {
 	Severity string `json:"severity"`
 	// Enforcement lists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT.
 	EnforcementActions []EnforcementAction `json:"enforcementActions,omitempty"`
-	// Notifiers is a list of notifier IDs that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found in the Central API.
+	// Notifiers is a list of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API.
 	Notifiers []string `json:"notifiers,omitempty"`
 	// +kubebuilder:validation:MinItems=1
 	// PolicySections define the violation criteria for this policy.
