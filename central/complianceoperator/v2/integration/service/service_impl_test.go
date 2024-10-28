@@ -126,8 +126,8 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 					OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 					ClusterID:                         fixtureconsts.Cluster1,
 					ClusterName:                       mockClusterName,
-					Type:                              storage.ClusterType_OPENSHIFT_CLUSTER,
-					StatusProviderMetadataClusterType: storage.ClusterMetadata_OCP,
+					Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT_CLUSTER),
+					StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_OCP),
 				},
 				}, nil).Times(1)
 

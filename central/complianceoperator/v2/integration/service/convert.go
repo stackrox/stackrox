@@ -46,8 +46,8 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *complianceD
 		StatusErrors:        integrationDetail.GetStatusErrors(),
 		OperatorInstalled:   opInstalled,
 		Status:              opStatus,
-		ClusterPlatformType: convertPlatformType(integration.Type),
-		ClusterProviderType: convertProviderType(integration.StatusProviderMetadataClusterType),
+		ClusterPlatformType: convertPlatformType(*integration.Type),
+		ClusterProviderType: convertProviderType(*integration.StatusProviderMetadataClusterType),
 	}, true, nil
 }
 
