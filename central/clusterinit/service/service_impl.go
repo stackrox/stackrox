@@ -131,7 +131,7 @@ func (s *serviceImpl) GenerateInitBundle(ctx context.Context, request *v1.InitBu
 
 func (s *serviceImpl) GenerateCRS(ctx context.Context, request *v1.CRSGenRequest) (*v1.CRSGenResponse, error) {
 	if !features.ClusterRegistrationSecrets.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "Support for generating Cluster Registration Secrets (CRS) is not enabled")
+		return nil, status.Error(codes.Unimplemented, "support for generating Cluster Registration Secrets (CRS) is not enabled")
 	}
 
 	generated, err := s.backend.IssueCRS(ctx, request.GetName())
