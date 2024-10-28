@@ -10,6 +10,9 @@ import (
 
 // UpdateSnapshotOnError updates the state of a given snapshot to FAILURE
 func UpdateSnapshotOnError(ctx context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2, err error, store snapshotDS.DataStore) error {
+	if snapshot == nil {
+		return nil
+	}
 	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 	snapshot.GetReportStatus().ErrorMsg = err.Error()
 	snapshot.GetReportStatus().CompletedAt = protocompat.TimestampNow()

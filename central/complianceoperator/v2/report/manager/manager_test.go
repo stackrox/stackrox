@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	reportGen "github.com/stackrox/rox/central/complianceoperator/v2/report/manager/complianceReportgenerator/mocks"
@@ -28,17 +29,19 @@ import (
 
 type ManagerTestSuite struct {
 	suite.Suite
-	mockCtrl            *gomock.Controller
-	ctx                 context.Context
-	scanConfigDataStore *scanConfigurationDS.MockDataStore
-	scanDataStore       *scanMocks.MockDataStore
-	profileDataStore    *profileMocks.MockDataStore
-	snapshotDataStore   *snapshotMocks.MockDataStore
-	reportGen           *reportGen.MockComplianceReportGenerator
+	mockCtrl                       *gomock.Controller
+	ctx                            context.Context
+	scanConfigDataStore            *scanConfigurationDS.MockDataStore
+	scanDataStore                  *scanMocks.MockDataStore
+	profileDataStore               *profileMocks.MockDataStore
+	snapshotDataStore              *snapshotMocks.MockDataStore
+	complianceIntegrationDataStore *integrationMocks.MockDataStore
+	reportGen                      *reportGen.MockComplianceReportGenerator
 }
 
 func (m *ManagerTestSuite) SetupSuite() {
 	m.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
+	m.T().Setenv(features.ScanScheduleReportJobs.EnvVar(), "true")
 	m.ctx = sac.WithAllAccess(context.Background())
 }
 
@@ -48,6 +51,7 @@ func (m *ManagerTestSuite) SetupTest() {
 	m.scanDataStore = scanMocks.NewMockDataStore(m.mockCtrl)
 	m.profileDataStore = profileMocks.NewMockDataStore(m.mockCtrl)
 	m.snapshotDataStore = snapshotMocks.NewMockDataStore(m.mockCtrl)
+	m.complianceIntegrationDataStore = integrationMocks.NewMockDataStore(m.mockCtrl)
 	m.reportGen = reportGen.NewMockComplianceReportGenerator(m.mockCtrl)
 }
 
@@ -56,7 +60,7 @@ func TestComplianceReportManager(t *testing.T) {
 }
 
 func (m *ManagerTestSuite) TestSubmitReportRequest() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
 	reportRequest := &storage.ComplianceOperatorScanConfigurationV2{
 		ScanConfigName: "test_scan_config",
 		Id:             "test_scan_config",
@@ -76,7 +80,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	ctx := context.Background()
 
 	m.Run("Successful report, no watchers running", func() {
-		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.reportGen)
+		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
 		manager.Start()
 		wg := concurrency.NewWaitGroup(1)
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
@@ -92,7 +96,7 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	})
 
 	m.Run("Error in the database", func() {
-		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.reportGen)
+		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
 		manager.Start()
 		wg := concurrency.NewWaitGroup(1)
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
@@ -106,9 +110,17 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	})
 
 	m.Run("Successful report, with watcher running", func() {
-		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.reportGen)
+		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
 		manager.Start()
 		now := protocompat.TimestampNow()
+		m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+			Return(
+				[]*storage.ComplianceOperatorScanConfigurationV2{
+					{
+						Id: "scan-config-id",
+					},
+				}, nil,
+			)
 		m.pushScansAndResults(manager, getTestScanConfig(), now)
 
 		wg := concurrency.NewWaitGroup(2)
@@ -151,9 +163,17 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 }
 
 func (m *ManagerTestSuite) TestHandleScan() {
+	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+		Return(
+			[]*storage.ComplianceOperatorScanConfigurationV2{
+				{
+					Id: "scan-config-id",
+				},
+			}, nil,
+		)
 	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
 		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	scan := &storage.ComplianceOperatorScanV2{
@@ -172,7 +192,7 @@ func (m *ManagerTestSuite) TestHandleScan() {
 	scan.LastStartedTime = protocompat.TimestampNow()
 	err = manager.HandleScan(context.Background(), scan)
 	assert.NoError(m.T(), err)
-	id, err := watcher.GetWatcherIDFromScan(context.Background(), scan, m.snapshotDataStore, nil)
+	id, err := watcher.GetWatcherIDFromScan(context.Background(), scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
 	require.NoError(m.T(), err)
 	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
 		w, ok := managerImplementation.watchingScans[id]
@@ -182,7 +202,7 @@ func (m *ManagerTestSuite) TestHandleScan() {
 }
 
 func (m *ManagerTestSuite) TestHandleResult() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	timeNow := time.Now()
@@ -204,9 +224,17 @@ func (m *ManagerTestSuite) TestHandleResult() {
 	}
 	m.scanDataStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(2).
 		Return([]*storage.ComplianceOperatorScanV2{scan}, nil)
+	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+		Return(
+			[]*storage.ComplianceOperatorScanConfigurationV2{
+				{
+					Id: "scan-config-id",
+				},
+			}, nil,
+		)
 	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
 		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
-	id, err := watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore)
+	id, err := watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
 	require.NoError(m.T(), err)
 	err = manager.HandleResult(context.Background(), result)
 	assert.NoError(m.T(), err)
@@ -230,7 +258,7 @@ func (m *ManagerTestSuite) TestHandleResult() {
 	result.Annotations["compliance.openshift.io/last-scanned-timestamp"] = nowRFCFormat
 	err = manager.HandleResult(context.Background(), result)
 	assert.NoError(m.T(), err)
-	id, err = watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore)
+	id, err = watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
 	require.NoError(m.T(), err)
 	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
 		w, ok := managerImplementation.watchingScans[id]
@@ -241,7 +269,7 @@ func (m *ManagerTestSuite) TestHandleResult() {
 	result.Annotations["compliance.openshift.io/last-scanned-timestamp"] = futureRFCFormat
 	err = manager.HandleResult(context.Background(), result)
 	assert.NoError(m.T(), err)
-	id, err = watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore)
+	id, err = watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
 	require.NoError(m.T(), err)
 	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
 		w, ok := managerImplementation.watchingScans[id]
@@ -334,7 +362,7 @@ func (m *ManagerTestSuite) finishFirstScan(manager Manager, scan *storage.Compli
 			}
 			return ret, nil
 		})
-	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).
+	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(2).
 		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
 	m.scanConfigDataStore.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Times(1).
 		Return(getTestScanConfig(), nil)
