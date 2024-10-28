@@ -4,21 +4,30 @@ package m208tom209
 
 import (
 	"context"
+	"fmt"
+	"path/filepath"
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations/m_208_to_m_209_policy_updates_for_4_6/conversion"
 	"github.com/stackrox/rox/migrator/migrations/m_208_to_m_209_policy_updates_for_4_6/schema"
+	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
+	"gorm.io/gorm"
 )
 
 type migrationTestSuite struct {
 	suite.Suite
 
-	db  *pghelper.TestPostgres
+	db     *pghelper.TestPostgres
+	gormDB *gorm.DB
+
 	ctx context.Context
 }
 
@@ -68,10 +77,10 @@ func (s *migrationTestSuite) TestMigration() {
 			var foundPolicies []schema.Policies
 			result := s.gormDB.Limit(1).Where(&schema.Policies{ID: afterPolicy.GetId()}).Find(&foundPolicies)
 			s.Require().NoError(result.Error)
-			migratedPolicy, err := schema.ConvertPolicyToProto(&foundPolicies[0])
+			migratedPolicy, err := conversion.ConvertPolicyToProto(&foundPolicies[0])
 			s.Require().NoError(err)
 			protoassert.ElementsMatch(s.T(), migratedPolicy.Exclusions, afterPolicy.Exclusions, "exclusion do not match after migration")
-			protoassert.ElementsMatch(s.T(), migratedPolicy.PolicySections, afterPolicy.PolicySection, "policy sections do not match after migration")
+			protoassert.ElementsMatch(s.T(), migratedPolicy.PolicySections, afterPolicy.PolicySections, "policy sections do not match after migration")
 		})
 	}
 }
@@ -83,8 +92,8 @@ func simplePolicy(policyID string) *storage.Policy {
 	}
 }
 
-func (s *policyMigrationTestSuite) addPolicyToDB(policy *storage.Policy) {
-	p, err := schema.ConvertPolicyFromProto(policy)
+func (s *migrationTestSuite) addPolicyToDB(policy *storage.Policy) {
+	p, err := conversion.ConvertPolicyFromProto(policy)
 	s.Require().NoError(err)
 	s.Require().NoError(s.gormDB.Create(p).Error)
 }

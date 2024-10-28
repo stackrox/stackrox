@@ -4,14 +4,13 @@ import (
 	"context"
 	"embed"
 
+	"gorm.io/gorm"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_208_to_m_209_policy_updates_for_4_6/conversion"
 	"github.com/stackrox/rox/migrator/migrations/m_208_to_m_209_policy_updates_for_4_6/schema"
 	"github.com/stackrox/rox/migrator/migrations/policymigrationhelper"
 	"github.com/stackrox/rox/migrator/types"
-
-	"gorm.io/gorm"
 )
 
 var (
