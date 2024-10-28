@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -16,6 +17,8 @@ import (
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/rhel"
 	rpm2 "github.com/quay/claircore/rpm"
+	"github.com/quay/zlog"
+	"github.com/rs/zerolog"
 	"github.com/stackrox/rox/compliance/collection/compliance"
 	"github.com/stackrox/rox/compliance/collection/intervals"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -33,6 +36,16 @@ var (
 	log         = logging.LoggerForModule()
 )
 
+// ClairCore is using zlog and needs separate configuration, as it's logging on debug level by default.
+func configureClairCoreLogging() {
+	l := zerolog.New(os.Stderr)
+	l = l.Level(zerolog.InfoLevel)
+	if logging.GetGlobalLogLevel().CapitalString() == "DEBUG" {
+		l = l.Level(zerolog.DebugLevel)
+	}
+	zlog.Set(&l)
+}
+
 type NodeIndexerConfig struct {
 	DisableAPI         bool
 	API                string
@@ -41,10 +54,11 @@ type NodeIndexerConfig struct {
 }
 
 func NewNodeIndexerConfigFromEnv() *NodeIndexerConfig {
+	configureClairCoreLogging()
 	return &NodeIndexerConfig{
 		DisableAPI:         false,
-		API:                env.NodeIndexContainerAPI.Setting(), // TODO(ROX-25540): Set in sync with Scanner via Helm charts
-		Repo2CPEMappingURL: env.NodeIndexMappingURL.Setting(),   // TODO(ROX-25540): Set in sync with Scanner via Helm charts
+		API:                env.NodeIndexContainerAPI.Setting(),
+		Repo2CPEMappingURL: env.NodeIndexMappingURL.Setting(),
 		Timeout:            10 * time.Second,
 	}
 }
@@ -98,6 +112,7 @@ func (l *localNodeIndexer) IndexNode(ctx context.Context) (r *v4.IndexReport, er
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to coalesce report")
 	}
+	log.Debugf("Finished coalescing report. Report contains %d repositories with %d packages", len(ir.Repositories), len(ir.Packages))
 
 	report = controller.MergeSR(report, []*claircore.IndexReport{ir})
 	report.Success = true
@@ -139,9 +154,6 @@ func runPackageScanner(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		return nil, errors.Wrap(err, "failed to invoke RPM scanner")
 	}
 	pck = filterPackages(ctx, pck)
-	if pck != nil {
-		log.Infof("Num packages found: %d", len(pck))
-	}
 	for i, p := range pck {
 		p.ID = fmt.Sprintf("%d", i)
 	}
@@ -203,9 +215,6 @@ func runRepositoryScanner(ctx context.Context, cfg *NodeIndexerConfig, l *clairc
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to scan repositories")
 	}
-	if reps != nil {
-		log.Infof("Num repositories found: %v", len(reps))
-	}
 	for i, r := range reps {
 		r.ID = fmt.Sprintf("%d", i)
 	}
@@ -213,7 +222,7 @@ func runRepositoryScanner(ctx context.Context, cfg *NodeIndexerConfig, l *clairc
 }
 
 func constructLayer(ctx context.Context, digest string, hostPath string) (*claircore.Layer, error) {
-	log.Infof("Realizing mount path: %s", hostPath)
+	log.Debugf("Realizing mount path: %s", hostPath)
 	desc := &claircore.LayerDescription{
 		Digest:    digest,
 		URI:       hostPath,
