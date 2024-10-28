@@ -89,10 +89,11 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 		containsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
 		containsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
 	}
-	// The following logline was added after v3.74 and can't show up in the logs when running compatibility tests with
-	// sensor version 3.74 (support exception), see:
-	// https://github.com/stackrox/stackrox/blob/228c38c33033b20c1ff18b89650b9c137f4f7ff2/sensor/common/sensor/sensor.go#L167
-	if os.Getenv("SENSOR_3_74_SUPPORT_EXCEPTION") != "true" {
+
+	// This test spawns a Clusterhealth.updater which calls getCollectorInfo() when it runs. This results in
+	// the error "unable to determine collector version" if COLLECTION_METHOD is set to NO_COLLECTION and Sensor ends up
+	// in a state where it is never able to connect to central again, so the line below never appears in the log.
+	if os.Getenv("COLLECTION_METHOD") != "NO_COLLECTION" {
 		logMatchers = append(logMatchers, containsLineMatching(regexp.MustCompile("Info: Connecting to Central server "+proxyEndpoint)))
 	}
 	ts.waitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection", logMatchers...)
