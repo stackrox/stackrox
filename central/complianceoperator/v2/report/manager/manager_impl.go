@@ -360,7 +360,7 @@ func (m *managerImpl) handleReadyScan() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
 				})
 				log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
-				w, scanConfig, wasAlreadyRunning, err := m.getScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
+				w, scanConfig, wasAlreadyRunning, err := m.getOrCreateScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
 				if errors.Is(err, watcher.ErrScanAlreadyHandled) {
 					continue
 				}
@@ -382,8 +382,8 @@ func (m *managerImpl) handleReadyScan() {
 	}
 }
 
-// getScanConfigWatcher returns the ScanConfigWatcher of a given scan
-func (m *managerImpl) getScanConfigWatcher(ctx context.Context, results *watcher.ScanWatcherResults, ds scanConfigurationDS.DataStore, queue *queue.Queue[*watcher.ScanConfigWatcherResults]) (watcher.ScanConfigWatcher, *storage.ComplianceOperatorScanConfigurationV2, bool, error) {
+// getOrCreateScanConfigWatcher returns the ScanConfigWatcher of a given scan
+func (m *managerImpl) getOrCreateScanConfigWatcher(ctx context.Context, results *watcher.ScanWatcherResults, ds scanConfigurationDS.DataStore, queue *queue.Queue[*watcher.ScanConfigWatcherResults]) (watcher.ScanConfigWatcher, *storage.ComplianceOperatorScanConfigurationV2, bool, error) {
 	sc, err := watcher.GetScanConfigFromScan(m.automaticReportingCtx, results.Scan, ds)
 	if err != nil {
 		return nil, nil, false, errors.Errorf("unable to get scan config id: %v", err)
