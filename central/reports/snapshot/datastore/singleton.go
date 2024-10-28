@@ -4,7 +4,6 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/reports/snapshot/datastore/search"
 	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -20,9 +19,6 @@ func initialize() {
 
 // Singleton returns a singleton instance of ReportSnapshot datastore
 func Singleton() DataStore {
-	if !features.VulnReportingEnhancements.Enabled() {
-		return nil
-	}
 	once.Do(initialize)
 	return ds
 }

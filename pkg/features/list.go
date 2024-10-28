@@ -22,9 +22,6 @@ var (
 	// ActiveVulnMgmt defines if the active vuln mgmt feature is enabled
 	ActiveVulnMgmt = registerFeature("Enable Active Vulnerability Management", "ROX_ACTIVE_VULN_MGMT")
 
-	// VulnReportingEnhancements enables APIs and UI pages for VM Reporting enhancements including downloadable reports
-	VulnReportingEnhancements = registerFeature("Enable Vulnerability Reporting enhancements", "ROX_VULN_MGMT_REPORTING_ENHANCEMENTS", enabled)
-
 	// UnifiedCVEDeferral enables APIs and UI pages for unified deferral workflow.
 	UnifiedCVEDeferral = registerFeature("Enable new unified Vulnerability deferral workflow", "ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL", enabled)
 

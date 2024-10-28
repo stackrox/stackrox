@@ -132,10 +132,7 @@ import (
 	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
-	reportConfigurationService "github.com/stackrox/rox/central/reports/config/service"
-	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
-	reportService "github.com/stackrox/rox/central/reports/service"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	v2Service "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
@@ -449,11 +446,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, backupService.Singleton())
 	}
 
-	if features.VulnReportingEnhancements.Enabled() {
-		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
-	} else {
-		servicesToRegister = append(servicesToRegister, reportService.Singleton(), reportConfigurationService.Singleton())
-	}
+	servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
@@ -877,15 +870,13 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	if features.VulnReportingEnhancements.Enabled() {
-		// Append report custom routes
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/reports/jobs/download",
-			Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
-			ServerHandler: v2Service.NewDownloadHandler(),
-			Compression:   true,
-		})
-	}
+	// Append report custom routes
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/reports/jobs/download",
+		Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
+		ServerHandler: v2Service.NewDownloadHandler(),
+		Compression:   true,
+	})
 
 	if features.ComplianceEnhancements.Enabled() && features.ComplianceReporting.Enabled() && features.ScanScheduleReportJobs.Enabled() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
@@ -945,13 +936,8 @@ func waitForTerminationSignal() {
 		{administrationEventHandler.Singleton(), "administration events handler"},
 	}
 
-	if features.VulnReportingEnhancements.Enabled() {
-		stoppables = append(stoppables,
-			stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
-	} else {
-		stoppables = append(stoppables,
-			stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"})
-	}
+	stoppables = append(stoppables,
+		stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
 
 	if features.ComplianceReporting.Enabled() {
 		stoppables = append(stoppables,
