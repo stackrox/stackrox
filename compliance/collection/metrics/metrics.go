@@ -306,18 +306,16 @@ const (
 	InventoryTransmissionResendingCacheMiss InventoryTransmission = "scanning and resending "
 )
 
-// ObserveNodeInventorySending observes the metric.
-func ObserveNodeInventorySending(nodeName string, sendingType InventoryTransmission, scannerVersion string) {
-	inventoryTransmissions.With(prometheus.Labels{
+// ObserveNodePackageReportTransmissions observes the metric.
+func ObserveNodePackageReportTransmissions(nodeName string, sendingType InventoryTransmission, scannerVersion string) {
+	nodePackageReportTransmissions.With(prometheus.Labels{
 		"node_name":         nodeName,
 		"transmission_type": string(sendingType),
 		"scanner_version":   scannerVersion,
 	}).Inc()
-}
-
-// ObserveNodePackageReportTransmissions observes the metric.
-func ObserveNodePackageReportTransmissions(nodeName string, sendingType InventoryTransmission, scannerVersion string) {
-	nodePackageReportTransmissions.With(prometheus.Labels{
+	// Record the old metric for backwards compatibility.
+	// Remove the block below after Scanner v2 is out of support for clusters
+	inventoryTransmissions.With(prometheus.Labels{
 		"node_name":         nodeName,
 		"transmission_type": string(sendingType),
 		"scanner_version":   scannerVersion,
