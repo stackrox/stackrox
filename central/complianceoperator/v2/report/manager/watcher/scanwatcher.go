@@ -106,7 +106,7 @@ func GetWatcherIDFromScan(ctx context.Context, scan *storage.ComplianceOperatorS
 		return "", errors.Wrap(err, "unable to retrieve the scan configuration from the store")
 	}
 	if len(scanConfigs) == 0 {
-		return "", errors.New("this scan is not handle by a scan configuration")
+		return "", errors.New("this scan is not handled by any known scan configuration")
 	}
 	// If there is a snapshot with the same timestamp or newer we shouldn't handle this scan since we already handle a newer one
 	query := search.NewQueryBuilder().

@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/branding"
 	"github.com/stackrox/rox/pkg/csv"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -116,7 +115,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceRep
 	log.Infof("Processing report request %s", req)
 
 	var snapshot *storage.ComplianceOperatorReportSnapshotV2
-	if features.ScanScheduleReportJobs.Enabled() {
+	if req.SnapshotID != "" {
 		var found bool
 		var err error
 		snapshot, found, err = rg.snapshotDS.GetSnapshot(req.Ctx, req.SnapshotID)
@@ -138,7 +137,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *ComplianceRep
 		return errors.Wrapf(err, "unable to zip the compliance reports for scan config %s", req.ScanConfigName)
 	}
 
-	if features.ScanScheduleReportJobs.Enabled() {
+	if snapshot != nil {
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_GENERATED
 		if err := rg.snapshotDS.UpsertSnapshot(req.Ctx, snapshot); err != nil {
 			return errors.Wrap(err, "unable to update snapshot on report generation success")
@@ -326,7 +325,7 @@ func (rg *complianceReportGeneratorImpl) sendEmail(ctx context.Context, zipData 
 		return
 	}
 
-	if !features.ScanScheduleReportJobs.Enabled() {
+	if snapshot == nil {
 		return
 	}
 

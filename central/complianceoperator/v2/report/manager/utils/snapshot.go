@@ -5,13 +5,12 @@ import (
 
 	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
 )
 
 // UpdateSnapshotOnError updates the state of a given snapshot to FAILURE
 func UpdateSnapshotOnError(ctx context.Context, snapshot *storage.ComplianceOperatorReportSnapshotV2, err error, store snapshotDS.DataStore) error {
-	if !features.ScanScheduleReportJobs.Enabled() {
+	if snapshot == nil {
 		return nil
 	}
 	snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
