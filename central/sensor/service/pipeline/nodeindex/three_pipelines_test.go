@@ -53,20 +53,6 @@ func Test_ThreePipelines_Run(t *testing.T) {
 		RiskScore:     1,
 	}
 
-	// nodeWithScanWithKernelV1 := &storage.Node{
-	// 	Id:            nodeID,
-	// 	Name:          nodeName,
-	// 	ClusterId:     clusterID,
-	// 	ClusterName:   clusterID,
-	// 	KernelVersion: "v1",
-	// 	Notes:         []storage.Node_Note{},
-	// 	RiskScore:     1,
-	// 	Scan:          nodeScanFixtureWithKernel("v1"),
-	// 	SetComponents: &storage.Node_Components{Components: 1},
-	// 	SetCves:       &storage.Node_Cves{Cves: 1},
-	// 	SetTopCvss:    &storage.Node_TopCvss{TopCvss: 1},
-	// }
-	//
 	nodeWithScanWithKernelV2 := &storage.Node{
 		Id:            nodeID,
 		Name:          nodeName,
@@ -149,16 +135,16 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				gomock.InOrder(
 					// node arrives
 					m.clusterStore.EXPECT().GetClusterName(gomock.Any(), gomock.Eq(clusterID)).Times(1).Return(clusterID, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
+					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), gomock.Any()).Times(1).Return(nil),
 					// node index arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).AnyTimes().Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV4).AnyTimes().Return(nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
+					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV4).Times(1).Return(nil),
 					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScanWithKernelV4, true, nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScanWithKernelV4, true, nil),
 				)
 			},
 			wantNodeExists:            true,
@@ -166,7 +152,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			wantKernelVersionNodeScan: "v4",
 		},
 
-		"node index arriving after node inventory should result in inventory being lost": {
+		"node index arriving after node inventory should result in inventory being overwritten": {
 			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
 
 				// V2 node-scan (node inventory) for node1 arrives over the node-inventory pipeline
@@ -183,19 +169,16 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				t.Setenv(env.NodeIndexEnabled.EnvVar(), "true")
 				gomock.InOrder(
 					// node inventory arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).AnyTimes().Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV2).AnyTimes().Return(nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
 
 					// node index arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).AnyTimes().Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV4).AnyTimes().Return(nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
+					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV4).Times(1).Return(nil),
 
 					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScanWithKernelV4, true, nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScanWithKernelV4, true, nil),
 				)
 			},
 			wantNodeExists:            true,
@@ -203,7 +186,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			wantKernelVersionNodeScan: "v4",
 		},
 
-		"node index arriving before node inventory should still result in inventory being lost": {
+		"node index arriving before node inventory should still result in inventory being overwritten": {
 			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
 				// V4 node-scan (node index) for node1 arrives
 				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
@@ -219,19 +202,16 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				t.Setenv(env.NodeIndexEnabled.EnvVar(), "true")
 				gomock.InOrder(
 					// node index arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).AnyTimes().Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV4).AnyTimes().Return(nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
+					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV4).Times(1).Return(nil),
 
 					// node inventory arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nodeWithScore, true, nil),
-					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).AnyTimes().Return(),
-					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
-					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV2).AnyTimes().Return(nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
 
 					// check what got stored in the DB
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScanWithKernelV4, true, nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScanWithKernelV4, true, nil),
 				)
 			},
 			wantNodeExists:            true,
