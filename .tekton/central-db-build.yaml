@@ -2,24 +2,22 @@ apiVersion: tekton.dev/v1
 kind: PipelineRun
 
 metadata:
-  annotations:
+  annotations: &annotations
     build.appstudio.openshift.io/repo: https://github.com/stackrox/stackrox?rev={{revision}}
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
-    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
-      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
-  labels:
+      (event == "push" && target_branch.matches("^(master|release-.*|misha/retest-test)$"))
+  labels: &labels
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: central-db
     pipelines.appstudio.openshift.io/type: build
-  name: central-db-build
+  name: central-db-on-push
   namespace: rh-acs-tenant
 
-spec:
+spec: &spec
 
   params:
   - name: dockerfile
@@ -64,3 +62,20 @@ spec:
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 1h40m
+
+---
+
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+
+metadata:
+  annotations:
+    <<: *annotations
+    build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
+    pipelinesascode.tekton.dev/on-cel-expression: |
+      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
+  labels: *labels
+  name: central-db-on-pull-request
+  namespace: rh-acs-tenant
+
+spec: *spec
