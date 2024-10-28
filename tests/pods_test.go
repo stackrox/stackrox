@@ -95,16 +95,16 @@ func TestPod(testT *testing.T) {
 			log.Infof("Event names: %+v", eventNames)
 			log.Infof("Expected name: %+v", expected)
 			require.ElementsMatch(retryT, eventNames, expected)
+
+			// Verify the pod's timestamp is no later than the timestamp of the earliest event.
+			log.Infof("Pod start comparison: %s vs %s", pod.Started, events[0].Timestamp.Time)
+			require.False(retryT, pod.Started.After(events[0].Timestamp.Time))
+
+			// Verify risk event timeline csv
+			log.Info("Before CSV Check")
+			verifyRiskEventTimelineCSV(retryT, deploymentID, eventNames)
+			log.Info("After CSV Check")
 		}
-
-		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
-		log.Infof("Pod start comparison: %s vs %s", pod.Started, events[0].Timestamp.Time)
-		require.False(retryT, pod.Started.After(events[0].Timestamp.Time))
-
-		// Verify risk event timeline csv
-		log.Info("Before CSV Check")
-		verifyRiskEventTimelineCSV(retryT, deploymentID, eventNames)
-		log.Info("After CSV Check")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
