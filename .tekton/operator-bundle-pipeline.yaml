@@ -319,6 +319,8 @@ spec:
       value: "$(params.scanner-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-scanner-db-image
     params:
@@ -326,6 +328,8 @@ spec:
       value: "$(params.scanner-db-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-scanner-slim-image
     params:
@@ -333,6 +337,8 @@ spec:
       value: "$(params.scanner-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-scanner-db-slim-image
     params:
@@ -340,6 +346,8 @@ spec:
       value: "$(params.scanner-db-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-scanner-v4-image
     params:
@@ -365,6 +373,8 @@ spec:
       value: "$(params.collector-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-collector-full-image
     params:
@@ -372,6 +382,8 @@ spec:
       value: "$(params.collector-full-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-roxctl-image
     params:
