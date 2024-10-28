@@ -189,7 +189,7 @@ func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance
 	cmetrics.ObserveNodeIndexReport(report, nodeName)
 	log.Debugf("Completed Node Index Report with %d packages", len(report.GetContents().GetPackages()))
 	msg := c.createIndexMsg(report, nodeName)
-	cmetrics.ObserveInventoryProtobufMessage(msg, cmetrics.ScannerVersionV4)
+	cmetrics.ObserveReportProtobufMessage(msg, cmetrics.ScannerVersionV4)
 	cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionScan, cmetrics.ScannerVersionV4)
 	return msg
 }
