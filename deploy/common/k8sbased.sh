@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+GITROOT=$(git rev-parse --show-toplevel)
+export GITROOT
+
 function realpath {
 	[[ -n "$1" ]] || return 0
 	python3 -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
@@ -56,7 +59,7 @@ function hotload_binary {
   echo
 
   goarch=$(go env GOARCH)
-  binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux_${goarch}/${local_name}")
+  binary_path=$(realpath "${GITROOT}/bin/linux_${goarch}/${local_name}")
   # set custom source path, e.g. when StackRox source is mounted into kind.
   if [[ -n "$ROX_LOCAL_SOURCE_PATH" ]]; then
       echo "ROX_LOCAL_SOURCE_PATH is set to $ROX_LOCAL_SOURCE_PATH."
@@ -156,7 +159,7 @@ function launch_central {
     # Manifest instllation does not include this CRD, so we need to install it in this script.
     # Helm would install the CRD, but since we add it here, Helm won't touch it.
     # Note that Helm is VERY conservative in that it will NEVER update a CRD, so applying a CRD here in this script is a divergence from Helm behavior!
-    crd_path=$(realpath "$(git rev-parse --show-toplevel)/config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml")
+    crd_path=$(realpath "${GITROOT}/config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml")
     kubectl apply -f "$crd_path"
 
     echo "Generating central config..."
@@ -749,6 +752,16 @@ function launch_sensor {
           --set customize.envVars.LOGLEVEL="${LOGLEVEL}"
         )
       fi
+
+      # Inject all currently set feature flags into all containers.
+      local feature_flags
+      feature_flags=$(sed < "${GITROOT}/pkg/features/list.go" -ne 's/^.*"\(ROX_[^"]*\)".*$/\1/p' | sort | uniq)
+      for feature_flag_name in $feature_flags; do
+        local feature_flag_val="{!feature_flag_name:-}"
+        if [ "$feature_flag_val" != "" ]; then
+          helm_args+=(--set "customize.envVars.${feature_flag_name}=${feature_flag_val}")
+        fi
+      done
 
       # Add a custom values file to Helm
       if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
