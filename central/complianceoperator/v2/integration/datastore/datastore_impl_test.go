@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package datastore
 
 import (
@@ -447,8 +445,8 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterID:                         testconsts.Cluster1,
 			ClusterName:                       "cluster1",
-			Type:                              1,
-			StatusProviderMetadataClusterType: 1,
+			Type:                              pointers.Pointer(storage.ClusterType_KUBERNETES_CLUSTER),
+			StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_AKS),
 		},
 		{
 			ID:                                "",
@@ -456,8 +454,8 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 			Version:                           "2",
 			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterName:                       "cluster2",
-			Type:                              2,
-			StatusProviderMetadataClusterType: 2,
+			Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT_CLUSTER),
+			StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_ARO),
 			OperatorInstalled:                 pointers.Bool(true),
 		},
 		{
@@ -466,8 +464,8 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 			Version:                           "2",
 			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterName:                       "cluster3",
-			Type:                              5,
-			StatusProviderMetadataClusterType: 5,
+			Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT4_CLUSTER),
+			StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_OCP),
 			OperatorInstalled:                 pointers.Bool(true),
 		},
 	}
