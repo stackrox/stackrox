@@ -687,7 +687,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
 
 func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 	s.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
-	if !features.ComplianceReporting.Enabled() {
+	s.T().Setenv(features.ScanScheduleReportJobs.EnvVar(), "true")
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		s.T().Skipf("compliance reporting feature flag is disabled")
 		s.T().SkipNow()
 	}
@@ -769,7 +770,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 
 func (s *ComplianceScanConfigServiceTestSuite) TestGetMyReportHistory() {
 	s.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
-	if !features.ComplianceReporting.Enabled() {
+	s.T().Setenv(features.ScanScheduleReportJobs.EnvVar(), "true")
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		s.T().Skipf("compliance reporting feature flag is disabled")
 		s.T().SkipNow()
 	}
@@ -883,7 +885,8 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetMyReportHistory() {
 
 func (s *ComplianceScanConfigServiceTestSuite) TestDeleteReport() {
 	s.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
-	if !features.ComplianceReporting.Enabled() {
+	s.T().Setenv(features.ScanScheduleReportJobs.EnvVar(), "true")
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		s.T().Skipf("compliance reporting feature flag is disabled")
 		s.T().SkipNow()
 	}

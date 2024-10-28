@@ -318,8 +318,8 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 }
 
 func (s *serviceImpl) GetReportHistory(ctx context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
-	if !features.ComplianceReporting.Enabled() {
-		return nil, errors.Wrapf(errox.NotImplemented, "%s not enabled", features.ComplianceReporting.EnvVar())
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
+		return nil, errors.Wrapf(errox.NotImplemented, "%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
 	}
 	if request == nil || request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
@@ -351,8 +351,8 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, request *v2.Complian
 }
 
 func (s *serviceImpl) GetMyReportHistory(ctx context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
-	if !features.ComplianceReporting.Enabled() {
-		return nil, errors.Wrapf(errox.NotImplemented, "%s not enabled", features.ComplianceReporting.EnvVar())
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
+		return nil, errors.Wrapf(errox.NotImplemented, "%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
 	}
 
 	if request == nil || request.GetId() == "" {
@@ -394,6 +394,10 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, request *v2.Compli
 }
 
 func (s *serviceImpl) DeleteReport(ctx context.Context, req *v2.ResourceByID) (*v2.Empty, error) {
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
+		return nil, errors.Wrapf(errox.NotImplemented, "%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
+	}
+
 	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Report Snapshot ID is required for deletion")
 	}

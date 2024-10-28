@@ -238,6 +238,12 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 	defer m.concurrencySem.Release(1)
 
 	log.Infof("Executing report %q at %v", request.scanConfig.GetId(), time.Now().Format(time.RFC822))
+
+	if !features.ScanScheduleReportJobs.Enabled() {
+		m.generateReportNoLock(request)
+		return true, nil
+	}
+
 	var w watcher.ScanConfigWatcher
 	concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 		w = m.watchingScanConfigs[request.scanConfig.GetId()]
@@ -285,7 +291,7 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 
 // HandleScan starts a new ScanWatcher if needed and pushes the scan to it
 func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.ComplianceOperatorScanV2) error {
-	if !features.ComplianceReporting.Enabled() {
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return nil
 	}
 	id, err := watcher.GetWatcherIDFromScan(m.automaticReportingCtx, scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
@@ -317,7 +323,7 @@ func (m *managerImpl) getWatcher(sensorCtx context.Context, id string) watcher.S
 
 // HandleResult starts a new ScanWatcher if needed and pushes the checkResult to it
 func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.ComplianceOperatorCheckResultV2) error {
-	if !features.ComplianceReporting.Enabled() {
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return nil
 	}
 	id, err := watcher.GetWatcherIDFromCheckResult(m.automaticReportingCtx, result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
@@ -341,7 +347,7 @@ func (m *managerImpl) HandleResult(sensorCtx context.Context, result *storage.Co
 
 // handleReadyScan pulls scans that are ready to be reported
 func (m *managerImpl) handleReadyScan() {
-	if !features.ComplianceReporting.Enabled() {
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return
 	}
 	for {
@@ -450,7 +456,7 @@ func (m *managerImpl) createAutomaticSnapshotAndSubscribe(ctx context.Context, s
 
 // handleReadyScanConfig pulls scan configs that are ready to be reported
 func (m *managerImpl) handleReadyScanConfig() {
-	if !features.ComplianceReporting.Enabled() {
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return
 	}
 	for {

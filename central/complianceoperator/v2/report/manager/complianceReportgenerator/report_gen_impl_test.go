@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/sac"
@@ -36,6 +37,7 @@ type ComplainceReportingTestSuite struct {
 }
 
 func (s *ComplainceReportingTestSuite) SetupSuite() {
+	s.T().Setenv(features.ScanScheduleReportJobs.EnvVar(), "true")
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	s.mockCtrl = gomock.NewController(s.T())
 	s.snapshotDS = snapshotMocks.NewMockDataStore(s.mockCtrl)

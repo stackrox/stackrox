@@ -41,6 +41,7 @@ type ManagerTestSuite struct {
 
 func (m *ManagerTestSuite) SetupSuite() {
 	m.T().Setenv(features.ComplianceReporting.EnvVar(), "true")
+	m.T().Setenv(features.ScanScheduleReportJobs.EnvVar(), "true")
 	m.ctx = sac.WithAllAccess(context.Background())
 }
 

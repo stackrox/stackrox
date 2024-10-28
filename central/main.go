@@ -887,7 +887,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		})
 	}
 
-	if features.ComplianceEnhancements.Enabled() && features.ComplianceReporting.Enabled() {
+	if features.ComplianceEnhancements.Enabled() && features.ComplianceReporting.Enabled() && features.ScanScheduleReportJobs.Enabled() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
 			Route:         "/v2/compliance/scan/configurations/reports/download",
 			Authorizer:    user.With(permissions.Modify(resources.Compliance)),
