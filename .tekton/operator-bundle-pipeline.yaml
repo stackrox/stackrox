@@ -302,7 +302,7 @@ spec:
     taskRef:
       name: wait-for-image
     # This timeout should be kept in sync with the maximum runtime of the PipelineRun for building the operator image.
-    timeout: 1h
+    timeout: 1h10m
 
   - name: wait-for-main-image
     params:
@@ -311,7 +311,7 @@ spec:
     taskRef:
       name: wait-for-image
     # This timeout should be kept in sync with the maximum runtime of the PipelineRun for building the main image.
-    timeout: 2h20m
+    timeout: 2h40m
 
   - name: wait-for-scanner-image
     params:
@@ -401,7 +401,7 @@ spec:
     taskRef:
       name: wait-for-image
     # This timeout should be kept in sync with the maximum runtime of the PipelineRun for building the central DB image.
-    timeout: 1h30m
+    timeout: 1h40m
 
   - name: build-container
     params:
