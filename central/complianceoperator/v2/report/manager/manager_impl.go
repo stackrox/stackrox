@@ -36,10 +36,6 @@ var (
 	maxRequests = 100
 )
 
-const (
-	defaultMaxErrors = 4
-)
-
 type reportRequest struct {
 	scanConfig         *storage.ComplianceOperatorScanConfigurationV2
 	ctx                context.Context
@@ -530,7 +526,7 @@ func (m *managerImpl) validateScanConfigResults(result *watcher.ScanConfigWatche
 	for _, scanResult := range result.ScanResults {
 		if scanResult.Error != nil {
 			// To not overwhelm the UI we only report a max number of errors
-			if len(errList.Errors()) > defaultMaxErrors {
+			if len(errList.Errors()) > env.ComplianceMaxNumberOfErrorsInReport.IntegerSetting() {
 				break
 			}
 			err := errors.Errorf("The report for the scan %s in cluster %s could not be generated.", scanResult.Scan.GetScanName(), scanResult.Scan.GetClusterId())
