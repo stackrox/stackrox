@@ -69,9 +69,9 @@ spec:
   #
   # 2. the overall timeouts for the respective image-building PipelineRuns.
   #
-  # For example, in main-pipeline.yaml the maximum timeout for building main images is set to 2h.
-  # Hence we set the tasks timeout here to 2h50m, because we need to give extra time for (i) completion
-  # of the whole PipelineRun for building main images and for (ii) assembling of the operator-bundle.
+  # For example, in main-build.yaml the maximum timeout for building main images is set to 2h40m.
+  # Hence we set the tasks timeout here to 3h, because we need to give extra time for assembling
+  # the operator-bundle.
   timeouts:
     tasks: 2h50m
     finally: 10m
