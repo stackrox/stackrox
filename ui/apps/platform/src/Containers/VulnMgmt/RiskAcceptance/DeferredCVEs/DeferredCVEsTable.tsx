@@ -97,12 +97,13 @@ function DeferredCVEsTable({
                 selectedIds.includes(row.id) &&
                 (canApproveRequests ||
                     (canCreateRequests &&
-                        row.vulnerabilityRequest.requestor.id === currentUser.userId))
+                        row.vulnerabilityRequest?.requestor.id === currentUser.userId))
             );
         })
         .map((row) => {
-            return row.vulnerabilityRequest.id;
-        });
+            return row.vulnerabilityRequest?.id;
+        })
+        .filter((id): id is string => id !== undefined);
 
     return (
         <>

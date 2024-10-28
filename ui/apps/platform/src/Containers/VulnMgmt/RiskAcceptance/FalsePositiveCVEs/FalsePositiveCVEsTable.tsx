@@ -96,12 +96,13 @@ function FalsePositiveCVEsTable({
                 selectedIds.includes(row.id) &&
                 (canApproveRequests ||
                     (canCreateRequests &&
-                        row.vulnerabilityRequest.requestor.id === currentUser.userId))
+                        row.vulnerabilityRequest?.requestor.id === currentUser.userId))
             );
         })
         .map((row) => {
-            return row.vulnerabilityRequest.id;
-        });
+            return row.vulnerabilityRequest?.id;
+        })
+        .filter((id): id is string => id !== undefined);
 
     return (
         <>
@@ -202,7 +203,7 @@ function FalsePositiveCVEsTable({
                             const canReobserveCVE =
                                 canApproveRequests ||
                                 (canCreateRequests &&
-                                    row.vulnerabilityRequest.requestor.id === currentUser.userId);
+                                    row.vulnerabilityRequest?.requestor.id === currentUser.userId);
 
                             return (
                                 <Tr key={row.cve}>
@@ -221,9 +222,13 @@ function FalsePositiveCVEsTable({
                                         <VulnerabilitySeverityIconText severity={row.severity} />
                                     </Td>
                                     <Td dataLabel="Scope">
-                                        <VulnerabilityRequestScope
-                                            scope={row.vulnerabilityRequest.scope}
-                                        />
+                                        {row.vulnerabilityRequest ? (
+                                            <VulnerabilityRequestScope
+                                                scope={row.vulnerabilityRequest.scope}
+                                            />
+                                        ) : (
+                                            'N/A'
+                                        )}
                                     </Td>
                                     <Td dataLabel="Affected components">
                                         <Button
@@ -237,15 +242,21 @@ function FalsePositiveCVEsTable({
                                         </Button>
                                     </Td>
                                     <Td dataLabel="Comments">
-                                        <RequestCommentsButton
-                                            comments={row.vulnerabilityRequest.comments}
-                                            cve={row.vulnerabilityRequest.cves.cves[0]}
-                                        />
+                                        {row.vulnerabilityRequest ? (
+                                            <RequestCommentsButton
+                                                comments={row.vulnerabilityRequest.comments}
+                                                cve={row.vulnerabilityRequest.cves.cves[0]}
+                                            />
+                                        ) : (
+                                            'N/A'
+                                        )}
                                     </Td>
                                     <Td dataLabel="Approver">
-                                        {row.vulnerabilityRequest.approvers
-                                            .map((user) => user.name)
-                                            .join(',')}
+                                        {row.vulnerabilityRequest
+                                            ? row.vulnerabilityRequest.approvers
+                                                  .map((user) => user.name)
+                                                  .join(',')
+                                            : 'N/A'}
                                     </Td>
                                     <Td className="pf-u-text-align-right">
                                         <FalsePositiveCVEActionsColumn

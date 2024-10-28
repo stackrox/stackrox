@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
 import { ActionsColumn } from '@patternfly/react-table';
 import { DeferredCVEsToBeAssessed } from './types';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
@@ -13,7 +13,7 @@ function DeferredCVEActionsColumn({
     row,
     setVulnsToBeAssessed,
     canReobserveCVE,
-}: DeferredCVEActionsColumnProps): ReactElement {
+}: DeferredCVEActionsColumnProps) {
     const items = [
         {
             title: 'Reobserve CVE',
@@ -22,13 +22,13 @@ function DeferredCVEActionsColumn({
                 setVulnsToBeAssessed({
                     type: 'DEFERRAL',
                     action: 'UNDO',
-                    requestIDs: [row.vulnerabilityRequest.id],
+                    requestIDs: [row.vulnerabilityRequest?.id ?? ''],
                 });
             },
             isDisabled: !canReobserveCVE,
         },
     ];
-    return <ActionsColumn items={items} />;
+    return row.vulnerabilityRequest ? <ActionsColumn items={items} /> : null;
 }
 
 export default DeferredCVEActionsColumn;

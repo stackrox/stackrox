@@ -30,7 +30,7 @@ export type Vulnerability = {
     scoreVersion: string;
     discoveredAtImage: string;
     components: EmbeddedImageScanComponent[];
-    vulnerabilityRequest: VulnerabilityRequest;
+    vulnerabilityRequest?: VulnerabilityRequest;
 };
 
 // This type is specific to the way we query using GraphQL

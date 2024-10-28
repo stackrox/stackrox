@@ -1,4 +1,4 @@
-import React, { ReactElement } from 'react';
+import React from 'react';
 import { ActionsColumn } from '@patternfly/react-table';
 import { FalsePositiveCVEsToBeAssessed } from './types';
 import { Vulnerability } from '../imageVulnerabilities.graphql';
@@ -13,7 +13,7 @@ function FalsePositiveCVEActionsColumn({
     row,
     setVulnsToBeAssessed,
     canReobserveCVE,
-}: FalsePositiveCVEActionsColumnProps): ReactElement {
+}: FalsePositiveCVEActionsColumnProps) {
     const items = [
         {
             title: 'Reobserve CVE',
@@ -22,13 +22,13 @@ function FalsePositiveCVEActionsColumn({
                 setVulnsToBeAssessed({
                     type: 'FALSE_POSITIVE',
                     action: 'UNDO',
-                    requestIDs: [row.vulnerabilityRequest.id],
+                    requestIDs: [row.vulnerabilityRequest?.id ?? ''],
                 });
             },
             isDisabled: !canReobserveCVE,
         },
     ];
-    return <ActionsColumn items={items} />;
+    return row.vulnerabilityRequest ? <ActionsColumn items={items} /> : null;
 }
 
 export default FalsePositiveCVEActionsColumn;
