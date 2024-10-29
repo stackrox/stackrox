@@ -5,7 +5,6 @@ import { Table, Thead, Tbody, Tr, Th, Td, IActions } from '@patternfly/react-tab
 import {
     Bullseye,
     Button,
-    ButtonVariant,
     Divider,
     Flex,
     FlexItem,
@@ -280,7 +279,7 @@ function ObservedCVEsTable({
                                     <Td dataLabel="CVSS score">{Number(row.cvss).toFixed(1)}</Td>
                                     <Td dataLabel="Affected components">
                                         <Button
-                                            variant={ButtonVariant.link}
+                                            variant="link"
                                             isInline
                                             onClick={() => {
                                                 showComponentDetails(row.components, row.cve);

@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     Button,
-    ButtonVariant,
     Divider,
     Flex,
     FlexItem,
@@ -119,7 +118,7 @@ function IntegrationsTable({
                             {permissions[source].write && !isReadOnly && (
                                 <FlexItem>
                                     <Button
-                                        variant={ButtonVariant.primary}
+                                        variant="primary"
                                         component={LinkShim}
                                         href={getPathToCreate(source, type)}
                                         data-testid="add-integration"
