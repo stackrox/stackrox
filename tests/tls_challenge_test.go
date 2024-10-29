@@ -94,8 +94,8 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 
 	logMatchers := []logMatcher{
 		containsLineMatching(regexp.MustCompile("Info: Add central CA cert with CommonName: 'Custom Root'")),
-		containsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
 		containsLineMatching(regexp.MustCompile("Info: Connecting to Central server " + proxyEndpoint)),
+		containsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
 		containsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
 	}
 
