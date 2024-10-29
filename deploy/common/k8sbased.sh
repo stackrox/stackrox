@@ -750,10 +750,6 @@ function launch_sensor {
         )
       fi
 
-      if [[ -n "${ROX_CLUSTER_REGISTRATION_SECRETS:-}" ]]; then
-        helm_args+=(--set customize.central.envVars.ROX_CLUSTER_REGISTRATION_SECRETS="${ROX_CLUSTER_REGISTRATION_SECRETS}")
-      fi
-
       # Add a custom values file to Helm
       if [[ -n "$ROX_SENSOR_EXTRA_HELM_VALUES_FILE" ]]; then
         helm_args+=(
