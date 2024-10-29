@@ -214,7 +214,7 @@ function IntegrationsTable({
                                                     column.Header === 'Configuration')
                                             ) {
                                                 return (
-                                                    <Td key="name">
+                                                    <Td key="name" dataLabel={column.Header}>
                                                         <Link
                                                             to={getPathToViewDetails(
                                                                 source,
@@ -231,7 +231,7 @@ function IntegrationsTable({
                                                 );
                                             }
                                             return (
-                                                <Td key={column.Header}>
+                                                <Td key={column.Header} dataLabel={column.Header}>
                                                     <TableCellValue
                                                         row={integration}
                                                         column={column}

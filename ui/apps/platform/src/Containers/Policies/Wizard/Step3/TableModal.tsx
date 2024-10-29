@@ -135,7 +135,10 @@ function TableModal({
                                                     {columns.map((column) => {
                                                         if (column.Header === 'Name') {
                                                             return (
-                                                                <Td key="name">
+                                                                <Td
+                                                                    key="name"
+                                                                    dataLabel={column.Header}
+                                                                >
                                                                     <Link to={link}>
                                                                         <TableCellValue
                                                                             row={row}
@@ -146,7 +149,10 @@ function TableModal({
                                                             );
                                                         }
                                                         return (
-                                                            <Td key={column.Header}>
+                                                            <Td
+                                                                key={column.Header}
+                                                                dataLabel={column.Header}
+                                                            >
                                                                 <TableCellValue
                                                                     row={row}
                                                                     column={column}
