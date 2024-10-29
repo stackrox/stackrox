@@ -4,6 +4,7 @@ package pruning
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"testing"
 	"time"
@@ -1749,6 +1750,25 @@ func (s *PruningTestSuite) TestRemoveOrphanedNetworkFlows() {
 			gci.removeOrphanedNetworkFlows(set.NewFrozenStringSet(fixtureconsts.Cluster1))
 		})
 	}
+}
+
+func (s *PruningTestSuite) TestRemoveOrphanedNetworkEntities() {
+	ctrl := gomock.NewController(s.T())
+	networkEntities := netEntityMocks.NewMockEntityDataStore(ctrl)
+
+	gci := &garbageCollectorImpl{
+		networkentities: networkEntities,
+	}
+
+	networkEntities.EXPECT().RemoveOrphanedEntities(pruningCtx).Return(int64(42), nil)
+
+	gci.removeOrphanedNetworkEntities()
+
+	networkEntities.EXPECT().RemoveOrphanedEntities(pruningCtx).Return(int64(0), errors.New("fake DB error"))
+
+	gci.removeOrphanedNetworkEntities()
+
+	ctrl.Finish()
 }
 
 func (s *PruningTestSuite) TestRemoveOrphanedImageRisks() {
