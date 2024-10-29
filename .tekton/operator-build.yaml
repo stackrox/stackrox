@@ -71,6 +71,7 @@ spec:
         requests:
           cpu: 2
 
+  # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
     # The tasks regularly takes 1h to finish.
     tasks: 1h

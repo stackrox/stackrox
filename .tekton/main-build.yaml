@@ -58,6 +58,7 @@ spec:
     secret:
       secretName: '{{ git_auth_secret }}'
 
+  # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
     # Slow multiarch builds may take around 2h to finish.
     tasks: 2h30m
