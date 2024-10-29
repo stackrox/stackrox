@@ -496,12 +496,12 @@ function VulnReportsPage() {
                                                             isSelected: selected[rowIndex],
                                                         }}
                                                     />
-                                                    <Td>
+                                                    <Td dataLabel="Report">
                                                         <Link to={vulnReportURL}>
                                                             {report.name}
                                                         </Link>
                                                     </Td>
-                                                    <Td>
+                                                    <Td dataLabel="Collection">
                                                         {isCollectionsRouteEnabled ? (
                                                             <Button
                                                                 variant="link"
@@ -518,8 +518,10 @@ function VulnReportsPage() {
                                                             collectionName
                                                         )}
                                                     </Td>
-                                                    <Td>{report.description || '-'}</Td>
-                                                    <Td>
+                                                    <Td dataLabel="Description">
+                                                        {report.description || '-'}
+                                                    </Td>
+                                                    <Td dataLabel="My last job status">
                                                         <MyLastJobStatus
                                                             snapshot={snapshot}
                                                             isLoadingSnapshots={

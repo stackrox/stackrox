@@ -109,7 +109,7 @@ function DeploymentComponentVulnerabilitiesTable({
                 return (
                     <Tbody key={`${image.id}:${name}:${version}`} style={style}>
                         <Tr>
-                            <Td>
+                            <Td dataLabel="Image">
                                 {image.name ? (
                                     <PendingExceptionLabelLayout
                                         hasPendingException={hasPendingException}
@@ -122,19 +122,19 @@ function DeploymentComponentVulnerabilitiesTable({
                                     'Image name not available'
                                 )}
                             </Td>
-                            <Td modifier="nowrap">
+                            <Td dataLabel="CVE severity" modifier="nowrap">
                                 <VulnerabilitySeverityIconText severity={severity} />
                             </Td>
-                            <Td modifier="nowrap">
+                            <Td dataLabel="CVSS" modifier="nowrap">
                                 <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
-                            <Td>{name}</Td>
-                            <Td>{version}</Td>
-                            <Td modifier="nowrap">
+                            <Td dataLabel="Component">{name}</Td>
+                            <Td dataLabel="Version">{version}</Td>
+                            <Td dataLabel="CVE fixed in" modifier="nowrap">
                                 <FixedByVersion fixedByVersion={fixedByVersion} />
                             </Td>
-                            <Td>{source}</Td>
-                            <Td>
+                            <Td dataLabel="Source">{source}</Td>
+                            <Td dataLabel="Location">
                                 <ComponentLocation location={location} source={source} />
                             </Td>
                         </Tr>
