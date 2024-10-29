@@ -305,7 +305,11 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationsV
 	for _, tc := range testCases {
 		clusterIntegrations, err := s.dataStore.GetComplianceIntegrationsView(s.testContexts[tc.scopeKey], tc.query)
 		s.Require().NoError(err)
-		assert.ElementsMatch(s.T(), tc.expectedResult, clusterIntegrations)
+		// style is killing me because the struct references an enum in a proto so it wants to use protoassert but
+		// since the struct is not a proto, the protoassert doesn't work.
+		for idx, integration := range clusterIntegrations {
+			assert.Equal(s.T(), tc.expectedResult[idx], integration)
+		}
 	}
 }
 
