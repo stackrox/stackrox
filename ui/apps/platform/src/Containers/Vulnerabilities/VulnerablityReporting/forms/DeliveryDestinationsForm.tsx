@@ -1,14 +1,5 @@
 import React, { ReactElement } from 'react';
-import {
-    Alert,
-    AlertVariant,
-    Divider,
-    Flex,
-    FlexItem,
-    Form,
-    PageSection,
-    Title,
-} from '@patternfly/react-core';
+import { Alert, Divider, Flex, FlexItem, Form, PageSection, Title } from '@patternfly/react-core';
 import { FormikProps } from 'formik';
 
 import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal';
@@ -93,7 +84,7 @@ function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormPar
             {cvesDiscoveredSinceError && (
                 <Alert
                     isInline
-                    variant={AlertVariant.danger}
+                    variant="danger"
                     title="Delivery destination & schedule are both required to be configured since the 'Last scheduled report that was successfully sent' option has been selected in Step 1."
                     component="p"
                 />

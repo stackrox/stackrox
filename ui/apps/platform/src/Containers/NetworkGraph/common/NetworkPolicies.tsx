@@ -2,7 +2,6 @@ import React, { useEffect, useMemo } from 'react';
 import {
     Alert,
     AlertGroup,
-    AlertVariant,
     Bullseye,
     Button,
     Divider,
@@ -95,7 +94,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
         return (
             <Alert
                 isInline
-                variant={AlertVariant.danger}
+                variant="danger"
                 title={getAxiosErrorMessage(error)}
                 component="p"
                 className="pf-v5-u-mb-lg"
@@ -111,7 +110,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                 {networkPolicyErrors.map((networkPolicyError) => (
                     <Alert
                         isInline
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         title="There was an error loading network policy data"
                         component="p"
                     >

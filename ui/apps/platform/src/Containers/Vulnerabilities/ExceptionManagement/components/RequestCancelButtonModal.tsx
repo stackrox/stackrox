@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, AlertVariant, Button, Flex, Modal, Text } from '@patternfly/react-core';
+import { Alert, Button, Flex, Modal, Text } from '@patternfly/react-core';
 
 import {
     VulnerabilityException,
@@ -63,12 +63,7 @@ function RequestCancelButtonModal({ exception, onSuccess }: RequestCancelButtonM
             >
                 <Flex className="pf-v5-u-py-md">
                     {errorMessage && (
-                        <Alert
-                            isInline
-                            variant={AlertVariant.danger}
-                            title={errorMessage}
-                            component="p"
-                        />
+                        <Alert isInline variant="danger" title={errorMessage} component="p" />
                     )}
                     <Alert
                         variant="warning"
