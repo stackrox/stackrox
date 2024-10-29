@@ -23,7 +23,7 @@ spec:
 
   params:
   - name: dockerfile
-    value: image/postgres/konflux.Dockerfile
+    value: image/postgres/konflux1.Dockerfile
   - name: git-url
     value: '{{source_url}}'
   - name: image-expires-after
