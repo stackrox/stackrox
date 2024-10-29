@@ -58,8 +58,7 @@ spec:
     secret:
       secretName: '{{ git_auth_secret }}'
 
-  # See comment in operator-bundle-build.yaml for spec.timeouts; adjustments of this timeout
-  # here might might require tweaking the timeout for the operator bundle as well.
+  # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
     # Slow multiarch builds may take around 2h to finish.
     tasks: 2h30m
