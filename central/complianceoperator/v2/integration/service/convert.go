@@ -7,7 +7,12 @@ import (
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 /*
@@ -28,12 +33,12 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *complianceD
 	}
 
 	opStatus := v2.COStatus_UNHEALTHY
-	if *integration.OperatorStatus == storage.COStatus_HEALTHY {
+	if integration.OperatorStatus != nil && *integration.OperatorStatus == storage.COStatus_HEALTHY {
 		opStatus = v2.COStatus_HEALTHY
 	}
 
 	opInstalled := false
-	if *integration.OperatorInstalled {
+	if integration.OperatorInstalled != nil && *integration.OperatorInstalled {
 		opInstalled = true
 	}
 
@@ -46,8 +51,8 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *complianceD
 		StatusErrors:        integrationDetail.GetStatusErrors(),
 		OperatorInstalled:   opInstalled,
 		Status:              opStatus,
-		ClusterPlatformType: convertPlatformType(*integration.Type),
-		ClusterProviderType: convertProviderType(*integration.StatusProviderMetadataClusterType),
+		ClusterPlatformType: convertPlatformType(integration.Type),
+		ClusterProviderType: convertProviderType(integration.StatusProviderMetadataClusterType),
 	}, true, nil
 }
 
@@ -74,8 +79,13 @@ func convertStorageProtos(ctx context.Context, integrations []*complianceDS.Inte
 	return apiIntegrations, nil
 }
 
-func convertPlatformType(platformType storage.ClusterType) v2.ClusterPlatformType {
-	switch platformType {
+func convertPlatformType(platformType *storage.ClusterType) v2.ClusterPlatformType {
+	if platformType == nil {
+		log.Error(errors.Errorf("unhandled cluster platform type encountered %s", platformType))
+		return v2.ClusterPlatformType_GENERIC_CLUSTER
+	}
+
+	switch *platformType {
 	case storage.ClusterType_GENERIC_CLUSTER:
 		return v2.ClusterPlatformType_GENERIC_CLUSTER
 	case storage.ClusterType_KUBERNETES_CLUSTER:
@@ -90,8 +100,13 @@ func convertPlatformType(platformType storage.ClusterType) v2.ClusterPlatformTyp
 	}
 }
 
-func convertProviderType(providerType storage.ClusterMetadata_Type) v2.ClusterProviderType {
-	switch providerType {
+func convertProviderType(providerType *storage.ClusterMetadata_Type) v2.ClusterProviderType {
+	if providerType == nil {
+		log.Error(errors.Errorf("unhandled cluster platform type encountered %s", providerType))
+		return v2.ClusterProviderType_UNSPECIFIED
+	}
+
+	switch *providerType {
 	case storage.ClusterMetadata_UNSPECIFIED:
 		return v2.ClusterProviderType_UNSPECIFIED
 	case storage.ClusterMetadata_AKS:

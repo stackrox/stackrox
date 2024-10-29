@@ -87,6 +87,40 @@ func TestConvertStorageIntegrationToV2(t *testing.T) {
 			expected:     nil,
 			clusterError: true,
 		},
+		{
+			testname: "Integration conversion with nil pointers",
+			integration: &storage.ComplianceIntegration{
+				Id:                  testID,
+				Version:             "22",
+				ClusterId:           fixtureconsts.Cluster1,
+				ComplianceNamespace: fixtureconsts.Namespace1,
+				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
+				OperatorInstalled:   true,
+			},
+			view: &datastore.IntegrationDetails{
+				ID:                                testID,
+				Version:                           "22",
+				OperatorInstalled:                 nil,
+				OperatorStatus:                    nil,
+				ClusterID:                         fixtureconsts.Cluster1,
+				ClusterName:                       mockClusterName,
+				Type:                              nil,
+				StatusProviderMetadataClusterType: nil,
+			},
+			expected: &apiV2.ComplianceIntegration{
+				Id:                  testID,
+				Version:             "22",
+				ClusterId:           fixtureconsts.Cluster1,
+				ClusterName:         mockClusterName,
+				Namespace:           fixtureconsts.Namespace1,
+				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
+				OperatorInstalled:   false,
+				Status:              apiV2.COStatus_UNHEALTHY,
+				ClusterPlatformType: apiV2.ClusterPlatformType_GENERIC_CLUSTER,
+				ClusterProviderType: apiV2.ClusterProviderType_UNSPECIFIED,
+			},
+			clusterError: false,
+		},
 	}
 
 	for _, c := range cases {
