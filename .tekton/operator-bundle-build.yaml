@@ -73,6 +73,6 @@ spec:
   #    E.g. if `wait-for-main-image` is the longest and has timeout `2h40m`, operator-bundle's `spec.timeouts.tasks`
   #    becomes `3h10m` and `spec.timeouts.pipeline` should be `3h20m`.
   timeouts:
-    tasks: 2h50m
+    tasks: 3h10m
     finally: 10m
-    pipeline: 3h
+    pipeline: 3h20m
