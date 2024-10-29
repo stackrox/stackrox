@@ -63,7 +63,9 @@ type Store struct {
 	historicalEndpoints map[string]map[net.NumericEndpoint]*entityStatus
 	// historicalIPs is mimicking ipMap: IP Address -> deploymentID -> historyStatus
 	historicalIPs map[net.IPAddress]map[string]*entityStatus
-	historyMutex  sync.RWMutex
+	// historicalContainerIDs is mimicking containerIDMap: container IDs -> container metadata -> historyStatus
+	historicalContainerIDs map[string]map[ContainerMetadata]*entityStatus
+	historyMutex           sync.RWMutex
 }
 
 // NewStore creates and returns a new store instance.
@@ -91,6 +93,7 @@ func (e *Store) initMaps() {
 	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
 	e.historicalEndpoints = make(map[string]map[net.NumericEndpoint]*entityStatus)
 	e.historicalIPs = make(map[net.IPAddress]map[string]*entityStatus)
+	e.historicalContainerIDs = make(map[string]map[ContainerMetadata]*entityStatus)
 }
 
 // EndpointTargetInfo is the target port for an endpoint (container port, service port etc.).
@@ -132,6 +135,7 @@ func (ed *EntityData) AddContainerID(containerID string, container ContainerMeta
 
 func (e *Store) updateMetrics() {
 	metrics.UpdateNumberContainersInEntityStored(len(e.containerIDMap))
+	metrics.UpdateNumberHistoricalContainersInEntityStored(len(e.historicalContainerIDs))
 }
 
 // Cleanup deletes all entries from store
@@ -169,6 +173,13 @@ func (e *Store) RecordTick() {
 			status.recordTick()
 			// Remove all historical entries that expired in this tick.
 			e.removeHistoricalExpiredIPs(deploymentID, ip)
+		}
+	}
+	for id, metaMap := range e.historicalContainerIDs {
+		for metadata, status := range metaMap {
+			status.recordTick()
+			// Remove all historical entries that expired in this tick.
+			e.removeHistoricalExpiredContainerIDs(id, metadata)
 		}
 	}
 }
@@ -218,6 +229,29 @@ func (e *Store) markEndpointHistorical(deploymentID string, ep net.NumericEndpoi
 	e.historicalEndpoints[deploymentID][ep] = es
 }
 
+func (e *Store) markContainerIDHistorical(contID string, meta ContainerMetadata) {
+	if _, ok := e.historicalContainerIDs[contID]; !ok {
+		e.historicalContainerIDs[contID] = make(map[ContainerMetadata]*entityStatus)
+	}
+	es := e.historicalContainerIDs[contID][meta]
+	if es == nil {
+		es = newEntityStatus(e.entitiesMemorySize)
+	}
+	es.markHistorical(e.entitiesMemorySize)
+	e.historicalContainerIDs[contID][meta] = es
+}
+
+// unmarkContainerIDHistorical marks previously marked historical containerID as no longer historical
+func (e *Store) unmarkContainerIDHistorical(contID string, meta ContainerMetadata) {
+	if _, ok := e.historicalContainerIDs[contID]; !ok {
+		return
+	}
+	delete(e.historicalContainerIDs[contID], meta)
+	if len(e.historicalContainerIDs[contID]) == 0 {
+		delete(e.historicalContainerIDs, contID)
+	}
+}
+
 func (e *Store) removeDeploymentIP(deploymentID string, ip net.IPAddress) {
 	delete(e.ipMap[ip], deploymentID)
 	if len(e.ipMap[ip]) == 0 {
@@ -236,6 +270,18 @@ func (e *Store) removeHistoricalExpiredIPs(deploymentID string, ip net.IPAddress
 		delete(e.historicalIPs[ip], deploymentID)
 		if len(e.historicalIPs[ip]) == 0 {
 			delete(e.historicalIPs, ip)
+		}
+	}
+}
+
+func (e *Store) removeHistoricalExpiredContainerIDs(contID string, meta ContainerMetadata) {
+	if status, ok := e.historicalContainerIDs[contID][meta]; ok && status.IsExpired() {
+		// remove in the non-historical storage
+		delete(e.containerIDMap, contID)
+
+		delete(e.historicalContainerIDs[contID], meta)
+		if len(e.historicalContainerIDs[contID]) == 0 {
+			delete(e.historicalContainerIDs, contID)
 		}
 	}
 }
@@ -290,8 +336,16 @@ func (e *Store) purgeNoLock(deploymentID string) {
 			}
 		}
 	}
+
 	for containerID := range e.reverseContainerIDMap[deploymentID] {
-		delete(e.containerIDMap, containerID)
+		if meta, found := e.containerIDMap[containerID]; found {
+			e.markContainerIDHistorical(containerID, meta)
+			// This must be called here in case memorySize is set to 0
+			e.removeHistoricalExpiredContainerIDs(containerID, meta)
+		}
+		if len(e.containerIDMap) == 0 {
+			delete(e.containerIDMap, containerID)
+		}
 	}
 
 	delete(e.reverseIPMap, deploymentID)
@@ -374,6 +428,8 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		}
 		reverseContainerIDs[containerID] = struct{}{}
 		e.containerIDMap[containerID] = metadata
+		// We must unmark if the container was previously marked as historical, otherwise it will expire
+		e.unmarkContainerIDHistorical(containerID, metadata)
 		mdsForCallback = append(mdsForCallback, metadata)
 	}
 
