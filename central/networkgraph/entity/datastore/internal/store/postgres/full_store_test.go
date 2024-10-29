@@ -52,8 +52,8 @@ func (s *EntityFullStoreTestSuite) TeardownSuite() {
 	s.db.Teardown(s.T())
 }
 
-// TestStore tests FullEntityStore pruning behavior
-func (s *EntityFullStoreTestSuite) TestStore() {
+// TestPruning verifies the FullEntityStore pruning behavior
+func (s *EntityFullStoreTestSuite) TestPruning() {
 	t1 := time.Now().UTC()
 	extEntity1 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{1, 2, 3, 4, 32})).ToProto()
 	extEntity2 := networkgraph.DiscoveredExternalEntity(net.IPNetworkFromCIDRBytes([]byte{2, 3, 4, 5, 32})).ToProto()
@@ -93,9 +93,14 @@ func (s *EntityFullStoreTestSuite) TestStore() {
 		{Info: extEntity3},
 	})
 	s.NoError(err, "upsert should succeed on first insert")
-	//	s.Error(err)
+
 	rowsAffected, err := s.tested.RemoveOrphanedEntities(s.allAccess)
 
 	s.NoError(err)
 	s.Equal(int64(1), rowsAffected, "Only one entity is expected to be pruned")
+
+	ids, err := s.tested.GetIDs(s.allAccess)
+
+	s.NoError(err)
+	s.ElementsMatch(ids, []string{extEntity1.GetId(), extEntity2.GetId()})
 }
