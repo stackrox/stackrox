@@ -1,5 +1,3 @@
-//go:build sql_integration
-
 package datastore
 
 import (
@@ -308,7 +306,14 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationsV
 		// style is killing me because the struct references an enum in a proto so it wants to use protoassert but
 		// since the struct is not a proto, the protoassert doesn't work.
 		for idx, integration := range clusterIntegrations {
-			assert.Equal(s.T(), tc.expectedResult[idx], integration)
+			assert.Equal(s.T(), tc.expectedResult[idx].ID, integration.ID)
+			assert.Equal(s.T(), tc.expectedResult[idx].ClusterID, integration.ClusterID)
+			assert.Equal(s.T(), tc.expectedResult[idx].ClusterName, integration.ClusterName)
+			assert.Equal(s.T(), tc.expectedResult[idx].Version, integration.Version)
+			assert.Equal(s.T(), tc.expectedResult[idx].OperatorStatus, integration.OperatorStatus)
+			assert.Equal(s.T(), tc.expectedResult[idx].OperatorInstalled, integration.OperatorInstalled)
+			assert.Equal(s.T(), tc.expectedResult[idx].StatusProviderMetadataClusterType, integration.StatusProviderMetadataClusterType)
+			assert.Equal(s.T(), tc.expectedResult[idx].Type, integration.Type)
 		}
 	}
 }
