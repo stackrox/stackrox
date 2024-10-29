@@ -157,7 +157,7 @@ func (m *managerImpl) Stop() {
 	logging.Info("Stopping compliance report manager")
 	concurrency.WithLock(&m.watchingScansLock, func() {
 		for _, scanWatcher := range m.watchingScans {
-			scanWatcher.Stop()
+			scanWatcher.Stop(nil)
 			<-scanWatcher.Finished().Done()
 		}
 		m.watchingScans = make(map[string]watcher.ScanWatcher)
@@ -305,6 +305,26 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	return m.getWatcher(sensorCtx, id).PushScan(scan)
 }
 
+func (m *managerImpl) HandleScanRemove(sensorCtx context.Context, scanID string) error {
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
+		return nil
+	}
+	scan, found, err := m.scanDataStore.GetScan(m.automaticReportingCtx, scanID)
+	if err != nil {
+		return errors.Wrapf(err, "unable to retrieve scan %s from the datastore", scanID)
+	}
+	if !found {
+		return errors.Errorf("unable to find the scan %s in the datastore", scanID)
+	}
+	id := fmt.Sprintf("%s:%s", scan.GetClusterId(), scan.GetId())
+	concurrency.WithLock(&m.watchingScansLock, func() {
+		if scanWatcher, found := m.watchingScans[id]; found {
+			scanWatcher.Stop(watcher.ErrScanRemoved)
+		}
+	})
+	return nil
+}
+
 func (m *managerImpl) getWatcher(sensorCtx context.Context, id string) watcher.ScanWatcher {
 	var scanWatcher watcher.ScanWatcher
 	concurrency.WithLock(&m.watchingScansLock, func() {
@@ -355,6 +375,10 @@ func (m *managerImpl) handleReadyScan() {
 				concurrency.WithLock(&m.watchingScansLock, func() {
 					delete(m.watchingScans, scanWatcherResult.WatcherID)
 				})
+				if errors.Is(scanWatcherResult.Error, watcher.ErrScanRemoved) {
+					log.Debugf("Scan %s was removed", scanWatcherResult.Scan.GetScanName())
+					continue
+				}
 				log.Debugf("Scan %s done with %d checks", scanWatcherResult.Scan.GetScanName(), len(scanWatcherResult.CheckResults))
 				w, scanConfig, wasAlreadyRunning, err := m.getOrCreateScanConfigWatcher(scanWatcherResult.SensorCtx, scanWatcherResult, m.scanConfigDataStore, m.scanConfigReadyQueue)
 				if errors.Is(err, watcher.ErrScanAlreadyHandled) {

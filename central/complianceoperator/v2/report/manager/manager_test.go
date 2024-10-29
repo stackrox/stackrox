@@ -179,18 +179,18 @@ func (m *ManagerTestSuite) TestHandleScan() {
 	scan := &storage.ComplianceOperatorScanV2{
 		ClusterId: "cluster-id",
 	}
-	err := manager.HandleScan(context.Background(), scan)
+	err := manager.HandleScan(context.Background(), scan.CloneVT())
 	assert.Error(m.T(), err)
 
 	scan.Id = "scan-id"
-	err = manager.HandleScan(context.Background(), scan)
+	err = manager.HandleScan(context.Background(), scan.CloneVT())
 	assert.NoError(m.T(), err)
 	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
 		assert.Len(m.T(), managerImplementation.watchingScans, 0)
 	})
 
 	scan.LastStartedTime = protocompat.TimestampNow()
-	err = manager.HandleScan(context.Background(), scan)
+	err = manager.HandleScan(context.Background(), scan.CloneVT())
 	assert.NoError(m.T(), err)
 	id, err := watcher.GetWatcherIDFromScan(context.Background(), scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
 	require.NoError(m.T(), err)
@@ -236,7 +236,7 @@ func (m *ManagerTestSuite) TestHandleResult() {
 		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
 	id, err := watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
 	require.NoError(m.T(), err)
-	err = manager.HandleResult(context.Background(), result)
+	err = manager.HandleResult(context.Background(), result.CloneVT())
 	assert.NoError(m.T(), err)
 	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
 		w, ok := managerImplementation.watchingScans[id]
@@ -249,14 +249,14 @@ func (m *ManagerTestSuite) TestHandleResult() {
 	m.scanDataStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).AnyTimes().
 		Return([]*storage.ComplianceOperatorScanV2{scan}, nil)
 
-	err = manager.HandleResult(context.Background(), result)
+	err = manager.HandleResult(context.Background(), result.CloneVT())
 	assert.NoError(m.T(), err)
 	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
 		assert.Len(m.T(), managerImplementation.watchingScans, 0)
 	})
 
 	result.Annotations["compliance.openshift.io/last-scanned-timestamp"] = nowRFCFormat
-	err = manager.HandleResult(context.Background(), result)
+	err = manager.HandleResult(context.Background(), result.CloneVT())
 	assert.NoError(m.T(), err)
 	id, err = watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
 	require.NoError(m.T(), err)
@@ -267,7 +267,7 @@ func (m *ManagerTestSuite) TestHandleResult() {
 		delete(managerImplementation.watchingScans, id)
 	})
 	result.Annotations["compliance.openshift.io/last-scanned-timestamp"] = futureRFCFormat
-	err = manager.HandleResult(context.Background(), result)
+	err = manager.HandleResult(context.Background(), result.CloneVT())
 	assert.NoError(m.T(), err)
 	id, err = watcher.GetWatcherIDFromCheckResult(context.Background(), result, m.scanDataStore, m.snapshotDataStore, m.scanConfigDataStore)
 	require.NoError(m.T(), err)

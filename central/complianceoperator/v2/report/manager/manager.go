@@ -19,5 +19,6 @@ type Manager interface {
 	Stop()
 
 	HandleScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2) error
+	HandleScanRemove(ctx context.Context, scanID string) error
 	HandleResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2) error
 }
