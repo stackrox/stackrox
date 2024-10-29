@@ -163,6 +163,7 @@ export_test_environment() {
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_NVD_CVSS "${ROX_NVD_CVSS_UI:-true}"
     ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-true}"
+    ci_export ROX_CLUSTER_REGISTRATION_SECRETS "${ROX_CLUSTER_REGISTRATION_SECRETS:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
