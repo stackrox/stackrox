@@ -6,6 +6,7 @@ const parserTypeScriptESLint = require('@typescript-eslint/parser');
 
 const pluginCypress = require('eslint-plugin-cypress');
 const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-extraneous-dependencies
+const pluginJSON = require('@eslint/json').default;
 const pluginESLintComments = require('eslint-plugin-eslint-comments');
 const pluginImport = require('eslint-plugin-import');
 const pluginJest = require('eslint-plugin-jest');
@@ -43,6 +44,18 @@ module.exports = [
             'src/setupTests.js',
             'cypress.d.ts',
         ],
+    },
+    {
+        files: ['*.json', 'cypress/**/*.json', 'src/**/*.json'],
+        ignores: [
+            'package-lock.json', // ignore because it is auto-generated
+            'cypress/downloads/*.json', // StackRox_Exported_Policies_*.json
+        ],
+
+        // language: 'json/json',
+
+        // https://github.com/eslint/json/blob/main/src/index.js
+        ...pluginJSON.configs.recommended,
     },
     {
         files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
