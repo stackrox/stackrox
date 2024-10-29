@@ -16,7 +16,7 @@ metadata:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: scanner-v4-db
     pipelines.appstudio.openshift.io/type: build
-  name: scanner-v4-db-build
+  name: scanner-v4-db-on-push
   namespace: rh-acs-tenant
 
 spec:

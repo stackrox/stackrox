@@ -16,7 +16,7 @@ metadata:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: central-db
     pipelines.appstudio.openshift.io/type: build
-  name: central-db-build
+  name: central-db-on-push
   namespace: rh-acs-tenant
 
 spec:
