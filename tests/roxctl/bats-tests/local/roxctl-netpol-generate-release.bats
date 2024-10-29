@@ -137,12 +137,12 @@ teardown() {
     assert_line --index 5 'doc: 2'
 }
 
-@test "roxctl-development netpol generate generates network policies with custom dns named port" {
+@test "roxctl-release netpol generate generates network policies with custom dns named port" {
     assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
     assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
     echo "Writing network policies to ${ofile}" >&3
     dns_port="dns"
-    run roxctl-development netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport ${dns_port}
+    run roxctl-release netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport ${dns_port}
     assert_success
 
     echo "$output" > "$ofile"
@@ -165,6 +165,14 @@ teardown() {
     run roxctl-release netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport 0
     assert_failure
     assert_output --regexp 'ERROR:.*illegal port number'
+}
+
+@test "roxctl-release netpol generate fails with dns port set to empty string" {
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    run roxctl-release netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport ""
+    assert_failure
+    assert_output --regexp 'ERROR:.*illegal port name'
 }
 
 @test "roxctl-release netpol generate produces no output when all yamls are templated" {
