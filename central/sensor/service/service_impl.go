@@ -105,6 +105,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		utils.Should(err)
 
 		capabilities := sliceutils.StringSlice(eventPipeline.Capabilities()...)
+		capabilities = append(capabilities, centralsensor.SecuredClusterCertificatesReissue)
 		if features.SensorReconciliationOnReconnect.Enabled() {
 			capabilities = append(capabilities, centralsensor.SendDeduperStateOnReconnect)
 		}
