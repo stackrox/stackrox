@@ -2,7 +2,7 @@ import React, { useState, ReactElement } from 'react';
 import pluralize from 'pluralize';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { Button, Modal, ModalVariant } from '@patternfly/react-core';
+import { Button, Modal } from '@patternfly/react-core';
 import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { selectors } from 'reducers';
@@ -127,7 +127,7 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                 </Tbody>
             </Table>
             <Modal
-                variant={ModalVariant.small}
+                variant="small"
                 title="Permanently delete auth provider?"
                 isOpen={!!authProviderToDelete}
                 onClose={clearPendingDelete}

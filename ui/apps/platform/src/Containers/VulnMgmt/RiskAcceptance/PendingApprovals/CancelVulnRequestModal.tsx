@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Button, Modal, ModalVariant } from '@patternfly/react-core';
+import { Button, Modal } from '@patternfly/react-core';
 import pluralize from 'pluralize';
 
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
@@ -56,7 +56,7 @@ function CancelVulnRequestModal({
 
     return (
         <Modal
-            variant={ModalVariant.small}
+            variant="small"
             title={title}
             isOpen
             onClose={onCancelHandler}

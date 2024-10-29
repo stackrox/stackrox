@@ -7,7 +7,6 @@ import {
     GridItem,
     InputGroup,
     Modal,
-    ModalVariant,
     TextInput,
     InputGroupItem,
 } from '@patternfly/react-core';
@@ -57,7 +56,7 @@ function AffectedComponentsModal({
 
     return (
         <Modal
-            variant={ModalVariant.small}
+            variant="small"
             title={`Components affected by ${cveName}`}
             isOpen={isOpen}
             onClose={onCloseHandler}

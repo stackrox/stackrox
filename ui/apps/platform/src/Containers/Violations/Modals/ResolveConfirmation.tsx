@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
-import { Modal, ModalVariant, Button } from '@patternfly/react-core';
+import { Button, Modal } from '@patternfly/react-core';
 
 import { resolveAlerts } from 'services/AlertsService';
 
@@ -32,7 +32,7 @@ function ResolveConfirmation({
     return (
         <Modal
             isOpen={isOpen}
-            variant={ModalVariant.small}
+            variant="small"
             actions={[
                 <Button key="confirm" variant="primary" onClick={resolveAlertsAction}>
                     Confirm

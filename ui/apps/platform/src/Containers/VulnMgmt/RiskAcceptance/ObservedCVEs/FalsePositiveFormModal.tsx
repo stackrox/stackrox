@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Button, Form, Modal, ModalVariant, Radio, TextArea } from '@patternfly/react-core';
+import { Button, Form, Modal, Radio, TextArea } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -90,7 +90,7 @@ function FalsePositiveFormModal({
 
     return (
         <Modal
-            variant={ModalVariant.small}
+            variant="small"
             title={title}
             isOpen={isOpen}
             onClose={onCancelHandler}
