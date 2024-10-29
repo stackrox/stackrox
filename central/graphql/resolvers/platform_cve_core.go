@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views/platformcve"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -78,9 +77,6 @@ func (resolver *Resolver) wrapPlatformCVECoresWithContext(ctx context.Context, v
 func (resolver *Resolver) PlatformCVECount(ctx context.Context, q RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "PlatformCVECount")
 
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		return 0, errors.Errorf("Feature %s is disabled", features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readClusters(ctx); err != nil {
 		return 0, err
 	}
@@ -103,9 +99,6 @@ func (resolver *Resolver) PlatformCVECount(ctx context.Context, q RawQuery) (int
 func (resolver *Resolver) PlatformCVEs(ctx context.Context, q PaginatedQuery) ([]*platformCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "PlatformCVEs")
 
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		return nil, errors.Errorf("Feature %s is disabled", features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -134,9 +127,6 @@ func (resolver *Resolver) PlatformCVE(ctx context.Context, args struct {
 }) (*platformCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "PlatformCVE")
 
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		return nil, errors.Errorf("Feature %s is disabled", features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}

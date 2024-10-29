@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/views/platformcve"
 	platformCVEViewMock "github.com/stackrox/rox/central/views/platformcve/mocks"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -33,13 +32,6 @@ type PlatformCVEResolverTestSuite struct {
 }
 
 func (s *PlatformCVEResolverTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnMgmtNodePlatformCVEs.EnvVar(), "true")
-
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		s.T().Skipf("Skiping test. %s=false", features.VulnMgmtNodePlatformCVEs.EnvVar())
-		s.T().SkipNow()
-	}
-
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = contextWithClusterPerm(s.T(), s.mockCtrl)
 	s.platformCVEView = platformCVEViewMock.NewMockCveView(s.mockCtrl)
