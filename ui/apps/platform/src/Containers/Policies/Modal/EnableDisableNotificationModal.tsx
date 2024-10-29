@@ -94,7 +94,7 @@ function EnableDisableNotificationModal({
                                     isSelected: allRowsSelected,
                                 }}
                             />
-                            <Th modifier="wrap">Select notifers</Th>
+                            <Th modifier="wrap">Notifier</Th>
                         </Tr>
                     </Thead>
                     <Tbody>
@@ -108,7 +108,7 @@ function EnableDisableNotificationModal({
                                             isSelected: selected[rowIndex],
                                         }}
                                     />
-                                    <Td>{name}</Td>
+                                    <Td dataLabel="Notifier">{name}</Td>
                                 </Tr>
                             );
                         })}
