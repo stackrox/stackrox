@@ -219,7 +219,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'compliance-enhanced': {
-        featureFlagRequirements: allEnabled(['ROX_COMPLIANCE_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     configmanagement: {
