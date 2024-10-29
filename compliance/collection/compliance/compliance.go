@@ -130,11 +130,11 @@ func (c *Compliance) manageNodeScanLoop(ctx context.Context) <-chan *sensor.MsgF
 			case _, ok := <-c.umh.RetryCommand():
 				if c.cache == nil {
 					log.Debug("Requested to retry but cache is empty. Resetting scan timer.")
-					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV2)
+					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheMiss, cmetrics.ScannerVersionV2)
 					t.Reset(time.Second)
 				} else if ok {
 					nodeInventoriesC <- c.cache
-					cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV2)
+					cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionResendingCacheHit, cmetrics.ScannerVersionV2)
 				}
 			case <-t.C:
 				if c.nodeScanner.IsActive() {
@@ -167,7 +167,7 @@ func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCo
 		return nil
 	}
 	cmetrics.ObserveNodeInventoryScan(msg.GetNodeInventory())
-	cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan, cmetrics.ScannerVersionV2)
+	cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionScan, cmetrics.ScannerVersionV2)
 	c.umh.ObserveSending()
 	c.cache = msg.CloneVT()
 	return msg
@@ -187,8 +187,8 @@ func (c *Compliance) runNodeIndex(ctx context.Context) *sensor.MsgFromCompliance
 	}
 	cmetrics.ObserveNodeIndexReport(report, nodeName)
 	msg := c.createIndexMsg(report, nodeName)
-	cmetrics.ObserveInventoryProtobufMessage(msg, cmetrics.ScannerVersionV4)
-	cmetrics.ObserveNodeInventorySending(nodeName, cmetrics.InventoryTransmissionScan, cmetrics.ScannerVersionV4)
+	cmetrics.ObserveReportProtobufMessage(msg, cmetrics.ScannerVersionV4)
+	cmetrics.ObserveNodePackageReportTransmissions(nodeName, cmetrics.InventoryTransmissionScan, cmetrics.ScannerVersionV4)
 	return msg
 }
 
