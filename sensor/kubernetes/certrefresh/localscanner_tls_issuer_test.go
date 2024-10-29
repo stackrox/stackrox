@@ -15,8 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrequester"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -524,9 +524,9 @@ func (m *certificateRequesterMock) Start() {
 func (m *certificateRequesterMock) Stop() {
 	m.Called()
 }
-func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*certrequester.IssueCertsResponse, error) {
+func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*certificates.Response, error) {
 	args := m.Called(ctx)
-	return args.Get(0).(*certrequester.IssueCertsResponse), args.Error(1)
+	return args.Get(0).(*certificates.Response), args.Error(1)
 }
 
 type certificateRefresherMock struct {

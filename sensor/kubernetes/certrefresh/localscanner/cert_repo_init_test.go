@@ -25,7 +25,7 @@ var (
 	scannerServiceType         = storage.ServiceType_SCANNER_SERVICE
 	serviceCertificate         = createServiceCertificate(scannerServiceType)
 	emptyPersistedCertificates = make([]*storage.TypedServiceCertificate, 0)
-	certificates               = &storage.TypedServiceCertificateSet{
+	certificateSet             = &storage.TypedServiceCertificateSet{
 		CaPem: make([]byte, 2),
 		ServiceCerts: []*storage.TypedServiceCertificate{
 			serviceCertificate,
@@ -65,9 +65,9 @@ func (s *localScannerCertificateRepoSuite) TestEnsureServiceCertificateMissingSe
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	repo := NewServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
-	persistedCertificates, err := repo.EnsureServiceCertificates(context.Background(), certificates)
+	persistedCertificates, err := repo.EnsureServiceCertificates(context.Background(), certificateSet)
 
-	protoassert.SlicesEqual(s.T(), certificates.ServiceCerts, persistedCertificates)
+	protoassert.SlicesEqual(s.T(), certificateSet.ServiceCerts, persistedCertificates)
 	s.NoError(err)
 }
 

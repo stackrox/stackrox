@@ -8,13 +8,11 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/message"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrequester"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -120,95 +118,10 @@ func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T
 	}
 }
 
-func TestConvertToIssueCertsResponse(t *testing.T) {
-	errorMessage := "error message"
-	certificatesSet := &storage.TypedServiceCertificateSet{
-		CaPem: []byte("ca_cert_pem"),
-		ServiceCerts: []*storage.TypedServiceCertificate{
-			{
-				ServiceType: storage.ServiceType_SCANNER_SERVICE,
-				Cert: &storage.ServiceCertificate{
-					CertPem: []byte("scanner_cert_pem"),
-					KeyPem:  []byte("scanner_key_pem"),
-				},
-			},
-			{
-				ServiceType: storage.ServiceType_SENSOR_SERVICE,
-				Cert: &storage.ServiceCertificate{
-					CertPem: []byte("sensor_cert_pem"),
-					KeyPem:  []byte("sensor_key_pem"),
-				},
-			},
-		},
-	}
-
-	tests := []struct {
-		name           string
-		input          *central.IssueLocalScannerCertsResponse
-		expectedResult *certrequester.IssueCertsResponse
-	}{
-		{
-			name:           "Nil input",
-			input:          nil,
-			expectedResult: nil,
-		},
-		{
-			name: "Response with error",
-			input: &central.IssueLocalScannerCertsResponse{
-				RequestId: "12345",
-				Response: &central.IssueLocalScannerCertsResponse_Error{
-					Error: &central.LocalScannerCertsIssueError{
-						Message: errorMessage,
-					},
-				},
-			},
-			expectedResult: &certrequester.IssueCertsResponse{
-				RequestId:    "12345",
-				ErrorMessage: &errorMessage,
-				Certificates: nil,
-			},
-		},
-		{
-			name: "Response with certificates",
-			input: &central.IssueLocalScannerCertsResponse{
-				RequestId: "67890",
-				Response: &central.IssueLocalScannerCertsResponse_Certificates{
-					Certificates: certificatesSet,
-				},
-			},
-			expectedResult: &certrequester.IssueCertsResponse{
-				RequestId:    "67890",
-				ErrorMessage: nil,
-				Certificates: certificatesSet,
-			},
-		},
-		{
-			name:           "Empty response",
-			input:          &central.IssueLocalScannerCertsResponse{},
-			expectedResult: &certrequester.IssueCertsResponse{},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := convertToIssueCertsResponse(tt.input)
-
-			if tt.expectedResult == nil {
-				assert.Nil(t, result)
-			} else {
-				assert.Equal(t, tt.expectedResult.RequestId, result.RequestId)
-				assert.Equal(t, tt.expectedResult.ErrorMessage, result.ErrorMessage)
-				// Must use proto.Equal for the Certificates field
-				assert.True(t, proto.Equal(tt.expectedResult.Certificates, result.Certificates), "Certificates should match")
-			}
-		})
-	}
-}
-
 type certificateRequesterFixture struct {
 	sendC                chan *message.ExpiringMessage
 	receiveC             chan *central.IssueLocalScannerCertsResponse
-	requester            certrequester.CertificateRequester
+	requester            certificates.Requester
 	interceptedRequestID *atomic.Value
 	ctx                  context.Context
 	cancelCtx            context.CancelFunc

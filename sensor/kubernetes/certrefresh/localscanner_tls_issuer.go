@@ -11,8 +11,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrequester"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/localscanner"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -74,7 +74,7 @@ type localScannerTLSIssuerImpl struct {
 	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
-	certRequester                certrequester.CertificateRequester
+	certRequester                certificates.Requester
 	certRefresher                concurrency.RetryTicker
 }
 
