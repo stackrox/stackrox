@@ -72,7 +72,7 @@ func TestPod(testT *testing.T) {
 		if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
 			log.Infof("Skipping parts of TestPod that relate to events because env var \"COLLECTION_METHOD\" is " +
 				"set to \"NO_COLLECTION\"\n. This is expected to only happen when Sensor version is 3.74.x " +
-				"(support exception within compatibility tests)")
+				"(support exception / compatibility tests)\"")
 		} else {
 			// Verify the events.
 			var loopCount int

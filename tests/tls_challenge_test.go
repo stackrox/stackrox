@@ -75,6 +75,14 @@ func (ts *TLSChallengeSuite) TearDownSuite() {
 }
 
 func (ts *TLSChallengeSuite) TestTLSChallenge() {
+	// When COLLECTION_METHOD is set to NO_COLLECTION the collector DS contains only a compliance container but
+	// no collector container, and this test will trigger the ClusterHealth updater which then queries the collectorDS
+	// for a container that does not exist, sending Sensor into an Error state.
+	// See sensor/kubernetes/clusterhealth/updater.go:getCollectorInfo()
+	if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
+		ts.T().Skipf("Skipping TestTLSChallenge because \"COLLECTION_METHOD\" is set to \"NO_COLLECTION\".\n" +
+			"This is expected to only happen when Sensor version is 3.74.x (support exception / compatibility tests)")
+	}
 	const (
 		proxyServiceName = "nginx-loadbalancer"
 		proxyEndpoint    = proxyServiceName + "." + proxyNs + ":443"
@@ -87,15 +95,10 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 	logMatchers := []logMatcher{
 		containsLineMatching(regexp.MustCompile("Info: Add central CA cert with CommonName: 'Custom Root'")),
 		containsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
+		containsLineMatching(regexp.MustCompile("Info: Connecting to Central server " + proxyEndpoint)),
 		containsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
 	}
 
-	// This test spawns a Clusterhealth.updater which calls getCollectorInfo() when it runs. This results in
-	// the error "unable to determine collector version" if COLLECTION_METHOD is set to NO_COLLECTION and Sensor ends up
-	// in a state where it is never able to connect to central again, so the line below never appears in the log.
-	if os.Getenv("COLLECTION_METHOD") != "NO_COLLECTION" {
-		logMatchers = append(logMatchers, containsLineMatching(regexp.MustCompile("Info: Connecting to Central server "+proxyEndpoint)))
-	}
 	ts.waitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection", logMatchers...)
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 }
