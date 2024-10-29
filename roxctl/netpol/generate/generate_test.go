@@ -120,6 +120,14 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			expectedWarnings:        []string{},
 			expectedErrors:          []string{},
 		},
+		"should report a negative port as a bad port number": {
+			inputFolderPath: "testdata/minimal",
+			dnsPort:         "-17",
+
+			expectedValidationError: errox.InvalidArgs,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
+		},
 	}
 
 	for name, tt := range cases {
@@ -128,6 +136,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			testCmd := &cobra.Command{Use: "test"}
 			testCmd.Flags().String("output-dir", "", "")
 			testCmd.Flags().String("output-file", "", "")
+			testCmd.Flags().String("dnsport", "", "")
 
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			generateNetpolCmd := netpolGenerateCmd{
@@ -149,6 +158,9 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			}
 			if tt.outFile != "" {
 				d.Assert().NoError(testCmd.Flags().Set("output-file", tt.outFile))
+			}
+			if tt.dnsPort != "" {
+				d.Assert().NoError(testCmd.Flags().Set("dnsport", tt.dnsPort))
 			}
 
 			generator, err := generateNetpolCmd.construct([]string{tt.inputFolderPath}, testCmd)

@@ -42,8 +42,8 @@ type netpolGenerateCmd struct {
 	inputFolderPath string
 	mergeMode       bool
 	splitMode       bool
-	dnsPortNum      int
-	dnsPortName     string
+	dnsPortNum      *int
+	dnsPortName     *string
 
 	// injected or constructed values
 	env     environment.Environment
@@ -82,18 +82,20 @@ func (cmd *netpolGenerateCmd) construct(args []string, c *cobra.Command) (*npgua
 	cmd.inputFolderPath = args[0]
 	cmd.splitMode = c.Flags().Changed("output-dir")
 	cmd.mergeMode = c.Flags().Changed("output-file")
-	dnsPortNum, err := strconv.Atoi(cmd.Options.DNSPort)
-	if err == nil {
-		cmd.dnsPortNum = dnsPortNum
-	} else {
-		cmd.dnsPortName = cmd.Options.DNSPort
+	if c.Flags().Changed("dnsport") {
+		dnsPortNum, err := strconv.Atoi(cmd.Options.DNSPort)
+		if err == nil {
+			cmd.dnsPortNum = &dnsPortNum
+		} else {
+			cmd.dnsPortName = &cmd.Options.DNSPort
+		}
 	}
 
 	opts := []npguard.PoliciesSynthesizerOption{}
-	if cmd.dnsPortNum != 0 {
-		opts = append(opts, npguard.WithDNSPort(cmd.dnsPortNum))
-	} else if cmd.dnsPortName != "" {
-		opts = append(opts, npguard.WithDNSNamedPort(cmd.dnsPortName))
+	if cmd.dnsPortNum != nil {
+		opts = append(opts, npguard.WithDNSPort(*cmd.dnsPortNum))
+	} else if cmd.dnsPortName != nil {
+		opts = append(opts, npguard.WithDNSNamedPort(*cmd.dnsPortName))
 	}
 
 	if cmd.env != nil && cmd.env.Logger() != nil {
@@ -119,17 +121,17 @@ func (cmd *netpolGenerateCmd) validate() error {
 		}
 	}
 
-	if cmd.dnsPortName != "" {
-		portErrs := validation.IsValidPortName(cmd.dnsPortName)
+	if cmd.dnsPortName != nil {
+		portErrs := validation.IsValidPortName(*cmd.dnsPortName)
 		if len(portErrs) > 0 {
 			return errox.InvalidArgs.Newf("illegal port name: %s", portErrs[0])
 		}
-	} else if cmd.Options.DNSPort != "" { // user set a value which could be interpreted as an integer
-		portErrs := validation.IsValidPortNum(cmd.dnsPortNum)
+	}
+	if cmd.dnsPortNum != nil {
+		portErrs := validation.IsValidPortNum(*cmd.dnsPortNum)
 		if len(portErrs) > 0 {
 			return errox.InvalidArgs.Newf("illegal port number: %s", portErrs[0])
 		}
-
 	}
 
 	return nil
