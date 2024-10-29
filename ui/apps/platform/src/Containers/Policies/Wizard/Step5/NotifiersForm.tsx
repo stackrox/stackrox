@@ -84,8 +84,8 @@ function NotifiersForm() {
                                                 isSelected: field.value.includes(notifier.id),
                                             }}
                                         />
-                                        <Td data-label="Notifier">{notifier.name}</Td>
-                                        <Td data-label="Type">{notifier.type}</Td>
+                                        <Td dataLabel="Notifier">{notifier.name}</Td>
+                                        <Td dataLabel="Type">{notifier.type}</Td>
                                     </Tr>
                                 );
                             })}
