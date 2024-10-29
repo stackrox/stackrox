@@ -27,7 +27,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		outFile               string
 		outDir                string
 		removeOutputPath      bool
-		dnsPort               string
+		dnsPort               *string
 
 		expectedValidationError error
 		expectedWarnings        []string
@@ -98,7 +98,15 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		},
 		"should report bad port name": {
 			inputFolderPath: "testdata/minimal",
-			dnsPort:         "bad@chars",
+			dnsPort:         ptrFromString("bad@chars"),
+
+			expectedValidationError: errox.InvalidArgs,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
+		},
+		"should report empty string as bad port name": {
+			inputFolderPath: "testdata/minimal",
+			dnsPort:         ptrFromString(""),
 
 			expectedValidationError: errox.InvalidArgs,
 			expectedWarnings:        []string{},
@@ -106,7 +114,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		},
 		"should report bad port number": {
 			inputFolderPath: "testdata/minimal",
-			dnsPort:         "100000",
+			dnsPort:         ptrFromString("100000"),
 
 			expectedValidationError: errox.InvalidArgs,
 			expectedWarnings:        []string{},
@@ -114,7 +122,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		},
 		"should report 0 as a bad port number": {
 			inputFolderPath: "testdata/minimal",
-			dnsPort:         "0",
+			dnsPort:         ptrFromString("0"),
 
 			expectedValidationError: errox.InvalidArgs,
 			expectedWarnings:        []string{},
@@ -122,7 +130,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		},
 		"should report a negative port as a bad port number": {
 			inputFolderPath: "testdata/minimal",
-			dnsPort:         "-17",
+			dnsPort:         ptrFromString("-17"),
 
 			expectedValidationError: errox.InvalidArgs,
 			expectedWarnings:        []string{},
@@ -146,7 +154,6 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 					OutputFolderPath:      tt.outDir,
 					OutputFilePath:        tt.outFile,
 					RemoveOutputPath:      tt.removeOutputPath,
-					DNSPort:               tt.dnsPort,
 				},
 				offline:         true,
 				inputFolderPath: "", // set through construct
@@ -159,8 +166,9 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			if tt.outFile != "" {
 				d.Assert().NoError(testCmd.Flags().Set("output-file", tt.outFile))
 			}
-			if tt.dnsPort != "" {
-				d.Assert().NoError(testCmd.Flags().Set("dnsport", tt.dnsPort))
+			if tt.dnsPort != nil {
+				d.Assert().NoError(testCmd.Flags().Set("dnsport", *tt.dnsPort))
+				generateNetpolCmd.Options.DNSPort = *tt.dnsPort
 			}
 
 			generator, err := generateNetpolCmd.construct([]string{tt.inputFolderPath}, testCmd)
@@ -179,4 +187,8 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			npg.AssertErrorsContain(d.T(), tt.expectedWarnings, warns, "warnings")
 		})
 	}
+}
+
+func ptrFromString(s string) *string {
+	return &s
 }
