@@ -1308,7 +1308,7 @@ openshift_ci_mods() {
     fi
 
     # Target a tag if HEAD is tagged.
-    BUILD_TAG="$(git tag --sort=creatordate --contains | tail -1)" || echo "Warning: Cannot get tag"
+    BUILD_TAG="$(git describe --exact-match --tags HEAD)" || echo "Warning: Cannot get tag"
     export BUILD_TAG
 
     # For gradle
