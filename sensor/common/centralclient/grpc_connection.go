@@ -130,4 +130,5 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	conn.Set(centralConnection)
 	f.changeState(centralConnection.GetState(), nil)
 	log.Infof("Initial gRPC connection with central state: %s", centralConnection.GetState())
+	// TODO: gRPC connection state may change after we leave this function!!!
 }
