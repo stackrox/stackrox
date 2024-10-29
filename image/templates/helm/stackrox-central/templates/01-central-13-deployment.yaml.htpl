@@ -111,8 +111,6 @@ spec:
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT
           value: "true"
-        - name: ROX_NODE_INDEX_ENABLED
-          value: "true"
         {{- end }}
         {{- if ._rox.env.managedServices }}
         - name: ROX_MANAGED_CENTRAL
