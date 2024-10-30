@@ -287,7 +287,7 @@ export function exchangeAuthToken(
 export async function logout() {
     try {
         await axios.post(logoutUrl);
-    } catch (e) {
+    } catch {
         // regardless of the result proceed with token deletion
     }
     accessTokenManager.clearToken();
