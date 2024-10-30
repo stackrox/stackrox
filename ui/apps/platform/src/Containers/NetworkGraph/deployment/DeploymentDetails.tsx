@@ -7,7 +7,6 @@ import {
     DescriptionListTerm,
     Divider,
     EmptyState,
-    EmptyStateVariant,
     ExpandableSection,
     Flex,
     FlexItem,
@@ -389,7 +388,7 @@ function DeploymentDetails({
                                 })}
                             </Stack>
                         ) : (
-                            <EmptyState variant={EmptyStateVariant.xs}>
+                            <EmptyState variant="xs">
                                 <EmptyStateHeader
                                     titleText="No ports available"
                                     headingLevel="h4"
@@ -412,7 +411,7 @@ function DeploymentDetails({
                                 })}
                             </Stack>
                         ) : (
-                            <EmptyState variant={EmptyStateVariant.xs}>
+                            <EmptyState variant="xs">
                                 <EmptyStateHeader
                                     titleText="No containers available"
                                     headingLevel="h4"

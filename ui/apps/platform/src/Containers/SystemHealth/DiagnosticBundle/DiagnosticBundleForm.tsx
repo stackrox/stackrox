@@ -8,7 +8,7 @@ import {
     HelperTextItem,
     TextInput,
 } from '@patternfly/react-core';
-import { Select, SelectOption, SelectVariant } from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import usePermissions from 'hooks/usePermissions';
 import { fetchClusters } from 'services/ClustersService';
@@ -85,7 +85,7 @@ function DiagnosticBundleForm({
                 <FormGroup label="Filter by clusters" fieldId="filterByClusters">
                     <Select
                         id="filterByClusters"
-                        variant={SelectVariant.typeaheadMulti}
+                        variant="typeaheadmulti"
                         typeAheadAriaLabel="Type a cluster name"
                         onToggle={toggleClusterSelect}
                         onSelect={onSelect}
