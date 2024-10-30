@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import {
     Bullseye,
     EmptyState,
-    EmptyStateVariant,
     Stack,
     StackItem,
     EmptyStateHeader,
@@ -48,7 +47,7 @@ function ViewActiveYamls({
     if (networkPolicies.length === 0) {
         return (
             <Bullseye>
-                <EmptyState variant={EmptyStateVariant.xs}>
+                <EmptyState variant="xs">
                     <EmptyStateHeader titleText="No network policies" headingLevel="h4" />
                 </EmptyState>
             </Bullseye>

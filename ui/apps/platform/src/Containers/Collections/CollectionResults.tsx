@@ -4,7 +4,6 @@ import {
     Divider,
     EmptyState,
     EmptyStateIcon,
-    EmptyStateVariant,
     Flex,
     FlexItem,
     SearchInput,
@@ -152,7 +151,7 @@ function CollectionResults({
 
     if (configError) {
         content = (
-            <EmptyState variant={EmptyStateVariant.xs}>
+            <EmptyState variant="xs">
                 <EmptyStateHeader
                     icon={
                         <EmptyStateIcon
@@ -176,7 +175,7 @@ function CollectionResults({
         );
     } else if (!selectorRulesExist) {
         content = (
-            <EmptyState variant={EmptyStateVariant.xs}>
+            <EmptyState variant="xs">
                 <EmptyStateHeader icon={<EmptyStateIcon icon={ListIcon} />} />
                 <EmptyStateFooter>
                     <p>

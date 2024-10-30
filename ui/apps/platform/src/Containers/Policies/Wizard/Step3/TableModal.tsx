@@ -5,7 +5,6 @@ import {
     Modal,
     ModalBoxBody,
     ModalBoxFooter,
-    ModalVariant,
     PageSection,
     TextInput,
 } from '@patternfly/react-core';
@@ -84,7 +83,7 @@ function TableModal({
             <Modal
                 title={`Add ${typeText}s to policy criteria`}
                 isOpen={isModalOpen}
-                variant={ModalVariant.large}
+                variant="large"
                 onClose={onCloseModalHandler}
                 aria-label={`Select ${typeText}s modal`}
                 hasNoBodyWrapper

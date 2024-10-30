@@ -1,7 +1,7 @@
 import React from 'react';
 import { useField } from 'formik';
 import { TextInput, ToggleGroup, ToggleGroupItem, FormGroup } from '@patternfly/react-core';
-import { Select, SelectOption, SelectVariant } from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 
 import { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
@@ -154,7 +154,7 @@ function PolicyCriteriaFieldInput({
                         selections={value.value === '' ? [] : value.value}
                         onClear={handleChangeSelectedValue([])}
                         placeholderText={descriptor.placeholder || 'Select one or more options'}
-                        variant={SelectVariant.typeaheadMulti}
+                        variant="typeaheadmulti"
                         menuAppendTo={() => document.body}
                     >
                         {descriptor.options?.map((option) => (
