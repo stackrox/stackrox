@@ -3,7 +3,6 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Button,
-    ButtonVariant,
     Divider,
     Flex,
     FlexItem,
@@ -80,7 +79,7 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
                             {editDisabledMessage ? (
                                 <Tooltip content={editDisabledMessage}>
                                     <Button
-                                        variant={ButtonVariant.secondary}
+                                        variant="secondary"
                                         component={LinkShim}
                                         href={integrationEditPath}
                                         isAriaDisabled={!!editDisabledMessage}
@@ -90,7 +89,7 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
                                 </Tooltip>
                             ) : (
                                 <Button
-                                    variant={ButtonVariant.secondary}
+                                    variant="secondary"
                                     component={LinkShim}
                                     href={integrationEditPath}
                                 >

@@ -1,6 +1,6 @@
 import React, { useState, ReactElement } from 'react';
 import pluralize from 'pluralize';
-import { Button, ButtonVariant, Flex, FlexItem, Label } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, Label } from '@patternfly/react-core';
 
 import entityTypes from 'constants/entityTypes';
 import ImpactedEntitiesModal from './ImpactedEntitiesModal';
@@ -33,7 +33,7 @@ function ImpactedEntities({
             <Flex spaceItems={{ default: 'spaceItemsMd' }}>
                 <FlexItem>
                     <Button
-                        variant={ButtonVariant.link}
+                        variant="link"
                         isInline
                         onClick={() => {
                             openModal(entityTypes.DEPLOYMENT);
@@ -46,7 +46,7 @@ function ImpactedEntities({
                 </FlexItem>
                 <FlexItem>
                     <Button
-                        variant={ButtonVariant.link}
+                        variant="link"
                         isInline
                         onClick={() => {
                             openModal(entityTypes.IMAGE);

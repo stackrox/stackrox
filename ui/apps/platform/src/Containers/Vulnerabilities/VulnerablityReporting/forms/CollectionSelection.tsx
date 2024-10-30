@@ -1,5 +1,5 @@
 import React, { useMemo, useState, ReactElement, useCallback } from 'react';
-import { Button, ButtonVariant, Flex, FlexItem, ValidatedOptions } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, ValidatedOptions } from '@patternfly/react-core';
 import {
     Select,
     SelectOption,
@@ -210,7 +210,7 @@ function CollectionSelection({
                 {isRouteEnabledForCollections && (
                     <FlexItem spacer={{ default: 'spacerMd' }}>
                         <Button
-                            variant={ButtonVariant.tertiary}
+                            variant="tertiary"
                             onClick={onOpenViewCollectionModal}
                             isDisabled={!selectedScope}
                         >
