@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Button, Form, Modal, ModalVariant, Radio, TextArea } from '@patternfly/react-core';
+import { Button, Form, Modal, Radio, TextArea } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import FormLabelGroup from 'Containers/Integrations/IntegrationForm/FormLabelGroup';
@@ -69,7 +69,7 @@ function UpdateDeferralFormModal({
     // @TODO: Create reusable components for the action buttons and form fields
     return (
         <Modal
-            variant={ModalVariant.small}
+            variant="small"
             title={title}
             isOpen={isOpen}
             onClose={onHandleCancel}
