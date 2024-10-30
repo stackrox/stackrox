@@ -206,6 +206,24 @@ func TestScanWatcherStop(t *testing.T) {
 	assert.ErrorIs(t, result.Error, ErrScanContextCancelled)
 }
 
+func TestScanWatcherStopWithError(t *testing.T) {
+	timeNow := protocompat.TimestampNow()
+	watcherID := "id"
+	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
+	scanWatcher := NewScanWatcher(context.Background(), context.Background(), watcherID, readyTestQueue)
+	handleScan("id-1", timeNow)(t, scanWatcher)
+	handleResult("id-1", timeNow)(t, scanWatcher)
+	scanWatcher.Stop(ErrScanRemoved)
+	select {
+	case <-scanWatcher.Finished().Done():
+	case <-time.After(100 * time.Millisecond):
+		t.Error("timeout waiting for the watcher to stop")
+	}
+	assert.Equal(t, 1, readyTestQueue.Len())
+	result := readyTestQueue.Pull()
+	assert.ErrorIs(t, result.Error, ErrScanRemoved)
+}
+
 func TestScanWatcherTimeout(t *testing.T) {
 	timeNow := protocompat.TimestampNow()
 	readyTestQueue := queue.NewQueue[*ScanWatcherResults]()
@@ -388,8 +406,6 @@ func TestGetIDFromResult(t *testing.T) {
 	result.Annotations = map[string]string{
 		LastScannedAnnotationKey: futureTime.Format(time.RFC3339Nano),
 	}
-	//futureTimeProto, err := protocompat.ConvertTimeToTimestampOrError(futureTime)
-	//require.NoError(t, err)
 	id, err := GetWatcherIDFromCheckResult(testDBAccess, result, scanDS, snapshotDS, scanConfigDS)
 	assert.NoError(t, err)
 	assert.Equal(t, "cluster-1:scan-1", id)

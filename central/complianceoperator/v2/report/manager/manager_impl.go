@@ -305,7 +305,7 @@ func (m *managerImpl) HandleScan(sensorCtx context.Context, scan *storage.Compli
 	return m.getWatcher(sensorCtx, id).PushScan(scan)
 }
 
-func (m *managerImpl) HandleScanRemove(sensorCtx context.Context, scanID string) error {
+func (m *managerImpl) HandleScanRemove(scanID string) error {
 	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
 		return nil
 	}

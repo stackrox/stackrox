@@ -69,17 +69,17 @@ func (mr *MockManagerMockRecorder) HandleScan(ctx, scan any) *gomock.Call {
 }
 
 // HandleScanRemove mocks base method.
-func (m *MockManager) HandleScanRemove(ctx context.Context, scanID string) error {
+func (m *MockManager) HandleScanRemove(scanID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleScanRemove", ctx, scanID)
+	ret := m.ctrl.Call(m, "HandleScanRemove", scanID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleScanRemove indicates an expected call of HandleScanRemove.
-func (mr *MockManagerMockRecorder) HandleScanRemove(ctx, scanID any) *gomock.Call {
+func (mr *MockManagerMockRecorder) HandleScanRemove(scanID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleScanRemove", reflect.TypeOf((*MockManager)(nil).HandleScanRemove), ctx, scanID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleScanRemove", reflect.TypeOf((*MockManager)(nil).HandleScanRemove), scanID)
 }
 
 // Start mocks base method.

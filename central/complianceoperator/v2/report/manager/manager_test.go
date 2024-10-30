@@ -201,6 +201,67 @@ func (m *ManagerTestSuite) TestHandleScan() {
 	})
 }
 
+func (m *ManagerTestSuite) TestHandleScanRemove() {
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
+	managerImplementation, ok := manager.(*managerImpl)
+	require.True(m.T(), ok)
+	manager.Start()
+
+	scanID := "scan-1"
+	scan := &storage.ComplianceOperatorScanV2{
+		Id:              scanID,
+		ClusterId:       "cluster-id",
+		LastStartedTime: protocompat.TimestampNow(),
+	}
+
+	m.Run("GetScan datastore failure", func() {
+		m.scanDataStore.EXPECT().GetScan(gomock.Any(), gomock.Any()).Times(1).Return(nil, false, errors.New("some error"))
+		err := manager.HandleScanRemove(scanID)
+		m.Require().Error(err)
+	})
+
+	m.Run("Scan not found", func() {
+		m.scanDataStore.EXPECT().GetScan(gomock.Any(), gomock.Any()).Times(1).Return(nil, false, nil)
+		err := manager.HandleScanRemove(scanID)
+		m.Require().Error(err)
+	})
+
+	m.Run("No scan watcher running for scan", func() {
+		m.scanDataStore.EXPECT().GetScan(gomock.Any(), gomock.Any()).Times(1).Return(scan, true, nil)
+		err := manager.HandleScanRemove(scanID)
+		m.Require().NoError(err)
+	})
+
+	m.Run("Scan watcher running for scan", func() {
+		m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
+			Return(
+				[]*storage.ComplianceOperatorScanConfigurationV2{
+					{
+						Id: "scan-config-id",
+					},
+				}, nil,
+			)
+		m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
+			Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
+		m.scanDataStore.EXPECT().GetScan(gomock.Any(), gomock.Any()).Times(1).Return(scan, true, nil)
+		m.Require().NoError(manager.HandleScan(context.Background(), scan))
+		id, err := watcher.GetWatcherIDFromScan(context.Background(), scan, m.snapshotDataStore, m.scanConfigDataStore, nil)
+		require.NoError(m.T(), err)
+		concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
+			w, ok := managerImplementation.watchingScans[id]
+			assert.True(m.T(), ok)
+			assert.NotNil(m.T(), w)
+		})
+		err = manager.HandleScanRemove(scanID)
+		m.Require().NoError(err)
+		m.Assert().Eventually(func() bool {
+			return concurrency.WithLock1[bool](&managerImplementation.watchingScansLock, func() bool {
+				return len(managerImplementation.watchingScans) == 0
+			})
+		}, 500*time.Millisecond, 10*time.Millisecond)
+	})
+}
+
 func (m *ManagerTestSuite) TestHandleResult() {
 	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)

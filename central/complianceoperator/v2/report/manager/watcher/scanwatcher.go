@@ -258,8 +258,8 @@ func (s *scanWatcherImpl) run() {
 	for {
 		select {
 		case <-s.ctx.Done():
-			log.Infof("Stopping scan watcher for scan")
 			concurrency.WithLock(&s.resultsLock, func() {
+				log.Infof("Stopping scan watcher for scan %s", s.scanResults.Scan.GetScanName())
 				if s.scanResults.Error == nil {
 					s.scanResults.Error = ErrScanContextCancelled
 				}
@@ -267,8 +267,8 @@ func (s *scanWatcherImpl) run() {
 			s.readyQueue.Push(s.scanResults)
 			return
 		case <-s.timeout.C():
-			log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())
 			concurrency.WithLock(&s.resultsLock, func() {
+				log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())
 				s.scanResults.Error = ErrScanTimeout
 			})
 			s.readyQueue.Push(s.scanResults)

@@ -85,7 +85,7 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
-		if err := s.reportMgr.HandleScanRemove(ctx, event.GetId()); err != nil {
+		if err := s.reportMgr.HandleScanRemove(event.GetId()); err != nil {
 			log.Errorf("unable to handle the scan removal in the report manager: %v", err)
 		}
 		return s.v2Datastore.DeleteScan(ctx, event.GetId())
