@@ -20,21 +20,17 @@ const rules = {
             schema: [],
         },
         create(context) {
-            // Temporary forbid list limits changed files per contribution.
-            const variants = [
-                'ClipboardCopyVariant',
-                'EmptyStateVariant',
-                'ExpandableSectionVariant',
-            ];
             return {
                 ImportDeclaration(node) {
-                    if (node.source.value === '@patternfly/react-core') {
+                    if (
+                        typeof node.source?.value === 'string' &&
+                        node.source.value.startsWith('@patternfly/react-core') // startsWith also matches deprecated
+                    ) {
                         if (
                             node.specifiers.some(
                                 (specifier) =>
                                     typeof specifier.imported?.name === 'string' &&
-                                    // specifier.imported.name.endsWith('Variant')
-                                    variants.includes(specifier.imported.name)
+                                    specifier.imported.name.endsWith('Variant')
                             )
                         ) {
                             context.report({
