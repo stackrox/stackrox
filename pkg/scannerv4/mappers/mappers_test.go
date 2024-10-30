@@ -10,6 +10,7 @@ import (
 	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -908,6 +909,7 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 	tests := map[string]struct {
 		ccVulnerabilities map[string]*claircore.Vulnerability
 		nvdVulns          map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem
+		enableRedHatCVEs  bool
 		want              map[string]*v4.VulnerabilityReport_Vulnerability
 	}{
 		"when nil then nil": {},
@@ -1367,10 +1369,150 @@ func Test_toProtoV4VulnerabilitiesMap(t *testing.T) {
 				},
 			},
 		},
+		"when Red Hat CVEs disabled return RHSA": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:                 "foo",
+					Name:               "CVE-2021-44228",
+					Links:              "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
+					Updater:            "rhel-vex",
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+					NormalizedSeverity: claircore.Critical,
+					Issued:             now,
+				},
+			},
+			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
+				"foo": {
+					"CVE-2021-44228": {
+						ID: "CVE-2021-44228",
+						Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+							CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+								{
+									CvssData: &nvdschema.CVSSV31{
+										Version:      "3.1",
+										VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+										BaseScore:    10.0,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Id:                 "foo",
+					Name:               "RHSA-2021:5132",
+					Link:               "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
+					Issued:             protoNow,
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 9.8,
+							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 9.8,
+								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+							Url:    "https://access.redhat.com/errata/RHSA-2021:5132",
+						},
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 10.0,
+								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+							Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+						},
+					},
+				},
+			},
+		},
+		"when Red Hat CVEs enabled return CVE": {
+			ccVulnerabilities: map[string]*claircore.Vulnerability{
+				"foo": {
+					ID:                 "foo",
+					Name:               "CVE-2021-44228",
+					Links:              "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
+					Updater:            "rhel-vex",
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+					NormalizedSeverity: claircore.Critical,
+					Issued:             now,
+				},
+			},
+			nvdVulns: map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem{
+				"foo": {
+					"CVE-2021-44228": {
+						ID: "CVE-2021-44228",
+						Metrics: &nvdschema.CVEAPIJSON20CVEItemMetrics{
+							CvssMetricV31: []*nvdschema.CVEAPIJSON20CVSSV31{
+								{
+									CvssData: &nvdschema.CVSSV31{
+										Version:      "3.1",
+										VectorString: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+										BaseScore:    10.0,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			enableRedHatCVEs: true,
+			want: map[string]*v4.VulnerabilityReport_Vulnerability{
+				"foo": {
+					Id:                 "foo",
+					Name:               "CVE-2021-44228",
+					Link:               "https://access.redhat.com/security/cve/CVE-2021-44228 https://access.redhat.com/errata/RHSA-2021:5132",
+					Issued:             protoNow,
+					Severity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+					NormalizedSeverity: v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL,
+					Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 9.8,
+							Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/security/cve/CVE-2021-44228",
+					},
+					CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 9.8,
+								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+							Url:    "https://access.redhat.com/security/cve/CVE-2021-44228",
+						},
+						{
+							V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+								BaseScore: 10.0,
+								Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+							},
+							Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+							Url:    "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+						},
+					},
+				},
+			},
+		},
 	}
 	ctx := context.Background()
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			enableRedHatCVEs := "false"
+			if tt.enableRedHatCVEs {
+				enableRedHatCVEs = "true"
+			}
+			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
 			got, err := toProtoV4VulnerabilitiesMap(ctx, tt.ccVulnerabilities, tt.nvdVulns)
 			assert.NoError(t, err)
 			protoassert.MapEqual(t, tt.want, got)
@@ -1398,10 +1540,11 @@ func Test_convertToNormalizedSeverity(t *testing.T) {
 
 func Test_vulnerabilityName(t *testing.T) {
 	testcases := map[string]struct {
-		name     string
-		links    string
-		expected string
-		updater  string
+		name             string
+		links            string
+		expected         string
+		updater          string
+		enableRedHatCVEs bool
 	}{
 		"Alpine": {
 			name:     "CVE-2018-16840",
@@ -1444,11 +1587,18 @@ func Test_vulnerabilityName(t *testing.T) {
 			links:    "https://nvd.nist.gov/vuln/detail/CVE-2023-47248",
 			expected: "CVE-2023-47248",
 		},
-		"when rhel updater then RHEL over CVE": {
+		"when rhel updater and Red Hat CVEs disabled then RHSA over CVE": {
 			name:     "CVE-2023-25762",
 			links:    "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
-			expected: "CVE-2023-25762",
+			expected: "RHSA-2023:1866",
 			updater:  "rhel-vex",
+		},
+		"when rhel updater and Red Hat CVE enabled then CVE over RHSA": {
+			name:             "CVE-2023-25762",
+			links:            "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
+			expected:         "CVE-2023-25762",
+			updater:          "rhel-vex",
+			enableRedHatCVEs: true,
 		},
 		"when not rhel updater then CVE over RHEL": {
 			links:    "https://access.redhat.com/security/cve/CVE-2023-25761 https://access.redhat.com/errata/RHSA-2023:1866 https://access.redhat.com/security/cve/CVE-2023-25762",
@@ -1460,11 +1610,18 @@ func Test_vulnerabilityName(t *testing.T) {
 			expected: "ALAS-2023-356",
 			updater:  "aws-foobar-",
 		},
-		"CVE for RHCC updater": {
+		"RHSA for RHCC updater when Red Hat CVEs disabled": {
 			name:     "RHSA-2024:2941",
 			updater:  "rhel-container-updater",
 			links:    "https://access.redhat.com/errata/RHSA-2024:2941 https://access.redhat.com/security/cve/CVE-2024-29180",
-			expected: "CVE-2024-29180",
+			expected: "RHSA-2024:2941",
+		},
+		"CVE for RHCC updater when Red Hat CVEs enabled": {
+			name:             "RHSA-2024:2941",
+			updater:          "rhel-container-updater",
+			links:            "https://access.redhat.com/errata/RHSA-2024:2941 https://access.redhat.com/security/cve/CVE-2024-29180",
+			expected:         "CVE-2024-29180",
+			enableRedHatCVEs: true,
 		},
 	}
 	for name, testcase := range testcases {
@@ -1474,6 +1631,11 @@ func Test_vulnerabilityName(t *testing.T) {
 				Links:   testcase.links,
 				Updater: testcase.updater,
 			}
+			enableRedHatCVEs := "false"
+			if testcase.enableRedHatCVEs {
+				enableRedHatCVEs = "true"
+			}
+			t.Setenv(features.ScannerV4RedHatCVEs.EnvVar(), enableRedHatCVEs)
 			assert.Equal(t, testcase.expected, vulnerabilityName(v))
 		})
 	}
