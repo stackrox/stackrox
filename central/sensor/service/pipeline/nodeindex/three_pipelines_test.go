@@ -53,6 +53,17 @@ func Test_ThreePipelines_Run(t *testing.T) {
 		RiskScore:     1,
 	}
 
+	nodeWithV4Scan := &storage.Node{
+		Id:            nodeID,
+		Name:          nodeName,
+		ClusterId:     clusterID,
+		ClusterName:   clusterID,
+		KernelVersion: "v1",
+		Notes:         []storage.Node_Note{storage.Node_MISSING_SCAN_DATA},
+		RiskScore:     1,
+		Scan:          &storage.NodeScan{ScannerVersion: storage.NodeScan_SCANNER_V4},
+	}
+
 	nodeWithScanWithKernelV2 := &storage.Node{
 		Id:            nodeID,
 		Name:          nodeName,
@@ -170,6 +181,9 @@ func Test_ThreePipelines_Run(t *testing.T) {
 				gomock.InOrder(
 					// node inventory arrives
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
+					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).Times(1).Return(),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).MinTimes(1).Return(nil),
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV2).Times(1).Return(nil),
 
 					// node index arrives
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
@@ -186,7 +200,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			wantKernelVersionNodeScan: "v4",
 		},
 
-		"node index arriving before node inventory should still result in inventory being overwritten": {
+		"node index arriving before node inventory should result in inventory being discarded": {
 			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
 				// V4 node-scan (node index) for node1 arrives
 				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
@@ -208,7 +222,7 @@ func Test_ThreePipelines_Run(t *testing.T) {
 					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV4).Times(1).Return(nil),
 
 					// node inventory arrives
-					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScore, true, nil),
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithV4Scan, true, nil),
 
 					// check what got stored in the DB
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Times(1).Return(nodeWithScanWithKernelV4, true, nil),

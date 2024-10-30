@@ -93,10 +93,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return errors.WithMessagef(err, "node does not exist: %s", ninv.GetNodeId())
 	}
 
-	// Discard a message if NodeScanning v4 and v2 are running in parallel - v4 scans are prioritized in that case.
-	// The message will be kept if any of the two switches is disabled.
-	// This ensures node scans are updated even if a customer falls back to Scanner v2.
-	if features.ScannerV4.Enabled() && env.NodeIndexEnabled.BooleanSetting() {
+	if shouldDiscardMsg(node) {
 		// To prevent resending the inventory, still acknowledge receipt of it
 		sendComplianceAck(ctx, node, ninv, injector)
 		log.Debug("Discarding v2 NodeScan in favor of v4 NodeScan")
@@ -121,6 +118,22 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	sendComplianceAck(ctx, node, ninv, injector)
 	return nil
+}
+
+func shouldDiscardMsg(node *storage.Node) bool {
+	// In a mixed environment, there might be NodeInventory-only clusters, so there is no
+	// Scanner v4 scan available for that cluster. Keep the v2 scan in that case, even if Node Indexing is enabled.
+	if node.GetScan() == nil || node.GetScan().ScannerVersion != storage.NodeScan_SCANNER_V4 {
+		return false
+	}
+	// Discard a message if NodeScanning v4 and v2 are running in parallel - v4 scans are prioritized in that case.
+	// The message will be kept if any of the two switches is disabled.
+	// This ensures node scans are updated even if a customer falls back to Scanner v2.
+	if features.ScannerV4.Enabled() && env.NodeIndexEnabled.BooleanSetting() {
+		return true
+	}
+
+	return false
 }
 
 func sendComplianceAck(ctx context.Context, node *storage.Node, ninv *storage.NodeInventory, injector common.MessageInjector) {
