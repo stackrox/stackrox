@@ -262,6 +262,31 @@ func Test_ThreePipelines_Run(t *testing.T) {
 			wantKernelVersionNode:     "v1",
 			wantKernelVersionNodeScan: "v2",
 		},
+		"node inventory arriving on blank node while indexing is enabled still results in inventory being persisted": {
+			operations: []func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error{
+				// V2 node-scan (node inventory) for node1 arrives over the node-inventory pipeline
+				func(t *testing.T, np pipeline.Fragment, ninvp pipeline.Fragment, nidxp pipeline.Fragment) error {
+					return ninvp.Run(context.Background(), clusterID, createNodeInventoryMsg(nodeID, "v2"), nil)
+				},
+			},
+			setUpMocksAndEnv: func(t *testing.T, m *usedMocks) {
+				t.Setenv(features.ScannerV4.EnvVar(), "true")
+				t.Setenv(env.NodeIndexEnabled.EnvVar(), "true")
+				gomock.InOrder(
+					// node inventory arrives
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).Return(nodeWithScore, true, nil),
+					m.cveDatastore.EXPECT().EnrichNodeWithSuppressedCVEs(gomock.Any()).AnyTimes().Return(),
+					m.riskStorage.EXPECT().UpsertRisk(gomock.Any(), gomock.Any()).AnyTimes().Return(nil),
+					m.nodeDatastore.EXPECT().UpsertNode(gomock.Any(), nodeWithScanWithKernelV2).AnyTimes().Return(nil),
+
+					// check what got stored in the DB
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(nodeID)).AnyTimes().Return(nodeWithScanWithKernelV2, true, nil),
+				)
+			},
+			wantNodeExists:            true,
+			wantKernelVersionNode:     "v1",
+			wantKernelVersionNodeScan: "v2",
+		},
 	}
 	for name, tt := range tests {
 		tt := tt
