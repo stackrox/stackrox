@@ -18,7 +18,7 @@ var (
 
 	// ErrCertificateRequesterStopped is returned by RequestCertificates when the certificate
 	// requester is not initialized.
-	ErrCertificateRequesterStopped                        = errors.New("stopped")
+	ErrCertificateRequesterStopped                        = errors.New("certificate requester is stopped")
 	_                              certificates.Requester = (*certificateRequesterImpl)(nil)
 )
 
