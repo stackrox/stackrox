@@ -312,10 +312,10 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationsV
 			assert.Equal(s.T(), tc.expectedResult[idx].ClusterID, integration.ClusterID)
 			assert.Equal(s.T(), tc.expectedResult[idx].ClusterName, integration.ClusterName)
 			assert.Equal(s.T(), tc.expectedResult[idx].Version, integration.Version)
-			assert.Equal(s.T(), tc.expectedResult[idx].OperatorStatus, integration.OperatorStatus)
+			assert.Equal(s.T(), tc.expectedResult[idx].OperatorStatus.String(), integration.OperatorStatus.String())
 			assert.Equal(s.T(), tc.expectedResult[idx].OperatorInstalled, integration.OperatorInstalled)
-			assert.Equal(s.T(), tc.expectedResult[idx].StatusProviderMetadataClusterType, integration.StatusProviderMetadataClusterType)
-			assert.Equal(s.T(), tc.expectedResult[idx].Type, integration.Type)
+			assert.Equal(s.T(), tc.expectedResult[idx].StatusProviderMetadataClusterType.String(), integration.StatusProviderMetadataClusterType.String())
+			assert.Equal(s.T(), tc.expectedResult[idx].Type.String(), integration.Type.String())
 		}
 	}
 }
