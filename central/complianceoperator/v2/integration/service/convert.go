@@ -33,12 +33,12 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *complianceD
 	}
 
 	opStatus := v2.COStatus_UNHEALTHY
-	if integration.OperatorStatus != nil && *integration.OperatorStatus == storage.COStatus_HEALTHY {
+	if integration.GetOperatorStatus() == storage.COStatus_HEALTHY {
 		opStatus = v2.COStatus_HEALTHY
 	}
 
 	opInstalled := false
-	if integration.OperatorInstalled != nil && *integration.OperatorInstalled {
+	if integration.GetOperatorInstalled() {
 		opInstalled = true
 	}
 
@@ -51,8 +51,8 @@ func convertStorageIntegrationToV2(ctx context.Context, integration *complianceD
 		StatusErrors:        integrationDetail.GetStatusErrors(),
 		OperatorInstalled:   opInstalled,
 		Status:              opStatus,
-		ClusterPlatformType: convertPlatformType(integration.Type),
-		ClusterProviderType: convertProviderType(integration.StatusProviderMetadataClusterType),
+		ClusterPlatformType: convertPlatformType(integration.GetType()),
+		ClusterProviderType: convertProviderType(integration.GetStatusProviderMetadataClusterType()),
 	}, true, nil
 }
 
@@ -79,13 +79,8 @@ func convertStorageProtos(ctx context.Context, integrations []*complianceDS.Inte
 	return apiIntegrations, nil
 }
 
-func convertPlatformType(platformType *storage.ClusterType) v2.ClusterPlatformType {
-	if platformType == nil {
-		log.Error(errors.Errorf("unhandled cluster platform type encountered %s", platformType))
-		return v2.ClusterPlatformType_GENERIC_CLUSTER
-	}
-
-	switch *platformType {
+func convertPlatformType(platformType storage.ClusterType) v2.ClusterPlatformType {
+	switch platformType {
 	case storage.ClusterType_GENERIC_CLUSTER:
 		return v2.ClusterPlatformType_GENERIC_CLUSTER
 	case storage.ClusterType_KUBERNETES_CLUSTER:
@@ -100,13 +95,8 @@ func convertPlatformType(platformType *storage.ClusterType) v2.ClusterPlatformTy
 	}
 }
 
-func convertProviderType(providerType *storage.ClusterMetadata_Type) v2.ClusterProviderType {
-	if providerType == nil {
-		log.Error(errors.Errorf("unhandled cluster platform type encountered %s", providerType))
-		return v2.ClusterProviderType_UNSPECIFIED
-	}
-
-	switch *providerType {
+func convertProviderType(providerType storage.ClusterMetadata_Type) v2.ClusterProviderType {
+	switch providerType {
 	case storage.ClusterMetadata_UNSPECIFIED:
 		return v2.ClusterProviderType_UNSPECIFIED
 	case storage.ClusterMetadata_AKS:
