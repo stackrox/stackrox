@@ -8,6 +8,35 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
+    'no-Td-data-label': {
+        // Although Td element renders prop as data-label attribute,
+        // require dataLabel prop to simplify other lint rules.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace data-label with dataLabel prop in Td element',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    if (typeof node.name?.name === 'string' && node.name.name.endsWith('Td')) {
+                        if (
+                            node.attributes.some(
+                                (attribute) => attribute.name?.name === 'data-label'
+                            )
+                        ) {
+                            context.report({
+                                node,
+                                message: 'Replace data-label with dataLabel prop in Td element',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-Variant': {
         // Replace Variant enum member with corresponding string literal.
         // Because TypeScript string enumeration is source of truth for prop.
