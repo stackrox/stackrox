@@ -1,9 +1,7 @@
 import axios from './instance';
 import { Empty } from './types';
 
-const configTypes = ['GENERIC', 'GITHUB_ACTIONS'] as const;
-
-export type MachineConfigType = (typeof configTypes)[number];
+export type MachineConfigType = 'GENERIC' | 'GITHUB_ACTIONS';
 
 export type MachineConfigMapping = {
     key: string;
