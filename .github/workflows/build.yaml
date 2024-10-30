@@ -746,6 +746,42 @@ jobs:
       #     category: ${{ matrix.image }}
       #     sarif_file: results.sarif
 
+  check-images-for-fips-check-payload:
+    if: github.event_name == 'push'
+    needs:
+      - build-and-push-main
+      - build-and-push-operator
+      - push-main-manifests
+    name: Check images for FIPS compliance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: 'https://github.com/stackrox/openshift-check-payload'
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v4
+
+      - name: Scan images for FIPS compliance
+        run: |
+          set -x
+          set +e
+          pwd
+          ls -la
+          image=roxctl
+          release_tag=$(make tag)
+          if [[ $image =~ "operator" ]]; then
+            release_tag=$(make -C operator --silent tag)
+          fi
+          for $(( i=10; i>0; i-- )); do
+            go run main.go -- scan operator --verbose \
+              --spec "quay.io/rhacs-eng/${image}:${release_tag}" \
+              && break
+            date
+            sleep 120
+          done
+
   slack-on-build-failure:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
