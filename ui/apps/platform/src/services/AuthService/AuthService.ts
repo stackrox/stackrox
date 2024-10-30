@@ -28,7 +28,7 @@ const requestedLocationKey = 'requested_location';
  */
 export class AuthHttpError extends Error {
     code: number;
-    cause: Error; // eslint-disable-line @typescript-eslint/lines-between-class-members
+    cause: Error;
 
     constructor(message: string, code: number, cause: Error) {
         super(message);
