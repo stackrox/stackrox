@@ -7,6 +7,11 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.4.6]
+
+### Technical Changes
+- ROX-24326: Resolves an issue where a vulnerabilityRequest object in a network response is null for CVEs that have approved false positive vulnerability requests.
+
 ## [4.4.4]
 
 ### Technical Changes
