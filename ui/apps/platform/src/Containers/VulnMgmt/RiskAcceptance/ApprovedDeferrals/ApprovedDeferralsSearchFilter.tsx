@@ -1,7 +1,6 @@
 import React, { ReactElement, useState } from 'react';
 import {
     Button,
-    ButtonVariant,
     Flex,
     FlexItem,
     InputGroup,
@@ -76,7 +75,7 @@ function ApprovedDeferralsSearchFilter({
                         </InputGroupItem>
                         <InputGroupItem>
                             <Button
-                                variant={ButtonVariant.control}
+                                variant="control"
                                 aria-label="search button for search input"
                                 onClick={() => handleSearchChange(inputValue)}
                             >

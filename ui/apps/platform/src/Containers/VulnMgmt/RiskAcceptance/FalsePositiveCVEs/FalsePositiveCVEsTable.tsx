@@ -3,7 +3,6 @@ import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
     Bullseye,
     Button,
-    ButtonVariant,
     Divider,
     PageSection,
     PageSectionVariants,
@@ -227,7 +226,7 @@ function FalsePositiveCVEsTable({
                                     </Td>
                                     <Td dataLabel="Affected components">
                                         <Button
-                                            variant={ButtonVariant.link}
+                                            variant="link"
                                             isInline
                                             onClick={() => {
                                                 showComponentDetails(row.components, row.cve);

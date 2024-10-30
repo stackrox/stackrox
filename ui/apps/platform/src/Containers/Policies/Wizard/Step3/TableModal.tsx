@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Button,
-    ButtonVariant,
     Modal,
     ModalBoxBody,
     ModalBoxFooter,
@@ -75,7 +74,7 @@ function TableModal({
             <Button
                 key="open-select-modal"
                 data-testid="table-modal-open-button"
-                variant={ButtonVariant.primary}
+                variant="primary"
                 onClick={() => {
                     setIsModalOpen(true);
                 }}
