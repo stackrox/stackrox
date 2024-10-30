@@ -13,6 +13,7 @@ ENV GOFLAGS=""
 # TODO(ROX-20240): enable non-release development builds.
 # ENV GOTAGS="release"
 # TODO(ROX-23335): Properly set the build tag
+ENV GOEXPERIMENT="strictfipsruntime"
 ENV BUILD_TAG="dev"
 ENV CI=1
 
