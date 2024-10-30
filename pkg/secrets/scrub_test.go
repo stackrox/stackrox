@@ -378,6 +378,7 @@ func TestValidateScrubTagTypes(t *testing.T) {
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.GoogleConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.ClairConfig{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.IBMRegistryConfig{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.AzureConfig{})))
 
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Notifier{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Jira{})))
@@ -387,7 +388,20 @@ func TestValidateScrubTagTypes(t *testing.T) {
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.PagerDuty{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Generic{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.SumoLogic{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.AWSSecurityHub{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.MicrosoftSentinel{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.Syslog{})))
 
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(v1.ExchangeTokenRequest{})))
 	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.HTTPEndpointConfig{})))
+
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(v1.CloudSource{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.CloudSource{})))
+
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.AuthProvider{})))
+
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.S3Config{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.S3Compatible{})))
+	assert.NoError(t, validateStructTagsOnType(reflect.TypeOf(storage.GCSConfig{})))
+
 }
