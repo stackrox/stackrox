@@ -678,6 +678,7 @@ module.exports = [
             // Turn off new rules until after we fix errors in follow-up contributions.
             '@typescript-eslint/no-misused-promises': 'off', // more than 100 errors
             '@typescript-eslint/no-unsafe-argument': 'off', // more than 300 errors
+            '@typescript-eslint/prefer-promise-reject-errors': 'off', // 9 errors
             '@typescript-eslint/require-await': 'off', // about 20 errors
 
             '@typescript-eslint/array-type': 'error',
