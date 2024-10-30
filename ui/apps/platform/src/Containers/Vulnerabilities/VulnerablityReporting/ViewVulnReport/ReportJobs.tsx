@@ -12,7 +12,6 @@ import {
 import {
     Alert,
     AlertGroup,
-    AlertVariant,
     Bullseye,
     Button,
     Card,
@@ -411,7 +410,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                     {deleteDownloadError && (
                         <Alert
                             isInline
-                            variant={AlertVariant.danger}
+                            variant="danger"
                             title={deleteDownloadError}
                             component="p"
                             className="pf-v5-u-mb-sm"

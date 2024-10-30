@@ -1,14 +1,5 @@
 import React, { useState } from 'react';
-import {
-    Alert,
-    AlertVariant,
-    Button,
-    Flex,
-    Form,
-    Modal,
-    Text,
-    TextArea,
-} from '@patternfly/react-core';
+import { Alert, Button, Flex, Form, Modal, Text, TextArea } from '@patternfly/react-core';
 import * as yup from 'yup';
 import { useFormik } from 'formik';
 import isEqual from 'lodash/isEqual';
@@ -100,12 +91,7 @@ function RequestDenialButtonModal({ exception, onSuccess }: RequestDenialButtonM
             >
                 <Flex direction={{ default: 'column' }}>
                     {errorMessage && (
-                        <Alert
-                            isInline
-                            variant={AlertVariant.danger}
-                            title={errorMessage}
-                            component="p"
-                        />
+                        <Alert isInline variant="danger" title={errorMessage} component="p" />
                     )}
                     <Alert
                         variant="warning"

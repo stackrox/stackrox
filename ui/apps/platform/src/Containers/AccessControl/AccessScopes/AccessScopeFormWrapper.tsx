@@ -3,7 +3,6 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
-    AlertVariant,
     Button,
     Label,
     Title,
@@ -99,7 +98,7 @@ function AccessScopeFormWrapper({
                     <Alert
                         title="Failed to save access scope"
                         component="p"
-                        variant={AlertVariant.danger}
+                        variant="danger"
                         isInline
                     >
                         {error.message}

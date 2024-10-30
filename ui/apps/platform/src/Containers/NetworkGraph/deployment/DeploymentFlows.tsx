@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     Alert,
-    AlertVariant,
     Bullseye,
     Divider,
     EmptyState,
@@ -147,7 +146,7 @@ function DeploymentFlows({
             {(networkFlowsError || modifyError) && (
                 <Alert
                     isInline
-                    variant={AlertVariant.danger}
+                    variant="danger"
                     title={networkFlowsError || modifyError}
                     component="p"
                     className="pf-v5-u-mb-sm"

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Alert, AlertVariant } from '@patternfly/react-core';
+import { Alert } from '@patternfly/react-core';
 
 function ReportFormErrorAlert({ error }) {
     const alertRef = React.useRef<HTMLInputElement>(null);
@@ -18,7 +18,7 @@ function ReportFormErrorAlert({ error }) {
             {error && (
                 <Alert
                     isInline
-                    variant={AlertVariant.danger}
+                    variant="danger"
                     title={error}
                     component="p"
                     className="pf-v5-u-mb-sm"

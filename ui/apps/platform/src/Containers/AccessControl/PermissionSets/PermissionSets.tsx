@@ -4,7 +4,6 @@ import { useHistory, useLocation, useParams } from 'react-router-dom';
 import {
     Alert,
     AlertActionCloseButton,
-    AlertVariant,
     Bullseye,
     Button,
     PageSection,
@@ -72,7 +71,7 @@ function PermissionSets(): ReactElement {
                     <Alert
                         title="Fetch permission sets failed"
                         component="p"
-                        variant={AlertVariant.danger}
+                        variant="danger"
                         isInline
                     >
                         {error.message}
@@ -97,7 +96,7 @@ function PermissionSets(): ReactElement {
                     <Alert
                         title="Fetch resources failed"
                         component="p"
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >
@@ -121,7 +120,7 @@ function PermissionSets(): ReactElement {
                     <Alert
                         title="Fetch roles failed"
                         component="p"
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >
