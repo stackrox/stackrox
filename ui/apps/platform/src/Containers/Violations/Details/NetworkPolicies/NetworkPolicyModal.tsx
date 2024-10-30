@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Flex, Modal, ModalVariant } from '@patternfly/react-core';
+import { Button, Flex, Modal } from '@patternfly/react-core';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
@@ -22,7 +22,7 @@ function NetworkPolicyModal({ networkPolicy, isOpen, onClose }: NetworkPolicyMod
     return (
         <Modal
             title="Network policy details"
-            variant={ModalVariant.small}
+            variant="small"
             isOpen={isOpen}
             onClose={onClose}
             actions={[

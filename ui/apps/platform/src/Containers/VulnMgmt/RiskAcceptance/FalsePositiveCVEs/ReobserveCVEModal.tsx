@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Button, Form, Modal, ModalVariant, TextArea } from '@patternfly/react-core';
+import { Button, Form, Modal, TextArea } from '@patternfly/react-core';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -70,7 +70,7 @@ function ReobserveCVEModal({
 
     return (
         <Modal
-            variant={ModalVariant.small}
+            variant="small"
             title="Reobserve CVE"
             isOpen={isOpen}
             onClose={onCancelHandler}
