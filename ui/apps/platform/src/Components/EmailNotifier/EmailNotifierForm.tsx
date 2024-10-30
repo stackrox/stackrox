@@ -27,7 +27,7 @@ const startTLSAuthMethods = [
 
 export type EmailNotifierFormProps = {
     values: EmailIntegrationFormValues;
-    setFieldValue: (field: string, value: any, shouldValidate?: boolean | undefined) => void;
+    setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
     handleBlur: (e: React.FocusEvent<any, Element>) => void;
     errors: FormikErrors<any>;
     touched: FormikTouched<any>;
