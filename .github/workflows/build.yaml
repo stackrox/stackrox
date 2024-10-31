@@ -793,7 +793,7 @@ jobs:
           cd check-payload
           ls -la
           podman unshare
-          for image in main roxctl stackrox-operator; do
+          for image in main roxctl rhacs-operator; do
             if [[ $image == stackrox-operator ]]; then
               pushd ../stackrox
               tag=$(make -C operator --silent tag)
