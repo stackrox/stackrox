@@ -111,7 +111,7 @@ func mapAlertToFinding(account string, arn string, alertURL string, alert *stora
 	finding.Resources = resources
 
 	switch alert.GetState() {
-	case storage.ViolationState_ACTIVE, storage.ViolationState_SNOOZED:
+	case storage.ViolationState_ACTIVE:
 		finding.Compliance = &securityhub.Compliance{
 			Status: aws.String(securityhub.ComplianceStatusFailed),
 		}
