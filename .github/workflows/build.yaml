@@ -764,6 +764,7 @@ jobs:
         with:
           repository: 'stackrox/openshift-check-payload'
           fetch-depth: 0
+          path: check-payload
 
       - uses: actions/setup-go@v4
 
@@ -776,6 +777,8 @@ jobs:
           image=roxctl
           release_tag=$(make -C stackrox tag)
           release_tag=${release_tag:-4.6.x-832-g3ee6976d32-amd64}
+          cd check-payload
+          ls -la
           if [[ $image =~ "operator" ]]; then
             release_tag=$(make -C operator --silent tag)
           fi
