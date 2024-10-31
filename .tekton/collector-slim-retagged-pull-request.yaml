@@ -23,11 +23,11 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rh-acs-tenant/collector-slim-retagged:on-pr-{{revision}}
+    value: quay.io/rhacs-eng/collector-slim:konflux-tmp-on-pr-{{revision}}
   - name: image-expires-after
     value: 5d
   - name: dockerfile
-    value: Dockerfile
+    value: .konflux/konflux.dummy.Dockerfile
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while maintaining trust after pipeline customization.
