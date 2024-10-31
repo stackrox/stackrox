@@ -788,6 +788,7 @@ jobs:
           release_tag=$(make tag)
           popd
           release_tag=${release_tag:-4.6.x-832-g3ee6976d32-amd64}
+          release_tag=4.6.x-832-g3ee6976d32-amd64
           cd check-payload
           ls -la
           for image in main, roxctl, stackrox-operator; do
