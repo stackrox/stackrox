@@ -131,7 +131,7 @@ shorten_tag() {
         echo "${BASH_REMATCH[1]}.z"
     else
         echo "${input_tag}"
-        >&2 echo "Failed to shorten version of tag ${input_tag} as it did not match the regex: \"${combined_regex}\""
+        >&2 echo "Failed to shorten tag ${input_tag} as it did not match the regex: \"${combined_regex}\""
         exit 1
     fi
 }
