@@ -775,7 +775,9 @@ jobs:
           pwd
           ls -la
           image=roxctl
-          release_tag=$(make -C stackrox tag)
+          pushd stackrox
+          release_tag=$(make tag)
+          popd
           release_tag=${release_tag:-4.6.x-832-g3ee6976d32-amd64}
           cd check-payload
           ls -la
