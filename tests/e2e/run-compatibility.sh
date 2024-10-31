@@ -30,8 +30,8 @@ run_compatibility_tests() {
 
     info "Starting go compatibility tests with central v${short_central_tag} and sensor v${short_sensor_tag}"
 
-    junit_wrap CentralSensorVersionCompatibility "central: ${short_central_tag}, sensor: ${short_sensor_tag}" "" \
-        _run_compatibility_tests "${central_version}" "${sensor_version}" "${short_central_tag}" "${short_sensor_tag}"
+    #junit_wrap CentralSensorVersionCompatibility "central: ${short_central_tag}, sensor: ${short_sensor_tag}" "" \
+    _run_compatibility_tests "${central_version}" "${sensor_version}" "${short_central_tag}" "${short_sensor_tag}"
 }
 
 _run_compatibility_tests() {
@@ -116,21 +116,26 @@ prepare_for_endpoints_test() {
 
 shorten_tag() {
     if [[ "$#" -ne 1 ]]; then
-        die "Expected a version tag as parameter in shorten_tag: shorten_tag <tag>"
+        die "Expected a version tag as parameter in mask_minor_version: mask_minor_version <tag>"
     fi
 
-    long_tag="$1"
+    input_tag="$1"
 
-    short_tag_regex='([0-9]+\.[0-9]+\.[0-9xX]+)'
+    development_version_regex='([0-9]+\.[0-9]+\.[xX])'
+    with_minor_version_regex='([0-9]+\.[0-9]+)\.[0-9]+'
+    combined_regex='[0-9]+\.[0-9]+\.[0-9xX]+'
 
-    if [[ $long_tag =~ $short_tag_regex ]]; then
+    if [[ $input_tag =~ $development_version_regex ]]; then
         echo "${BASH_REMATCH[1]}"
+    elif [[ $input_tag =~ $with_minor_version_regex ]]; then
+        echo "${BASH_REMATCH[1]}.z"
     else
-        echo "${long_tag}"
-        >&2 echo "Failed to shorten tag ${long_tag} as it did not match the regex: \"${short_tag_regex}\""
+        echo "${input_tag}"
+        >&2 echo "Failed to shorten version of tag ${input_tag} as it did not match the regex: \"${combined_regex}\""
         exit 1
     fi
 }
+
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -ne 2 ]]; then
