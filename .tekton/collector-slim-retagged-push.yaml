@@ -24,7 +24,7 @@ spec:
   - name: output-image
     value: quay.io/rhacs-eng/collector-sim:konflux-tmp-on-pr-{{revision}}
   - name: dockerfile
-    value: .konflux/konflux.dummy.Dockerfile
+    value: .konflux/konflux.dummy2.Dockerfile
   pipelineSpec:
     description: |
       This pipeline is ideal for building container images from a Containerfile while maintaining trust after pipeline customization.
