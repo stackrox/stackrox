@@ -755,7 +755,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          repository: 'https://github.com/stackrox/openshift-check-payload'
+          repository: 'stackrox/openshift-check-payload'
           fetch-depth: 0
 
       - uses: actions/setup-go@v4
