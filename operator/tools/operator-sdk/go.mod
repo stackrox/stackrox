@@ -1,8 +1,8 @@
 module github.com/stackrox/rox/operator/tools/kuttl
 
-go 1.21
+go 1.22
 
-toolchain go1.21.9
+toolchain go1.22.5
 
 require github.com/operator-framework/operator-sdk v1.33.0
 

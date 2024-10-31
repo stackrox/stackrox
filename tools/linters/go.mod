@@ -1,6 +1,8 @@
 module github.com/stackrox/stackrox/tools/linters
 
-go 1.19
+go 1.22
+
+toolchain go1.22.5
 
 require (
 	github.com/golangci/golangci-lint v1.55.2
