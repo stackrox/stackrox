@@ -786,7 +786,7 @@ jobs:
           fi
           for (( i=10; i>0; i-- )); do
             go run main.go scan operator --verbose \
-              --spec "quay.io/rhacs-eng/${image}:${release_tag}" \
+              --spec "quay.io/stackrox-io/${image}:${release_tag}" \
               && break
             date
             sleep 120
