@@ -755,6 +755,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: stackrox
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
           repository: 'stackrox/openshift-check-payload'
           fetch-depth: 0
 
@@ -767,7 +774,7 @@ jobs:
           pwd
           ls -la
           image=roxctl
-          release_tag=$(make tag)
+          release_tag=$(make -C stackrox tag)
           if [[ $image =~ "operator" ]]; then
             release_tag=$(make -C operator --silent tag)
           fi
