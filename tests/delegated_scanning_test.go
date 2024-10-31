@@ -867,17 +867,27 @@ func (ts *DelegatedScanningSuite) scanWithRetries(ctx context.Context, service v
 	var err error
 	var img *storage.Image
 
+	retryErrTokens := []string{
+		scan.ErrTooManyParallelScans.Error(),
+		"context deadline exceeded",
+	}
+
 	retryFunc := func() error {
 		img, err = service.ScanImage(ctx, req)
+		if err == nil {
+			return nil
+		}
 
-		if err != nil && strings.Contains(err.Error(), scan.ErrTooManyParallelScans.Error()) {
-			err = retry.MakeRetryable(err)
+		for _, token := range retryErrTokens {
+			if strings.Contains(err.Error(), token) {
+				return retry.MakeRetryable(err)
+			}
 		}
 
 		return err
 	}
 
-	err = ts.withRetries(retryFunc, "Too many parallel scans")
+	err = ts.withRetries(retryFunc, "Timeout or too many parallel scans")
 	return img, err
 }
 
