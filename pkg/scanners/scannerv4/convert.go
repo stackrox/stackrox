@@ -188,56 +188,6 @@ func vulnerabilities(vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerab
 	return vulns
 }
 
-// This method is used by node scanning
-func setScoresAndScoreVersion(vuln *storage.EmbeddedVulnerability, vulnCVSS *v4.VulnerabilityReport_Vulnerability_CVSS) error {
-	if vulnCVSS == nil {
-		return nil
-	}
-	errList := errorhelpers.NewErrorList("failed to parse vector")
-	if v2 := vulnCVSS.GetV2(); v2 != nil {
-		if c, err := cvssv2.ParseCVSSV2(v2.GetVector()); err == nil {
-			err = cvssv2.CalculateScores(c)
-			if err != nil {
-				errList.AddError(fmt.Errorf("calculating CVSS v2 scores: %w", err))
-			}
-			// Use the report's score if it exists.
-			if baseScore := v2.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
-				log.Debugf("Calculated CVSSv2 score does not match given base score (%f != %f) for %s. Using given score...", c.Score, baseScore, vuln.GetCve())
-				c.Score = baseScore
-			}
-			c.Severity = cvssv2.Severity(c.Score)
-			vuln.CvssV2 = c
-			// This sets the top level score for use in policies.
-			// It will be overwritten if v3 exists.
-			vuln.ScoreVersion = storage.EmbeddedVulnerability_V2
-			vuln.Cvss = c.Score
-		} else {
-			errList.AddError(fmt.Errorf("v2: %w", err))
-		}
-	}
-	if v3 := vulnCVSS.GetV3(); v3 != nil {
-		if c, err := cvssv3.ParseCVSSV3(v3.GetVector()); err == nil {
-			err = cvssv3.CalculateScores(c)
-			if err != nil {
-				errList.AddError(fmt.Errorf("calculating CVSS v3 scores: %w", err))
-			}
-			// Use the report's score if it exists.
-			if baseScore := v3.GetBaseScore(); baseScore != 0.0 && baseScore != c.Score {
-				log.Debugf("Calculated CVSSv3 score does not match given base score (%f != %f) for %s. Using given score...", c.Score, baseScore, vuln.GetCve())
-				c.Score = baseScore
-			}
-			c.Severity = cvssv3.Severity(c.Score)
-			vuln.CvssV3 = c
-			// Overwrite v2, if set.
-			vuln.ScoreVersion = storage.EmbeddedVulnerability_V3
-			vuln.Cvss = c.Score
-		} else {
-			errList.AddError(fmt.Errorf("v3: %w", err))
-		}
-	}
-	return errList.ToError()
-}
-
 func setScoresAndScoreVersions(vuln *storage.EmbeddedVulnerability, CVSSMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) error {
 	if len(CVSSMetrics) == 0 {
 		return nil
