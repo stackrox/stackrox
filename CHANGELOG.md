@@ -10,7 +10,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ## [4.4.6]
 
 ### Technical Changes
-- ROX-24326: Resolves an issue where a vulnerabilityRequest object in a network response is null for CVEs that have approved false positive vulnerability requests.
+- ROX-24326: Resolves an issue where a null vulnerabilityRequest object in a network response for CVEs that have approved false positive vulnerability requests causes a crash in the UI.
 
 ## [4.4.4]
 
