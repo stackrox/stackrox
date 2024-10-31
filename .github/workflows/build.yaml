@@ -751,7 +751,17 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'fips')
     name: Check images for FIPS compliance
     runs-on: ubuntu-latest
+    env:
+      QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
     steps:
+      - name: Docker login
+        # Skip for external contributions.
+        if: |
+          github.event_name == 'push' || !github.event.pull_request.head.repo.fork
+        run: |
+          ./scripts/ci/lib.sh registry_ro_login "quay.io/rhacs-eng"
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -774,22 +784,23 @@ jobs:
           set +e
           pwd
           ls -la
-          image=roxctl
           pushd stackrox
           release_tag=$(make tag)
           popd
           release_tag=${release_tag:-4.6.x-832-g3ee6976d32-amd64}
           cd check-payload
           ls -la
-          if [[ $image =~ "operator" ]]; then
-            release_tag=$(make -C operator --silent tag)
-          fi
-          for (( i=10; i>0; i-- )); do
+          for image in main, roxctl, stackrox-operator; do
+            if [[ $image == stackrox-operator ]]; then
+              pushd stackrox
+              tag=$(make -C operator --silent tag)
+              popd
+            else
+              tag=${release_tag}
+            fi
             go run main.go scan operator --verbose \
-              --spec "quay.io/stackrox-io/${image}:${release_tag}" \
-              && break
+              --spec "quay.io/rhacs-eng/${image}:${tag}"
             date
-            sleep 120
           done
 
   slack-on-build-failure:
