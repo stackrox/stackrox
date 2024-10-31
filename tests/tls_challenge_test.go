@@ -75,10 +75,14 @@ func (ts *TLSChallengeSuite) TearDownSuite() {
 }
 
 func (ts *TLSChallengeSuite) TestTLSChallenge() {
-	// When COLLECTION_METHOD is set to NO_COLLECTION the collector DS contains only a compliance container but
-	// no collector container, and this test will trigger the ClusterHealth updater which then queries the collectorDS
-	// for a container that does not exist, sending Sensor into an Error state.
-	// See sensor/kubernetes/clusterhealth/updater.go:getCollectorInfo()
+	// This test relies on several log lines appearing in the Sensor logs. One of those does not appear
+	// when running in 3.74. This is caused by Collector being set to NO_COLLECTION method
+	// which results in no Collector container in the pod (only Compliance is present).
+	// That condition makes it impossible for Sensor to parse the Collector image version from
+	// the Collector container because such container is absent. This sends Sensor into an error state
+	// and the said log line is never produced. A fix for that is trivial, but would require a patch release for 3.74
+	// and we do not do patch releases for this version anymore.
+	// See getCollectorInfo() in sensor/kubernetes/clusterhealth/updater.go for implementation details
 	if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
 		ts.T().Skipf("Skipping TestTLSChallenge because \"COLLECTION_METHOD\" is set to \"NO_COLLECTION\".\n" +
 			"This is expected to only happen when Sensor version is 3.74.x (support exception / compatibility tests)")
@@ -92,14 +96,13 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 	ts.mustSetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
 	ts.logf("Sensor will now attempt connecting via the nginx proxy.")
 
-	logMatchers := []logMatcher{
+	ts.waitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection",
 		containsLineMatching(regexp.MustCompile("Info: Add central CA cert with CommonName: 'Custom Root'")),
-		containsLineMatching(regexp.MustCompile("Info: Connecting to Central server " + proxyEndpoint)),
+		containsLineMatching(regexp.MustCompile("Info: Connecting to Central server "+proxyEndpoint)),
 		containsLineMatching(regexp.MustCompile("Info: Established connection to Central.")),
 		containsLineMatching(regexp.MustCompile("Info: Communication with central started.")),
-	}
+	)
 
-	ts.waitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection", logMatchers...)
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 }
 

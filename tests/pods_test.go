@@ -39,12 +39,6 @@ func TestPod(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
 
-	if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
-		testT.Log("Skipping TestPod because env var \"COLLECTION_METHOD\" is set to \"NO_COLLECTION\"\n" +
-			"This is expected to only happen when Sensor version is 3.74.x (support exception within compatibility tests)")
-		return
-	}
-
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
 	client := createK8sClient(testT)
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
@@ -71,8 +65,7 @@ func TestPod(testT *testing.T) {
 
 		if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
 			testT.Logf("Skipping parts of TestPod that relate to events because env var \"COLLECTION_METHOD\" is " +
-				"set to \"NO_COLLECTION\"\n. This is expected to only happen when Sensor version is 3.74.x " +
-				"(support exception / compatibility tests)\"")
+				"set to \"NO_COLLECTION\"")
 		} else {
 			// Verify the events.
 			var loopCount int
