@@ -93,10 +93,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 		return errors.WithMessagef(err, "node does not exist: %s", ninv.GetNodeId())
 	}
 
-	// Discard a message if NodeScanning v4 and v2 are running in parallel - v4 scans are prioritized in that case.
-	// The message will be kept if any of the two switches is disabled.
-	// This ensures node scans are updated even if a customer falls back to Scanner v2.
-	if features.ScannerV4.Enabled() && env.NodeIndexEnabled.BooleanSetting() {
+	if shouldDiscardMsg(node) {
 		// To prevent resending the inventory, still acknowledge receipt of it
 		sendComplianceAck(ctx, node, ninv, injector)
 		log.Debug("Discarding v2 NodeScan in favor of v4 NodeScan")
@@ -121,6 +118,25 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 
 	sendComplianceAck(ctx, node, ninv, injector)
 	return nil
+}
+
+// shouldDiscardMsg returns true if the pipeline should discard an incoming message or false if it should keep processing it.
+func shouldDiscardMsg(node *storage.Node) bool {
+	// In a mixed environment, there might be v2-only clusters, so there is no Scanner v4 scan available for that cluster.
+	// If a cluster only ever produces v2 NodeScans, they need to be processed and persisted, even if Node Indexing is enabled.
+	if node.GetScan() == nil || node.GetScan().ScannerVersion != storage.NodeScan_SCANNER_V4 {
+		return false
+	}
+	// Discard this v2 message if NodeScanning v4 and v2 are running in parallel on the same cluster.
+	// v4 scans are prioritized in that case.
+	if features.ScannerV4.Enabled() && env.NodeIndexEnabled.BooleanSetting() {
+		return true
+	}
+	// If either ScannerV4 or the feature flag are disabled, v2 scans are processed and persisted normally,
+	// even if there are already v4 scans in the database.
+	// This is a safety fallback to keep node scanning working if a customer decides to disable v4 node indexing
+	// after it already ran at least once.
+	return false
 }
 
 func sendComplianceAck(ctx context.Context, node *storage.Node, ninv *storage.NodeInventory, injector common.MessageInjector) {

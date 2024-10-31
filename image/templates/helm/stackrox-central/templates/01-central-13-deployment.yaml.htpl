@@ -113,8 +113,6 @@ spec:
           value: "true"
         {{- end }}
         {{- if ._rox.env.managedServices }}
-        - name: ROX_NODE_INDEX_ENABLED
-          value: "true"
         - name: ROX_MANAGED_CENTRAL
           value: "true"
         - name: ROX_ENABLE_CENTRAL_DIAGNOSTICS
