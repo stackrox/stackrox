@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -121,12 +122,12 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 				Return([]*datastore.IntegrationDetails{{
 					ID:                                uuid.NewDummy().String(),
 					Version:                           "22",
-					OperatorInstalled:                 true,
-					OperatorStatus:                    storage.COStatus_HEALTHY,
+					OperatorInstalled:                 pointers.Bool(true),
+					OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 					ClusterID:                         fixtureconsts.Cluster1,
 					ClusterName:                       mockClusterName,
-					Type:                              storage.ClusterType_OPENSHIFT_CLUSTER,
-					StatusProviderMetadataClusterType: storage.ClusterMetadata_OCP,
+					Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT_CLUSTER),
+					StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_OCP),
 				},
 				}, nil).Times(1)
 
