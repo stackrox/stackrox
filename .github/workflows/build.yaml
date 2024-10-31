@@ -771,7 +771,7 @@ jobs:
           if [[ $image =~ "operator" ]]; then
             release_tag=$(make -C operator --silent tag)
           fi
-          for $(( i=10; i>0; i-- )); do
+          for (( i=10; i>0; i-- )); do
             go run main.go -- scan operator --verbose \
               --spec "quay.io/rhacs-eng/${image}:${release_tag}" \
               && break
