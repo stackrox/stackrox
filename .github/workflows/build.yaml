@@ -794,7 +794,7 @@ jobs:
           ls -la
           for image in main, roxctl, stackrox-operator; do
             if [[ $image == stackrox-operator ]]; then
-              pushd stackrox
+              pushd ../stackrox
               tag=$(make -C operator --silent tag)
               popd
             else
