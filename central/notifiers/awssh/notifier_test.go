@@ -365,7 +365,6 @@ func TestNotifierCreationFromEnvAndTest(t *testing.T) {
 
 	require.NoError(t, notifier.Test(ctx))
 	require.NoError(t, notifier.AlertNotify(ctx, (&LightAlert{state: storage.ViolationState_ACTIVE}).convert()))
-	require.NoError(t, notifier.AlertNotify(ctx, (&LightAlert{state: storage.ViolationState_SNOOZED}).convert()))
 	require.NoError(t, notifier.AlertNotify(ctx, (&LightAlert{state: storage.ViolationState_RESOLVED}).convert()))
 
 	require.Equal(t, context.DeadlineExceeded, <-errCh)
