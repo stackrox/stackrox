@@ -747,11 +747,8 @@ jobs:
       #     sarif_file: results.sarif
 
   check-images-for-fips-check-payload:
-    if: github.event_name == 'push'
-    needs:
-      - build-and-push-main
-      - build-and-push-operator
-      - push-main-manifests
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'fips')
     name: Check images for FIPS compliance
     runs-on: ubuntu-latest
     steps:
