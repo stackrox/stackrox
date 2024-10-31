@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -27,9 +26,6 @@ type Service interface {
 func New(reportConfigStore reportConfigDS.DataStore, snapshotDatastore snapshotDS.DataStore,
 	collectionDatastore collectionDS.DataStore, notifierDatastore notifierDS.DataStore,
 	scheduler schedulerV2.Scheduler, blobStore blobDS.Datastore, validator *validation.Validator) Service {
-	if !features.VulnReportingEnhancements.Enabled() {
-		return nil
-	}
 	return &serviceImpl{
 		reportConfigStore:   reportConfigStore,
 		snapshotDatastore:   snapshotDatastore,

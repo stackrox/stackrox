@@ -21,7 +21,6 @@ import (
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	types2 "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -67,11 +66,6 @@ type vulnReportData struct {
 }
 
 func (s *EnhancedReportingTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
-	if !features.VulnReportingEnhancements.Enabled() {
-		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
-		s.T().SkipNow()
-	}
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	s.mockCtrl = gomock.NewController(s.T())
 	s.testDB = resolvers.SetupTestPostgresConn(s.T())
