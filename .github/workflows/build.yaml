@@ -794,6 +794,9 @@ jobs:
           ls -la
           SHELL=/bin/bash
           which podman
+          podman -v
+          sudo apt install podman
+          podman -v
           podman unshare
           for image in main roxctl rhacs-operator; do
             if [[ $image == stackrox-operator ]]; then
