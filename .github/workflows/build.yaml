@@ -795,9 +795,6 @@ jobs:
           SHELL=/bin/bash
           which podman
           podman -v
-          sudo apt install podman
-          podman -v
-          podman unshare
           for image in main roxctl rhacs-operator; do
             if [[ $image == stackrox-operator ]]; then
               pushd ../stackrox
@@ -806,7 +803,7 @@ jobs:
             else
               tag=${release_tag}
             fi
-            go run main.go scan operator --verbose \
+            podman unshare go run main.go scan operator --verbose \
               --spec "quay.io/rhacs-eng/${image}:${tag}"
             date
           done
