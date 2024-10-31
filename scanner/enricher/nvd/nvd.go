@@ -245,9 +245,13 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, _ driver.Fingerprint) (i
 					_ = f.Close()
 				}()
 				dec := json.NewDecoder(f)
-				var vuln *schema.CVEAPIJSON20DefCVEItem
-				for err := dec.Decode(&vuln); err == nil; err = dec.Decode(vuln) {
-					if !yield(vuln) {
+				for {
+					var vuln schema.CVEAPIJSON20DefCVEItem
+					err = dec.Decode(&vuln)
+					if err != nil {
+						break
+					}
+					if !yield(&vuln) {
 						break
 					}
 				}

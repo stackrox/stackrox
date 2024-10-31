@@ -251,6 +251,11 @@ export function interactAndWaitForConfigurationManagementScan(interactionCallbac
         routeMatcherMapForConfigurationManagementDashboard
     );
 
+    // ROX-24912
+    // Comment out for now and assume that scan results are available from compliance tests.
+    // Maybe interactAndWaitForResponses waits only for the first pair of responses from page visit.
+    // Apparently the negative assertion sometimes passes before ComplianceScanProgress renders.
+    // But auto-disappears prevents positive assertion as in scanCompliance helper function.
     cy.get('div:contains("Compliance scanning in progress")', {
         timeout: 30000,
     }).should('not.exist');

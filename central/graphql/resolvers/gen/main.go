@@ -66,6 +66,7 @@ var (
 			reflect.TypeOf((*v1.Metadata)(nil)),
 			reflect.TypeOf((*v1.Namespace)(nil)),
 			reflect.TypeOf((*v1.ProcessNameGroup)(nil)),
+			reflect.TypeOf((*v1.ScopeObject)(nil)),
 			reflect.TypeOf((*v1.SearchResult)(nil)),
 		},
 		SkipResolvers: []reflect.Type{

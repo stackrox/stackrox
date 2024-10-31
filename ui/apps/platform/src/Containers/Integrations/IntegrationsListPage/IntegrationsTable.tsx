@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     Button,
-    ButtonVariant,
     Divider,
     Flex,
     FlexItem,
@@ -119,7 +118,7 @@ function IntegrationsTable({
                             {permissions[source].write && !isReadOnly && (
                                 <FlexItem>
                                     <Button
-                                        variant={ButtonVariant.primary}
+                                        variant="primary"
                                         component={LinkShim}
                                         href={getPathToCreate(source, type)}
                                         data-testid="add-integration"
@@ -214,7 +213,7 @@ function IntegrationsTable({
                                                     column.Header === 'Configuration')
                                             ) {
                                                 return (
-                                                    <Td key="name">
+                                                    <Td key="name" dataLabel={column.Header}>
                                                         <Link
                                                             to={getPathToViewDetails(
                                                                 source,
@@ -231,7 +230,7 @@ function IntegrationsTable({
                                                 );
                                             }
                                             return (
-                                                <Td key={column.Header}>
+                                                <Td key={column.Header} dataLabel={column.Header}>
                                                     <TableCellValue
                                                         row={integration}
                                                         column={column}

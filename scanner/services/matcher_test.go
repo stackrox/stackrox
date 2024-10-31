@@ -227,6 +227,11 @@ func (s *matcherServiceTestSuite) Test_matcherService_notes() {
 			VersionID: "",
 			Version:   "3.18",
 		},
+		{
+			DID:       "alpine",
+			VersionID: "3.19",
+			Version:   "",
+		},
 	}
 
 	srv := NewMatcherService(s.matcherMock, nil)

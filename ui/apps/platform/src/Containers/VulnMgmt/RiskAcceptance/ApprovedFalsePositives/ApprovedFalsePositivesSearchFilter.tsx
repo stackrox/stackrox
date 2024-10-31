@@ -1,11 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import {
-    Button,
-    ButtonVariant,
-    InputGroup,
-    TextInput,
-    InputGroupItem,
-} from '@patternfly/react-core';
+import { Button, InputGroup, TextInput, InputGroupItem } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
 import { SearchFilter } from 'types/search';
@@ -52,7 +46,7 @@ function ApprovedFalsePositivesSearchFilter({
             </InputGroupItem>
             <InputGroupItem>
                 <Button
-                    variant={ButtonVariant.control}
+                    variant="control"
                     aria-label="search button for search input"
                     onClick={() => handleSearchChange(inputValue)}
                 >

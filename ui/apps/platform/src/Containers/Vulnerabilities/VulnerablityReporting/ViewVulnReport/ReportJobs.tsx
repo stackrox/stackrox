@@ -12,7 +12,6 @@ import {
 import {
     Alert,
     AlertGroup,
-    AlertVariant,
     Bullseye,
     Button,
     Card,
@@ -196,7 +195,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                                 Completed
                             </Th>
                             <Th width={25}>Status</Th>
-                            <Th width={50}>Requestor</Th>
+                            <Th width={50}>Requester</Th>
                             <Th>
                                 <span className="pf-v5-screen-reader">Row actions</span>
                             </Th>
@@ -411,7 +410,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                     {deleteDownloadError && (
                         <Alert
                             isInline
-                            variant={AlertVariant.danger}
+                            variant="danger"
                             title={deleteDownloadError}
                             component="p"
                             className="pf-v5-u-mb-sm"

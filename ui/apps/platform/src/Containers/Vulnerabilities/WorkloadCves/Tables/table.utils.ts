@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { min } from 'date-fns';
+import { min, parse } from 'date-fns';
 import sortBy from 'lodash/sortBy';
 import uniq from 'lodash/uniq';
 import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
@@ -74,6 +74,7 @@ export type DeploymentComponentVulnerability = Omit<
         scoreVersion: string;
         fixedByVersion: string;
         discoveredAtImage: string | null;
+        publishedOn: string | null;
         pendingExceptionCount: number;
     }[];
 };
@@ -216,6 +217,7 @@ export type DeploymentWithVulnerabilities = {
         vulnerabilityId: string;
         cve: string;
         operatingSystem: string;
+        publishedOn: string | null;
         summary: string;
         pendingExceptionCount: number;
         images: {
@@ -237,6 +239,7 @@ export type FormattedDeploymentVulnerability = {
     severity: VulnerabilitySeverity;
     isFixable: boolean;
     discoveredAtImage: Date | null;
+    publishedOn: Date | null;
     summary: string;
     affectedComponentsText: string;
     images: DeploymentVulnerabilityImageMapping[];
@@ -283,6 +286,10 @@ export function formatVulnerabilityData(
                     !!vulnImageMap.imageMetadataContext
             );
 
+        const publishedOnDate = allVulnerabilities[0].publishedOn
+            ? parse(allVulnerabilities[0].publishedOn)
+            : null;
+
         return {
             vulnerabilityId,
             cve,
@@ -290,6 +297,7 @@ export function formatVulnerabilityData(
             severity: highestVulnSeverity,
             isFixable: isFixableInDeployment,
             discoveredAtImage: oldestDiscoveredVulnDate,
+            publishedOn: publishedOnDate,
             summary,
             affectedComponentsText,
             images: vulnerabilityImages,

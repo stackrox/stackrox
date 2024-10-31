@@ -261,7 +261,7 @@ The following block checks for the validity of the provided init bundle. (`helm 
 {{- else if and (not $helmInitBundleNotPresent) $operatorInitBundlePresent }}
     {{ include "srox.warn" (list . "It seems an init bundle in the operator format has been provided. Note that this bundle format is ignored by the Helm chart.") }}
 {{- else if $helmInitBundleNotPresent }}
-    {{ include "srox.fail" (list . "A CA certificate must be specified") }}
+    {{ include "srox.fail" "A CA certificate must be specified" }}
 {{- end }}
 
 {{/* ManagedBy related settings */}}

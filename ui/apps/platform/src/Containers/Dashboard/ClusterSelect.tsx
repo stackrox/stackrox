@@ -1,11 +1,6 @@
 import React, { ChangeEvent } from 'react';
 import { Divider } from '@patternfly/react-core';
-import {
-    Select,
-    SelectOption,
-    SelectOptionObject,
-    SelectVariant,
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption, SelectOptionObject } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
 import { flattenFilterValue } from 'utils/searchUtils';
@@ -84,7 +79,7 @@ function ClusterSelect({
     return (
         <Select
             toggleAriaLabel="Select clusters"
-            variant={SelectVariant.checkbox}
+            variant="checkbox"
             isOpen={isOpen}
             onToggle={(_e, v) => onToggle(v)}
             onSelect={onSelect}

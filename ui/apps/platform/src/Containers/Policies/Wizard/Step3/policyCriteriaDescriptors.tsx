@@ -182,6 +182,7 @@ export const mountPropagationCriteriaName = 'Mount Propagation';
     defaultValue: the default value to set, if provided
     disabled: disables the field entirely
     reverse: will reverse boolean value on store
+    infoText: optional short text for title of info Alert element in card body of policy field in wizard
     featureFlagDependency: optional property to filter descriptor by feature flags enabled or disabled
  */
 
@@ -219,6 +220,7 @@ type BaseDescriptor = {
     name: string;
     shortName: string;
     longName?: string;
+    infoText?: string;
     category: string;
     type: DescriptorType;
     disabled?: boolean;
@@ -487,6 +489,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         shortName: 'NVD CVSS',
         longName:
             'Common Vulnerability Scoring System (CVSS) score from National Vulnerability Database (NVD)',
+        infoText: 'NVD CVSS scores require Scanner V4',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'group',
         subComponents: [
@@ -506,7 +509,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         ],
         canBooleanLogic: true,
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
-        featureFlagDependency: ['ROX_SCANNER_V4', 'ROX_NVD_CVSS_UI'],
+        featureFlagDependency: ['ROX_NVD_CVSS_UI'],
     },
     {
         label: 'Severity',
@@ -1390,6 +1393,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'Kubernetes user groups',
         name: 'Kubernetes User Groups',
         shortName: 'Kubernetes user groups',
+        negatedName: "Kubernetes user group doesn't match",
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
@@ -1538,6 +1542,7 @@ export const auditLogDescriptor: Descriptor[] = [
         label: 'Kubernetes user group',
         name: 'Kubernetes User Groups',
         shortName: 'Kubernetes user groups',
+        negatedName: "Kubernetes user group doesn't match",
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,

@@ -7,7 +7,6 @@ import {
     HintFooter,
     HintTitle,
     Modal,
-    ModalVariant,
 } from '@patternfly/react-core';
 
 import { RequestComment } from 'types/vuln_request.proto';
@@ -27,7 +26,7 @@ function RequestCommentsModal({
     onClose,
 }: RequestCommentsModalProps): ReactElement {
     return (
-        <Modal variant={ModalVariant.small} title={cve} isOpen={isOpen} onClose={onClose}>
+        <Modal variant="small" title={cve} isOpen={isOpen} onClose={onClose}>
             <Flex direction={{ default: 'columnReverse' }}>
                 {comments.map((comment) => {
                     return (

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import {
     Button,
-    ButtonVariant,
     Pagination,
     SearchInput,
     Toolbar,
@@ -158,7 +157,7 @@ function CollectionsTable({
                         children: (
                             <div>
                                 <Button
-                                    variant={ButtonVariant.primary}
+                                    variant="primary"
                                     component={LinkShim}
                                     href={`${collectionsBasePath}?action=create`}
                                 >

@@ -7,7 +7,6 @@ import {
     GridItem,
     InputGroup,
     Modal,
-    ModalVariant,
     TextInput,
     InputGroupItem,
 } from '@patternfly/react-core';
@@ -57,7 +56,7 @@ function AffectedComponentsModal({
 
     return (
         <Modal
-            variant={ModalVariant.small}
+            variant="small"
             title={`Components affected by ${cveName}`}
             isOpen={isOpen}
             onClose={onCloseHandler}
@@ -120,10 +119,7 @@ function AffectedComponentsModal({
                                     <Td dataLabel="Fixed in">{component.fixedIn || '-'}</Td>
                                 </Tr>
                                 <Tr isExpanded={isComponentExpanded(component)}>
-                                    <Td
-                                        dataLabel="Dockerfile line where component is added"
-                                        colSpan={4}
-                                    >
+                                    <Td colSpan={4}>
                                         <ExpandableRowContent>
                                             <CodeBlock>
                                                 <Grid hasGutter>

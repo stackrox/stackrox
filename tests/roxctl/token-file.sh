@@ -1,9 +1,9 @@
 #! /usr/bin/env bash
 
-# This test script requires API_ENDPOINT and ROX_PASSWORD to be set in the environment.
+# This test script requires API_ENDPOINT and ROX_ADMIN_PASSWORD to be set in the environment.
 
 [ -n "$API_ENDPOINT" ]
-[ -n "$ROX_PASSWORD" ]
+[ -n "$ROX_ADMIN_PASSWORD" ]
 
 echo "Using API_ENDPOINT $API_ENDPOINT"
 
@@ -20,7 +20,7 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
 # Retrieve API token
 TOKEN_FILE=$(mktemp)
 curl -k -f \
-  --config <(curl_cfg user "admin:$ROX_PASSWORD") \
+  --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") \
   -d '{"name": "test", "role": "Admin"}' \
   --retry 5 \
   --retry-connrefused \
@@ -32,6 +32,11 @@ curl -k -f \
 
 test_roxctl_cmd() {
   echo "Testing command: roxctl " "$@"
+  local password="$ROX_ADMIN_PASSWORD"
+  # Clear values for the test run.
+  local ROX_ADMIN_PASSWORD=""
+  local ROX_API_TOKEN_FILE=""
+  local ROX_API_TOKEN=""
 
   # Verify that specifying a token file works.
   if OUTPUT=$(roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
@@ -66,7 +71,8 @@ test_roxctl_cmd() {
   fi
 
   # Verify that specifying a token file and password at the same time fails.
-  if OUTPUT=$(ROX_API_TOKEN_FILE="$TOKEN_FILE" ROX_ADMIN_PASSWORD="$ROX_PASSWORD" \
+  # shellcheck disable=SC2030
+  if OUTPUT=$(export ROX_API_TOKEN_FILE="$TOKEN_FILE" ROX_ADMIN_PASSWORD="$password"; \
     roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     "$@" \
     2>&1); then
@@ -84,7 +90,9 @@ test_roxctl_cmd() {
   fi
 
   # Verify that token on the command line has precedence over token in the environment
-  if OUTPUT=$(ROX_API_TOKEN="invalid-token" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+  # shellcheck disable=SC2030
+  if OUTPUT=$(export ROX_API_TOKEN="invalid-token"; \
+    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     --token-file "$TOKEN_FILE" \
     "$@" \
     2>&1); then
@@ -97,8 +105,10 @@ test_roxctl_cmd() {
   fi
 
   # Verify that a password on the command line has precedence over token in the environment
-  if OUTPUT=$(ROX_API_TOKEN="invalid-token" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
-    --password "$ROX_PASSWORD" \
+  # shellcheck disable=SC2031
+  if OUTPUT=$(export ROX_API_TOKEN="invalid-token"; \
+    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --password "$password" \
     "$@" \
     2>&1); then
       echo "[OK] --password has precedence over ROX_API_TOKEN environment variable"
@@ -110,8 +120,10 @@ test_roxctl_cmd() {
   fi
 
   # Verify that a password on the command line has precedence over password in the environment.
-  if OUTPUT=$(ROX_ADMIN_PASSWORD="bad-password" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
-    --password "$ROX_PASSWORD" \
+  # shellcheck disable=SC2030,SC2031
+  if OUTPUT=$(export ROX_ADMIN_PASSWORD="bad-password"; \
+    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --password "$password" \
     "$@" \
     2>&1); then
       echo "[OK] --password has precedence over ROX_ADMIN_PASSWORD environment variable"
@@ -145,8 +157,10 @@ test_roxctl_cmd() {
   fi
 
   # Verify that a password on the command line has precedence over token file in the environment.
-  if OUTPUT=$(ROX_API_TOKEN_FILE="$TOKEN_FILE" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
-    --password "$ROX_PASSWORD" \
+  # shellcheck disable=SC2031
+  if OUTPUT=$(export ROX_API_TOKEN_FILE="$TOKEN_FILE"; \
+    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+    --password "$password" \
     "$@" \
     2>&1); then
       echo "[OK] --password has precedence over ROX_API_TOKEN_FILE environment variable"
@@ -158,7 +172,9 @@ test_roxctl_cmd() {
   fi
 
   # Verify that the token file on the command line has precedence over password in the environment.
-  if OUTPUT=$(ROX_ADMIN_PASSWORD="bad-password" roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
+  # shellcheck disable=SC2031
+  if OUTPUT=$(export ROX_ADMIN_PASSWORD="bad-password"; \
+    roxctl --insecure-skip-tls-verify --insecure -e "$API_ENDPOINT" \
     --token-file "$TOKEN_FILE" \
     "$@" \
     2>&1); then

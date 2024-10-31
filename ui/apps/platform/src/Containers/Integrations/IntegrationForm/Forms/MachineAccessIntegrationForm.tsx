@@ -2,7 +2,6 @@ import * as yup from 'yup';
 import React, { ReactElement, useEffect, useState } from 'react';
 import {
     Alert,
-    AlertVariant,
     Button,
     Flex,
     FlexItem,
@@ -117,12 +116,7 @@ function MachineAccessIntegrationForm({
     return (
         <>
             {alertRoles && (
-                <Alert
-                    title="Fetch roles failed"
-                    component="p"
-                    variant={AlertVariant.warning}
-                    isInline
-                >
+                <Alert title="Fetch roles failed" component="p" variant="warning" isInline>
                     {alertRoles}
                 </Alert>
             )}

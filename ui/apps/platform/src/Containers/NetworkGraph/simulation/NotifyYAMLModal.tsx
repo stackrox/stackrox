@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-    Modal,
-    ModalVariant,
-    Button,
-    Bullseye,
-    Spinner,
-    AlertVariant,
-    Alert,
-} from '@patternfly/react-core';
+import { Alert, Bullseye, Button, Modal, Spinner } from '@patternfly/react-core';
 
 import { NetworkPolicyModification } from 'types/networkPolicy.proto';
 import useFetchNotifiers from 'hooks/useFetchNotifiers';
@@ -106,7 +98,7 @@ function NotifyYAMLModal({
 
     return (
         <Modal
-            variant={ModalVariant.small}
+            variant="small"
             title="Share network policy YAML with team"
             isOpen={isModalOpen}
             onClose={onClose}
@@ -122,7 +114,7 @@ function NotifyYAMLModal({
             {errorMessage && (
                 <Alert
                     isInline
-                    variant={AlertVariant.danger}
+                    variant="danger"
                     title={errorMessage}
                     component="p"
                     className="pf-v5-u-mb-lg"

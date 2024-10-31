@@ -141,7 +141,6 @@ export_test_environment() {
 
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
-    ci_export ROX_VULN_MGMT_REPORTING_ENHANCEMENTS "${ROX_VULN_MGMT_REPORTING_ENHANCEMENTS:-true}"
     ci_export ROX_VULN_MGMT_WORKLOAD_CVES "${ROX_VULN_MGMT_WORKLOAD_CVES:-true}"
     ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
     ci_export ROX_VULN_MGMT_NODE_PLATFORM_CVES "${ROX_VULN_MGMT_NODE_PLATFORM_CVES:-true}"
@@ -237,8 +236,8 @@ deploy_central_via_operator() {
 
     NAMESPACE="${central_namespace}" make -C operator stackrox-image-pull-secret
 
-    ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
-    centralAdminPasswordBase64="$(echo "$ROX_PASSWORD" | base64)"
+    ROX_ADMIN_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
+    centralAdminPasswordBase64="$(echo "$ROX_ADMIN_PASSWORD" | base64)"
 
     centralAdditionalCAIndented="$(sed 's,^,        ,' "${TRUSTED_CA_FILE:-/dev/null}")"
     if [[ -z $centralAdditionalCAIndented ]]; then
@@ -378,11 +377,12 @@ deploy_sensor_via_operator() {
 
     NAMESPACE="${sensor_namespace}" make -C operator stackrox-image-pull-secret
 
-    kubectl -n "${central_namespace}" exec deploy/central -- \
-    roxctl central init-bundles generate my-test-bundle \
+    # shellcheck disable=SC2016
+    echo "${ROX_ADMIN_PASSWORD}" | \
+    kubectl -n "${central_namespace}" exec -i deploy/central -- bash -c \
+    'ROX_ADMIN_PASSWORD=$(cat) roxctl central init-bundles generate my-test-bundle \
         --insecure-skip-tls-verify \
-        --password "$ROX_PASSWORD" \
-        --output-secrets - \
+        --output-secrets -' \
     | kubectl -n "${sensor_namespace}" apply -f -
 
     if [[ -n "${COLLECTION_METHOD:-}" ]]; then
@@ -449,17 +449,17 @@ pause_stackrox_operator_reconcile() {
 export_central_basic_auth_creds() {
     if [[ -n ${DEPLOY_DIR:-} && -f "${DEPLOY_DIR}/central-deploy/password" ]]; then
         info "Getting central basic auth creds from central-deploy/password"
-        ROX_PASSWORD="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
-    elif [[ -n "${ROX_PASSWORD:-}" ]]; then
-        info "Using existing ROX_PASSWORD env"
+        ROX_ADMIN_PASSWORD="$(cat "${DEPLOY_DIR}"/central-deploy/password)"
+    elif [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
+        info "Using existing ROX_ADMIN_PASSWORD env"
     else
-        echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_PASSWORD env"
+        echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_ADMIN_PASSWORD env"
         exit 1
     fi
 
     ROX_USERNAME="admin"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
-    ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
+    ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
 deploy_optional_e2e_components() {
@@ -496,10 +496,10 @@ setup_client_CA_auth_provider() {
     info "Set up client CA auth provider for endpoints_test.go"
 
     require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
+    require_environment "ROX_ADMIN_PASSWORD"
     require_environment "CLIENT_CA_PATH"
 
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+    roxctl -e "$API_ENDPOINT" \
         central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH"
 }
 
@@ -513,9 +513,9 @@ setup_generated_certs_for_test() {
     local dir="$1"
 
     require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
+    require_environment "ROX_ADMIN_PASSWORD"
 
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+    roxctl -e "$API_ENDPOINT" \
         sensor generate-certs remote --output-dir "$dir"
     [[ -f "$dir"/cluster-remote-tls.yaml ]]
     # Use the certs in future steps that will use client auth.
@@ -1132,12 +1132,12 @@ _record_build_info() {
 
     local central_namespace=${1:-stackrox}
 
-    require_environment "ROX_PASSWORD"
+    require_environment "ROX_ADMIN_PASSWORD"
 
     local build_info
 
     local metadata_url="https://${API_ENDPOINT}/v1/metadata"
-    releaseBuild="$(curl -skS --config <(curl_cfg user "admin:${ROX_PASSWORD}") "${metadata_url}" | jq -r '.releaseBuild')"
+    releaseBuild="$(curl -skS --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") "${metadata_url}" | jq -r '.releaseBuild')"
 
     if [[ "$releaseBuild" == "true" ]]; then
         build_info="release"
@@ -1160,10 +1160,10 @@ restore_4_1_postgres_backup() {
     info "Restoring a 4.1 postgres backup"
 
     require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
+    require_environment "ROX_ADMIN_PASSWORD"
 
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_1.sql.zip .
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+    roxctl -e "$API_ENDPOINT" \
         central db restore --timeout 5m postgres_db_4_1.sql.zip
 }
 
@@ -1186,21 +1186,21 @@ db_backup_and_restore_test() {
     fi
 
     require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
+    require_environment "ROX_ADMIN_PASSWORD"
 
     # Ensure central is ready for requests after any previous tests
     wait_for_api "${central_namespace}"
 
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
-    roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central backup --output "$output_dir" || touch DB_TEST_FAIL
+    roxctl -e "${API_ENDPOINT}" central backup --output "$output_dir" || touch DB_TEST_FAIL
 
     info "Updating public config"
     update_public_config
 
     if [[ ! -e DB_TEST_FAIL ]]; then
         info "Restoring from ${output_dir}/postgres_db_*"
-        roxctl -e "${API_ENDPOINT}" -p "${ROX_PASSWORD}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
+        roxctl -e "${API_ENDPOINT}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
     fi
 
     wait_for_api "${central_namespace}"

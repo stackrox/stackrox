@@ -16,7 +16,7 @@ metadata:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: scanner-v4-db
     pipelines.appstudio.openshift.io/type: build
-  name: scanner-v4-db-build
+  name: scanner-v4-db-on-push
   namespace: rh-acs-tenant
 
 spec:
@@ -25,7 +25,7 @@ spec:
   - name: dockerfile
     value: scanner/image/db/konflux.Dockerfile
   - name: git-url
-    value: '{{repo_url}}'
+    value: '{{source_url}}'
   - name: image-expires-after
     # TODO(ROX-24530): return expiration for non-released images to 13w
     value: '52w'
@@ -58,6 +58,7 @@ spec:
   pipelineRef:
     name: basic-component-pipeline
 
+  # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
     # The tasks regularly takes 1h to finish.
     tasks: 1h

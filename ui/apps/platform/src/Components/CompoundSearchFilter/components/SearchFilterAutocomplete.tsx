@@ -121,7 +121,9 @@ function SearchFilterAutocomplete({
     const filteredSearchContext = Object.keys(searchContext).reduce((acc, key) => {
         // Autocomplete requests for some filters never return results if there is a 'Fixable' search filter
         // included in the query.
-        if (key !== 'FIXABLE') {
+        // We also need to exclude the current search term from the autocomplete query otherwise following
+        // autocomplete requests will return only the current search term as a suggestion.
+        if (key !== 'FIXABLE' && key.toLowerCase() !== searchTerm.toLowerCase()) {
             acc[key] = searchContext[key];
         }
         return acc;
@@ -144,7 +146,7 @@ function SearchFilterAutocomplete({
     );
     // Filter out empty strings
     const data: SearchAutocompleteQueryResponse = {
-        searchAutocomplete: rawData?.searchAutocomplete?.filter((item) => item !== '') ?? [],
+        searchAutocomplete: rawData?.searchAutocomplete?.filter((item) => item !== '').sort() ?? [],
     };
 
     const selectOptions: SelectOptionProps[] = getSelectOptions(

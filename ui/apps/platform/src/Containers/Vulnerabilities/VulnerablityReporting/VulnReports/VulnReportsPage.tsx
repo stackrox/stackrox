@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, generatePath, useHistory } from 'react-router-dom';
 import isEmpty from 'lodash/isEmpty';
 import {
+    Alert,
     AlertActionCloseButton,
     AlertGroup,
     PageSection,
@@ -16,10 +17,7 @@ import {
     EmptyState,
     EmptyStateIcon,
     EmptyStateBody,
-    EmptyStateVariant,
     Text,
-    Alert,
-    AlertVariant,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
@@ -185,9 +183,7 @@ function VulnReportsPage() {
                 ))}
             </AlertGroup>
             <PageTitle title="Vulnerability reporting" />
-            {runError && (
-                <Alert variant={AlertVariant.danger} isInline title={runError} component="p" />
-            )}
+            {runError && <Alert variant="danger" isInline title={runError} component="p" />}
             <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <Flex
                     direction={{ default: 'row' }}
@@ -278,7 +274,7 @@ function VulnReportsPage() {
                                 </div>
                             )}
                             {fetchError && (
-                                <EmptyState variant={EmptyStateVariant.sm}>
+                                <EmptyState variant="sm">
                                     <EmptyStateHeader
                                         titleText="Unable to get vulnerability reports"
                                         icon={
@@ -496,12 +492,12 @@ function VulnReportsPage() {
                                                             isSelected: selected[rowIndex],
                                                         }}
                                                     />
-                                                    <Td>
+                                                    <Td dataLabel="Report">
                                                         <Link to={vulnReportURL}>
                                                             {report.name}
                                                         </Link>
                                                     </Td>
-                                                    <Td>
+                                                    <Td dataLabel="Collection">
                                                         {isCollectionsRouteEnabled ? (
                                                             <Button
                                                                 variant="link"
@@ -518,8 +514,10 @@ function VulnReportsPage() {
                                                             collectionName
                                                         )}
                                                     </Td>
-                                                    <Td>{report.description || '-'}</Td>
-                                                    <Td>
+                                                    <Td dataLabel="Description">
+                                                        {report.description || '-'}
+                                                    </Td>
+                                                    <Td dataLabel="My last job status">
                                                         <MyLastJobStatus
                                                             snapshot={snapshot}
                                                             isLoadingSnapshots={
@@ -562,7 +560,7 @@ function VulnReportsPage() {
                     {numSuccessfulDeletions > 0 && (
                         <Alert
                             isInline
-                            variant={AlertVariant.success}
+                            variant="success"
                             title={`Successfully deleted ${numSuccessfulDeletions} ${pluralize(
                                 'report',
                                 numSuccessfulDeletions
@@ -581,7 +579,7 @@ function VulnReportsPage() {
                         return (
                             <Alert
                                 isInline
-                                variant={AlertVariant.danger}
+                                variant="danger"
                                 title={`Failed to delete "${report.name}"`}
                                 component="p"
                                 className="pf-v5-u-mb-sm"

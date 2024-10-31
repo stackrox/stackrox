@@ -35,7 +35,7 @@ spec:
       - name: name
         value: show-sbom
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:9bfc6b99ef038800fe131d7b45ff3cd4da3a415dd536f7c657b3527b01c4a13b
+        value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:52f8b96b96ce4203d4b74d850a85f963125bf8eef0683ea5acdd80818d335a28
       - name: kind
         value: task
       resolver: bundles
@@ -183,7 +183,6 @@ spec:
 
   workspaces:
   - name: git-auth
-  - name: quay-auth
 
   tasks:
 
@@ -297,292 +296,112 @@ spec:
       resolver: bundles
 
   - name: wait-for-operator-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.operator-image-repo):$(tasks.determine-operator-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # This timeout must be the same as the pipeline timeout in `operator-build.yaml`.
+    timeout: 1h10m
 
   - name: wait-for-main-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.main-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # This timeout must be the same as the pipeline timeout in `main-build.yaml`.
+    timeout: 2h40m
 
   - name: wait-for-scanner-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.scanner-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-scanner-db-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.scanner-db-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-scanner-slim-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.scanner-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-scanner-db-slim-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.scanner-db-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-scanner-v4-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.scanner-v4-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # This timeout must be the same as the pipeline timeout in `scanner-v4-build.yaml`.
+    timeout: 1h10m
 
   - name: wait-for-scanner-v4-db-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.scanner-v4-db-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # This timeout must be the same as the pipeline timeout in `scanner-v4-db-build.yaml`.
+    timeout: 1h10m
 
   - name: wait-for-collector-slim-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.collector-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-collector-full-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.collector-full-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # TODO(ROX-26471): add timeout
+    # timeout: ?h?m
 
   - name: wait-for-roxctl-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.roxctl-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
+    # This timeout must be the same as the pipeline timeout in `roxctl-build.yaml`.
+    timeout: 1h10m
 
   - name: wait-for-central-db-image
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
     params:
     - name: IMAGE
       value: "$(params.central-db-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
-
-  - name: determine-operator-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.operator-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-operator-image-tag.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-operator-image
-
-  - name: determine-main-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.main-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-main-image
-
-  - name: determine-scanner-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.scanner-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-scanner-image
-
-  - name: determine-scanner-db-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.scanner-db-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-scanner-db-image
-
-  - name: determine-scanner-slim-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.scanner-slim-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-scanner-slim-image
-
-  - name: determine-scanner-db-slim-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.scanner-db-slim-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-scanner-db-slim-image
-
-  - name: determine-scanner-v4-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.scanner-v4-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-scanner-v4-image
-
-  - name: determine-scanner-v4-db-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.scanner-v4-db-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-scanner-v4-db-image
-
-  - name: determine-collector-slim-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.collector-slim-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-collector-slim-image
-
-  - name: determine-collector-full-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.collector-full-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-collector-full-image
-
-  - name: determine-roxctl-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.roxctl-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-roxctl-image
-
-  - name: determine-central-db-image-digest
-    workspaces:
-    - name: pull-secret
-      workspace: quay-auth
-    params:
-    - name: IMAGE_REPOSITORY
-      value: "$(params.central-db-image-repo)"
-    - name: IMAGE_TAG
-      value: "$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
-    taskRef:
-      name: determine-image-digest
-    runAfter:
-      - wait-for-central-db-image
+    # This timeout must be the same as the pipeline timeout in `central-db-build.yaml`.
+    timeout: 1h40m
 
   - name: build-container
     params:
@@ -604,19 +423,18 @@ spec:
     - name: BUILD_ARGS
       value:
       - OPERATOR_IMAGE_TAG=$(tasks.determine-operator-image-tag.results.IMAGE_TAG)
-      - OPERATOR_IMAGE_REF=$(params.operator-image-repo)@$(tasks.determine-operator-image-digest.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_MAIN=$(params.main-image-repo)@$(tasks.determine-main-image-digest.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER=$(params.scanner-image-repo)@$(tasks.determine-scanner-image-digest.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_DB=$(params.scanner-db-image-repo)@$(tasks.determine-scanner-db-image-digest.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_SLIM=$(params.scanner-slim-image-repo)@$(tasks.determine-scanner-slim-image-digest.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_DB_SLIM=$(params.scanner-db-slim-image-repo)@$(tasks.determine-scanner-db-slim-image-digest.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_V4=$(params.scanner-v4-image-repo)@$(tasks.determine-scanner-v4-image-digest.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_V4_DB=$(params.scanner-v4-db-image-repo)@$(tasks.determine-scanner-v4-db-image-digest.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_COLLECTOR_SLIM=$(params.collector-slim-image-repo)@$(tasks.determine-collector-slim-image-digest.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_COLLECTOR_FULL=$(params.collector-full-image-repo)@$(tasks.determine-collector-full-image-digest.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_ROXCTL=$(params.roxctl-image-repo)@$(tasks.determine-roxctl-image-digest.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_CENTRAL_DB=$(params.central-db-image-repo)@$(tasks.determine-central-db-image-digest.results.IMAGE_DIGEST)
-
+      - OPERATOR_IMAGE_REF=$(params.operator-image-repo)@$(tasks.wait-for-operator-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_MAIN=$(params.main-image-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER=$(params.scanner-image-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER_DB=$(params.scanner-db-image-repo)@$(tasks.wait-for-scanner-db-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER_SLIM=$(params.scanner-slim-image-repo)@$(tasks.wait-for-scanner-slim-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER_DB_SLIM=$(params.scanner-db-slim-image-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER_V4=$(params.scanner-v4-image-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER_V4_DB=$(params.scanner-v4-db-image-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_COLLECTOR_SLIM=$(params.collector-slim-image-repo)@$(tasks.wait-for-collector-slim-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_COLLECTOR_FULL=$(params.collector-full-image-repo)@$(tasks.wait-for-collector-full-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_ROXCTL=$(params.roxctl-image-repo)@$(tasks.wait-for-roxctl-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_CENTRAL_DB=$(params.central-db-image-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
@@ -626,7 +444,7 @@ spec:
       - name: name
         value: buildah-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.2@sha256:06946a3a676a9daa1efb16120ba0d81e0c3ce38c9f6242439e2169f27d5d2a2a
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.2@sha256:43aecf28e07b3cdf74f85524354b665ea584f2282a1f40ec32f64c6a9b036cd3
       - name: kind
         value: task
       resolver: bundles
@@ -708,7 +526,7 @@ spec:
       - name: name
         value: clair-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.2@sha256:9f4ddafd599e06b319cece5a4b8ac36b9e7ec46bea378bc6c6af735d3f7f8060
+        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.2@sha256:28fee4bf5da87f2388c973d9336086749cad8436003f9a514e22ac99735e056b
       - name: kind
         value: task
       resolver: bundles
@@ -730,7 +548,7 @@ spec:
       - name: name
         value: sast-snyk-check-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.2@sha256:c10a095a48bffe898cc95644eb9a826ea0667c6ba9e9ec35b6149337ece234fd
+        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.3@sha256:92af5ba1bb9d6bf442c8d3b317ada71d44a9c1ab59959a37bbb5d163205a104f
       - name: kind
         value: task
       resolver: bundles
@@ -750,7 +568,7 @@ spec:
       - name: name
         value: clamav-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.1@sha256:5ac9b24cff7cfb391bc54cd5135536892090354862327d1028fa08872d759c03
+        value: quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.1@sha256:a94b6523ba0b691dc276e37594321c2eff3594d2753014e5c920803b47627df1
       - name: kind
         value: task
       resolver: bundles
@@ -762,9 +580,9 @@ spec:
   - name: rpms-signature-scan
     params:
     - name: image-digest
-      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+      value: $(tasks.build-container.results.IMAGE_DIGEST)
     - name: image-url
-      value: $(tasks.build-image-index.results.IMAGE_URL)
+      value: $(tasks.build-container.results.IMAGE_URL)
     taskRef:
       params:
       - name: name

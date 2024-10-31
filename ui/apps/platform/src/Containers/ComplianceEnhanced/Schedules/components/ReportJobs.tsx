@@ -2,7 +2,6 @@ import React, { useCallback } from 'react';
 import {
     Alert,
     AlertGroup,
-    AlertVariant,
     Card,
     CardBody,
     Divider,
@@ -88,7 +87,7 @@ function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsPr
         isLoading,
         error,
         refetch,
-    } = useRestQuery(fetchComplianceReportHistoryCallback);
+    } = useRestQuery(fetchComplianceReportHistoryCallback, { clearErrorBeforeRequest: false });
 
     const {
         openDeleteDownloadModal,
@@ -222,7 +221,7 @@ function ReportJobs({ scanConfigId, isComplianceReportingEnabled }: ReportJobsPr
                     {deleteDownloadError && (
                         <Alert
                             isInline
-                            variant={AlertVariant.danger}
+                            variant="danger"
                             title={deleteDownloadError}
                             component="p"
                             className="pf-v5-u-mb-sm"

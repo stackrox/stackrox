@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Button, Form, Modal, ModalVariant, TextArea } from '@patternfly/react-core';
+import { Button, Form, Modal, TextArea } from '@patternfly/react-core';
 import * as yup from 'yup';
 
 import FormMessage, { FormResponseMessage } from 'Components/PatternFly/FormMessage';
@@ -81,7 +81,7 @@ function ApproveDeferralModal({
 
     return (
         <Modal
-            variant={ModalVariant.small}
+            variant="small"
             title={title}
             isOpen={isOpen}
             onClose={onCancelHandler}

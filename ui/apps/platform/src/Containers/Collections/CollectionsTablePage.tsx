@@ -6,7 +6,6 @@ import {
     Button,
     Flex,
     FlexItem,
-    ButtonVariant,
     Divider,
     Alert,
     AlertActionCloseButton,
@@ -97,7 +96,7 @@ function CollectionsTablePage({ hasWriteAccessForCollections }: CollectionsTable
                     {hasWriteAccessForCollections && (
                         <FlexItem align={{ default: 'alignRight' }}>
                             <Button
-                                variant={ButtonVariant.primary}
+                                variant="primary"
                                 component={LinkShim}
                                 href={`${collectionsBasePath}?action=create`}
                             >

@@ -11,6 +11,18 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+### Removed Features
+
+### Deprecated Fatures
+
+### Technical Changes
+
+## [4.6.0]
+
+
+
+### Added Features
+
 - ROX-25066: Add new external backup integration for non-AWS S3 compatible providers.
 - ROX-25376: Add the release stage property to the `/v1/featureflags` response.
 - ROX-25451: Secured Cluster Auto-Upgrader is now enabled for all kind of clusters.
@@ -38,6 +50,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   each with an optional fraction and a unit suffix (e.g., "300ms", "-1.5h", or "2h45m").
   The currently valid time units "ns", "us" (or "µs"), "ms", "m", and "h" will no longer be supported.
 - ROX-24169: API token authentication has been deprecated by Red Hat OpenShift Cluster Manager. The corresponding cloud source integration now uses service accounts for authentication.
+- ROX-26669: StackRox Scanner is now deprecated. Users should use Scanner V4, instead, for all image scanning needs. StackRox Scanner is still required for full Node and Orchestrator scanning, though.
+- ROX-26670: Google Container Registry integration is now deprecated. Users should use Artifact Registry as a registry replacement and Scanner V4 as a scanner replacement.
 
 ### Technical Changes
 - ROX-24897: Sensor will now perform TLS checks lazily during delegated scanning instead of when secrets are first discovered, this should reduce Sensor startup time.
@@ -52,15 +66,17 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-20578: Sensor will now store pull secrets by secret name and registry host (instead of only registry host). This will reduce Delegated Scanning authentication failures when multiple secrets exist for the same registry within a namespace and more closely aligns with k8s secret handling.
   - Setting `ROX_SENSOR_PULL_SECRETS_BY_NAME` to `false` on Sensor will disable this feature and cause secrets to be stored by only registry host.
 - ROX-25981: Scanner V4 now fetches vulnerability data from [Red Hat's VEX files](https://security.access.redhat.com/data/csaf/v2/vex/) instead of [Red Hat's OVAL feed](https://security.access.redhat.com/data/oval/v2/) for RPMs installed in RHEL-based image containers.
-  - Fixed vulnerabilities affecting RHEL-based images are no longer identified by the respective RHSA, RHBA, nor RHEA. Instead, they will be identified by CVE.
+  - Fixed vulnerabilities affecting RHEL-based images are still identified by the respective RHSA, RHBA, or RHEA, by default. They may be identified by CVE, instead, by setting the feature flag `ROX_SCANNER_V4_RED_HAT_CVES` to `true` in Scanner V4 Matcher.
     - This will also apply to vulnerabilities obtained from the [CVE map](https://security.access.redhat.com/data/metrics/cvemap.xml) (used for container-first scanning).
-    - This may potentially disrupt policies created around RHSAs.
+    - Setting the feature flag will disrupt policies created around RHSAs, as RHSAs will no longer be tracked.
   - Scanner V4 now only considers vulnerabilities affecting Red Hat products dated back to 2014.
     - Previously when reading Red Hat's OVAL data, the vulnerabilities dated back to pre-2000, but ClairCore only reads back to 2014.
   - Scanner V4 DB requires less space for vulnerability data, and its initialization time has improved from about 1 hour on SSD to about 10 minutes.
 - ROX-26372: `ROX_POSTGRES_VM_STATEMENT_TIMEOUT` env var defaulting to 3 minutes to allow customers to extend the timeout for queries backing VM pages only
 - ROX-26428: Fixed a bug when using delegated scanning where newer image metadata and layers were pulled incorrectly for an older image referenced by tag when the image registry contents have changed since deployment.
   - Now the metadata and layers pulled will be based on the digest of the image provided by the container runtime (when available) instead of just the tag.
+- ROX-26748: Replaced 'unsafe' characters in the CSV report file name.
+- The endpoint `/v2/compliance/scan/configurations/reports/run` method has changed from `PUT` to `POST`.
 
 ## [4.5.0]
 
