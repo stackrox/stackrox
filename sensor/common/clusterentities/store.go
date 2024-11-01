@@ -96,6 +96,28 @@ func (e *Store) initMaps() {
 	e.historicalContainerIDs = make(map[string]map[ContainerMetadata]*entityStatus)
 }
 
+func (e *Store) resetMaps() {
+	e.historyMutex.Lock()
+	defer e.historyMutex.Unlock()
+	e.ipMap = make(map[net.IPAddress]map[string]struct{})
+	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{})
+	e.containerIDMap = make(map[string]ContainerMetadata)
+	e.reverseIPMap = make(map[string]map[net.IPAddress]struct{})
+	e.reverseEndpointMap = make(map[string]map[net.NumericEndpoint]struct{})
+	e.reverseContainerIDMap = make(map[string]map[string]struct{})
+	e.publicIPRefCounts = make(map[net.IPAddress]*int)
+	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
+
+	// Maps holding historical data should not be wiped on reset!
+
+	// FIXME: This is probably wrong - on transition to offline, we may lose those histories
+	e.historicalEndpoints = make(map[string]map[net.NumericEndpoint]*entityStatus)
+	e.historicalIPs = make(map[net.IPAddress]map[string]*entityStatus)
+
+	// Wipe everything after e.entitiesMemorySize ticks
+	e.markAllContainerIDsHistorical()
+}
+
 // EndpointTargetInfo is the target port for an endpoint (container port, service port etc.).
 type EndpointTargetInfo struct {
 	ContainerPort uint16
@@ -143,7 +165,7 @@ func (e *Store) Cleanup() {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	defer e.updateMetrics()
-	e.initMaps()
+	e.resetMaps()
 }
 
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment
@@ -227,6 +249,16 @@ func (e *Store) markEndpointHistorical(deploymentID string, ep net.NumericEndpoi
 	}
 	es.markHistorical(e.entitiesMemorySize)
 	e.historicalEndpoints[deploymentID][ep] = es
+}
+
+// markAllContainerIDsHistorical does a history-preserving version of removeAll
+func (e *Store) markAllContainerIDsHistorical() {
+	for contID, submap := range e.historicalContainerIDs {
+		for meta, status := range submap {
+			status.markHistorical(e.entitiesMemorySize)
+			e.historicalContainerIDs[contID][meta] = status
+		}
+	}
 }
 
 func (e *Store) markContainerIDHistorical(contID string, meta ContainerMetadata) {
