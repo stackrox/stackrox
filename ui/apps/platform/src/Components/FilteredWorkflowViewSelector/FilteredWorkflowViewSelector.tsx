@@ -52,6 +52,7 @@ function FilteredWorkflowViewSelector({
                 </MenuToggle>
             )}
             shouldFocusToggleOnSelect
+            aria-label="Filtered workflow select options"
         >
             <SelectList style={{ width }}>
                 <SelectOption
