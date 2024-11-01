@@ -98,7 +98,7 @@ func (s *ClusterMetricsTestSuite) createNewClusterMetrics(interval time.Duration
 
 func (s *ClusterMetricsTestSuite) assertOfflineMode(state common.SensorComponentEvent, metrics *clusterMetricsImpl) {
 	switch state {
-	case common.SensorComponentEventCentralReachableHTTP:
+	case common.SensorComponentEventResourceSyncFinished:
 		select {
 		case <-time.After(metricsTimeout):
 			s.Fail("timeout waiting for the pollTicker to tick")

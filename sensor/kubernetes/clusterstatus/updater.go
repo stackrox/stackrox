@@ -64,7 +64,7 @@ func (u *updaterImpl) Stop(_ error) {
 
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
-	case common.SensorComponentEventCentralReachableHTTP:
+	case common.SensorComponentEventResourceSyncFinished:
 		if u.offlineMode.CompareAndSwap(true, false) {
 			u.createContext()
 			go u.run()

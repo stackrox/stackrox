@@ -290,7 +290,7 @@ func (s *UpdaterTestSuite) createNewUpdater(interval time.Duration) *updaterImpl
 
 func (s *UpdaterTestSuite) assertOfflineMode(state common.SensorComponentEvent, updater *updaterImpl, interval time.Duration) *message.ExpiringMessage {
 	switch state {
-	case common.SensorComponentEventCentralReachableHTTP:
+	case common.SensorComponentEventResourceSyncFinished:
 		select {
 		case <-time.After(updateTimeout):
 			s.Fail("timeout waiting for sensor message")

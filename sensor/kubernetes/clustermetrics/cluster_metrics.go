@@ -70,7 +70,7 @@ func (cm *clusterMetricsImpl) Stop(_ error) {
 
 func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
-	case common.SensorComponentEventCentralReachableHTTP:
+	case common.SensorComponentEventResourceSyncFinished:
 		cm.pollTicker.Reset(cm.pollingInterval)
 	case common.SensorComponentEventOfflineMode:
 		cm.pollTicker.Stop()

@@ -31,7 +31,7 @@ type resetNotifiable struct {
 
 func (r *resetNotifiable) Notify(e common.SensorComponentEvent) {
 	switch e {
-	case common.SensorComponentEventCentralReachableHTTP:
+	case common.SensorComponentEventResourceSyncFinished:
 		resetGRPCClient()
 		log.Debug("Reset scanner client")
 	}

@@ -386,6 +386,10 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 func (s *Sensor) changeState(state common.SensorComponentEvent) {
 	s.currentStateMtx.Lock()
 	defer s.currentStateMtx.Unlock()
+	s.changeStateNoLock(state)
+}
+
+func (s *Sensor) changeStateNoLock(state common.SensorComponentEvent) {
 	if s.currentState != state {
 		log.Infof("Updating Sensor State to: %s", state)
 		s.currentState = state
@@ -434,8 +438,9 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
-			// Connection is up, we can try to create a new central communication
-			s.changeState(common.SensorComponentEventCentralReachable)
+			// Connection is up, we can try to create a new central communication,
+			// but we should not go online yet as the first data exchange over gRPC has not happened yet.
+			s.changeState(common.SensorComponentEventCentralReachableHTTP)
 		case <-s.centralConnectionFactory.StopSignal().WaitC():
 			// Save the error before retrying
 			err := wrapOrNewError(s.centralConnectionFactory.StopSignal().Err(), "communication stopped")

@@ -25,7 +25,7 @@ type notifiableImpl struct {
 func (ni *notifiableImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e, ni.name))
 	switch e {
-	case common.SensorComponentEventCentralReachableHTTP:
+	case common.SensorComponentEventResourceSyncFinished:
 		ni.oa.GoOnline()
 	case common.SensorComponentEventOfflineMode:
 		ni.oa.GoOffline()

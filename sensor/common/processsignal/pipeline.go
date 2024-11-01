@@ -104,7 +104,7 @@ func (p *Pipeline) Notify(e common.SensorComponentEvent) {
 	}
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
-	case common.SensorComponentEventCentralReachableHTTP:
+	case common.SensorComponentEventResourceSyncFinished:
 		p.createNewContext()
 	case common.SensorComponentEventOfflineMode:
 		p.cancelCurrentContext()

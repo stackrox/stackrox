@@ -80,7 +80,7 @@ func (c *nodeInventoryHandlerImpl) Stop(_ error) {
 func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
-	case common.SensorComponentEventCentralReachableHTTP:
+	case common.SensorComponentEventResourceSyncFinished:
 		c.centralReady.Signal()
 	case common.SensorComponentEventOfflineMode:
 		// As Compliance enters a retry loop when it is not receiving an ACK,
