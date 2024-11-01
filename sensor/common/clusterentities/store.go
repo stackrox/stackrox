@@ -340,11 +340,9 @@ func (e *Store) purgeNoLock(deploymentID string) {
 	for containerID := range e.reverseContainerIDMap[deploymentID] {
 		if meta, found := e.containerIDMap[containerID]; found {
 			e.markContainerIDHistorical(containerID, meta)
-			// This must be called here in case memorySize is set to 0
+			// If memorySize is set to 0, this must be called here
+			// as it is an equivalent of: delete(e.containerIDMap, containerID)
 			e.removeHistoricalExpiredContainerIDs(containerID, meta)
-		}
-		if len(e.containerIDMap) == 0 {
-			delete(e.containerIDMap, containerID)
 		}
 	}
 
