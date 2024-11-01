@@ -598,3 +598,25 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: ["false"]
+
+  - name: push-dockerfile
+    params:
+    - name: IMAGE
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    - name: DOCKERFILE
+      value: $(params.dockerfile)
+    - name: CONTEXT
+      value: $(params.path-context)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: push-dockerfile-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-push-dockerfile-oci-ta:0.1@sha256:a28f33b69b270c4e8def293ff6d19ecc9789e1fee5a5929f1250a2e6cbabed81
+      - name: kind
+        value: task
+      resolver: bundles
