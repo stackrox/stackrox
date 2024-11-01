@@ -9,15 +9,23 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
+	appsApiv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
 var (
+	namespace        = "stackrox-ns"
+	sensorDeployment = &appsApiv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sensor-deployment",
+			Namespace: namespace,
+		},
+	}
 	scannerServiceType         = storage.ServiceType_SCANNER_SERVICE
 	serviceCertificate         = createServiceCertificate(scannerServiceType)
 	emptyPersistedCertificates = make([]*storage.TypedServiceCertificate, 0)
-	certificates               = &storage.TypedServiceCertificateSet{
+	certificateSet             = &storage.TypedServiceCertificateSet{
 		CaPem: make([]byte, 2),
 		ServiceCerts: []*storage.TypedServiceCertificate{
 			serviceCertificate,
@@ -57,9 +65,9 @@ func (s *localScannerCertificateRepoSuite) TestEnsureServiceCertificateMissingSe
 	secretsClient := clientSet.CoreV1().Secrets(namespace)
 	repo := NewServiceCertificatesRepo(sensorOwnerReference()[0], namespace, secretsClient)
 
-	persistedCertificates, err := repo.EnsureServiceCertificates(context.Background(), certificates)
+	persistedCertificates, err := repo.EnsureServiceCertificates(context.Background(), certificateSet)
 
-	protoassert.SlicesEqual(s.T(), certificates.ServiceCerts, persistedCertificates)
+	protoassert.SlicesEqual(s.T(), certificateSet.ServiceCerts, persistedCertificates)
 	s.NoError(err)
 }
 
