@@ -80,13 +80,13 @@ function ImageComponentVulnerabilitiesTable({
                 return (
                     <Tbody key={`${image.id}:${name}:${version}`} style={style}>
                         <Tr>
-                            <Td data-label="Component">{name}</Td>
-                            <Td data-label="Version">{version}</Td>
-                            <Td data-label="CVE fixed in" modifier="nowrap">
+                            <Td dataLabel="Component">{name}</Td>
+                            <Td dataLabel="Version">{version}</Td>
+                            <Td dataLabel="CVE fixed in" modifier="nowrap">
                                 <FixedByVersion fixedByVersion={fixedByVersion} />
                             </Td>
-                            <Td data-label="Source">{source}</Td>
-                            <Td data-label="Location">
+                            <Td dataLabel="Source">{source}</Td>
+                            <Td dataLabel="Location">
                                 <ComponentLocation location={location} source={source} />
                             </Td>
                         </Tr>

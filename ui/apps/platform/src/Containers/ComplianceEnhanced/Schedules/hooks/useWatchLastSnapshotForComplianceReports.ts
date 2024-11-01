@@ -19,7 +19,7 @@ async function fetchLastJobForConfiguration(
         perPage: 1,
         showMyHistory: true,
         sortOption: {
-            field: 'Report Completion Time',
+            field: 'Compliance Report Completed Time',
             reversed: true,
         },
     });

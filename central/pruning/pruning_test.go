@@ -33,6 +33,7 @@ import (
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	nodeSearch "github.com/stackrox/rox/central/node/datastore/search"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
@@ -243,7 +244,7 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 	mockFilter.EXPECT().DeleteByPod(gomock.Any()).AnyTimes()
 
-	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
 	require.NoError(s.T(), err)
 
 	images := imageDatastore.NewWithPostgres(
@@ -314,7 +315,7 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
-	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
 	require.NoError(s.T(), err)
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }
@@ -377,7 +378,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
 
-	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, clusterFlows, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, clusterFlows, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.Singleton())
 	require.NoError(s.T(), err)
 
 	clusterDataStore, err := clusterDatastore.New(
@@ -1555,7 +1556,6 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 			initialAlerts: []*storage.ListAlert{
 				newListAlertWithDeployment(fixtureconsts.Alert1, 1*time.Hour, fixtureconsts.Deployment1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
 				newListAlertWithDeployment(fixtureconsts.Alert2, 1*time.Hour, fixtureconsts.Deployment2, storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
-				newListAlertWithDeployment(fixtureconsts.Alert3, 1*time.Hour, fixtureconsts.Deployment3, storage.LifecycleStage_DEPLOY, storage.ViolationState_SNOOZED),
 			},
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
 			expectedDeletions: []string{fixtureconsts.Alert1},

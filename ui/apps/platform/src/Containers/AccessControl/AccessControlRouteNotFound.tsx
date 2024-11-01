@@ -1,5 +1,5 @@
 import React, { CSSProperties, ReactElement } from 'react';
-import { Alert, AlertVariant, List, ListItem, PageSection } from '@patternfly/react-core';
+import { Alert, List, ListItem, PageSection } from '@patternfly/react-core';
 
 import AccessControlHeading from './AccessControlHeading';
 
@@ -16,7 +16,7 @@ function AccessControlRouteNotFound(): ReactElement {
                 <Alert
                     title="Access Control route not found"
                     component="p"
-                    variant={AlertVariant.warning}
+                    variant="warning"
                     isInline
                 >
                     <List style={styleList}>

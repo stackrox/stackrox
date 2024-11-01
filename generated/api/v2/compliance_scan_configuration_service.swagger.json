@@ -16,170 +16,6 @@
     "application/json"
   ],
   "paths": {
-    "/v2/compliance/scan/configuration/{id}/reports/history": {
-      "get": {
-        "summary": "GetReportHistory returns a list of snapshots (scan executions) from a given scan configuration.",
-        "operationId": "ComplianceScanConfigurationService_GetReportHistory",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2ComplianceReportHistoryResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "reportParamQuery.query",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "reportParamQuery.pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "reportParamQuery.pagination.offset",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "reportParamQuery.pagination.sortOption.field",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "reportParamQuery.pagination.sortOption.reversed",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "UNSET",
-              "COUNT",
-              "MIN",
-              "MAX"
-            ],
-            "default": "UNSET"
-          },
-          {
-            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          }
-        ],
-        "tags": [
-          "ComplianceScanConfigurationService"
-        ]
-      }
-    },
-    "/v2/compliance/scan/configuration/{id}/reports/my-history": {
-      "get": {
-        "summary": "GetMyReportHistory returns a list of snapshots (scan executions) executed by the current user from a given scan configuration.",
-        "operationId": "ComplianceScanConfigurationService_GetMyReportHistory",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2ComplianceReportHistoryResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "reportParamQuery.query",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "reportParamQuery.pagination.limit",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "reportParamQuery.pagination.offset",
-            "in": "query",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "reportParamQuery.pagination.sortOption.field",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "reportParamQuery.pagination.sortOption.reversed",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "UNSET",
-              "COUNT",
-              "MIN",
-              "MAX"
-            ],
-            "default": "UNSET"
-          },
-          {
-            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
-          }
-        ],
-        "tags": [
-          "ComplianceScanConfigurationService"
-        ]
-      }
-    },
     "/v2/compliance/scan/configurations": {
       "get": {
         "summary": "ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters",
@@ -478,6 +314,37 @@
         ]
       }
     },
+    "/v2/compliance/scan/configurations/reports/{id}": {
+      "delete": {
+        "summary": "DeleteReport deletes a given snapshot (scan execution).",
+        "operationId": "ComplianceScanConfigurationService_DeleteReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
     "/v2/compliance/scan/configurations/{id}": {
       "get": {
         "summary": "GetComplianceScanConfiguration retrieves the specified compliance scan configurations",
@@ -568,6 +435,170 @@
             "schema": {
               "$ref": "#/definitions/ComplianceScanConfigurationServiceUpdateComplianceScanConfigurationBody"
             }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}/reports/history": {
+      "get": {
+        "summary": "GetReportHistory returns a list of snapshots (scan executions) from a given scan configuration.",
+        "operationId": "ComplianceScanConfigurationService_GetReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}/reports/my-history": {
+      "get": {
+        "summary": "GetMyReportHistory returns a list of snapshots (scan executions) executed by the current user from a given scan configuration.",
+        "operationId": "ComplianceScanConfigurationService_GetMyReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [

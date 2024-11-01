@@ -3,7 +3,6 @@ import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import {
     Bullseye,
     Button,
-    ButtonVariant,
     Divider,
     PageSection,
     PageSectionVariants,
@@ -171,7 +170,7 @@ function DeferredCVEsTable({
                         <Th sort={getSortParams('Severity')}>Severity</Th>
                         <Th>Expires</Th>
                         <Th modifier="fitContent">Scope</Th>
-                        <Th>Affected Components</Th>
+                        <Th>Affected components</Th>
                         <Th>Comments</Th>
                         <Th>Approver</Th>
                     </Tr>
@@ -242,7 +241,7 @@ function DeferredCVEsTable({
                                     </Td>
                                     <Td dataLabel="Affected components">
                                         <Button
-                                            variant={ButtonVariant.link}
+                                            variant="link"
                                             isInline
                                             onClick={() => {
                                                 showComponentDetails(row.components, row.cve);

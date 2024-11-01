@@ -23,16 +23,20 @@ import (
 	"github.com/pkg/errors"
 	configstackroxiov1alpha1 "github.com/stackrox/rox/config-controller/api/v1alpha1"
 	"github.com/stackrox/rox/config-controller/pkg/client"
+	"github.com/stackrox/rox/pkg/logging"
 	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
 	policyFinalizer = "securitypolicies.config.stackrox.io/finalizer"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // SecurityPolicyReconciler reconciles a SecurityPolicy object
@@ -47,8 +51,7 @@ type SecurityPolicyReconciler struct {
 //+kubebuilder:rbac:groups=config.stackrox.io,resources=policies/finalizers,verbs=update
 
 func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	rlog := log.FromContext(ctx)
-	rlog.Info("Reconciling", "namespace", req.Namespace, "name", req.Name)
+	log.Infof("Reconciling resource %q/%q", req.Namespace, req.Name)
 
 	// Get the policy CR
 	policyCR := &configstackroxiov1alpha1.SecurityPolicy{}
@@ -75,21 +78,6 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, errors.Wrap(err, "Failed to fetch policy")
 	}
 
-	if exists && existingPolicy.IsDefault {
-		retErr := errors.New(fmt.Sprintf("Failed to reconcile: existing default policy with the same name '%s' exists", desiredState.GetName()))
-		policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
-			Accepted: false,
-			Message:  retErr.Error(),
-		}
-		if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
-			rlog.Error(err, "error updating status for securitypolicy '%s'", policyCR.GetName())
-			return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on security policy resource '%s'", policyCR.GetName()))
-		}
-		// We do not want this reconcile request to be requeued since it has a name collision
-		// with an existing default policy hence return nil error.
-		return ctrl.Result{}, nil
-	}
-
 	// If the policy in CR is being renamed or does not exist on central, exists will be false, and we will update the policy ID
 	// to the one in CR status. The policy ID in the CR status is expected to be blank if this is the first time policy is being reconciled.
 	if exists {
@@ -114,10 +102,13 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		// The policy is being deleted since k8s set the deletion timestamp
 		if controllerutil.ContainsFinalizer(policyCR, policyFinalizer) {
 			// finalizer is present, so lets handle the external dependency of deleting policy in central
-			if err := r.PolicyClient.DeletePolicy(ctx, policyCR.Spec.PolicyName); err != nil {
-				// if we failed to delete the policy in central, return with error
-				// so that reconciliation can be retried.
-				return ctrl.Result{}, errors.Wrapf(err, "failed to delete policy %q", policyCR.GetName())
+			if policyCR.Status.Accepted {
+				// Only try to delete a policy from Central if the CR has been marked as accepted
+				if err := r.PolicyClient.DeletePolicy(ctx, policyCR.Spec.PolicyName); err != nil {
+					// if we failed to delete the policy in central, return with error
+					// so that reconciliation can be retried.
+					return ctrl.Result{}, errors.Wrapf(err, "failed to delete policy %q", policyCR.GetName())
+				}
 			}
 
 			// delete on central was successful, so remove our finalizer from the list and update the resource.
@@ -131,9 +122,26 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
+	if exists && existingPolicy.IsDefault {
+		retErr := errors.New(fmt.Sprintf("Failed to reconcile: existing default policy with the same name '%s' exists", desiredState.GetName()))
+		policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
+			Accepted: false,
+			Message:  retErr.Error(),
+		}
+		if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
+			errMsg := fmt.Sprintf("error updating status for securitypolicy '%s'", policyCR.GetName())
+			log.Debug(errMsg)
+			return ctrl.Result{}, errors.Wrap(err, errMsg)
+		}
+		// We do not want this reconcile request to be requeued since it has a name collision
+		// with an existing default policy hence return nil error.
+		return ctrl.Result{}, nil
+	}
+
 	// policy create or update flow
 	var retErr error
 	if desiredState.GetId() != "" {
+		log.Debugf("Updating policy %q (ID: %q)", desiredState.GetName(), desiredState.GetId())
 		if err := r.PolicyClient.UpdatePolicy(ctx, desiredState); err != nil {
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to update policy '%s'", desiredState.GetName()))
 			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
@@ -148,6 +156,7 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			}
 		}
 	} else {
+		log.Debugf("Creating policy with name %q", desiredState.GetName())
 		if createdPolicy, err := r.PolicyClient.CreatePolicy(ctx, desiredState); err != nil {
 			retErr = errors.Wrap(err, fmt.Sprintf("Failed to create policy '%s'", desiredState.GetName()))
 			policyCR.Status = configstackroxiov1alpha1.SecurityPolicyStatus{
@@ -170,8 +179,9 @@ func (r *SecurityPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	if err := r.K8sClient.Status().Update(ctx, policyCR); err != nil {
-		rlog.Error(err, "error updating status for securitypolicy", "name", policyCR.GetName())
-		return ctrl.Result{}, errors.Wrap(err, fmt.Sprintf("Failed to set status on security policy resource '%s'", policyCR.GetName()))
+		errMsg := fmt.Sprintf("error updating status for securitypolicy %q", policyCR.GetName())
+		log.Debug(errMsg)
+		return ctrl.Result{}, errors.Wrap(err, errMsg)
 	}
 
 	return ctrl.Result{}, retErr

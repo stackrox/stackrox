@@ -1,5 +1,5 @@
 import React, { useState, ReactElement } from 'react';
-import { Button, ButtonVariant, Flex, Popover, PopoverPosition } from '@patternfly/react-core';
+import { Button, Flex, Popover, PopoverPosition } from '@patternfly/react-core';
 import { AngleDownIcon, AngleUpIcon, DownloadIcon } from '@patternfly/react-icons';
 import { useFormik } from 'formik';
 import { parse } from 'date-fns';
@@ -77,7 +77,7 @@ function GenerateDiagnosticBundle(): ReactElement {
     const footerContent = (
         <Flex spaceItems={{ default: 'spaceItemsLg' }}>
             <Button
-                variant={ButtonVariant.primary}
+                variant="primary"
                 onClick={submitForm}
                 icon={isSubmitting ? null : <DownloadIcon />}
                 spinnerAriaValueText={isSubmitting ? 'Downloading' : undefined}
@@ -129,7 +129,7 @@ function GenerateDiagnosticBundle(): ReactElement {
             showClose={false}
             isVisible={isOpen}
         >
-            <Button variant={ButtonVariant.secondary}>
+            <Button variant="secondary">
                 <Flex
                     alignItems={{ default: 'alignItemsCenter' }}
                     spaceItems={{ default: 'spaceItemsXs' }}

@@ -65,7 +65,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"processViolation: Alert_ProcessViolation",
 		"resolvedAt: Time",
 		"resource: Alert_Resource",
-		"snoozeTill: Time",
 		"state: ViolationState!",
 		"time: Time",
 		"violations: [Alert_Violation]!",
@@ -966,8 +965,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"notes: [NodeScan_Note!]!",
 		"operatingSystem: String!",
 		"scanTime: Time",
+		"scannerVersion: NodeScan_Scanner!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Note(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NodeScan_Scanner(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Node_Note(0)))
 	utils.Must(builder.AddType("Notifier", []string{
 		"awsSecurityHub: AWSSecurityHub",
@@ -1219,6 +1220,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cluster: String!",
 		"label: Scope_Label",
 		"namespace: String!",
+	}))
+	utils.Must(builder.AddType("ScopeObject", []string{
+		"id: ID!",
+		"name: String!",
 	}))
 	utils.Must(builder.AddType("Scope_Label", []string{
 		"key: String!",
@@ -2008,12 +2013,6 @@ func (resolver *alertResolver) Resource(ctx context.Context) (*alert_ResourceRes
 	resolver.ensureData(ctx)
 	value := resolver.data.GetResource()
 	return resolver.root.wrapAlert_Resource(value, true, nil)
-}
-
-func (resolver *alertResolver) SnoozeTill(ctx context.Context) (*graphql.Time, error) {
-	resolver.ensureData(ctx)
-	value := resolver.data.GetSnoozeTill()
-	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
 func (resolver *alertResolver) State(ctx context.Context) string {
@@ -10967,6 +10966,11 @@ func (resolver *nodeScanResolver) ScanTime(ctx context.Context) (*graphql.Time, 
 	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
 }
 
+func (resolver *nodeScanResolver) ScannerVersion(ctx context.Context) string {
+	value := resolver.data.GetScannerVersion()
+	return value.String()
+}
+
 func toNodeScan_Note(value *string) storage.NodeScan_Note {
 	if value != nil {
 		return storage.NodeScan_Note(storage.NodeScan_Note_value[*value])
@@ -10981,6 +10985,24 @@ func toNodeScan_Notes(values *[]string) []storage.NodeScan_Note {
 	output := make([]storage.NodeScan_Note, len(*values))
 	for i, v := range *values {
 		output[i] = toNodeScan_Note(&v)
+	}
+	return output
+}
+
+func toNodeScan_Scanner(value *string) storage.NodeScan_Scanner {
+	if value != nil {
+		return storage.NodeScan_Scanner(storage.NodeScan_Scanner_value[*value])
+	}
+	return storage.NodeScan_Scanner(0)
+}
+
+func toNodeScan_Scanners(values *[]string) []storage.NodeScan_Scanner {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.NodeScan_Scanner, len(*values))
+	for i, v := range *values {
+		output[i] = toNodeScan_Scanner(&v)
 	}
 	return output
 }
@@ -13258,6 +13280,58 @@ func (resolver *scopeResolver) Label(ctx context.Context) (*scope_LabelResolver,
 
 func (resolver *scopeResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
+	return value
+}
+
+type scopeObjectResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *v1.ScopeObject
+}
+
+func (resolver *Resolver) wrapScopeObject(value *v1.ScopeObject, ok bool, err error) (*scopeObjectResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &scopeObjectResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapScopeObjects(values []*v1.ScopeObject, err error) ([]*scopeObjectResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*scopeObjectResolver, len(values))
+	for i, v := range values {
+		output[i] = &scopeObjectResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapScopeObjectWithContext(ctx context.Context, value *v1.ScopeObject, ok bool, err error) (*scopeObjectResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &scopeObjectResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapScopeObjectsWithContext(ctx context.Context, values []*v1.ScopeObject, err error) ([]*scopeObjectResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*scopeObjectResolver, len(values))
+	for i, v := range values {
+		output[i] = &scopeObjectResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *scopeObjectResolver) Id(ctx context.Context) graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *scopeObjectResolver) Name(ctx context.Context) string {
+	value := resolver.data.GetName()
 	return value
 }
 

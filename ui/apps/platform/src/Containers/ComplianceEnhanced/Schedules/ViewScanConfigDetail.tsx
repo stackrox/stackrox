@@ -84,7 +84,6 @@ function ViewScanConfigDetail({
                     type: 'success',
                     title: 'Successfully triggered a re-scan',
                 });
-                // TODO verify is lastExecutedTime expected to change? therefore, refetch?
             })
             .catch((error) => {
                 setAlertObj({
@@ -186,6 +185,7 @@ function ViewScanConfigDetail({
                                 title={alertObj.title}
                                 component="p"
                                 variant={alertObj.type}
+                                isInline
                                 className="pf-v5-u-mb-lg pf-v5-u-mx-lg"
                                 actionClose={<AlertActionCloseButton onClose={clearAlertObj} />}
                             >
@@ -235,10 +235,10 @@ function ViewScanConfigDetail({
                     </Card>
                 </PageSection>
             )}
-            {activeScanConfigTab === 'ALL_REPORT_JOBS' && (
+            {activeScanConfigTab === 'ALL_REPORT_JOBS' && scanConfig?.id && (
                 <PageSection isCenterAligned id={allReportJobsTabId}>
                     <ReportJobs
-                        scanConfig={scanConfig}
+                        scanConfigId={scanConfig.id}
                         isComplianceReportingEnabled={isComplianceReportingEnabled}
                     />
                 </PageSection>

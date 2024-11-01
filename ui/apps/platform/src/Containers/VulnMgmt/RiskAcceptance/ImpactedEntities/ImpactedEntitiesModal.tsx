@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { Flex, FlexItem, Modal, ModalVariant, Title } from '@patternfly/react-core';
+import { Flex, FlexItem, Modal, Title } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import pluralize from 'pluralize';
 
@@ -49,7 +49,7 @@ function ImpactedEntitiesModal({
     );
 
     return (
-        <Modal variant={ModalVariant.small} header={header} isOpen={isOpen} onClose={onClose}>
+        <Modal variant="small" header={header} isOpen={isOpen} onClose={onClose}>
             <Table aria-label="Simple table" variant="compact">
                 <Thead>
                     <Tr>

@@ -538,6 +538,8 @@ central:
 #    # sufficient and manual override is required.
 #    configOverride: null
 #
+#configAsCode:
+#  enabled: true
 #
 ## EXPERT SETTINGS. You usually do not need to touch those.
 #

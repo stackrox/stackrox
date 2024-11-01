@@ -4,23 +4,28 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/pkg/errors"
 	complianceIntegrationDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
+	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
+	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanDS "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/timestamp"
 	"golang.org/x/mod/semver"
 )
 
 var (
 	log                                              = logging.LoggerForModule()
+	ErrScanAlreadyHandled                            = errors.New("the scan is already handled")
 	ErrScanTimeout                                   = errors.New("scan watcher timed out")
+	ErrScanContextCancelled                          = errors.New("scan watcher context cancelled")
 	ErrComplianceOperatorNotInstalled                = errors.New("compliance operator is not installed")
 	ErrComplianceOperatorVersion                     = errors.New("compliance operator version")
 	ErrComplianceOperatorIntegrationDataStore        = errors.New("unable to retrieve compliance operator integration")
@@ -31,10 +36,9 @@ var (
 
 const (
 	minimumComplianceOperatorVersion = "v1.6.0"
-	checkCountAnnotationKey          = "compliance.openshift.io/check-count"
-	lastScannedAnnotationKey         = "compliance.openshift.io/last-scanned-timestamp"
+	CheckCountAnnotationKey          = "compliance.openshift.io/check-count"
+	LastScannedAnnotationKey         = "compliance.openshift.io/last-scanned-timestamp"
 	defaultChanelSize                = 100
-	defaultTimeout                   = 10 * time.Minute
 )
 
 // ScanWatcher determines if a scan is running or has completed.
@@ -47,7 +51,7 @@ type ScanWatcher interface {
 
 // ScanWatcherResults is returned when the watcher detects that the scan is completed.
 type ScanWatcherResults struct {
-	Ctx          context.Context
+	SensorCtx    context.Context
 	WatcherID    string
 	Scan         *storage.ComplianceOperatorScanV2
 	CheckResults set.StringSet
@@ -74,7 +78,7 @@ func IsComplianceOperatorHealthy(ctx context.Context, clusterID string, complian
 }
 
 // GetWatcherIDFromScan given a Scan, returns a unique ID for the watcher
-func GetWatcherIDFromScan(scan *storage.ComplianceOperatorScanV2, overrideTimestamp *protocompat.Timestamp) (string, error) {
+func GetWatcherIDFromScan(ctx context.Context, scan *storage.ComplianceOperatorScanV2, snapshotDataStore snapshotDS.DataStore, scanConfigDataStore scanConfigDS.DataStore, overrideTimestamp *protocompat.Timestamp) (string, error) {
 	if scan == nil {
 		return "", errors.New("nil scan")
 	}
@@ -87,18 +91,45 @@ func GetWatcherIDFromScan(scan *storage.ComplianceOperatorScanV2, overrideTimest
 		return "", errors.New("missing scan ID")
 	}
 	startTime := scan.GetLastStartedTime()
-	if startTime == nil {
+	if startTime == nil && overrideTimestamp == nil {
 		// This could happen if the scan is freshly created
 		return "", ErrComplianceOperatorScanMissingLastStartedFiled
 	}
 	if overrideTimestamp != nil {
 		startTime = overrideTimestamp
 	}
+	scanConfigQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfigName, scan.GetScanConfigName()).
+		ProtoQuery()
+	scanConfigs, err := scanConfigDataStore.GetScanConfigurations(ctx, scanConfigQuery)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to retrieve the scan configuration from the store")
+	}
+	if len(scanConfigs) == 0 {
+		return "", errors.New("this scan is not handled by any known scan configuration")
+	}
+	// If there is a snapshot with the same timestamp or newer we shouldn't handle this scan since we already handle a newer one
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanRef, scan.GetScanRefId()).
+		AddTimeRangeField(search.ComplianceOperatorScanLastStartedTime, startTime.AsTime(), timestamp.InfiniteFuture.GoTime()).
+		ProtoQuery()
+	snapshots, err := snapshotDataStore.SearchSnapshots(ctx, query)
+	if err != nil {
+		return "", errors.Wrap(err, "unable to retrieve snapshots from the store")
+	}
+	if len(snapshots) > 0 {
+		// If we have reports with the same start time or newer, then we do not handle this scan
+		// as it is an old scan, because the check results in the db will not be the results of this scan.
+		// We can land in this situation if CO sends a scan update after the watcher is done, which
+		// could happen because the check-count annotation that we use to determine if the scan is done
+		// is sent before the scan's last update (when it changes its status to COMPLETED).
+		return "", ErrScanAlreadyHandled
+	}
 	return fmt.Sprintf("%s:%s:%s", clusterID, scanID, startTime.String()), nil
 }
 
 // GetWatcherIDFromCheckResult given a CheckResult, returns a unique ID for the watcher
-func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2, scanDataStore scanDS.DataStore) (string, error) {
+func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.ComplianceOperatorCheckResultV2, scanDataStore scanDS.DataStore, snapshotDataStore snapshotDS.DataStore, scanConfigDataStore scanConfigDS.DataStore) (string, error) {
 	if result == nil {
 		return "", errors.New("nil check result")
 	}
@@ -116,8 +147,8 @@ func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.Compliance
 	}
 	var startTime string
 	var ok bool
-	if startTime, ok = result.GetAnnotations()[lastScannedAnnotationKey]; !ok {
-		return "", errors.Errorf("%s annotation not found", lastScannedAnnotationKey)
+	if startTime, ok = result.GetAnnotations()[LastScannedAnnotationKey]; !ok {
+		return "", errors.Errorf("%s annotation not found", LastScannedAnnotationKey)
 	}
 	timestamp, err := protocompat.ParseRFC3339NanoTimestamp(startTime)
 	if err != nil {
@@ -130,9 +161,9 @@ func GetWatcherIDFromCheckResult(ctx context.Context, result *storage.Compliance
 	if timestampCmpResult > 0 {
 		// In this case the timestamp from the check is newer which means the scans has not yet arrived
 		// to sensor's pipeline. We need to create the watcher with the new timestamp
-		return GetWatcherIDFromScan(scans[0], timestamp)
+		return GetWatcherIDFromScan(ctx, scans[0], snapshotDataStore, scanConfigDataStore, timestamp)
 	}
-	return GetWatcherIDFromScan(scans[0], nil)
+	return GetWatcherIDFromScan(ctx, scans[0], snapshotDataStore, scanConfigDataStore, nil)
 }
 
 // readyQueue represents the expected queue interface to push the results
@@ -141,12 +172,12 @@ type readyQueue[T comparable] interface {
 }
 
 type scanWatcherImpl struct {
-	ctx     context.Context
-	cancel  func()
-	timeout *time.Timer
-	scanC   chan *storage.ComplianceOperatorScanV2
-	resultC chan *storage.ComplianceOperatorCheckResultV2
-	stopped *concurrency.Signal
+	ctx       context.Context
+	sensorCtx context.Context
+	cancel    func()
+	scanC     chan *storage.ComplianceOperatorScanV2
+	resultC   chan *storage.ComplianceOperatorCheckResultV2
+	stopped   *concurrency.Signal
 
 	readyQueue  readyQueue[*ScanWatcherResults]
 	scanResults *ScanWatcherResults
@@ -154,24 +185,26 @@ type scanWatcherImpl struct {
 }
 
 // NewScanWatcher creates a new ScanWatcher
-func NewScanWatcher(ctx context.Context, watcherID string, queue readyQueue[*ScanWatcherResults]) *scanWatcherImpl {
+func NewScanWatcher(ctx, sensorCtx context.Context, watcherID string, queue readyQueue[*ScanWatcherResults]) *scanWatcherImpl {
+	log.Debugf("Creating new ScanWatcher with id %s", watcherID)
 	watcherCtx, cancel := context.WithCancel(ctx)
 	finishedSignal := concurrency.NewSignal()
+	timeout := NewTimer(env.ComplianceScanWatcherTimeout.DurationSetting())
 	ret := &scanWatcherImpl{
 		ctx:        watcherCtx,
+		sensorCtx:  sensorCtx,
 		cancel:     cancel,
 		scanC:      make(chan *storage.ComplianceOperatorScanV2, defaultChanelSize),
 		resultC:    make(chan *storage.ComplianceOperatorCheckResultV2, defaultChanelSize),
 		stopped:    &finishedSignal,
 		readyQueue: queue,
 		scanResults: &ScanWatcherResults{
-			Ctx:          ctx,
+			SensorCtx:    ctx,
 			WatcherID:    watcherID,
 			CheckResults: set.NewStringSet(),
 		},
-		timeout: time.NewTimer(defaultTimeout),
 	}
-	go ret.run(ret.timeout.C)
+	go ret.run(timeout)
 	return ret
 }
 
@@ -205,18 +238,20 @@ func (s *scanWatcherImpl) Stop() {
 	s.cancel()
 }
 
-func (s *scanWatcherImpl) run(timerC <-chan time.Time) {
+func (s *scanWatcherImpl) run(timer Timer) {
 	defer func() {
-		s.timeout.Stop()
 		s.stopped.Signal()
 		<-s.stopped.Done()
+		timer.Stop()
 	}()
 	for {
 		select {
 		case <-s.ctx.Done():
 			log.Infof("Stopping scan watcher for scan")
+			s.scanResults.Error = ErrScanContextCancelled
+			s.readyQueue.Push(s.scanResults)
 			return
-		case <-timerC:
+		case <-timer.C():
 			log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())
 			s.scanResults.Error = ErrScanTimeout
 			s.readyQueue.Push(s.scanResults)
@@ -238,7 +273,7 @@ func (s *scanWatcherImpl) run(timerC <-chan time.Time) {
 }
 
 func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) error {
-	if checkCountAnnotation, found := scan.GetAnnotations()[checkCountAnnotationKey]; found {
+	if checkCountAnnotation, found := scan.GetAnnotations()[CheckCountAnnotationKey]; found {
 		var numChecks int
 		var err error
 		if numChecks, err = strconv.Atoi(checkCountAnnotation); err != nil {

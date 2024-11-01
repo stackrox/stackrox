@@ -74,6 +74,10 @@ export const defaultColumns = {
         title: 'First discovered',
         isShownByDefault: true,
     },
+    publishedOn: {
+        title: 'Published',
+        isShownByDefault: true,
+    },
 } as const;
 
 export const cveListQuery = gql`
@@ -101,6 +105,7 @@ export const cveListQuery = gql`
             topCVSS
             affectedImageCount
             firstDiscoveredInSystem
+            publishedOn
             topNvdCVSS
             distroTuples {
                 summary
@@ -136,6 +141,7 @@ export type ImageCVE = {
     topCVSS: number;
     affectedImageCount: number;
     firstDiscoveredInSystem: string | null;
+    publishedOn: string | null;
     topNvdCVSS: number;
     distroTuples: {
         summary: string;
@@ -185,10 +191,11 @@ function WorkloadCVEOverviewTable({
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
 
     const colSpan =
-        (isNvdCvssEnabled ? 7 : 6) +
+        (isNvdCvssColumnEnabled ? 7 : 6) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0) +
@@ -219,7 +226,7 @@ function WorkloadCVEOverviewTable({
                     >
                         Top CVSS
                     </TooltipTh>
-                    {isNvdCvssEnabled && (
+                    {isNvdCvssColumnEnabled && (
                         <TooltipTh
                             className={getVisibilityClass('topNvdCvss')}
                             tooltip="Highest CVSS score (from National Vulnerability Database) of this CVE across images"
@@ -242,6 +249,12 @@ function WorkloadCVEOverviewTable({
                     >
                         First discovered
                         {isFiltered && <DynamicColumnIcon />}
+                    </TooltipTh>
+                    <TooltipTh
+                        className={getVisibilityClass('publishedOn')}
+                        tooltip="Time when the CVE was made public and assigned a number"
+                    >
+                        Published
                     </TooltipTh>
                     {showExceptionDetailsLink && (
                         <TooltipTh tooltip="View information about this exception request">
@@ -270,6 +283,7 @@ function WorkloadCVEOverviewTable({
                                 topNvdCVSS,
                                 affectedImageCount,
                                 firstDiscoveredInSystem,
+                                publishedOn,
                                 distroTuples,
                                 pendingExceptionCount,
                             },
@@ -359,7 +373,7 @@ function WorkloadCVEOverviewTable({
                                                 }
                                             />
                                         </Td>
-                                        {isNvdCvssEnabled && (
+                                        {isNvdCvssColumnEnabled && (
                                             <Td
                                                 className={getVisibilityClass('topNvdCvss')}
                                                 dataLabel="Top NVD CVSS"
@@ -380,8 +394,20 @@ function WorkloadCVEOverviewTable({
                                         <Td
                                             dataLabel="First discovered"
                                             className={getVisibilityClass('firstDiscovered')}
+                                            modifier="nowrap"
                                         >
                                             <DateDistance date={firstDiscoveredInSystem} />
+                                        </Td>
+                                        <Td
+                                            dataLabel="Published"
+                                            className={getVisibilityClass('publishedOn')}
+                                            modifier="nowrap"
+                                        >
+                                            {publishedOn ? (
+                                                <DateDistance date={publishedOn} />
+                                            ) : (
+                                                'Not available'
+                                            )}
                                         </Td>
                                         {showExceptionDetailsLink && (
                                             <ExceptionDetailsCell

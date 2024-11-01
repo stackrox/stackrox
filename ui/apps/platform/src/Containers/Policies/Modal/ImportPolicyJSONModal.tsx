@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { Modal, ModalVariant } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core';
 
 import { importPolicies } from 'services/PoliciesService';
 import { Policy } from 'types/policy.proto';
@@ -90,7 +90,7 @@ function ImportPolicyJSONModal({
         <Modal
             title="Import policy JSON"
             isOpen={isOpen}
-            variant={ModalVariant.small}
+            variant="small"
             onClose={handleCancelModal}
             data-testid="import-policy-modal"
             aria-label="Import policy"

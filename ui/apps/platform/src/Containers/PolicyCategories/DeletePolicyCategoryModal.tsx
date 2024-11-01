@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
     Modal,
-    ModalVariant,
     ModalBoxBody,
     ModalBoxFooter,
     Button,
@@ -74,7 +73,7 @@ function DeletePolicyCategoryModal({
         <Modal
             title="Permanently delete category?"
             isOpen={isOpen}
-            variant={ModalVariant.small}
+            variant="small"
             onClose={onClose}
             data-testid="delete-category-modal"
             aria-label="Permanently delete category?"

@@ -3,7 +3,6 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
-    AlertVariant,
     Badge,
     Button,
     Form,
@@ -97,7 +96,7 @@ function PermissionSetForm({
                     <Alert
                         title="Failed to save permission set"
                         component="p"
-                        variant={AlertVariant.danger}
+                        variant="danger"
                         isInline
                     >
                         {error.message}

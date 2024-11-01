@@ -14,6 +14,7 @@ import { NotifierConfiguration } from './ReportsService.types';
 import { Empty } from './types';
 
 const complianceScanConfigBaseUrl = `${complianceV2Url}/scan/configurations`;
+export const complianceReportDownloadURL = '/v2/compliance/scan/configurations/reports/download';
 
 export type ScheduleBase = {
     hour: number;
@@ -195,9 +196,9 @@ export type ComplianceRunReportResponse = {
  */
 export function runComplianceReport(
     scanConfigId: string,
-    scanNotificationMethod: 'EMAIL' | 'DOWNLOAD'
+    reportNotificationMethod: 'EMAIL' | 'DOWNLOAD'
 ): Promise<ComplianceRunReportResponse> {
-    const body = { scanConfigId, scanNotificationMethod };
+    const body = { scanConfigId, reportNotificationMethod };
     return axios
         .post<ComplianceRunReportResponse>(`${complianceScanConfigBaseUrl}/reports/run`, body)
         .then((response) => {
@@ -280,5 +281,13 @@ export function fetchComplianceReportHistory({
         .catch((error) => {
             Raven.captureException(error);
             return Promise.reject(error);
+        });
+}
+
+export function deleteDownloadableComplianceReport(reportJobId: string) {
+    return axios
+        .delete<Empty>(`/v2/compliance/scan/configurations/reports/${reportJobId}`)
+        .then((response) => {
+            return response.data;
         });
 }

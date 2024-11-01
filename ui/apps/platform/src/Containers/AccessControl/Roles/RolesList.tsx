@@ -1,14 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import {
-    Alert,
-    AlertVariant,
-    Button,
-    Modal,
-    ModalVariant,
-    PageSection,
-    pluralize,
-    Title,
-} from '@patternfly/react-core';
+import { Alert, Button, Modal, PageSection, pluralize, Title } from '@patternfly/react-core';
 import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { AccessScope } from 'services/AccessScopesService';
@@ -62,12 +53,7 @@ function RolesList({
         handleDelete(nameDeleting)
             .catch((error) => {
                 setAlertDelete(
-                    <Alert
-                        title="Delete role failed"
-                        component="p"
-                        variant={AlertVariant.danger}
-                        isInline
-                    >
+                    <Alert title="Delete role failed" component="p" variant="danger" isInline>
                         {error.message}
                     </Alert>
                 );
@@ -170,7 +156,7 @@ function RolesList({
                 </Table>
             )}
             <Modal
-                variant={ModalVariant.small}
+                variant="small"
                 title="Permanently delete role?"
                 isOpen={typeof nameConfirmingDelete === 'string'}
                 onClose={onCancelDelete}

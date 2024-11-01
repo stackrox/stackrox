@@ -74,6 +74,10 @@ export const defaultColumns = {
         title: 'First discovered',
         isShownByDefault: true,
     },
+    publishedOn: {
+        title: 'Published',
+        isShownByDefault: true,
+    },
 } as const;
 
 export const imageVulnerabilitiesFragment = gql`
@@ -87,6 +91,7 @@ export const imageVulnerabilitiesFragment = gql`
         nvdCvss
         nvdScoreVersion
         discoveredAtImage
+        publishedOn
         pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         imageComponents(query: $query) {
             ...ImageComponentVulnerabilities
@@ -103,6 +108,7 @@ export type ImageVulnerability = {
     nvdCvss: number;
     nvdScoreVersion: string; // for example, V3 or UNKNOWN_VERSION
     discoveredAtImage: string | null;
+    publishedOn: string | null;
     pendingExceptionCount: number;
     imageComponents: ImageComponentVulnerability[];
 };
@@ -142,10 +148,11 @@ function ImageVulnerabilitiesTable({
     const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
 
     const colSpan =
-        (isNvdCvssEnabled ? 7 : 6) +
+        (isNvdCvssColumnEnabled ? 7 : 6) +
         (canSelectRows ? 1 : 0) +
         (createTableActions ? 1 : 0) +
         (showExceptionDetailsLink ? 1 : 0) +
@@ -171,14 +178,19 @@ function ImageVulnerabilitiesTable({
                     <Th className={getVisibilityClass('cvss')} sort={getSortParams('CVSS')}>
                         CVSS
                     </Th>
-                    {isNvdCvssEnabled && (
+                    {isNvdCvssColumnEnabled && (
                         <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
                     )}
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    <Th className={getVisibilityClass('firstDiscovered')}>First discovered</Th>
+                    <Th className={getVisibilityClass('firstDiscovered')} modifier="nowrap">
+                        First discovered
+                    </Th>
+                    <Th className={getVisibilityClass('publishedOn')} modifier="nowrap">
+                        Published
+                    </Th>
                     {showExceptionDetailsLink && (
                         <TooltipTh tooltip="View information about this exception request">
                             Request details
@@ -208,6 +220,7 @@ function ImageVulnerabilitiesTable({
                             nvdScoreVersion,
                             imageComponents,
                             discoveredAtImage,
+                            publishedOn,
                             pendingExceptionCount,
                         } = vulnerability;
                         const vulnerabilities = imageComponents.flatMap(
@@ -275,7 +288,7 @@ function ImageVulnerabilitiesTable({
                                     >
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
-                                    {isNvdCvssEnabled && (
+                                    {isNvdCvssColumnEnabled && (
                                         <Td
                                             className={getVisibilityClass('nvdCvss')}
                                             modifier="nowrap"
@@ -301,6 +314,16 @@ function ImageVulnerabilitiesTable({
                                     >
                                         <DateDistance date={discoveredAtImage} />
                                     </Td>
+                                    <Td
+                                        className={getVisibilityClass('publishedOn')}
+                                        dataLabel="Published"
+                                    >
+                                        {publishedOn ? (
+                                            <DateDistance date={publishedOn} />
+                                        ) : (
+                                            'Not available'
+                                        )}
+                                    </Td>
                                     {showExceptionDetailsLink && (
                                         <ExceptionDetailsCell
                                             cve={cve}
@@ -308,7 +331,7 @@ function ImageVulnerabilitiesTable({
                                         />
                                     )}
                                     {createTableActions && (
-                                        <Td className="pf-v5-u-px-0">
+                                        <Td isActionCell>
                                             <ActionsColumn
                                                 // menuAppendTo={() => document.body}
                                                 items={createTableActions({

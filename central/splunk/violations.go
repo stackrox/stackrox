@@ -471,7 +471,7 @@ func extractAlertInfo(from *storage.Alert, violationInfo *integrations.SplunkVio
 	}
 
 	return alertInfo
-	// from.State and from.SnoozeTill are ignored because they might change over time.
+	// from.State is ignored because they might change over time.
 }
 
 func extractPolicyInfo(alertID string, from *storage.Policy) *integrations.SplunkViolation_PolicyInfo {

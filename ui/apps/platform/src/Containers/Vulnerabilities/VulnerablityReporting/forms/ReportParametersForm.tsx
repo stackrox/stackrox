@@ -6,6 +6,7 @@ import {
     Flex,
     FlexItem,
     Form,
+    FormGroup,
     PageSection,
     TextArea,
     TextInput,
@@ -41,7 +42,8 @@ export type ReportParametersFormParams = {
 
 function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isIncludeNvdCvssEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
 
     const handleTextChange =
         (fieldName: string) =>
@@ -282,19 +284,15 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                         />
                     </FormLabelGroup>
                 )}
-                {isNvdCvssEnabled && (
-                    <FormLabelGroup
-                        label="Optional columns"
-                        fieldId="reportParameters.includeNvdCvss"
-                        errors={formik.errors}
-                    >
+                {isIncludeNvdCvssEnabled && (
+                    <FormGroup label="Optional columns" isInline>
                         <Checkbox
                             label="Include NVD CVSS"
                             id="reportParameters.includeNvdCvss"
                             isChecked={formik.values.reportParameters.includeNvdCvss}
                             onChange={onChange}
                         />
-                    </FormLabelGroup>
+                    </FormGroup>
                 )}
                 <FormLabelGroup
                     label="Configure collection included"

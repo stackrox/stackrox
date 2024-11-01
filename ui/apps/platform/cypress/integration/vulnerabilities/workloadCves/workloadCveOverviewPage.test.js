@@ -14,7 +14,7 @@ import {
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
-import { sortByTableHeader } from '../../../helpers/tableHelpers';
+import { sortByTableHeader, verifyColumnManagement } from '../../../helpers/tableHelpers';
 import {
     getRouteMatcherMapForGraphQL,
     expectRequestedSort,
@@ -97,12 +97,28 @@ describe('Workload CVE overview page tests', () => {
         });
     });
 
+    describe('Column management tests', () => {
+        it('should allow the user to hide and show columns on the CVE tab', () => {
+            visitWorkloadCveOverview();
+            verifyColumnManagement({ tableSelector: 'table' });
+        });
+
+        it('should allow the user to hide and show columns on the Images tab', () => {
+            visitWorkloadCveOverview();
+            selectEntityTab('Image');
+            verifyColumnManagement({ tableSelector: 'table' });
+        });
+
+        it('should allow the user to hide and show columns on the Deployment tab', () => {
+            visitWorkloadCveOverview();
+            selectEntityTab('Deployment');
+            verifyColumnManagement({ tableSelector: 'table' });
+        });
+    });
+
     describe('Images without CVEs view tests', () => {
         beforeEach(function () {
-            if (
-                !hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS') ||
-                !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-            ) {
+            if (!hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
                 this.skip();
             }
         });

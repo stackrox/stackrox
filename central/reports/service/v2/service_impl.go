@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -82,10 +81,7 @@ func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 }
 
 func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	if features.VulnReportingEnhancements.Enabled() {
-		return apiV2.RegisterReportServiceHandler(ctx, mux, conn)
-	}
-	return nil
+	return apiV2.RegisterReportServiceHandler(ctx, mux, conn)
 }
 
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {

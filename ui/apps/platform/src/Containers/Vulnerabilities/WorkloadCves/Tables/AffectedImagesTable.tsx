@@ -39,8 +39,8 @@ import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayo
 
 export const tableId = 'WorkloadCvesAffectedImagesTable';
 export const defaultColumns = {
-    cvesBySeverity: {
-        title: 'CVEs by severity',
+    cveSeverity: {
+        title: 'CVE severity',
         isShownByDefault: true,
     },
     cveStatus: {
@@ -137,13 +137,15 @@ function AffectedImagesTable({
     onClearFilters,
     tableConfig,
 }: AffectedImagesTableProps) {
+    const expandedRowSet = useSet<string>();
+
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
-    const expandedRowSet = useSet<string>();
-    const colSpan = 8 + -hiddenColumnCount;
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssEnabled = isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const colSpan = 8 + (isNvdCvssColumnEnabled ? 1 : 0) + -hiddenColumnCount;
 
     return (
         <Table variant="compact">
@@ -152,7 +154,7 @@ function AffectedImagesTable({
                     <ExpandRowTh />
                     <Th sort={getSortParams('Image')}>Image</Th>
                     <Th
-                        className={getVisibilityClass('cvesBySeverity')}
+                        className={getVisibilityClass('cveSeverity')}
                         sort={getSortParams('Severity')}
                     >
                         CVE severity
@@ -162,7 +164,7 @@ function AffectedImagesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th className={getVisibilityClass('cvss')}>CVSS</Th>
-                    {isNvdCvssEnabled && (
+                    {isNvdCvssColumnEnabled && (
                         <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
                     )}
                     <Th
@@ -226,7 +228,7 @@ function AffectedImagesTable({
                                         )}
                                     </Td>
                                     <Td
-                                        className={getVisibilityClass('cvesBySeverity')}
+                                        className={getVisibilityClass('cveSeverity')}
                                         dataLabel="CVE severity"
                                         modifier="nowrap"
                                     >
@@ -249,7 +251,7 @@ function AffectedImagesTable({
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
 
-                                    {isNvdCvssEnabled && (
+                                    {isNvdCvssColumnEnabled && (
                                         <Td
                                             className={getVisibilityClass('nvdCvss')}
                                             dataLabel="NVD CVSS"

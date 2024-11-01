@@ -219,7 +219,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'compliance-enhanced': {
-        featureFlagRequirements: allEnabled(['ROX_COMPLIANCE_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['Compliance']),
     },
     configmanagement: {
@@ -313,7 +312,6 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         resourceAccessRequirements: everyResource(['Alert']),
     },
     'vulnerabilities/reports': {
-        featureFlagRequirements: allEnabled(['ROX_VULN_MGMT_REPORTING_ENHANCEMENTS']),
         resourceAccessRequirements: everyResource(['WorkflowAdministration']),
     },
     // Risk Acceptance must precede generic Vulnerability Management in Body and so here for consistency.

@@ -45,7 +45,7 @@ import {
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { useManagedColumns } from 'hooks/useManagedColumns';
+import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import {
     SearchOption,
@@ -102,6 +102,7 @@ export const imageCveMetadataQuery = gql`
         imageCVE(cve: $cve) {
             cve
             firstDiscoveredInSystem
+            publishedOn
             distroTuples {
                 summary
                 link
@@ -303,10 +304,18 @@ function ImageCvePage() {
         },
         skip: entityTab !== 'Deployment',
     });
+
+    const isNvdCvssColumnEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NVD_CVSS_UI');
+    const affectedImagesFilteredColumns = filterManagedColumns(
+        affectedImagesDefaultColumns,
+        (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
+    );
     const imageTableColumnState = useManagedColumns(
         affectedImagesTableId,
-        affectedImagesDefaultColumns
+        affectedImagesFilteredColumns
     );
+
     const deploymentTableColumnState = useManagedColumns(
         affectedDeploymentsTableId,
         affectedDeploymentsDefaultColumns
