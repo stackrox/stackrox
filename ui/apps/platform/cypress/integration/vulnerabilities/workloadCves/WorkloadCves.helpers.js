@@ -5,7 +5,6 @@ import {
     getRouteMatcherMapForGraphQL,
 } from '../../../helpers/request';
 import { visit } from '../../../helpers/visit';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 
@@ -37,7 +36,7 @@ export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch
     // Clear the default filters that will be applied to increase the likelihood of finding entities with
     // CVEs. The default filters of Severity: Critical and Severity: Important make it very likely that
     // there will be no results across entity tabs on the overview page.
-    if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS') && clearFiltersOnVisit) {
+    if (clearFiltersOnVisit) {
         cy.get(vulnSelectors.clearFiltersButton).click();
         // Ensure the data in the table has settled before continuing with the test
         cy.get(selectors.isUpdatingTable).should('not.exist');
