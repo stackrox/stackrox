@@ -214,6 +214,9 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+    workspaces:
+    - name: git-basic-auth
+      workspace: git-auth
 
   - name: build-container-amd64
     params:

@@ -294,6 +294,9 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+    workspaces:
+    - name: git-basic-auth
+      workspace: git-auth
 
   - name: wait-for-operator-image
     params:
