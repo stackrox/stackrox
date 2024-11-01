@@ -14,7 +14,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
@@ -41,13 +40,6 @@ type NodeCVECoreResolverTestSuite struct {
 }
 
 func (s *NodeCVECoreResolverTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnMgmtNodePlatformCVEs.EnvVar(), "true")
-
-	if !features.VulnMgmtNodePlatformCVEs.Enabled() {
-		s.T().Skipf("Skiping test. %s=false", features.VulnMgmtNodePlatformCVEs.EnvVar())
-		s.T().SkipNow()
-	}
-
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = contextWithNodePerm(s.T(), s.mockCtrl)
 	s.nodeCVEView = nodeCVEViewMock.NewMockCveView(s.mockCtrl)

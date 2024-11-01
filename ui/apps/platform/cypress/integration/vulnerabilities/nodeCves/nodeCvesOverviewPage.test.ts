@@ -1,6 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
 import { assertAvailableFilters } from '../../../helpers/compoundFilters';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     assertCannotFindThePage,
     visitWithStaticResponseForPermissions,
@@ -36,12 +35,6 @@ import { getSeverityLabelCounts, visitEntityTab } from '../vulnerabilities.helpe
 
 describe('Node CVEs - Overview Page', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_NODE_PLATFORM_CVES')) {
-            this.skip();
-        }
-    });
 
     it('should restrict access to users with insufficient "Cluster" permission', () => {
         // When lacking the minimum permissions:
