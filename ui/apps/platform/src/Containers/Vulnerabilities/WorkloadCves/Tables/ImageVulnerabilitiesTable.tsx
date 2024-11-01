@@ -331,7 +331,7 @@ function ImageVulnerabilitiesTable({
                                         />
                                     )}
                                     {createTableActions && (
-                                        <Td className="pf-v5-u-px-0">
+                                        <Td isActionCell>
                                             <ActionsColumn
                                                 // menuAppendTo={() => document.body}
                                                 items={createTableActions({
