@@ -187,7 +187,7 @@ function CVEsTable({
                                         clusters
                                     </Td>
                                     {canSelectRows && (
-                                        <Td className="pf-v5-u-px-0">
+                                        <Td isActionCell>
                                             <ActionsColumn items={createRowActions({ cve })} />
                                         </Td>
                                     )}

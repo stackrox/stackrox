@@ -345,7 +345,7 @@ function ViolationsTablePanel({
                                         );
                                     })}
                                     {hasActions && (
-                                        <Td>
+                                        <Td isActionCell>
                                             <ActionsColumn
                                                 // menuAppendTo={() => document.body}
                                                 isDisabled={actionItems.length === 0}
