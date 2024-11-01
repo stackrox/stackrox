@@ -43,7 +43,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/localscanner"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
 	"github.com/stackrox/rox/sensor/kubernetes/clustermetrics"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
@@ -196,7 +196,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	if securedClusterIsNotManagedManually(helmManagedConfig) && env.LocalImageScanningEnabled.BooleanSetting() {
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
-			localscanner.NewLocalScannerTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
+			certrefresh.NewLocalScannerTLSIssuer(cfg.k8sClient.Kubernetes(), sensorNamespace, podName))
 	}
 
 	s := sensor.NewSensor(

@@ -6,16 +6,20 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	// ErrCertificateRequesterStopped is returned by RequestCertificates when the certificate
 	// requester is not initialized.
-	ErrCertificateRequesterStopped                      = errors.New("stopped")
-	_                              CertificateRequester = (*certificateRequesterImpl)(nil)
+	ErrCertificateRequesterStopped                        = errors.New("certificate requester is stopped")
+	_                              certificates.Requester = (*certificateRequesterImpl)(nil)
 )
 
 // NewCertificateRequester creates a new certificate requester that communicates through
@@ -23,7 +27,7 @@ var (
 // To use it call Start, and then make requests with RequestCertificates, concurrent requests are supported.
 // This assumes that the returned certificate requester is the only consumer of `receiveC`.
 func NewCertificateRequester(sendC chan<- *message.ExpiringMessage,
-	receiveC <-chan *central.IssueLocalScannerCertsResponse) CertificateRequester {
+	receiveC <-chan *central.IssueLocalScannerCertsResponse) certificates.Requester {
 	return &certificateRequesterImpl{
 		sendC:    sendC,
 		receiveC: receiveC,
@@ -75,7 +79,7 @@ func (r *certificateRequesterImpl) dispatchResponses() {
 
 // RequestCertificates makes a new request for a new set of local scanner certificates from central.
 // This assumes the certificate requester is started, otherwise this returns ErrCertificateRequesterStopped.
-func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
+func (r *certificateRequesterImpl) RequestCertificates(ctx context.Context) (*certificates.Response, error) {
 	requestID := uuid.NewV4().String()
 	receiveC := make(chan *central.IssueLocalScannerCertsResponse, 1)
 	r.requests.Store(requestID, receiveC)
@@ -107,11 +111,11 @@ func (r *certificateRequesterImpl) send(ctx context.Context, requestID string) e
 	}
 }
 
-func receive(ctx context.Context, receiveC <-chan *central.IssueLocalScannerCertsResponse) (*central.IssueLocalScannerCertsResponse, error) {
+func receive(ctx context.Context, receiveC <-chan *central.IssueLocalScannerCertsResponse) (*certificates.Response, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case response := <-receiveC:
-		return response, nil
+		return certificates.NewResponseFromLocalScannerCerts(response), nil
 	}
 }

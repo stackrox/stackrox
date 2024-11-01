@@ -1,4 +1,4 @@
-package localscanner
+package certrefresh
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -38,12 +39,11 @@ var (
 	sensorReplicasetName = "sensor-replicaset"
 	sensorPodName        = "sensor-pod"
 
-	namespace        = "stackrox-ns"
 	errForced        = errors.New("forced error")
 	sensorDeployment = &appsApiv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sensor-deployment",
-			Namespace: namespace,
+			Namespace: sensorNamespace,
 		},
 	}
 )
@@ -99,7 +99,7 @@ func (f *localScannerTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
 	f.componentGetter.On("getServiceCertificatesRepo", mock.Anything,
 		mock.Anything, mock.Anything).Once().Return(f.repo, nil)
 
-	f.componentGetter.On("getCertificateRefresher", mock.Anything, f.repo,
+	f.componentGetter.On("getCertificateRefresher", "local scanner certificates", mock.Anything, f.repo,
 		certRefreshTimeout, certRefreshBackoff).Once().Return(f.certRefresher)
 }
 
@@ -524,9 +524,9 @@ func (m *certificateRequesterMock) Start() {
 func (m *certificateRequesterMock) Stop() {
 	m.Called()
 }
-func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*central.IssueLocalScannerCertsResponse, error) {
+func (m *certificateRequesterMock) RequestCertificates(ctx context.Context) (*certificates.Response, error) {
 	args := m.Called(ctx)
-	return args.Get(0).(*central.IssueLocalScannerCertsResponse), args.Error(1)
+	return args.Get(0).(*certificates.Response), args.Error(1)
 }
 
 type certificateRefresherMock struct {
@@ -552,9 +552,9 @@ type componentGetterMock struct {
 	mock.Mock
 }
 
-func (m *componentGetterMock) getCertificateRefresher(requestCertificates requestCertificatesFunc,
+func (m *componentGetterMock) getCertificateRefresher(certsDescription string, requestCertificates requestCertificatesFunc,
 	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
-	args := m.Called(requestCertificates, repository, timeout, backoff)
+	args := m.Called(certsDescription, requestCertificates, repository, timeout, backoff)
 	return args.Get(0).(concurrency.RetryTicker)
 }
 

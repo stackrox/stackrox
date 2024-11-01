@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -65,7 +66,7 @@ func TestCertificateRequesterRequestSuccess(t *testing.T) {
 
 	response, err := f.requester.RequestCertificates(f.ctx)
 	assert.NoError(t, err)
-	assert.Equal(t, f.interceptedRequestID.Load(), response.GetRequestId())
+	assert.Equal(t, f.interceptedRequestID.Load(), response.RequestId)
 }
 
 func TestCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
@@ -120,7 +121,7 @@ func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T
 type certificateRequesterFixture struct {
 	sendC                chan *message.ExpiringMessage
 	receiveC             chan *central.IssueLocalScannerCertsResponse
-	requester            CertificateRequester
+	requester            certificates.Requester
 	interceptedRequestID *atomic.Value
 	ctx                  context.Context
 	cancelCtx            context.CancelFunc
