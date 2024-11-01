@@ -99,7 +99,7 @@ func (h *commandHandler) Stop(err error) {
 
 func (h *commandHandler) Notify(e common.SensorComponentEvent) {
 	switch e {
-	case common.SensorComponentEventCentralReachable:
+	case common.SensorComponentEventCentralReachableHTTP:
 		h.centralReachable.Store(true)
 	case common.SensorComponentEventOfflineMode:
 		h.centralReachable.Store(false)

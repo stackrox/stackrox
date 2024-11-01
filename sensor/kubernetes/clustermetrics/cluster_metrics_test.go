@@ -66,9 +66,9 @@ func (s *ClusterMetricsTestSuite) TestMultipleNodes() {
 
 func (s *ClusterMetricsTestSuite) TestOfflineMode() {
 	states := []common.SensorComponentEvent{
-		common.SensorComponentEventCentralReachable,
+		common.SensorComponentEventCentralReachableHTTP,
 		common.SensorComponentEventOfflineMode,
-		common.SensorComponentEventCentralReachable,
+		common.SensorComponentEventCentralReachableHTTP,
 	}
 	// Setting the duration too low may result in ticker emiting ticks in offline mode and the test to flake.
 	// It has been seen flaking with interval of 1 Millisecond
@@ -98,7 +98,7 @@ func (s *ClusterMetricsTestSuite) createNewClusterMetrics(interval time.Duration
 
 func (s *ClusterMetricsTestSuite) assertOfflineMode(state common.SensorComponentEvent, metrics *clusterMetricsImpl) {
 	switch state {
-	case common.SensorComponentEventCentralReachable:
+	case common.SensorComponentEventCentralReachableHTTP:
 		select {
 		case <-time.After(metricsTimeout):
 			s.Fail("timeout waiting for the pollTicker to tick")
@@ -119,7 +119,7 @@ func (s *ClusterMetricsTestSuite) getClusterMetrics() *central.ClusterMetrics {
 	timer := time.NewTimer(metricsTimeout)
 	clusterMetricsStream := New(s.client)
 
-	clusterMetricsStream.Notify(common.SensorComponentEventCentralReachable)
+	clusterMetricsStream.Notify(common.SensorComponentEventCentralReachableHTTP)
 	err := clusterMetricsStream.Start()
 	s.Require().NoError(err)
 	defer clusterMetricsStream.Stop(nil)

@@ -261,7 +261,7 @@ func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
 		return
 	}
 	switch e {
-	case common.SensorComponentEventCentralReachable:
+	case common.SensorComponentEventCentralReachableHTTP:
 		d.indicatorsQueue.Resume()
 		d.networkFlowsQueue.Resume()
 	case common.SensorComponentEventOfflineMode:

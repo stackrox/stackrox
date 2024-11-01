@@ -309,7 +309,7 @@ func (s *Sensor) Start() {
 			s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
 			return
 		case <-okSig.Done():
-			s.changeState(common.SensorComponentEventCentralReachable)
+			s.changeState(common.SensorComponentEventCentralReachableHTTP)
 		case <-s.stoppedSig.Done():
 			return
 		}

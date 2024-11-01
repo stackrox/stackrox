@@ -46,7 +46,7 @@ func NewDefinitionsHandler(centralEndpoint string, centralCertificates []*x509.C
 func (h *Handler) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e, "Scanner definitions handler"))
 	switch e {
-	case common.SensorComponentEventCentralReachable:
+	case common.SensorComponentEventCentralReachableHTTP:
 		h.centralReachable.Store(true)
 	case common.SensorComponentEventOfflineMode:
 		h.centralReachable.Store(false)

@@ -15,8 +15,8 @@ import (
 type SensorComponentEvent string
 
 const (
-	// SensorComponentEventCentralReachable denotes that Sensor-Central connection is up
-	SensorComponentEventCentralReachable SensorComponentEvent = "central-reachable"
+	// SensorComponentEventCentralReachableHTTP denotes that Sensor-Central responds to pings over HTTP
+	SensorComponentEventCentralReachableHTTP SensorComponentEvent = "central-reachable-HTTP"
 
 	// SensorComponentEventOfflineMode denotes that Sensor-Central connection is broken and sensor should operate in offline mode
 	SensorComponentEventOfflineMode SensorComponentEvent = "offline-mode"
@@ -39,7 +39,7 @@ func LogSensorComponentEvent(e SensorComponentEvent, optComponentName ...string)
 	}
 	mode := fmt.Sprintf("unknown (%s)", e)
 	switch e {
-	case SensorComponentEventCentralReachable:
+	case SensorComponentEventCentralReachableHTTP:
 		mode = "Online"
 	case SensorComponentEventOfflineMode:
 		mode = "Offline"
