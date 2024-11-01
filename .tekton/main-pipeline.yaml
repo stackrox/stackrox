@@ -404,6 +404,8 @@ spec:
       - $(tasks.build-container-s390x.results.IMAGE_REF)
       - $(tasks.build-container-ppc64le.results.IMAGE_REF)
       - $(tasks.build-container-arm64.results.IMAGE_REF)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
     taskRef:
       params:
       - name: name
@@ -430,6 +432,8 @@ spec:
       - $(tasks.build-container-s390x.results.IMAGE_REF)
       - $(tasks.build-container-ppc64le.results.IMAGE_REF)
       - $(tasks.build-container-arm64.results.IMAGE_REF)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
     taskRef:
       params:
       - name: name
