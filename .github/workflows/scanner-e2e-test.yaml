@@ -1,7 +1,7 @@
 name: Scanner standalone E2E tests
 
 on:
-  workflow_call:
+  workflow_dispatch:
 
 jobs:
   e2e-run:
