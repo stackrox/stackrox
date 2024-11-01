@@ -14,7 +14,7 @@ type Requester interface {
 	RequestCertificates(ctx context.Context) (*Response, error)
 }
 
-// Response represents the response of a certificate request (a set of certificates or an error)
+// Response represents the response to a certificate request. It contains a set of certificates or an error.
 type Response struct {
 	RequestId    string
 	ErrorMessage *string
