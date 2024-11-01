@@ -363,6 +363,11 @@ function PoliciesTable({
                                 }}
                             />
                             {/* columns.map(({ Header, width }) => {
+                                // https://github.com/stackrox/stackrox/pull/10316
+                                // Move client-side sorting from PoliciesTable to PoliciesTablePage.
+                                // After the Policies API is paginated in the API,
+                                // we can use start passing the URL sort parameters that I (Van) have added here directly to the API call.
+                                //
                                 // const sortParams = {
                                 //     sort: {
                                 //         sortBy: {
