@@ -7,7 +7,6 @@ export const columns = [
         Header: 'Policy',
         accessor: 'name',
         sortMethod: (a: ListPolicy, b: ListPolicy) => sortAsciiCaseInsensitive(a.name, b.name),
-        width: 30 as const,
     },
     {
         Header: 'Status',
@@ -18,7 +17,6 @@ export const columns = [
         accessor: 'isDefault',
         sortMethod: (a: ListPolicy, b: ListPolicy) =>
             sortAsciiCaseInsensitive(getPolicyOriginLabel(a), getPolicyOriginLabel(b)),
-        width: 20 as const,
     },
     {
         Header: 'Notifiers',
