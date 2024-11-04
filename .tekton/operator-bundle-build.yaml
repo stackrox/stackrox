@@ -38,10 +38,19 @@ spec:
   - name: rebuild
     value: 'true'
   # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: 'true'
+  - name: hermetic
+    value: 'true'
   - name: prefetch-input
-    value: ''
+    value: |
+      [
+        { "type": "gomod", "path": "operator/tools/controller-gen" },
+        { "type": "gomod", "path": "operator/tools/envtest" },
+        { "type": "gomod", "path": "operator/tools/kustomize" },
+        { "type": "gomod", "path": "operator/tools/kuttl" },
+        { "type": "gomod", "path": "operator/tools/operator-sdk" },
+        { "type": "gomod", "path": "operator/tools/yq" },
+        { "type": "pip", "path": "operator/bundle_helpers", "allow_binary": "true" }
+      ]
   - name: build-source-image
     value: 'true'
   - name: clone-depth
