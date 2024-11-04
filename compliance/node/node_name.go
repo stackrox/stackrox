@@ -1,4 +1,4 @@
-package compliance
+package node
 
 import (
 	"os"

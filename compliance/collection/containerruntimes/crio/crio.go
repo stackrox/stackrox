@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/containerruntimes/common"
-	collectionUtils "github.com/stackrox/rox/compliance/collection/utils"
+	collectionUtils "github.com/stackrox/rox/compliance/utils"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 )
 

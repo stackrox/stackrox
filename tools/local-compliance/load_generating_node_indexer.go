@@ -3,16 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
+
+	"github.com/stackrox/rox/compliance/node"
+	"github.com/stackrox/rox/compliance/utils"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"strings"
 	"time"
-
-	"github.com/stackrox/rox/compliance/collection/compliance"
-	"github.com/stackrox/rox/compliance/collection/intervals"
-	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 )
 
 var (
-	_ compliance.NodeIndexer = (*LoadGeneratingNodeIndexer)(nil)
+	_ node.NodeIndexer = (*LoadGeneratingNodeIndexer)(nil)
 )
 
 type LoadGeneratingNodeIndexer struct {
@@ -20,8 +20,8 @@ type LoadGeneratingNodeIndexer struct {
 	initialScanDelay   time.Duration
 }
 
-func (l LoadGeneratingNodeIndexer) GetIntervals() *intervals.NodeScanIntervals {
-	return intervals.NewNodeScanInterval(l.generationInterval, 0.0, l.initialScanDelay)
+func (l LoadGeneratingNodeIndexer) GetIntervals() *utils.NodeScanIntervals {
+	return utils.NewNodeScanInterval(l.generationInterval, 0.0, l.initialScanDelay)
 }
 
 func (l LoadGeneratingNodeIndexer) IndexNode(_ context.Context) (*v4.IndexReport, error) {

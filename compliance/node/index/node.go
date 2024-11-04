@@ -1,4 +1,4 @@
-package v4
+package index
 
 import (
 	"bytes"
@@ -6,10 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"os"
-	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
@@ -19,14 +15,18 @@ import (
 	rpm2 "github.com/quay/claircore/rpm"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
-	"github.com/stackrox/rox/compliance/collection/compliance"
-	"github.com/stackrox/rox/compliance/collection/intervals"
+	"github.com/stackrox/rox/compliance/node"
+	"github.com/stackrox/rox/compliance/utils"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
+	"net/http"
+	"os"
+	"strings"
+	"time"
 )
 
 var (
@@ -68,13 +68,13 @@ type localNodeIndexer struct {
 }
 
 // NewNodeIndexer creates a new node indexer
-func NewNodeIndexer(config *NodeIndexerConfig) compliance.NodeIndexer {
+func NewNodeIndexer(config *NodeIndexerConfig) node.NodeIndexer {
 	return &localNodeIndexer{config: config}
 }
 
 // GetIntervals
-func (l *localNodeIndexer) GetIntervals() *intervals.NodeScanIntervals {
-	i := intervals.NewNodeScanIntervalFromEnv()
+func (l *localNodeIndexer) GetIntervals() *utils.NodeScanIntervals {
+	i := utils.NewNodeScanIntervalFromEnv()
 	return &i
 }
 

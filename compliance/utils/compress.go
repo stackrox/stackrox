@@ -1,4 +1,4 @@
-package compliance
+package utils
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func compressResults(results map[string]*compliance.ComplianceStandardResult) (*compliance.GZIPDataChunk, error) {
+func CompressResults(results map[string]*compliance.ComplianceStandardResult) (*compliance.GZIPDataChunk, error) {
 	wrappedResults := pkgCompress.ResultWrapper{
 		ResultMap: results,
 	}

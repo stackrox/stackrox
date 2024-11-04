@@ -2,16 +2,12 @@ package compliance
 
 import (
 	"context"
-	"math/rand"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
+	"github.com/stackrox/rox/compliance/node"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,20 +21,25 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc/metadata"
+	"math/rand"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 // Compliance represents the Compliance app
 type Compliance struct {
-	nodeNameProvider NodeNameProvider
-	nodeScanner      NodeScanner
-	nodeIndexer      NodeIndexer
-	umh              UnconfirmedMessageHandler
+	nodeNameProvider node.NodeNameProvider
+	nodeScanner      node.NodeScanner
+	nodeIndexer      node.NodeIndexer
+	umh              node.UnconfirmedMessageHandler
 	cache            *sensor.MsgFromCompliance
 }
 
 // NewComplianceApp contsructs the Compliance app object
-func NewComplianceApp(nnp NodeNameProvider, scanner NodeScanner, nodeIndexer NodeIndexer,
-	srh UnconfirmedMessageHandler) *Compliance {
+func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeIndexer node.NodeIndexer,
+	srh node.UnconfirmedMessageHandler) *Compliance {
 	return &Compliance{
 		nodeNameProvider: nnp,
 		nodeScanner:      scanner,
@@ -240,7 +241,7 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		}
 		switch t := msg.Msg.(type) {
 		case *sensor.MsgToCompliance_Trigger:
-			if err := runChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
+			if err := RunChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
 				return errors.Wrap(err, "running compliance checks")
 			}
 		case *sensor.MsgToCompliance_AuditLogCollectionRequest_:

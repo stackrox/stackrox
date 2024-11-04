@@ -1,17 +1,22 @@
-package compliance
+package node
 
 import (
 	"context"
 	"time"
 
-	"github.com/stackrox/rox/compliance/collection/intervals"
-	"github.com/stackrox/rox/compliance/collection/inventory"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
+	"github.com/stackrox/rox/compliance/node/inventory"
+	"github.com/stackrox/rox/compliance/utils"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // NodeInventoryComponentScanner connects to node-inventory container to provide node-inventory object
@@ -48,8 +53,8 @@ func (n *NodeInventoryComponentScanner) Connect(address string) {
 }
 
 // GetIntervals returns node scan intervals (initial scan delay, regular scan delay)
-func (n *NodeInventoryComponentScanner) GetIntervals() *intervals.NodeScanIntervals {
-	i := intervals.NewNodeScanIntervalFromEnv()
+func (n *NodeInventoryComponentScanner) GetIntervals() *utils.NodeScanIntervals {
+	i := utils.NewNodeScanIntervalFromEnv()
 	return &i
 }
 

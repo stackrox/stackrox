@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	cutils "github.com/stackrox/rox/compliance/utils"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
@@ -48,7 +49,7 @@ func BenchmarkCompressResults(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := compressResults(results)
+		_, err := cutils.CompressResults(results)
 		if err != nil {
 			panic(err)
 		}
@@ -70,7 +71,7 @@ func BenchmarkChecksAndCompression(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		results := getCheckResults(run, conf, data)
-		_, err := compressResults(results)
+		_, err := cutils.CompressResults(results)
 		if err != nil {
 			panic(err)
 		}
