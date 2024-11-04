@@ -1,10 +1,5 @@
-FROM registry.access.redhat.com/ubi9:latest AS ubi-repo-donor
+FROM registry.access.redhat.com/ubi9:latest AS builder-runner
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.22 AS builder-runner
-
-# For some reason, openshift-golang-builder 9 comes without any RPM repos in /etc/yum.repos.d/
-# We, however, need to install some packages and so we need to configure RPM repos. The ones for UBI are sufficient.
-COPY --from=ubi-repo-donor /etc/yum.repos.d/ubi.repo /etc/yum.repos.d/ubi.repo
 RUN dnf -y upgrade --nobest && dnf -y install --nodocs --noplugins jq python3-pip
 
 COPY ./operator/bundle_helpers/requirements.txt /tmp/requirements.txt
@@ -65,11 +60,6 @@ RUN echo "Checking required RELATED_IMAGE_ROXCTL"; [[ "${RELATED_IMAGE_ROXCTL}" 
 ARG RELATED_IMAGE_CENTRAL_DB
 ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTRAL_DB}" != "" ]]
-
-# Reset GOFLAGS='-mod=vendor' value which comes by default in openshift-golang-builder and causes build errors like
-#  go: inconsistent vendoring in /stackrox/operator/tools/operator-sdk:
-#      github.com/operator-framework/operator-lifecycle-manager@v0.27.0: is explicitly required in go.mod, but not marked as explicit in vendor/modules.txt
-ENV GOFLAGS=''
 
 RUN mkdir -p build/ && \
     rm -rf build/bundle && \
