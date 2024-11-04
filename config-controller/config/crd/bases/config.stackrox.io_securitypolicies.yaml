@@ -253,7 +253,6 @@ spec:
                 type: string
             required:
             - categories
-            - description
             - lifecycleStages
             - policyName
             - policySections
