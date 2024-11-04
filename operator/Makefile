@@ -184,6 +184,7 @@ $(call go-tool, KUTTL, github.com/kudobuilder/kuttl/cmd/kubectl-kuttl, tools/kut
 $(call go-tool, YQ, github.com/mikefarah/yq/v4, tools/yq)
 
 OPERATOR_SDK_VERSION = $(shell cd tools/operator-sdk; go list -m -f '{{ .Version }}' github.com/operator-framework/operator-sdk)
+OLM_VERSION = v0.26.0
 
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
@@ -330,7 +331,7 @@ endif
 
 .PHONY: olm-install
 olm-install: operator-sdk ## Install OLM on Kubernetes cluster
-	$(OPERATOR_SDK) olm install
+	$(OPERATOR_SDK) olm install --version=$(OLM_VERSION)
 
 .PHONY: olm-uninstall
 olm-uninstall: operator-sdk ## Uninstall OLM previously installed on Kubernetes cluster
