@@ -219,6 +219,9 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+    workspaces:
+    - name: git-basic-auth
+      workspace: git-auth
 
   - name: build-container-amd64
     params:
@@ -401,6 +404,8 @@ spec:
       - $(tasks.build-container-s390x.results.IMAGE_REF)
       - $(tasks.build-container-ppc64le.results.IMAGE_REF)
       - $(tasks.build-container-arm64.results.IMAGE_REF)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
     taskRef:
       params:
       - name: name
@@ -427,6 +432,8 @@ spec:
       - $(tasks.build-container-s390x.results.IMAGE_REF)
       - $(tasks.build-container-ppc64le.results.IMAGE_REF)
       - $(tasks.build-container-arm64.results.IMAGE_REF)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
     taskRef:
       params:
       - name: name
@@ -532,6 +539,8 @@ spec:
     params:
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     - name: image-digest
       value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     - name: image-url
@@ -589,3 +598,25 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: ["false"]
+
+  - name: push-dockerfile
+    params:
+    - name: IMAGE
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    - name: DOCKERFILE
+      value: $(params.dockerfile)
+    - name: CONTEXT
+      value: $(params.path-context)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    taskRef:
+      params:
+      - name: name
+        value: push-dockerfile-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-push-dockerfile-oci-ta:0.1@sha256:a28f33b69b270c4e8def293ff6d19ecc9789e1fee5a5929f1250a2e6cbabed81
+      - name: kind
+        value: task
+      resolver: bundles
