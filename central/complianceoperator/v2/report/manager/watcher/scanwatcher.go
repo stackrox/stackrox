@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"golang.org/x/mod/semver"
 )
@@ -26,6 +27,7 @@ var (
 	ErrScanAlreadyHandled                            = errors.New("the scan is already handled")
 	ErrScanTimeout                                   = errors.New("scan watcher timed out")
 	ErrScanContextCancelled                          = errors.New("scan watcher context cancelled")
+	ErrScanRemoved                                   = errors.New("scan was removed")
 	ErrComplianceOperatorNotInstalled                = errors.New("compliance operator is not installed")
 	ErrComplianceOperatorVersion                     = errors.New("compliance operator version")
 	ErrComplianceOperatorIntegrationDataStore        = errors.New("unable to retrieve compliance operator integration")
@@ -46,7 +48,7 @@ type ScanWatcher interface {
 	PushScan(v2 *storage.ComplianceOperatorScanV2) error
 	PushCheckResult(*storage.ComplianceOperatorCheckResultV2) error
 	Finished() concurrency.ReadOnlySignal
-	Stop()
+	Stop(err error)
 }
 
 // ScanWatcherResults is returned when the watcher detects that the scan is completed.
@@ -125,7 +127,7 @@ func GetWatcherIDFromScan(ctx context.Context, scan *storage.ComplianceOperatorS
 		// is sent before the scan's last update (when it changes its status to COMPLETED).
 		return "", ErrScanAlreadyHandled
 	}
-	return fmt.Sprintf("%s:%s:%s", clusterID, scanID, startTime.String()), nil
+	return fmt.Sprintf("%s:%s", clusterID, scanID), nil
 }
 
 // GetWatcherIDFromCheckResult given a CheckResult, returns a unique ID for the watcher
@@ -175,13 +177,16 @@ type scanWatcherImpl struct {
 	ctx       context.Context
 	sensorCtx context.Context
 	cancel    func()
+	timeout   Timer
 	scanC     chan *storage.ComplianceOperatorScanV2
 	resultC   chan *storage.ComplianceOperatorCheckResultV2
 	stopped   *concurrency.Signal
 
-	readyQueue  readyQueue[*ScanWatcherResults]
-	scanResults *ScanWatcherResults
-	totalChecks int
+	readyQueue      readyQueue[*ScanWatcherResults]
+	resultsLock     sync.Mutex
+	scanResults     *ScanWatcherResults
+	totalChecks     int
+	lastStartedTime *protocompat.Timestamp
 }
 
 // NewScanWatcher creates a new ScanWatcher
@@ -194,6 +199,7 @@ func NewScanWatcher(ctx, sensorCtx context.Context, watcherID string, queue read
 		ctx:        watcherCtx,
 		sensorCtx:  sensorCtx,
 		cancel:     cancel,
+		timeout:    timeout,
 		scanC:      make(chan *storage.ComplianceOperatorScanV2, defaultChanelSize),
 		resultC:    make(chan *storage.ComplianceOperatorCheckResultV2, defaultChanelSize),
 		stopped:    &finishedSignal,
@@ -204,7 +210,7 @@ func NewScanWatcher(ctx, sensorCtx context.Context, watcherID string, queue read
 			CheckResults: set.NewStringSet(),
 		},
 	}
-	go ret.run(timeout)
+	go ret.run()
 	return ret
 }
 
@@ -234,26 +240,37 @@ func (s *scanWatcherImpl) Finished() concurrency.ReadOnlySignal {
 }
 
 // Stop the watcher
-func (s *scanWatcherImpl) Stop() {
+func (s *scanWatcherImpl) Stop(err error) {
+	if err != nil {
+		concurrency.WithLock(&s.resultsLock, func() {
+			s.scanResults.Error = err
+		})
+	}
 	s.cancel()
 }
 
-func (s *scanWatcherImpl) run(timer Timer) {
+func (s *scanWatcherImpl) run() {
 	defer func() {
 		s.stopped.Signal()
 		<-s.stopped.Done()
-		timer.Stop()
+		s.timeout.Stop()
 	}()
 	for {
 		select {
 		case <-s.ctx.Done():
-			log.Infof("Stopping scan watcher for scan")
-			s.scanResults.Error = ErrScanContextCancelled
+			concurrency.WithLock(&s.resultsLock, func() {
+				log.Infof("Stopping scan watcher for scan %s", s.scanResults.Scan.GetScanName())
+				if s.scanResults.Error == nil {
+					s.scanResults.Error = ErrScanContextCancelled
+				}
+			})
 			s.readyQueue.Push(s.scanResults)
 			return
-		case <-timer.C():
-			log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())
-			s.scanResults.Error = ErrScanTimeout
+		case <-s.timeout.C():
+			concurrency.WithLock(&s.resultsLock, func() {
+				log.Warnf("Timeout waiting for the scan %s to finish", s.scanResults.Scan.GetScanName())
+				s.scanResults.Error = ErrScanTimeout
+			})
 			s.readyQueue.Push(s.scanResults)
 			return
 		case scan := <-s.scanC:
@@ -265,7 +282,11 @@ func (s *scanWatcherImpl) run(timer Timer) {
 				log.Errorf("Unable to handle result %s for scan %s: %v", result.GetCheckName(), result.GetScanName(), err)
 			}
 		}
-		if s.totalChecks != 0 && s.totalChecks == len(s.scanResults.CheckResults) {
+		var numCheckResults int
+		concurrency.WithLock(&s.resultsLock, func() {
+			numCheckResults = len(s.scanResults.CheckResults)
+		})
+		if s.totalChecks != 0 && s.totalChecks == numCheckResults {
 			s.readyQueue.Push(s.scanResults)
 			return
 		}
@@ -281,13 +302,53 @@ func (s *scanWatcherImpl) handleScan(scan *storage.ComplianceOperatorScanV2) err
 		}
 		s.totalChecks = numChecks
 	}
+
+	s.resultsLock.Lock()
+	defer s.resultsLock.Unlock()
+
 	if s.scanResults.Scan == nil {
 		s.scanResults.Scan = scan
+	}
+	// If we received a newer timestamp we need to reset the watcher.
+	if protocompat.CompareTimestamps(s.lastStartedTime, scan.GetLastStartedTime()) < 0 {
+		s.lastStartedTime = scan.GetLastStartedTime()
+		s.scanResults.Scan = scan
+		s.scanResults.CheckResults = set.NewStringSet()
+		s.timeout.Reset()
 	}
 	return nil
 }
 
 func (s *scanWatcherImpl) handleResult(result *storage.ComplianceOperatorCheckResultV2) error {
+	var startTime string
+	var found bool
+	if startTime, found = result.GetAnnotations()[LastScannedAnnotationKey]; !found {
+		return errors.Errorf("check result does not have the %s annotation", LastScannedAnnotationKey)
+	}
+	timestamp, err := protocompat.ParseRFC3339NanoTimestamp(startTime)
+	if err != nil {
+		return errors.Errorf("unable to parse time: %v", err)
+	}
+
+	s.resultsLock.Lock()
+	defer s.resultsLock.Unlock()
+
+	timestampCmpResult := protocompat.CompareTimestamps(timestamp, s.lastStartedTime)
+	if timestampCmpResult < 0 {
+		// This is an old CheckResult, so we do not processed it.
+		// This could happen if a scan is reset mid-execution and there are old
+		// CheckResult still in sensor's pipeline.
+		return ErrComplianceOperatorReceivedOldCheckResult
+	}
+	// We received a CheckResult with a newer timestamp.
+	// This means that a new scan is about to be received, so we reset the watcher.
+	// This should never happen and is only here as a sanity check in case
+	// there is a race in sensor's pipelines.
+	if timestampCmpResult > 0 {
+		s.lastStartedTime = timestamp
+		s.scanResults.CheckResults = set.NewStringSet()
+		s.timeout.Reset()
+	}
 	s.scanResults.CheckResults.Add(result.GetCheckId())
 	return nil
 }
