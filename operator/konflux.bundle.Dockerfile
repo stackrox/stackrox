@@ -1,14 +1,16 @@
-FROM registry.access.redhat.com/ubi9:latest AS ubi-repo-donor
+FROM quay.io/tommartensen/hermetic-experiment:latest as builder-runner
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.22 AS builder-runner
+# FROM registry.access.redhat.com/ubi9:latest AS ubi-repo-donor
 
-# For some reason, openshift-golang-builder 9 comes without any RPM repos in /etc/yum.repos.d/
-# We, however, need to install some packages and so we need to configure RPM repos. The ones for UBI are sufficient.
-COPY --from=ubi-repo-donor /etc/yum.repos.d/ubi.repo /etc/yum.repos.d/ubi.repo
-RUN dnf -y upgrade --nobest && dnf -y install --nodocs --noplugins jq python3-pip
+# FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.22 AS builder-runner
+
+# # For some reason, openshift-golang-builder 9 comes without any RPM repos in /etc/yum.repos.d/
+# # We, however, need to install some packages and so we need to configure RPM repos. The ones for UBI are sufficient.
+# COPY --from=ubi-repo-donor /etc/yum.repos.d/ubi.repo /etc/yum.repos.d/ubi.repo
+# RUN dnf -y upgrade --nobest && dnf -y install --nodocs --noplugins jq python3-pip
 
 COPY ./operator/bundle_helpers/requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
+RUN pip3 install --no-cache-dir --only-binary=:all: -r /tmp/requirements.txt && rm /tmp/requirements.txt
 
 # Use a new stage to enable caching of the package installations for local development
 FROM builder-runner AS builder
