@@ -40,6 +40,7 @@ type SecurityPolicySpec struct {
 	// +kubebuilder:validation:Pattern=`^[^\n\r\$]{5,128}$`
 	// PolicyName is the name of the policy as it appears in the API and UI.  Note that changing this value will rename the policy as stored in the database.  This field must be unique.
 	PolicyName string `json:"policyName"`
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Pattern=`^[^\$]{0,800}$`
 	// Description is a free-form text description of this policy.
 	Description string `json:"description"`
