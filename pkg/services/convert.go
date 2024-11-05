@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -17,4 +18,12 @@ func ServiceTypeToSlugName(ty storage.ServiceType) string {
 	tyName = strings.ToLower(tyName)
 	tyName = strings.ReplaceAll(tyName, "_", "-")
 	return tyName
+}
+
+// SlugNameToServiceType ...
+func SlugNameToServiceType(tyName string) storage.ServiceType {
+	tyName = strings.ToUpper(tyName)
+	tyName = strings.ReplaceAll(tyName, "-", "_")
+	tyName = fmt.Sprintf("%s_SERVICE", tyName)
+	return storage.ServiceType(storage.ServiceType_value[tyName])
 }
