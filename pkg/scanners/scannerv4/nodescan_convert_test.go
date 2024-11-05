@@ -1,6 +1,7 @@
 package scannerv4
 
 import (
+	"fmt"
 	"testing"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -194,6 +195,11 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 	s.Len(actual, 2)
 	for _, c := range actual {
 		// Ensure that each of the components track the expected CVE
+		vulns := c.GetVulns()
+		fmt.Println(">>>>>>")
+		for i, vuln := range vulns {
+			fmt.Printf("Vulnerability %d: %+v\n", i, vuln)
+		}
 		protoassert.SliceContains(s.T(), c.GetVulns(), expectedCVE)
 	}
 }
