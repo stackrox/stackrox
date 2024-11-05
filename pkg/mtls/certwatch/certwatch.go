@@ -58,8 +58,8 @@ func (h *handler) OnStableUpdate(val interface{}, err error) {
 		if cert == nil {
 			log.Infof("No TLS certificate found. Using internal certificates for HTTPS. Watch dir: %q", h.dir)
 		} else {
-			log.Infof("TLS certificate loaded, using the following cert for HTTPS: (SerialNumber: %s, Subject: %s, DNSNames, %s), watch dir: %q",
-				cert.Leaf.SerialNumber, cert.Leaf.Subject, cert.Leaf.DNSNames, h.dir)
+			log.Infof("TLS certificate loaded, using the following cert for HTTPS: (SerialNumber: %s, Subject: %s, DNSNames: %s, Issuer: %s), watch dir: %q",
+				cert.Leaf.SerialNumber, cert.Leaf.Subject, cert.Leaf.DNSNames, cert.Leaf.Issuer, h.dir)
 
 			parsedChain, err := x509utils.ParseCertificateChain(cert.Certificate)
 			if err != nil {
