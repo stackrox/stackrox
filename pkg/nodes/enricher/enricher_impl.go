@@ -58,10 +58,23 @@ func (e *enricherImpl) RemoveNodeIntegration(id string) {
 	delete(e.scanners, id)
 }
 
+// EnrichNode enriches a node with the integration set present.
+func (e *enricherImpl) EnrichNode(node *storage.Node) error {
+	return e.enrichNode(node, nil, nil)
+}
+
+func (e *enricherImpl) EnrichNodeWithIndexReport(node *storage.Node, indexReport *v4.IndexReport) error {
+	return e.enrichNode(node, nil, indexReport)
+}
+
 // EnrichNodeWithInventory does vulnerability scanning and sets the result in node.NodeScan.
 // node must not be nil - it is caller's responsibility to ensure this
 // nodeInventory can be nil - in that case it is skipped on scanning
-func (e *enricherImpl) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
+func (e *enricherImpl) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory) error {
+	return e.enrichNode(node, nodeInventory, nil)
+}
+
+func (e *enricherImpl) enrichNode(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	// Clear any pre-existing notes, as it will all be filled here.
 	// Note: this is valid even if node.Notes is nil.
 	node.Notes = node.Notes[:0]
@@ -74,11 +87,6 @@ func (e *enricherImpl) EnrichNodeWithInventory(node *storage.Node, nodeInventory
 	e.cves.EnrichNodeWithSuppressedCVEs(node)
 
 	return err
-}
-
-// EnrichNode enriches a node with the integration set present.
-func (e *enricherImpl) EnrichNode(node *storage.Node) error {
-	return e.EnrichNodeWithInventory(node, nil, nil)
 }
 
 func (e *enricherImpl) enrichWithScan(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
