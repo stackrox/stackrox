@@ -373,7 +373,7 @@ spec:
   - name: wait-for-collector-slim-image
     params:
     - name: IMAGE
-      value: "$(params.collector-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+      value: "$(params.collector-slim-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # The timeout must be the same as the pipeline timeout in `collector-slim-retag.yaml`
@@ -382,7 +382,7 @@ spec:
   - name: wait-for-collector-full-image
     params:
     - name: IMAGE
-      value: "$(params.collector-full-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+      value: "$(params.collector-full-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # The timeout must be the same as the pipeline timeout in `collector-full-retag.yaml`
