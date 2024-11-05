@@ -58,6 +58,8 @@ spec:
         cosign copy --force "${input_url}" "${output_url}"
 
         oras cp --recursive "${input_url}" "${output_url}"
+
+        # NB: cosign and oras don't retry by themselves. TODO: add retries against Quay transient errors.
       }
 
       function get_digest() {
