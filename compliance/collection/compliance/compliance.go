@@ -3,12 +3,6 @@ package compliance
 import (
 	"context"
 
-	"math/rand"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
-
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
@@ -27,6 +21,11 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc/metadata"
+	"math/rand"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 // Compliance represents the Compliance app

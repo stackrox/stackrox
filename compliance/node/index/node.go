@@ -7,11 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"net/http"
-	"os"
-	"strings"
-	"time"
-
 	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	ccindexer "github.com/quay/claircore/indexer"
@@ -28,6 +23,10 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
+	"net/http"
+	"os"
+	"strings"
+	"time"
 )
 
 var (
