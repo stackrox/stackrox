@@ -75,7 +75,14 @@ export const domains = ['Authentication', 'General', 'Image Scanning', 'Integrat
  * https://github.com/stackrox/stackrox/blob/master/pkg/administration/events/resources/resources.go
  * https://github.com/stackrox/stackrox/blob/master/pkg/sac/resources/list.go
  */
-export const resourceTypes = ['API Token', 'Cluster', 'Image', 'Node', 'Notifier'] as const;
+export const resourceTypes = [
+    'API Token',
+    'Backup',
+    'Cluster',
+    'Image',
+    'Node',
+    'Notifier',
+] as const;
 
 // filter
 
