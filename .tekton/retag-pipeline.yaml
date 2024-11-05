@@ -132,6 +132,8 @@ spec:
 
   - name: determine-output-image-tag
     params:
+    - name: MAKEFILE_TARGET
+      value: "tag"
     - name: TAG_SUFFIX
       value: $(params.image-tag-suffix)
     - name: SOURCE_ARTIFACT
