@@ -903,7 +903,7 @@ func compileExpected(images []*storage.Image, filter *filterImpl, options views.
 	}
 	if options.SkipGetTopCVSS {
 		for _, entry := range expected {
-			entry.TopCVSS = pointers.Float32(0.0)
+			entry.TopCVSS = nil
 		}
 	}
 	if options.SkipGetAffectedImages {
