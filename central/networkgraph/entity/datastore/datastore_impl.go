@@ -37,6 +37,7 @@ var (
 	// Since system-generated external sources are immutable (per current implementation) and are the same across all
 	// clusters, we allow them to be accessed if users have network graph permissions to any cluster.
 	networkGraphSAC       = sac.ForResource(resources.NetworkGraph)
+	pruningSAC            = sac.ForResource(resources.Pruning)
 	administrationReadCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 			sac.ResourceScopeKeys(resources.Administration)))
@@ -447,10 +448,8 @@ func (ds *dataStoreImpl) DeleteExternalNetworkEntitiesForCluster(ctx context.Con
 }
 
 func (ds *dataStoreImpl) RemoveOrphanedEntities(ctx context.Context) (int64, error) {
-	if ok, err := ds.writeAllowed(ctx, "__glob"); err != nil {
+	if err := sac.VerifyAuthzOK(pruningSAC.WriteAllowed(ctx)); err != nil {
 		return 0, err
-	} else if !ok {
-		return 0, sac.ErrResourceAccessDenied
 	}
 
 	return ds.storage.RemoveOrphanedEntities(ctx)
