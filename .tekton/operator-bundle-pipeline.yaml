@@ -377,8 +377,7 @@ spec:
     taskRef:
       name: wait-for-image
     # The timeout must be the same as the pipeline timeout in `collector-slim-retag.yaml`
-    # TODO(ROX-26471): add timeout
-    # timeout: ?h?m
+    timeout: 40m
 
   - name: wait-for-collector-full-image
     params:
@@ -387,8 +386,7 @@ spec:
     taskRef:
       name: wait-for-image
     # The timeout must be the same as the pipeline timeout in `collector-full-retag.yaml`
-    # TODO(ROX-26471): add timeout
-    # timeout: ?h?m
+    timeout: 40m
 
   - name: wait-for-roxctl-image
     params:
