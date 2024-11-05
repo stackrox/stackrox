@@ -1,0 +1,32 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: cert-picker-script
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "cert-picker-script") | nindent 4 }}
+    auto-upgrade.stackrox.io/component: sensor
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "cert-picker-script") | nindent 4 }}
+data:
+    script: |
+        #!/bin/bash
+
+        set -e
+        sleep 2
+
+        echo "Looking for '${CRS_CREATED_CERTS}/cert.pem'..."
+        if [[ -e "${CRS_CREATED_CERTS}/cert.pem" ]]; then
+            echo "Found certificate coming from a CRS."
+            cp "${CRS_CREATED_CERTS}/"*.pem "${EFFECTIVE_CERTS}"
+            exit 0
+        fi
+        echo "Looking for '${LEGACY_CERTS}/cert.pem'..."
+        if [[ -e "${LEGACY_CERTS}/cert.pem" ]]; then
+            echo "Found legacy certificate, e.g. coming from an init-bundle."
+            cp "${LEGACY_CERTS}/"*.pem "${EFFECTIVE_CERTS}"
+            exit 0
+        fi
+
+        echo "No certificates found."
+        exit 1
