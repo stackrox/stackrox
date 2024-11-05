@@ -1,5 +1,9 @@
 FROM registry.access.redhat.com/ubi9/python-39:latest AS builder
 
+# Because 'default' user cannot create build/ directory and errrors like:
+# mkdir: cannot create directory ‘build/’: Permission denied
+USER root
+
 COPY ./operator/bundle_helpers/requirements.txt /tmp/requirements.txt
 RUN pip3 install --no-cache-dir --only-binary=:all: -r /tmp/requirements.txt
 
