@@ -21,7 +21,7 @@ spec:
     description: Repository of the output image.
     type: string
   - name: OUTPUT_IMAGE_TAG
-    description: Repository of the output image.
+    description: Tag of the output image.
     type: string
   results:
   - name: IMAGE_DIGEST
