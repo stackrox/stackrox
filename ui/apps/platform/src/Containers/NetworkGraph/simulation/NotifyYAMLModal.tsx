@@ -15,11 +15,6 @@ type NotifyYAMLModalProps = {
     modification: NetworkPolicyModification | null;
 };
 
-const columnNames = {
-    name: 'Name',
-    type: 'Type',
-};
-
 function NotifyYAMLModal({
     isModalOpen,
     setIsModalOpen,
@@ -71,8 +66,8 @@ function NotifyYAMLModal({
                                 isSelected: allRowsSelected,
                             }}
                         />
-                        <Th>{columnNames.name}</Th>
-                        <Th>{columnNames.type}</Th>
+                        <Th>Name</Th>
+                        <Th>Type</Th>
                     </Tr>
                 </Thead>
                 <Tbody>
@@ -86,8 +81,8 @@ function NotifyYAMLModal({
                                         isSelected: selected[rowIndex],
                                     }}
                                 />
-                                <Td dataLabel={columnNames.name}>{notifier.name}</Td>
-                                <Td dataLabel={columnNames.type}>{notifier.type}</Td>
+                                <Td dataLabel="Name">{notifier.name}</Td>
+                                <Td dataLabel="Type">{notifier.type}</Td>
                             </Tr>
                         );
                     })}
