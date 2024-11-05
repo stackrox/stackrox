@@ -44,12 +44,12 @@ spec:
         local -r output_url="${2}"
 
         if [[ "${input_url}" == "${output_url}" ]]; then
-          >&2 echo "Will not copy image ${input_url} into itself."
+          >&2 echo "Error: Will not copy image ${input_url} into itself."
           exit 5
         fi
 
-        echo "Copying image from ${input_url} ..."
-        echo "... to ${output_url} ..."
+        echo ">>> Copying image from ${input_url} ..."
+        echo ">>> ... to ${output_url} ..."
 
         # cosign copies not just cosign artifacts but also images. It understands and copies index images.
         # --force argument is needed to prevent the command failing when it runs into (partial) previous copies with
@@ -77,17 +77,17 @@ spec:
       # containers are also copied (but not tags of arch-specific containers if they were additionally tagged).
       copy_image "${INPUT_URL}" "${OUTPUT_URL}"
 
-      echo "Figuring the input image digest ..."
+      echo ">>> Figuring the input image digest ..."
       INPUT_DIGEST="$(get_digest "${INPUT_URL}")"
 
-      echo "Figuring the output image digest ..."
+      echo ">>> Figuring the output image digest ..."
       OUTPUT_DIGEST="$(get_digest "${OUTPUT_URL}")"
 
-      echo "Checking if the input image digest ${INPUT_DIGEST} is the same as the output image digest ${OUTPUT_DIGEST} ..."
+      echo ">>> Checking if the input image digest ${INPUT_DIGEST} is the same as the output image digest ${OUTPUT_DIGEST} ..."
       [[ "${INPUT_DIGEST}" == "${OUTPUT_DIGEST}" ]]
 
       # This handles the image with source code, not to be confused with the input image itself.
-      echo "Copying the image with sources ..."
+      echo ">>> Copying the image with sources ..."
       # Tag determination borrowed from
       # https://github.com/konflux-ci/release-service-catalog/blob/92dabb8a31c42669ab9b6ccce831487727514059/tasks/push-snapshot/push-snapshot.yaml#L158
       SOURCES_IMAGE_TAG="${INPUT_DIGEST/:/-}.src"
@@ -95,12 +95,12 @@ spec:
       OUTPUT_SOURCES_IMAGE_URL="$(params.OUTPUT_IMAGE_REPO):${SOURCES_IMAGE_TAG}"
       if [[ "${INPUT_SOURCES_IMAGE_URL}" == "${OUTPUT_SOURCES_IMAGE_URL}" ]]; then
         # This is the case when we retag in the same repo.
-        echo "The repo of the image with sources would not change and so the image does not need to be copied."
+        echo ">>> The repo of the image with sources would not change and so the image does not need to be copied."
       else
         copy_image "${INPUT_SOURCES_IMAGE_URL}" "${OUTPUT_SOURCES_IMAGE_URL}"
       fi
 
-      echo "Done"
+      echo ">>> Done"
 
       echo -n "${OUTPUT_DIGEST}" | tee "$(results.IMAGE_DIGEST.path)"; echo
       echo -n "${OUTPUT_URL}" | tee "$(results.IMAGE_URL.path)"; echo
