@@ -3,7 +3,7 @@ import pluralize from 'pluralize';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { Button, Modal } from '@patternfly/react-core';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
@@ -100,9 +100,9 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                 <Td dataLabel="Assigned rules">
                                     {`${groups.length} ${pluralize('rules', groups.length)}`}
                                 </Td>
-                                <Td
-                                    actions={{
-                                        items: [
+                                <Td isActionCell>
+                                    <ActionsColumn
+                                        items={[
                                             {
                                                 title: 'Delete auth provider',
                                                 onClick: () => onClickDelete(name, id),
@@ -117,10 +117,9 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                                           ? 'Cannot delete unmodifiable auth provider'
                                                           : '',
                                             },
-                                        ],
-                                    }}
-                                    className="pf-v5-u-text-align-right"
-                                />
+                                        ]}
+                                    />
+                                </Td>
                             </Tr>
                         );
                     })}
