@@ -124,9 +124,9 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 	in := createOutOfBoundsReport()
 	expectedCVE := &storage.EmbeddedVulnerability{
 		Cve:               "RHSA-2024:4616",
-		Cvss:              7.5,
+		Cvss:              8.2,
 		Summary:           "Sample Description",
-		ScoreVersion:      1,
+		ScoreVersion:      storage.CvssScoreVersion_V3.Number(),
 		SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9"},
 		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 		Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
