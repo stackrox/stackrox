@@ -55,7 +55,7 @@ spec:
         - /cert-picker/script
         resources: {} # few resources!
         securityContext:
-          runAsNonRoot: true
+          # runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
         - name: K8S_NODE_NAME
