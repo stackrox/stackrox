@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -99,10 +100,10 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 			a.T().Cleanup(func() { api.Stop() })
 			var urls []string
 			if tt.useHTTP {
-				urls = append(urls, "https://localhost:8080/test")
+				urls = append(urls, fmt.Sprintf("https://localhost:%d/test", testDefaultPort))
 			}
 			if tt.useGRPC {
-				urls = append(urls, "https://localhost:8080/v1/ping")
+				urls = append(urls, fmt.Sprintf("https://localhost:%d/v1/ping", testDefaultPort))
 			}
 
 			hitLimit := false

@@ -193,10 +193,22 @@ func (a *apiImpl) Stop() bool {
 	a.listenersLock.Lock()
 	defer a.listenersLock.Unlock()
 
+	log.Infof("Stopping %d listeners", len(a.listeners))
 	for _, listener := range a.listeners {
-		if listener.stopper != nil {
-			listener.stopper()
+		debugMsg := "unknown listener type: "
+		switch listener.srv.(type) {
+		case *grpc.Server:
+			debugMsg = "gRPC server listener: "
+		case *http.Server:
+			debugMsg = "http handler listener: "
 		}
+		if listener.stopper != nil {
+			debugMsg += "stopped"
+			listener.stopper()
+		} else {
+			debugMsg += fmt.Sprintf("not stopped in loop. Comparing with grpcServer pointer with listener.srv pointer (%p : %p)", a.grpcServer, listener.srv)
+		}
+		log.Info(debugMsg)
 	}
 	return true
 }
@@ -430,6 +442,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 }
 
 func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
+	defer printSocketInfo(nil)
 	if len(a.config.Endpoints) == 0 {
 		panic(errors.New("server has no endpoints"))
 	}

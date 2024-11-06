@@ -1,11 +1,17 @@
 package grpc
 
 import (
+	"bufio"
 	"context"
 	"net"
+	"os"
+	"strconv"
+	"strings"
 	"testing"
 
 	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware/v2"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -54,4 +60,91 @@ func CreateTestGRPCStreamingService(
 		server.Stop()
 	}
 	return conn, closeFunc, nil
+}
+
+var (
+	// TODO: Remove this after the gather more information
+	// This is just to log extra information in the server_tests.go if they panic.
+	// It should be removed after the investigation is finished.
+	printSocketInfo = dummyPrintSocketInfo
+	procFiles       = []string{"/proc/net/tcp", "/proc/net/tcp6"}
+)
+
+func dummyPrintSocketInfo(_ *testing.T) {}
+
+func testPrintSocketInfo(t *testing.T, ports ...uint64) error {
+	errList := errorhelpers.NewErrorList("print socket info")
+	for _, fName := range procFiles {
+		if err := testPrintSocketInfoFromProcFile(t, fName, ports...); err != nil {
+			errList.AddError(err)
+		}
+	}
+	return errList.ToError()
+}
+
+func testPrintSocketInfoFromProcFile(t *testing.T, fName string, ports ...uint64) (err error) {
+	shouldPrintPort := func(port uint64, ports ...uint64) bool {
+		for _, p := range ports {
+			if p == port {
+				return true
+			}
+		}
+		return false
+	}
+	getStateString := func(code uint64) string {
+		codeToState := map[uint64]string{
+			0x01: "ESTABLISHED",
+			0x02: "SYN_SENT",
+			0x03: "SYN_RECV",
+			0x04: "FIN_WAIT1",
+			0x05: "FIN_WAIT2",
+			0x06: "TIME_WAIT",
+			0x07: "CLOSE",
+			0x08: "CLOSE_WAIT",
+			0x09: "LAST_ACK",
+			0x0a: "LISTEN",
+			0x0b: "CLOSING",
+		}
+		str, found := codeToState[code]
+		if !found {
+			return "UNKNOWN"
+		}
+		return str
+	}
+	f, openErr := os.Open(fName)
+	if openErr != nil {
+		return openErr
+	}
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil {
+			err = closeErr
+		}
+	}()
+	scanner := bufio.NewScanner(f)
+	// Ignore the header
+	scanner.Scan()
+	// Parse the file
+	for scanner.Scan() {
+		columns := strings.Fields(scanner.Text())
+		if len(columns) < 12 {
+			return errors.Errorf("not enough columns in the line: %q", scanner.Text())
+		}
+		fields := strings.Split(columns[1], ":")
+		if len(fields) < 2 {
+			return errors.Errorf("not enouch fields in the address column: %q", columns[1])
+		}
+		port, parseErr := strconv.ParseUint(fields[1], 16, 16)
+		if parseErr != nil {
+			return parseErr
+		}
+		if !shouldPrintPort(port, ports...) {
+			continue
+		}
+		code, parseErr := strconv.ParseUint(columns[3], 16, 8)
+		if parseErr != nil {
+			return parseErr
+		}
+		t.Logf("Port %d is in %q state", port, getStateString(code))
+	}
+	return err
 }

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -21,6 +23,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	testDefaultPort = 8080
+)
+
 type APIServerSuite struct {
 	suite.Suite
 }
@@ -33,6 +39,8 @@ func (a *APIServerSuite) SetupTest() {
 	a.T().Setenv("ROX_MTLS_KEY_FILE", "../../tools/local-sensor/certs/key.pem")
 	a.T().Setenv("ROX_MTLS_CA_FILE", "../../tools/local-sensor/certs/caCert.pem")
 	a.T().Setenv("ROX_MTLS_CA_KEY_FILE", "../../tools/local-sensor/certs/caKey.pem")
+
+	setUpPrintSocketInfoFunction(a.T(), testDefaultPort)
 }
 
 func Test_APIServerSuite(t *testing.T) {
@@ -78,7 +86,7 @@ func (a *APIServerSuite) Test_CustomAPI() {
 		a.T().Cleanup(func() { api.Stop() })
 		a.Assert().NoError(api.Start().Wait())
 
-		a.requestWithoutErr("https://localhost:8080/test")
+		a.requestWithoutErr(fmt.Sprintf("https://localhost:%d/test", testDefaultPort))
 		a.waitForSignal(endpointReached)
 	})
 
@@ -88,7 +96,7 @@ func (a *APIServerSuite) Test_CustomAPI() {
 		a.Assert().NoError(api.Start().Wait())
 		a.Require().True(api.Stop())
 
-		_, err := http.Get("https://localhost:8080/test")
+		_, err := http.Get(fmt.Sprintf("https://localhost:%d/test", testDefaultPort))
 		a.Require().Error(err)
 		a.Require().False(endpointReached.IsDone())
 	})
@@ -143,7 +151,7 @@ func defaultConf() Config {
 	return Config{
 		Endpoints: []*EndpointConfig{
 			{
-				ListenEndpoint: ":8080",
+				ListenEndpoint: fmt.Sprintf(":%d", testDefaultPort),
 				TLS:            verifier.NonCA{},
 				ServeGRPC:      true,
 				ServeHTTP:      true,
@@ -183,7 +191,7 @@ func (s *pingServiceTestErrorImpl) Ping(context.Context, *v1.Empty) (*v1.PongMes
 }
 
 func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
-	url := "https://localhost:8080/v1/ping"
+	url := fmt.Sprintf("https://localhost:%d/v1/ping", testDefaultPort)
 	jsonPayload := `{"code":3, "details":[], "error":"missing argument: invalid arguments", "message":"missing argument: invalid arguments"}`
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -202,4 +210,19 @@ func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
 
 	bodyStr := string(body)
 	a.Assert().JSONEq(jsonPayload, bodyStr)
+}
+
+func setUpPrintSocketInfoFunction(t *testing.T, ports ...uint64) {
+	printSocketInfo = func(_ *testing.T) {
+		if r := recover(); r != nil {
+			if err, ok := r.(string); ok {
+				if strings.Contains(err, syscall.EADDRINUSE.Error()) {
+					if printErr := testPrintSocketInfo(t, ports...); printErr != nil {
+						t.Log(printErr)
+					}
+					panic(err)
+				}
+			}
+		}
+	}
 }
