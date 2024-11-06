@@ -6,7 +6,6 @@ import (
 	roleDatastore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	bindingDatastore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	saDatastore "github.com/stackrox/rox/central/serviceaccount/datastore"
-
 	"github.com/stackrox/rox/pkg/sync"
 )
 

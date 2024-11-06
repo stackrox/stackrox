@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-
 	pgStore "github.com/stackrox/rox/central/networkgraph/config/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/pkg/sync"
 )

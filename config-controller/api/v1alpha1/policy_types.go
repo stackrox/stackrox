@@ -18,11 +18,10 @@ package v1alpha1
 
 import (
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/protocompat"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/stackrox/rox/generated/storage"
 )
 
 // +kubebuilder:validation:Enum=DEPLOY;BUILD;RUNTIME
