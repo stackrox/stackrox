@@ -1,10 +1,11 @@
-//go:build test_e2e
+//go:build test_e2e || test_compatibility
 
 package tests
 
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -37,6 +38,7 @@ type Event struct {
 func TestPod(testT *testing.T) {
 	// https://stack-rox.atlassian.net/browse/ROX-6631
 	// - the process events expected in this test are not reliably detected.
+
 	kPod := getPodFromFile(testT, "yamls/multi-container-pod.yaml")
 	client := createK8sClient(testT)
 	testutils.Retry(testT, 3, 5*time.Second, func(retryT testutils.T) {
@@ -47,68 +49,73 @@ func TestPod(testT *testing.T) {
 		deploymentID := getDeploymentID(retryT, kPod.GetName())
 
 		podCount := getPodCount(retryT, deploymentID)
-		log.Infof("Pod count: %d", podCount)
+		testT.Logf("Pod count: %d", podCount)
 		require.Equal(retryT, 1, podCount)
 
 		// Get the test pod.
 		pods := getPods(retryT, deploymentID)
-		log.Infof("Num pods: %d", len(pods))
+		testT.Logf("Num pods: %d", len(pods))
 		require.Len(retryT, pods, 1)
 		pod := pods[0]
 
-		log.Infof("Pod: %+v", pod)
+		testT.Logf("Pod: %+v", pod)
 
 		// Verify the container count.
 		require.Equal(retryT, int32(2), pod.ContainerCount)
 
-		// Verify the events.
-		var loopCount int
-		var events []Event
-		for {
-			events = getEvents(retryT, pod)
-			log.Infof("%d: Events: %+v", loopCount, events)
-			if len(events) == 4 {
-				break
+		if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
+			testT.Logf("Skipping parts of TestPod that relate to events because env var \"COLLECTION_METHOD\" is " +
+				"set to \"NO_COLLECTION\"")
+		} else {
+			// Verify the events.
+			var loopCount int
+			var events []Event
+			for {
+				events = getEvents(retryT, pod)
+				testT.Logf("%d: Events: %+v", loopCount, events)
+				if len(events) == 4 {
+					break
+				}
+				loopCount++
+				require.LessOrEqual(retryT, loopCount, 20)
+				time.Sleep(4 * time.Second)
 			}
-			loopCount++
-			require.LessOrEqual(retryT, loopCount, 20)
-			time.Sleep(4 * time.Second)
+
+			// Expecting processes: nginx, sh, date, sleep
+			eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
+			expected := []string{"/bin/date", "/bin/sh", "/bin/sleep", "/usr/sbin/nginx"}
+
+			testT.Logf("Event names: %+v", eventNames)
+			testT.Logf("Expected name: %+v", expected)
+			require.ElementsMatch(retryT, eventNames, expected)
+
+			// Verify the pod's timestamp is no later than the timestamp of the earliest event.
+			testT.Logf("Pod start comparison: %s vs %s", pod.Started, events[0].Timestamp.Time)
+			require.False(retryT, pod.Started.After(events[0].Timestamp.Time))
+
+			// Verify risk event timeline csv
+			testT.Logf("Before CSV Check")
+			verifyRiskEventTimelineCSV(retryT, deploymentID, eventNames)
+			testT.Logf("After CSV Check")
 		}
-
-		// Expecting processes: nginx, sh, date, sleep
-		eventNames := sliceutils.Map(events, func(event Event) string { return event.Name })
-		expected := []string{"/bin/date", "/bin/sh", "/bin/sleep", "/usr/sbin/nginx"}
-
-		log.Infof("Event names: %+v", eventNames)
-		log.Infof("Expected name: %+v", expected)
-		require.ElementsMatch(retryT, eventNames, expected)
-
-		// Verify the pod's timestamp is no later than the timestamp of the earliest event.
-		log.Infof("Pod start comparison: %s vs %s", pod.Started, events[0].Timestamp.Time)
-		require.False(retryT, pod.Started.After(events[0].Timestamp.Time))
-
-		// Verify risk event timeline csv
-		log.Info("Before CSV Check")
-		verifyRiskEventTimelineCSV(retryT, deploymentID, eventNames)
-		log.Info("After CSV Check")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
 		k8sPod, err := client.CoreV1().Pods(kPod.GetNamespace()).Get(ctx, kPod.GetName(), metav1.GetOptions{})
 		if err != nil {
-			log.Errorf("Error: %v", err)
+			testT.Errorf("Error: %v", err)
 
 			pList, err := client.CoreV1().Pods(kPod.GetNamespace()).List(context.Background(), metav1.ListOptions{})
 			if err != nil {
-				log.Errorf("error listing pods: %v", err)
+				testT.Errorf("error listing pods: %v", err)
 			}
-			log.Infof("Pods list: %+v", pList)
+			testT.Logf("Pods list: %+v", pList)
 		}
-		log.Infof("K8s pod: %+v", k8sPod)
+		testT.Logf("K8s pod: %+v", k8sPod)
 		require.NoError(retryT, err)
 		// Verify Pod start time is the creation time.
-		log.Infof("Creation timestamps comparison: %s vs %s", k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
+		testT.Logf("Creation timestamps comparison: %s vs %s", k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
 		require.Equal(retryT, k8sPod.GetCreationTimestamp().Time.UTC(), pod.Started.UTC())
 	})
 }
