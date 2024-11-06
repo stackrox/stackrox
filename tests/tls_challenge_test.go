@@ -84,8 +84,8 @@ func (ts *TLSChallengeSuite) TestTLSChallenge() {
 	// and we do not do patch releases for this version anymore.
 	// See getCollectorInfo() in sensor/kubernetes/clusterhealth/updater.go for implementation details
 	if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
-		ts.T().Skipf("Skipping TestTLSChallenge because \"COLLECTION_METHOD\" is set to \"NO_COLLECTION\".\n" +
-			"This is expected to only happen when Sensor version is 3.74.x (support exception / compatibility tests)")
+		ts.T().Skipf("The \"COLLECTION_METHOD\" is set to \"NO_COLLECTION\"." +
+			"For compatibility tests against Sensor version 3.74.x, \"NO_COLLECTION\" is the only valid setting.")
 	}
 	const (
 		proxyServiceName = "nginx-loadbalancer"
