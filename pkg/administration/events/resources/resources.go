@@ -4,9 +4,10 @@ import "github.com/stackrox/rox/pkg/sac/resources"
 
 // Resources used in administration events.
 const (
-	APIToken = "API Token"
-	Backup   = "Backup"
-	Notifier = "Notifier"
+	APIToken    = "API Token"
+	Backup      = "Backup"
+	CloudSource = "Cloud Source"
+	Notifier    = "Notifier"
 )
 
 // Resources used in administration events.

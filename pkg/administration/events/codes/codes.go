@@ -9,6 +9,10 @@ const (
 	S3CompatibleGeneric = "s3compatible-generic"
 	S3Generic           = "s3-generic"
 
+	// Cloud Source codes.
+	PaladinCloudGeneric = "paladin-cloud-generic"
+	OCMCloudGeneric     = "ocm-generic"
+
 	// Notifier codes.
 	ACSCSEmailGeneric        = "acscs-email-generic"
 	AWSSHBatchUpload         = "awssh-batch-upload"

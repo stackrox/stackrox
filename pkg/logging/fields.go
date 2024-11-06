@@ -11,6 +11,7 @@ const (
 	imageIDField      = "image_id"
 	nodeIDField       = "node_id"
 	backupField       = "backup"
+	cloudSourceField  = "cloud_source"
 	notifierField     = "notifier"
 	errCodeField      = "err_code"
 	alertIDField      = "alert_id"
@@ -19,18 +20,17 @@ const (
 	clusterNameField  = "cluster_name"
 )
 
-var (
-	resourceTypeFields = map[string]string{
-		imageField:        administrationResources.Image,
-		imageIDField:      administrationResources.Image,
-		clusterIDField:    administrationResources.Cluster,
-		nodeIDField:       administrationResources.Node,
-		backupField:       administrationResources.Backup,
-		notifierField:     administrationResources.Notifier,
-		apiTokenIDField:   administrationResources.APIToken,
-		apiTokenNameField: administrationResources.APIToken,
-	}
-)
+var resourceTypeFields = map[string]string{
+	imageField:        administrationResources.Image,
+	imageIDField:      administrationResources.Image,
+	clusterIDField:    administrationResources.Cluster,
+	nodeIDField:       administrationResources.Node,
+	backupField:       administrationResources.Backup,
+	cloudSourceField:  administrationResources.CloudSource,
+	notifierField:     administrationResources.Notifier,
+	apiTokenIDField:   administrationResources.APIToken,
+	apiTokenNameField: administrationResources.APIToken,
+}
 
 // Err wraps err into a zap.Field instance with a well-known name 'error'.
 func Err(err error) zap.Field {
@@ -60,6 +60,11 @@ func NodeID(id string) zap.Field {
 // BackupName provides the backup name as a structured log field.
 func BackupName(name string) zap.Field {
 	return zap.String(backupField, name)
+}
+
+// CloudSourceName provides the cloud source name as a structured log field.
+func CloudSourceName(name string) zap.Field {
+	return zap.String(cloudSourceField, name)
 }
 
 // NotifierName provides the notifier name as a structured log field.
@@ -140,6 +145,7 @@ func getResourceTypeField(field zap.Field) (string, bool) {
 func isIDField(fieldName string) bool {
 	return fieldName != imageField &&
 		fieldName != backupField &&
+		fieldName != cloudSourceField &&
 		fieldName != notifierField &&
 		fieldName != apiTokenNameField
 }
