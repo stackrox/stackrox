@@ -11,7 +11,7 @@ metadata:
     {{- include "srox.annotations" (list . "configmap" "central-db-config") | nindent 4 }}
 data:
   postgresql.conf: |
-    {{- ._rox.central.db._postgresConfig | nindent 4 }}
+    {{- tpl (.Files.Get "config/centraldb/postgresql.conf.default.tpl") . | nindent 4 }}
   pg_hba.conf: |
     {{- ._rox.central.db._hbaConfig | nindent 4 }}
 {{- end }}
