@@ -1,7 +1,6 @@
 package scannerv4
 
 import (
-	"fmt"
 	"testing"
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -25,9 +24,9 @@ func (s *indexReportConvertSuite) TestToNodeInventory() {
 		Version: "8.7p1-38.el9",
 		Vulns: []*storage.EmbeddedVulnerability{{
 			Cve:               "RHSA-2024:4616",
-			Cvss:              7.5,
+			Cvss:              8.2,
 			Summary:           "Sample Description",
-			ScoreVersion:      1,
+			ScoreVersion:      storage.EmbeddedVulnerability_V3,
 			SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9"},
 			VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 			Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
@@ -97,6 +96,7 @@ func (s *indexReportConvertSuite) TestToNodeInventory() {
 	s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
 	s.Len(actual.GetComponents(), 2)
 	s.Len(actual.GetNotes(), 0)
+
 	protoassert.SliceContains(s.T(), actual.GetComponents(), expected)
 }
 
@@ -126,7 +126,7 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 		Cve:               "RHSA-2024:4616",
 		Cvss:              8.2,
 		Summary:           "Sample Description",
-		ScoreVersion:      storage.CvssScoreVersion_V3.Number(),
+		ScoreVersion:      storage.EmbeddedVulnerability_V3,
 		SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9"},
 		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 		Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
@@ -195,11 +195,6 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 	s.Len(actual, 2)
 	for _, c := range actual {
 		// Ensure that each of the components track the expected CVE
-		vulns := c.GetVulns()
-		fmt.Println(">>>>>>")
-		for i, vuln := range vulns {
-			fmt.Printf("Vulnerability %d: %+v\n", i, vuln)
-		}
 		protoassert.SliceContains(s.T(), c.GetVulns(), expectedCVE)
 	}
 }
