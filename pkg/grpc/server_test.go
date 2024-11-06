@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	testDefaultPort = 8080
+	testDefaultPort = 8484
 )
 
 type APIServerSuite struct {
