@@ -341,6 +341,7 @@ func shouldProcessAlerts(q *v1.Query) (shouldProcess bool) {
 // GlobalSearch runs a global search request with the given arguments. It's a shared function between gRPC and GraphQL.
 func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCategory, searchFuncMap map[v1.SearchCategory]SearchFunc) (results []*v1.SearchResult,
 	counts []*v1.SearchResponse_Count, err error) {
+	log.Info("Search: query -> \"", query, "\" , categories -> \"", categories, "\"")
 
 	parsedRequest, err := search.ParseQuery(query)
 	if err != nil {
