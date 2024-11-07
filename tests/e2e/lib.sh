@@ -1254,9 +1254,9 @@ _EO_DETAILS_
             save_junit_success "${stackrox_deployed[@]}"
         else
             if [[ -f "${QA_DEPLOY_WAIT_INFO}" ]]; then
-                save_junit_failure "${stackrox_deployed[0]}" "Wait for $(cat "${QA_DEPLOY_WAIT_INFO}")" "Check the build log"
+                save_junit_failure "${stackrox_deployed[0]}" "$(cat "${QA_DEPLOY_WAIT_INFO}")" "Check the build log"
             else
-                save_junit_failure "${stackrox_deployed[@]}"
+                save_junit_failure "${stackrox_deployed[@]}" "Check the build log"
             fi
         fi
     else
@@ -1405,7 +1405,7 @@ wait_for_object_to_appear() {
         count=$((count + 1))
         if [[ $count -ge "$tries" ]]; then
             info "$namespace $object did not appear after $count tries"
-            echo "$object in $namespace" > "${QA_DEPLOY_WAIT_INFO}" || true
+            echo "Waiting for $object in ns $namespace timed out." > "${QA_DEPLOY_WAIT_INFO}" || true
             kubectl -n "$namespace" get "$object"
             return 1
         fi
