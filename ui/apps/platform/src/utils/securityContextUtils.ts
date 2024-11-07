@@ -26,7 +26,7 @@ export function getFilteredSecurityContextMap(
             try {
                 const stringifiedObject = JSON.stringify(currentValue);
                 filteredValues.set(key, stringifiedObject);
-            } catch (err) {
+            } catch {
                 filteredValues.set(key, currentValue.toString()); // fallback, if corrupt data prevent JSON parsing
             }
         } else if (!Array.isArray(currentValue) && (currentValue || currentValue === 0)) {

@@ -26,7 +26,7 @@ export function isSortOption(val: unknown): val is SortOption {
     try {
         SortOptionSchema.validateSync(val);
         return true;
-    } catch (err) {
+    } catch {
         return false;
     }
 }

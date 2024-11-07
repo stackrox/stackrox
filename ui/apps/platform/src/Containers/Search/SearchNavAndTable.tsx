@@ -26,7 +26,7 @@ function SearchNavAndTable({
     function getNavCategoryCount(navCategory: SearchNavCategory) {
         return navCategory === 'SEARCH_UNSET'
             ? results.length
-            : counts.find(({ category }) => category === navCategory)?.count ?? 0;
+            : (counts.find(({ category }) => category === navCategory)?.count ?? 0);
     }
 
     return (
