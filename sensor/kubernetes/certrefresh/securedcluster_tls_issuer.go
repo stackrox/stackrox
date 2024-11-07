@@ -18,7 +18,7 @@ import (
 var _ common.SensorComponent = (*securedClusterTLSIssuerImpl)(nil)
 
 // NewSecuredClusterTLSIssuer creates a sensor component that will keep the Secured Cluster certificates
-// up to date, using the specified retry parameters.
+// up to date, using the retry parameters in tls_issuer_common.go
 func NewSecuredClusterTLSIssuer(
 	k8sClient kubernetes.Interface,
 	sensorNamespace string,
@@ -57,7 +57,7 @@ type securedClusterTLSIssuerImpl struct {
 // In case a secret doesn't have the expected owner, this logs a warning and returns nil.
 // In case this component was already started, it fails immediately.
 func (i *securedClusterTLSIssuerImpl) Start() error {
-	log.Debug("starting Secured Cluster TLS issuer.")
+	log.Debug("Starting Secured Cluster TLS issuer.")
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 

@@ -72,7 +72,7 @@ func (r *certificateRequesterImpl) dispatchResponses() {
 			}
 			r.requests.Delete(msg.GetRequestId())
 			// Doesn't block even if the corresponding call to RequestCertificates is cancelled and no one
-			// ever reads this, because requestC has buffer of 1, and we removed it from `r.request` above,
+			// ever reads this, because requestC has buffer of 1, and we removed it from `r.requests` above,
 			// in case we get more than 1 response for `msg.GetRequestId()`.
 			responseC.(chan *central.IssueSecuredClusterCertsResponse) <- msg
 		}

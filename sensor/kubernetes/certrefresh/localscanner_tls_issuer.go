@@ -27,7 +27,7 @@ var (
 )
 
 // NewLocalScannerTLSIssuer creates a sensor component that will keep the local scanner certificates
-// up to date, using the specified retry parameters.
+// up to date, using the retry parameters in tls_issuer_common.go
 func NewLocalScannerTLSIssuer(
 	k8sClient kubernetes.Interface,
 	sensorNamespace string,
@@ -72,7 +72,7 @@ type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, na
 // In case a secret doesn't have the expected owner, this logs a warning and returns nil.
 // In case this component was already started it fails immediately.
 func (i *localScannerTLSIssuerImpl) Start() error {
-	log.Debug("starting local scanner TLS issuer.")
+	log.Debug("Starting local scanner TLS issuer.")
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 
@@ -96,12 +96,12 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate certRefresher"))
 	}
 
-	log.Debug("local scanner TLS issuer started.")
+	log.Debug("Local Scanner TLS issuer started.")
 	return nil
 }
 
 func (i *localScannerTLSIssuerImpl) abortStart(err error) error {
-	log.Errorf("local scanner TLS issuer start aborted due to error: %s", err)
+	log.Errorf("Local Scanner TLS issuer start aborted due to error: %s", err)
 	i.Stop(err)
 	return err
 }
@@ -113,7 +113,7 @@ func (i *localScannerTLSIssuerImpl) Stop(_ error) {
 	}
 
 	i.certRequester.Stop()
-	log.Debug("local scanner TLS issuer stopped.")
+	log.Debug("Local Scanner TLS issuer stopped.")
 }
 
 func (i *localScannerTLSIssuerImpl) Notify(common.SensorComponentEvent) {}
