@@ -1,4 +1,4 @@
-import { distanceInWordsStrict, format, addDays } from 'date-fns';
+import { distanceInWordsStrict, format } from 'date-fns';
 
 import dateTimeFormat, { dateFormat, timeFormat } from 'constants/dateTimeFormat';
 import { IntervalType } from 'services/ReportsService.types';
@@ -109,10 +109,6 @@ export const getDistanceStrictAsPhrase = (
         partialMethod: 'floor',
         unit,
     });
-
-export const addDaysToDate = (date: DateLike, amount: number) => {
-    return format(addDays(date, amount + 1), 'YYYY-MM-DD[T]HH:mm:ss.SSSSSSSSS[Z]');
-};
 
 const weekDays = [
     { key: 1, dayName: 'Monday' },

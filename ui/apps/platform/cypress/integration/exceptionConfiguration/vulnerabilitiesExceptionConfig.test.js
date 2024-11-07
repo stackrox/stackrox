@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 import {
     selectSingleCveForException,
     visitWorkloadCveOverview,
@@ -14,22 +13,12 @@ import { vulnerabilitiesConfigSelectors as selectors } from './ExceptionConfig.s
 describe('Vulnerabilities Exception Configuration', () => {
     withAuth();
 
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
-            resetExceptionConfig();
-        }
+        resetExceptionConfig();
     });
 
     after(() => {
-        if (hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
-            resetExceptionConfig();
-        }
+        resetExceptionConfig();
     });
 
     it('should correctly handle RBAC for the vulnerability exception config', () => {

@@ -117,12 +117,6 @@ describe('Workload CVE overview page tests', () => {
     });
 
     describe('Images without CVEs view tests', () => {
-        beforeEach(function () {
-            if (!hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')) {
-                this.skip();
-            }
-        });
-
         it('should remove cve-related UI elements when viewing the "without cves" view', () => {
             visitWorkloadCveOverview();
 

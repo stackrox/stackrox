@@ -17,10 +17,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     withAuth();
 
     before(function () {
-        if (
-            !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             this.skip();
         }
     });
@@ -30,10 +27,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     after(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             cancelAllCveExceptions();
         }
     });
