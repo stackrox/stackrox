@@ -6,7 +6,7 @@ toolchain go1.22.5
 
 require (
 	github.com/operator-framework/operator-lifecycle-manager v0.27.0
-	github.com/operator-framework/operator-sdk v1.36.1
+	github.com/operator-framework/operator-sdk v0.0.0-20241015224211-6beabcd1b86c
 )
 
 // These are copied verbatim from
@@ -58,9 +58,9 @@ require (
 	github.com/cyphar/filepath-securejoin v0.3.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v27.1.1+incompatible // indirect
+	github.com/docker/cli v27.2.0+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v27.1.1+incompatible // indirect
+	github.com/docker/docker v27.2.0+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
@@ -160,8 +160,6 @@ require (
 	github.com/openshift/client-go v0.0.0-20220525160904-9e1acff93e4a // indirect
 	github.com/operator-framework/ansible-operator-plugins v1.35.0 // indirect
 	github.com/operator-framework/api v0.23.0 // indirect
-	github.com/operator-framework/helm-operator-plugins v0.2.2 // indirect
-	github.com/operator-framework/java-operator-plugins v0.10.0 // indirect
 	github.com/operator-framework/operator-manifest-tools v0.6.0 // indirect
 	github.com/operator-framework/operator-registry v1.39.0 // indirect
 	github.com/otiai10/copy v1.14.0 // indirect
