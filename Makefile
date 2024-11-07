@@ -484,7 +484,7 @@ main-build-dockerized: build-volumes
 
 .PHONY: main-build-nodeps
 main-build-nodeps: central-build-nodeps migrator-build-nodeps config-controller-build-nodeps
-	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance
+	$(GOBUILD) sensor/kubernetes sensor/admission-control compliance/cmd/compliance
 	$(GOBUILD) sensor/upgrader
 ifndef CI
 	CGO_ENABLED=0 $(GOBUILD) roxctl
