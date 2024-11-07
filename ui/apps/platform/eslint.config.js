@@ -52,7 +52,7 @@ module.exports = [
             'cypress/downloads/*.json', // StackRox_Exported_Policies_*.json
         ],
 
-        // language: 'json/json',
+        language: 'json/json',
 
         // https://github.com/eslint/json/blob/main/src/index.js
         ...pluginJSON.configs.recommended,
