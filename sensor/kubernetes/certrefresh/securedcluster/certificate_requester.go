@@ -119,30 +119,11 @@ func (r *certificateRequesterImpl) send(ctx context.Context, requestID string) e
 	}
 }
 
-func convertToIssueCertsResponse(response *central.IssueSecuredClusterCertsResponse) *certificates.Response {
-	if response == nil {
-		return nil
-	}
-
-	res := &certificates.Response{
-		RequestId: response.GetRequestId(),
-	}
-
-	if response.GetError() != nil {
-		errMsg := response.GetError().GetMessage()
-		res.ErrorMessage = &errMsg
-	} else {
-		res.Certificates = response.GetCertificates()
-	}
-
-	return res
-}
-
 func receive(ctx context.Context, receiveC <-chan *central.IssueSecuredClusterCertsResponse) (*certificates.Response, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case response := <-receiveC:
-		return convertToIssueCertsResponse(response), nil
+		return certificates.NewResponseFromSecuredClusterCerts(response), nil
 	}
 }

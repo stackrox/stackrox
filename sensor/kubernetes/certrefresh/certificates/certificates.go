@@ -41,3 +41,24 @@ func NewResponseFromLocalScannerCerts(response *central.IssueLocalScannerCertsRe
 
 	return res
 }
+
+// NewResponseFromSecuredClusterCerts creates a certificates.Response from a
+// protobuf central.IssueSecuredClusterCertsResponse message
+func NewResponseFromSecuredClusterCerts(response *central.IssueSecuredClusterCertsResponse) *Response {
+	if response == nil {
+		return nil
+	}
+
+	res := &Response{
+		RequestId: response.GetRequestId(),
+	}
+
+	if response.GetError() != nil {
+		errMsg := response.GetError().GetMessage()
+		res.ErrorMessage = &errMsg
+	} else {
+		res.Certificates = response.GetCertificates()
+	}
+
+	return res
+}
