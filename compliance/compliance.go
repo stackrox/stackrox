@@ -11,6 +11,7 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/auditlog"
+	"github.com/stackrox/rox/compliance/collection/compliance_checks"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -27,6 +29,8 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc/metadata"
 )
+
+var log = logging.LoggerForModule()
 
 // Compliance represents the Compliance app
 type Compliance struct {
@@ -241,7 +245,7 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		}
 		switch t := msg.Msg.(type) {
 		case *sensor.MsgToCompliance_Trigger:
-			if err := runChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
+			if err := compliance_checks.RunChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
 				return errors.Wrap(err, "running compliance checks")
 			}
 		case *sensor.MsgToCompliance_AuditLogCollectionRequest_:

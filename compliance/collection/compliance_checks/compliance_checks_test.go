@@ -1,4 +1,4 @@
-package compliance
+package compliance_checks
 
 import (
 	"bytes"

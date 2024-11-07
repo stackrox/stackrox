@@ -1,4 +1,4 @@
-package compliance
+package compliance_checks
 
 import (
 	"time"
@@ -22,7 +22,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-func runChecks(client sensor.ComplianceService_CommunicateClient,
+func RunChecks(client sensor.ComplianceService_CommunicateClient,
 	scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,
 	run *sensor.MsgToCompliance_TriggerRun,
 	nodeNameProvider node.NodeNameProvider,

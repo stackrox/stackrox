@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/rox/compliance/collection/compliance"
+	compliance "github.com/stackrox/rox/compliance"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/retry/handler"

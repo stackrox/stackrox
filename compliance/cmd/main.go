@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 
-	"github.com/stackrox/rox/compliance/collection/compliance"
+	"github.com/stackrox/rox/compliance"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/node/index"
 	"github.com/stackrox/rox/pkg/env"
