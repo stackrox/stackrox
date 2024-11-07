@@ -391,7 +391,7 @@ export type AnalyticsEvent =
           };
       };
 
-export const redactedHostReplacement = 'redacted.host';
+export const redactedHostReplacement = 'redacted.host.invalid';
 export const redactedSearchReplacement = '*****';
 
 // Replace the hostname, port, and search parameters with redacted values
