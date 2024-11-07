@@ -10,5 +10,5 @@ pyyaml = "6.0.2"
 pytest = "7.0.1"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core", "calver"]
 build-backend = "poetry.core.masonry.api"

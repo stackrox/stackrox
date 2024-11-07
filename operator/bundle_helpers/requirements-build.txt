@@ -4,6 +4,10 @@
 #
 #    pip-compile --allow-unsafe --generate-hashes requirements-build.in
 #
+calver==2022.6.26 \
+    --hash=sha256:a1d7fcdd67797afc52ee36ffb8c8adf6643173864306547bfd1380cbce6310a0 \
+    --hash=sha256:e05493a3b17517ef1748fbe610da11f10485faa7c416b9d33fd4a52d74894f8b
+    # via -r requirements-build.in
 cython==3.0.11 \
     --hash=sha256:0b1d1f6f94cc5d42a4591f6d60d616786b9cd15576b112bc92a23131fcf38020 \
     --hash=sha256:0e25f6425ad4a700d7f77cd468da9161e63658837d1bc34861a9861a4ef6346d \

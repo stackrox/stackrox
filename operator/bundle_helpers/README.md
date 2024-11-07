@@ -40,5 +40,8 @@ curl -O https://raw.githubusercontent.com/containerbuildsystem/cachito/master/bi
   --append \
   --only-write-on-update \
   -o requirements-build.in
+
+# Manually add any build system dependencies, like calver
+
 pip-compile requirements-build.in --allow-unsafe --generate-hashes > requirements-build.txt
 ```
