@@ -10,8 +10,8 @@ const (
 	S3Generic           = "s3-generic"
 
 	// Cloud Source codes.
-	PaladinCloudGeneric = "paladin-cloud-generic"
 	OCMCloudGeneric     = "ocm-generic"
+	PaladinCloudGeneric = "paladin-cloud-generic"
 
 	// Notifier codes.
 	ACSCSEmailGeneric        = "acscs-email-generic"

@@ -6,30 +6,30 @@ import (
 )
 
 const (
-	imageField        = "image"
-	clusterIDField    = "cluster_id"
-	imageIDField      = "image_id"
-	nodeIDField       = "node_id"
-	backupField       = "backup"
-	cloudSourceField  = "cloud_source"
-	notifierField     = "notifier"
-	errCodeField      = "err_code"
 	alertIDField      = "alert_id"
 	apiTokenIDField   = "api_token_id"
 	apiTokenNameField = "api_token_name"
+	backupField       = "backup"
+	cloudSourceField  = "cloud_source"
+	clusterIDField    = "cluster_id"
 	clusterNameField  = "cluster_name"
+	errCodeField      = "err_code"
+	imageField        = "image"
+	imageIDField      = "image_id"
+	nodeIDField       = "node_id"
+	notifierField     = "notifier"
 )
 
 var resourceTypeFields = map[string]string{
-	imageField:        administrationResources.Image,
-	imageIDField:      administrationResources.Image,
-	clusterIDField:    administrationResources.Cluster,
-	nodeIDField:       administrationResources.Node,
-	backupField:       administrationResources.Backup,
-	cloudSourceField:  administrationResources.CloudSource,
-	notifierField:     administrationResources.Notifier,
 	apiTokenIDField:   administrationResources.APIToken,
 	apiTokenNameField: administrationResources.APIToken,
+	backupField:       administrationResources.Backup,
+	cloudSourceField:  administrationResources.CloudSource,
+	clusterIDField:    administrationResources.Cluster,
+	imageField:        administrationResources.Image,
+	imageIDField:      administrationResources.Image,
+	nodeIDField:       administrationResources.Node,
+	notifierField:     administrationResources.Notifier,
 }
 
 // Err wraps err into a zap.Field instance with a well-known name 'error'.
@@ -143,9 +143,9 @@ func getResourceTypeField(field zap.Field) (string, bool) {
 }
 
 func isIDField(fieldName string) bool {
-	return fieldName != imageField &&
+	return fieldName != apiTokenNameField &&
 		fieldName != backupField &&
 		fieldName != cloudSourceField &&
-		fieldName != notifierField &&
-		fieldName != apiTokenNameField
+		fieldName != imageField &&
+		fieldName != notifierField
 }

@@ -12,7 +12,7 @@ const (
 
 // Resources used in administration events.
 var (
-	Image   = resources.Image.String()
 	Cluster = resources.Cluster.String()
+	Image   = resources.Image.String()
 	Node    = resources.Node.String()
 )
