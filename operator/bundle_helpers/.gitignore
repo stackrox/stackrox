@@ -1,2 +1,4 @@
 /__pycache__/
 
+requirements-build.in
+pip_find_builddeps.py

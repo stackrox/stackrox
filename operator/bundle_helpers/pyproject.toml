@@ -5,8 +5,8 @@ description = "StackRox Operator Bundle Helpers"
 authors = []
 
 [tool.poetry.dependencies]
-python = "^3.6"
-pyyaml = "6.0"
+python = "^3.9"
+pyyaml = "6.0.2"
 pytest = "7.0.1"
 
 [build-system]
