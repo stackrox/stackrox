@@ -10,7 +10,7 @@ import {
     selectSingleCveForException,
     verifyExceptionConfirmationDetails,
     verifySelectedCvesInModal,
-    visitAnyImageSinglePage,
+    visitAnyImageSinglePageWithMockedCves,
 } from './WorkloadCves.helpers';
 
 describe('Workload CVE Image page deferral and false positive flows', () => {
@@ -39,7 +39,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should defer a single CVE', () => {
-        visitAnyImageSinglePage().then((image) => {
+        visitAnyImageSinglePageWithMockedCves().then((image) => {
             selectSingleCveForException('DEFERRAL').then((cveName) => {
                 verifySelectedCvesInModal([cveName]);
                 fillAndSubmitExceptionForm({
@@ -56,9 +56,8 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
         });
     });
 
-    // TODO ROX-26706 - Unskip this test and rework to handle the case where multiple CVEs are not available via the API
-    it.skip('should defer multiple selected CVEs', () => {
-        visitAnyImageSinglePage().then((image) => {
+    it('should defer multiple selected CVEs', () => {
+        visitAnyImageSinglePageWithMockedCves().then((image) => {
             selectMultipleCvesForException('DEFERRAL').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);
                 fillAndSubmitExceptionForm({
@@ -77,7 +76,7 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
     });
 
     it('should mark a single CVE as false positive', () => {
-        visitAnyImageSinglePage().then((image) => {
+        visitAnyImageSinglePageWithMockedCves().then((image) => {
             selectSingleCveForException('FALSE_POSITIVE').then((cveName) => {
                 verifySelectedCvesInModal([cveName]);
                 fillAndSubmitExceptionForm({ comment: 'Test comment' });
@@ -90,9 +89,8 @@ describe('Workload CVE Image page deferral and false positive flows', () => {
         });
     });
 
-    // TODO ROX-26706 - Unskip this test and rework to handle the case where multiple CVEs are not available via the API
-    it.skip('should mark multiple selected CVEs as false positive', () => {
-        visitAnyImageSinglePage().then((image) => {
+    it('should mark multiple selected CVEs as false positive', () => {
+        visitAnyImageSinglePageWithMockedCves().then((image) => {
             selectMultipleCvesForException('FALSE_POSITIVE').then((cveNames) => {
                 verifySelectedCvesInModal(cveNames);
                 fillAndSubmitExceptionForm({
