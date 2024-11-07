@@ -40,15 +40,11 @@ export type DiscoveredClusterType = (typeof types)[number];
 
 // providerType
 
-// Order of items is for search filter options.
-const providerTypes = [
-    'PROVIDER_TYPE_AWS',
-    'PROVIDER_TYPE_AZURE',
-    'PROVIDER_TYPE_GCP',
-    'PROVIDER_TYPE_UNSPECIFIED',
-] as const; // for isProviderType function
-
-export type DiscoveredClusterProviderType = (typeof providerTypes)[number];
+export type DiscoveredClusterProviderType =
+    | 'PROVIDER_TYPE_AWS'
+    | 'PROVIDER_TYPE_AZURE'
+    | 'PROVIDER_TYPE_GCP'
+    | 'PROVIDER_TYPE_UNSPECIFIED';
 
 // status
 
