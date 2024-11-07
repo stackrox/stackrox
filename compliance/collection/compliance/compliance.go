@@ -241,7 +241,7 @@ func (c *Compliance) runRecv(ctx context.Context, client sensor.ComplianceServic
 		}
 		switch t := msg.Msg.(type) {
 		case *sensor.MsgToCompliance_Trigger:
-			if err := RunChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
+			if err := runChecks(client, config, t.Trigger, c.nodeNameProvider); err != nil {
 				return errors.Wrap(err, "running compliance checks")
 			}
 		case *sensor.MsgToCompliance_AuditLogCollectionRequest_:

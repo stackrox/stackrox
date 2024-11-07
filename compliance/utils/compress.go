@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
+// CompressResults will take compliance results and compress them with GZIP
 func CompressResults(results map[string]*compliance.ComplianceStandardResult) (*compliance.GZIPDataChunk, error) {
 	wrappedResults := pkgCompress.ResultWrapper{
 		ResultMap: results,
