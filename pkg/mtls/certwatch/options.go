@@ -24,7 +24,7 @@ func applyOptions(options ...CertWatchOption) *CertWatchConfig {
 	return cfg
 }
 
-// WithVerify enables/disables the verification of watched certifications.
+// WithVerify enables/disables the verification of watched certificates.
 func WithVerify(verify bool) CertWatchOption {
 	return func(cfg *CertWatchConfig) *CertWatchConfig {
 		if cfg == nil {
