@@ -24,7 +24,11 @@ function InitBundlesTable({
                     <Th>Created by</Th>
                     <Th>Created at</Th>
                     <Th>Expires at</Th>
-                    {hasWriteAccessForInitBundles && <Td />}
+                    {hasWriteAccessForInitBundles && (
+                        <Th>
+                            <span className="pf-v5-screen-reader">Row actions</span>
+                        </Th>
+                    )}
                 </Tr>
             </Thead>
             <Tbody>

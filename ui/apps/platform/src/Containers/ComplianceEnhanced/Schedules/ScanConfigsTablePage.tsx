@@ -48,7 +48,8 @@ import { SortOption } from 'types/table';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { displayOnlyItemOrItemCount } from 'utils/textUtils';
 
-import MyLastJobStatusTh from 'Components/ReportJob/MyLastJobStatusTh';
+import HelpIconTh from 'Components/HelpIconTh';
+import JobStatusPopoverContent from 'Components/ReportJob/JobStatusPopoverContent';
 import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
 import useAnalytics from 'hooks/useAnalytics';
@@ -389,8 +390,16 @@ function ScanConfigsTablePage({
                                 <Th>Last scanned</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
-                                {isReportJobsEnabled && <MyLastJobStatusTh />}
-                                {hasWriteAccessForCompliance && <Td />}
+                                {isReportJobsEnabled && (
+                                    <HelpIconTh popoverContent={<JobStatusPopoverContent />}>
+                                        My last job status
+                                    </HelpIconTh>
+                                )}
+                                {hasWriteAccessForCompliance && (
+                                    <Th>
+                                        <span className="pf-v5-screen-reader">Row actions</span>
+                                    </Th>
+                                )}
                             </Tr>
                         </Thead>
                         <Tbody>{renderTableBodyContent()}</Tbody>
