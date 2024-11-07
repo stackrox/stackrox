@@ -140,7 +140,7 @@ require (
 	golang.org/x/sync v0.8.0
 	golang.org/x/sys v0.25.0
 	golang.org/x/text v0.18.0
-	golang.org/x/time v0.6.0
+	golang.org/x/time v0.7.0
 	golang.org/x/tools v0.25.0
 	golang.stackrox.io/grpc-http1 v0.3.13
 	google.golang.org/api v0.194.0
