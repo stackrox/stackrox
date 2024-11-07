@@ -283,13 +283,23 @@ export function verifySelectedCvesInModal(cveNames) {
     });
 }
 
-export function visitAnyImageSinglePage() {
+export function visitAnyImageSinglePageWithMockedCves() {
+    const cveListOpname = 'getCVEsForImage';
+    const routeMatcherMapForImageCves = getRouteMatcherMapForGraphQL([cveListOpname]);
+    const staticResponseMapForImageCves = {
+        [cveListOpname]: { fixture: 'vulnerabilities/workloadCves/multipleCvesForImage.json' },
+    };
+
     visitWorkloadCveOverview();
 
-    selectEntityTab('Image');
-    cy.get('tbody tr td[data-label="Image"] a').first().click();
-
-    waitForTableLoadCompleteIndicator();
+    interactAndWaitForResponses(
+        () => {
+            selectEntityTab('Image');
+            cy.get('tbody tr td[data-label="Image"] a').first().click();
+        },
+        routeMatcherMapForImageCves,
+        staticResponseMapForImageCves
+    );
 
     return cy.get('h1').then(($h1) => {
         // Remove the SHA and/or tag from the image name
