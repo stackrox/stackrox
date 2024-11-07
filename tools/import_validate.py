@@ -61,7 +61,7 @@ def complete(data):
         print("%s:%d: Too many blank lines in imports" % (data["file"], n))
 
 PREIMPORT, IMPORTS, POSTIMPORT, EXTRACOMMENT, BLANKIMPORT = range(5)
-FPIMPORTS, TPIMPORTS = 1, 3
+FPIMPORTS, TPIMPORTS = 1, 3 # We differentiate between first party (FPIMPORTS) and third party (TPIMPORTS) imports
 
 TRANSITIONS = [
     (PREIMPORT, 'import (', IMPORTS),
