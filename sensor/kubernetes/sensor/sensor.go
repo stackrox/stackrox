@@ -100,7 +100,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	log.Infof("Install method: %q", helmManagedConfig.GetManagedBy())
 	installmethod.Set(helmManagedConfig.GetManagedBy())
 
-	deploymentIdentification := fetchDeploymentIdentification(context.Background(), cfg.k8sClient.Kubernetes())
+	deploymentIdentification := FetchDeploymentIdentification(context.Background(), cfg.k8sClient.Kubernetes())
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
 
 	auditLogEventsInput := make(chan *sensorInternal.AuditEvents)
