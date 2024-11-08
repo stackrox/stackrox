@@ -249,21 +249,6 @@ spec:
     taskRef:
       name: determine-image-tag
 
-  # TODO(ROX-26471): This is currently needed, since some images do not
-  # seem to be available with the "-fast" suffix added.
-  # Once they are pushed with the correct suffix, we can remove this step
-  # and reuse the results of the `determine-main-image-tag` task everywhere.
-  - name: determine-main-image-tag-unsuffixed
-    params:
-    - name: TAG_SUFFIX
-      value: ""
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: MAKEFILE_DIRECTORY
-      value: "."
-    taskRef:
-      name: determine-image-tag
-
   - name: determine-main-image-tag
     params:
     - name: TAG_SUFFIX
@@ -310,7 +295,7 @@ spec:
   - name: wait-for-main-image
     params:
     - name: IMAGE
-      value: "$(params.main-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+      value: "$(params.main-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # This timeout must be the same as the pipeline timeout in `main-build.yaml`.
@@ -319,38 +304,38 @@ spec:
   - name: wait-for-scanner-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+      value: "$(params.scanner-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
-    # TODO(ROX-26471): add timeout
-    # timeout: ?h?m
+    # This timeout must be the same as the pipeline timeout in `scanner-retag.yaml`
+    timeout: 40m
 
   - name: wait-for-scanner-db-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-db-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+      value: "$(params.scanner-db-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
-    # TODO(ROX-26471): add timeout
-    # timeout: ?h?m
+    # This timeout must be the same as the pipeline timeout in `scanner-db-retag.yaml`
+    timeout: 40m
 
   - name: wait-for-scanner-slim-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+      value: "$(params.scanner-slim-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
-    # TODO(ROX-26471): add timeout
-    # timeout: ?h?m
+    # This timeout must be the same as the pipeline timeout in `scanner-slim-retag.yaml`
+    timeout: 40m
 
   - name: wait-for-scanner-db-slim-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-db-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+      value: "$(params.scanner-db-slim-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
-    # TODO(ROX-26471): add timeout
-    # timeout: ?h?m
+    # This timeout must be the same as the pipeline timeout in `scanner-db-slim-retag.yaml`
+    timeout: 40m
 
   - name: wait-for-scanner-v4-image
     params:
@@ -373,20 +358,20 @@ spec:
   - name: wait-for-collector-slim-image
     params:
     - name: IMAGE
-      value: "$(params.collector-slim-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+      value: "$(params.collector-slim-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
-    # TODO(ROX-26471): add timeout
-    # timeout: ?h?m
+    # The timeout must be the same as the pipeline timeout in `collector-slim-retag.yaml`
+    timeout: 40m
 
   - name: wait-for-collector-full-image
     params:
     - name: IMAGE
-      value: "$(params.collector-full-image-repo):$(tasks.determine-main-image-tag-unsuffixed.results.IMAGE_TAG)"
+      value: "$(params.collector-full-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
-    # TODO(ROX-26471): add timeout
-    # timeout: ?h?m
+    # The timeout must be the same as the pipeline timeout in `collector-full-retag.yaml`
+    timeout: 40m
 
   - name: wait-for-roxctl-image
     params:
