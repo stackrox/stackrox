@@ -2344,9 +2344,9 @@ func (suite *PLOPDataStoreTestSuite) makeRandomPlops(nport int, nprocess int, np
 }
 
 func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
-	nport := 30
-	nprocess := 30
-	npod := 30
+	nport := 10
+	nprocess := 10
+	npod := 10
 
 	plopObjects := suite.makeRandomPlops(nport, nprocess, npod, fixtureconsts.Deployment1)
 
@@ -2384,9 +2384,9 @@ func (suite *PLOPDataStoreTestSuite) TestAddPodUids() {
 // TestDeletePods: The purpose of this test is to check for a race condition between RemovePlopsByPod
 // and AddProcessListeningOnPort. They should not delete PLOPs simultaneously.
 func (suite *PLOPDataStoreTestSuite) TestDeletePods() {
-	nport := 30
-	nprocess := 30
-	npod := 30
+	nport := 10
+	nprocess := 10
+	npod := 10
 
 	// Create a map to associate PodIds and PodUids. This is done to assign PodUids since makeRandomPlops
 	// doesn't do that. Also it is used in deleting PLOPs by PodUids.

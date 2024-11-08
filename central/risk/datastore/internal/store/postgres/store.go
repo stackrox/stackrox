@@ -209,7 +209,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableRisks(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS risks CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE risks CASCADE")
 
 }
 

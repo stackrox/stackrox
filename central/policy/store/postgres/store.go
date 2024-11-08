@@ -211,7 +211,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTablePolicies(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS policies CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE policies CASCADE")
 
 }
 

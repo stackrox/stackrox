@@ -197,7 +197,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableImageComponents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS image_components CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE image_components CASCADE")
 
 }
 

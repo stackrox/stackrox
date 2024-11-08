@@ -228,7 +228,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableComplianceOperatorCheckResultV2(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_check_result_v2 CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE compliance_operator_check_result_v2 CASCADE")
 
 }
 

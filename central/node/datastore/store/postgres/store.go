@@ -1065,7 +1065,7 @@ func CreateTableAndNewStore(ctx context.Context, _ testing.TB, db postgres.DB, g
 }
 
 func dropTableNodes(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE nodes CASCADE")
 	dropTableNodesTaints(ctx, db)
 	dropTableNodesComponents(ctx, db)
 	dropTableNodeCVEs(ctx, db)
@@ -1074,23 +1074,23 @@ func dropTableNodes(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableNodesTaints(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS nodes_taints CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE nodes_taints CASCADE")
 }
 
 func dropTableNodesComponents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentsTable+" CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE "+nodeComponentsTable+" CASCADE")
 }
 
 func dropTableNodeCVEs(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeCVEsTable+" CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE "+nodeCVEsTable+" CASCADE")
 }
 
 func dropTableComponentCVEEdges(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+componentCVEEdgesTable+" CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE "+componentCVEEdgesTable+" CASCADE")
 }
 
 func dropTableNodeComponentEdges(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS "+nodeComponentEdgesTable+" CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE "+nodeComponentEdgesTable+" CASCADE")
 }
 
 // Destroy drops all node tree tables.

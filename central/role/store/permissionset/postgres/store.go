@@ -179,7 +179,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTablePermissionSets(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS permission_sets CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE permission_sets CASCADE")
 
 }
 

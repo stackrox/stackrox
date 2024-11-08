@@ -225,7 +225,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableListeningEndpoints(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS listening_endpoints CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE listening_endpoints CASCADE")
 
 }
 

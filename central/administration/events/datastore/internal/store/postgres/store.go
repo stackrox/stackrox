@@ -199,7 +199,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableAdministrationEvents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS administration_events CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE administration_events CASCADE")
 
 }
 

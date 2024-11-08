@@ -367,19 +367,19 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableSecrets(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE secrets CASCADE")
 	dropTableSecretsFiles(ctx, db)
 
 }
 
 func dropTableSecretsFiles(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_files CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE secrets_files CASCADE")
 	dropTableSecretsFilesRegistries(ctx, db)
 
 }
 
 func dropTableSecretsFilesRegistries(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS secrets_files_registries CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE secrets_files_registries CASCADE")
 
 }
 

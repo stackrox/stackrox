@@ -188,7 +188,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableGroups(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS groups CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE groups CASCADE")
 
 }
 

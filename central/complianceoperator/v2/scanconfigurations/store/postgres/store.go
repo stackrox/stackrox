@@ -391,7 +391,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableComplianceOperatorScanConfigurationV2(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_configuration_v2 CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE compliance_operator_scan_configuration_v2 CASCADE")
 	dropTableComplianceOperatorScanConfigurationV2Profiles(ctx, db)
 	dropTableComplianceOperatorScanConfigurationV2Clusters(ctx, db)
 	dropTableComplianceOperatorScanConfigurationV2Notifiers(ctx, db)
@@ -399,17 +399,17 @@ func dropTableComplianceOperatorScanConfigurationV2(ctx context.Context, db post
 }
 
 func dropTableComplianceOperatorScanConfigurationV2Profiles(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_configuration_v2_profiles CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE compliance_operator_scan_configuration_v2_profiles CASCADE")
 
 }
 
 func dropTableComplianceOperatorScanConfigurationV2Clusters(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_configuration_v2_clusters CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE compliance_operator_scan_configuration_v2_clusters CASCADE")
 
 }
 
 func dropTableComplianceOperatorScanConfigurationV2Notifiers(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS compliance_operator_scan_configuration_v2_notifiers CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE compliance_operator_scan_configuration_v2_notifiers CASCADE")
 
 }
 

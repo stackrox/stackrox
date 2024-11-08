@@ -259,13 +259,13 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableCollections(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS collections CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE collections CASCADE")
 	dropTableCollectionsEmbeddedCollections(ctx, db)
 
 }
 
 func dropTableCollectionsEmbeddedCollections(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS collections_embedded_collections CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE collections_embedded_collections CASCADE")
 
 }
 

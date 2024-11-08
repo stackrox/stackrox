@@ -298,13 +298,13 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableRoleBindings(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS role_bindings CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE role_bindings CASCADE")
 	dropTableRoleBindingsSubjects(ctx, db)
 
 }
 
 func dropTableRoleBindingsSubjects(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS role_bindings_subjects CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE role_bindings_subjects CASCADE")
 
 }
 

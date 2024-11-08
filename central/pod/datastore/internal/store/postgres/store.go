@@ -293,13 +293,13 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTablePods(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE pods CASCADE")
 	dropTablePodsLiveInstances(ctx, db)
 
 }
 
 func dropTablePodsLiveInstances(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS pods_live_instances CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE pods_live_instances CASCADE")
 
 }
 

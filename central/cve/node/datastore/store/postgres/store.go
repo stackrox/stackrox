@@ -210,7 +210,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableNodeCves(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS node_cves CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE node_cves CASCADE")
 
 }
 

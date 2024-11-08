@@ -175,7 +175,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableIntegrationHealths(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS integration_healths CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE integration_healths CASCADE")
 
 }
 

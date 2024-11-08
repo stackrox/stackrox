@@ -218,7 +218,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableK8sRoles(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS k8s_roles CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE k8s_roles CASCADE")
 
 }
 

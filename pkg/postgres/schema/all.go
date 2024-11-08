@@ -18,6 +18,8 @@ var (
 	log = logging.LoggerForModule()
 	// registeredTables is map of sql table name to go schema of the sql table.
 	registeredTables = make(map[string]*registeredTable)
+
+	useGORM = false
 )
 
 type registeredTable struct {
@@ -90,6 +92,10 @@ func getRegisteredTablesFor(visited set.StringSet, table string) []*registeredTa
 
 // ApplyAllSchemas creates or auto migrate according to the current schema
 func ApplyAllSchemas(ctx context.Context, gormDB *gorm.DB) {
+	if !useGORM {
+		return
+	}
+
 	for _, rt := range getAllRegisteredTablesInOrder() {
 		// Exclude tests
 		if strings.HasPrefix(rt.Schema.Table, "test_") {
@@ -102,6 +108,10 @@ func ApplyAllSchemas(ctx context.Context, gormDB *gorm.DB) {
 
 // ApplyAllSchemasIncludingTests creates or auto migrate according to the current schema including test schemas
 func ApplyAllSchemasIncludingTests(ctx context.Context, gormDB *gorm.DB, _ testing.TB) {
+	if !useGORM {
+		return
+	}
+
 	for _, rt := range getAllRegisteredTablesInOrder() {
 		log.Debugf("Applying schema for table %s", rt.Schema.Table)
 		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)
@@ -110,6 +120,10 @@ func ApplyAllSchemasIncludingTests(ctx context.Context, gormDB *gorm.DB, _ testi
 
 // ApplySchemaForTable creates or auto migrate according to the current schema
 func ApplySchemaForTable(ctx context.Context, gormDB *gorm.DB, table string) {
+	if !useGORM {
+		return
+	}
+
 	rts := getRegisteredTablesFor(set.NewStringSet(), table)
 	for _, rt := range rts {
 		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)

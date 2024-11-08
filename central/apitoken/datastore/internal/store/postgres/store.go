@@ -183,7 +183,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableAPITokens(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS api_tokens CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE api_tokens CASCADE")
 
 }
 

@@ -180,7 +180,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableLogImbues(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS log_imbues CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE log_imbues CASCADE")
 
 }
 

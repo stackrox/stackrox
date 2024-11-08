@@ -175,7 +175,7 @@ func Destroy(ctx context.Context, db postgres.DB) {
 }
 
 func dropTableNetworkGraphConfigs(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS network_graph_configs CASCADE")
+	_, _ = db.Exec(ctx, "TRUNCATE network_graph_configs CASCADE")
 
 }
 
