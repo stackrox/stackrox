@@ -220,7 +220,7 @@ func (c *paladinClient) Ping(ctx context.Context) error {
 	// At the current time, no better API is known besides the asset API to confirm correct authN/Z setup and
 	// connectivity. In case we find a better API, we may switch to that.
 	if _, err := c.getAssets(ctx); err != nil {
-		log.Errorw("Retrieving data",
+		log.Errorw("PaladinCloud: retrieving data",
 			logging.Err(err),
 			logging.ErrCode(codes.PaladinCloudGeneric),
 			logging.CloudSourceName(c.cloudSourceName),
@@ -234,7 +234,7 @@ func (c *paladinClient) Ping(ctx context.Context) error {
 func (c *paladinClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclusters.DiscoveredCluster, error) {
 	response, err := c.getAssets(ctx)
 	if err != nil {
-		log.Errorw("Retrieving data",
+		log.Errorw("PaladinCloud: retrieving data",
 			logging.Err(err),
 			logging.ErrCode(codes.PaladinCloudGeneric),
 			logging.CloudSourceName(c.cloudSourceName),
@@ -254,7 +254,7 @@ func (c *paladinClient) GetDiscoveredClusters(ctx context.Context) ([]*discovere
 	}
 
 	if transformErrors != nil {
-		log.Errorw("Transforming assets",
+		log.Errorw("PaladinCloud: transforming assets",
 			logging.Err(transformErrors),
 			logging.ErrCode(codes.PaladinCloudGeneric),
 			logging.CloudSourceName(c.cloudSourceName),

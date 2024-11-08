@@ -60,7 +60,7 @@ func (c *ocmClient) Ping(ctx context.Context) error {
 	defer cancel()
 
 	if _, err := c.conn.AccountsMgmt().V1().CurrentAccount().Get().SendContext(ctx); err != nil {
-		log.Errorw("Retrieving account",
+		log.Errorw("OpenShift Cluster Manager: retrieving account",
 			logging.Err(err),
 			logging.ErrCode(codes.OCMCloudGeneric),
 			logging.CloudSourceName(c.cloudSourceName),
@@ -93,7 +93,7 @@ func (c *ocmClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclu
 		// performed better on queries. The console also favors the subscription API for creating the list view.
 		resp, err := c.conn.AccountsMgmt().V1().Subscriptions().List().Size(100).Page(page).Search(subscriptionSearch).SendContext(ctx)
 		if err != nil {
-			log.Errorw("Retrieving cluster subscription",
+			log.Errorw("OpenShift Cluster Manager: retrieving cluster subscription",
 				logging.Err(err),
 				logging.ErrCode(codes.OCMCloudGeneric),
 				logging.CloudSourceName(c.cloudSourceName),
