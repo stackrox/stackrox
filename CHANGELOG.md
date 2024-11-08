@@ -109,7 +109,6 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-22251: The ability to snooze Node and Platform CVEs is no longer enabled by default and can be enabled by setting `ROX_VULN_MGMT_LEGACY_SNOOZE` to `true` on Central.
 - ROX-24471: Scanner V4 Matcher memory requirements were updates to align with the current consumption (see ROX-24355).
 
-
 ## [4.4.0]
 
 
