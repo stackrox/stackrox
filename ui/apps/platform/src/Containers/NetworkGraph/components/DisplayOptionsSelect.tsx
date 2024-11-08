@@ -3,10 +3,10 @@ import { Split, SplitItem } from '@patternfly/react-core';
 import { Select, SelectGroup, SelectOption } from '@patternfly/react-core/deprecated';
 import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
 
-import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
-import { ReactComponent as PortLabel } from 'images/network-graph/tcp-icon.svg';
-import { ReactComponent as RelatedEntity } from 'images/network-graph/related-entity.svg';
-import { ReactComponent as FilteredEntity } from 'images/network-graph/filtered-entity.svg';
+import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
+import PortLabel from 'images/network-graph/tcp-icon.svg?react';
+import RelatedEntity from 'images/network-graph/related-entity.svg?react';
+import FilteredEntity from 'images/network-graph/filtered-entity.svg?react';
 
 import './DisplayOptionsSelect.css';
 import { CidrBlockIcon, DeploymentIcon, NamespaceIcon } from '../common/NetworkGraphIcons';

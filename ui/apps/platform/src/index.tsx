@@ -8,6 +8,7 @@ import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { HistoryRouter as Router } from 'redux-first-history/rr6';
 import { AnyAction } from 'redux';
+import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { ApolloProvider } from '@apollo/client';
 
 import 'css.imports';
@@ -19,9 +20,8 @@ import { configureMonacoYaml } from 'monaco-yaml';
 
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
-import configureStore from 'store/configureStore';
+import configureStore from 'configureStore';
 import installRaven from 'installRaven';
-import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { fetchFeatureFlagsThunk } from './reducers/featureFlags';
 import { fetchPublicConfigThunk } from './reducers/publicConfig';
 import { fetchCentralCapabilitiesThunk } from './reducers/centralCapabilities';

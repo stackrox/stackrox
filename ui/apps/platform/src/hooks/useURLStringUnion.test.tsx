@@ -1,20 +1,10 @@
 import React from 'react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
+import actAndFlushTaskQueue from 'test-utils/flushTaskQueue';
 
 import { URLSearchParams } from 'url';
 import useURLStringUnion from './useURLStringUnion';
-
-beforeAll(() => {
-    jest.useFakeTimers();
-});
-
-function actAndRunTicks(callback) {
-    return act(() => {
-        callback();
-        jest.runAllTicks();
-    });
-}
 
 test('should read/write only the specified set of strings to the URL parameter', async () => {
     let params;
@@ -34,7 +24,7 @@ test('should read/write only the specified set of strings to the URL parameter',
         }
     );
 
-    actAndRunTicks(() => {});
+    await actAndFlushTaskQueue(() => {});
 
     // Check that default value is applied correctly
     params = new URLSearchParams(testLocation.search);
@@ -42,7 +32,7 @@ test('should read/write only the specified set of strings to the URL parameter',
     expect(params.get('urlKey')).toBe('Alpha');
 
     // Check that setting the value changes the parameter
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam('Delta');
     });
@@ -63,18 +53,19 @@ test('should read/write only the specified set of strings to the URL parameter',
         undefined,
     ];
 
-    invalidValues.forEach((invalid) => {
-        actAndRunTicks(() => {
+    for (let i = 0; i < invalidValues.length; i += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        await actAndFlushTaskQueue(() => {
             const [, setParam] = result.current;
-            setParam(invalid);
+            setParam(invalidValues[i]);
         });
         params = new URLSearchParams(testLocation.search);
         expect(result.current[0]).toBe('Delta');
         expect(params.get('urlKey')).toBe('Delta');
-    });
+    }
 
     // Check setting a valid value after invalid attempts correctly sets the new value
-    actAndRunTicks(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam('Beta');
     });
@@ -100,7 +91,7 @@ test('should default to the current URL parameter value on initialization, if it
         }
     );
 
-    actAndRunTicks(() => {});
+    await actAndFlushTaskQueue(() => {});
 
     // Check that default value is not applied if the URL param already contains a valid value
     const params = new URLSearchParams(testLocation.search);
@@ -125,7 +116,7 @@ test('should use the default value when an invalid value is entered directly int
         }
     );
 
-    actAndRunTicks(() => {});
+    await actAndFlushTaskQueue(() => {});
 
     // Check that default value is applied correctly when the URL param is invalid
     const params = new URLSearchParams(testLocation.search);
