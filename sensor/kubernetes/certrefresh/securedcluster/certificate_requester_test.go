@@ -43,7 +43,7 @@ func TestCertificateRequesterRequestFailureIfStopped(t *testing.T) {
 
 			certs, requestErr := f.requester.RequestCertificates(f.ctx)
 			assert.Nil(t, certs)
-			assert.Equal(t, ErrCertificateRequesterStopped, requestErr)
+			assert.Equal(t, certificates.ErrCertificateRequesterStopped, requestErr)
 		})
 	}
 }
