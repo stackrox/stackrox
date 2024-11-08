@@ -5,9 +5,10 @@ These will be prefetched with Cachi2 and made available to the container image b
 
 ## Python Dependency Management
 
+You need Python>=3.9 installed.
 We use Poetry to manage Python dependencies.
 Install it from [here](https://python-poetry.org/docs/#installation).
-You also need Python>=3.9 installed.
+
 
 In this directory, run
 
@@ -19,6 +20,12 @@ For as long as we build downstream images with CPaaS, you should not add or use 
 Check `pyproject.toml` for which dependencies and versions are managed with Poetry.
 
 ## Prepare the fully resolved requirements files for Cachi2
+
+### Prerequisite
+
+- Install [pip-compile](https://pip-tools.readthedocs.io/en/stable/).
+
+### Instructions
 
 1. Generate a fully resolved requirements.txt:
 
@@ -43,3 +50,5 @@ chmod +x pip_find_builddeps.py
 
 pip-compile requirements-build.in --allow-unsafe --generate-hashes > requirements-build.txt
 ```
+
+For more information, consult the [Cachi2 docs](https://github.com/containerbuildsystem/cachi2/blob/main/docs/pip.md#building-from-source).

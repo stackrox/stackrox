@@ -8,6 +8,7 @@ authors = []
 python = "^3.9"
 pyyaml = "6.0.2"
 pytest = "7.0.1"
+# calver is a transitive build dependency of pytest, but not recognized by pip_find_builddeps.
 calver = "2022.6.26"
 
 [build-system]
