@@ -10,6 +10,8 @@ import { standardLabels } from 'messages/standards';
 import useCaseTypes from 'constants/useCaseTypes';
 import usePermissions from 'hooks/usePermissions';
 
+// Disable to prevent merge conflict below if we need to cherry pick fix to previous release.
+/* eslint-disable prettier/prettier */
 const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsExporting }) => {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
@@ -58,6 +60,7 @@ const ListHeader = ({ entityType, searchComponent, standard, isExporting, setIsE
         </PageHeader>
     );
 };
+/* eslint-enable prettier/prettier */
 ListHeader.propTypes = {
     searchComponent: PropTypes.element,
     entityType: PropTypes.string.isRequired,

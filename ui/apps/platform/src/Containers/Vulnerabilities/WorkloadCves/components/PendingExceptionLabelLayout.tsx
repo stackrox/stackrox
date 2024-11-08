@@ -11,7 +11,7 @@ export type PendingExceptionLabelLayoutProps = {
     children: React.ReactNode;
     hasPendingException: boolean;
     cve: string;
-    vulnerabilityState: VulnerabilityState | undefined; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
 };
 
 /**
@@ -34,7 +34,7 @@ function PendingExceptionLabelLayout({
     return (
         <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXs' }}>
             {children}
-            {hasPendingException && vulnerabilityState && (
+            {hasPendingException && (
                 <FlexItem>
                     <Link to={url}>
                         <Label

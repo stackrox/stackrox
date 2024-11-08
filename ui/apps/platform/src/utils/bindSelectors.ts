@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-unsafe-function-type */
 /**
  * Given the map of selectors which work on a particular slice of a global Redux state,
  * and a slicer that extracts this slice form a global state, returns map of selectors

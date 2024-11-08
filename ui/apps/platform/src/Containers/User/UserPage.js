@@ -42,7 +42,7 @@ const getUserRolePath = (roleName) => `${userBasePath}/roles/${roleName}`;
 function UserPage({ resourceToAccessByRole, userData }) {
     const { email, name, roles, usedAuthProvider } = new User(userData);
     const authProviderName =
-        usedAuthProvider?.type === 'basic' ? 'Basic' : usedAuthProvider?.name ?? '';
+        usedAuthProvider?.type === 'basic' ? 'Basic' : (usedAuthProvider?.name ?? '');
 
     return (
         <>

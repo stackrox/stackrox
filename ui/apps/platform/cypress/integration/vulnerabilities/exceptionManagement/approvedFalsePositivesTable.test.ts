@@ -22,28 +22,19 @@ describe('Exception Management - Approved False Positives Table', () => {
     withAuth();
 
     before(function () {
-        if (
-            !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             this.skip();
         }
     });
 
     beforeEach(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             cancelAllCveExceptions();
         }
     });
 
     after(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
+        if (hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
             cancelAllCveExceptions();
         }
     });

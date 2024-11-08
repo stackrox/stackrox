@@ -91,7 +91,7 @@ export type AffectedDeploymentsTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     cve: string;
-    vulnerabilityState: VulnerabilityState | undefined; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
     filteredSeverities?: VulnerabilitySeverityLabel[];
     onClearFilters: () => void;
     tableConfig: ManagedColumns<keyof typeof defaultColumns>['columns'];
