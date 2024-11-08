@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/clusters"
 	installationStore "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/central/metrics/telemetry"
+	"github.com/stackrox/rox/central/securedclustercertgen"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
+	protoconv "github.com/stackrox/rox/pkg/protoconv/certs"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -99,6 +100,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if err != nil {
 		return err
 	}
+	clusterID := cluster.GetId()
 
 	// Generate a pipeline for the cluster to use.
 	eventPipeline, err := s.pf.PipelineForCluster(server.Context(), cluster.GetId())
@@ -125,11 +127,11 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			capabilities = append(capabilities, centralsensor.ScannerV4Supported)
 		}
 
-		preferences := s.manager.GetConnectionPreference(cluster.GetId())
+		preferences := s.manager.GetConnectionPreference(clusterID)
 
 		// Let's be polite and respond with a greeting from our side.
 		centralHello := &central.CentralHello{
-			ClusterId:        cluster.GetId(),
+			ClusterId:        clusterID,
 			ManagedCentral:   env.ManagedCentral.BooleanSetting(),
 			CentralId:        installInfo.GetId(),
 			Capabilities:     capabilities,
@@ -137,11 +139,12 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		}
 
 		if err := safe.RunE(func() error {
-			certBundle, err := clusters.IssueSecuredClusterCertificates(cluster, sensorHello.GetDeploymentIdentification().GetAppNamespace(), nil)
+			namespace := sensorHello.GetDeploymentIdentification().GetAppNamespace()
+			certificateSet, err := securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID)
 			if err != nil {
 				return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
 			}
-			centralHello.CertBundle = certBundle.FileMap()
+			centralHello.CertBundle = protoconv.ConvertTypedServiceCertificateSetToFileMap(certificateSet)
 			return nil
 		}); err != nil {
 			log.Errorf("Could not include certificate bundle in sensor hello message: %s", err)
