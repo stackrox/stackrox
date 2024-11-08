@@ -9,15 +9,13 @@ const (
 	integrationDomain    = "Integrations"
 )
 
-var (
-	moduleToDomain = map[*regexp.Regexp]string{
-		regexp.MustCompile(`^apitoken/expiration`):                     authenticationDomain,
-		regexp.MustCompile(`^externalbackups(/|$)`):                    integrationDomain,
-		regexp.MustCompile(`^pkg/cloudsources(/|$)|cloudsources(/|$)`): integrationDomain,
-		regexp.MustCompile(`^pkg/notifiers(/|$)|notifiers(/|$)`):       integrationDomain,
-		regexp.MustCompile(`^reprocessor|image/service`):               imageScanningDomain,
-	}
-)
+var moduleToDomain = map[*regexp.Regexp]string{
+	regexp.MustCompile(`^apitoken/expiration`):       authenticationDomain,
+	regexp.MustCompile(`(^|/)externalbackups(/|$)`):  integrationDomain,
+	regexp.MustCompile(`(^|/)cloudsources(/|$)`):     integrationDomain,
+	regexp.MustCompile(`(^|/)notifiers(/|$)`):        integrationDomain,
+	regexp.MustCompile(`^reprocessor|image/service`): imageScanningDomain,
+}
 
 // GetDomainFromModule retrieves a domain based on a specific module which will be
 // used for administration events.
