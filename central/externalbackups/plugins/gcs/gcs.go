@@ -201,9 +201,9 @@ func (s *gcs) Test() error {
 
 func (s *gcs) createError(msg string, err error) error {
 	if gErr, _ := err.(*googleapi.Error); gErr != nil {
-		msg = fmt.Sprintf("%s (code: %d)", msg, gErr.Code)
+		msg = fmt.Sprintf("GCS backup: %s (code: %d)", msg, gErr.Code)
 	} else {
-		msg = fmt.Sprintf("%s: %v", msg, err)
+		msg = fmt.Sprintf("GCS backup: %s: %v", msg, err)
 	}
 	log.Errorw(msg,
 		logging.BackupName(s.integration.GetName()),

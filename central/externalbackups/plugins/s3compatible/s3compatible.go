@@ -179,16 +179,17 @@ func (s *s3Compatible) createError(msg string, err error) error {
 	var apiErr smithy.APIError
 	if errors.As(err, &apiErr) {
 		if apiErr.ErrorMessage() != "" {
-			msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, apiErr.ErrorCode(), apiErr.ErrorMessage())
+			msg = fmt.Sprintf("S3 compatible backup: %s (code: %s; message: %s)",
+				msg, apiErr.ErrorCode(), apiErr.ErrorMessage())
 		} else {
-			msg = fmt.Sprintf("%s (code: %s)", msg, apiErr.ErrorCode())
+			msg = fmt.Sprintf("S3 compatible backup: %s (code: %s)", msg, apiErr.ErrorCode())
 		}
 	}
 	log.Errorw(msg,
 		logging.BackupName(s.integration.GetName()),
 		logging.Err(err),
 		logging.ErrCode(codes.S3CompatibleGeneric),
-		logging.String("bucket", s.integration.GetS3Compatible().GetBucket()),
+		logging.String("bucket", s.bucket),
 		logging.String("object-prefix", s.integration.GetS3Compatible().GetObjectPrefix()),
 	)
 	return errors.New(msg)

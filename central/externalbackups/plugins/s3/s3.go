@@ -202,16 +202,16 @@ func (s *s3) Test() error {
 func (s *s3) createError(msg string, err error) error {
 	if awsErr, _ := err.(awserr.Error); awsErr != nil {
 		if awsErr.Message() != "" {
-			msg = fmt.Sprintf("%s (code: %s; message: %s)", msg, awsErr.Code(), awsErr.Message())
+			msg = fmt.Sprintf("S3 backup: %s (code: %s; message: %s)", msg, awsErr.Code(), awsErr.Message())
 		} else {
-			msg = fmt.Sprintf("%s (code: %s)", msg, awsErr.Code())
+			msg = fmt.Sprintf("S3 backup: %s (code: %s)", msg, awsErr.Code())
 		}
 	}
 	log.Errorw(msg,
 		logging.BackupName(s.integration.GetName()),
 		logging.Err(err),
 		logging.ErrCode(codes.S3Generic),
-		logging.String("bucket", s.integration.GetS3().GetBucket()),
+		logging.String("bucket", s.bucket),
 		logging.String("object-prefix", s.integration.GetS3().GetObjectPrefix()),
 	)
 	return errors.New(msg)
