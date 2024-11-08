@@ -7,7 +7,6 @@ import "api/v1/empty.proto";
 import "api/v1/pagination.proto";
 import "api/v1/search_service.proto";
 import weak "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
 import "storage/alert.proto";
 import "storage/policy.proto";
 
