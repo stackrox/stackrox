@@ -1,3 +1,8 @@
+## Issues
+
+- pip-compile did not like our approach with handling 3.6 and 3.9
+- calver is a build dependency of attrs and not detected by pip_find_builddeps.py
+
 # Bundle Helpers
 
 For hermetic builds with Konflux, we need to provide the full list of resolved dependencies in `requirements.txt`.
@@ -31,6 +36,7 @@ pip-compile pyproject.toml --generate-hashes > requirements.txt
 
 ```bash
 curl -O https://raw.githubusercontent.com/containerbuildsystem/cachito/master/bin/pip_find_builddeps.py
+chmod +x pip_find_builddeps.py
 ```
 
 3. Generate a fully resolved `requirements-build.txt`:
@@ -40,8 +46,6 @@ curl -O https://raw.githubusercontent.com/containerbuildsystem/cachito/master/bi
   --append \
   --only-write-on-update \
   -o requirements-build.in
-
-# Manually add any build system dependencies, like calver
 
 pip-compile requirements-build.in --allow-unsafe --generate-hashes > requirements-build.txt
 ```

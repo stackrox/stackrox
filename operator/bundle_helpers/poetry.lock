@@ -30,6 +30,17 @@ tests = ["cloudpickle", "hypothesis", "mypy (>=1.11.1)", "pympler", "pytest (>=4
 tests-mypy = ["mypy (>=1.11.1)", "pytest-mypy-plugins"]
 
 [[package]]
+name = "calver"
+version = "2022.6.26"
+description = "Setuptools extension for CalVer package versions"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "calver-2022.6.26-py3-none-any.whl", hash = "sha256:a1d7fcdd67797afc52ee36ffb8c8adf6643173864306547bfd1380cbce6310a0"},
+    {file = "calver-2022.6.26.tar.gz", hash = "sha256:e05493a3b17517ef1748fbe610da11f10485faa7c416b9d33fd4a52d74894f8b"},
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -188,4 +199,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "1eb87d0b714bdb67d4f50303e241dcdf7d6aac6a7af9f356a2cbcf2976152295"
+content-hash = "5f9360afee4fd91163a045866add3d204bcaa6dbe8984eb7095330090513b6d7"
