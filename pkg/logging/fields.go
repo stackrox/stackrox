@@ -10,6 +10,7 @@ const (
 	clusterIDField    = "cluster_id"
 	imageIDField      = "image_id"
 	nodeIDField       = "node_id"
+	backupField       = "backup"
 	notifierField     = "notifier"
 	errCodeField      = "err_code"
 	alertIDField      = "alert_id"
@@ -24,6 +25,7 @@ var (
 		imageIDField:      administrationResources.Image,
 		clusterIDField:    administrationResources.Cluster,
 		nodeIDField:       administrationResources.Node,
+		backupField:       administrationResources.Backup,
 		notifierField:     administrationResources.Notifier,
 		apiTokenIDField:   administrationResources.APIToken,
 		apiTokenNameField: administrationResources.APIToken,
@@ -53,6 +55,11 @@ func ImageID(id string) zap.Field {
 // NodeID provides the node ID as a structured log field.
 func NodeID(id string) zap.Field {
 	return zap.String(nodeIDField, id)
+}
+
+// BackupName provides the backup name as a structured log field.
+func BackupName(name string) zap.Field {
+	return zap.String(backupField, name)
 }
 
 // NotifierName provides the notifier name as a structured log field.
@@ -132,6 +139,7 @@ func getResourceTypeField(field zap.Field) (string, bool) {
 
 func isIDField(fieldName string) bool {
 	return fieldName != imageField &&
+		fieldName != backupField &&
 		fieldName != notifierField &&
 		fieldName != apiTokenNameField
 }
