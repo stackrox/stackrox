@@ -22,6 +22,7 @@ import (
 
 var log = logging.LoggerForModule()
 
+// RunChecks gathers the required data and executes all registered compliance checks.
 func RunChecks(client sensor.ComplianceService_CommunicateClient,
 	scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,
 	run *sensor.MsgToCompliance_TriggerRun,
