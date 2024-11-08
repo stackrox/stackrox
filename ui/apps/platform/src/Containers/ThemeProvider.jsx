@@ -87,3 +87,6 @@ ThemeProvider.propTypes = {
 
 export { ThemeProvider, useTheme };
 */
+
+export const ThemeContext = {};
+export {};
