@@ -20,7 +20,7 @@ import { configureMonacoYaml } from 'monaco-yaml';
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
 import configureStore from 'store/configureStore';
-import installRaven from 'installRaven';
+import installRaven from './installRaven';
 import { ThunkAction, ThunkDispatch } from 'redux-thunk';
 import { fetchFeatureFlagsThunk } from './reducers/featureFlags';
 import { fetchPublicConfigThunk } from './reducers/publicConfig';

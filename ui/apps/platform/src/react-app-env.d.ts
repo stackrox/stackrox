@@ -1,4 +1,5 @@
-/// <reference types="react-scripts" />
+/// <reference types="vite/client" />
+/// <reference types="vite-plugin-svgr/client" />
 
 // this overrides the analytics definition thats found in the @types/segment-analytics package to include undefined
 // var appears to be required to augment the type because of how its defined in the package
