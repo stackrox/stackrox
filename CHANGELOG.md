@@ -7,6 +7,11 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.5.5]
+
+### Technical Changes
+- Fixed a bug with the Scanner V4 image build where zero byte files were incorrectly embedded into the image
+  - This negatively affected scan results for any image scanned within 24 hours of indexer startup.
 
 ## [4.5.0]
 
@@ -103,6 +108,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
     - `/v1/cve/requests` APIs (deprecated in 4.3.0) for managing vulnerability exceptions are now replaced with new `/v2/vulnerability-exceptions/` APIs.
 - ROX-22251: The ability to snooze Node and Platform CVEs is no longer enabled by default and can be enabled by setting `ROX_VULN_MGMT_LEGACY_SNOOZE` to `true` on Central.
 - ROX-24471: Scanner V4 Matcher memory requirements were updates to align with the current consumption (see ROX-24355).
+
 
 ## [4.4.0]
 
