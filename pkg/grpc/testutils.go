@@ -5,6 +5,7 @@ import (
 	"context"
 	"net"
 	"os"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"testing"
@@ -147,4 +148,14 @@ func testPrintSocketInfoFromProcFile(t *testing.T, fName string, ports ...uint64
 		t.Logf("Port %d is in %q state", port, getStateString(code))
 	}
 	return err
+}
+
+func testPrintStackTraceInfo(_ *testing.T) error {
+	errList := errorhelpers.NewErrorList("print stacktrace info")
+	for _, p := range pprof.Profiles() {
+		if err := p.WriteTo(os.Stderr, 2); err != nil {
+			errList.AddError(err)
+		}
+	}
+	return errList.ToError()
 }

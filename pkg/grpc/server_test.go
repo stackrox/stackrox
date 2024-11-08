@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	testDefaultPort = 8484
+	testDefaultPort = 8080
 )
 
 type APIServerSuite struct {
@@ -217,9 +217,19 @@ func setUpPrintSocketInfoFunction(t *testing.T, ports ...uint64) {
 		if r := recover(); r != nil {
 			if err, ok := r.(string); ok {
 				if strings.Contains(err, syscall.EADDRINUSE.Error()) {
+					t.Log("-----------------------------------------------")
+					t.Log(" STACK TRACE INFO")
+					t.Log("-----------------------------------------------")
+					if printErr := testPrintStackTraceInfo(t); printErr != nil {
+						t.Log(printErr)
+					}
+					t.Log("-----------------------------------------------")
+					t.Log(" SOCKET INFO")
+					t.Log("-----------------------------------------------")
 					if printErr := testPrintSocketInfo(t, ports...); printErr != nil {
 						t.Log(printErr)
 					}
+					t.Log("-----------------------------------------------")
 					panic(err)
 				}
 			}
