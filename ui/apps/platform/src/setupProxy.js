@@ -1,12 +1,12 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 function proxyWithTarget(target) {
-    return createProxyMiddleware({
+    return {
         target,
         changeOrigin: true,
         secure: false,
         xfwd: true,
-    });
+    };
 }
 
 /**
@@ -21,6 +21,7 @@ function parseCustomProxies() {
     if (!proxyString) {
         return [];
     }
+
     const rawValues = proxyString.split(',');
     if (rawValues.length % 2 !== 0) {
         // eslint-disable-next-line no-console
@@ -40,13 +41,18 @@ function parseCustomProxies() {
     return proxies;
 }
 
-module.exports = function main(app) {
-    parseCustomProxies().forEach(([path, target]) => app.use(path, proxyWithTarget(target)));
+export function viteProxy() {
+    const customProxies = Object.fromEntries(
+        parseCustomProxies().map(([path, target]) => [path, proxyWithTarget(target)])
+    );
 
     const proxy = proxyWithTarget(process.env.UI_START_TARGET || 'https://localhost:8000');
-    app.use('/v1', proxy);
-    app.use('/v2', proxy);
-    app.use('/api', proxy);
-    app.use('/docs', proxy);
-    app.use('/sso', proxy);
-};
+
+    return {
+        '/v1': proxy,
+        '/v2': proxy,
+        '/api': proxy,
+        '/docs': proxy,
+        '/sso': proxy,
+    };
+}

@@ -3,6 +3,13 @@
 @import 'css/light.theme.css';
 @import 'css/dark.theme.css';
 
+/* React Table overrides. Delete this file once all react Table properties are ported over properly to avoid the use of !important*/
+@import 'react-table-6/react-table.css';
+
+/* React-vis */
+@import 'react-vis/dist/style.css';
+
+
 .theme-dark .react-select__option:hover,
 .theme-dark .react-select__option:focus,
 .theme-dark .react-select__option:active {
@@ -365,9 +372,6 @@ h6 {
 .hide-dropdown > div:last-child {
     @apply hidden;
 }
-
-/* React Table overrides. Delete this file once all react Table properties are ported over properly to avoid the use of !important*/
-@import '~react-table-6/react-table.css';
 
 .ReactTable .rt-table {
     overflow: overlay !important;
@@ -818,9 +822,6 @@ h6 {
 .toggle-switch-checkbox:disabled + .toggle-switch-label:before {
     @apply bg-base-200;
 }
-
-/* React-vis */
-@import '~react-vis/dist/style.css';
 
 /*
  * Override overflow-y: auto which causes axe DevTools to report:
