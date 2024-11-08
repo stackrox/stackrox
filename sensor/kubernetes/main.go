@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	"github.com/stackrox/rox/sensor/kubernetes/crs"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"golang.org/x/sys/unix"
@@ -37,6 +38,16 @@ func main() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 
 	features.LogFeatureFlags()
+
+	if len(os.Args) > 1 && os.Args[1] == "ensure-cluster-registered" {
+		err := crs.EnsureClusterRegistered()
+		if err != nil {
+			log.Errorf("Ensuring cluster registration failed: %v", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
 	// Start the prometheus metrics server
 	metrics.NewServer(metrics.SensorSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()
 	metrics.GatherThrottleMetricsForever(metrics.SensorSubsystem.String())
