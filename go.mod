@@ -1,6 +1,7 @@
 module github.com/stackrox/rox
 
 go 1.22.5
+toolchain go1.22.9
 
 require (
 	cloud.google.com/go/artifactregistry v1.14.13
@@ -99,7 +100,7 @@ require (
 	github.com/owenrumney/go-sarif/v2 v2.3.2
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/pkg/errors v0.9.1
-	github.com/planetscale/vtprotobuf v0.6.0
+	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/client_model v0.6.1
@@ -136,7 +137,7 @@ require (
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/mod v0.21.0
 	golang.org/x/net v0.29.0
-	golang.org/x/oauth2 v0.22.0
+	golang.org/x/oauth2 v0.23.0
 	golang.org/x/sync v0.8.0
 	golang.org/x/sys v0.25.0
 	golang.org/x/text v0.18.0
@@ -145,7 +146,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.3.13
 	google.golang.org/api v0.194.0
 	google.golang.org/genproto v0.0.0-20240814211410-ddb44dafa142
-	google.golang.org/grpc v1.65.0
+	google.golang.org/grpc v1.68.0
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
@@ -470,8 +471,8 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/term v0.24.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240814211410-ddb44dafa142 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
