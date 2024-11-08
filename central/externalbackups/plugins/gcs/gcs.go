@@ -15,6 +15,8 @@ import (
 	"github.com/stackrox/rox/central/externalbackups/plugins"
 	"github.com/stackrox/rox/central/externalbackups/plugins/types"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	gcpUtils "github.com/stackrox/rox/pkg/cloudproviders/gcp/utils"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -30,7 +32,7 @@ const (
 	timeFormat   = "2006-01-02-15-04-05"
 )
 
-var log = logging.LoggerForModule()
+var log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
 type gcs struct {
 	integration *storage.ExternalBackup
@@ -111,7 +113,7 @@ func (s *gcs) delete(client *googleStorage.Client, objectPath string) error {
 	return nil
 }
 
-func (s *gcs) pruneBackupsIfNecessary(client *googleStorage.Client) {
+func (s *gcs) pruneBackupsIfNecessary(client *googleStorage.Client) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	bucketHandle := client.Bucket(s.bucket)
@@ -133,26 +135,28 @@ func (s *gcs) pruneBackupsIfNecessary(client *googleStorage.Client) {
 		currentBackups = append(currentBackups, attrs)
 	}
 	if err != iterator.Done {
-		log.Errorf("fetching all objects from GCS bucket: %v", err)
-		return
+		return s.createError("fetching all objects from GCS bucket", err)
 	}
 
 	if len(currentBackups) <= s.backupsToKeep {
-		return
+		return nil
 	}
 	// Sort with earliest created first
 	sort.Slice(currentBackups, func(i, j int) bool {
 		return currentBackups[i].Created.Before(currentBackups[j].Created)
 	})
 
+	errorList := errorhelpers.NewErrorList("remove objects in GCS store")
 	numBackupsToRemove := len(currentBackups) - s.backupsToKeep
 	for _, attrToRemove := range currentBackups[:numBackupsToRemove] {
 		log.Infof("Pruning old backup %s", attrToRemove.Name)
 		if err := s.delete(client, attrToRemove.Name); err != nil {
-			log.Errorf("deleting element %s: %v", attrToRemove.Name, err)
-			return
+			errorList.AddError(s.createError(
+				fmt.Sprintf("deleting object %q from bucket %q", attrToRemove.Name, s.bucket), err),
+			)
 		}
 	}
+	return errorList.ToError()
 }
 
 func (s *gcs) prefixKey(key string) string {
@@ -175,33 +179,39 @@ func (s *gcs) Backup(reader io.ReadCloser) error {
 
 	log.Infof("Starting GCS Backup for file %v", formattedKey)
 	if err := s.send(s.client, backupMaxTimeout, formattedKey, reader); err != nil {
-		return s.createError(fmt.Sprintf("error creating backup in bucket %q with key %q", s.bucket, formattedKey), err)
+		return s.createError(fmt.Sprintf("creating backup in bucket %q with key %q", s.bucket, formattedKey), err)
 	}
 	log.Info("Successfully backed up to GCS")
-	go s.pruneBackupsIfNecessary(s.client)
-	return nil
+	return s.pruneBackupsIfNecessary(s.client)
 }
 
 func (s *gcs) Test() error {
 	formattedKey := s.prefixKey(fmt.Sprintf("%s-test-%s", backupPrefix, formattedTime()))
 	reader := strings.NewReader("This is a test of the StackRox integration with this bucket")
 	if err := s.send(s.client, timeout, formattedKey, reader); err != nil {
-		return s.createError(fmt.Sprintf("error creating test object %q in bucket %q", formattedKey, s.bucket), err)
+		return s.createError(fmt.Sprintf("creating test object %q in bucket %q", formattedKey, s.bucket), err)
 	}
 
 	if err := s.delete(s.client, formattedKey); err != nil {
-		return s.createError("deleting test object", err)
+		return s.createError(fmt.Sprintf("deleting test object %q from bucket %q",
+			formattedKey, s.bucket), err)
 	}
 	return nil
 }
 
 func (s *gcs) createError(msg string, err error) error {
 	if gErr, _ := err.(*googleapi.Error); gErr != nil {
-		msg = fmt.Sprintf("%s (code: %d)", msg, gErr.Code)
+		msg = fmt.Sprintf("GCS backup: %s (code: %d)", msg, gErr.Code)
 	} else {
-		msg = fmt.Sprintf("%s: %v", msg, err)
+		msg = fmt.Sprintf("GCS backup: %s: %v", msg, err)
 	}
-	log.Errorf("GCS backup error: %v", err)
+	log.Errorw(msg,
+		logging.BackupName(s.integration.GetName()),
+		logging.Err(err),
+		logging.ErrCode(codes.GCSGeneric),
+		logging.String("bucket", s.bucket),
+		logging.String("object-prefix", s.integration.GetGcs().GetObjectPrefix()),
+	)
 	return errors.New(msg)
 }
 

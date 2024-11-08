@@ -13,6 +13,7 @@ var (
 	moduleToDomain = map[*regexp.Regexp]string{
 		regexp.MustCompile(`^reprocessor|image/service`):         imageScanningDomain,
 		regexp.MustCompile(`^pkg/notifiers(/|$)|notifiers(/|$)`): integrationDomain,
+		regexp.MustCompile(`^externalbackups(/|$)`):              integrationDomain,
 		regexp.MustCompile(`^apitoken/expiration`):               authenticationDomain,
 	}
 )
