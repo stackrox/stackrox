@@ -7,6 +7,11 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.5.5]
+
+### Technical Changes
+- Fixed a bug with the Scanner V4 image build where zero byte files were incorrectly embedded into the image
+  - This negatively affected scan results for any image scanned within 24 hours of indexer startup.
 
 ## [4.5.0]
 

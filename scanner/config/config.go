@@ -33,8 +33,8 @@ var (
 				PasswordFile: "",
 			},
 			GetLayerTimeout:    Duration(time.Minute),
-			RepositoryToCPEURL: "https://access.redhat.com/security/data/metrics/repository-to-cpe.json",
-			NameToReposURL:     "https://access.redhat.com/security/data/metrics/container-name-repos-map.json",
+			RepositoryToCPEURL: "https://security.access.redhat.com/data/metrics/repository-to-cpe.json",
+			NameToReposURL:     "https://security.access.redhat.com/data/metrics/container-name-repos-map.json",
 		},
 		Matcher: MatcherConfig{
 			Enable: true,

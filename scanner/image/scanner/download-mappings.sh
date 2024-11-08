@@ -13,8 +13,8 @@ shift
 mkdir -p "$output_dir"
 
 urls=(
-    "https://access.redhat.com/security/data/metrics/repository-to-cpe.json"
-    "https://access.redhat.com/security/data/metrics/container-name-repos-map.json"
+    "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
+    "https://security.access.redhat.com/data/metrics/container-name-repos-map.json"
 )
 
 for url in "${urls[@]}"; do
