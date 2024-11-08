@@ -1,6 +1,6 @@
 module github.com/stackrox/rox
 
-go 1.22.7
+go 1.22.5
 
 require (
 	cloud.google.com/go/artifactregistry v1.14.13
@@ -145,7 +145,7 @@ require (
 	golang.stackrox.io/grpc-http1 v0.3.13
 	google.golang.org/api v0.194.0
 	google.golang.org/genproto v0.0.0-20240814211410-ddb44dafa142
-	google.golang.org/grpc v1.68.0
+	google.golang.org/grpc v1.67.1
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	google.golang.org/protobuf v1.35.1
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
