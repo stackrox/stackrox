@@ -1,8 +1,3 @@
-## Issues
-
-- pip-compile did not like our approach with handling 3.6 and 3.9
-- calver is a build dependency of attrs and not detected by pip_find_builddeps.py
-
 # Bundle Helpers
 
 For hermetic builds with Konflux, we need to provide the full list of resolved dependencies in `requirements.txt`.
@@ -12,13 +7,12 @@ These will be prefetched with Cachi2 and made available to the container image b
 
 We use Poetry to manage Python dependencies.
 Install it from [here](https://python-poetry.org/docs/#installation).
-You also need Python==3.6 installed as a prerequisite to keep GHA builds working.
-This is going to be solved by [ROX-26860](https://issues.redhat.com/browse/ROX-26860).
+You also need Python>=3.9 installed.
 
 In this directory, run
 
-* to add a new dependency: `poetry add PyYAML==6.0`
-* to update existing dependencies: `poetry update`
+- to add a new dependency: `poetry add PyYAML==6.0`
+- to update existing dependencies: `poetry update`
 
 For as long as we build downstream images with CPaaS, you should not add or use dependencies that aren't available OOTB in CPaaS in `render_templates` context.
 

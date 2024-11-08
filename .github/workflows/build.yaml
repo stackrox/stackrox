@@ -565,6 +565,12 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      # ROX-26860: prebake newer Python version into the runner image.
+      - name: Install newer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
 
