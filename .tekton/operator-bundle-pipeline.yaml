@@ -110,7 +110,7 @@ spec:
     description: Repository where the (unreleased) operator image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/stackrox-operator"
-  - name: operator-image-downstream-repo
+  - name: operator-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the operator image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-rhel8-operator"
@@ -119,7 +119,7 @@ spec:
     description: Repository where the (unreleased) main image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/main"
-  - name: main-image-downstream-repo
+  - name: main-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the main image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8"
@@ -128,7 +128,7 @@ spec:
     description: Repository where the (unreleased) Scanner V2 image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner"
-  - name: scanner-image-downstream-repo
+  - name: scanner-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8"
@@ -137,7 +137,7 @@ spec:
     description: Repository where the (unreleased) Scanner V2 DB image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner-db"
-  - name: scanner-db-image-downstream-repo
+  - name: scanner-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 DB image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8"
@@ -146,7 +146,7 @@ spec:
     description: Repository where the (unreleased) Scanner V2 slim image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner-slim"
-  - name: scanner-slim-image-downstream-repo
+  - name: scanner-slim-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 slim image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel8"
@@ -155,7 +155,7 @@ spec:
     description: Repository where the (unreleased) Scanner V2 DB slim image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner-db-slim"
-  - name: scanner-db-slim-image-downstream-repo
+  - name: scanner-db-slim-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V2 DB slim image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel8"
@@ -164,7 +164,7 @@ spec:
     description: Repository where the (unreleased) Scanner V4 image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner-v4"
-  - name: scanner-v4-image-downstream-repo
+  - name: scanner-v4-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V4 image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel8"
@@ -173,7 +173,7 @@ spec:
     description: Repository where the (unreleased) Scanner V4 DB image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner-v4-db"
-  - name: scanner-v4-db-image-downstream-repo
+  - name: scanner-v4-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Scanner V4 DB image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel8"
@@ -182,7 +182,7 @@ spec:
     description: Repository where the (unreleased) collector slim image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/collector-slim"
-  - name: collector-slim-image-downstream-repo
+  - name: collector-slim-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the collector slim image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8"
@@ -191,7 +191,7 @@ spec:
     description: Repository where the (unreleased) collector full image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/collector"
-  - name: collector-full-image-downstream-repo
+  - name: collector-full-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the collector full image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8"
@@ -200,7 +200,7 @@ spec:
     description: Repository where the (unreleased) roxctl image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/roxctl"
-  - name: roxctl-image-downstream-repo
+  - name: roxctl-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the roxctl image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel8"
@@ -209,7 +209,7 @@ spec:
     description: Repository where the (unreleased) Central DB image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/central-db"
-  - name: central-db-image-downstream-repo
+  - name: central-db-image-catalog-repo
     description: Repository within the Red Hat Container Catalog where the Central DB image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8"
@@ -461,18 +461,18 @@ spec:
     - name: BUILD_ARGS
       value:
       - OPERATOR_IMAGE_TAG=$(tasks.determine-operator-image-tag.results.IMAGE_TAG)
-      - OPERATOR_IMAGE_REF=$(params.operator-image-downstream-repo)@$(tasks.wait-for-operator-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_MAIN=$(params.main-image-downstream-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER=$(params.scanner-image-downstream-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_DB=$(params.scanner-db-image-downstream-repo)@$(tasks.wait-for-scanner-db-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_SLIM=$(params.scanner-slim-image-downstream-repo)@$(tasks.wait-for-scanner-slim-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_DB_SLIM=$(params.scanner-db-slim-image-downstream-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_V4=$(params.scanner-v4-image-downstream-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_SCANNER_V4_DB=$(params.scanner-v4-db-image-downstream-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_COLLECTOR_SLIM=$(params.collector-slim-image-downstream-repo)@$(tasks.wait-for-collector-slim-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_COLLECTOR_FULL=$(params.collector-full-image-downstream-repo)@$(tasks.wait-for-collector-full-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_ROXCTL=$(params.roxctl-image-downstream-repo)@$(tasks.wait-for-roxctl-image.results.IMAGE_DIGEST)
-      - RELATED_IMAGE_CENTRAL_DB=$(params.central-db-image-downstream-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)
+      - OPERATOR_IMAGE_REF=$(params.operator-image-catalog-repo)@$(tasks.wait-for-operator-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_MAIN=$(params.main-image-catalog-repo)@$(tasks.wait-for-main-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER=$(params.scanner-image-catalog-repo)@$(tasks.wait-for-scanner-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER_DB=$(params.scanner-db-image-catalog-repo)@$(tasks.wait-for-scanner-db-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER_SLIM=$(params.scanner-slim-image-catalog-repo)@$(tasks.wait-for-scanner-slim-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER_DB_SLIM=$(params.scanner-db-slim-image-catalog-repo)@$(tasks.wait-for-scanner-db-slim-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER_V4=$(params.scanner-v4-image-catalog-repo)@$(tasks.wait-for-scanner-v4-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_SCANNER_V4_DB=$(params.scanner-v4-db-image-catalog-repo)@$(tasks.wait-for-scanner-v4-db-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_COLLECTOR_SLIM=$(params.collector-slim-image-catalog-repo)@$(tasks.wait-for-collector-slim-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_COLLECTOR_FULL=$(params.collector-full-image-catalog-repo)@$(tasks.wait-for-collector-full-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_ROXCTL=$(params.roxctl-image-catalog-repo)@$(tasks.wait-for-roxctl-image.results.IMAGE_DIGEST)
+      - RELATED_IMAGE_CENTRAL_DB=$(params.central-db-image-catalog-repo)@$(tasks.wait-for-central-db-image.results.IMAGE_DIGEST)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     - name: CACHI2_ARTIFACT
