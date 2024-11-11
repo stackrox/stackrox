@@ -1,4 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# CAUTION: If you change this file, please be sure to update the corresponding midstream script
+#
+# Downloads and performs basic JSON validation for the name-to-repository and
+# repository-to-cpu mapping files to be embedded in the Scanner v4 container.
 
 set -euo pipefail
 
