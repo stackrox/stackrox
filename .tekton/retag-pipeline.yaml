@@ -93,10 +93,10 @@ spec:
   # causes problems.
   - description: ""
     name: CHAINS-GIT_URL
-    value: $(tasks.clone-repository.results.url)
+    value: "git+https://github.com/stackrox/collector.git"
   - description: ""
     name: CHAINS-GIT_COMMIT
-    value: $(tasks.clone-repository.results.commit)
+    value: "f1748e6301357bf28d648f8a4ba253b95e06cd90"
 
   workspaces:
   - name: git-auth
