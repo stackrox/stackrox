@@ -25,7 +25,7 @@ urls=(
 for url in "${urls[@]}"; do
     filename=$(basename "$url")
     echo "Downloading ${url} > ${output_dir}/$filename"
-    curl --location --silent --fail --show-error --retry 3 \
+    curl --location --silent --fail --show-error --retry 3 --max-time 60 \
         --output "${output_dir}/$filename" "$url"
     if [[ ! (-s "${output_dir}/$filename") ]]; then
         echo "${output_dir}/$filename is empty"
