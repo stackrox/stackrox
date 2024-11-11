@@ -454,9 +454,8 @@ spec:
       value: $(tasks.build-image-index.results.IMAGE_URL)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    # TODO(ROX-26900): uncomment CACHI2_ARTIFACT after KFLUXBUGS-1508 is resolved.
-    # - name: CACHI2_ARTIFACT
-    #   value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     taskRef:
       params:
       - name: name
