@@ -8,7 +8,12 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -423,6 +428,14 @@ func (e *Store) LookupByContainerID(containerID string) (ContainerMetadata, bool
 }
 
 func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResult) {
+	log.Info("")
+	log.Info("")
+	log.Info("")
+	log.Info("lookupNoLock")
+	log.Infof("endpoint= %+v", endpoint)
+	log.Info("")
+	log.Infof("e.endpointMap= %+v",  e.endpointMap)
+	log.Info("")
 	for deploymentID, targetInfoSet := range e.endpointMap[endpoint] {
 		result := LookupResult{
 			Entity:         networkgraph.EntityForDeployment(deploymentID),
@@ -438,9 +451,20 @@ func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResu
 	}
 
 	if len(results) > 0 {
+		log.Infof("Returning results= %+v", results)
+		log.Info("")
+		log.Info("")
+		log.Info("")
 		return
 	}
 
+	log.Info("")
+	log.Infof("Address= %+v", endpoint.IPAndPort.Address)
+	log.Info("")
+	log.Infof("e.ipMap= %+v", e.ipMap)
+	log.Info("")
+	log.Info("")
+	log.Info("")
 	for deploymentID := range e.ipMap[endpoint.IPAndPort.Address] {
 		result := LookupResult{
 			Entity:         networkgraph.EntityForDeployment(deploymentID),
@@ -448,6 +472,11 @@ func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResu
 		}
 		results = append(results, result)
 	}
+
+	log.Infof("Returning based on Address %+v", results)
+	log.Info("")
+	log.Info("")
+	log.Info("")
 
 	return
 }
