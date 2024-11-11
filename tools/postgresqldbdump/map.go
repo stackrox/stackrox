@@ -109,21 +109,14 @@ var tableToProtoInterface = map[string]protocompat.Message{
 	"deployments_ports":                                (*storage.PortConfig)(nil),
 	"deployments_ports_exposure_infos":                 (*storage.PortConfig_ExposureInfo)(nil),
 	"images_layers":                                    (*storage.ImageLayer)(nil),
-	// "network_flows_v2_5c00f86e_e789_47ac_b001_4d1190c77a8e": (*storage.Blob)(nil),
-	"nodes_taints":             (*storage.Taint)(nil),
-	"pods_live_instances":      (*storage.Pod_ContainerInstanceList)(nil),
-	"role_bindings_subjects":   (*storage.K8SRoleBinding)(nil),
-	"secrets_files":            (*storage.SecretDataFile)(nil),
-	"secrets_files_registries": (*storage.ImagePullSecret_Registry)(nil),
+	"nodes_taints":                                     (*storage.Taint)(nil),
+	"pods_live_instances":                              (*storage.Pod_ContainerInstanceList)(nil),
+	"role_bindings_subjects":                           (*storage.K8SRoleBinding)(nil),
+	"secrets_files":                                    (*storage.SecretDataFile)(nil),
+	"secrets_files_registries":                         (*storage.ImagePullSecret_Registry)(nil),
 }
 
-var knownUnhandledBuckets = set.NewStringSet(
-	"compliance-run-results", // multiple types
-	"dackbox_graph",
-	"dackbox_dirty",
-	"dackbox_reindex",
-	"node_to_cve",
-)
+var knownUnhandledBuckets = set.NewStringSet()
 
 func getProtoInterface(tableName string) (protocompat.Message, bool) {
 	msg, ok := tableToProtoInterface[tableName]
