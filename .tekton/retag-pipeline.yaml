@@ -100,10 +100,10 @@ spec:
   # causes problems.
   - description: ""
     name: CHAINS-GIT_URL
-    value: $(params.our-chains-git-url)
+    value: $(tasks.clone-repository.results.url)
   - description: ""
     name: CHAINS-GIT_COMMIT
-    value: $(params.our-chains-git-commit)
+    value: ""
 
   workspaces:
   - name: git-auth
