@@ -111,7 +111,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/stackrox-operator"
   - name: operator-image-downstream-repo
-    description: Downstream repository for the StackRox Operator.
+    description: Repository within the Red Hat Container Catalog where the operator image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-rhel8-operator"
 
@@ -120,7 +120,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/main"
   - name: main-image-downstream-repo
-    description: Downstream repository for the main image.
+    description: Repository within the Red Hat Container Catalog where the main image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8"
 
@@ -129,7 +129,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/scanner"
   - name: scanner-image-downstream-repo
-    description: Downstream repository for the Scanner V2 image.
+    description: Repository within the Red Hat Container Catalog where the Scanner V2 image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8"
 
@@ -138,7 +138,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/scanner-db"
   - name: scanner-db-image-downstream-repo
-    description: Downstream repository for the Scanner V2 DB image.
+    description: Repository within the Red Hat Container Catalog where the Scanner V2 DB image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8"
 
@@ -147,7 +147,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/scanner-slim"
   - name: scanner-slim-image-downstream-repo
-    description: Downstream repository for the Scanner V2 slim image.
+    description: Repository within the Red Hat Container Catalog where the Scanner V2 slim image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel8"
 
@@ -156,7 +156,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/scanner-db-slim"
   - name: scanner-db-slim-image-downstream-repo
-    description: Downstream repository for the Scanner V2 DB slim image.
+    description: Repository within the Red Hat Container Catalog where the Scanner V2 DB slim image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel8"
 
@@ -165,7 +165,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/scanner-v4"
   - name: scanner-v4-image-downstream-repo
-    description: Downstream repository for the Scanner V4 image.
+    description: Repository within the Red Hat Container Catalog where the Scanner V4 image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel8"
 
@@ -174,7 +174,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/scanner-v4-db"
   - name: scanner-v4-db-image-downstream-repo
-    description: Downstream repository for the Scanner V4 DB image.
+    description: Repository within the Red Hat Container Catalog where the Scanner V4 DB image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel8"
 
@@ -183,7 +183,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/collector-slim"
   - name: collector-slim-image-downstream-repo
-    description: Downstream repository for the collector slim image.
+    description: Repository within the Red Hat Container Catalog where the collector slim image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8"
 
@@ -192,7 +192,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/collector"
   - name: collector-full-image-downstream-repo
-    description: Downstream repository for the collector full image.
+    description: Repository within the Red Hat Container Catalog where the collector full image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8"
 
@@ -201,7 +201,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/roxctl"
   - name: roxctl-image-downstream-repo
-    description: Downstream repository for the roxctl image.
+    description: Repository within the Red Hat Container Catalog where the roxctl image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel8"
 
@@ -210,7 +210,7 @@ spec:
     type: string
     default: "quay.io/rhacs-eng/central-db"
   - name: central-db-image-downstream-repo
-    description: Downstream repository for the Central DB image.
+    description: Repository within the Red Hat Container Catalog where the Central DB image is pushed to during the release.
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8"
 
