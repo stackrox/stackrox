@@ -79,7 +79,7 @@ COPY THIRD_PARTY_NOTICES /THIRD_PARTY_NOTICES/
 COPY ui /ui
 
 COPY bin/central            /stackrox/central
-COPY migrations             /stackrox/
+COPY migrations             /stackrox/migrations
 COPY bin/compliance         /stackrox/bin/compliance
 COPY bin/kubernetes-sensor  /stackrox/bin/kubernetes-sensor
 COPY bin/sensor-upgrader    /stackrox/bin/sensor-upgrader
