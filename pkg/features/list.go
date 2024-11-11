@@ -49,9 +49,6 @@ var (
 	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
 	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", enabled)
 
-	// ComplianceHierachyControlData enables support for compliance hierarchy control data.
-	ComplianceHierachyControlData = registerFeature("Enable support to display and import the compliance hierarchy control data", "ROX_COMPLIANCE_HIERARCHY_CONTROL_DATA", enabled)
-
 	// VulnMgmtLegacySnooze enables APIs and UI for the legacy VM 1.0 "snooze CVE" functionality in the new VM 2.0 sections
 	VulnMgmtLegacySnooze = registerFeature("Enables the ability to snooze Node and Platform CVEs in VM 2.0", "ROX_VULN_MGMT_LEGACY_SNOOZE")
 
@@ -108,7 +105,7 @@ var (
 	ClustersPageMigrationUI = registerFeature("Display clusters page patternfly redesign", "ROX_CLUSTERS_PAGE_MIGRATION_UI")
 
 	// ClusterRegistrationSecrets enables support for Cluster Registration Secrets (CRS), the next-gen init-bundles.
-	ClusterRegistrationSecrets = registerFeature("Enable support for Cluster Registration Secrets (CRS)", "ROX_CLUSTER_REGISTRATION_SECRETS")
+	ClusterRegistrationSecrets = registerFeature("Enable support for Cluster Registration Secrets (CRS)", "ROX_CLUSTER_REGISTRATION_SECRETS", enabled)
 
 	// SensorPullSecretsByName when set to enabled will cause Sensor to capture pull secrets by secret name and registry host instead of just
 	// registry host.

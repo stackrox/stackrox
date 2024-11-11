@@ -137,12 +137,42 @@ teardown() {
     assert_line --index 5 'doc: 2'
 }
 
+@test "roxctl-release netpol generate generates network policies with custom dns named port" {
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    echo "Writing network policies to ${ofile}" >&3
+    dns_port="dns"
+    run roxctl-release netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport ${dns_port}
+    assert_success
+
+    echo "$output" > "$ofile"
+    assert_file_exist "$ofile"
+    yaml_valid "$ofile"
+
+    # Ensure that dns ports are properly set
+    run yq e '.spec.egress[1].ports[0].port | ({"match": ., "doc": di})' "${ofile}"
+    assert_line --index 0 'match: null'
+    assert_line --index 1 'doc: 0'
+    assert_line --index 2 'match: '${dns_port}
+    assert_line --index 3 'doc: 1'
+    assert_line --index 4 'match: null'
+    assert_line --index 5 'doc: 2'
+}
+
 @test "roxctl-release netpol generate fails with dns port set to 0" {
     assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
     assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
     run roxctl-release netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport 0
     assert_failure
     assert_output --regexp 'ERROR:.*illegal port number'
+}
+
+@test "roxctl-release netpol generate fails with dns port set to empty string" {
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/frontend.yaml"
+    assert_file_exist "${test_data}/np-guard/scenario-minimal-service/backend.yaml"
+    run roxctl-release netpol generate "${test_data}/np-guard/scenario-minimal-service" --dnsport ""
+    assert_failure
+    assert_output --regexp 'ERROR:.*illegal port name'
 }
 
 @test "roxctl-release netpol generate produces no output when all yamls are templated" {

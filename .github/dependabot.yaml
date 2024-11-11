@@ -43,7 +43,7 @@ updates:
     directory: '/'
     schedule:
       interval: 'daily'
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 9
     labels:
       - "ci-all-qa-tests"
       - "dependencies"

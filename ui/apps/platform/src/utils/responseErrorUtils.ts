@@ -1,6 +1,6 @@
 import { AxiosError } from 'axios';
 
-function isAxiosError(error: Error): error is AxiosError {
+function isAxiosError(error: Error): error is AxiosError<{ message?: string }> {
     return (
         Object.prototype.hasOwnProperty.call(error, 'response') ||
         Object.prototype.hasOwnProperty.call(error, 'request')

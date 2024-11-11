@@ -111,7 +111,7 @@ func NewTLSConfigurerFromEnv() verifier.TLSConfigurer {
 // watchForChanges watches for changes of the server TLS certificate files and the client CA config map.
 func (t *tlsConfigurerImpl) watchForChanges() {
 	// Watch for changes of server TLS certificate.
-	certwatch.WatchCertDir(t.certDir, t.getCertificateFromDirectory, t.updateCertificate)
+	certwatch.WatchCertDir(t.certDir, t.getCertificateFromDirectory, t.updateCertificate, certwatch.WithVerify(false))
 
 	// Watch for changes of client CA.
 	t.k8sWatcher.Watch(context.Background(), t.clientCANamespace, t.clientCAConfigMap)

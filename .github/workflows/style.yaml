@@ -153,6 +153,10 @@ jobs:
     - name: Check cache golangci-lint
       run: make golangci-lint-cache-status
 
+    - name: Check Go version is in sync in .golangci.yml and go.mod
+      run: |
+        [ "$(awk '/^go /{print $2}' go.mod | cut -d. -f 1-2)" = "$(yq e .run.go .golangci.yml)" ]
+
     - name: make golangci-lint
       run: make golangci-lint
 

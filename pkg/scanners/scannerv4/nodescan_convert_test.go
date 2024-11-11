@@ -24,23 +24,71 @@ func (s *indexReportConvertSuite) TestToNodeInventory() {
 		Version: "8.7p1-38.el9",
 		Vulns: []*storage.EmbeddedVulnerability{{
 			Cve:               "RHSA-2024:4616",
-			Cvss:              7.5,
+			Cvss:              8.2,
 			Summary:           "Sample Description",
-			Link:              "https://localhost/7401229",
-			ScoreVersion:      1,
+			ScoreVersion:      storage.EmbeddedVulnerability_V3,
 			SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9"},
 			VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 			Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+			Link:              "https://access.redhat.com/errata/RHSA-2024:4616",
 			CvssV3: &storage.CVSSV3{
-				Vector:              "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-				ExploitabilityScore: 3.9,
-				ImpactScore:         3.6,
-				AttackVector:        2,
-				Availability:        2,
-				Score:               7.5,
+				Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+				ExploitabilityScore: 2.8,
+				ImpactScore:         4.7,
+				AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+				AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+				PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+				UserInteraction:     storage.CVSSV3_UI_NONE,
+				Scope:               storage.CVSSV3_CHANGED,
+				Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+				Integrity:           storage.CVSSV3_IMPACT_NONE,
+				Availability:        storage.CVSSV3_IMPACT_HIGH,
+				Score:               8.2,
 				Severity:            storage.CVSSV3_HIGH,
 			},
-		}},
+			CvssMetrics: []*storage.CVSSScore{
+				{
+					CvssScore: &storage.CVSSScore_Cvssv3{
+						Cvssv3: &storage.CVSSV3{
+							Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+							ExploitabilityScore: 2.8,
+							ImpactScore:         4.7,
+							AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+							AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+							PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+							UserInteraction:     storage.CVSSV3_UI_NONE,
+							Scope:               storage.CVSSV3_CHANGED,
+							Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+							Integrity:           storage.CVSSV3_IMPACT_NONE,
+							Availability:        storage.CVSSV3_IMPACT_HIGH,
+							Score:               8.2,
+							Severity:            storage.CVSSV3_HIGH,
+						},
+					},
+					Source: storage.Source_SOURCE_RED_HAT,
+					Url:    "https://access.redhat.com/errata/RHSA-2024:4616",
+				},
+				{
+					CvssScore: &storage.CVSSScore_Cvssv2{
+						Cvssv2: &storage.CVSSV2{
+							Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+							AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+							AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+							Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
+							Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
+							Integrity:           storage.CVSSV2_IMPACT_NONE,
+							Availability:        storage.CVSSV2_IMPACT_PARTIAL,
+							ExploitabilityScore: 5.5,
+							ImpactScore:         7.8,
+							Score:               6.4,
+							Severity:            storage.CVSSV2_MEDIUM,
+						},
+					},
+					Source: storage.Source_SOURCE_NVD,
+					Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+				},
+			}},
+		},
 	}
 
 	actual := toNodeScan(r, "Red Hat Enterprise Linux CoreOS 417.94.202409121747-0")
@@ -48,6 +96,7 @@ func (s *indexReportConvertSuite) TestToNodeInventory() {
 	s.Equal(storage.NodeScan_SCANNER_V4, actual.GetScannerVersion())
 	s.Len(actual.GetComponents(), 2)
 	s.Len(actual.GetNotes(), 0)
+
 	protoassert.SliceContains(s.T(), actual.GetComponents(), expected)
 }
 
@@ -75,20 +124,69 @@ func (s *indexReportConvertSuite) TestToStorageComponentsOutOfBounds() {
 	in := createOutOfBoundsReport()
 	expectedCVE := &storage.EmbeddedVulnerability{
 		Cve:               "RHSA-2024:4616",
-		Cvss:              7.5,
+		Cvss:              8.2,
 		Summary:           "Sample Description",
-		ScoreVersion:      1,
+		ScoreVersion:      storage.EmbeddedVulnerability_V3,
 		SetFixedBy:        &storage.EmbeddedVulnerability_FixedBy{FixedBy: "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9"},
 		VulnerabilityType: storage.EmbeddedVulnerability_NODE_VULNERABILITY,
 		Severity:          storage.VulnerabilitySeverity_MODERATE_VULNERABILITY_SEVERITY,
+		Link:              "https://access.redhat.com/errata/RHSA-2024:4616",
 		CvssV3: &storage.CVSSV3{
-			Vector:              "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-			ExploitabilityScore: 3.9,
-			ImpactScore:         3.6,
-			AttackVector:        2,
-			Availability:        2,
-			Score:               7.5,
-			Severity:            4,
+			Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+			ExploitabilityScore: 2.8,
+			ImpactScore:         4.7,
+			AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+			AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+			PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+			UserInteraction:     storage.CVSSV3_UI_NONE,
+			Scope:               storage.CVSSV3_CHANGED,
+			Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+			Integrity:           storage.CVSSV3_IMPACT_NONE,
+			Availability:        storage.CVSSV3_IMPACT_HIGH,
+			Score:               8.2,
+			Severity:            storage.CVSSV3_HIGH,
+		},
+		CvssMetrics: []*storage.CVSSScore{
+			{
+				CvssScore: &storage.CVSSScore_Cvssv3{
+					Cvssv3: &storage.CVSSV3{
+						Vector:              "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+						ExploitabilityScore: 2.8,
+						ImpactScore:         4.7,
+						AttackVector:        storage.CVSSV3_ATTACK_ADJACENT,
+						AttackComplexity:    storage.CVSSV3_COMPLEXITY_LOW,
+						PrivilegesRequired:  storage.CVSSV3_PRIVILEGE_NONE,
+						UserInteraction:     storage.CVSSV3_UI_NONE,
+						Scope:               storage.CVSSV3_CHANGED,
+						Confidentiality:     storage.CVSSV3_IMPACT_LOW,
+						Integrity:           storage.CVSSV3_IMPACT_NONE,
+						Availability:        storage.CVSSV3_IMPACT_HIGH,
+						Score:               8.2,
+						Severity:            storage.CVSSV3_HIGH,
+					},
+				},
+				Source: storage.Source_SOURCE_RED_HAT,
+				Url:    "https://access.redhat.com/errata/RHSA-2024:4616",
+			},
+			{
+				CvssScore: &storage.CVSSScore_Cvssv2{
+					Cvssv2: &storage.CVSSV2{
+						Vector:              "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+						AttackVector:        storage.CVSSV2_ATTACK_NETWORK,
+						AccessComplexity:    storage.CVSSV2_ACCESS_MEDIUM,
+						Authentication:      storage.CVSSV2_AUTH_MULTIPLE,
+						Confidentiality:     storage.CVSSV2_IMPACT_COMPLETE,
+						Integrity:           storage.CVSSV2_IMPACT_NONE,
+						Availability:        storage.CVSSV2_IMPACT_PARTIAL,
+						ExploitabilityScore: 5.5,
+						ImpactScore:         7.8,
+						Score:               6.4,
+						Severity:            storage.CVSSV2_MEDIUM,
+					},
+				},
+				Source: storage.Source_SOURCE_NVD,
+				Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+			},
 		},
 	}
 
@@ -202,13 +300,32 @@ func createVulnerabilityReport() *v4.VulnerabilityReport {
 				Severity:           "Moderate",
 				NormalizedSeverity: 2,
 				FixedInVersion:     "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9",
-				Link:               "https://localhost/7401229",
+				Link:               "https://access.redhat.com/errata/RHSA-2024:4616",
 				Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-						BaseScore: 7.5,
-						Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+						BaseScore: 8.2,
+						Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
 					},
-					Url: "https://localhost/7401229",
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+					Url:    "https://access.redhat.com/errata/RHSA-2024:4616",
+				},
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 8.2,
+							Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/errata/RHSA-2024:4616",
+					},
+					{
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							BaseScore: 6.4,
+							Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
+					},
 				},
 			},
 		},
@@ -291,8 +408,28 @@ func createOutOfBoundsReport() *v4.VulnerabilityReport {
 				FixedInVersion:     "0:4.16.0-202407111006.p0.gfa84651.assembly.stream.el9",
 				Cvss: &v4.VulnerabilityReport_Vulnerability_CVSS{
 					V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-						BaseScore: 7.5,
-						Vector:    "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+						BaseScore: 8.2,
+						Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+					},
+					Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+					Url:    "https://access.redhat.com/errata/RHSA-2024:4616",
+				},
+				CvssMetrics: []*v4.VulnerabilityReport_Vulnerability_CVSS{
+					{
+						V3: &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+							BaseScore: 8.2,
+							Vector:    "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:H",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+						Url:    "https://access.redhat.com/errata/RHSA-2024:4616",
+					},
+					{
+						V2: &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+							BaseScore: 6.4,
+							Vector:    "AV:N/AC:M/Au:M/C:C/I:N/A:P",
+						},
+						Source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+						Url:    "https://nvd.nist.gov/vuln/detail/CVE-1234-567",
 					},
 				},
 			},

@@ -120,7 +120,7 @@ export type ImageVulnerabilitiesTableProps = {
     isFiltered: boolean;
     canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
-    vulnerabilityState: VulnerabilityState | undefined; // TODO Make Required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
     createTableActions?: (cve: {
         cve: string;
         summary: string;
@@ -145,7 +145,7 @@ function ImageVulnerabilitiesTable({
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
-    const showExceptionDetailsLink = vulnerabilityState && vulnerabilityState !== 'OBSERVED';
+    const showExceptionDetailsLink = vulnerabilityState !== 'OBSERVED';
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled =
@@ -198,7 +198,7 @@ function ImageVulnerabilitiesTable({
                     )}
                     {createTableActions && (
                         <Th>
-                            <span className="pf-v5-screen-reader">CVE actions</span>
+                            <span className="pf-v5-screen-reader">Row actions</span>
                         </Th>
                     )}
                 </Tr>

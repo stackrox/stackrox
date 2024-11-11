@@ -1,6 +1,6 @@
 import React, { ReactElement, useState } from 'react';
 import { Alert, Button, Modal, PageSection, pluralize, Title } from '@patternfly/react-core';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { PermissionSet, Role } from 'services/RolesService';
 
@@ -98,24 +98,24 @@ function PermissionSetsList({
                                         entityId={id}
                                     />
                                 </Td>
-                                <Td
-                                    actions={{
-                                        isDisabled:
+                                <Td isActionCell>
+                                    <ActionsColumn
+                                        isDisabled={
                                             !hasWriteAccessForPage ||
                                             idDeleting === id ||
                                             !isUserResource(traits) ||
                                             roles.some(
                                                 ({ permissionSetId }) => permissionSetId === id
-                                            ),
-                                        items: [
+                                            )
+                                        }
+                                        items={[
                                             {
                                                 title: 'Delete permission set',
                                                 onClick: () => onClickDelete(id),
                                             },
-                                        ],
-                                    }}
-                                    className="pf-v5-u-text-align-right"
-                                />
+                                        ]}
+                                    />
+                                </Td>
                             </Tr>
                         ))}
                     </Tbody>

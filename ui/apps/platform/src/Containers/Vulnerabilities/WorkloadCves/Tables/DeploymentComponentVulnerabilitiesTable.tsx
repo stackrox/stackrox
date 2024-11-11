@@ -51,7 +51,7 @@ export type DeploymentComponentVulnerabilitiesTableProps = {
         componentVulnerabilities: DeploymentComponentVulnerability[];
     }[];
     cve: string;
-    vulnerabilityState: VulnerabilityState | undefined; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
 };
 
 function DeploymentComponentVulnerabilitiesTable({

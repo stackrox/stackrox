@@ -127,7 +127,7 @@ function CVEsTable({
                     </TooltipTh>
                     {canSelectRows && (
                         <Th>
-                            <span className="pf-v5-screen-reader">CVE actions</span>
+                            <span className="pf-v5-screen-reader">Row actions</span>
                         </Th>
                     )}
                 </Tr>

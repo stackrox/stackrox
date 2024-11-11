@@ -182,7 +182,7 @@ function ImageOverviewTable({
                     </Th>
                     {hasWriteAccessForWatchedImage && (
                         <Th>
-                            <span className="pf-v5-screen-reader">Image action menu</span>
+                            <span className="pf-v5-screen-reader">Row actions</span>
                         </Th>
                     )}
                 </Tr>

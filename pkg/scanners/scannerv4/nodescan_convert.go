@@ -90,7 +90,7 @@ func convertVulnerability(v *v4.VulnerabilityReport_Vulnerability) *storage.Embe
 		PublishedOn:       v.GetIssued(),
 	}
 
-	if err := setScoresAndScoreVersion(converted, v.GetCvss()); err != nil {
+	if err := setScoresAndScoreVersions(converted, v.GetCvssMetrics()); err != nil {
 		utils.Should(err)
 	}
 	maybeOverwriteSeverity(converted)

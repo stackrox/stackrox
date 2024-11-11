@@ -1,0 +1,166 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: retag-pipeline
+spec:
+
+  finally:
+  - name: slack-notification
+    params:
+    - name: message
+      value: ':x: `{{event_type}}` pipeline for <https://console.redhat.com/application-pipeline/workspaces/rh-acs/applications/acs/pipelineruns/$(context.pipelineRun.name)|$(context.pipelineRun.name)> (`$(params.output-image-repo)`, revision <$(params.git-url)/commit/$(params.revision)|$(params.revision)>) has failed.'
+    - name: key-name
+      value: 'acs-konflux-notifications'
+    when:
+    # Run when any task has Failed
+    - input: $(tasks.status)
+      operator: in
+      values: [ "Failed" ]
+    taskRef:
+      params:
+      - name: name
+        value: slack-webhook-notification
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-slack-webhook-notification:0.1@sha256:0dfdfd87a8716ff9c20ae3325eff9a5d52ee9c708959c1e93eaedc852621a4d5
+      - name: kind
+        value: task
+      resolver: bundles
+
+  - name: show-sbom
+    params:
+    - name: IMAGE_URL
+      value: $(tasks.retag-image.results.IMAGE_URL)
+    taskRef:
+      params:
+      - name: name
+        value: show-sbom
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:52f8b96b96ce4203d4b74d850a85f963125bf8eef0683ea5acdd80818d335a28
+      - name: kind
+        value: task
+      resolver: bundles
+
+  params:
+  - description: Source Repository URL.
+    name: git-url
+    type: string
+  - description: Revision of the Source Repository.
+    name: revision
+    type: string
+  - description: Output Image Repository.
+    name: output-image-repo
+    type: string
+  - default: "-fast"
+    description: Suffix that's appended to generated image tags (both input and output).
+    name: image-tag-suffix
+    type: string
+  - description: Input Image Repository.
+    name: input-image-repo
+    type: string
+  - description: Makefile target to execute in order to determine the input image's tag.
+    name: input-image-tag-makefile-target
+    type: string
+
+  # Common params for all retagging pipelines.
+  - default: "0"
+    description: Depth of the git clone in number of commits. Use "1" for shallow clone. Use "0" for deep clone, i.e. to fetch all commits.
+    name: clone-depth
+    type: string
+  - default: "true"
+    description: Fetch tags with git clone
+    name: clone-fetch-tags
+    type: string
+  - default: "1d"
+    description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
+    name: oci-artifact-expires-after
+    type: string
+
+  results:
+  - description: ""
+    name: IMAGE_URL
+    value: $(tasks.retag-image.results.IMAGE_URL)
+  - description: ""
+    name: IMAGE_DIGEST
+    value: $(tasks.retag-image.results.IMAGE_DIGEST)
+
+  # CHAINS-GIT_* values will be entered in a Snapshot and into the image attestation data (cosign artifact).
+  # The values passed here will overwrite the values provided at the time when the input containers were built.
+  # E.g. the original git url 'git+https://github.com/stackrox/scanner.git' will be changed to
+  # 'git+https://github.com/stackrox/stackrox.git'.
+  # It is unclear from searches and inquiries, however, how these values are used and whether the overwriting would have
+  # any negative effects. E.g. see https://redhat-internal.slack.com/archives/C04PZ7H0VA8/p1729697134648409
+  # Since figuring the original values is somewhat more laborious, the suggestion is to keep doing what we do until that
+  # causes problems.
+  - description: ""
+    name: CHAINS-GIT_URL
+    value: $(tasks.clone-repository.results.url)
+  - description: ""
+    name: CHAINS-GIT_COMMIT
+    value: $(tasks.clone-repository.results.commit)
+
+  workspaces:
+  - name: git-auth
+
+  tasks:
+
+  - name: clone-repository
+    params:
+    - name: url
+      value: $(params.git-url)
+    - name: revision
+      value: $(params.revision)
+    - name: depth
+      value: $(params.clone-depth)
+    - name: fetchTags
+      value: $(params.clone-fetch-tags)
+    - name: ociStorage
+      value: $(params.output-image-repo):konflux-$(params.revision).git
+    - name: ociArtifactExpiresAfter
+      value: $(params.oci-artifact-expires-after)
+    taskRef:
+      params:
+      - name: name
+        value: git-clone-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:d1e63ec00bed1c9f0f571fa76b4da570be49a7c255c610544a461495230ba1b1
+      - name: kind
+        value: task
+      resolver: bundles
+    workspaces:
+    - name: basic-auth
+      workspace: git-auth
+
+  - name: determine-output-image-tag
+    params:
+    - name: MAKEFILE_TARGET
+      value: "tag"
+    - name: TAG_SUFFIX
+      value: $(params.image-tag-suffix)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    taskRef:
+      name: determine-image-tag
+
+  - name: determine-input-image-tag
+    params:
+    - name: MAKEFILE_TARGET
+      value: $(params.input-image-tag-makefile-target)
+    - name: TAG_SUFFIX
+      value: $(params.image-tag-suffix)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    taskRef:
+      name: determine-image-tag
+
+  - name: retag-image
+    params:
+    - name: INPUT_IMAGE_REPO
+      value: $(params.input-image-repo)
+    - name: INPUT_IMAGE_TAG
+      value: $(tasks.determine-input-image-tag.results.IMAGE_TAG)
+    - name: OUTPUT_IMAGE_REPO
+      value: $(params.output-image-repo)
+    - name: OUTPUT_IMAGE_TAG
+      value: $(tasks.determine-output-image-tag.results.IMAGE_TAG)
+    taskRef:
+      name: retag-image

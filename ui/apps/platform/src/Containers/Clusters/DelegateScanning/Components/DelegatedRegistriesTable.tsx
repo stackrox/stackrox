@@ -229,7 +229,7 @@ function DelegatedRegistriesTable({
                     <Th width={40}>Source registry</Th>
                     <Th width={40}>Destination cluster (CLI/API only)</Th>
                     <Th>
-                        <span className="pf-v5-screen-reader">Row deletion</span>
+                        <span className="pf-v5-screen-reader">Row action</span>
                     </Th>
                 </Tr>
             </Thead>
@@ -290,13 +290,16 @@ function DelegatedRegistriesTable({
                                     <>{clusterSelectOptions}</>
                                 </Select>
                             </Td>
-                            <Td dataLabel="Delete row" isActionCell>
+                            <Td dataLabel="Row action" className="pf-v5-u-text-align-right">
                                 <Button
-                                    variant="plain"
-                                    aria-label="Delete row"
+                                    variant="link"
+                                    isInline
+                                    icon={
+                                        <MinusCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                                    }
                                     onClick={() => deleteRow(rowIndex)}
                                 >
-                                    <MinusCircleIcon />
+                                    Delete row
                                 </Button>
                             </Td>
                         </Tr>

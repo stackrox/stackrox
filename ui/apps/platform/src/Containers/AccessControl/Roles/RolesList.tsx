@@ -1,6 +1,6 @@
 import React, { ReactElement, useState } from 'react';
 import { Alert, Button, Modal, PageSection, pluralize, Title } from '@patternfly/react-core';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { AccessScope } from 'services/AccessScopesService';
 import { Group } from 'services/AuthService';
@@ -133,22 +133,22 @@ function RolesList({
                                             entityName={getAccessScopeName(accessScopeId)}
                                         />
                                     </Td>
-                                    <Td
-                                        actions={{
-                                            isDisabled:
+                                    <Td isActionCell>
+                                        <ActionsColumn
+                                            isDisabled={
                                                 !hasWriteAccessForPage ||
                                                 nameDeleting === name ||
                                                 !isUserResource(traits) ||
-                                                getHasRoleName(groups, name),
-                                            items: [
+                                                getHasRoleName(groups, name)
+                                            }
+                                            items={[
                                                 {
                                                     title: 'Delete role',
                                                     onClick: () => onClickDelete(name),
                                                 },
-                                            ],
-                                        }}
-                                        className="pf-v5-u-text-align-right"
-                                    />
+                                            ]}
+                                        />
+                                    </Td>
                                 </Tr>
                             )
                         )}

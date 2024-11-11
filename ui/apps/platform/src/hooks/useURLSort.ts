@@ -65,7 +65,7 @@ export type UseURLSortResult = {
     sortOption: ApiSortOption;
     setSortOption: (
         newSortOption: SortOption | SortOption[],
-        historyAction?: HistoryAction | undefined
+        historyAction?: HistoryAction
     ) => void;
     getSortParams: GetSortParams;
 };
