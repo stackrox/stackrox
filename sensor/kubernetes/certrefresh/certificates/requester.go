@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -25,11 +24,52 @@ type Requester interface {
 	RequestCertificates(ctx context.Context) (*Response, error)
 }
 
-// Response represents the response to a certificate request. It contains a set of certificates or an error.
-type Response struct {
-	RequestId    string
-	ErrorMessage *string
-	Certificates *storage.TypedServiceCertificateSet
+// NewLocalScannerCertificateRequester creates a new local scanner certificate requester that communicates through
+// the specified channels and initializes a new request ID for reach request.
+// To use it call Start, and then make requests with RequestCertificates, concurrent requests are supported.
+// This assumes that the returned certificate requester is the only consumer of `receiveC`.
+func NewLocalScannerCertificateRequester(sendC chan<- *message.ExpiringMessage,
+	receiveC <-chan *central.IssueLocalScannerCertsResponse) Requester {
+	return newRequester[
+		*central.IssueLocalScannerCertsRequest,
+		*central.IssueLocalScannerCertsResponse,
+	](
+		sendC,
+		receiveC,
+		&LocalScannerMessageFactory{},
+		&LocalScannerResponseFactory{},
+	)
+}
+
+// NewSecuredClusterCertificateRequester creates a new certificate requester that communicates through
+// the specified channels and initializes a new request ID for reach request.
+// To use it call Start, and then make requests with RequestCertificates, concurrent requests are supported.
+// This assumes that the returned certificate requester is the only consumer of `receiveC`.
+func NewSecuredClusterCertificateRequester(sendC chan<- *message.ExpiringMessage,
+	receiveC <-chan *central.IssueSecuredClusterCertsResponse) Requester {
+	return newRequester[
+		*central.IssueSecuredClusterCertsResponse,
+		*central.IssueSecuredClusterCertsResponse,
+	](
+		sendC,
+		receiveC,
+		&SecuredClusterMessageFactory{},
+		&SecuredClusterResponseFactory{},
+	)
+}
+
+func newRequester[ReqT any, ResT ProtobufResponse](
+	sendC chan<- *message.ExpiringMessage,
+	receiveC <-chan ResT,
+	messageFactory MessageFactory,
+	responseFactory ResponseFactory[ResT],
+) *GenericRequester[ReqT, ResT] {
+	return &GenericRequester[ReqT, ResT]{
+		sendC:           sendC,
+		receiveC:        receiveC,
+		messageFactory:  messageFactory,
+		responseFactory: responseFactory,
+	}
 }
 
 type GenericRequester[ReqT any, ResT ProtobufResponse] struct {
@@ -37,7 +77,7 @@ type GenericRequester[ReqT any, ResT ProtobufResponse] struct {
 	receiveC        <-chan ResT
 	stopC           concurrency.ErrorSignal
 	requests        sync.Map
-	messageFactory  MessageFactory[ReqT]
+	messageFactory  MessageFactory
 	responseFactory ResponseFactory[ResT]
 }
 
@@ -45,7 +85,7 @@ type ProtobufResponse interface {
 	GetRequestId() string
 }
 
-type MessageFactory[ReqT any] interface {
+type MessageFactory interface {
 	NewMsgFromSensor(requestID string) *central.MsgFromSensor
 }
 
@@ -86,20 +126,6 @@ func (f *LocalScannerMessageFactory) NewMsgFromSensor(requestID string) *central
 				RequestId: requestID,
 			},
 		},
-	}
-}
-
-func NewRequester[ReqT any, ResT ProtobufResponse](
-	sendC chan<- *message.ExpiringMessage,
-	receiveC <-chan ResT,
-	messageFactory MessageFactory[ReqT],
-	responseFactory ResponseFactory[ResT],
-) *GenericRequester[ReqT, ResT] {
-	return &GenericRequester[ReqT, ResT]{
-		sendC:           sendC,
-		receiveC:        receiveC,
-		messageFactory:  messageFactory,
-		responseFactory: responseFactory,
 	}
 }
 
@@ -166,46 +192,4 @@ func (r *GenericRequester[ReqT, ResT]) receive(ctx context.Context, receiveC <-c
 		// Convert ResT to `certificates.Response` here, e.g. with a generic conversion function.
 		return r.responseFactory.ConvertToResponse(response), nil
 	}
-}
-
-// NewResponseFromLocalScannerCerts creates a certificates.Response from a
-// protobuf central.IssueLocalScannerCertsResponse message
-func NewResponseFromLocalScannerCerts(response *central.IssueLocalScannerCertsResponse) *Response {
-	if response == nil {
-		return nil
-	}
-
-	res := &Response{
-		RequestId: response.GetRequestId(),
-	}
-
-	if response.GetError() != nil {
-		errMsg := response.GetError().GetMessage()
-		res.ErrorMessage = &errMsg
-	} else {
-		res.Certificates = response.GetCertificates()
-	}
-
-	return res
-}
-
-// NewResponseFromSecuredClusterCerts creates a certificates.Response from a
-// protobuf central.IssueSecuredClusterCertsResponse message
-func NewResponseFromSecuredClusterCerts(response *central.IssueSecuredClusterCertsResponse) *Response {
-	if response == nil {
-		return nil
-	}
-
-	res := &Response{
-		RequestId: response.GetRequestId(),
-	}
-
-	if response.GetError() != nil {
-		errMsg := response.GetError().GetMessage()
-		res.ErrorMessage = &errMsg
-	} else {
-		res.Certificates = response.GetCertificates()
-	}
-
-	return res
 }

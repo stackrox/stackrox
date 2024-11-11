@@ -35,7 +35,7 @@ func NewSecuredClusterTLSIssuer(
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: securedcluster.NewServiceCertificatesRepo,
-		certRequester:                securedcluster.NewCertificateRequester(msgToCentralC, msgFromCentralC),
+		certRequester:                certificates.NewSecuredClusterCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
 }
 
