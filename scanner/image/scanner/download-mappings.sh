@@ -25,6 +25,19 @@ for url in "${urls[@]}"; do
         echo "${output_dir}/$filename is empty"
         exit 1
     fi
+
+    if command -v jq &>/dev/null; then
+        echo "Validating if $filename contains parseable JSON"
+        if jq -e . >/dev/null 2>&1 < "$filename"; then
+            echo "Validated"
+        else
+            echo "$filename is not valid JSON"
+            exit 1
+        fi
+    else
+        echo "Could not find jq to validate JSON"
+        echo "WARNING: Skipping JSON validation"
+    fi
 done
 
 echo "Done"
