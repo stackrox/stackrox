@@ -9,7 +9,15 @@ Follow the procedure below after any dependencies change for successful builds i
 
 ### Prerequisite
 
-- Install [pip-compile](https://pip-tools.readthedocs.io/en/stable/).
+Install [pip-compile](https://pip-tools.readthedocs.io/en/stable/).
+
+Example:
+
+```bash
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+pipx install pip-tools
+```
 
 ### Instructions
 
