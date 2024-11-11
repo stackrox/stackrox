@@ -46,3 +46,11 @@ pip-compile requirements-build.in --allow-unsafe --generate-hashes > requirement
 ```
 
 For more information, consult the [Cachi2 docs](https://github.com/containerbuildsystem/cachi2/blob/main/docs/pip.md#building-from-source).
+
+### What does each requirements file do?
+
+* `requirements.in`: List of project dependencies.
+* `requirements-gha.txt`: Temporary list of project dependencies as required by the build process on GHA. This will be deleted after ROX-26860.
+* `requirements.txt`: Fully resolved list of all transitive project dependencies.
+* `requirements-build.txt`: Fully resolved list of all dependencies required to _build_ the project dependencies.
+* `requirements-build.in` (not commited): Intermediate result for the generation of `requirements.txt`.
