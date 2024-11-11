@@ -16,11 +16,10 @@ func init() {
 
 func main() {
 	np := &compliance.EnvNodeNameProvider{}
-	cfg := v4.NewNodeIndexerConfigFromEnv()
 
 	scanner := compliance.NewNodeInventoryComponentScanner(np)
 	scanner.Connect(env.NodeScanningEndpoint.Setting())
-	nodeIndexer := v4.NewNodeIndexer(cfg)
+	nodeIndexer := v4.NewNodeIndexer(v4.DefaultNodeIndexerConfig)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

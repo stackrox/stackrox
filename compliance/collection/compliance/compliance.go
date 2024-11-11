@@ -86,6 +86,7 @@ func (c *Compliance) Start() {
 		c.manageStream(ctx, cli, &stoppedSig, toSensorC)
 	}()
 
+	// TODO: Shouldn't this be in a goroutine, too?
 	if c.nodeScanner.IsActive() || env.NodeIndexEnabled.BooleanSetting() {
 		nodeInventoriesC := c.manageNodeScanLoop(ctx)
 		// sending nodeInventories into output toSensorC
@@ -94,6 +95,7 @@ func (c *Compliance) Start() {
 		}
 	}
 
+	// TODO: is this ever printed...?
 	if env.NodeIndexEnabled.BooleanSetting() {
 		log.Infof("Node Index v4 enabled")
 	}
