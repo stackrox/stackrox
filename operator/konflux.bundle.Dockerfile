@@ -63,6 +63,7 @@ RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTR
 RUN mkdir -p build/ && \
     rm -rf build/bundle && \
     cp -a bundle build/ && \
+    cp -v ../config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml build/bundle/manifests/ && \
     ./bundle_helpers/patch-csv.py \
       --use-version "${OPERATOR_IMAGE_TAG}" \
       --first-version 3.62.0 \
