@@ -37,8 +37,7 @@ class SummaryTest extends BaseSpecification {
             def stackroxSummaryCounts = SummaryService.getCounts()
             List<String> orchestratorResourceNames = orchestrator.getDeploymentCount() +
                     orchestrator.getDaemonSetCount() +
-                    // Static pods get renamed as "static-<name>-pods" in sensor, so match it for easy debugging
-                    orchestrator.getStaticPodCount().collect {  "static-" + it + "-pods"  } +
+                    orchestrator.getStaticPodCount() +
                     orchestrator.getStatefulSetCount() +
                     orchestrator.getJobCount()
 
@@ -65,7 +64,7 @@ class SummaryTest extends BaseSpecification {
                 log.info "Orchestrator deployments: " + orchestratorResourceNames.sort().join(",")
             }
 
-            assert Math.abs(stackroxSummaryCounts.numDeployments - orchestratorResourceNames.size()) <= 2
+            assert stackroxSummaryCounts.numDeployments == orchestratorResourceNames.size()
             List<String> stackroxSecretNames = Services.getSecrets()*.name
             log.info "ACS secrets: " + stackroxSecretNames.join(",")
             assert Math.abs(stackroxSummaryCounts.numSecrets - orchestrator.getSecretCount()) <= 2
