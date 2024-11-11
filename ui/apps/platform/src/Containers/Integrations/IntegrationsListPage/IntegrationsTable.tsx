@@ -8,7 +8,7 @@ import {
     PageSectionVariants,
     Title,
 } from '@patternfly/react-core';
-import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { ActionsColumn, Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import { useParams, Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 
@@ -238,15 +238,15 @@ function IntegrationsTable({
                                                 </Td>
                                             );
                                         })}
-                                        <Td
-                                            actions={{
-                                                items: actionItems,
-                                                isDisabled:
+                                        <Td isActionCell>
+                                            <ActionsColumn
+                                                isDisabled={
                                                     !permissions[source].write ||
-                                                    !isUserResource(integration.traits),
-                                            }}
-                                            className="pf-v5-u-text-align-right"
-                                        />
+                                                    !isUserResource(integration.traits)
+                                                }
+                                                items={actionItems}
+                                            />
+                                        </Td>
                                     </Tr>
                                 );
                             })}

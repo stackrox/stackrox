@@ -10,7 +10,7 @@ function* getRoles() {
     try {
         const result = yield call(service.fetchRoles);
         yield put(actions.fetchRoles.success(result?.response || []));
-    } catch (error) {
+    } catch {
         // do nothing
     }
 }

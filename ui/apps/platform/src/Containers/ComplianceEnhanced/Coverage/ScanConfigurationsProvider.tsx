@@ -16,7 +16,7 @@ type ScanConfigurationsContextValue = {
     selectedScanConfigName: string | undefined;
     setSelectedScanConfigName: (
         scanConfigName: string | undefined,
-        historyAction?: HistoryAction | undefined
+        historyAction?: HistoryAction
     ) => void;
 };
 
@@ -56,7 +56,7 @@ function ScanConfigurationsProvider({ children }: { children: React.ReactNode })
 
     const wrappedSetSelectedScanConfig = (
         scanConfigName: string | undefined,
-        historyAction?: HistoryAction | undefined
+        historyAction?: HistoryAction
     ) => {
         setSelectedScanConfigName(scanConfigName, historyAction);
     };

@@ -9,16 +9,22 @@ import (
 	accountsmgmtv1 "github.com/openshift-online/ocm-sdk-go/accountsmgmt/v1"
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	"github.com/stackrox/rox/pkg/cloudsources/opts"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
+var log = logging.LoggerForModule(option.EnableAdministrationEvents())
+
 type ocmClient struct {
-	conn          *sdkClient.Connection
-	cloudSourceID string
+	conn            *sdkClient.Connection
+	cloudSourceID   string
+	cloudSourceName string
 }
 
 // NewClient creates a client to interact with OCM APIs.
@@ -40,8 +46,9 @@ func NewClient(ctx context.Context, config *storage.CloudSource, options ...opts
 	}
 
 	return &ocmClient{
-		conn:          connection,
-		cloudSourceID: config.GetId(),
+		conn:            connection,
+		cloudSourceID:   config.GetId(),
+		cloudSourceName: config.GetName(),
 	}, nil
 }
 
@@ -52,8 +59,15 @@ func (c *ocmClient) Ping(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 8*time.Second)
 	defer cancel()
 
-	_, err := c.conn.AccountsMgmt().V1().CurrentAccount().Get().SendContext(ctx)
-	return err
+	if _, err := c.conn.AccountsMgmt().V1().CurrentAccount().Get().SendContext(ctx); err != nil {
+		log.Errorw("OpenShift Cluster Manager: retrieving account",
+			logging.Err(err),
+			logging.ErrCode(codes.OCMCloudGeneric),
+			logging.CloudSourceName(c.cloudSourceName),
+		)
+		return err
+	}
+	return nil
 }
 
 func (c *ocmClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclusters.DiscoveredCluster, error) {
@@ -79,6 +93,11 @@ func (c *ocmClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclu
 		// performed better on queries. The console also favors the subscription API for creating the list view.
 		resp, err := c.conn.AccountsMgmt().V1().Subscriptions().List().Size(100).Page(page).Search(subscriptionSearch).SendContext(ctx)
 		if err != nil {
+			log.Errorw("OpenShift Cluster Manager: retrieving cluster subscription",
+				logging.Err(err),
+				logging.ErrCode(codes.OCMCloudGeneric),
+				logging.CloudSourceName(c.cloudSourceName),
+			)
 			return nil, pkgErrors.Wrap(err, "retrieving cluster subscriptions")
 		}
 		total = resp.Total()

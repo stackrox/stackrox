@@ -52,11 +52,11 @@ import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import pluralize from 'pluralize';
-import MyLastJobStatusTh from 'Components/ReportJob/MyLastJobStatusTh';
+import HelpIconTh from 'Components/HelpIconTh';
+import JobStatusPopoverContent from 'Components/ReportJob/JobStatusPopoverContent';
 import MyLastJobStatus from 'Components/ReportJob/MyLastJobStatus';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { reportDownloadURL } from 'services/ReportsService';
-import HelpIconTh from './HelpIconTh';
 
 const CreateReportsButton = () => {
     return (
@@ -312,8 +312,18 @@ function VulnReportsPage() {
                                                 Collection
                                             </HelpIconTh>
                                             <Th>Description</Th>
-                                            <MyLastJobStatusTh />
-                                            {hasWriteAccessForReport && <Td />}
+                                            <HelpIconTh
+                                                popoverContent={<JobStatusPopoverContent />}
+                                            >
+                                                My last job status
+                                            </HelpIconTh>
+                                            {hasWriteAccessForReport && (
+                                                <Th>
+                                                    <span className="pf-v5-screen-reader">
+                                                        Row actions
+                                                    </span>
+                                                </Th>
+                                            )}
                                         </Tr>
                                     </Thead>
                                     {reportConfigurations.length === 0 && isEmpty(searchFilter) && (

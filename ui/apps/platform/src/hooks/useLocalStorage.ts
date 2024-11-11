@@ -38,7 +38,7 @@ function useLocalStorage<Storage extends JsonValue>(
             const item = window.localStorage.getItem(key);
             const parsedItem = JSON.parse(item ?? 'null');
             return isValidPredicate(parsedItem) ? parsedItem : initialValue;
-        } catch (error) {
+        } catch {
             // On error, return the initial value
             return initialValue;
         }

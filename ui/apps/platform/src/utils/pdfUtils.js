@@ -78,7 +78,7 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
         // Throwing error sometimes but not related to this PR, #2603
         try {
             parent.removeChild(table);
-        } catch (err) {
+        } catch {
             return;
         }
     }

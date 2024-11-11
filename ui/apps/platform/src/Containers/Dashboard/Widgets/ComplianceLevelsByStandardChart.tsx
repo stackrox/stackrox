@@ -20,7 +20,7 @@ import {
 } from 'utils/chartUtils';
 
 const labelLinkCallback = ({ datum }: ChartLabelProps, data: ComplianceLevelByStandard[]) => {
-    return typeof datum === 'number' ? data[datum - 1]?.link ?? '' : '';
+    return typeof datum === 'number' ? (data[datum - 1]?.link ?? '') : '';
 };
 
 export type ComplianceLevelByStandard = {

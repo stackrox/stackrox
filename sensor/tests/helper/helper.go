@@ -353,7 +353,7 @@ func (c *TestContext) runWithResources(t *testing.T, resources []K8sResourceInfo
 	if err != nil {
 		return errors.Errorf("failed to create namespace: %s", err)
 	}
-	defer utils.IgnoreError(removeNamespace)
+	defer utils.IgnoreErrorAndCheckNil(removeNamespace)
 	var removeFunctions []func() error
 	fileToObj := map[string]k8s.Object{}
 	for i := range resources {
@@ -367,7 +367,7 @@ func (c *TestContext) runWithResources(t *testing.T, resources []K8sResourceInfo
 	}
 	defer func() {
 		for _, fn := range removeFunctions {
-			utils.IgnoreError(fn)
+			utils.IgnoreErrorAndCheckNil(fn)
 		}
 	}()
 	testCase(t, c, fileToObj)
@@ -377,7 +377,7 @@ func (c *TestContext) runWithResources(t *testing.T, resources []K8sResourceInfo
 // runBare runs a test case without applying any resources to the cluster.
 func (c *TestContext) runBare(t *testing.T, testCase TestCallback) {
 	_, removeNamespace, err := c.createTestNs(context.Background(), t, DefaultNamespace)
-	defer utils.IgnoreError(removeNamespace)
+	defer utils.IgnoreErrorAndCheckNil(removeNamespace)
 	if err != nil {
 		t.Fatalf("failed to create namespace: %s", err)
 	}

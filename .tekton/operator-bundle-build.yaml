@@ -37,11 +37,13 @@ spec:
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: 'true'
+  - name: hermetic
+    value: 'true'
   - name: prefetch-input
-    value: ''
+    value: |
+      [
+        { "type": "pip", "path": "operator/bundle_helpers" }
+      ]
   - name: build-source-image
     value: 'true'
   - name: clone-depth

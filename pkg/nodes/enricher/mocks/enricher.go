@@ -70,18 +70,18 @@ func (mr *MockNodeEnricherMockRecorder) EnrichNode(node any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNode", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNode), node)
 }
 
-// EnrichNodeWithInventory mocks base method.
-func (m *MockNodeEnricher) EnrichNodeWithInventory(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
+// EnrichNodeWithVulnerabilities mocks base method.
+func (m *MockNodeEnricher) EnrichNodeWithVulnerabilities(node *storage.Node, nodeInventory *storage.NodeInventory, indexReport *v4.IndexReport) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnrichNodeWithInventory", node, nodeInventory, indexReport)
+	ret := m.ctrl.Call(m, "EnrichNodeWithVulnerabilities", node, nodeInventory, indexReport)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// EnrichNodeWithInventory indicates an expected call of EnrichNodeWithInventory.
-func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithInventory(node, nodeInventory, indexReport any) *gomock.Call {
+// EnrichNodeWithVulnerabilities indicates an expected call of EnrichNodeWithVulnerabilities.
+func (mr *MockNodeEnricherMockRecorder) EnrichNodeWithVulnerabilities(node, nodeInventory, indexReport any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithInventory", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNodeWithInventory), node, nodeInventory, indexReport)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichNodeWithVulnerabilities", reflect.TypeOf((*MockNodeEnricher)(nil).EnrichNodeWithVulnerabilities), node, nodeInventory, indexReport)
 }
 
 // RemoveNodeIntegration mocks base method.

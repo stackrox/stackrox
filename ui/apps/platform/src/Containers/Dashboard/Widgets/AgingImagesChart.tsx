@@ -66,11 +66,11 @@ function yAxisTitle(searchFilter: SearchFilter) {
 // `datum` for these callbacks will refer to the index number of the bar in the chart. This index
 // value matches the index of the target `ChartData` item passed to the chart component.
 const labelLinkCallback = ({ datum }: ChartLabelProps, chartData: ChartData[]) => {
-    return typeof datum === 'number' ? chartData[datum - 1]?.labelLink ?? '' : '';
+    return typeof datum === 'number' ? (chartData[datum - 1]?.labelLink ?? '') : '';
 };
 
 const labelTextCallback = ({ datum }: { datum?: number }, chartData: ChartData[]) => {
-    return typeof datum === 'number' ? chartData[datum - 1]?.labelText ?? '' : '';
+    return typeof datum === 'number' ? (chartData[datum - 1]?.labelText ?? '') : '';
 };
 
 function makeChartData(

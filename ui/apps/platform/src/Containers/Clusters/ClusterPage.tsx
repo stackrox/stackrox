@@ -90,7 +90,7 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
     function managerType(cluster: Partial<Cluster> | null): ClusterManagerType {
         return cluster?.helmConfig && cluster.managedBy === 'MANAGER_TYPE_UNKNOWN'
             ? 'MANAGER_TYPE_HELM_CHART'
-            : cluster?.managedBy ?? 'MANAGER_TYPE_UNKNOWN';
+            : (cluster?.managedBy ?? 'MANAGER_TYPE_UNKNOWN');
     }
 
     useEffect(

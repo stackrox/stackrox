@@ -33,6 +33,8 @@ type Config struct {
 	ClientID string
 	// ClientName tells what kind of client is sending data.
 	ClientName string
+	// ClientVersion is the client version.
+	ClientVersion string
 	// GroupType identifies the main group type to which the client belongs.
 	GroupType string
 	// GroupID identifies the ID of the GroupType group.
@@ -94,6 +96,7 @@ func (cfg *Config) Telemeter() telemeter.Telemeter {
 				cfg.Endpoint,
 				cfg.ClientID,
 				cfg.ClientName,
+				cfg.ClientVersion,
 				cfg.PushInterval,
 				cfg.BatchSize)
 		} else {

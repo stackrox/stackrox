@@ -53,7 +53,7 @@ export function getOverviewPagePath(
 export function getWorkloadEntityPagePath(
     workloadCveEntity: WorkloadEntityTab,
     id: string,
-    vulnerabilityState: VulnerabilityState | undefined, // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState,
     queryOptions?: qs.ParsedQs
 ): string {
     const queryString = getQueryString({ ...queryOptions, vulnerabilityState });
@@ -200,12 +200,10 @@ export function getRegexScopedQueryString(searchFilter: QuerySearchFilter): stri
 // Returns a search filter string that scopes results to a Vulnerability state (e.g. 'OBSERVED')
 export function getVulnStateScopedQueryString(
     searchFilter: QuerySearchFilter,
-    vulnerabilityState?: VulnerabilityState // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState
 ): string {
     const searchFilterWithRegex = applyRegexSearchModifiers(searchFilter);
-    const vulnerabilityStateFilter = vulnerabilityState
-        ? { 'Vulnerability State': vulnerabilityState }
-        : {};
+    const vulnerabilityStateFilter = { 'Vulnerability State': vulnerabilityState };
     return getRequestQueryStringForSearchFilter({
         ...searchFilterWithRegex,
         ...vulnerabilityStateFilter,

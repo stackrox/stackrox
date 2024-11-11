@@ -276,7 +276,11 @@ function ViolationsTablePanel({
                                     </Th>
                                 );
                             })}
-                            {hasActions && <Td />}
+                            {hasActions && (
+                                <Th>
+                                    <span className="pf-v5-screen-reader">Row actions</span>
+                                </Th>
+                            )}
                         </Tr>
                     </Thead>
                     <Tbody>
