@@ -52,5 +52,5 @@ For more information, consult the [Cachi2 docs](https://github.com/containerbuil
 * `requirements.in`: List of project dependencies.
 * `requirements-gha.txt`: Temporary list of project dependencies as required by the build process on GHA. This will be deleted after ROX-26860.
 * `requirements.txt`: Fully resolved list of all transitive project dependencies.
-* `requirements-build.txt`: Fully resolved list of all dependencies required to _build_ the project dependencies.
+* `requirements-build.txt`: Fully resolved list of all dependencies required to _build_ the project dependencies from sources in Konflux.
 * `requirements-build.in` (not commited): Intermediate result for the generation of `requirements.txt`.
