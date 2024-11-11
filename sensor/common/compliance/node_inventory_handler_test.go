@@ -98,7 +98,7 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 	producer := concurrency.NewStopper()
 	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{})
 	s.NoError(h.Start())
-	h.Notify(common.SensorComponentEventCentralReachableHTTP)
+	h.Notify(common.SensorComponentEventResourceSyncFinished)
 	consumer := consumeAndCount(h.ResponsesC(), 1)
 	// This is a producer that stops the handler after producing the first message and then sends many (29) more messages.
 	go func() {
@@ -129,7 +129,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 	defer close(reports)
 	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
-	h.Notify(common.SensorComponentEventCentralReachableHTTP)
+	h.Notify(common.SensorComponentEventResourceSyncFinished)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -146,7 +146,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	defer close(reports)
 	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
-	h.Notify(common.SensorComponentEventCentralReachableHTTP)
+	h.Notify(common.SensorComponentEventResourceSyncFinished)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -172,7 +172,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 	defer close(reports)
 	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
 	s.NoError(h.Start())
-	h.Notify(common.SensorComponentEventCentralReachableHTTP)
+	h.Notify(common.SensorComponentEventResourceSyncFinished)
 
 	cases := map[string]struct {
 		centralReply      central.NodeInventoryACK_Action
@@ -218,7 +218,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 
 	states := []testState{
 		{
-			event:             common.SensorComponentEventCentralReachableHTTP,
+			event:             common.SensorComponentEventResourceSyncFinished,
 			expectedACKCount:  1,
 			expectedNACKCount: 0,
 		},
@@ -228,7 +228,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 			expectedNACKCount: 1,
 		},
 		{
-			event:             common.SensorComponentEventCentralReachableHTTP,
+			event:             common.SensorComponentEventResourceSyncFinished,
 			expectedACKCount:  1,
 			expectedNACKCount: 0,
 		},
@@ -237,7 +237,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	for i, state := range states {
 		h.Notify(state.event)
 		ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", i))
-		if state.event == common.SensorComponentEventCentralReachableHTTP {
+		if state.event == common.SensorComponentEventResourceSyncFinished {
 			s.NoError(mockCentralReply(h, central.NodeInventoryACK_ACK))
 		}
 		result := consumeAndCountCompliance(h.ComplianceC(), 1)
@@ -351,7 +351,7 @@ func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
 
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
-	h.Notify(common.SensorComponentEventCentralReachableHTTP)
+	h.Notify(common.SensorComponentEventResourceSyncFinished)
 	s.NoError(h.Start())
 	s.ErrorIs(h.Start(), errStartMoreThanOnce)
 
@@ -376,7 +376,7 @@ func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 	defer close(reports)
 	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
-	h.Notify(common.SensorComponentEventCentralReachableHTTP)
+	h.Notify(common.SensorComponentEventResourceSyncFinished)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -394,7 +394,7 @@ func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 	defer close(reports)
 	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
-	h.Notify(common.SensorComponentEventCentralReachableHTTP)
+	h.Notify(common.SensorComponentEventResourceSyncFinished)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
@@ -429,7 +429,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNilInput() {
 	defer close(reports)
 	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{})
 	// Notify is called before Start to avoid race between generateNilTestInputNoClose and the NodeInventoryHandler
-	h.Notify(common.SensorComponentEventCentralReachableHTTP)
+	h.Notify(common.SensorComponentEventResourceSyncFinished)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 0)
 	s.NoError(producer.Stopped().Wait())
@@ -446,7 +446,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
 	defer close(reports)
 	h := NewNodeInventoryHandler(ch, reports, &mockNeverHitNodeIDMatcher{})
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
-	h.Notify(common.SensorComponentEventCentralReachableHTTP)
+	h.Notify(common.SensorComponentEventResourceSyncFinished)
 	s.NoError(h.Start())
 	// expect centralConsumer to get 0 messages - sensor should drop inventory when node is not found
 	centralConsumer := consumeAndCount(h.ResponsesC(), 0)

@@ -74,7 +74,7 @@ func (s *eventPipelineSuite) write() {
 }
 
 func (s *eventPipelineSuite) online() {
-	s.pipeline.Notify(common.SensorComponentEventCentralReachableHTTP)
+	s.pipeline.Notify(common.SensorComponentEventResourceSyncFinished)
 }
 
 func (s *eventPipelineSuite) offline() {
@@ -105,7 +105,7 @@ func (s *eventPipelineSuite) Test_OfflineModeCases() {
 	s.listener.EXPECT().Stop(gomock.Any()).AnyTimes()
 
 	s.Require().NoError(s.pipeline.Start())
-	s.pipeline.Notify(common.SensorComponentEventCentralReachableHTTP)
+	s.pipeline.Notify(common.SensorComponentEventResourceSyncFinished)
 
 	testCases := map[string][]func(){
 		"Base case: Start, WA, WB, RA, RB, Disconnect":       {s.online, s.write, s.write, s.readSuccess, s.readSuccess, s.offline},
@@ -139,7 +139,7 @@ func (s *eventPipelineSuite) Test_OfflineMode() {
 	s.listener.EXPECT().Stop(gomock.Any()).Times(2)
 
 	s.Require().NoError(s.pipeline.Start())
-	s.pipeline.Notify(common.SensorComponentEventCentralReachableHTTP)
+	s.pipeline.Notify(common.SensorComponentEventResourceSyncFinished)
 
 	outputC <- message.NewExpiring(s.pipeline.context, nil)
 	outputC <- message.NewExpiring(s.pipeline.context, nil)
@@ -150,7 +150,7 @@ func (s *eventPipelineSuite) Test_OfflineMode() {
 	s.Assert().False(msgA.IsExpired(), "context should not be expired")
 
 	s.pipeline.Notify(common.SensorComponentEventOfflineMode)
-	s.pipeline.Notify(common.SensorComponentEventCentralReachableHTTP)
+	s.pipeline.Notify(common.SensorComponentEventResourceSyncFinished)
 
 	// Read message B
 	msgB, more := <-s.pipeline.ResponsesC()

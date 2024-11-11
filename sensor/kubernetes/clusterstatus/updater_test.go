@@ -77,7 +77,7 @@ func (s *updaterSuite) createUpdater(getProviders func(context.Context) *storage
 }
 
 func (s *updaterSuite) online() {
-	s.updater.Notify(common.SensorComponentEventCentralReachableHTTP)
+	s.updater.Notify(common.SensorComponentEventResourceSyncFinished)
 }
 
 func (s *updaterSuite) offline() {

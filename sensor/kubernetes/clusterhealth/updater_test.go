@@ -188,7 +188,7 @@ func (s *UpdaterTestSuite) TestNamespaceMismatch() {
 
 func (s *UpdaterTestSuite) TestExpiredMessages() {
 	states := []common.SensorComponentEvent{
-		common.SensorComponentEventCentralReachableHTTP,
+		common.SensorComponentEventResourceSyncFinished,
 		common.SensorComponentEventOfflineMode,
 	}
 	s.addDaemonSet(makeDaemonSet())
@@ -204,7 +204,7 @@ func (s *UpdaterTestSuite) TestExpiredMessages() {
 			expiredMessages = append(expiredMessages, expiredMsg)
 		}
 	}
-	updater.Notify(common.SensorComponentEventCentralReachableHTTP)
+	updater.Notify(common.SensorComponentEventResourceSyncFinished)
 	// All the messages received until now should be expired at this point
 	for _, msg := range expiredMessages {
 		select {
@@ -238,7 +238,7 @@ func (s *UpdaterTestSuite) TestNotExpiredMessage() {
 	fakeTicker := make(chan time.Time)
 	defer close(fakeTicker)
 	go updater.run(fakeTicker)
-	updater.Notify(common.SensorComponentEventCentralReachableHTTP)
+	updater.Notify(common.SensorComponentEventResourceSyncFinished)
 	fakeTicker <- time.Now()
 	select {
 	case msg := <-updater.ResponsesC():
@@ -262,7 +262,7 @@ func (s *UpdaterTestSuite) TestExpiredMessage() {
 	fakeTicker := make(chan time.Time)
 	defer close(fakeTicker)
 	go updater.run(fakeTicker)
-	updater.Notify(common.SensorComponentEventCentralReachableHTTP)
+	updater.Notify(common.SensorComponentEventResourceSyncFinished)
 	fakeTicker <- time.Now()
 	var msg *message.ExpiringMessage
 	select {
@@ -272,7 +272,7 @@ func (s *UpdaterTestSuite) TestExpiredMessage() {
 		s.Fail("timeout waiting for sensor message")
 	}
 	updater.Notify(common.SensorComponentEventOfflineMode)
-	updater.Notify(common.SensorComponentEventCentralReachableHTTP)
+	updater.Notify(common.SensorComponentEventResourceSyncFinished)
 	select {
 	case <-msg.Context.Done():
 		break
@@ -314,7 +314,7 @@ func (s *UpdaterTestSuite) getHealthInfo(times int) *storage.CollectorHealthInfo
 	timer := time.NewTimer(updateTimeout)
 	updater := NewUpdater(s.client, updateInterval)
 
-	updater.Notify(common.SensorComponentEventCentralReachableHTTP)
+	updater.Notify(common.SensorComponentEventResourceSyncFinished)
 	err := updater.Start()
 	s.Require().NoError(err)
 	defer updater.Stop(nil)

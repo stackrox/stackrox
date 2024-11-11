@@ -126,7 +126,7 @@ func newEntity(containerID, deploymentID string) clusterentities.ContainerMetada
 }
 
 func online(_ *testing.T, pipeline *Pipeline) {
-	pipeline.Notify(common.SensorComponentEventCentralReachableHTTP)
+	pipeline.Notify(common.SensorComponentEventResourceSyncFinished)
 }
 
 func offline(_ *testing.T, pipeline *Pipeline) {
@@ -202,8 +202,8 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 	}{
 		{
 			name:         "Staying online should yield all messages with valid context",
-			initialState: common.SensorComponentEventCentralReachableHTTP,
-			laterState:   common.SensorComponentEventCentralReachableHTTP,
+			initialState: common.SensorComponentEventResourceSyncFinished,
+			laterState:   common.SensorComponentEventResourceSyncFinished,
 			initialSignal: &processIndicatorMessageT{
 				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
 				expectDeploymentID:      containerMetadata1.DeploymentID,
@@ -219,7 +219,7 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 		},
 		{
 			name:         "Going offline should yield all second message with canceled context",
-			initialState: common.SensorComponentEventCentralReachableHTTP,
+			initialState: common.SensorComponentEventResourceSyncFinished,
 			laterState:   common.SensorComponentEventOfflineMode,
 			initialSignal: &processIndicatorMessageT{
 				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
@@ -254,7 +254,7 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 		{
 			name:         "Going online should yield second message with valid context",
 			initialState: common.SensorComponentEventOfflineMode,
-			laterState:   common.SensorComponentEventCentralReachableHTTP,
+			laterState:   common.SensorComponentEventResourceSyncFinished,
 			initialSignal: &processIndicatorMessageT{
 				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
 				expectDeploymentID:      containerMetadata1.DeploymentID,
@@ -271,7 +271,7 @@ func TestProcessPipelineOfflineV1(t *testing.T) {
 		{
 			name:         "Transitioning through offline should keep the enricher alive",
 			initialState: common.SensorComponentEventOfflineMode,
-			laterState:   common.SensorComponentEventCentralReachableHTTP,
+			laterState:   common.SensorComponentEventResourceSyncFinished,
 			// initial signal is processed in offline mode without the enricher (processSignal) as metadata is known
 			initialSignal: &processIndicatorMessageT{
 				signal:                  &storage.ProcessSignal{ContainerId: containerMetadata1.ContainerID},
@@ -421,7 +421,7 @@ func TestProcessPipelineOnline(t *testing.T) {
 
 	p := NewProcessPipeline(sensorEvents, mockStore, filter.NewFilter(5, 5, []int{10, 10, 10}),
 		mockDetector)
-	p.Notify(common.SensorComponentEventCentralReachableHTTP)
+	p.Notify(common.SensorComponentEventResourceSyncFinished)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
