@@ -42,7 +42,7 @@ spec:
   - name: prefetch-input
     value: |
       [
-        { "type": "pip", "path": "operator/bundle_helpers", "allow_binary": "true" }
+        { "type": "pip", "path": "operator/bundle_helpers" }
       ]
   - name: build-source-image
     value: 'true'
