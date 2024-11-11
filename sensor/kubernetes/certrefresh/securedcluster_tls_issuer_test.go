@@ -318,16 +318,17 @@ func (s *securedClusterTLSIssueIntegrationTests) TestSuccessfulRefresh() {
 			ok := concurrency.PollWithTimeout(func() bool {
 				secrets, err = k8sClient.CoreV1().Secrets(sensorNamespace).List(context.Background(), metav1.ListOptions{})
 				s.Require().NoError(err)
-				return len(secrets.Items) == 7 && func() bool {
-					for _, secret := range secrets.Items {
-						if len(secret.Data) == 0 {
-							return false
-						}
+
+				allSecretsHaveData := true
+				for _, secret := range secrets.Items {
+					if len(secret.Data) == 0 {
+						allSecretsHaveData = false
+						break
 					}
-					return true
-				}()
+				}
+				return allSecretsHaveData && len(secrets.Items) == len(secretsCerts)
 			}, 10*time.Millisecond, testTimeout)
-			s.Require().True(ok, "expected exactly 7 secrets with non-empty data available in the k8s API")
+			s.Require().True(ok, "expected exactly %d secrets with non-empty data available in the k8s API", len(secretsCerts))
 
 			for _, secret := range secrets.Items {
 				expectedCert, exists := secretsCerts[secret.GetName()]

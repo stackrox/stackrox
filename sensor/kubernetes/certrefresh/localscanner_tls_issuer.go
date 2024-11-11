@@ -2,7 +2,6 @@ package certrefresh
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -12,12 +11,9 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/localscanner"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 var (
@@ -60,12 +56,6 @@ type localScannerTLSIssuerImpl struct {
 	certRequester                certificates.Requester
 	certRefresher                concurrency.RetryTicker
 }
-
-type certificateRefresherGetter func(certsDescription string, requestCertificates requestCertificatesFunc,
-	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
-
-type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
-	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo
 
 // Start starts the sensor component and launches a certificate refresher that immediately checks the certificates, and
 // that keeps them updated.
