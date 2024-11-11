@@ -136,7 +136,6 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                 fetchClusterWithRetentionInformation(clusterIdToRetrieve)
                     .then((clusterResponse) => {
                         const { cluster } = clusterResponse;
-                        // eslint-disable-next-line no-param-reassign
                         // cluster.managedBy = 'MANAGER_TYPE_MANUAL';
                         // TODO: refactor to use useReducer effect
                         setSelectedCluster(cluster);

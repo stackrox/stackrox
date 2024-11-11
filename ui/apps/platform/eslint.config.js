@@ -53,7 +53,7 @@ module.exports = [
         // languageOptions are in specific configuration objects
 
         linterOptions: {
-            // reportUnusedDisableDirectives: 'error', // TODO fix errors
+            reportUnusedDisableDirectives: 'error', // TODO fix errors
         },
 
         // Key of plugin is namespace of its rules.
