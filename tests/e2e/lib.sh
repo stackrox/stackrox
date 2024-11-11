@@ -14,6 +14,7 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
 export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
+export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
 # execute it, even though it can be located via `$PATH`, hence we retrieve the absolute path of
@@ -1252,7 +1253,11 @@ _EO_DETAILS_
         if [[ -f "${STATE_DEPLOYED}" ]]; then
             save_junit_success "${stackrox_deployed[@]}"
         else
-            save_junit_failure "${stackrox_deployed[@]}" "Check the build log"
+            if [[ -f "${QA_DEPLOY_WAIT_INFO}" ]]; then
+                save_junit_failure "${stackrox_deployed[0]}" "$(cat "${QA_DEPLOY_WAIT_INFO}")" "Check the build log"
+            else
+                save_junit_failure "${stackrox_deployed[@]}" "Check the build log"
+            fi
         fi
     else
         save_junit_skipped "${stackrox_deployed[@]}"
@@ -1400,6 +1405,7 @@ wait_for_object_to_appear() {
         count=$((count + 1))
         if [[ $count -ge "$tries" ]]; then
             info "$namespace $object did not appear after $count tries"
+            echo "Waiting for $object in ns $namespace timed out." > "${QA_DEPLOY_WAIT_INFO}" || true
             kubectl -n "$namespace" get "$object"
             return 1
         fi
