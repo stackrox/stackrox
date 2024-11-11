@@ -1,23 +1,9 @@
 # Bundle Helpers
 
 For hermetic builds with Konflux, we need to provide the full list of resolved dependencies in `requirements.txt`.
-These will be prefetched with Cachi2 and made available to the container image build.
-
-## Python Dependency Management
-
-You need Python>=3.9 installed.
-We use Poetry to manage Python dependencies.
-Install it from [here](https://python-poetry.org/docs/#installation).
-
-
-In this directory, run
-
-- to add a new dependency: `poetry add PyYAML==6.0`
-- to update existing dependencies: `poetry update`
-
-For as long as we build downstream images with CPaaS, you should not add or use dependencies that aren't available OOTB in CPaaS in `render_templates` context.
-
-Check `pyproject.toml` for which dependencies and versions are managed with Poetry.
+The dependency source files will be prefetched with Cachi2 and made available to the container image build.
+Because GHA/upstream is running on a different Python version, it uses `requirements-upstream.txt` to mange its own dependencies.
+Follow the procedure below after any dependencies change for successful builds in Konflux and mirror those changes into the `requirements-upstream.txt`.
 
 ## Prepare the fully resolved requirements files for Cachi2
 
@@ -30,13 +16,13 @@ Check `pyproject.toml` for which dependencies and versions are managed with Poet
 1. Generate a fully resolved requirements.txt:
 
 ```bash
-pip-compile pyproject.toml --generate-hashes > requirements.txt
+pip-compile requirements.in --generate-hashes > requirements.txt
 ```
 
 2. Download pip_find_builddeps.py:
 
 ```bash
-curl -O https://raw.githubusercontent.com/containerbuildsystem/cachito/master/bin/pip_find_builddeps.py
+curl -fO https://raw.githubusercontent.com/containerbuildsystem/cachito/master/bin/pip_find_builddeps.py
 chmod +x pip_find_builddeps.py
 ```
 
