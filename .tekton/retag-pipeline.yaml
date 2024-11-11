@@ -75,6 +75,13 @@ spec:
     name: oci-artifact-expires-after
     type: string
 
+  - default: "git+https://github.com/stackrox/collector.git"
+    type: string
+    name: our-chains-git-url
+  - default: "f1748e6301357bf28d648f8a4ba253b95e06cd90"
+    type: string
+    name: our-chains-git-commit
+
   results:
   - description: ""
     name: IMAGE_URL
@@ -93,10 +100,10 @@ spec:
   # causes problems.
   - description: ""
     name: CHAINS-GIT_URL
-    value: "git+https://github.com/stackrox/collector.git"
+    value: $(params.our-chains-git-url)
   - description: ""
     name: CHAINS-GIT_COMMIT
-    value: "f1748e6301357bf28d648f8a4ba253b95e06cd90"
+    value: $(params.our-chains-git-commit)
 
   workspaces:
   - name: git-auth
