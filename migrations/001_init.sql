@@ -259,6 +259,27 @@ CREATE TABLE compliance_operator_remediation_v2 (
     serialized bytea
 );
 
+CREATE TABLE compliance_operator_report_snapshot_v2 (
+    reportid uuid NOT NULL,
+    scanconfigurationid uuid,
+    name character varying,
+    reportstatus_runstate integer,
+    reportstatus_startedat timestamp without time zone,
+    reportstatus_completedat timestamp without time zone,
+    reportstatus_reportrequesttype integer,
+    reportstatus_reportnotificationmethod integer,
+    user_id character varying,
+    user_name character varying,
+    serialized bytea
+);
+
+CREATE TABLE compliance_operator_report_snapshot_v2_scans (
+    compliance_operator_report_snapshot_v2_reportid uuid NOT NULL,
+    idx integer NOT NULL,
+    scanrefid character varying,
+    laststartedtime timestamp without time zone
+);
+
 CREATE TABLE compliance_operator_rule_v2 (
     id character varying NOT NULL,
     name character varying,
@@ -1143,6 +1164,12 @@ ALTER TABLE ONLY compliance_operator_profiles
 ALTER TABLE ONLY compliance_operator_remediation_v2
     ADD CONSTRAINT compliance_operator_remediation_v2_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY compliance_operator_report_snapshot_v2
+    ADD CONSTRAINT compliance_operator_report_snapshot_v2_pkey PRIMARY KEY (reportid);
+
+ALTER TABLE ONLY compliance_operator_report_snapshot_v2_scans
+    ADD CONSTRAINT compliance_operator_report_snapshot_v2_scans_pkey PRIMARY KEY (compliance_operator_report_snapshot_v2_reportid, idx);
+
 ALTER TABLE ONLY compliance_operator_rule_v2_controls
     ADD CONSTRAINT compliance_operator_rule_v2_controls_pkey PRIMARY KEY (compliance_operator_rule_v2_id, idx);
 
@@ -1477,6 +1504,8 @@ CREATE INDEX complianceoperatorprofilev2rules_idx ON compliance_operator_profile
 
 CREATE INDEX complianceoperatorremediationv2_sac_filter ON compliance_operator_remediation_v2 USING hash (clusterid);
 
+CREATE INDEX complianceoperatorreportsnapshotv2scans_idx ON compliance_operator_report_snapshot_v2_scans USING btree (idx);
+
 CREATE INDEX complianceoperatorrulev2_sac_filter ON compliance_operator_rule_v2 USING hash (clusterid);
 
 CREATE INDEX complianceoperatorrulev2controls_idx ON compliance_operator_rule_v2_controls USING btree (idx);
@@ -1640,6 +1669,12 @@ ALTER TABLE ONLY compliance_operator_benchmark_v2_profiles
 
 ALTER TABLE ONLY compliance_operator_profile_v2_rules
     ADD CONSTRAINT fk_compliance_operator_profile_v2_rules_compliance_oper55f27d3c FOREIGN KEY (compliance_operator_profile_v2_id) REFERENCES compliance_operator_profile_v2(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY compliance_operator_report_snapshot_v2
+    ADD CONSTRAINT fk_compliance_operator_report_snapshot_v2_compliance_op4653ba9c FOREIGN KEY (scanconfigurationid) REFERENCES compliance_operator_scan_configuration_v2(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY compliance_operator_report_snapshot_v2_scans
+    ADD CONSTRAINT fk_compliance_operator_report_snapshot_v2_scans_complia4e9b3bd3 FOREIGN KEY (compliance_operator_report_snapshot_v2_reportid) REFERENCES compliance_operator_report_snapshot_v2(reportid) ON DELETE CASCADE;
 
 ALTER TABLE ONLY compliance_operator_rule_v2_controls
     ADD CONSTRAINT fk_compliance_operator_rule_v2_controls_compliance_oper55523455 FOREIGN KEY (compliance_operator_rule_v2_id) REFERENCES compliance_operator_rule_v2(id) ON DELETE CASCADE;
