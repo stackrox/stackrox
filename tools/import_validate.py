@@ -36,10 +36,14 @@ def blank_import(data):
 
 def check_imports(data):
     # We only tolerate blank lines between first and third party imports, as well as blank (_) imports
-    line = data.get('line', '')
+    s_line = data.get('line', '').lstrip()
     import_state = data.get('import_state', TPIMPORTS)
-    # ignore . imports, but recognize 3rd party imports of the form github.com/user/proj
-    if not line.startswith('.') and '.' in line and import_state == FPIMPORTS:
+    # ignore . imports, but recognize 3rd party imports of the form github.com/user/proj;
+    # dot imports are stripped of their leading dot.
+    if s_line.startswith('.'):
+        s_line = s_line[1:]
+
+    if '.' in s_line and import_state == FPIMPORTS:
         data["import_state"] = TPIMPORTS
         check_blanks(data)
 
