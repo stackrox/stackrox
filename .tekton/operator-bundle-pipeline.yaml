@@ -107,7 +107,7 @@ spec:
     type: string
 
   - name: operator-image-build-repo
-    description: Image repository for the StackRox Operator.
+    description: Repository where the (unreleased) operator image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/stackrox-operator"
   - name: operator-image-downstream-repo
@@ -116,7 +116,7 @@ spec:
     default: "registry.redhat.io/advanced-cluster-security/rhacs-rhel8-operator"
 
   - name: main-image-build-repo
-    description: Image repository for the main image.
+    description: Repository where the (unreleased) main image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/main"
   - name: main-image-downstream-repo
@@ -125,7 +125,7 @@ spec:
     default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8"
 
   - name: scanner-image-build-repo
-    description: Image repository for the Scanner V2 image.
+    description: Repository where the (unreleased) Scanner V2 image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner"
   - name: scanner-image-downstream-repo
@@ -134,7 +134,7 @@ spec:
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8"
 
   - name: scanner-db-image-build-repo
-    description: Image repository for the Scanner V2 DB image.
+    description: Repository where the (unreleased) Scanner V2 DB image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner-db"
   - name: scanner-db-image-downstream-repo
@@ -143,7 +143,7 @@ spec:
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8"
 
   - name: scanner-slim-image-build-repo
-    description: Image repository for the Scanner V2 slim image.
+    description: Repository where the (unreleased) Scanner V2 slim image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner-slim"
   - name: scanner-slim-image-downstream-repo
@@ -152,7 +152,7 @@ spec:
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel8"
 
   - name: scanner-db-slim-image-build-repo
-    description: Image repository for the Scanner V2 DB slim image.
+    description: Repository where the (unreleased) Scanner V2 DB slim image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner-db-slim"
   - name: scanner-db-slim-image-downstream-repo
@@ -161,7 +161,7 @@ spec:
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel8"
 
   - name: scanner-v4-image-build-repo
-    description: Image repository for the Scanner V4 image.
+    description: Repository where the (unreleased) Scanner V4 image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner-v4"
   - name: scanner-v4-image-downstream-repo
@@ -170,7 +170,7 @@ spec:
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel8"
 
   - name: scanner-v4-db-image-build-repo
-    description: Image repository for the Scanner V4 DB image.
+    description: Repository where the (unreleased) Scanner V4 DB image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/scanner-v4-db"
   - name: scanner-v4-db-image-downstream-repo
@@ -179,7 +179,7 @@ spec:
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel8"
 
   - name: collector-slim-image-build-repo
-    description: Image repository for the collector slim image.
+    description: Repository where the (unreleased) collector slim image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/collector-slim"
   - name: collector-slim-image-downstream-repo
@@ -188,7 +188,7 @@ spec:
     default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8"
 
   - name: collector-full-image-build-repo
-    description: Image repository for the collector full image.
+    description: Repository where the (unreleased) collector full image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/collector"
   - name: collector-full-image-downstream-repo
@@ -197,7 +197,7 @@ spec:
     default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8"
 
   - name: roxctl-image-build-repo
-    description: Image repository for the roxctl image.
+    description: Repository where the (unreleased) roxctl image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/roxctl"
   - name: roxctl-image-downstream-repo
@@ -206,7 +206,7 @@ spec:
     default: "registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel8"
 
   - name: central-db-image-build-repo
-    description: Image repository for the Central DB image.
+    description: Repository where the (unreleased) Central DB image is pushed by its build pipeline.
     type: string
     default: "quay.io/rhacs-eng/central-db"
   - name: central-db-image-downstream-repo
