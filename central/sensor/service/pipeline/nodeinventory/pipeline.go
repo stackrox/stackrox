@@ -101,7 +101,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	}
 
 	// Call Scanner to enrich the node inventory and attach the results to the node object.
-	err = p.enricher.EnrichNodeWithInventory(node, ninv, nil)
+	err = p.enricher.EnrichNodeWithVulnerabilities(node, ninv, nil)
 	if err != nil {
 		log.Errorf("enriching node %s: %v", nodeDatastore.NodeString(node), err)
 		return errors.WithMessagef(err, "enrinching node %s", nodeDatastore.NodeString(node))

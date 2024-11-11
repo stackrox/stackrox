@@ -1,4 +1,4 @@
-package compliance
+package compliance_checks
 
 import (
 	"time"
@@ -6,7 +6,9 @@ import (
 	"github.com/stackrox/rox/compliance/collection/command"
 	"github.com/stackrox/rox/compliance/collection/containerruntimes/crio"
 	"github.com/stackrox/rox/compliance/collection/file"
-	"github.com/stackrox/rox/compliance/collection/kubernetes/collection/kubelet"
+	"github.com/stackrox/rox/compliance/collection/kubernetes"
+	"github.com/stackrox/rox/compliance/node"
+	"github.com/stackrox/rox/compliance/utils"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,10 +22,11 @@ import (
 
 var log = logging.LoggerForModule()
 
-func runChecks(client sensor.ComplianceService_CommunicateClient,
+// RunChecks gathers the required data and executes all registered compliance checks.
+func RunChecks(client sensor.ComplianceService_CommunicateClient,
 	scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,
 	run *sensor.MsgToCompliance_TriggerRun,
-	nodeNameProvider NodeNameProvider,
+	nodeNameProvider node.NodeNameProvider,
 ) error {
 	complianceData := gatherData(scrapeConfig, run.GetScrapeId(), nodeNameProvider)
 	complianceData.Files = data.FlattenFileMap(complianceData.Files)
@@ -83,8 +86,8 @@ func addCheckResultsToResponse(results map[string]*compliance.ComplianceStandard
 }
 
 func sendResults(results map[string]*compliance.ComplianceStandardResult,
-	client sensor.ComplianceService_CommunicateClient, runID string, nodeNameProvider NodeNameProvider) error {
-	compressedResults, err := compressResults(results)
+	client sensor.ComplianceService_CommunicateClient, runID string, nodeNameProvider node.NodeNameProvider) error {
+	compressedResults, err := utils.CompressResults(results)
 	if err != nil {
 		return err
 	}
@@ -103,7 +106,7 @@ func sendResults(results map[string]*compliance.ComplianceStandardResult,
 }
 
 func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,
-	scrapeID string, nodeNameProvider NodeNameProvider) *standards.ComplianceData {
+	scrapeID string, nodeNameProvider node.NodeNameProvider) *standards.ComplianceData {
 	complianceData := &standards.ComplianceData{
 		NodeName: nodeNameProvider.GetNodeName(),
 	}
@@ -147,7 +150,7 @@ func gatherData(scrapeConfig *sensor.MsgToCompliance_ScrapeConfig,
 
 	complianceData.IsMasterNode = scrapeConfig.GetIsMasterNode()
 
-	complianceData.KubeletConfiguration, err = kubelet.GatherKubelet()
+	complianceData.KubeletConfiguration, err = kubernetes.GatherKubelet()
 	if err != nil {
 		log.Errorf("collecting kubelet configuration failed: %v", err)
 	}

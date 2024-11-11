@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/stackrox/rox/compliance/collection/compliance"
-	v4 "github.com/stackrox/rox/compliance/index/v4"
+	"github.com/stackrox/rox/compliance"
+	"github.com/stackrox/rox/compliance/node"
+	"github.com/stackrox/rox/compliance/node/index"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/retry/handler"
@@ -15,12 +16,12 @@ func init() {
 }
 
 func main() {
-	np := &compliance.EnvNodeNameProvider{}
-	cfg := v4.NewNodeIndexerConfigFromEnv()
+	np := &node.EnvNodeNameProvider{}
+	cfg := index.NewNodeIndexerConfigFromEnv()
 
-	scanner := compliance.NewNodeInventoryComponentScanner(np)
+	scanner := node.NewNodeInventoryComponentScanner(np)
 	scanner.Connect(env.NodeScanningEndpoint.Setting())
-	nodeIndexer := v4.NewNodeIndexer(cfg)
+	nodeIndexer := index.NewNodeIndexer(cfg)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

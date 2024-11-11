@@ -1,9 +1,9 @@
-package compliance
+package node
 
 import (
 	"context"
 
-	"github.com/stackrox/rox/compliance/collection/intervals"
+	"github.com/stackrox/rox/compliance/utils"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 )
@@ -15,7 +15,7 @@ type NodeNameProvider interface {
 
 // NodeScanner provides a way to obtain a node-inventory
 type NodeScanner interface {
-	GetIntervals() *intervals.NodeScanIntervals
+	GetIntervals() *utils.NodeScanIntervals
 	ScanNode(ctx context.Context) (*sensor.MsgFromCompliance, error)
 	IsActive() bool
 }
@@ -26,7 +26,7 @@ type NodeScanner interface {
 // instead of downloading and scanning layers of a container manifest.
 type NodeIndexer interface {
 	IndexNode(ctx context.Context) (*v4.IndexReport, error)
-	GetIntervals() *intervals.NodeScanIntervals
+	GetIntervals() *utils.NodeScanIntervals
 }
 
 // UnconfirmedMessageHandler handles the observation of sending, and ACK/NACK messages

@@ -1,10 +1,10 @@
-package kubelet
+package kubernetes
 
 import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/compliance/collection/utils"
+	complianceUtils "github.com/stackrox/rox/compliance/utils"
 	"github.com/stackrox/rox/pkg/compliance/checks/standards"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/set"
@@ -43,11 +43,11 @@ func applyConfigDefaults(kc *v1beta1.KubeletConfiguration) {
 // GatherKubelet gets the KubeletConfiguration
 func GatherKubelet() (*standards.KubeletConfiguration, error) {
 	var config, hostnameOverride string
-	flagSet := utils.NewFlagSet("kubelet")
+	flagSet := complianceUtils.NewFlagSet("kubelet")
 	flagSet.StringVar(&config, "config", "", "")
 	flagSet.StringVar(&hostnameOverride, "hostname-override", "", "")
 
-	if err := utils.ParseFlags(set.NewStringSet("kubelet"), flagSet); err != nil {
+	if err := complianceUtils.ParseFlags(set.NewStringSet("kubelet"), flagSet); err != nil {
 		return nil, err
 	}
 	if config == "" {
@@ -56,7 +56,7 @@ func GatherKubelet() (*standards.KubeletConfiguration, error) {
 	var configuration v1beta1.KubeletConfiguration
 	applyConfigDefaults(&configuration)
 
-	data, err := utils.ReadHostFile(config)
+	data, err := complianceUtils.ReadHostFile(config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "reading file %q for kubelet", config)
 	}
