@@ -1,4 +1,4 @@
-package intervals
+package utils
 
 import (
 	"testing"

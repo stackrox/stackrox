@@ -89,7 +89,7 @@ func (p pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSen
 	}
 
 	// Send the Node and Index Report to Scanner for enrichment. The result will be persisted in node.NodeScan
-	err = p.enricher.EnrichNodeWithInventory(node, nil, report)
+	err = p.enricher.EnrichNodeWithVulnerabilities(node, nil, report)
 	if err != nil {
 		return errors.WithMessagef(err, "enriching node %s with index report", nodeId)
 	}

@@ -53,7 +53,7 @@ func TestPipelineEnrichesAndUpserts(t *testing.T) {
 	riskManager := riskManagerMocks.NewMockManager(ctrl)
 	riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil)
 	enricher := nodesEnricherMocks.NewMockNodeEnricher(ctrl)
-	enricher.EXPECT().EnrichNodeWithInventory(gomock.Any(), nil, gomock.Any()).Times(1).Return(nil)
+	enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), nil, gomock.Any()).Times(1).Return(nil)
 
 	p := &pipelineImpl{
 		clusterStore:  clusterStore,
