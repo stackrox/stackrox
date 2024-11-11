@@ -75,9 +75,7 @@ func LogTrace(ctx context.Context, logger logging.Logger, contextString string) 
 		if e.rowsAccessed != nil {
 			rowsAccessed = *e.rowsAccessed
 		}
-		if e.duration > queryThreshold {
-			logger.Infof("trace=%s: returned %d rows and took(%d ms): %s %+v", tracer.id, rowsAccessed, e.duration.Milliseconds(), e.query, e.args)
-		}
+		logger.Infof("trace=%s: returned %d rows and took(%d ms): %s %+v", tracer.id, rowsAccessed, e.duration.Milliseconds(), e.query, e.args)
 	}
 }
 

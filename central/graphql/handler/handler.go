@@ -83,7 +83,7 @@ func (h *relayHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if queryTracerEnabled && time.Since(startTime) > graphQLQueryThreshold {
+	if queryTracerEnabled {
 		singleLineQuery := strings.ReplaceAll(params.Query, "\n", " ")
 		postgres.LogTracef(ctx, log, "GraphQL Op %s took %d ms: %s vars=%+v", params.OperationName, time.Since(startTime).Milliseconds(), singleLineQuery, params.Variables)
 	}
