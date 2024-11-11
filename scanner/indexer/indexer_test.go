@@ -13,9 +13,10 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/libvuln/updates"
-	mockindexer "github.com/quay/claircore/test/mock/indexer"
+	mockccindexer "github.com/quay/claircore/test/mock/indexer"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
+	mockindexer "github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -30,7 +31,7 @@ func mustLoadIndexerConfig(t *testing.T, r io.Reader) config.IndexerConfig {
 
 func TestNewLibindex(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	store := mockindexer.NewMockStore(ctrl)
+	store := mockccindexer.NewMockStore(ctrl)
 	store.EXPECT().
 		RegisterScanners(gomock.Any(), gomock.Any()).
 		Return(nil)
@@ -68,13 +69,11 @@ func TestGetIndexReport(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 
 	ctrl := gomock.NewController(t)
-	store := mockindexer.NewMockStore(ctrl)
+	store := mockccindexer.NewMockStore(ctrl)
 	store.EXPECT().
 		RegisterScanners(gomock.Any(), gomock.Any()).
 		Return(nil)
-
-	vscnrs, err := versionedScanners(ctx, ecosystems(ctx))
-	require.NoError(t, err)
+	metadataStore := mockindexer.NewMockIndexerMetadataStore(ctrl)
 
 	ccIndexer, err := libindex.New(ctx, &libindex.Options{
 		Store:      store,
@@ -84,21 +83,49 @@ func TestGetIndexReport(t *testing.T) {
 	}, http.DefaultClient)
 	require.NoError(t, err)
 
+	vscnrs, err := versionedScanners(ctx, ccIndexer.Ecosystems)
+	require.NoError(t, err)
+
 	indexer := &localIndexer{
-		libIndex: ccIndexer,
-		vscnrs:   vscnrs,
+		libIndex:      ccIndexer,
+		vscnrs:        vscnrs,
+		metadataStore: metadataStore,
 	}
 
-	// Could not get manifest, so error.
-	store.EXPECT().
-		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
+	// Could not get manifest metadata, so error.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
 		Return(false, errors.New("error"))
 	ir, exists, err := indexer.GetIndexReport(ctx, "test")
 	assert.Nil(t, ir)
 	assert.False(t, exists)
 	assert.Error(t, err)
 
+	// Manifest metadata does not exist, so claim it doesn't exist.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(false, nil)
+	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	assert.Nil(t, ir)
+	assert.False(t, exists)
+	assert.NoError(t, err)
+
+	// Could not get manifest, so error.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(true, nil)
+	store.EXPECT().
+		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(false, errors.New("error"))
+	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	assert.Nil(t, ir)
+	assert.False(t, exists)
+	assert.Error(t, err)
+
 	// Got manifest, and it's obsolete, so claim it doesn't exist.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(true, nil)
 	store.EXPECT().
 		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(false, nil)
@@ -108,6 +135,9 @@ func TestGetIndexReport(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Manifest exists, but Index Report doesn't.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(true, nil)
 	store.EXPECT().
 		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(true, nil)
@@ -120,7 +150,12 @@ func TestGetIndexReport(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Got manifest, and it's current, so return it.
-	blankReport := &claircore.IndexReport{}
+	blankReport := &claircore.IndexReport{
+		Hash: claircore.MustParseDigest("sha256:" + strings.Repeat("a", 64)),
+	}
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(true, nil)
 	store.EXPECT().
 		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(true, nil)
@@ -193,7 +228,7 @@ func TestRandomExpiry(t *testing.T) {
 	thirtyDays := now.Add(30 * 24 * time.Hour)
 
 	i := &localIndexer{
-		deleteIntervalStart: int64((7 * 24 * time.Hour).Seconds()),
+		deleteIntervalStart:    int64((7 * 24 * time.Hour).Seconds()),
 		deleteIntervalDuration: int64((23 * 24 * time.Hour).Seconds()),
 	}
 

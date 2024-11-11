@@ -27,9 +27,9 @@ var (
 
 	// ScannerV4ManifestDeleteStart specifies the start of the interval in which manifests will be deleted.
 	// Default: 7 days
-	ScannerV4ManifestDeleteStart = registerDurationSetting("ROX_SCANNER_V4_MANIFEST_DELETE_INTERVAL_START", 7 * 24 * time.Hour)
+	ScannerV4ManifestDeleteStart = registerDurationSetting("ROX_SCANNER_V4_MANIFEST_DELETE_INTERVAL_START", 7*24*time.Hour)
 
 	// ScannerV4ManifestDeleteDuration specifies the duration of the interval (not inclusive) in which manifests will be deleted.
 	// Default: 23 days
-	ScannerV4ManifestDeleteDuration = registerDurationSetting("ROX_SCANNER_V4_MANIFEST_DELETE_DURATION", 23 * 24 * time.Hour)
+	ScannerV4ManifestDeleteDuration = registerDurationSetting("ROX_SCANNER_V4_MANIFEST_DELETE_DURATION", 23*24*time.Hour)
 )

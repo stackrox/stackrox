@@ -1,7 +1,7 @@
 --- a table to hold deletion timestamps for manifests.
 CREATE TABLE IF NOT EXISTS manifest_metadata (
-    manifest_id  TEXT PRIMARY KEY,
-    expiration TIMESTAMP
+    manifest_id TEXT PRIMARY KEY,
+    expiration  TIMESTAMP
 );
 
 --- (hopefully) make 'WHERE expiration < SOME_TIMESTAMP' searches faster.

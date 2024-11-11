@@ -41,13 +41,13 @@ func Test_ManifestMetadata_MigrateManifests(t *testing.T) {
 	}
 
 	// Migrate all manifests.
-	ms, err := store.MigrateManifests(ctx)
+	ms, err := store.MigrateManifests(ctx, time.Now())
 	require.NoError(t, err)
 	assert.Len(t, ms, 4)
 	assert.ElementsMatch(t, shas, ms)
 
 	// All manifests have already been migrated, so do nothing.
-	ms, err = store.MigrateManifests(ctx)
+	ms, err = store.MigrateManifests(ctx, time.Now())
 	require.NoError(t, err)
 	assert.Empty(t, ms)
 }
@@ -66,6 +66,10 @@ func Test_ManifestMetadata(t *testing.T) {
 	ids, err := store.GCManifests(ctx, now)
 	require.NoError(t, err)
 	assert.Len(t, ids, 0)
+	// Check the manifest still exists.
+	exists, err := store.ManifestExists(ctx, "sha512:abc")
+	require.NoError(t, err)
+	assert.True(t, exists)
 
 	// Add a manifest to be deleted.
 	// First, add it an hour ahead.
@@ -75,11 +79,19 @@ func Test_ManifestMetadata(t *testing.T) {
 	// This ensures the row is overwritten.
 	err = store.StoreManifest(ctx, "sha512:def", now.Add(-1*time.Hour))
 	assert.NoError(t, err)
+	// Sanity check it exists in the table.
+	exists, err = store.ManifestExists(ctx, "sha512:def")
+	require.NoError(t, err)
+	assert.True(t, exists)
 	// Delete the manifest.
 	ids, err = store.GCManifests(ctx, now)
 	require.NoError(t, err)
 	assert.Len(t, ids, 1)
 	assert.Equal(t, "sha512:def", ids[0])
+	// Ensure the manifest no longer exists from the table.
+	exists, err = store.ManifestExists(ctx, "sha512:def")
+	require.NoError(t, err)
+	assert.False(t, exists)
 
 	// Add a manifest which manages to have the same time as now.
 	err = store.StoreManifest(ctx, "sha512:ghi", now)
@@ -89,6 +101,10 @@ func Test_ManifestMetadata(t *testing.T) {
 	ids, err = store.GCManifests(ctx, now)
 	require.NoError(t, err)
 	assert.Len(t, ids, 0)
+	// Ensure the manifest still exists in the table.
+	exists, err = store.ManifestExists(ctx, "sha512:ghi")
+	require.NoError(t, err)
+	assert.True(t, exists)
 
 	// More complex test.
 	// Note: according to https://www.postgresql.org/docs/15/datatype-datetime.html
@@ -107,6 +123,18 @@ func Test_ManifestMetadata(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, ids, 3)
 	assert.ElementsMatch(t, []string{"sha512:jkl", "sha512:stu", "sha512:vwx"}, ids)
+	for _, id := range ids {
+		exists, err = store.ManifestExists(ctx, id)
+		require.NoError(t, err)
+		assert.False(t, exists)
+	}
+
+	// Ensure there are still a few remaining manifests.
+	for _, id := range []string{"sha512:abc", "sha512:ghi", "sha512:mno", "sha512:pqr"} {
+		exists, err = store.ManifestExists(ctx, id)
+		require.NoError(t, err)
+		assert.True(t, exists)
+	}
 
 	// Delete everything after 5 years (24 hours/day * 365 days/year * 5 years = 43,800 hours)
 	ids, err = store.GCManifests(ctx, now.Add(43_800*time.Hour))
@@ -114,4 +142,9 @@ func Test_ManifestMetadata(t *testing.T) {
 	// There should have been 4 remaining rows.
 	assert.Len(t, ids, 4)
 	assert.ElementsMatch(t, []string{"sha512:abc", "sha512:ghi", "sha512:mno", "sha512:pqr"}, ids)
+	for _, id := range ids {
+		exists, err = store.ManifestExists(ctx, id)
+		require.NoError(t, err)
+		assert.False(t, exists)
+	}
 }

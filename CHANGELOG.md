@@ -80,9 +80,10 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - This will allow image scans to reflect the latest features (for example, we support a new language, we will re-index an image to see if artifacts of the new language exist)
   - This will also clean up manifests/Index Reports from Scanner V4 DB which are no longer relevant in the environment
   - This will mean Scanner V4 Indexer will now pull images from the registry more than just once.
-  - The interval in which manifests are randomly deleted may be modified via `ROX_SCANNER_V4_MANIFEST_DELETE_INTERVAL_START` and `ROX_SCANNER_V4_MANIFEST_DELETE_DURATION` in Scanner V4 Indexer, though the 7 - 30-day interval cannot be changed for any manifests created prior to this version.
+  - The interval in which manifests are randomly deleted may be modified via `ROX_SCANNER_V4_MANIFEST_DELETE_INTERVAL_START` and `ROX_SCANNER_V4_MANIFEST_DELETE_DURATION` in Scanner V4 Indexer.
+  - Any manifests indexed prior to this change will be deleted upon update to this version to ensure any incorrect Index Reports are amended.
   - Scanner V4 Indexer periodically checks for expired manifests at the interval specified by `ROX_SCANNER_V4_MANIFEST_GC_INTERVAL` (current default: 6 hours).
-  - This may be disabled by setting `ROX_SCANNER_V4_REINDEX` to `false` in the Scanner V4 Indexer.
+  - Re-indexing may be disabled by setting `ROX_SCANNER_V4_REINDEX` to `false` in the Scanner V4 Indexer.
 
 ## [4.5.0]
 

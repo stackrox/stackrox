@@ -152,8 +152,8 @@ type localIndexer struct {
 	root            string
 	getLayerTimeout time.Duration
 
-	metadataStore   postgres.IndexerMetadataStore
-	manifestManager *manifest.Manager
+	metadataStore          postgres.IndexerMetadataStore
+	manifestManager        *manifest.Manager
 	deleteIntervalStart    int64
 	deleteIntervalDuration int64
 }
@@ -226,19 +226,23 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		return nil, err
 	}
 
+	// Use indexer.Ecosystems instead of the ecosystems we pass to libindex.New
+	// in case libindex.New adds any ecosystems (which it does).
 	vscnrs, err := versionedScanners(ctx, indexer.Ecosystems)
 	if err != nil {
 		return nil, err
 	}
 
 	manifestManager := manifest.NewManager(ctx, metadataStore, locker)
-	err = manifestManager.MigrateManifests()
+	// Set any manifests indexer prior to the existence of the manifest_metadata table
+	// to expire immediately.
+	err = manifestManager.MigrateManifests(ctx, time.Now())
 	if err != nil {
 		return nil, fmt.Errorf("migrating manifests to metadata store: %w", err)
 	}
 	// Start the manifest GC.
 	go func() {
-		if err := manifestManager.StartGC(); err != nil {
+		if err := manifestManager.StartGC(ctx); err != nil {
 			zlog.Error(ctx).Err(err).Msg("manifest GC failed")
 		}
 	}()
@@ -262,16 +266,16 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		root:            root,
 		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
 
-		metadataStore:   metadataStore,
-		manifestManager: manifestManager,
-		deleteIntervalStart: int64(deleteIntervalDuration.Seconds()),
+		metadataStore:          metadataStore,
+		manifestManager:        manifestManager,
+		deleteIntervalStart:    int64(deleteIntervalStart.Seconds()),
 		deleteIntervalDuration: int64(deleteIntervalDuration.Seconds()),
 	}, nil
 }
 
 // versionedScanners returns the versioned scanners derived from the given ecosystems.
 //
-// This is based on https://github.com/quay/claircore/blob/v1.5.30/libindex/libindex.go#L127.
+// This is based on https://github.com/quay/claircore/blob/v1.5.33/libindex/libindex.go#L127.
 func versionedScanners(ctx context.Context, ecosystems []*ccindexer.Ecosystem) (ccindexer.VersionedScanners, error) {
 	// Get all current versioned scanners.
 	pscnrs, dscnrs, rscnrs, fscnrs, err := ccindexer.EcosystemsToScanners(ctx, ecosystems)
@@ -498,11 +502,24 @@ func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*clai
 	if err != nil {
 		return nil, false, err
 	}
-	ok, err := i.libIndex.Store.ManifestScanned(ctx, manifestDigest, i.vscnrs)
+	exists, err := i.metadataStore.ManifestExists(ctx, manifestDigest.String())
+	if err != nil {
+		return nil, false, fmt.Errorf("checking if manifest metadata exists: %w", err)
+	}
+	if !exists {
+		// Even if the indexing was successful, if the manifest metadata was not stored, then we consider
+		// this manifest as non-existent.
+		//
+		// Note: This can only happen when storing the manifest metadata fails but the indexing succeeds.
+		// We will not run into a situation where manifest metadata was added successfully but deleted prior
+		// to successfully fetching the index report, as the manifest metadata and index report are deleted together in a transaction.
+		return nil, false, nil
+	}
+	scanned, err := i.libIndex.Store.ManifestScanned(ctx, manifestDigest, i.vscnrs)
 	if err != nil {
 		return nil, false, fmt.Errorf("fetching manifest: %w", err)
 	}
-	if !ok {
+	if !scanned {
 		// The IndexReport is obsolete, as there has been an update to
 		// the versioned scanners since this manifest was indexed.
 		return nil, false, nil

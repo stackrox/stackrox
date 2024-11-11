@@ -2,6 +2,7 @@ package manifest
 
 import (
 	"context"
+	"errors"
 	"math/rand/v2"
 	"time"
 
@@ -39,7 +40,6 @@ var jitterMinutes = []time.Duration{
 // both the manifest metadata storage maintained by StackRox
 // and the manifest storage maintained by ClairCore.
 type Manager struct {
-	ctx      context.Context
 	gcCtx    context.Context
 	gcCancel context.CancelFunc
 
@@ -52,17 +52,12 @@ type Manager struct {
 
 // NewManager creates a manifest manager.
 func NewManager(ctx context.Context, metadataStore postgres.IndexerMetadataStore, locker updates.LockSource) *Manager {
-	gcCtx, gcCancel := context.WithCancel(ctx)
 	interval := env.ScannerV4ManifestGCInterval.DurationSetting()
 	if interval < minGCInterval {
 		zlog.Warn(ctx).Msgf("configured manifest GC interval (%v) is too small: setting to %v", interval, minGCInterval)
 		interval = minGCInterval
 	}
 	return &Manager{
-		ctx:      ctx,
-		gcCtx:    gcCtx,
-		gcCancel: gcCancel,
-
 		metadataStore: metadataStore,
 		locker:        locker,
 
@@ -71,8 +66,8 @@ func NewManager(ctx context.Context, metadataStore postgres.IndexerMetadataStore
 }
 
 // MigrateManifests migrates manifests into the manifest_metadata table.
-func (m *Manager) MigrateManifests() error {
-	ctx := zlog.ContextWithValues(m.ctx, "component", "indexer/manifest/Manager.MigrateManifests")
+func (m *Manager) MigrateManifests(ctx context.Context, expiration time.Time) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "indexer/manifest/Manager.MigrateManifests")
 
 	// Use TryLock instead of Lock in case a migration is already happening.
 	// There is no need to run another one.
@@ -85,7 +80,7 @@ func (m *Manager) MigrateManifests() error {
 		return nil
 	}
 
-	ms, err := m.metadataStore.MigrateManifests(ctx)
+	ms, err := m.metadataStore.MigrateManifests(ctx, expiration)
 	if err != nil {
 		return err
 	}
@@ -98,8 +93,13 @@ func (m *Manager) MigrateManifests() error {
 }
 
 // StartGC begins periodic garbage collection.
-func (m *Manager) StartGC() error {
-	ctx := zlog.ContextWithValues(m.gcCtx, "component", "indexer/manifest/Manager.Start")
+func (m *Manager) StartGC(ctx context.Context) error {
+	if m.gcCtx != nil {
+		return errors.New("StartGC already started")
+	}
+
+	m.gcCtx, m.gcCancel = context.WithCancel(ctx)
+	ctx = zlog.ContextWithValues(ctx, "component", "indexer/manifest/Manager.Start")
 
 	if err := m.runGC(ctx); err != nil {
 		zlog.Error(ctx).Err(err).Msg("errors encountered during manifest GC run")
@@ -152,7 +152,12 @@ func (m *Manager) runGC(ctx context.Context) error {
 
 // StopGC ends periodic garbage collection.
 func (m *Manager) StopGC() error {
+	if m.gcCtx == nil {
+		return errors.New("StartGC not started yet")
+	}
 	m.gcCancel()
+	m.gcCtx = nil
+	m.gcCancel = nil
 	return nil
 }
 
