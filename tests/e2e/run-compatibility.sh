@@ -135,7 +135,6 @@ shorten_tag() {
     fi
 }
 
-
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -ne 2 ]]; then
         info "run-compatibility.sh Args: $*, Numargs: $#"
