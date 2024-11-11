@@ -106,7 +106,7 @@ spec:
     name: oci-artifact-expires-after
     type: string
 
-  - name: operator-image-repo
+  - name: operator-image-build-repo
     description: Image repository for the StackRox Operator.
     type: string
     default: "quay.io/rhacs-eng/stackrox-operator"
@@ -115,7 +115,7 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-rhel8-operator"
 
-  - name: main-image-repo
+  - name: main-image-build-repo
     description: Image repository for the main image.
     type: string
     default: "quay.io/rhacs-eng/main"
@@ -124,7 +124,7 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8"
 
-  - name: scanner-image-repo
+  - name: scanner-image-build-repo
     description: Image repository for the Scanner V2 image.
     type: string
     default: "quay.io/rhacs-eng/scanner"
@@ -133,7 +133,7 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8"
 
-  - name: scanner-db-image-repo
+  - name: scanner-db-image-build-repo
     description: Image repository for the Scanner V2 DB image.
     type: string
     default: "quay.io/rhacs-eng/scanner-db"
@@ -142,7 +142,7 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8"
 
-  - name: scanner-slim-image-repo
+  - name: scanner-slim-image-build-repo
     description: Image repository for the Scanner V2 slim image.
     type: string
     default: "quay.io/rhacs-eng/scanner-slim"
@@ -151,7 +151,7 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel8"
 
-  - name: scanner-db-slim-image-repo
+  - name: scanner-db-slim-image-build-repo
     description: Image repository for the Scanner V2 DB slim image.
     type: string
     default: "quay.io/rhacs-eng/scanner-db-slim"
@@ -160,7 +160,7 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel8"
 
-  - name: scanner-v4-image-repo
+  - name: scanner-v4-image-build-repo
     description: Image repository for the Scanner V4 image.
     type: string
     default: "quay.io/rhacs-eng/scanner-v4"
@@ -169,7 +169,7 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel8"
 
-  - name: scanner-v4-db-image-repo
+  - name: scanner-v4-db-image-build-repo
     description: Image repository for the Scanner V4 DB image.
     type: string
     default: "quay.io/rhacs-eng/scanner-v4-db"
@@ -178,7 +178,7 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel8"
 
-  - name: collector-slim-image-repo
+  - name: collector-slim-image-build-repo
     description: Image repository for the collector slim image.
     type: string
     default: "quay.io/rhacs-eng/collector-slim"
@@ -187,7 +187,7 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8"
 
-  - name: collector-full-image-repo
+  - name: collector-full-image-build-repo
     description: Image repository for the collector full image.
     type: string
     default: "quay.io/rhacs-eng/collector"
@@ -196,7 +196,7 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8"
 
-  - name: roxctl-image-repo
+  - name: roxctl-image-build-repo
     description: Image repository for the roxctl image.
     type: string
     default: "quay.io/rhacs-eng/roxctl"
@@ -205,7 +205,7 @@ spec:
     type: string
     default: "registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel8"
 
-  - name: central-db-image-repo
+  - name: central-db-image-build-repo
     description: Image repository for the Central DB image.
     type: string
     default: "quay.io/rhacs-eng/central-db"
@@ -336,7 +336,7 @@ spec:
   - name: wait-for-operator-image
     params:
     - name: IMAGE
-      value: "$(params.operator-image-repo):$(tasks.determine-operator-image-tag.results.IMAGE_TAG)"
+      value: "$(params.operator-image-build-repo):$(tasks.determine-operator-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # This timeout must be the same as the pipeline timeout in `operator-build.yaml`.
@@ -345,7 +345,7 @@ spec:
   - name: wait-for-main-image
     params:
     - name: IMAGE
-      value: "$(params.main-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.main-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # This timeout must be the same as the pipeline timeout in `main-build.yaml`.
@@ -354,7 +354,7 @@ spec:
   - name: wait-for-scanner-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # This timeout must be the same as the pipeline timeout in `scanner-retag.yaml`
@@ -363,7 +363,7 @@ spec:
   - name: wait-for-scanner-db-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-db-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-db-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # This timeout must be the same as the pipeline timeout in `scanner-db-retag.yaml`
@@ -372,7 +372,7 @@ spec:
   - name: wait-for-scanner-slim-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-slim-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-slim-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # This timeout must be the same as the pipeline timeout in `scanner-slim-retag.yaml`
@@ -381,7 +381,7 @@ spec:
   - name: wait-for-scanner-db-slim-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-db-slim-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-db-slim-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # This timeout must be the same as the pipeline timeout in `scanner-db-slim-retag.yaml`
@@ -390,7 +390,7 @@ spec:
   - name: wait-for-scanner-v4-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-v4-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-v4-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # This timeout must be the same as the pipeline timeout in `scanner-v4-build.yaml`.
@@ -399,7 +399,7 @@ spec:
   - name: wait-for-scanner-v4-db-image
     params:
     - name: IMAGE
-      value: "$(params.scanner-v4-db-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.scanner-v4-db-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # This timeout must be the same as the pipeline timeout in `scanner-v4-db-build.yaml`.
@@ -408,7 +408,7 @@ spec:
   - name: wait-for-collector-slim-image
     params:
     - name: IMAGE
-      value: "$(params.collector-slim-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.collector-slim-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # The timeout must be the same as the pipeline timeout in `collector-slim-retag.yaml`
@@ -417,7 +417,7 @@ spec:
   - name: wait-for-collector-full-image
     params:
     - name: IMAGE
-      value: "$(params.collector-full-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.collector-full-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # The timeout must be the same as the pipeline timeout in `collector-full-retag.yaml`
@@ -426,7 +426,7 @@ spec:
   - name: wait-for-roxctl-image
     params:
     - name: IMAGE
-      value: "$(params.roxctl-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.roxctl-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # This timeout must be the same as the pipeline timeout in `roxctl-build.yaml`.
@@ -435,7 +435,7 @@ spec:
   - name: wait-for-central-db-image
     params:
     - name: IMAGE
-      value: "$(params.central-db-image-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
+      value: "$(params.central-db-image-build-repo):$(tasks.determine-main-image-tag.results.IMAGE_TAG)"
     taskRef:
       name: wait-for-image
     # This timeout must be the same as the pipeline timeout in `central-db-build.yaml`.
