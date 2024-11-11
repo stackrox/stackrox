@@ -64,7 +64,7 @@ func CreateTestGRPCStreamingService(
 }
 
 var (
-	// TODO: Remove this after the gather more information
+	// TODO: Remove this after gathering more information.
 	// This is just to log extra information in the server_tests.go if they panic.
 	// It should be removed after the investigation is finished.
 	printSocketInfo = dummyPrintSocketInfo
