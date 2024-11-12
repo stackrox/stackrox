@@ -22,6 +22,7 @@ import (
 type MockTokenExchangerSet struct {
 	ctrl     *gomock.Controller
 	recorder *MockTokenExchangerSetMockRecorder
+	isgomock struct{}
 }
 
 // MockTokenExchangerSetMockRecorder is the mock recorder for MockTokenExchangerSet.

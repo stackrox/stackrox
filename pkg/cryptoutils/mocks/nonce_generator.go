@@ -19,6 +19,7 @@ import (
 type MockNonceGenerator struct {
 	ctrl     *gomock.Controller
 	recorder *MockNonceGeneratorMockRecorder
+	isgomock struct{}
 }
 
 // MockNonceGeneratorMockRecorder is the mock recorder for MockNonceGenerator.

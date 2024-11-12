@@ -22,6 +22,7 @@ import (
 type MockPipelineComponent struct {
 	ctrl     *gomock.Controller
 	recorder *MockPipelineComponentMockRecorder
+	isgomock struct{}
 }
 
 // MockPipelineComponentMockRecorder is the mock recorder for MockPipelineComponent.
@@ -71,6 +72,7 @@ func (mr *MockPipelineComponentMockRecorder) Stop(arg0 any) *gomock.Call {
 type MockResolver struct {
 	ctrl     *gomock.Controller
 	recorder *MockResolverMockRecorder
+	isgomock struct{}
 }
 
 // MockResolverMockRecorder is the mock recorder for MockResolver.
@@ -132,6 +134,7 @@ func (mr *MockResolverMockRecorder) Stop(arg0 any) *gomock.Call {
 type MockOutputQueue struct {
 	ctrl     *gomock.Controller
 	recorder *MockOutputQueueMockRecorder
+	isgomock struct{}
 }
 
 // MockOutputQueueMockRecorder is the mock recorder for MockOutputQueue.
@@ -207,6 +210,7 @@ func (mr *MockOutputQueueMockRecorder) Stop(arg0 any) *gomock.Call {
 type MockContextListener struct {
 	ctrl     *gomock.Controller
 	recorder *MockContextListenerMockRecorder
+	isgomock struct{}
 }
 
 // MockContextListenerMockRecorder is the mock recorder for MockContextListener.
