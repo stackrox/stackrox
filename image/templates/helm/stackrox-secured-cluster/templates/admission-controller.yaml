@@ -214,12 +214,20 @@ webhooks:
           {{- if ._rox.env.openshift }}
           - deploymentconfigs
           {{- end }}
+        scope: "Namespaced"
     namespaceSelector:
       matchExpressions:
       - key: namespace.metadata.stackrox.io/name
         operator: NotIn
         values:
           - {{ ._rox._namespace }}
+          - kube-system
+          - kube-public
+          - istio-system
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+          - stackrox
           - kube-system
           - kube-public
           - istio-system
