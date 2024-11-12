@@ -51,13 +51,15 @@ spec:
         echo ">>> Copying image from ${input_url} ..."
         echo ">>> ... to ${output_url} ..."
 
+        skopeo copy --all --retry-times="${SKOPEO_RETRIES}" "docker://${input_url}" "docker://${output_url}"
+
         # cosign copies not just cosign artifacts but also images. It understands and copies index images.
         # --force argument is needed to prevent the command failing when it runs into (partial) previous copies with
         # errors like the following.
         #   Error: image "quay.io/rhacs-eng/collector:sha256-4b509fdf27761150a5a5ce519f087bc6d69af9d886a63f67f70b1e293643ea19" already exists. Use `-f` to overwrite
-        cosign copy --force "${input_url}" "${output_url}"
+        #cosign copy --force "${input_url}" "${output_url}"
 
-        oras cp --recursive "${input_url}" "${output_url}"
+        #oras cp --recursive "${input_url}" "${output_url}"
 
         # NB: cosign and oras don't retry by themselves. TODO: add retries against Quay transient errors.
       }
@@ -88,24 +90,24 @@ spec:
       echo ">>> Checking if the input image digest ${INPUT_DIGEST} is the same as the output image digest ${OUTPUT_DIGEST} ..."
       [[ "${INPUT_DIGEST}" == "${OUTPUT_DIGEST}" ]]
 
-      # This handles the source image.
-      # Source image is the one where application source code, source code of its dependencies and base container is
-      # packaged. Source image is produced for the input image by Konflux if there's task-source-build* in the pipeline.
-      # While source image is related to the input image semantically and through its tag, there's no enforced link
-      # between them (unlike cosign or oras artifacts) and it is a _separate, independent_ image, so it must not to be
-      # confused with the input image itself.
-      echo ">>> Copying source image ..."
-      # Tag determination borrowed from
-      # https://github.com/konflux-ci/release-service-catalog/blob/92dabb8a31c42669ab9b6ccce831487727514059/tasks/push-snapshot/push-snapshot.yaml#L158
-      SOURCE_IMAGE_TAG="${INPUT_DIGEST/:/-}.src"
-      INPUT_SOURCE_IMAGE_URL="$(params.INPUT_IMAGE_REPO):${SOURCE_IMAGE_TAG}"
-      OUTPUT_SOURCE_IMAGE_URL="$(params.OUTPUT_IMAGE_REPO):${SOURCE_IMAGE_TAG}"
-      if [[ "${INPUT_SOURCE_IMAGE_URL}" == "${OUTPUT_SOURCE_IMAGE_URL}" ]]; then
-        # This is the case when we retag in the same repo.
-        echo ">>> The repo and tag of the source image would not change and so the image does not need to be copied."
-      else
-        copy_image "${INPUT_SOURCE_IMAGE_URL}" "${OUTPUT_SOURCE_IMAGE_URL}"
-      fi
+      #      # This handles the source image.
+      #      # Source image is the one where application source code, source code of its dependencies and base container is
+      #      # packaged. Source image is produced for the input image by Konflux if there's task-source-build* in the pipeline.
+      #      # While source image is related to the input image semantically and through its tag, there's no enforced link
+      #      # between them (unlike cosign or oras artifacts) and it is a _separate, independent_ image, so it must not to be
+      #      # confused with the input image itself.
+      #      echo ">>> Copying source image ..."
+      #      # Tag determination borrowed from
+      #      # https://github.com/konflux-ci/release-service-catalog/blob/92dabb8a31c42669ab9b6ccce831487727514059/tasks/push-snapshot/push-snapshot.yaml#L158
+      #      SOURCE_IMAGE_TAG="${INPUT_DIGEST/:/-}.src"
+      #      INPUT_SOURCE_IMAGE_URL="$(params.INPUT_IMAGE_REPO):${SOURCE_IMAGE_TAG}"
+      #      OUTPUT_SOURCE_IMAGE_URL="$(params.OUTPUT_IMAGE_REPO):${SOURCE_IMAGE_TAG}"
+      #      if [[ "${INPUT_SOURCE_IMAGE_URL}" == "${OUTPUT_SOURCE_IMAGE_URL}" ]]; then
+      #        # This is the case when we retag in the same repo.
+      #        echo ">>> The repo and tag of the source image would not change and so the image does not need to be copied."
+      #      else
+      #        copy_image "${INPUT_SOURCE_IMAGE_URL}" "${OUTPUT_SOURCE_IMAGE_URL}"
+      #      fi
 
       echo ">>> Done"
 

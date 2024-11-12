@@ -26,19 +26,19 @@ spec:
         value: task
       resolver: bundles
 
-  - name: show-sbom
-    params:
-    - name: IMAGE_URL
-      value: $(tasks.retag-image.results.IMAGE_URL)
-    taskRef:
-      params:
-      - name: name
-        value: show-sbom
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:52f8b96b96ce4203d4b74d850a85f963125bf8eef0683ea5acdd80818d335a28
-      - name: kind
-        value: task
-      resolver: bundles
+#  - name: show-sbom
+#    params:
+#    - name: IMAGE_URL
+#      value: $(tasks.retag-image.results.IMAGE_URL)
+#    taskRef:
+#      params:
+#      - name: name
+#        value: show-sbom
+#      - name: bundle
+#        value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:52f8b96b96ce4203d4b74d850a85f963125bf8eef0683ea5acdd80818d335a28
+#      - name: kind
+#        value: task
+#      resolver: bundles
 
   params:
   - description: Source Repository URL.
