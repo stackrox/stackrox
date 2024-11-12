@@ -110,8 +110,3 @@ spec:
       #      fi
 
       echo ">>> Done"
-
-      #      echo -n "${OUTPUT_DIGEST}" | tee "$(results.IMAGE_DIGEST.path)"; echo
-      #      echo -n "${OUTPUT_URL}" | tee "$(results.IMAGE_URL.path)"; echo
-      #      # build-image-index task provides both tag and the digest in the IMAGE_REF. We follow its example.
-      #      echo -n "${OUTPUT_URL}@${OUTPUT_DIGEST}" | tee "$(results.IMAGE_REF.path)"; echo
