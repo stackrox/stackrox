@@ -261,7 +261,7 @@ func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
 		return
 	}
 	switch e {
-	case common.SensorComponentEventResourceSyncFinished:
+	case common.SensorComponentEventCentralReachable:
 		d.indicatorsQueue.Resume()
 		d.networkFlowsQueue.Resume()
 	case common.SensorComponentEventOfflineMode:

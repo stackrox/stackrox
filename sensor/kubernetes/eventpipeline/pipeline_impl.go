@@ -120,9 +120,9 @@ func (p *eventPipeline) Stop(_ error) {
 }
 
 func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
-	log.Info(common.LogSensorComponentEvent(e))
+	log.Info(common.LogSensorComponentEvent(e, "Event Pipeline"))
 	switch e {
-	case common.SensorComponentEventResourceSyncFinished:
+	case common.SensorComponentEventCentralReachable:
 		// Start listening to events if not yet listening
 		if p.offlineMode.CompareAndSwap(true, false) {
 			log.Info("Connection established: Starting Kubernetes listener")

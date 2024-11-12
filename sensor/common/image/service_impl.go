@@ -139,7 +139,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
-	case common.SensorComponentEventResourceSyncFinished:
+	case common.SensorComponentEventCentralReachable:
 		s.centralReady.Signal()
 	case common.SensorComponentEventOfflineMode:
 		s.centralReady.Reset()

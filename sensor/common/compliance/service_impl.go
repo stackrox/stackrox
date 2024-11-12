@@ -48,7 +48,7 @@ type serviceImpl struct {
 
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
-	case common.SensorComponentEventResourceSyncFinished:
+	case common.SensorComponentEventCentralReachable:
 		s.offlineMode.Store(false)
 	case common.SensorComponentEventOfflineMode:
 		s.offlineMode.Store(true)

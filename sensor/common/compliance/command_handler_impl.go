@@ -50,7 +50,7 @@ func (c *commandHandlerImpl) Stop(_ error) {
 
 func (c *commandHandlerImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
-	case common.SensorComponentEventResourceSyncFinished:
+	case common.SensorComponentEventCentralReachable:
 		c.centralReachable.Store(true)
 	case common.SensorComponentEventOfflineMode:
 		c.centralReachable.Store(false)

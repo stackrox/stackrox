@@ -40,7 +40,7 @@ func (h *alertHandlerImpl) Stop(_ error) {
 func (h *alertHandlerImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
-	case common.SensorComponentEventResourceSyncFinished:
+	case common.SensorComponentEventCentralReachable:
 		h.centralReady.Signal()
 	case common.SensorComponentEventOfflineMode:
 		h.centralReady.Reset()

@@ -397,9 +397,12 @@ func (s *Sensor) changeStateNoLock(state common.SensorComponentEvent) {
 	}
 }
 
-func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
-	for _, component := range s.notifyList {
-		component.Notify(notification)
+// notifyAllComponents sends each notification one-by-one to all components
+func (s *Sensor) notifyAllComponents(notifications ...common.SensorComponentEvent) {
+	for _, notification := range notifications {
+		for _, component := range s.notifyList {
+			component.Notify(notification)
+		}
 	}
 }
 
@@ -411,11 +414,18 @@ func wrapOrNewError(err error, message string) error {
 }
 
 func (s *Sensor) notifySyncDone(syncDone *concurrency.Signal, centralCommunication CentralCommunication) {
+	// SensorComponentEventSyncFinished is the first event that guarantees that the gRPC connection was successful
+	// at least once, because data has been exchanged over gRPC. This is sufficient condition for going online.
+	s.notifyAllOnSignal(syncDone, centralCommunication, common.SensorComponentEventSyncFinished, common.SensorComponentEventCentralReachable)
+}
+
+// notifyAllOnSignal sends `notification` to all components when `signal` is raised
+func (s *Sensor) notifyAllOnSignal(signal *concurrency.Signal, centralCommunication CentralCommunication, notifications ...common.SensorComponentEvent) {
 	select {
-	case <-syncDone.Done():
+	case <-signal.Done():
 		s.currentStateMtx.Lock()
 		defer s.currentStateMtx.Unlock()
-		s.notifyAllComponents(common.SensorComponentEventSyncFinished)
+		s.notifyAllComponents(notifications...)
 	case <-centralCommunication.Stopped().WaitC():
 		return
 	case <-s.stoppedSig.WaitC():

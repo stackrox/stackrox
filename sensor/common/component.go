@@ -15,7 +15,10 @@ import (
 type SensorComponentEvent string
 
 const (
-	// SensorComponentEventCentralReachableHTTP denotes that Sensor-Central responds to pings over HTTP
+	// SensorComponentEventCentralReachable denotes that Sensor-Central gRPC stream is connected and in ready state
+	SensorComponentEventCentralReachable SensorComponentEvent = "central-reachable"
+
+	// SensorComponentEventCentralReachableHTTP denotes that Central responds to pings over HTTP
 	SensorComponentEventCentralReachableHTTP SensorComponentEvent = "central-reachable-HTTP"
 
 	// SensorComponentEventOfflineMode denotes that Sensor-Central connection is broken and sensor should operate in offline mode
@@ -37,19 +40,18 @@ func LogSensorComponentEvent(e SensorComponentEvent, optComponentName ...string)
 	if len(optComponentName) > 0 {
 		name += fmt.Sprintf(" '%s'", optComponentName[0])
 	}
-	mode := fmt.Sprintf("unknown (%s)", e)
 	switch e {
-	case SensorComponentEventCentralReachableHTTP:
-		mode = "Online"
+	case SensorComponentEventCentralReachable:
+		return fmt.Sprintf("%s runs now in Online mode", name)
 	case SensorComponentEventOfflineMode:
-		mode = "Offline"
+		return fmt.Sprintf("%s runs now in Offline mode", name)
 	case SensorComponentEventSyncFinished:
 		return fmt.Sprintf("%s has received the SyncFinished notification", name)
 	case SensorComponentEventResourceSyncFinished:
 		return fmt.Sprintf("%s has received the ResourceSyncFinished notification", name)
+	default:
+		return fmt.Sprintf("%s has received the %s notification", name, e)
 	}
-	return fmt.Sprintf("%s runs now in %s mode", name, mode)
-
 }
 
 // Notifiable is the interface used by Sensor to notify components of state changes in Central<->Sensor connectivity.

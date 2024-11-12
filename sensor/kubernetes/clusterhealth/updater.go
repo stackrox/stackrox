@@ -67,7 +67,7 @@ func (u *updaterImpl) Stop(_ error) {
 
 func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 	switch e {
-	case common.SensorComponentEventResourceSyncFinished:
+	case common.SensorComponentEventCentralReachable:
 		u.resetContext()
 		u.updateTicker.Reset(u.updateInterval)
 	case common.SensorComponentEventOfflineMode:
