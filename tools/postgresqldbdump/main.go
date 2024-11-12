@@ -13,7 +13,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/jsonutil"
@@ -34,7 +33,6 @@ const (
 var (
 	foundUnhandledTables = set.NewStringSet()
 	fatalErrorsFound     bool
-	marshaller           = &jsonpb.Marshaler{Indent: "  "}
 	log                  = logging.LoggerForModule()
 )
 
@@ -92,7 +90,7 @@ func processCentralBackup(zipPath, outputDir string) error {
 	for _, file := range zipReader.File {
 		if file.Name == postgresDumpPath {
 			if err := extractDBDump(file, outputDir); err != nil {
-				log.Errorf("failed to deserialize postgres dump: %w", err)
+				log.Errorf("failed to deserialize postgres dump: %v", err)
 			}
 			continue
 		}
@@ -283,6 +281,9 @@ func genDataRow(headerLine, valueLine, tableName string, hasSerialized bool) (*D
 			return je, err
 		}
 		pb, err := unmarshalProto(decoded, pbInterface, tableName, possibleObjectID)
+		if err != nil {
+			return nil, err
+		}
 		jsonStr, err := jsonutil.MarshalToString(*pb)
 		if err != nil {
 			return nil, err
@@ -317,14 +318,14 @@ func genFields(headerLine, valueLine string) (map[string]string, error) {
 	start := strings.Index(headerLine, "(")
 	end := strings.Index(headerLine, ")")
 	if start == -1 || end == -1 || start >= end {
-		return nil, errors.Errorf("invalid COPY command format")
+		return nil, errors.New("invalid COPY command format")
 	}
 
 	columnPart := headerLine[start+1 : end]
 	columns := strings.Split(columnPart, ", ")
 	values := strings.Split(valueLine, "\t")
 	if len(values) > len(columns) {
-		return nil, errors.Errorf("number of values are more than number of columns")
+		return nil, errors.New("number of values are more than number of columns")
 	}
 
 	result := make(map[string]string)
