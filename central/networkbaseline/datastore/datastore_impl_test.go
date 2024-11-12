@@ -43,14 +43,12 @@ var _ interface {
 
 func (suite *NetworkBaselineDataStoreTestSuite) SetupSuite() {
 	ctx := context.Background()
-	source := pgtest.GetConnectionString(suite.T())
-	config, err := postgres.ParseConfig(source)
-	suite.NoError(err)
-	suite.pool, err = postgres.New(ctx, config)
-	suite.NoError(err)
-	pgStore.Destroy(ctx, suite.pool)
-	gormDB := pgtest.OpenGormDB(suite.T(), source)
+	testDB := pgtest.ForT(suite.T())
+
+	gormDB := testDB.GetGormDB(suite.T())
 	defer pgtest.CloseGormDB(suite.T(), gormDB)
+	suite.pool = testDB.DB
+
 	suite.storage = pgStore.CreateTableAndNewStore(ctx, suite.pool, gormDB)
 	suite.datastore = newNetworkBaselineDataStore(suite.storage)
 }
