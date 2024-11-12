@@ -227,7 +227,7 @@ func newFixture[ReqT any, RespT protobufResponse](
 ) *certificateRequesterFixture[ReqT, RespT] {
 	sendC := make(chan *message.ExpiringMessage)
 	receiveC := make(chan RespT)
-	requester := newRequester[ReqT, RespT](sendC, receiveC, messageFactory, responseFactory)
+	requester := newRequester[ReqT, RespT](sendC, receiveC, messageFactory, responseFactory, nil)
 	var interceptedRequestID atomic.Value
 	if timeout == 0 {
 		timeout = testTimeout

@@ -2,13 +2,16 @@ package certificates
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
@@ -38,6 +41,7 @@ func NewLocalScannerCertificateRequester(sendC chan<- *message.ExpiringMessage,
 		receiveC,
 		&localScannerMessageFactory{},
 		&localScannerResponseFactory{},
+		nil,
 	)
 }
 
@@ -55,6 +59,10 @@ func NewSecuredClusterCertificateRequester(sendC chan<- *message.ExpiringMessage
 		receiveC,
 		&securedClusterMessageFactory{},
 		&securedClusterResponseFactory{},
+		func() *centralsensor.CentralCapability {
+			centralCap := centralsensor.CentralCapability(centralsensor.SecuredClusterCertificatesReissue)
+			return &centralCap
+		}(),
 	)
 }
 
@@ -63,22 +71,25 @@ func newRequester[ReqT any, RespT protobufResponse](
 	receiveC <-chan RespT,
 	messageFactory messageFactory,
 	responseFactory responseFactory[RespT],
+	centralCapability *centralsensor.CentralCapability,
 ) *genericRequester[ReqT, RespT] {
 	return &genericRequester[ReqT, RespT]{
-		sendC:           sendC,
-		receiveC:        receiveC,
-		messageFactory:  messageFactory,
-		responseFactory: responseFactory,
+		sendC:             sendC,
+		receiveC:          receiveC,
+		messageFactory:    messageFactory,
+		responseFactory:   responseFactory,
+		centralCapability: centralCapability,
 	}
 }
 
 type genericRequester[ReqT any, RespT protobufResponse] struct {
-	sendC           chan<- *message.ExpiringMessage
-	receiveC        <-chan RespT
-	stopC           concurrency.ErrorSignal
-	requests        sync.Map
-	messageFactory  messageFactory
-	responseFactory responseFactory[RespT]
+	sendC             chan<- *message.ExpiringMessage
+	receiveC          <-chan RespT
+	stopC             concurrency.ErrorSignal
+	requests          sync.Map
+	messageFactory    messageFactory
+	responseFactory   responseFactory[RespT]
+	centralCapability *centralsensor.CentralCapability
 }
 
 type protobufResponse interface {
@@ -129,11 +140,17 @@ func (f *localScannerMessageFactory) newMsgFromSensor(requestID string) *central
 	}
 }
 
+// Start makes the certificate requester listen to `receiveC` and forwards responses to any request that is running
+// as a call to RequestCertificates.
 func (r *genericRequester[ReqT, RespT]) Start() {
 	r.stopC.Reset()
 	go r.dispatchResponses()
 }
 
+// Stop makes the certificate stop forwarding responses to running requests. Subsequent calls to RequestCertificates
+// will fail with ErrCertificateRequesterStopped.
+// Currently active calls to RequestCertificates will continue running until cancelled or timed out via the
+// provided context.
 func (r *genericRequester[ReqT, RespT]) Stop() {
 	r.stopC.Signal()
 }
@@ -159,12 +176,23 @@ func (r *genericRequester[ReqT, RespT]) dispatchResponses() {
 	}
 }
 
+// RequestCertificates makes a new request for a new set of secured cluster certificates from Central.
+// This assumes the certificate requester is started, otherwise this returns ErrCertificateRequesterStopped.
 func (r *genericRequester[ReqT, RespT]) RequestCertificates(ctx context.Context) (*Response, error) {
+	if r.centralCapability != nil {
+		// Central capabilities are only available after this component is created,
+		// which is why this check is done here
+		if !centralcaps.Has(*r.centralCapability) {
+			return nil, fmt.Errorf("TLS certificate refresh failed: missing Central capability '%s'", *r.centralCapability)
+		}
+	}
+
 	requestID := uuid.NewV4().String()
 	receiveC := make(chan RespT, 1)
 	r.requests.Store(requestID, receiveC)
 	defer r.requests.Delete(requestID)
-
+	// Always delete this entry when leaving this scope to account for requests that are never responded, to avoid
+	// having entries in `r.requests` that are never removed.
 	if err := r.send(ctx, requestID); err != nil {
 		return nil, err
 	}
