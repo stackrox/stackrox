@@ -34,22 +34,38 @@ type TestPostgres struct {
 	database string
 }
 
-// CreateADatabaseForT creates a postgres database for test
-func CreateADatabaseForT(t testing.TB) string {
-	suffix, err := random.GenerateString(5, random.AlphanumericCharacters)
+func TestToDBName(t testing.TB) string {
+	suffixLength := 5
+
+	// There is a limit on how large the name could be in PostgreSQL, so we
+	// need to cut the generated name to fit into it. Since the idea is to have
+	// a randomized suffix, truncate the test name rather than suffix. The
+	// actual maximum database name is 63, and could be verified via:
+	//
+	//     SELECT length(repeat('abcde', 100)::NAME);
+	//
+	// But we reduce it to 60 to keep a small buffer.
+	maxDBName := 60
+
+	nameLength := min(len(t.Name()), maxDBName-suffixLength)
+	truncatedTestName := t.Name()[:nameLength]
+
+	suffix, err := random.GenerateString(suffixLength,
+		random.AlphanumericCharacters)
 	require.NoError(t, err)
 
-	database := strings.ToLower(strings.ReplaceAll(t.Name(), "/", "_") + suffix)
-	database = strings.ToLower(strings.ReplaceAll(database, "-", "_"))
+	database := truncatedTestName + suffix
+	database = strings.ReplaceAll(database, "/", "_")
+	database = strings.ReplaceAll(database, "-", "_")
+	database = strings.ToLower(database)
 
-	// There is a limit on how large the name could be in PostgreSQL, cut the
-	// generated name to fit into it. Note, that taking a slice larger than the
-	// original strill will cause an error, a minimum lenght has to be used.
-	name_length := min(len(database), 60)
-	database = database[:name_length]
+	return database
+}
 
+// CreateADatabaseForT creates a postgres database for test
+func CreateADatabaseForT(t testing.TB) string {
+	database := TestToDBName(t)
 	CreateDatabase(t, database)
-
 	return database
 }
 
