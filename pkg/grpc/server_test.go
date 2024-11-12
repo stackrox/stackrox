@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 )
@@ -65,8 +66,8 @@ func (a *APIServerSuite) TestEnvValues() {
 }
 
 func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
-	api1 := NewAPI(defaultConf())
-	api2 := NewAPI(defaultConf())
+	api1 := newAPIForTest(a.T(), defaultConf())
+	api2 := newAPIForTest(a.T(), defaultConf())
 
 	for i, api := range []API{api1, api2} {
 		// Running two tests that start the API results in failure.
@@ -82,7 +83,7 @@ func (a *APIServerSuite) Test_CustomAPI() {
 
 	a.Run("fetch data from /test", func() {
 		cfg, endpointReached := configWithCustomRoute()
-		api := NewAPI(cfg)
+		api := newAPIForTest(a.T(), cfg)
 		a.T().Cleanup(func() { api.Stop() })
 		a.Assert().NoError(api.Start().Wait())
 
@@ -92,7 +93,7 @@ func (a *APIServerSuite) Test_CustomAPI() {
 
 	a.Run("cannot fetch data from /test after server stopped", func() {
 		cfg, endpointReached := configWithCustomRoute()
-		api := NewAPI(cfg)
+		api := newAPIForTest(a.T(), cfg)
 		a.Assert().NoError(api.Start().Wait())
 		a.Require().True(api.Stop())
 
@@ -103,7 +104,7 @@ func (a *APIServerSuite) Test_CustomAPI() {
 }
 
 func (a *APIServerSuite) Test_Stop_CalledMultipleTimes() {
-	api := NewAPI(defaultConf())
+	api := newAPIForTest(a.T(), defaultConf())
 
 	a.Assert().NoError(api.Start().Wait())
 
@@ -113,7 +114,7 @@ func (a *APIServerSuite) Test_Stop_CalledMultipleTimes() {
 }
 
 func (a *APIServerSuite) Test_CantCallStartMultipleTimes() {
-	api := NewAPI(defaultConf())
+	api := newAPIForTest(a.T(), defaultConf())
 	a.Assert().NoError(api.Start().Wait())
 	a.Require().True(api.Stop())
 	a.Assert().Error(api.Start().Wait())
@@ -196,7 +197,7 @@ func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	api := NewAPI(defaultConf())
+	api := newAPIForTest(a.T(), defaultConf())
 	grpcServiceHandler := &pingServiceTestErrorImpl{}
 	api.Register(grpcServiceHandler)
 	a.Assert().NoError(api.Start().Wait())
@@ -210,6 +211,14 @@ func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
 
 	bodyStr := string(body)
 	a.Assert().JSONEq(jsonPayload, bodyStr)
+}
+
+func newAPIForTest(t *testing.T, config Config) API {
+	api := NewAPI(config)
+	impl, ok := api.(*apiImpl)
+	require.True(t, ok)
+	impl.debugLog = newDebugLogger(t)
+	return api
 }
 
 func setUpPrintSocketInfoFunction(t *testing.T, ports ...uint64) {

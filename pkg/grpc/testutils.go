@@ -71,6 +71,35 @@ var (
 	procFiles       = []string{"/proc/net/tcp", "/proc/net/tcp6"}
 )
 
+type debugLogger interface {
+	Log(args ...any)
+	Logf(format string, args ...any)
+}
+
+type debugLoggerImpl struct {
+	log debugLogger
+}
+
+func (d *debugLoggerImpl) Log(args ...any) {
+	if d == nil || d.log == nil {
+		return
+	}
+	d.log.Log(args)
+}
+
+func (d *debugLoggerImpl) Logf(format string, args ...any) {
+	if d == nil || d.log == nil {
+		return
+	}
+	d.log.Logf(format, args)
+}
+
+func newDebugLogger(t *testing.T) *debugLoggerImpl {
+	return &debugLoggerImpl{
+		log: t,
+	}
+}
+
 func dummyPrintSocketInfo(_ *testing.T) {}
 
 func testPrintSocketInfo(t *testing.T, ports ...uint64) error {

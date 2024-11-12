@@ -126,6 +126,8 @@ type apiImpl struct {
 
 	grpcServer         *grpc.Server
 	shutdownInProgress *atomic.Bool
+
+	debugLog *debugLoggerImpl
 }
 
 // A Config configures the server.
@@ -193,7 +195,7 @@ func (a *apiImpl) Stop() bool {
 	a.listenersLock.Lock()
 	defer a.listenersLock.Unlock()
 
-	log.Infof("Stopping %d listeners", len(a.listeners))
+	a.debugLog.Logf("Stopping %d listeners", len(a.listeners))
 	for _, listener := range a.listeners {
 		debugMsg := "unknown listener type: "
 		switch listener.srv.(type) {
@@ -208,7 +210,7 @@ func (a *apiImpl) Stop() bool {
 		} else {
 			debugMsg += fmt.Sprintf("not stopped in loop. Comparing with grpcServer pointer with listener.srv pointer (%p : %p)", a.grpcServer, listener.srv)
 		}
-		log.Info(debugMsg)
+		a.debugLog.Log(debugMsg)
 	}
 	return true
 }

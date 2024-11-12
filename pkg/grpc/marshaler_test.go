@@ -64,7 +64,7 @@ func (a *MarshalerTest) TestDurationParsing() {
 	url := fmt.Sprintf("https://localhost:%d/v1/nodecves/suppress", testDefaultPort)
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	api := NewAPI(defaultConf())
+	api := newAPIForTest(a.T(), defaultConf())
 	grpcServiceHandler := &supressCveServiceTestErrorImpl{}
 	api.Register(grpcServiceHandler)
 	a.Require().NoError(api.Start().Wait())

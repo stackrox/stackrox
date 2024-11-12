@@ -92,7 +92,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 				},
 			}
 
-			api := NewAPI(cfg)
+			api := newAPIForTest(a.T(), cfg)
 			grpcService := &pingServiceTestImpl{}
 			api.Register(grpcService)
 			a.Assert().NoError(api.Start().Wait())
