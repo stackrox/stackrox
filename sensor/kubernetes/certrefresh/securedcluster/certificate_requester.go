@@ -36,6 +36,9 @@ func NewCertificateRequester(sendC chan<- *message.ExpiringMessage,
 	}
 }
 
+// certificateRequesterImpl implements the certificates.Requester interface for Secured Cluster certificates.
+// Note that there is a nearly identical certificateRequesterImpl in the localscanner package (using a different
+// gRPC API), and any changes or fixes in this file should be carried over to that file as well.
 type certificateRequesterImpl struct {
 	sendC    chan<- *message.ExpiringMessage
 	receiveC <-chan *central.IssueSecuredClusterCertsResponse
