@@ -56,21 +56,21 @@ var (
 )
 
 // minManifestDeleteIntervalStart returns the minimum manifest deletion interval start.
-// For release builds: 1 day
+// For release builds: 1 hour
 // For dev builds: 1 minute
 func minManifestDeleteIntervalStart() time.Duration {
 	if buildinfo.ReleaseBuild {
-		return 24 * time.Hour
+		return 1 * time.Hour
 	}
 	return time.Minute
 }
 
 // minManifestDeleteIntervalDuration returns the minimum duration of the manifest deletion interval.
-// For release builds: 2 days
+// For release builds: 1 hour
 // For dev builds: 2 minutes
 func minManifestDeleteIntervalDuration() time.Duration {
 	if buildinfo.ReleaseBuild {
-		return 2 * 24 * time.Hour
+		return 1 * time.Hour
 	}
 	return 2 * time.Minute
 }
@@ -236,8 +236,11 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	manifestManager := manifest.NewManager(ctx, metadataStore, locker)
 	// Set any manifests indexed prior to the existence of the manifest_metadata table
 	// to expire immediately.
+	// TODO(ROX-26957): Consider moving this elsewhere so we do not block initialization.
 	err = manifestManager.MigrateManifests(ctx, time.Now())
 	if err != nil {
+		// TODO(ROX-26958): Consider just logging this instead once we start deleting entries
+		// missing from the metadata table, too.
 		return nil, fmt.Errorf("migrating manifests to metadata store: %w", err)
 	}
 	// Start the manifest GC.

@@ -84,6 +84,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Any manifests indexed prior to this change will be deleted upon update to this version to ensure any incorrect Index Reports are amended.
   - Scanner V4 Indexer periodically checks for expired manifests at the interval specified by `ROX_SCANNER_V4_MANIFEST_GC_INTERVAL` (current default: 6 hours).
   - Re-indexing may be disabled by setting `ROX_SCANNER_V4_REINDEX` to `false` in the Scanner V4 Indexer.
+- Alpine vulnerabilities will now have a link to https://security.alpinelinux.org instead of https://www.cve.org.
 
 ## [4.5.0]
 
