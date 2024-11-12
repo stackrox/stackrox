@@ -233,6 +233,7 @@ function ViolationsTablePage(): ReactElement {
                         setFilteredWorkflowView('Applications view');
                         setSelectedViolationStateTab(tab);
                     }}
+                    aria-label="Violation state tabs"
                 >
                     <Tab
                         eventKey="ACTIVE"
