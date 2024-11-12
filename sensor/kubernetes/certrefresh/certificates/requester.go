@@ -36,8 +36,8 @@ func NewLocalScannerCertificateRequester(sendC chan<- *message.ExpiringMessage,
 	](
 		sendC,
 		receiveC,
-		&LocalScannerMessageFactory{},
-		&LocalScannerResponseFactory{},
+		&localScannerMessageFactory{},
+		&localScannerResponseFactory{},
 	)
 }
 
@@ -53,18 +53,18 @@ func NewSecuredClusterCertificateRequester(sendC chan<- *message.ExpiringMessage
 	](
 		sendC,
 		receiveC,
-		&SecuredClusterMessageFactory{},
-		&SecuredClusterResponseFactory{},
+		&securedClusterMessageFactory{},
+		&securedClusterResponseFactory{},
 	)
 }
 
-func newRequester[ReqT any, ResT ProtobufResponse](
+func newRequester[ReqT any, ResT protobufResponse](
 	sendC chan<- *message.ExpiringMessage,
 	receiveC <-chan ResT,
-	messageFactory MessageFactory,
-	responseFactory ResponseFactory[ResT],
-) *GenericRequester[ReqT, ResT] {
-	return &GenericRequester[ReqT, ResT]{
+	messageFactory messageFactory,
+	responseFactory responseFactory[ResT],
+) *genericRequester[ReqT, ResT] {
+	return &genericRequester[ReqT, ResT]{
 		sendC:           sendC,
 		receiveC:        receiveC,
 		messageFactory:  messageFactory,
@@ -72,42 +72,42 @@ func newRequester[ReqT any, ResT ProtobufResponse](
 	}
 }
 
-type GenericRequester[ReqT any, ResT ProtobufResponse] struct {
+type genericRequester[ReqT any, ResT protobufResponse] struct {
 	sendC           chan<- *message.ExpiringMessage
 	receiveC        <-chan ResT
 	stopC           concurrency.ErrorSignal
 	requests        sync.Map
-	messageFactory  MessageFactory
-	responseFactory ResponseFactory[ResT]
+	messageFactory  messageFactory
+	responseFactory responseFactory[ResT]
 }
 
-type ProtobufResponse interface {
+type protobufResponse interface {
 	GetRequestId() string
 }
 
-type MessageFactory interface {
-	NewMsgFromSensor(requestID string) *central.MsgFromSensor
+type messageFactory interface {
+	newMsgFromSensor(requestID string) *central.MsgFromSensor
 }
 
-type ResponseFactory[ResT any] interface {
-	ConvertToResponse(response ResT) *Response
+type responseFactory[ResT any] interface {
+	convertToResponse(response ResT) *Response
 }
 
-type LocalScannerResponseFactory struct{}
+type localScannerResponseFactory struct{}
 
-func (f *LocalScannerResponseFactory) ConvertToResponse(response *central.IssueLocalScannerCertsResponse) *Response {
+func (f *localScannerResponseFactory) convertToResponse(response *central.IssueLocalScannerCertsResponse) *Response {
 	return NewResponseFromLocalScannerCerts(response)
 }
 
-type SecuredClusterResponseFactory struct{}
+type securedClusterResponseFactory struct{}
 
-func (f *SecuredClusterResponseFactory) ConvertToResponse(response *central.IssueSecuredClusterCertsResponse) *Response {
+func (f *securedClusterResponseFactory) convertToResponse(response *central.IssueSecuredClusterCertsResponse) *Response {
 	return NewResponseFromSecuredClusterCerts(response)
 }
 
-type SecuredClusterMessageFactory struct{}
+type securedClusterMessageFactory struct{}
 
-func (f *SecuredClusterMessageFactory) NewMsgFromSensor(requestID string) *central.MsgFromSensor {
+func (f *securedClusterMessageFactory) newMsgFromSensor(requestID string) *central.MsgFromSensor {
 	return &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_IssueSecuredClusterCertsRequest{
 			IssueSecuredClusterCertsRequest: &central.IssueSecuredClusterCertsRequest{
@@ -117,9 +117,9 @@ func (f *SecuredClusterMessageFactory) NewMsgFromSensor(requestID string) *centr
 	}
 }
 
-type LocalScannerMessageFactory struct{}
+type localScannerMessageFactory struct{}
 
-func (f *LocalScannerMessageFactory) NewMsgFromSensor(requestID string) *central.MsgFromSensor {
+func (f *localScannerMessageFactory) newMsgFromSensor(requestID string) *central.MsgFromSensor {
 	return &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_IssueLocalScannerCertsRequest{
 			IssueLocalScannerCertsRequest: &central.IssueLocalScannerCertsRequest{
@@ -129,16 +129,16 @@ func (f *LocalScannerMessageFactory) NewMsgFromSensor(requestID string) *central
 	}
 }
 
-func (r *GenericRequester[ReqT, ResT]) Start() {
+func (r *genericRequester[ReqT, ResT]) Start() {
 	r.stopC.Reset()
 	go r.dispatchResponses()
 }
 
-func (r *GenericRequester[ReqT, ResT]) Stop() {
+func (r *genericRequester[ReqT, ResT]) Stop() {
 	r.stopC.Signal()
 }
 
-func (r *GenericRequester[ReqT, ResT]) dispatchResponses() {
+func (r *genericRequester[ReqT, ResT]) dispatchResponses() {
 	for {
 		select {
 		case <-r.stopC.Done():
@@ -159,7 +159,7 @@ func (r *GenericRequester[ReqT, ResT]) dispatchResponses() {
 	}
 }
 
-func (r *GenericRequester[ReqT, ResT]) RequestCertificates(ctx context.Context) (*Response, error) {
+func (r *genericRequester[ReqT, ResT]) RequestCertificates(ctx context.Context) (*Response, error) {
 	requestID := uuid.NewV4().String()
 	receiveC := make(chan ResT, 1)
 	r.requests.Store(requestID, receiveC)
@@ -171,9 +171,9 @@ func (r *GenericRequester[ReqT, ResT]) RequestCertificates(ctx context.Context) 
 	return r.receive(ctx, receiveC)
 }
 
-func (r *GenericRequester[ReqT, ResT]) send(ctx context.Context, requestID string) error {
+func (r *genericRequester[ReqT, ResT]) send(ctx context.Context, requestID string) error {
 	// Assuming the `message.New` function is generic and can handle different request types.
-	msg := r.messageFactory.NewMsgFromSensor(requestID)
+	msg := r.messageFactory.newMsgFromSensor(requestID)
 	select {
 	case <-r.stopC.Done():
 		return r.stopC.ErrorWithDefault(ErrCertificateRequesterStopped)
@@ -184,12 +184,12 @@ func (r *GenericRequester[ReqT, ResT]) send(ctx context.Context, requestID strin
 	}
 }
 
-func (r *GenericRequester[ReqT, ResT]) receive(ctx context.Context, receiveC <-chan ResT) (*Response, error) {
+func (r *genericRequester[ReqT, ResT]) receive(ctx context.Context, receiveC <-chan ResT) (*Response, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case response := <-receiveC:
 		// Convert ResT to `certificates.Response` here, e.g. with a generic conversion function.
-		return r.responseFactory.ConvertToResponse(response), nil
+		return r.responseFactory.convertToResponse(response), nil
 	}
 }

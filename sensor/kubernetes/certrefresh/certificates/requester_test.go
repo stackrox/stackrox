@@ -184,7 +184,7 @@ func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T
 	}
 }
 
-type certificateRequesterFixture[ReqT any, ResT ProtobufResponse] struct {
+type certificateRequesterFixture[ReqT any, ResT protobufResponse] struct {
 	sendC                chan *message.ExpiringMessage
 	receiveC             chan ResT
 	requester            Requester
@@ -199,8 +199,8 @@ func newLocalScannerFixture(timeout time.Duration) *certificateRequesterFixture[
 	*central.IssueLocalScannerCertsResponse] {
 	return newFixture[*central.IssueLocalScannerCertsRequest, *central.IssueLocalScannerCertsResponse](
 		timeout,
-		&LocalScannerMessageFactory{},
-		&LocalScannerResponseFactory{},
+		&localScannerMessageFactory{},
+		&localScannerResponseFactory{},
 		localScannerRequestIDGetter,
 		newLocalScannerResponseWithID)
 }
@@ -210,18 +210,18 @@ func newSecuredClusterFixture(timeout time.Duration) *certificateRequesterFixtur
 	return newFixture[*central.IssueSecuredClusterCertsRequest,
 		*central.IssueSecuredClusterCertsResponse](
 		timeout,
-		&SecuredClusterMessageFactory{},
-		&SecuredClusterResponseFactory{},
+		&securedClusterMessageFactory{},
+		&securedClusterResponseFactory{},
 		securedClusterRequestIDGetter,
 		newSecuredClusterResponseWithID)
 }
 
 // newFixture creates a new test fixture that uses `timeout` as context timeout if `timeout` is
 // not 0, and `testTimeout` otherwise.
-func newFixture[ReqT any, ResT ProtobufResponse](
+func newFixture[ReqT any, ResT protobufResponse](
 	timeout time.Duration,
-	messageFactory MessageFactory,
-	responseFactory ResponseFactory[ResT],
+	messageFactory messageFactory,
+	responseFactory responseFactory[ResT],
 	getRequestID requestIDGetter,
 	newResponseWithID func(requestID string) ResT,
 ) *certificateRequesterFixture[ReqT, ResT] {
