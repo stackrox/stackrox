@@ -16,7 +16,7 @@ metadata:
 #    appstudio.openshift.io/application: acs
 #    appstudio.openshift.io/component: collector-slim-retagged
 #    pipelines.appstudio.openshift.io/type: build
-  name: collector-slim-retag
+  name: collector-slim-retagged-on-push
   namespace: rh-acs-tenant
 
 spec:
