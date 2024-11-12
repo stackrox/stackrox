@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -60,10 +61,10 @@ func (s *supressCveServiceTestErrorImpl) SuppressCVEs(_ context.Context, req *v1
 
 func (a *MarshalerTest) TestDurationParsing() {
 
-	url := "https://localhost:8080/v1/nodecves/suppress"
+	url := fmt.Sprintf("https://localhost:%d/v1/nodecves/suppress", testDefaultPort)
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	api := NewAPI(defaultConf())
+	api := newAPIForTest(a.T(), defaultConf())
 	grpcServiceHandler := &supressCveServiceTestErrorImpl{}
 	api.Register(grpcServiceHandler)
 	a.Require().NoError(api.Start().Wait())
