@@ -123,8 +123,7 @@ func TestLocalScannerCertificateRequesterResponsesWithUnknownIDAreIgnored(t *tes
 	f.requester.Start()
 	defer f.tearDown()
 
-	var response *central.IssueLocalScannerCertsResponse
-	response = &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"}
+	response := &central.IssueLocalScannerCertsResponse{RequestId: "UNKNOWN"}
 	// Request with different request ID should be ignored.
 	go f.respondRequest(t, 0, &response)
 
@@ -138,8 +137,7 @@ func TestSecuredClusterCertificateRequesterResponsesWithUnknownIDAreIgnored(t *t
 	f.requester.Start()
 	defer f.tearDown()
 
-	var response *central.IssueSecuredClusterCertsResponse
-	response = &central.IssueSecuredClusterCertsResponse{RequestId: "UNKNOWN"}
+	response := &central.IssueSecuredClusterCertsResponse{RequestId: "UNKNOWN"}
 	// Request with different request ID should be ignored.
 	go f.respondRequest(t, 0, &response)
 

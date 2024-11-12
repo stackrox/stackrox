@@ -5,8 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-var ()
-
 // Response represents the response to a certificate request. It contains a set of certificates or an error.
 type Response struct {
 	RequestId    string
