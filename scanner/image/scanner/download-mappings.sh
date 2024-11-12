@@ -33,11 +33,11 @@ for url in "${urls[@]}"; do
     fi
 
     if command -v jq &>/dev/null; then
-        echo "Validating if $filename contains parseable JSON"
-        if jq -e . >/dev/null 2>&1 < "$filename"; then
+        echo "Validating if ${output_dir}/$filename contains parseable JSON"
+        if jq -e . >/dev/null 2>&1 < "${output_dir}/$filename"; then
             echo "Validated"
         else
-            echo "$filename is not valid JSON"
+            echo "${output_dir}/$filename is not valid JSON"
             exit 1
         fi
     else
