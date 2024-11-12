@@ -27,9 +27,9 @@ spec:
     # Names IMAGE_DIGEST, IMAGE_URL and IMAGE_REF must not be used here
     # OUTPUT_IMAGE_DIGEST, OUTPUT_IMAGE_URL
 
-  - name: RESULTING_IMAGE_DIGEST_YO
+  - name: DIGEST_HERE
     description: Digest of the output image (will be the same as of the input one).
-  - name: RESULTING_IMAGE_URL_YO
+  - name: URL_HERE
     description: Image repository and tag of the output image.
   - name: OUTPUT_IMAGE_REF
     description: Image reference of the output image containing both the repository, the tag and the digest.
@@ -114,6 +114,6 @@ spec:
 
       echo ">>> Done"
 
-      echo -n "${OUTPUT_DIGEST}" | tee "$(results.RESULTING_IMAGE_DIGEST_YO.path)"; echo
-      echo -n "${OUTPUT_URL}" | tee "$(results.RESULTING_IMAGE_URL_YO.path)"; echo
+      echo -n "${OUTPUT_DIGEST}" | tee "$(results.DIGEST_HERE.path)"; echo
+      echo -n "${OUTPUT_URL}" | tee "$(results.URL_HERE.path)"; echo
       echo -n "${OUTPUT_URL}@${OUTPUT_DIGEST}" | tee "$(results.OUTPUT_IMAGE_REF.path)"; echo
