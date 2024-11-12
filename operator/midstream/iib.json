@@ -9,7 +9,11 @@
     "4.18": "835767"
   },
   "operator": {
+<<<<<<< HEAD
     "version": "4.5.4",
+=======
+    "version": "4.4.6",
+>>>>>>> 9b974240a3 (update version)
     "channel": "stable"
   }
 }
