@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -17,8 +19,13 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
+)
+
+const (
+	testDefaultPort = 8080
 )
 
 type APIServerSuite struct {
@@ -33,6 +40,8 @@ func (a *APIServerSuite) SetupTest() {
 	a.T().Setenv("ROX_MTLS_KEY_FILE", "../../tools/local-sensor/certs/key.pem")
 	a.T().Setenv("ROX_MTLS_CA_FILE", "../../tools/local-sensor/certs/caCert.pem")
 	a.T().Setenv("ROX_MTLS_CA_KEY_FILE", "../../tools/local-sensor/certs/caKey.pem")
+
+	setUpPrintSocketInfoFunction(a.T(), testDefaultPort)
 }
 
 func Test_APIServerSuite(t *testing.T) {
@@ -57,8 +66,8 @@ func (a *APIServerSuite) TestEnvValues() {
 }
 
 func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
-	api1 := NewAPI(defaultConf())
-	api2 := NewAPI(defaultConf())
+	api1 := newAPIForTest(a.T(), defaultConf())
+	api2 := newAPIForTest(a.T(), defaultConf())
 
 	for i, api := range []API{api1, api2} {
 		// Running two tests that start the API results in failure.
@@ -74,28 +83,28 @@ func (a *APIServerSuite) Test_CustomAPI() {
 
 	a.Run("fetch data from /test", func() {
 		cfg, endpointReached := configWithCustomRoute()
-		api := NewAPI(cfg)
+		api := newAPIForTest(a.T(), cfg)
 		a.T().Cleanup(func() { api.Stop() })
 		a.Assert().NoError(api.Start().Wait())
 
-		a.requestWithoutErr("https://localhost:8080/test")
+		a.requestWithoutErr(fmt.Sprintf("https://localhost:%d/test", testDefaultPort))
 		a.waitForSignal(endpointReached)
 	})
 
 	a.Run("cannot fetch data from /test after server stopped", func() {
 		cfg, endpointReached := configWithCustomRoute()
-		api := NewAPI(cfg)
+		api := newAPIForTest(a.T(), cfg)
 		a.Assert().NoError(api.Start().Wait())
 		a.Require().True(api.Stop())
 
-		_, err := http.Get("https://localhost:8080/test")
+		_, err := http.Get(fmt.Sprintf("https://localhost:%d/test", testDefaultPort))
 		a.Require().Error(err)
 		a.Require().False(endpointReached.IsDone())
 	})
 }
 
 func (a *APIServerSuite) Test_Stop_CalledMultipleTimes() {
-	api := NewAPI(defaultConf())
+	api := newAPIForTest(a.T(), defaultConf())
 
 	a.Assert().NoError(api.Start().Wait())
 
@@ -105,7 +114,7 @@ func (a *APIServerSuite) Test_Stop_CalledMultipleTimes() {
 }
 
 func (a *APIServerSuite) Test_CantCallStartMultipleTimes() {
-	api := NewAPI(defaultConf())
+	api := newAPIForTest(a.T(), defaultConf())
 	a.Assert().NoError(api.Start().Wait())
 	a.Require().True(api.Stop())
 	a.Assert().Error(api.Start().Wait())
@@ -143,7 +152,7 @@ func defaultConf() Config {
 	return Config{
 		Endpoints: []*EndpointConfig{
 			{
-				ListenEndpoint: ":8080",
+				ListenEndpoint: fmt.Sprintf(":%d", testDefaultPort),
 				TLS:            verifier.NonCA{},
 				ServeGRPC:      true,
 				ServeHTTP:      true,
@@ -183,12 +192,12 @@ func (s *pingServiceTestErrorImpl) Ping(context.Context, *v1.Empty) (*v1.PongMes
 }
 
 func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
-	url := "https://localhost:8080/v1/ping"
+	url := fmt.Sprintf("https://localhost:%d/v1/ping", testDefaultPort)
 	jsonPayload := `{"code":3, "details":[], "error":"missing argument: invalid arguments", "message":"missing argument: invalid arguments"}`
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	api := NewAPI(defaultConf())
+	api := newAPIForTest(a.T(), defaultConf())
 	grpcServiceHandler := &pingServiceTestErrorImpl{}
 	api.Register(grpcServiceHandler)
 	a.Assert().NoError(api.Start().Wait())
@@ -202,4 +211,37 @@ func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
 
 	bodyStr := string(body)
 	a.Assert().JSONEq(jsonPayload, bodyStr)
+}
+
+func newAPIForTest(t *testing.T, config Config) API {
+	api := NewAPI(config)
+	impl, ok := api.(*apiImpl)
+	require.True(t, ok)
+	impl.debugLog = newDebugLogger(t)
+	return api
+}
+
+func setUpPrintSocketInfoFunction(t *testing.T, ports ...uint64) {
+	printSocketInfo = func(_ *testing.T) {
+		if r := recover(); r != nil {
+			if err, ok := r.(string); ok {
+				if strings.Contains(err, syscall.EADDRINUSE.Error()) {
+					t.Log("-----------------------------------------------")
+					t.Log(" STACK TRACE INFO")
+					t.Log("-----------------------------------------------")
+					if printErr := testPrintStackTraceInfo(t); printErr != nil {
+						t.Log(printErr)
+					}
+					t.Log("-----------------------------------------------")
+					t.Log(" SOCKET INFO")
+					t.Log("-----------------------------------------------")
+					if printErr := testPrintSocketInfo(t, ports...); printErr != nil {
+						t.Log(printErr)
+					}
+					t.Log("-----------------------------------------------")
+					panic(err)
+				}
+			}
+		}
+	}
 }
