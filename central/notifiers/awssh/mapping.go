@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/securityhub/types"
+	securityhubTypes "github.com/aws/aws-sdk-go-v2/service/securityhub/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/set"
@@ -62,10 +62,10 @@ func categoriesToFindings(categories []string) []string {
 	return findings
 }
 
-func mapAlertToFinding(account string, arn string, alertURL string, alert *storage.Alert) types.AwsSecurityFinding {
+func mapAlertToFinding(account string, arn string, alertURL string, alert *storage.Alert) securityhubTypes.AwsSecurityFinding {
 	severity := float64(alert.GetPolicy().GetSeverity())
 
-	finding := types.AwsSecurityFinding{
+	finding := securityhubTypes.AwsSecurityFinding{
 		SchemaVersion: aws.String(schemaVersion),
 		AwsAccountId:  aws.String(account),
 		ProductArn:    aws.String(arn),
@@ -81,7 +81,7 @@ func mapAlertToFinding(account string, arn string, alertURL string, alert *stora
 		CreatedAt:   aws.String(protoconv.ConvertTimestampToTimeOrNow(alert.GetFirstOccurred()).UTC().Format(iso8601UTC)),
 		UpdatedAt:   aws.String(protoconv.ConvertTimestampToTimeOrNow(alert.GetTime()).UTC().Format(iso8601UTC)),
 		Confidence:  aws.Int32(100),
-		Severity: &types.Severity{
+		Severity: &securityhubTypes.Severity{
 			Normalized: aws.Int32(int32(100 * severity / criticalSeverity)),
 			Product:    aws.Float64(severity),
 		},
@@ -92,14 +92,14 @@ func mapAlertToFinding(account string, arn string, alertURL string, alert *stora
 	resources := getEntitySection(alert)
 
 	for i, violation := range alert.GetViolations() {
-		resources = append(resources, types.Resource{
+		resources = append(resources, securityhubTypes.Resource{
 			Id:   aws.String("violation: " + violation.GetMessage()),
 			Type: aws.String(resourceTypeOther),
 		})
 		// If we are going to add eclipse the maxResource limit, the use the last entry to
 		// reference the StackRox UI and break
 		if len(resources) == maxResources-1 && i != len(alert.GetViolations())-1 {
-			resources = append(resources, types.Resource{
+			resources = append(resources, securityhubTypes.Resource{
 				Id:   aws.String(fmt.Sprintf("Note: More than %d violations found. Please consult the StackRox product to see more.", maxResources)),
 				Type: aws.String(resourceTypeOther),
 			})
@@ -110,13 +110,13 @@ func mapAlertToFinding(account string, arn string, alertURL string, alert *stora
 
 	switch alert.GetState() {
 	case storage.ViolationState_ACTIVE:
-		finding.Compliance = &types.Compliance{
-			Status: types.ComplianceStatusFailed,
+		finding.Compliance = &securityhubTypes.Compliance{
+			Status: securityhubTypes.ComplianceStatusFailed,
 		}
 		finding.RecordState = "ACTIVE"
 	case storage.ViolationState_RESOLVED:
-		finding.Compliance = &types.Compliance{
-			Status: types.ComplianceStatusPassed,
+		finding.Compliance = &securityhubTypes.Compliance{
+			Status: securityhubTypes.ComplianceStatusPassed,
 		}
 		finding.RecordState = "ARCHIVED"
 	}
@@ -124,7 +124,7 @@ func mapAlertToFinding(account string, arn string, alertURL string, alert *stora
 	return finding
 }
 
-func getEntitySection(alert *storage.Alert) []types.Resource {
+func getEntitySection(alert *storage.Alert) []securityhubTypes.Resource {
 	switch entity := alert.GetEntity().(type) {
 	case *storage.Alert_Deployment_:
 		return getDeploymentSection(entity.Deployment)
@@ -134,8 +134,8 @@ func getEntitySection(alert *storage.Alert) []types.Resource {
 	return nil
 }
 
-func getResourceSection(resource *storage.Alert_Resource) []types.Resource {
-	resources := []types.Resource{
+func getResourceSection(resource *storage.Alert_Resource) []securityhubTypes.Resource {
+	resources := []securityhubTypes.Resource{
 		// At the time of this writing, AWS security hub does not support the notion of a k8s cluster/deployment.
 		// While it supports a resource type AwsEksCluster, it lacks support for cluster details.
 		// With that, we instead create a custom resource and describe the k8s resource context of the alert in this
@@ -143,7 +143,7 @@ func getResourceSection(resource *storage.Alert_Resource) []types.Resource {
 		{
 			Id:   aws.String(fmt.Sprintf("resource: %s", resource.GetName())),
 			Type: aws.String(resourceTypeOther),
-			Details: &types.ResourceDetails{
+			Details: &securityhubTypes.ResourceDetails{
 				Other: map[string]string{
 					"cluster-name":       resource.GetClusterName(),
 					"resource-name":      resource.GetName(),
@@ -156,8 +156,8 @@ func getResourceSection(resource *storage.Alert_Resource) []types.Resource {
 	return resources
 }
 
-func getDeploymentSection(deployment *storage.Alert_Deployment) []types.Resource {
-	resources := []types.Resource{
+func getDeploymentSection(deployment *storage.Alert_Deployment) []securityhubTypes.Resource {
+	resources := []securityhubTypes.Resource{
 		// At the time of this writing, AWS security hub does not support the notion of a k8s cluster/deployment.
 		// While it supports a resource type AwsEksCluster, it lacks support for cluster details.
 		// With that, we instead create a custom resource and describe the deployment context of the alert in this
@@ -165,7 +165,7 @@ func getDeploymentSection(deployment *storage.Alert_Deployment) []types.Resource
 		{
 			Id:   aws.String(fmt.Sprintf("deployment: %s", deployment.GetName())),
 			Type: aws.String(resourceTypeOther),
-			Details: &types.ResourceDetails{
+			Details: &securityhubTypes.ResourceDetails{
 				Other: map[string]string{
 					"cluster-name":         deployment.GetClusterName(),
 					"deployment-name":      deployment.GetName(),
@@ -179,11 +179,11 @@ func getDeploymentSection(deployment *storage.Alert_Deployment) []types.Resource
 		if container.GetImage().GetId() == "" {
 			continue
 		}
-		resources = append(resources, types.Resource{
+		resources = append(resources, securityhubTypes.Resource{
 			Id:   aws.String(fmt.Sprintf("container: %s.%s@%s: %s", deployment.GetName(), deployment.GetNamespace(), deployment.GetClusterName(), container.GetName())),
 			Type: aws.String(resourceTypeContainer),
-			Details: &types.ResourceDetails{
-				Container: &types.ContainerDetails{
+			Details: &securityhubTypes.ResourceDetails{
+				Container: &securityhubTypes.ContainerDetails{
 					Name:      aws.String(container.GetName()),
 					ImageId:   aws.String(container.GetImage().GetId()),
 					ImageName: aws.String(container.GetImage().GetName().GetFullName()),

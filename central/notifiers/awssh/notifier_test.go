@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/securityhub"
-	"github.com/aws/aws-sdk-go-v2/service/securityhub/types"
+	securityhubTypes "github.com/aws/aws-sdk-go-v2/service/securityhub/types"
 	"github.com/stackrox/rox/central/notifiers/awssh/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -96,14 +96,14 @@ func mockBatchImportFindings() func(_ context.Context, input *securityhub.BatchI
 // setting the appropriate number of successes and (if non-zero) failures.
 func mockBatchImportFindingsWithFailures(failures int) func(_ context.Context, input *securityhub.BatchImportFindingsInput, _ ...func(*securityhub.Options)) (*securityhub.BatchImportFindingsOutput, error) {
 	return func(_ context.Context, input *securityhub.BatchImportFindingsInput, _ ...func(*securityhub.Options)) (*securityhub.BatchImportFindingsOutput, error) {
-		failedFindings := make([]types.ImportFindingsError, 0, failures)
+		failedFindings := make([]securityhubTypes.ImportFindingsError, 0, failures)
 		if failures > len(input.Findings) {
 			failures = len(input.Findings)
 		}
 		for _, finding := range input.Findings[:failures] {
 			errorCode := "Mocked BatchImportFindings error code"
 			errorMessage := "Mocked BatchImportFindings error message"
-			failedFindings = append(failedFindings, types.ImportFindingsError{
+			failedFindings = append(failedFindings, securityhubTypes.ImportFindingsError{
 				ErrorCode:    &errorCode,
 				ErrorMessage: &errorMessage,
 				Id:           finding.Id,

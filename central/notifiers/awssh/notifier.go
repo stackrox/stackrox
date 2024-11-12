@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/securityhub"
-	"github.com/aws/aws-sdk-go-v2/service/securityhub/types"
+	securityhubTypes "github.com/aws/aws-sdk-go-v2/service/securityhub/types"
 	"github.com/aws/smithy-go"
 	"github.com/pkg/errors"
 	notifierUtils "github.com/stackrox/rox/central/notifiers/utils"
@@ -240,7 +240,7 @@ func (n *notifier) waitForInitDone() {
 func (n *notifier) sendHeartbeat(ctx context.Context) {
 	now := aws.String(time.Now().UTC().Format(iso8601UTC))
 	input := &securityhub.BatchImportFindingsInput{
-		Findings: []types.AwsSecurityFinding{
+		Findings: []securityhubTypes.AwsSecurityFinding{
 			{
 				SchemaVersion: aws.String(schemaVersion),
 				AwsAccountId:  aws.String(n.account),
@@ -256,11 +256,11 @@ func (n *notifier) sendHeartbeat(ctx context.Context) {
 				Types:       []string{"Heartbeat"},
 				CreatedAt:   now,
 				UpdatedAt:   now,
-				Severity: &types.Severity{
+				Severity: &securityhubTypes.Severity{
 					Normalized: aws.Int32(0),
 					Product:    aws.Float64(0),
 				},
-				Resources: []types.Resource{
+				Resources: []securityhubTypes.Resource{
 					{
 						Id:   aws.String("heartbeat-" + *now),
 						Type: aws.String(resourceTypeOther),
@@ -424,10 +424,10 @@ func (n *notifier) Test(ctx context.Context) *notifiers.NotifierError {
 	defer cancel()
 
 	_, err := n.securityHub.GetFindings(ctx, &securityhub.GetFindingsInput{
-		Filters: &types.AwsSecurityFindingFilters{
-			ProductArn: []types.StringFilter{
+		Filters: &securityhubTypes.AwsSecurityFindingFilters{
+			ProductArn: []securityhubTypes.StringFilter{
 				{
-					Comparison: types.StringFilterComparisonEquals,
+					Comparison: securityhubTypes.StringFilterComparisonEquals,
 					Value:      aws.String(n.arn),
 				},
 			},
@@ -470,7 +470,7 @@ func (n *notifier) Test(ctx context.Context) *notifiers.NotifierError {
 		State: storage.ViolationState_RESOLVED,
 	}
 	_, err = n.securityHub.BatchImportFindings(ctx, &securityhub.BatchImportFindingsInput{
-		Findings: []types.AwsSecurityFinding{
+		Findings: []securityhubTypes.AwsSecurityFinding{
 			mapAlertToFinding(n.account, n.arn, notifiers.AlertLink(n.ProtoNotifier().GetUiEndpoint(), testAlert), testAlert),
 		},
 	})
