@@ -7,71 +7,43 @@
 
 set -euo pipefail
 
-main() {
-    local output_dir="$1"
+if [[ "$#" -lt "1" ]]; then
+  >&2 echo "Error: please pass target directory as a command line argument."
+  exit 1
+fi
 
-    local urls=(
-        "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
-        "https://security.access.redhat.com/data/metrics/container-name-repos-map.json"
-    )
+output_dir="$1"
+shift
 
-    echo "Downloading mapping files"
+mkdir -p "$output_dir"
 
-    local url
-    for url in "${urls[@]}"; do
-        local filename
-        filename=$(basename "$url")
-        echo "Downloading ${url} > ${output_dir}/$filename"
-        curl --location --silent --fail --show-error --retry 3 \
-            -o "${output_dir}/$filename" "$url"
-        if [[ ! -s "${output_dir}/$filename" ]]; then
-            echo "${output_dir}/$filename is empty"
-            exit 1
-        fi
+urls=(
+    "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
+    "https://security.access.redhat.com/data/metrics/container-name-repos-map.json"
+)
 
-        if ! check_valid_json "${output_dir}/$filename"; then
-            echo "${output_dir}/$filename is invalid JSON"
-            exit 1
-        fi
-    done
-
-    echo "Done"
-}
-
-# check_valid_json(filename)
-#
-# Validates that the contents of the specified file is JSON.
-#
-# Arguments:
-#   filename: Name of the file whose contents should be validated
-check_valid_json() {
-    local filename="$1"
-
-    echo "Validating if $filename is valid JSON"
-    if command -v jq &>/dev/null; then
-        echo "Using jq"
-        if ! jq -e . >/dev/null 2>&1 < "$filename"; then
-            echo "$filename is not valid JSON"
-            exit 1
-        fi
-    elif command -v python &>/dev/null; then
-        echo "Using python"
-        if ! python -c "import json; f = open('$filename'); json.load(f); f.close()"; then
-            echo "$filename is not valid JSON"
-            exit 1
-        fi
-    else
-        echo "WARNING: could not detect a method to validate JSON"
-    fi
-
-    echo "Valid!"
-}
-
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    if [[ "$#" -ne "1" ]]; then
-        >&2 echo "Usage: $0 <target directory>"
+for url in "${urls[@]}"; do
+    filename=$(basename "$url")
+    echo "Downloading ${url} > ${output_dir}/$filename"
+    curl --location --silent --fail --show-error --retry 3 --max-time 60 \
+        --output "${output_dir}/$filename" "$url"
+    if [[ ! (-s "${output_dir}/$filename") ]]; then
+        echo "${output_dir}/$filename is empty"
         exit 1
     fi
 
-    main "$@"
-fi
+    if command -v jq &>/dev/null; then
+        echo "Validating if ${output_dir}/$filename contains parseable JSON"
+        if jq -e . >/dev/null 2>&1 < "${output_dir}/$filename"; then
+            echo "Validated"
+        else
+            echo "${output_dir}/$filename is not valid JSON"
+            exit 1
+        fi
+    else
+        echo "Could not find jq to validate JSON"
+        echo "WARNING: Skipping JSON validation"
+    fi
+done
+
+echo "Done"
