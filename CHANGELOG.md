@@ -12,6 +12,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 ### Added Features
 
 - ROX-26849: Introduce report caching for RHCOS Node Indexing
+- ROX-26088: Implemented Cluster Registration Secrets (CRS) as a successor to init bundles
+  for registering Secured Clusters.
 
 ### Removed Features
 
