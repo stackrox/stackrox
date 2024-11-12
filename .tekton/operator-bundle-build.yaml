@@ -31,8 +31,6 @@ spec:
     value: '52w'
   - name: output-image-repo
     value: quay.io/rhacs-eng/stackrox-operator-bundle
-  - name: operator-image-repo
-    value: quay.io/rhacs-eng/stackrox-operator
   - name: revision
     value: '{{revision}}'
   - name: rebuild
