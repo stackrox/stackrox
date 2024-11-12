@@ -8,13 +8,10 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
-    # TODO(ROX-21073): re-enable for all PR branches
-    pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
-      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
+    pipelinesascode.tekton.dev/on-cel-expression: target_branch == "release-4.6" && event in ["push", "pull_request"]
   labels:
-    appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: operator
+    appstudio.openshift.io/application: acs-4-6
+    appstudio.openshift.io/component: operator-4-6
     pipelines.appstudio.openshift.io/type: build
   name: operator-on-push
   namespace: rh-acs-tenant
