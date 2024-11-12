@@ -54,7 +54,7 @@ config_custom() {
     # TODO(ROX-14759): Re-enable once image pulling is fixed.
     #deploy_clair_v4
 
-    image_prefetcher_prebuilt_await
+    #image_prefetcher_prebuilt_await
 }
 
 reuse_config_part_1() {
