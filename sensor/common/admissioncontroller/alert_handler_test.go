@@ -34,7 +34,7 @@ func (s *alertHandlerSuite) TestProcessAlert() {
 		err          error
 	}{
 		"Central reachable": {
-			notify:       common.SensorComponentEventResourceSyncFinished,
+			notify:       common.SensorComponentEventCentralReachableHTTP,
 			deploymentID: "1",
 			policyID:     "1",
 			stage:        storage.LifecycleStage_DEPLOY,

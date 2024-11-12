@@ -97,7 +97,7 @@ func (s *complianceServiceSuite) TestServiceOfflineMode() {
 }
 
 func (s *complianceServiceSuite) online() {
-	s.srv.Notify(common.SensorComponentEventResourceSyncFinished)
+	s.srv.Notify(common.SensorComponentEventCentralReachableHTTP)
 }
 
 func (s *complianceServiceSuite) offline() {

@@ -92,7 +92,7 @@ func (s *CommandHandlerTestSuite) startCommandHandler(outputChan chan *complianc
 	s.Assert().False(s.cHandler.centralReachable.Load())
 	err := s.cHandler.Start()
 	s.Require().NoError(err)
-	s.cHandler.Notify(common.SensorComponentEventResourceSyncFinished)
+	s.cHandler.Notify(common.SensorComponentEventCentralReachableHTTP)
 }
 
 func (s *CommandHandlerTestSuite) TestCommandHandlerStops() {
@@ -103,7 +103,7 @@ func (s *CommandHandlerTestSuite) TestCommandHandlerStops() {
 	s.Assert().True(s.cHandler.centralReachable.Load())
 	s.cHandler.Notify(common.SensorComponentEventOfflineMode)
 	s.Assert().False(s.cHandler.centralReachable.Load())
-	s.cHandler.Notify(common.SensorComponentEventResourceSyncFinished)
+	s.cHandler.Notify(common.SensorComponentEventCentralReachableHTTP)
 	time.Sleep(2000 * time.Millisecond)
 	s.Assert().True(s.cHandler.centralReachable.Load())
 }
@@ -123,7 +123,7 @@ func (s *CommandHandlerTestSuite) TestResponseWhenCentralReachable() {
 	outputChan := make(chan *compliance.ComplianceReturn)
 	defer close(outputChan)
 	s.startCommandHandler(outputChan)
-	s.cHandler.Notify(common.SensorComponentEventResourceSyncFinished)
+	s.cHandler.Notify(common.SensorComponentEventCentralReachableHTTP)
 
 	s.startScrape("bar", []string{"node1", "node2"})
 	select {

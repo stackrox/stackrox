@@ -453,7 +453,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWithLatestFil
 
 	manager := s.getManager(make(map[string]sensor.ComplianceService_CommunicateServer), expectedStatus)
 	manager.receivedInitialStateFromCentral.Set(true)
-	manager.Notify(common.SensorComponentEventResourceSyncFinished)
+	manager.Notify(common.SensorComponentEventCentralReachableHTTP)
 
 	err := manager.Start()
 	s.Require().NoError(err)
@@ -475,7 +475,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSendsUpdateWhenForced() 
 	manager.updaterTicker = time.NewTicker(1 * time.Minute)
 
 	manager.receivedInitialStateFromCentral.Set(true)
-	manager.Notify(common.SensorComponentEventResourceSyncFinished)
+	manager.Notify(common.SensorComponentEventCentralReachableHTTP)
 
 	err := manager.Start()
 	s.Require().NoError(err)
@@ -523,11 +523,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 	centralC := manager.ResponsesC()
 	complianceC := manager.AuditMessagesChan()
 
-	states := [3]common.SensorComponentEvent{
-		common.SensorComponentEventResourceSyncFinished,
-		common.SensorComponentEventOfflineMode,
-		common.SensorComponentEventResourceSyncFinished,
-	}
+	states := [3]common.SensorComponentEvent{common.SensorComponentEventCentralReachableHTTP, common.SensorComponentEventOfflineMode, common.SensorComponentEventCentralReachableHTTP}
 
 	for i, state := range states {
 		manager.Notify(state)
@@ -546,7 +542,7 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 			}
 		case <-time.After(500 * time.Millisecond):
 			s.T().Logf("Timeout waiting for a message on centralC (state: %s)", state)
-			if state == common.SensorComponentEventResourceSyncFinished {
+			if state == common.SensorComponentEventCentralReachableHTTP {
 				s.Fail("CentralC msg didn't arrive within deadline")
 				// The message was sent, so we must wait until it finally arrives,
 				// otherwise the next iteration may receive it
