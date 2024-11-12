@@ -58,13 +58,13 @@ func NewSecuredClusterCertificateRequester(sendC chan<- *message.ExpiringMessage
 	)
 }
 
-func newRequester[ReqT any, ResT protobufResponse](
+func newRequester[ReqT any, RespT protobufResponse](
 	sendC chan<- *message.ExpiringMessage,
-	receiveC <-chan ResT,
+	receiveC <-chan RespT,
 	messageFactory messageFactory,
-	responseFactory responseFactory[ResT],
-) *genericRequester[ReqT, ResT] {
-	return &genericRequester[ReqT, ResT]{
+	responseFactory responseFactory[RespT],
+) *genericRequester[ReqT, RespT] {
+	return &genericRequester[ReqT, RespT]{
 		sendC:           sendC,
 		receiveC:        receiveC,
 		messageFactory:  messageFactory,
@@ -72,13 +72,13 @@ func newRequester[ReqT any, ResT protobufResponse](
 	}
 }
 
-type genericRequester[ReqT any, ResT protobufResponse] struct {
+type genericRequester[ReqT any, RespT protobufResponse] struct {
 	sendC           chan<- *message.ExpiringMessage
-	receiveC        <-chan ResT
+	receiveC        <-chan RespT
 	stopC           concurrency.ErrorSignal
 	requests        sync.Map
 	messageFactory  messageFactory
-	responseFactory responseFactory[ResT]
+	responseFactory responseFactory[RespT]
 }
 
 type protobufResponse interface {
@@ -89,8 +89,8 @@ type messageFactory interface {
 	newMsgFromSensor(requestID string) *central.MsgFromSensor
 }
 
-type responseFactory[ResT any] interface {
-	convertToResponse(response ResT) *Response
+type responseFactory[RespT any] interface {
+	convertToResponse(response RespT) *Response
 }
 
 type localScannerResponseFactory struct{}
@@ -129,16 +129,16 @@ func (f *localScannerMessageFactory) newMsgFromSensor(requestID string) *central
 	}
 }
 
-func (r *genericRequester[ReqT, ResT]) Start() {
+func (r *genericRequester[ReqT, RespT]) Start() {
 	r.stopC.Reset()
 	go r.dispatchResponses()
 }
 
-func (r *genericRequester[ReqT, ResT]) Stop() {
+func (r *genericRequester[ReqT, RespT]) Stop() {
 	r.stopC.Signal()
 }
 
-func (r *genericRequester[ReqT, ResT]) dispatchResponses() {
+func (r *genericRequester[ReqT, RespT]) dispatchResponses() {
 	for {
 		select {
 		case <-r.stopC.Done():
@@ -154,14 +154,14 @@ func (r *genericRequester[ReqT, ResT]) dispatchResponses() {
 			// Doesn't block even if the corresponding call to RequestCertificates is cancelled and no one
 			// ever reads this, because requestC has buffer of 1, and we removed it from `r.requests` above,
 			// in case we get more than 1 response for `msg.GetRequestId()`.
-			responseC.(chan ResT) <- msg
+			responseC.(chan RespT) <- msg
 		}
 	}
 }
 
-func (r *genericRequester[ReqT, ResT]) RequestCertificates(ctx context.Context) (*Response, error) {
+func (r *genericRequester[ReqT, RespT]) RequestCertificates(ctx context.Context) (*Response, error) {
 	requestID := uuid.NewV4().String()
-	receiveC := make(chan ResT, 1)
+	receiveC := make(chan RespT, 1)
 	r.requests.Store(requestID, receiveC)
 	defer r.requests.Delete(requestID)
 
@@ -171,7 +171,7 @@ func (r *genericRequester[ReqT, ResT]) RequestCertificates(ctx context.Context) 
 	return r.receive(ctx, receiveC)
 }
 
-func (r *genericRequester[ReqT, ResT]) send(ctx context.Context, requestID string) error {
+func (r *genericRequester[ReqT, RespT]) send(ctx context.Context, requestID string) error {
 	// Assuming the `message.New` function is generic and can handle different request types.
 	msg := r.messageFactory.newMsgFromSensor(requestID)
 	select {
@@ -184,12 +184,12 @@ func (r *genericRequester[ReqT, ResT]) send(ctx context.Context, requestID strin
 	}
 }
 
-func (r *genericRequester[ReqT, ResT]) receive(ctx context.Context, receiveC <-chan ResT) (*Response, error) {
+func (r *genericRequester[ReqT, RespT]) receive(ctx context.Context, receiveC <-chan RespT) (*Response, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case response := <-receiveC:
-		// Convert ResT to `certificates.Response` here, e.g. with a generic conversion function.
+		// Convert RespT to `certificates.Response` here, e.g. with a generic conversion function.
 		return r.responseFactory.convertToResponse(response), nil
 	}
 }

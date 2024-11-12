@@ -184,15 +184,15 @@ func TestCertificateRequesterRequestConcurrentRequestDoNotInterfere(t *testing.T
 	}
 }
 
-type certificateRequesterFixture[ReqT any, ResT protobufResponse] struct {
+type certificateRequesterFixture[ReqT any, RespT protobufResponse] struct {
 	sendC                chan *message.ExpiringMessage
-	receiveC             chan ResT
+	receiveC             chan RespT
 	requester            Requester
 	interceptedRequestID *atomic.Value
 	ctx                  context.Context
 	cancelCtx            context.CancelFunc
 	getRequestID         requestIDGetter
-	newResponseWithID    func(requestID string) ResT
+	newResponseWithID    func(requestID string) RespT
 }
 
 func newLocalScannerFixture(timeout time.Duration) *certificateRequesterFixture[*central.IssueLocalScannerCertsRequest,
@@ -218,22 +218,22 @@ func newSecuredClusterFixture(timeout time.Duration) *certificateRequesterFixtur
 
 // newFixture creates a new test fixture that uses `timeout` as context timeout if `timeout` is
 // not 0, and `testTimeout` otherwise.
-func newFixture[ReqT any, ResT protobufResponse](
+func newFixture[ReqT any, RespT protobufResponse](
 	timeout time.Duration,
 	messageFactory messageFactory,
-	responseFactory responseFactory[ResT],
+	responseFactory responseFactory[RespT],
 	getRequestID requestIDGetter,
-	newResponseWithID func(requestID string) ResT,
-) *certificateRequesterFixture[ReqT, ResT] {
+	newResponseWithID func(requestID string) RespT,
+) *certificateRequesterFixture[ReqT, RespT] {
 	sendC := make(chan *message.ExpiringMessage)
-	receiveC := make(chan ResT)
-	requester := newRequester[ReqT, ResT](sendC, receiveC, messageFactory, responseFactory)
+	receiveC := make(chan RespT)
+	requester := newRequester[ReqT, RespT](sendC, receiveC, messageFactory, responseFactory)
 	var interceptedRequestID atomic.Value
 	if timeout == 0 {
 		timeout = testTimeout
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	return &certificateRequesterFixture[ReqT, ResT]{
+	return &certificateRequesterFixture[ReqT, RespT]{
 		sendC:                sendC,
 		receiveC:             receiveC,
 		requester:            requester,
@@ -245,7 +245,7 @@ func newFixture[ReqT any, ResT protobufResponse](
 	}
 }
 
-func (f *certificateRequesterFixture[ReqT, ResT]) tearDown() {
+func (f *certificateRequesterFixture[ReqT, RespT]) tearDown() {
 	f.cancelCtx()
 	f.requester.Stop()
 }
@@ -254,16 +254,16 @@ func (f *certificateRequesterFixture[ReqT, ResT]) tearDown() {
 // a response with the same ID as the request otherwise. If `responseDelay` is greater than 0 then this function
 // waits for that time before sending the response.
 // Before sending the response, it stores in `f.interceptedRequestID` the request ID for the requests read from `f.sendC`.
-func (f *certificateRequesterFixture[ReqT, ResT]) respondRequest(
+func (f *certificateRequesterFixture[ReqT, RespT]) respondRequest(
 	t *testing.T,
 	responseDelay time.Duration,
-	responseOverwrite *ResT) {
+	responseOverwrite *RespT) {
 	select {
 	case <-f.ctx.Done():
 	case request := <-f.sendC:
 		interceptedRequestID := f.getRequestID(request)
 		assert.NotEmpty(t, interceptedRequestID)
-		var response ResT
+		var response RespT
 		if responseOverwrite != nil {
 			response = *responseOverwrite
 		} else {
