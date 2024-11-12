@@ -76,12 +76,12 @@ spec:
     type: string
 
   results:
-  - description: ""
-    name: OUR_IMAGE_URL
-    value: $(tasks.retag-image.results.IMAGE_URL)
-  - description: ""
-    name: OUR_IMAGE_DIGEST
-    value: $(tasks.retag-image.results.IMAGE_DIGEST)
+#  - description: ""
+#    name: OUR_IMAGE_URL
+#    value: $(tasks.retag-image.results.IMAGE_URL)
+#  - description: ""
+#    name: OUR_IMAGE_DIGEST
+#    value: $(tasks.retag-image.results.IMAGE_DIGEST)
 
 #  # CHAINS-GIT_* values will be entered in a Snapshot and into the image attestation data (cosign artifact).
 #  # The values passed here will overwrite the values provided at the time when the input containers were built.
