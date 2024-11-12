@@ -32,17 +32,21 @@ for url in "${urls[@]}"; do
         exit 1
     fi
 
-    echo "Validating if ${output_dir}/$filename contains parseable JSON"
-    python -c '
+    if command -v python &>/dev/null; then
+        echo "Validating if ${output_dir}/$filename contains parseable JSON"
+        python -c '
 import json, sys
 with open(sys.argv[1]) as f:
     json.load(f)' "${output_dir}/$filename"
-    exit_status="$?"
-    if [[ "$exit_status" != "0" ]]; then
-        echo "${output_dir}/$filename is not valid JSON"
-        exit 1
+        exit_status="$?"
+        if [[ "$exit_status" != "0" ]]; then
+            echo "${output_dir}/$filename is not valid JSON"
+            exit 1
+        else
+            echo "Validated"
+        fi
     else
-        echo "Validated"
+        echo "WARNING: Could not find a method to validate if the file contains parseable JSON"
     fi
 done
 
