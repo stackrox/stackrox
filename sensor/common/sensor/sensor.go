@@ -416,7 +416,9 @@ func wrapOrNewError(err error, message string) error {
 func (s *Sensor) notifySyncDone(syncDone *concurrency.Signal, centralCommunication CentralCommunication) {
 	// SensorComponentEventSyncFinished is the first event that guarantees that the gRPC connection was successful
 	// at least once, because data has been exchanged over gRPC. This is sufficient condition for going online.
-	s.notifyAllOnSignal(syncDone, centralCommunication, common.SensorComponentEventSyncFinished, common.SensorComponentEventCentralReachable)
+	// The order of events is preserved, so first all components receive EventCentralReachable and when that is done,
+	// all will get EventSyncFinished.
+	s.notifyAllOnSignal(syncDone, centralCommunication, common.SensorComponentEventCentralReachable, common.SensorComponentEventSyncFinished)
 }
 
 // notifyAllOnSignal sends `notification` to all components when `signal` is raised
