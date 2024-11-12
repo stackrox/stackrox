@@ -13,7 +13,11 @@
     "version": "4.5.4",
 =======
     "version": "4.4.6",
+<<<<<<< HEAD
 >>>>>>> 9b974240a3 (update version)
     "channel": "stable"
+=======
+    "channel": "rhacs-4.4"
+>>>>>>> a9f38b98cd (update operator channel)
   }
 }
