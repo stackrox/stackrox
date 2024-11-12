@@ -26,9 +26,9 @@ spec:
   results:
     # Names IMAGE_DIGEST, IMAGE_URL and IMAGE_REF must not be used here
 
-  - name: OUR_MYSTERIOUS_THING_1_IMAGE_DIGEST
+  - name: OUTPUT_IMAGE_DIGEST
     description: Digest of the output image (will be the same as of the input one).
-  - name: OUR_MYSTERIOUS_THING_2_IMAGE_URL
+  - name: OUTPUT_IMAGE_URL
     description: Image repository and tag of the output image.
   - name: OUTPUT_IMAGE_REF
     description: Image reference of the output image containing both the repository, the tag and the digest.
@@ -113,6 +113,6 @@ spec:
 
       echo ">>> Done"
 
-      echo -n "${OUTPUT_DIGEST}" | tee "$(results.OUR_MYSTERIOUS_THING_1_IMAGE_DIGEST.path)"; echo
-      echo -n "${OUTPUT_URL}" | tee "$(results.OUR_MYSTERIOUS_THING_2_IMAGE_URL.path)"; echo
+      echo -n "${OUTPUT_DIGEST}" | tee "$(results.OUTPUT_IMAGE_DIGEST.path)"; echo
+      echo -n "${OUTPUT_URL}" | tee "$(results.OUTPUT_IMAGE_URL.path)"; echo
       echo -n "${OUTPUT_URL}@${OUTPUT_DIGEST}" | tee "$(results.OUTPUT_IMAGE_REF.path)"; echo
