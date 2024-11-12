@@ -8,29 +8,42 @@ import (
 
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 )
 
 const (
 	// migrateName is the name of the manifest migration process.
-	// This is used by the lock to prevent concurrent initializations.
+	// This is used by the lock to prevent concurrent migrations.
 	migrateName = `manifest-migrate`
 
 	// gcName is the name of the GC process.
 	// This is used by the lock to prevent concurrent GC runs.
 	gcName = `manifest-garbage-collection`
-
-	// minGCInterval specifies the minimum interval between GC runs.
-	minGCInterval = time.Hour
 )
 
-var jitterMinutes = []time.Duration{
-	-10 * time.Minute,
-	-5 * time.Minute,
-	0 * time.Minute,
-	5 * time.Minute,
-	10 * time.Minute,
+var (
+	// minGCInterval specifies the minimum interval between GC runs.
+	minGCInterval = minGCIntervalDuration()
+
+	jitterMinutes = []time.Duration{
+		-10 * time.Minute,
+		-5 * time.Minute,
+		0 * time.Minute,
+		5 * time.Minute,
+		10 * time.Minute,
+	}
+)
+
+// minGCIntervalDuration returns the minimum GC interval duration.
+// For release builds: 1 hour
+// For dev builds: 1 minute
+func minGCIntervalDuration() time.Duration {
+	if buildinfo.ReleaseBuild {
+		return time.Hour
+	}
+	return time.Minute
 }
 
 // Manager represents an indexer manifest manager.
@@ -38,7 +51,7 @@ var jitterMinutes = []time.Duration{
 // After initialization, it periodically runs a process
 // to identify expired manifests and delete them from
 // both the manifest metadata storage maintained by StackRox
-// and the manifest storage maintained by ClairCore.
+// and the manifest storage maintained by Claircore.
 type Manager struct {
 	gcCtx    context.Context
 	gcCancel context.CancelFunc

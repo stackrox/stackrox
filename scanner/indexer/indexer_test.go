@@ -134,6 +134,21 @@ func TestGetIndexReport(t *testing.T) {
 	assert.False(t, exists)
 	assert.NoError(t, err)
 
+	// Manifest exists and fetching Index Report errors.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(true, nil)
+	store.EXPECT().
+		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(true, nil)
+	store.EXPECT().
+		IndexReport(gomock.Any(), gomock.Any()).
+		Return(nil, false, errors.New("error"))
+	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	assert.Nil(t, ir)
+	assert.False(t, exists)
+	assert.Error(t, err)
+
 	// Manifest exists, but Index Report doesn't.
 	metadataStore.EXPECT().
 		ManifestExists(gomock.Any(), gomock.Any()).
@@ -223,19 +238,19 @@ func TestParseContainerImageURL(t *testing.T) {
 }
 
 func TestRandomExpiry(t *testing.T) {
-	now := time.Now()
-	sevenDays := now.Add(7 * 24 * time.Hour)
-	thirtyDays := now.Add(30 * 24 * time.Hour)
+	now := time.Now().Truncate(time.Second)
+	oneMinute := now.Add(1 * time.Minute)
+	threeMinutes := now.Add(3 * time.Minute)
 
 	i := &localIndexer{
-		deleteIntervalStart:    int64((7 * 24 * time.Hour).Seconds()),
-		deleteIntervalDuration: int64((23 * 24 * time.Hour).Seconds()),
+		deleteIntervalStart:    int64((1 * time.Minute).Seconds()),
+		deleteIntervalDuration: int64((2 * time.Minute).Seconds()),
 	}
 
 	const iterations = 1000
 	for range iterations {
 		expiry := i.randomExpiry(now)
-		assert.False(t, expiry.Before(sevenDays))
-		assert.True(t, expiry.Before(thirtyDays))
+		assert.False(t, expiry.Before(oneMinute))
+		assert.True(t, expiry.Before(threeMinutes))
 	}
 }

@@ -72,6 +72,8 @@ func (i *indexerMetadataStore) StoreManifest(ctx context.Context, manifestID str
 func (i *indexerMetadataStore) ManifestExists(ctx context.Context, manifestID string) (bool, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.ManifestExists")
 
+	// selectManifest returns 1 if the given manifest exists in the table.
+	// If it does not exist, then no rows will be returned.
 	const selectManifest = `SELECT 1 FROM manifest_metadata WHERE manifest_id = $1`
 
 	row := i.pool.QueryRow(ctx, selectManifest, manifestID)

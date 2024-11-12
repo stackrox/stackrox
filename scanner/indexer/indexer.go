@@ -234,7 +234,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	}
 
 	manifestManager := manifest.NewManager(ctx, metadataStore, locker)
-	// Set any manifests indexer prior to the existence of the manifest_metadata table
+	// Set any manifests indexed prior to the existence of the manifest_metadata table
 	// to expire immediately.
 	err = manifestManager.MigrateManifests(ctx, time.Now())
 	if err != nil {
@@ -416,9 +416,9 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 	return ir, nil
 }
 
-// randomExpiry generates a random time.Time within the manifest deletion interval.
+// randomExpiry generates a random time.Time within the manifest deletion interval
+// rounding down to the nearest second.
 func (i *localIndexer) randomExpiry(now time.Time) time.Time {
-	// now + a random number of seconds between zero and twenty-three days + seven days
 	expirySec := now.Unix() + rand.Int64N(i.deleteIntervalDuration) + i.deleteIntervalStart
 	return time.Unix(expirySec, 0)
 }
