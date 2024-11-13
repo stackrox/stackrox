@@ -48,6 +48,12 @@ main() {
     mkdir -p "${dest}"
     roxctl -e "${api_endpoint}" --insecure-skip-tls-verify central backup --output "${dest}"
 
+    if ! [ -x "$(command -v postgresqldbdump)" ]; then
+        go install ./tools/postgresqldbdump
+    fi
+
+    postgresqldbdump "${dest}"/*.zip -o "${dest}"
+
     # Pull some data not found from the database
     set +e
     call_curl "https://${api_endpoint}/v1/imageintegrations" | jq > "${dest}/imageintegrations.json"

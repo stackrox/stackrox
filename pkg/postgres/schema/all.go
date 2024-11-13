@@ -115,3 +115,12 @@ func ApplySchemaForTable(ctx context.Context, gormDB *gorm.DB, table string) {
 		pgutils.CreateTableFromModel(ctx, gormDB, rt.CreateStmt)
 	}
 }
+
+// GetAllSchemas return all schemas registered
+func GetAllSchemas() []*walker.Schema {
+	var list []*walker.Schema
+	for _, tb := range getAllTables() {
+		list = append(list, tb.Schema)
+	}
+	return list
+}
