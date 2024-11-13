@@ -91,6 +91,7 @@ func (e *Store) initMaps() {
 	e.reverseContainerIDMap = make(map[string]map[string]struct{})
 	e.publicIPRefCounts = make(map[net.IPAddress]*int)
 	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
+
 	e.historicalEndpoints = make(map[string]map[net.NumericEndpoint]*entityStatus)
 	e.historicalIPs = make(map[net.IPAddress]map[string]*entityStatus)
 	e.historicalContainerIDs = make(map[string]map[ContainerMetadata]*entityStatus)
@@ -99,6 +100,10 @@ func (e *Store) initMaps() {
 func (e *Store) resetMaps() {
 	e.historyMutex.Lock()
 	defer e.historyMutex.Unlock()
+	// Maps holding historical data must not be wiped on reset! Instead, all entities must be marked as historical.
+	// Must be called before the respective source maps are wiped!
+	e.resetHistoricalMapsNoLock()
+
 	e.ipMap = make(map[net.IPAddress]map[string]struct{})
 	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{})
 	e.containerIDMap = make(map[string]ContainerMetadata)
@@ -107,14 +112,15 @@ func (e *Store) resetMaps() {
 	e.reverseContainerIDMap = make(map[string]map[string]struct{})
 	e.publicIPRefCounts = make(map[net.IPAddress]*int)
 	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
+}
 
-	// Maps holding historical data should not be wiped on reset!
-
+// resetHistoricalMapsNoLock ensures that all current data is moved to history. The history will be wiped after
+// configured number of ticks
+func (e *Store) resetHistoricalMapsNoLock() {
 	// FIXME: This is probably wrong - on transition to offline, we may lose those histories
 	e.historicalEndpoints = make(map[string]map[net.NumericEndpoint]*entityStatus)
 	e.historicalIPs = make(map[net.IPAddress]map[string]*entityStatus)
 
-	// Wipe everything after e.entitiesMemorySize ticks
 	e.markAllContainerIDsHistorical()
 }
 
@@ -160,7 +166,7 @@ func (e *Store) updateMetrics() {
 	metrics.UpdateNumberHistoricalContainersInEntityStored(len(e.historicalContainerIDs))
 }
 
-// Cleanup deletes all entries from store
+// Cleanup deletes all entries from store (or marks them as historical)
 func (e *Store) Cleanup() {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
@@ -253,15 +259,16 @@ func (e *Store) markEndpointHistorical(deploymentID string, ep net.NumericEndpoi
 
 // markAllContainerIDsHistorical does a history-preserving version of removeAll
 func (e *Store) markAllContainerIDsHistorical() {
-	for contID, submap := range e.historicalContainerIDs {
-		for meta, status := range submap {
-			status.markHistorical(e.entitiesMemorySize)
-			e.historicalContainerIDs[contID][meta] = status
-		}
+	for contID, metadata := range e.containerIDMap {
+		e.markContainerIDHistorical(contID, metadata)
 	}
 }
 
 func (e *Store) markContainerIDHistorical(contID string, meta ContainerMetadata) {
+	// Marking something historical should not happen when the memory setting is 0.
+	if e.entitiesMemorySize == 0 {
+		return
+	}
 	if _, ok := e.historicalContainerIDs[contID]; !ok {
 		e.historicalContainerIDs[contID] = make(map[ContainerMetadata]*entityStatus)
 	}
@@ -504,8 +511,31 @@ func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 func (e *Store) LookupByContainerID(containerID string) (ContainerMetadata, bool) {
 	e.mutex.RLock()
 	defer e.mutex.RUnlock()
-	metadata, ok := e.containerIDMap[containerID]
-	return metadata, ok
+	// Search in the non-historical memory
+	if metadata, ok := e.lookupByContainerIDNoLock(containerID); ok {
+		return metadata, true
+	}
+	// Search in history
+	return e.lookupByContainerIDInHistoryNoLock(containerID)
+}
+
+// lookupByContainerIDNoLock retrieves the deployment ID by a container ID from the non-historical data in the map.
+func (e *Store) lookupByContainerIDNoLock(containerID string) (ContainerMetadata, bool) {
+	if metadata, ok := e.containerIDMap[containerID]; ok {
+		return metadata, true
+	}
+	return ContainerMetadata{}, false
+}
+
+// lookupByContainerIDInHistoryNoLock does the same as LookupByContainerID but searches only among historical entries.
+func (e *Store) lookupByContainerIDInHistoryNoLock(containerID string) (ContainerMetadata, bool) {
+	if metaHistory, ok := e.historicalContainerIDs[containerID]; ok {
+		// The metaHistory map contains 0 or 1 elements
+		for metadata := range metaHistory {
+			return metadata, true
+		}
+	}
+	return ContainerMetadata{}, false
 }
 
 func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResult) {
