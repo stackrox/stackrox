@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -Eeo pipefail
+set -xEeo pipefail
 
 # Initialize DB if it does not exist
 if [ ! -s "$PGDATA/PG_VERSION" ]; then
