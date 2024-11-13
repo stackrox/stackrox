@@ -513,9 +513,17 @@ func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*clai
 		// Even if the indexing was successful, if the manifest metadata was not stored, then we consider
 		// this manifest as non-existent.
 		//
-		// Note: This can only happen when storing the manifest metadata fails but the indexing succeeds.
-		// We will not run into a situation where manifest metadata was added successfully but deleted prior
-		// to successfully fetching the index report, as the manifest metadata and index report are deleted together in a transaction.
+		// Note: There are two known situations in which this may happen:
+		//
+		// 1. When storing the manifest metadata fails but the indexing succeeds.
+		//    We will not run into a situation where manifest metadata was added successfully but deleted prior
+		//    to successfully fetching the index report, as the manifest metadata and index
+		//    report are deleted together in a transaction.
+		// 2. Upon upgrade from an older version of the Indexer in which the manifest metadata table does not
+		//    exist to a version in which it does. It is possible the upgraded version migrates all
+		//    known manifests over to the metadata table, but there is still an older Indexer running which successfully
+		//    indexes a manifest after the migration. The manifest metadata table will now be missing an entry related to
+		//    this new index report. This is ok, as it will be caught here and the manifest will be re-indexed.
 		return nil, false, nil
 	}
 	scanned, err := i.libIndex.Store.ManifestScanned(ctx, manifestDigest, i.vscnrs)
