@@ -25,6 +25,7 @@ import (
 type MockCveCore struct {
 	ctrl     *gomock.Controller
 	recorder *MockCveCoreMockRecorder
+	isgomock struct{}
 }
 
 // MockCveCoreMockRecorder is the mock recorder for MockCveCore.
@@ -160,6 +161,7 @@ func (mr *MockCveCoreMockRecorder) GetFixability() *gomock.Call {
 type MockCveView struct {
 	ctrl     *gomock.Controller
 	recorder *MockCveViewMockRecorder
+	isgomock struct{}
 }
 
 // MockCveViewMockRecorder is the mock recorder for MockCveView.
@@ -258,6 +260,7 @@ func (mr *MockCveViewMockRecorder) GetClusterIDs(ctx, q any) *gomock.Call {
 type MockClusterCountByPlatformType struct {
 	ctrl     *gomock.Controller
 	recorder *MockClusterCountByPlatformTypeMockRecorder
+	isgomock struct{}
 }
 
 // MockClusterCountByPlatformTypeMockRecorder is the mock recorder for MockClusterCountByPlatformType.
@@ -337,6 +340,7 @@ func (mr *MockClusterCountByPlatformTypeMockRecorder) GetOpenshiftClusterCount()
 type MockCVECountByType struct {
 	ctrl     *gomock.Controller
 	recorder *MockCVECountByTypeMockRecorder
+	isgomock struct{}
 }
 
 // MockCVECountByTypeMockRecorder is the mock recorder for MockCVECountByType.

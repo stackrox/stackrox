@@ -23,6 +23,7 @@ import (
 type MockAuditNotifier struct {
 	ctrl     *gomock.Controller
 	recorder *MockAuditNotifierMockRecorder
+	isgomock struct{}
 }
 
 // MockAuditNotifierMockRecorder is the mock recorder for MockAuditNotifier.
@@ -85,17 +86,17 @@ func (mr *MockAuditNotifierMockRecorder) ProtoNotifier() *gomock.Call {
 }
 
 // SendAuditMessage mocks base method.
-func (m *MockAuditNotifier) SendAuditMessage(arg0 context.Context, arg1 *v1.Audit_Message) error {
+func (m *MockAuditNotifier) SendAuditMessage(ctx context.Context, msg *v1.Audit_Message) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendAuditMessage", arg0, arg1)
+	ret := m.ctrl.Call(m, "SendAuditMessage", ctx, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SendAuditMessage indicates an expected call of SendAuditMessage.
-func (mr *MockAuditNotifierMockRecorder) SendAuditMessage(arg0, arg1 any) *gomock.Call {
+func (mr *MockAuditNotifierMockRecorder) SendAuditMessage(ctx, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendAuditMessage", reflect.TypeOf((*MockAuditNotifier)(nil).SendAuditMessage), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendAuditMessage", reflect.TypeOf((*MockAuditNotifier)(nil).SendAuditMessage), ctx, msg)
 }
 
 // Test mocks base method.

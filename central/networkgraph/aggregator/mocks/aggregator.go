@@ -20,6 +20,7 @@ import (
 type MockNetworkConnsAggregator struct {
 	ctrl     *gomock.Controller
 	recorder *MockNetworkConnsAggregatorMockRecorder
+	isgomock struct{}
 }
 
 // MockNetworkConnsAggregatorMockRecorder is the mock recorder for MockNetworkConnsAggregator.

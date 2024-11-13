@@ -22,6 +22,7 @@ import (
 type MockGRPCMetrics struct {
 	ctrl     *gomock.Controller
 	recorder *MockGRPCMetricsMockRecorder
+	isgomock struct{}
 }
 
 // MockGRPCMetricsMockRecorder is the mock recorder for MockGRPCMetrics.
