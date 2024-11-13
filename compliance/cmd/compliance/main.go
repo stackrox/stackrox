@@ -22,11 +22,11 @@ func main() {
 
 	scanner := inventory.NewNodeInventoryComponentScanner(np)
 	scanner.Connect(env.NodeScanningEndpoint.Setting())
-	nodeIndexer := index.NewNodeIndexer(cfg)
+	cachedNodeIndexer := index.NewCachingNodeIndexer(cfg, env.NodeIndexCacheDuration.DurationSetting(), env.NodeIndexCachePath.Setting())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	umh := handler.NewUnconfirmedMessageHandler(ctx, env.NodeScanningAckDeadlineBase.DurationSetting())
-	c := compliance.NewComplianceApp(np, scanner, nodeIndexer, umh)
+	c := compliance.NewComplianceApp(np, scanner, cachedNodeIndexer, umh)
 	c.Start()
 }
