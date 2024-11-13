@@ -82,7 +82,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - This will mean Scanner V4 Indexer will now pull images from the registry more than just once.
   - The interval in which manifests are randomly deleted may be modified via `ROX_SCANNER_V4_MANIFEST_DELETE_INTERVAL_START` and `ROX_SCANNER_V4_MANIFEST_DELETE_DURATION` in Scanner V4 Indexer.
   - Any manifests indexed prior to this change will be deleted upon update to this version to ensure any incorrect Index Reports are amended.
-  - Scanner V4 Indexer periodically checks for expired manifests at the interval specified by `ROX_SCANNER_V4_MANIFEST_GC_INTERVAL` (current default: 6 hours).
+  - Scanner V4 Indexer periodically checks for expired manifests at the interval specified by `ROX_SCANNER_V4_MANIFEST_GC_INTERVAL` (current default: 4 hours).
+  - Each GC process only deleted a subset of expired manifests specified by `ROX_SCANNER_V4_MANIFEST_GC_THROTTLE` (default: 100) in Scanner V4 Indexer.
+  - Scanner V4 Indexer will also run a periodic "full" GC process at the interval specified by `ROX_SCANNER_V4_FULL_MANIFEST_GC_INTERVAL` (default: 24 hours).
   - Re-indexing may be disabled by setting `ROX_SCANNER_V4_REINDEX` to `false` in the Scanner V4 Indexer.
 - Alpine vulnerabilities will now have a link to https://security.alpinelinux.org instead of https://www.cve.org.
 
