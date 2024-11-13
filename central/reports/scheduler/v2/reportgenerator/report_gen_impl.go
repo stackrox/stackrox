@@ -46,7 +46,7 @@ var (
 	reportGenCtx = resolvers.SetAuthorizerOverride(loaders.WithLoaderContext(sac.WithAllAccess(context.Background())), allow.Anonymous())
 
 	deployedImagesQueryParts = &ReportQueryParts{
-		Schema: pkgSchema.ImageComponentsSchema,
+		Schema: pkgSchema.ImageCvesSchema,
 		Selects: []*v1.QuerySelect{
 			search.NewQuerySelect(search.ImageName).Proto(),
 			search.NewQuerySelect(search.Component).Proto(),
@@ -514,7 +514,9 @@ func (rg *reportGeneratorImpl) getWatchedImages() ([]string, error) {
 func (rg *reportGeneratorImpl) withCVEReferenceLinks(imageCVEResponses []*ImageCVEQueryResponse) ([]*ImageCVEQueryResponse, error) {
 	cveIDs := set.NewStringSet()
 	for _, res := range imageCVEResponses {
-		cveIDs.Add(res.CVEID)
+		if res.GetCVEID() != "" {
+			cveIDs.Add(res.GetCVEID())
+		}
 	}
 
 	cves, err := rg.imageCVEDatastore.GetBatch(reportGenCtx, cveIDs.AsSlice())
@@ -528,7 +530,7 @@ func (rg *reportGeneratorImpl) withCVEReferenceLinks(imageCVEResponses []*ImageC
 	}
 
 	for _, res := range imageCVEResponses {
-		if link, ok := cveRefLinks[res.CVEID]; ok {
+		if link, ok := cveRefLinks[res.GetCVEID()]; ok {
 			res.Link = link
 		}
 	}

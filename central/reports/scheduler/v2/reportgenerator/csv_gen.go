@@ -38,27 +38,22 @@ func GenerateCSV(cveResponses []*ImageCVEQueryResponse, configName string, inclu
 	}
 	csvWriter := csv.NewGenericWriter(csvHeaderClone, true)
 	for _, r := range cveResponses {
-		discoveredTs := "Not Available"
-		if r.DiscoveredAtImage != nil {
-			discoveredTs = r.DiscoveredAtImage.Format("January 02, 2006")
-		}
 		row := csv.Value{
-			r.Cluster,
-			r.Namespace,
-			r.Deployment,
-			r.Image,
-			r.Component,
-			r.ComponentVersion,
-			r.CVE,
-			strconv.FormatBool(r.Fixable),
-			r.FixedByVersion,
-			strings.ToTitle(stringutils.GetUpTo(r.Severity.String(), "_")),
-			strconv.FormatFloat(r.CVSS, 'f', 2, 64),
-			discoveredTs,
+			r.GetCluster(),
+			r.GetNamespace(),
+			r.GetDeployment(),
+			r.GetImage(),
+			r.GetComponent(),
+			r.GetCVE(),
+			strconv.FormatBool(r.GetFixable()),
+			r.GetFixedByVersion(),
+			strings.ToTitle(stringutils.GetUpTo(r.GetSeverity().String(), "_")),
+			strconv.FormatFloat(r.GetCVSS(), 'f', 2, 64),
+			r.GetDiscoveredAtImage(),
 			r.Link,
 		}
 		if includeNVDCVSS {
-			csvWriter.AppendToValue(&row, strconv.FormatFloat(r.NVDCVSS, 'f', 2, 64))
+			csvWriter.AppendToValue(&row, strconv.FormatFloat(r.GetNVDCVSS(), 'f', 2, 64))
 		}
 		csvWriter.AddValue(row)
 	}

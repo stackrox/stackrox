@@ -452,13 +452,13 @@ func collectVulnReportDataSQF(cveResponses []*ImageCVEQueryResponse) *vulnReport
 	cvss := make([]float64, 0)
 
 	for _, res := range cveResponses {
-		if res.Deployment != "" {
-			deploymentNames.Add(res.Deployment)
+		if res.GetDeployment() != "" {
+			deploymentNames.Add(res.GetDeployment())
 		}
-		imageNames.Add(res.Image)
-		componentNames.Add(res.Component)
-		cveNames = append(cveNames, res.CVE)
-		cvss = append(cvss, res.CVSS)
+		imageNames.Add(res.GetImage())
+		componentNames.Add(res.GetComponent())
+		cveNames = append(cveNames, res.GetCVE())
+		cvss = append(cvss, res.GetCVSS())
 	}
 	return &vulnReportData{
 		deploymentNames: deploymentNames.AsSlice(),
