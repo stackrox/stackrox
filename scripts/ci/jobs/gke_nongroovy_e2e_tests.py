@@ -18,6 +18,9 @@ os.environ["ROX_ACTIVE_VULN_MGMT"] = "true"
 # delegated scanning support in the secured cluster
 os.environ["SENSOR_SCANNER_SUPPORT"] = "true"
 
+# Enable new CRS-based flow for registering secured clusters
+os.environ["ROX_DEPLOY_SENSOR_WITH_CRS"] = "true"
+
 ClusterTestRunner(
     cluster=GKECluster("nongroovy-test"),
     pre_test=PreSystemTests(),
