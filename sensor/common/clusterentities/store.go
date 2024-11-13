@@ -383,6 +383,7 @@ func (e *Store) purgeNoLock(deploymentID string) {
 			// as it is an equivalent of: delete(e.containerIDMap, containerID)
 			e.removeHistoricalExpiredContainerIDs(containerID, meta)
 		}
+		delete(e.containerIDMap, containerID)
 	}
 
 	delete(e.reverseIPMap, deploymentID)

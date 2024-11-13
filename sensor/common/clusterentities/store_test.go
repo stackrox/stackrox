@@ -2,7 +2,6 @@ package clusterentities
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 	"testing"
 
@@ -18,6 +17,13 @@ func TestClusterEntitiesStore(t *testing.T) {
 
 type ClusterEntitiesStoreTestSuite struct {
 	suite.Suite
+}
+
+// eUpdate represents a request to the entity store to append, or replace an entry
+type eUpdate struct {
+	deploymentID string
+	containerID  string
+	incremental  bool
 }
 
 // region external-entities test
@@ -365,12 +371,6 @@ func (s *ClusterEntitiesStoreTestSuite) TestChangingIPsAndExternalEntities() {
 // region container-id history test
 
 func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
-	type eUpdate struct {
-		deploymentID string
-		containerID  string
-		incremental  bool
-	}
-
 	type whereContainerIDisStored string
 	const (
 		// the container will be found in history
@@ -381,11 +381,19 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 		nowhere whereContainerIDisStored = "nowhere"
 	)
 
+	type operation string
+	const (
+		mapReset operation = "mapReset"
+		// for simplicity of the test, we assume that all delete request will be for depl1
+		deleteDeployment1 operation = "deleteDeployment1"
+	)
+
 	cases := map[string]struct {
 		numTicksToRemember uint16
 		entityUpdates      map[int][]eUpdate // tick -> updates
-		// resetAfterTick defines tick IDs after which a reset should be simulated (e.g., going offline)
-		resetAfterTick        []uint16
+		// operationAfterTick defines tick IDs after which an operation should be simulated
+		// (e.g., deletion of a container, or going offline).
+		operationAfterTick    map[int]operation
 		containerIDsAfterTick []map[string]whereContainerIDisStored
 	}{
 		"Memory disabled with no reset should remember pod1 forever": {
@@ -399,11 +407,39 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 					},
 				},
 			},
-			resetAfterTick: []uint16{}, // do not reset at all
+			operationAfterTick: map[int]operation{}, // do not reset at all
 			containerIDsAfterTick: []map[string]whereContainerIDisStored{
 				{"pod1": theMap}, // before tick 1: container should be added immediately
 				{"pod1": theMap}, // after tick 1: no reset - should be in the map forever
 				{"pod1": theMap},
+			},
+		},
+		"Memory disabled with no reset and container overwrite should remember pod1 forever": {
+			numTicksToRemember: 0,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						incremental:  true, // append
+					},
+				},
+				3: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						incremental:  false, // delete and add
+					},
+				},
+			},
+			operationAfterTick: map[int]operation{}, // do not reset at all
+			containerIDsAfterTick: []map[string]whereContainerIDisStored{
+				{"pod1": theMap}, // before tick 1: container should be added immediately
+				{"pod1": theMap}, // after tick 1: no reset - should be in the map forever
+				{"pod1": theMap}, // after tick 2
+				// container is overwritten in the map
+				{"pod1": theMap}, // after tick 3: should be still in the map
+				{"pod1": theMap}, // after tick 3: should be still in the map
 			},
 		},
 		"Memory disabled with reset after tick 1 should make pod1 be forgotten before tick 2": {
@@ -417,7 +453,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 					},
 				},
 			},
-			resetAfterTick: []uint16{1},
+			operationAfterTick: map[int]operation{1: mapReset},
 			containerIDsAfterTick: []map[string]whereContainerIDisStored{
 				{"pod1": theMap}, // before tick 1: container should be added immediately
 				{"pod1": theMap}, // after tick 1: no reset yet, so it should be in the map
@@ -436,7 +472,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 					},
 				},
 			},
-			resetAfterTick: []uint16{1},
+			operationAfterTick: map[int]operation{1: mapReset},
 			containerIDsAfterTick: []map[string]whereContainerIDisStored{
 				{"pod1": theMap}, // before tick 1: container should be added immediately
 				{"pod1": theMap}, // after tick 1
@@ -464,7 +500,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 					},
 				},
 			},
-			resetAfterTick: []uint16{1},
+			operationAfterTick: map[int]operation{1: mapReset},
 			containerIDsAfterTick: []map[string]whereContainerIDisStored{
 				{"pod1": theMap}, // before tick 1: container should be added immediately
 				{"pod1": theMap}, // after tick 1
@@ -479,23 +515,97 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 				{"pod1": theMap},
 			},
 		},
+		"Re-adding (with overwrite) successfully forgotten container should reset the history status": {
+			numTicksToRemember: 2,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						incremental:  true,
+					},
+				},
+				5: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						incremental:  false, // overwrite
+					},
+				},
+			},
+			operationAfterTick: map[int]operation{1: mapReset},
+			containerIDsAfterTick: []map[string]whereContainerIDisStored{
+				{"pod1": theMap}, // before tick 1: container should be added immediately
+				{"pod1": theMap}, // after tick 1
+				// reset
+				{"pod1": history}, // after tick 2: will remember that for one more tick
+				{"pod1": history}, // after tick 3: will remember that for this last tick
+				{"pod1": nowhere}, // after tick 4: history expired - should be forgotten
+				{"pod1": theMap},  // after tick 5: re-added pod1 should be findable from now on until the next reset
+				{"pod1": theMap},  // after tick 6: no further reset was planned, so we should find pod1 forever
+				{"pod1": theMap},
+				{"pod1": theMap},
+				{"pod1": theMap},
+			},
+		},
+		"Container is deleted normally": {
+			numTicksToRemember: 2,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						incremental:  true,
+					},
+				},
+			},
+			operationAfterTick: map[int]operation{1: deleteDeployment1},
+			containerIDsAfterTick: []map[string]whereContainerIDisStored{
+				{"pod1": theMap}, // before tick 1: container should be added immediately
+				{"pod1": theMap}, // after tick 1
+				// container deletion
+				{"pod1": history}, // after tick 2: will remember that for one more tick
+				{"pod1": history}, // after tick 3: will remember that for this last tick
+				{"pod1": nowhere}, // after tick 4: history expired - should be forgotten forever
+				{"pod1": nowhere},
+			},
+		},
+		"Re-adding normally deleted container should reset the history status": {
+			numTicksToRemember: 2,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						incremental:  true,
+					},
+				},
+				5: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						incremental:  true,
+					},
+				},
+			},
+			operationAfterTick: map[int]operation{1: deleteDeployment1},
+			containerIDsAfterTick: []map[string]whereContainerIDisStored{
+				{"pod1": theMap}, // before tick 1: container should be added immediately
+				{"pod1": theMap}, // after tick 1
+				// container deletion
+				{"pod1": history}, // after tick 2: will remember that for one more tick
+				{"pod1": history}, // after tick 3: will remember that for this last tick
+				{"pod1": nowhere}, // after tick 4: history expired - should be forgotten forever
+				// adding container again
+				{"pod1": theMap}, // after tick 5: should be normally added to the map
+				{"pod1": theMap}, // after tick 6: should stay in the map until the next deletion or reset
+				{"pod1": theMap},
+			},
+		},
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
 			entityStore := NewStoreWithMemory(tCase.numTicksToRemember)
-
-			// Prepare reset plan
-			resetPlan := make(map[uint16]bool) // key: tickNo, value: shall reset
-			resetPlan[0] = false               // in case tCase.resetAfterTick is empty
-			// pre-fill the reset plan
-			if len(tCase.resetAfterTick) > 0 {
-				for tick := 0; uint16(tick) < slices.Max(tCase.resetAfterTick); tick++ {
-					resetPlan[uint16(tick)] = false
-				}
-				for _, tickWithReset := range tCase.resetAfterTick {
-					resetPlan[tickWithReset] = true
-				}
-			}
 
 			for tickNo, expectation := range tCase.containerIDsAfterTick {
 				// Add entities to the store (mimic data arriving from the K8s informers)
@@ -544,14 +654,19 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 					}
 				}
 				entityStore.RecordTick()
-				if shallReset, ok := resetPlan[uint16(tickNo)]; ok && shallReset {
-					s.T().Logf("Resetting maps (tick %d). State after reset:", tickNo)
-					entityStore.resetMaps()
+				if op, ok := tCase.operationAfterTick[tickNo]; ok {
+					s.T().Logf("Exec operation=%s (tick %d). State after operation:", op, tickNo)
+					switch op {
+					case mapReset:
+						entityStore.resetMaps()
+					case deleteDeployment1:
+						// purgeNoLock accepts deploymentID, not containerID
+						entityStore.purgeNoLock("depl1")
+					}
 					s.T().Logf("\tHistorical container IDs (tick %d): %v", tickNo, prettyPrintHistoricalData(entityStore.historicalContainerIDs))
-					s.T().Logf("\tAll container IDs (tick %d): %v", tickNo, entityStore.containerIDMap)
+					s.T().Logf("\tAll container IDs (tick %d): %v", tickNo, maps.Keys(entityStore.containerIDMap))
 				}
 			}
-
 		})
 	}
 }
