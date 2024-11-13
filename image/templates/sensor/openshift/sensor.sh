@@ -131,6 +131,9 @@ if [[ -f "$DIR/additional-ca-sensor.yaml" ]]; then
   ${KUBE_COMMAND} apply -f "$DIR/additional-ca-sensor.yaml"
 fi
 
+echo "Creating cert-picker-script configmap..."
+${KUBE_COMMAND} apply -f "$DIR/cert-picker-script-configmap.yaml"
+
 echo "Creating sensor deployment..."
 ${KUBE_COMMAND} apply -f "$DIR/sensor.yaml"
 
