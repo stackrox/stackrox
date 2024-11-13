@@ -23,6 +23,7 @@ import (
 type MockAlertManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockAlertManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockAlertManagerMockRecorder is the mock recorder for MockAlertManager.

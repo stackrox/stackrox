@@ -21,6 +21,7 @@ import (
 type MockZipGenerator struct {
 	ctrl     *gomock.Controller
 	recorder *MockZipGeneratorMockRecorder
+	isgomock struct{}
 }
 
 // MockZipGeneratorMockRecorder is the mock recorder for MockZipGenerator.

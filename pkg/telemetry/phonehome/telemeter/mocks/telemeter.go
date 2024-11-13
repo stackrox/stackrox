@@ -20,6 +20,7 @@ import (
 type MockTelemeter struct {
 	ctrl     *gomock.Controller
 	recorder *MockTelemeterMockRecorder
+	isgomock struct{}
 }
 
 // MockTelemeterMockRecorder is the mock recorder for MockTelemeter.

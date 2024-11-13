@@ -22,6 +22,7 @@ import (
 type MockResolvableAlertNotifier struct {
 	ctrl     *gomock.Controller
 	recorder *MockResolvableAlertNotifierMockRecorder
+	isgomock struct{}
 }
 
 // MockResolvableAlertNotifierMockRecorder is the mock recorder for MockResolvableAlertNotifier.
@@ -42,31 +43,31 @@ func (m *MockResolvableAlertNotifier) EXPECT() *MockResolvableAlertNotifierMockR
 }
 
 // AckAlert mocks base method.
-func (m *MockResolvableAlertNotifier) AckAlert(arg0 context.Context, arg1 *storage.Alert) error {
+func (m *MockResolvableAlertNotifier) AckAlert(ctx context.Context, alert *storage.Alert) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AckAlert", arg0, arg1)
+	ret := m.ctrl.Call(m, "AckAlert", ctx, alert)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AckAlert indicates an expected call of AckAlert.
-func (mr *MockResolvableAlertNotifierMockRecorder) AckAlert(arg0, arg1 any) *gomock.Call {
+func (mr *MockResolvableAlertNotifierMockRecorder) AckAlert(ctx, alert any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckAlert", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).AckAlert), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AckAlert", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).AckAlert), ctx, alert)
 }
 
 // AlertNotify mocks base method.
-func (m *MockResolvableAlertNotifier) AlertNotify(arg0 context.Context, arg1 *storage.Alert) error {
+func (m *MockResolvableAlertNotifier) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AlertNotify", arg0, arg1)
+	ret := m.ctrl.Call(m, "AlertNotify", ctx, alert)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AlertNotify indicates an expected call of AlertNotify.
-func (mr *MockResolvableAlertNotifierMockRecorder) AlertNotify(arg0, arg1 any) *gomock.Call {
+func (mr *MockResolvableAlertNotifierMockRecorder) AlertNotify(ctx, alert any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertNotify", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).AlertNotify), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertNotify", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).AlertNotify), ctx, alert)
 }
 
 // Close mocks base method.
@@ -98,17 +99,17 @@ func (mr *MockResolvableAlertNotifierMockRecorder) ProtoNotifier() *gomock.Call 
 }
 
 // ResolveAlert mocks base method.
-func (m *MockResolvableAlertNotifier) ResolveAlert(arg0 context.Context, arg1 *storage.Alert) error {
+func (m *MockResolvableAlertNotifier) ResolveAlert(ctx context.Context, alert *storage.Alert) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ResolveAlert", arg0, arg1)
+	ret := m.ctrl.Call(m, "ResolveAlert", ctx, alert)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ResolveAlert indicates an expected call of ResolveAlert.
-func (mr *MockResolvableAlertNotifierMockRecorder) ResolveAlert(arg0, arg1 any) *gomock.Call {
+func (mr *MockResolvableAlertNotifierMockRecorder) ResolveAlert(ctx, alert any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAlert", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).ResolveAlert), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveAlert", reflect.TypeOf((*MockResolvableAlertNotifier)(nil).ResolveAlert), ctx, alert)
 }
 
 // Test mocks base method.

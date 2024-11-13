@@ -23,6 +23,7 @@ import (
 type MockSignatureIntegrationStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockSignatureIntegrationStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockSignatureIntegrationStoreMockRecorder is the mock recorder for MockSignatureIntegrationStore.

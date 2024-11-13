@@ -22,6 +22,7 @@ import (
 type MockDispatcher struct {
 	ctrl     *gomock.Controller
 	recorder *MockDispatcherMockRecorder
+	isgomock struct{}
 }
 
 // MockDispatcherMockRecorder is the mock recorder for MockDispatcher.
@@ -59,6 +60,7 @@ func (mr *MockDispatcherMockRecorder) ProcessEvent(obj, oldObj, action any) *gom
 type MockDispatcherRegistry struct {
 	ctrl     *gomock.Controller
 	recorder *MockDispatcherRegistryMockRecorder
+	isgomock struct{}
 }
 
 // MockDispatcherRegistryMockRecorder is the mock recorder for MockDispatcherRegistry.

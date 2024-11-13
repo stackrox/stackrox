@@ -20,6 +20,7 @@ import (
 type MockRegistryCredentialsManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockRegistryCredentialsManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockRegistryCredentialsManagerMockRecorder is the mock recorder for MockRegistryCredentialsManager.

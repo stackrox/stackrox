@@ -22,6 +22,7 @@ import (
 type MockCA struct {
 	ctrl     *gomock.Controller
 	recorder *MockCAMockRecorder
+	isgomock struct{}
 }
 
 // MockCAMockRecorder is the mock recorder for MockCA.
