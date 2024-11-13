@@ -5,4 +5,4 @@ CREATE TABLE IF NOT EXISTS manifest_metadata (
 );
 
 --- (hopefully) make 'WHERE expiration < SOME_TIMESTAMP' searches faster.
-CREATE INDEX IF NOT EXISTS manfiest_metadata_expiration_idx ON manifest_metadata(expiration);
+CREATE INDEX IF NOT EXISTS manifest_metadata_expiration_idx ON manifest_metadata(expiration);

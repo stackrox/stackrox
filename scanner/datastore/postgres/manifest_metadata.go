@@ -90,12 +90,16 @@ func (i *indexerMetadataStore) ManifestExists(ctx context.Context, manifestID st
 	return value == 1, nil
 }
 
-func (i *indexerMetadataStore) GCManifests(ctx context.Context, expiration time.Time) ([]string, error) {
+func (i *indexerMetadataStore) GCManifests(ctx context.Context, expiration time.Time, opts ...GCManifestsOption) ([]string, error) {
+	o := makeGCManifestsOpts(opts)
+
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexerMetadataStore.GCManifests")
 
 	const deleteManifests = `
 		DELETE FROM manifest_metadata
-		WHERE expiration < $1
+		WHERE manifest_id IN (
+		    SELECT manifest_id FROM manifest_metadata WHERE expiration < $1 LIMIT $2
+		)
 		RETURNING manifest_id`
 
 	// Make this a transaction, as failure to delete the manifest should stop the deletion of its metadata.
@@ -108,7 +112,7 @@ func (i *indexerMetadataStore) GCManifests(ctx context.Context, expiration time.
 	}()
 
 	// Delete expired rows from manifest_metadata
-	rows, err := tx.Query(ctx, deleteManifests, expiration.UTC())
+	rows, err := tx.Query(ctx, deleteManifests, expiration.UTC(), o.gcThrottle)
 	if err != nil {
 		return nil, err
 	}

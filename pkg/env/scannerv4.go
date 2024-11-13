@@ -22,8 +22,15 @@ var (
 	ScannerV4AnonymousAuth = RegisterBooleanSetting("ROX_SCANNER_V4_ALLOW_ANONYMOUS_AUTH", !buildinfo.ReleaseBuild)
 
 	// ScannerV4ManifestGCInterval specifies the interval between manifest garbage collection runs.
-	// The manifest garbage collector runs periodically to check for expired manifests and then delete them.
-	ScannerV4ManifestGCInterval = registerDurationSetting("ROX_SCANNER_V4_MANIFEST_GC_INTERVAL", 6*time.Hour)
+	// The manifest garbage collector runs periodically to check for expired manifests and then delete a subset of them.
+	ScannerV4ManifestGCInterval = registerDurationSetting("ROX_SCANNER_V4_MANIFEST_GC_INTERVAL", 4*time.Hour)
+
+	// ScannerV4ManifestGCThrottle specifies the number of manifests to garbage collect during a typical, non-full run.
+	ScannerV4ManifestGCThrottle = RegisterIntegerSetting("ROX_SCANNER_V4_MANIFEST_GC_THROTTLE", 100)
+
+	// ScannerV4FullManifestGCInterval specifies the interval between full manifest garbage collection runs.
+	// The manifest garbage collector runs periodically to check for expired manifests and then delete all of them.
+	ScannerV4FullManifestGCInterval = registerDurationSetting("ROX_SCANNER_V4_FULL_MANIFEST_GC_INTERVAL", 24*time.Hour)
 
 	// ScannerV4ManifestDeleteStart specifies the start of the interval in which manifests will be deleted.
 	// Default: 7 days

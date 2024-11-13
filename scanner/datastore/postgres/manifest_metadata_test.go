@@ -119,9 +119,14 @@ func Test_ManifestMetadata(t *testing.T) {
 	assert.NoError(t, err)
 	err = store.StoreManifest(ctx, "sha512:vwx", time.Time{}.Add(-1*time.Microsecond))
 	assert.NoError(t, err)
-	ids, err = store.GCManifests(ctx, now)
+	// Split the GC.
+	ids1, err := store.GCManifests(ctx, now, WithGCThrottle(1))
 	require.NoError(t, err)
-	assert.Len(t, ids, 3)
+	assert.Len(t, ids1, 1)
+	ids2, err := store.GCManifests(ctx, now, WithGCThrottle(5))
+	require.NoError(t, err)
+	assert.Len(t, ids2, 2)
+	ids = append(ids1, ids2...)
 	assert.ElementsMatch(t, []string{"sha512:jkl", "sha512:stu", "sha512:vwx"}, ids)
 	for _, id := range ids {
 		exists, err = store.ManifestExists(ctx, id)

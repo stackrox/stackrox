@@ -39,6 +39,7 @@ import (
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
@@ -194,11 +195,14 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 	}()
 
-	metadataStore, err := postgres.InitPostgresIndexerMetadataStore(ctx, pool, true, postgres.IndexerMetadataStoreOpts{
-		IndexerStore: store,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("initializing postgres indexer metadata store: %w", err)
+	var metadataStore postgres.IndexerMetadataStore
+	if features.ScannerV4ReIndex.Enabled() {
+		metadataStore, err = postgres.InitPostgresIndexerMetadataStore(ctx, pool, true, postgres.IndexerMetadataStoreOpts{
+			IndexerStore: store,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("initializing postgres indexer metadata store: %w", err)
+		}
 	}
 
 	root, err := os.MkdirTemp("", "scanner-fetcharena-*")
@@ -233,22 +237,27 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		return nil, err
 	}
 
-	manifestManager := manifest.NewManager(ctx, metadataStore, locker)
-	// Set any manifests indexed prior to the existence of the manifest_metadata table
-	// to expire immediately.
-	// TODO(ROX-26957): Consider moving this elsewhere so we do not block initialization.
-	err = manifestManager.MigrateManifests(ctx, time.Now())
-	if err != nil {
-		// TODO(ROX-26958): Consider just logging this instead once we start deleting entries
-		// missing from the metadata table, too.
-		return nil, fmt.Errorf("migrating manifests to metadata store: %w", err)
-	}
-	// Start the manifest GC.
-	go func() {
-		if err := manifestManager.StartGC(ctx); err != nil {
-			zlog.Error(ctx).Err(err).Msg("manifest GC failed")
+	var manifestManager *manifest.Manager
+	if features.ScannerV4ReIndex.Enabled() {
+		manifestManager = manifest.NewManager(ctx, metadataStore, locker)
+		// Set any manifests indexed prior to the existence of the manifest_metadata table
+		// to expire immediately.
+		// TODO(ROX-26957): Consider moving this elsewhere so we do not block initialization.
+		// TODO(ROX-26995): Consider updating the immediate purge condition.
+		// It may be possible we want to purge all manifests upon startup for other reasons.
+		err = manifestManager.MigrateManifests(ctx, time.Now())
+		if err != nil {
+			// TODO(ROX-26958): Consider just logging this instead once we start deleting entries
+			// missing from the metadata table, too.
+			return nil, fmt.Errorf("migrating manifests to metadata store: %w", err)
 		}
-	}()
+		// Start the manifest GC.
+		go func() {
+			if err := manifestManager.StartGC(); err != nil {
+				zlog.Error(ctx).Err(err).Msg("manifest GC failed")
+			}
+		}()
+	}
 
 	deleteIntervalStart := env.ScannerV4ManifestDeleteStart.DurationSetting()
 	if deleteIntervalStart < minManifestDeleteStart {
@@ -341,7 +350,10 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *h
 // Close closes the indexer.
 func (i *localIndexer) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.Close")
-	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root), i.manifestManager.StopGC())
+	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root))
+	if features.ScannerV4ReIndex.Enabled() && i.manifestManager != nil {
+		err = errors.Join(err, i.manifestManager.StopGC())
+	}
 	i.pool.Close()
 	return err
 }
@@ -411,9 +423,11 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 		return nil, err
 	}
 
-	err = i.metadataStore.StoreManifest(ctx, manifestDigest.String(), i.randomExpiry(time.Now()))
-	if err != nil {
-		return nil, err
+	if features.ScannerV4ReIndex.Enabled() && i.metadataStore != nil {
+		err = i.metadataStore.StoreManifest(ctx, manifestDigest.String(), i.randomExpiry(time.Now()))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return ir, nil
@@ -505,26 +519,28 @@ func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*clai
 	if err != nil {
 		return nil, false, err
 	}
-	exists, err := i.metadataStore.ManifestExists(ctx, manifestDigest.String())
-	if err != nil {
-		return nil, false, fmt.Errorf("checking if manifest metadata exists: %w", err)
-	}
-	if !exists {
-		// Even if the indexing was successful, if the manifest metadata was not stored, then we consider
-		// this manifest as non-existent.
-		//
-		// Note: There are two known situations in which this may happen:
-		//
-		// 1. When storing the manifest metadata fails but the indexing succeeds.
-		//    We will not run into a situation where manifest metadata was added successfully but deleted prior
-		//    to successfully fetching the index report, as the manifest metadata and index
-		//    report are deleted together in a transaction.
-		// 2. Upon upgrade from an older version of the Indexer in which the manifest metadata table does not
-		//    exist to a version in which it does. It is possible the upgraded version migrates all
-		//    known manifests over to the metadata table, but there is still an older Indexer running which successfully
-		//    indexes a manifest after the migration. The manifest metadata table will now be missing an entry related to
-		//    this new index report. This is ok, as it will be caught here and the manifest will be re-indexed.
-		return nil, false, nil
+	if features.ScannerV4ReIndex.Enabled() && i.metadataStore != nil {
+		exists, err := i.metadataStore.ManifestExists(ctx, manifestDigest.String())
+		if err != nil {
+			return nil, false, fmt.Errorf("checking if manifest metadata exists: %w", err)
+		}
+		if !exists {
+			// Even if the indexing was successful, if the manifest metadata was not stored, then we consider
+			// this manifest as non-existent.
+			//
+			// Note: There are two known situations in which this may happen:
+			//
+			// 1. When storing the manifest metadata fails but the indexing succeeds.
+			//    We will not run into a situation where manifest metadata was added successfully but deleted prior
+			//    to successfully fetching the index report, as the manifest metadata and index
+			//    report are deleted together in a transaction.
+			// 2. Upon upgrade from an older version of the Indexer in which the manifest metadata table does not
+			//    exist to a version in which it does. It is possible the upgraded version migrates all
+			//    known manifests over to the metadata table, but there is still an older Indexer running which successfully
+			//    indexes a manifest after the migration. The manifest metadata table will now be missing an entry related to
+			//    this new index report. This is ok, as it will be caught here and the manifest will be re-indexed.
+			return nil, false, nil
+		}
 	}
 	scanned, err := i.libIndex.Store.ManifestScanned(ctx, manifestDigest, i.vscnrs)
 	if err != nil {

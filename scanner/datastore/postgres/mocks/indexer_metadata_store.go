@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 	time "time"
 
+	postgres "github.com/stackrox/rox/scanner/datastore/postgres"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,18 +42,23 @@ func (m *MockIndexerMetadataStore) EXPECT() *MockIndexerMetadataStoreMockRecorde
 }
 
 // GCManifests mocks base method.
-func (m *MockIndexerMetadataStore) GCManifests(ctx context.Context, expiration time.Time) ([]string, error) {
+func (m *MockIndexerMetadataStore) GCManifests(ctx context.Context, expiration time.Time, opts ...postgres.GCManifestsOption) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GCManifests", ctx, expiration)
+	varargs := []any{ctx, expiration}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GCManifests", varargs...)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GCManifests indicates an expected call of GCManifests.
-func (mr *MockIndexerMetadataStoreMockRecorder) GCManifests(ctx, expiration any) *gomock.Call {
+func (mr *MockIndexerMetadataStoreMockRecorder) GCManifests(ctx, expiration any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GCManifests", reflect.TypeOf((*MockIndexerMetadataStore)(nil).GCManifests), ctx, expiration)
+	varargs := append([]any{ctx, expiration}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GCManifests", reflect.TypeOf((*MockIndexerMetadataStore)(nil).GCManifests), varargs...)
 }
 
 // ManifestExists mocks base method.
