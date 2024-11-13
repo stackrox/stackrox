@@ -158,7 +158,7 @@ func (m *Manager) StartGC() error {
 
 	fullInterval := m.fullInterval + jitter()
 	zlog.Info(ctx).Msgf("next full manifest metadata GC run will be in about %v", fullInterval)
-	tFull := time.NewTimer(interval)
+	tFull := time.NewTimer(fullInterval)
 	defer tFull.Stop()
 
 	for {
@@ -197,20 +197,29 @@ func (m *Manager) runFullGC(ctx context.Context) error {
 		return err
 	}
 
+	zlog.Info(ctx).Msg("starting manifest metadata garbage collection")
+
+	var ms []string
 	// Set i to any int greater than 0 to start the loop.
 	i := 1
-	var err error
 	for i > 0 {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			i, err = m.runGCNoLock(ctx)
+			deleted, err := m.runGCNoLock(ctx)
 			if err != nil {
 				return err
 			}
+			i = len(deleted)
+			ms = append(ms, deleted...)
 		}
 	}
+
+	if len(ms) > 0 {
+		zlog.Debug(ctx).Strs("deleted_manifest_metadata", ms).Msg("deleted expired manifest metadata")
+	}
+	zlog.Info(ctx).Int("deleted_manifest_metadata", len(ms)).Msg("deleted expired manifest metadata")
 
 	return nil
 }
@@ -229,23 +238,24 @@ func (m *Manager) runGC(ctx context.Context) error {
 		return err
 	}
 
-	_, err := m.runGCNoLock(ctx)
-	return err
-}
-
-// runGCNoLock runs the actual garbage collection cycle.
-// DO NOT CALL THIS UNLESS THE manifest-garbage-collection LOCK IS ACQUIRED.
-func (m *Manager) runGCNoLock(ctx context.Context) (int, error) {
 	zlog.Info(ctx).Msg("starting manifest metadata garbage collection")
-	ms, err := m.metadataStore.GCManifests(ctx, time.Now(), postgres.WithGCThrottle(m.gcThrottle))
+	ms, err := m.runGCNoLock(ctx)
 	if err != nil {
-		return 0, err
+		return err
 	}
+
 	if len(ms) > 0 {
 		zlog.Debug(ctx).Strs("deleted_manifest_metadata", ms).Msg("deleted expired manifest metadata")
 	}
 	zlog.Info(ctx).Int("deleted_manifest_metadata", len(ms)).Msg("deleted expired manifest metadata")
-	return len(ms), nil
+
+	return nil
+}
+
+// runGCNoLock runs the actual garbage collection cycle.
+// DO NOT CALL THIS UNLESS THE manifest-garbage-collection LOCK IS ACQUIRED.
+func (m *Manager) runGCNoLock(ctx context.Context) ([]string, error) {
+	return m.metadataStore.GCManifests(ctx, time.Now(), postgres.WithGCThrottle(m.gcThrottle))
 }
 
 // StopGC ends periodic garbage collection.
