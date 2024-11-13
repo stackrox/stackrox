@@ -10,12 +10,10 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
-      target_branch == "master" && (
-        event == "push" || (
-          event == "pull_request" && (
-            source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
-            body.pull_request.labels.exists(l, l.name == "konflux-build")
-          )
+      event == "push" || (
+        event == "pull_request" && (
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          body.pull_request.labels.exists(l, l.name == "konflux-build")
         )
       )
   labels:
