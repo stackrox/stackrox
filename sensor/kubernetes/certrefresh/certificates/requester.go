@@ -71,25 +71,25 @@ func newRequester[ReqT any, RespT protobufResponse](
 	receiveC <-chan RespT,
 	messageFactory messageFactory,
 	responseFactory responseFactory[RespT],
-	centralCapability *centralsensor.CentralCapability,
+	requiredCentralCapability *centralsensor.CentralCapability,
 ) *genericRequester[ReqT, RespT] {
 	return &genericRequester[ReqT, RespT]{
-		sendC:             sendC,
-		receiveC:          receiveC,
-		messageFactory:    messageFactory,
-		responseFactory:   responseFactory,
-		centralCapability: centralCapability,
+		sendC:                     sendC,
+		receiveC:                  receiveC,
+		messageFactory:            messageFactory,
+		responseFactory:           responseFactory,
+		requiredCentralCapability: requiredCentralCapability,
 	}
 }
 
 type genericRequester[ReqT any, RespT protobufResponse] struct {
-	sendC             chan<- *message.ExpiringMessage
-	receiveC          <-chan RespT
-	stopC             concurrency.ErrorSignal
-	requests          sync.Map
-	messageFactory    messageFactory
-	responseFactory   responseFactory[RespT]
-	centralCapability *centralsensor.CentralCapability
+	sendC                     chan<- *message.ExpiringMessage
+	receiveC                  <-chan RespT
+	stopC                     concurrency.ErrorSignal
+	requests                  sync.Map
+	messageFactory            messageFactory
+	responseFactory           responseFactory[RespT]
+	requiredCentralCapability *centralsensor.CentralCapability
 }
 
 type protobufResponse interface {
@@ -179,11 +179,11 @@ func (r *genericRequester[ReqT, RespT]) dispatchResponses() {
 // RequestCertificates makes a new request for a new set of secured cluster certificates from Central.
 // This assumes the certificate requester is started, otherwise this returns ErrCertificateRequesterStopped.
 func (r *genericRequester[ReqT, RespT]) RequestCertificates(ctx context.Context) (*Response, error) {
-	if r.centralCapability != nil {
+	if r.requiredCentralCapability != nil {
 		// Central capabilities are only available after this component is created,
 		// which is why this check is done here
-		if !centralcaps.Has(*r.centralCapability) {
-			return nil, fmt.Errorf("TLS certificate refresh failed: missing Central capability '%s'", *r.centralCapability)
+		if !centralcaps.Has(*r.requiredCentralCapability) {
+			return nil, fmt.Errorf("TLS certificate refresh failed: missing Central capability '%s'", *r.requiredCentralCapability)
 		}
 	}
 
