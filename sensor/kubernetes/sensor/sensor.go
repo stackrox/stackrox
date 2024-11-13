@@ -193,9 +193,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	if securedClusterIsNotManagedManually(helmManagedConfig) {
 		// Central capabilities are not available at this point (there's no connection to Central yet),
-		// so we'll start both Secured Cluster and Local Scanner TLS issuer Sensor components.
-		// Ideally we'd only start one or the other, depending on whether Central has
-		// the `SecuredClusterCertificatesReissue` capability.
+		// so we'll start both Secured Cluster and Local Scanner TLS issuer Sensor components. The Secured Cluster
+		// certificate refresher can determine at runtime if Central has the required capability for it to work.
 
 		podName := os.Getenv("POD_NAME")
 		components = append(components,
