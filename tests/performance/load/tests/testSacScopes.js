@@ -12,7 +12,7 @@ const sacOptions = [
         tag: 'c1-n1',
         numClusters: 1,
         numNamespaces: 1,
-    },
+    },/*
     {
         name: 'TestFiveClustersFiveNamespaces',
         tag: 'c5-n5',
@@ -30,6 +30,54 @@ const sacOptions = [
         tag: 'c10-n100',
         numClusters: 10,
         numNamespaces: 100,
+    },*/
+    {
+        name: 'TestOneClusterTenNamespace',
+        tag: 'c1-n10',
+        numClusters: 1,
+        numNamespaces: 10,
+    },
+    {
+        name: 'TestOneClusterTwentyNamespace',
+        tag: 'c1-n20',
+        numClusters: 1,
+        numNamespaces: 20,
+    },
+    {
+        name: 'TestOneClusterFiftyNamespace',
+        tag: 'c1-n50',
+        numClusters: 1,
+        numNamespaces: 50,
+    },
+    {
+        name: 'TestOneClusterOneHundredNamespace',
+        tag: 'c1-n100',
+        numClusters: 1,
+        numNamespaces: 100,
+    },
+    {
+        name: 'TestOneClusterTwoHundredNamespace',
+        tag: 'c1-n200',
+        numClusters: 1,
+        numNamespaces: 200,
+    },
+    {
+        name: 'TestOneClusterFiveHundredNamespace',
+        tag: 'c1-n500',
+        numClusters: 1,
+        numNamespaces: 500,
+    },
+    {
+        name: 'TestOneClusterOneThousandNamespace',
+        tag: 'c1-n1000',
+        numClusters: 1,
+        numNamespaces: 1000,
+    },
+    {
+        name: 'TestOneClusterTwoThousandNamespace',
+        tag: 'c1-n2000',
+        numClusters: 1,
+        numNamespaces: 2000,
     },
 ];
 
