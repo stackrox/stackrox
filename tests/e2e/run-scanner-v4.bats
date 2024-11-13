@@ -124,6 +124,10 @@ setup() {
     test_case_no=$(( test_case_no + 1))
 
     export ROX_SCANNER_V4=true
+
+    # By default we will use CRS-based cluster registration in this test suite, but there are some
+    # specific tests which require CRS to be switched off (upgrade tests involving an old Helm chart, e.g.).
+    export ROX_DEPLOY_SENSOR_WITH_CRS=true
 }
 
 describe_pods_in_namespace() {
@@ -215,6 +219,8 @@ teardown_file() {
 @test "Upgrade from old Helm chart to HEAD Helm chart with Scanner v4 enabled" {
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=helm
+    export ROX_DEPLOY_SENSOR_WITH_CRS=false
+
     local main_image_tag="${MAIN_IMAGE_TAG}"
 
     # Deploy earlier version without Scanner V4.
