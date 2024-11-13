@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/compliance"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/node/index"
+	"github.com/stackrox/rox/compliance/node/inventory"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/retry/handler"
@@ -19,7 +20,7 @@ func main() {
 	np := &node.EnvNodeNameProvider{}
 	cfg := index.NewNodeIndexerConfigFromEnv()
 
-	scanner := node.NewNodeInventoryComponentScanner(np)
+	scanner := inventory.NewNodeInventoryComponentScanner(np)
 	scanner.Connect(env.NodeScanningEndpoint.Setting())
 	nodeIndexer := index.NewNodeIndexer(cfg)
 
