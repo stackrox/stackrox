@@ -395,15 +395,15 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 					{
 						deploymentID: "depl1",
 						containerID:  "pod1",
-						incremental:  true, // append
+						incremental:  true,
 					},
 				},
 			},
 			resetAfterTick: []uint16{}, // do not reset at all
 			containerIDsAfterTick: []map[string]whereContainerIDisStored{
 				{"pod1": theMap}, // before tick 1: container should be added immediately
-				{"pod1": theMap}, // after tick 1: nothing has happened that would cause the container ID to disappear
-				{"pod1": theMap}, // after tick 2: nothing has happened that would cause the container ID to disappear
+				{"pod1": theMap}, // after tick 1: no reset - should be in the map forever
+				{"pod1": theMap},
 			},
 		},
 		"Memory disabled with reset after tick 1 should make pod1 be forgotten before tick 2": {
@@ -413,15 +413,16 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 					{
 						deploymentID: "depl1",
 						containerID:  "pod1",
-						incremental:  true, // append
+						incremental:  true,
 					},
 				},
 			},
 			resetAfterTick: []uint16{1},
 			containerIDsAfterTick: []map[string]whereContainerIDisStored{
-				{"pod1": theMap},  // before tick 1: container should be added immediately
-				{"pod1": theMap},  // after tick 1: reset happens after this assertion
-				{"pod1": nowhere}, // after tick 2: first tick after reset
+				{"pod1": theMap}, // before tick 1: container should be added immediately
+				{"pod1": theMap}, // after tick 1: no reset yet, so it should be in the map
+				// reset
+				{"pod1": nowhere}, // after tick 2: should be gone
 			},
 		},
 		"Memory for 2 ticks with reset after tick 1 should make pod1 be forgotten before tick 4": {
@@ -431,17 +432,18 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 					{
 						deploymentID: "depl1",
 						containerID:  "pod1",
-						incremental:  true, // append
+						incremental:  true,
 					},
 				},
 			},
 			resetAfterTick: []uint16{1},
 			containerIDsAfterTick: []map[string]whereContainerIDisStored{
-				{"pod1": theMap},  // before tick 1: container should be added immediately
-				{"pod1": theMap},  // after tick 1: reset happens after this assertion
-				{"pod1": history}, // after tick 2: reset happened but memory will remember that for one more tick
-				{"pod1": history}, // after tick 3: reset happened but memory will remember that for this last tick
-				{"pod1": nowhere}, // after tick 4: reset happened and memory expired - should be forgotten
+				{"pod1": theMap}, // before tick 1: container should be added immediately
+				{"pod1": theMap}, // after tick 1
+				// reset
+				{"pod1": history}, // after tick 2: will remember that for one more tick
+				{"pod1": history}, // after tick 3: will remember that for this last tick
+				{"pod1": nowhere}, // after tick 4: history expired - should be forgotten
 			},
 		},
 		"Re-adding successfully forgotten container should reset the history status": {
@@ -451,26 +453,27 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 					{
 						deploymentID: "depl1",
 						containerID:  "pod1",
-						incremental:  true, // append
+						incremental:  true,
 					},
 				},
 				5: {
 					{
 						deploymentID: "depl1",
 						containerID:  "pod1",
-						incremental:  true, // append
+						incremental:  true,
 					},
 				},
 			},
 			resetAfterTick: []uint16{1},
 			containerIDsAfterTick: []map[string]whereContainerIDisStored{
-				{"pod1": theMap},  // before tick 1: container should be added immediately
-				{"pod1": theMap},  // after tick 1: reset happens after this assertion
-				{"pod1": history}, // after tick 2: reset happened but memory will remember that for one more tick
-				{"pod1": history}, // after tick 3: reset happened but memory will remember that for this last tick
-				{"pod1": nowhere}, // after tick 4: reset happened and memory expired - should be forgotten
-				{"pod1": theMap},  // after tick 5: re-added pod1 should be findable until next reset
-				{"pod1": theMap},  // after tick 6: no further reset was planned, so we should find pod1 in all ticks from now
+				{"pod1": theMap}, // before tick 1: container should be added immediately
+				{"pod1": theMap}, // after tick 1
+				// reset
+				{"pod1": history}, // after tick 2: will remember that for one more tick
+				{"pod1": history}, // after tick 3: will remember that for this last tick
+				{"pod1": nowhere}, // after tick 4: history expired - should be forgotten
+				{"pod1": theMap},  // after tick 5: re-added pod1 should be findable from now on until the next reset
+				{"pod1": theMap},  // after tick 6: no further reset was planned, so we should find pod1 forever
 				{"pod1": theMap},
 				{"pod1": theMap},
 				{"pod1": theMap},
