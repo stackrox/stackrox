@@ -312,6 +312,55 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 	return ret
 }
 
+// EmbeddedVulnerabilityToImageCVEV2 converts *storage.EmbeddedVulnerability object to *storage.ImageCVE object
+func EmbeddedVulnerabilityToImageCVEV2(os string, imageID string, from *storage.EmbeddedVulnerability) *storage.ImageCVEV2 {
+	var nvdCvss float32
+	nvdCvss = 0
+	nvdVersion := storage.CvssScoreVersion_UNKNOWN_VERSION
+	for _, score := range from.GetCvssMetrics() {
+		if score.Source == storage.Source_SOURCE_NVD {
+			if score.GetCvssv3() != nil {
+				nvdCvss = score.GetCvssv3().GetScore()
+				nvdVersion = storage.CvssScoreVersion_V3
+
+			} else if score.GetCvssv2() != nil {
+				nvdCvss = score.GetCvssv2().GetScore()
+				nvdVersion = storage.CvssScoreVersion_V2
+			}
+		}
+	}
+	ret := &storage.ImageCVEV2{
+		Id:              cve.ID(from.GetCve(), imageID),
+		OperatingSystem: os,
+		CveBaseInfo: &storage.CVEInfo{
+			Cve:          from.GetCve(),
+			Summary:      from.GetSummary(),
+			Link:         from.GetLink(),
+			PublishedOn:  from.GetPublishedOn(),
+			CreatedAt:    from.GetFirstSystemOccurrence(),
+			LastModified: from.GetLastModified(),
+			CvssV2:       from.GetCvssV2(),
+			CvssV3:       from.GetCvssV3(),
+		},
+		Cvss:                 from.GetCvss(),
+		Nvdcvss:              nvdCvss,
+		NvdScoreVersion:      nvdVersion,
+		Severity:             from.GetSeverity(),
+		CvssMetrics:          from.GetCvssMetrics(),
+		ImageId:              imageID,
+		FirstImageOccurrence: from.GetFirstImageOccurrence(),
+		State:                from.GetState(),
+	}
+	if ret.GetCveBaseInfo().GetCvssV3() != nil {
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
+		ret.ImpactScore = from.GetCvssV3().GetImpactScore()
+	} else if ret.GetCveBaseInfo().GetCvssV2() != nil {
+		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V2
+		ret.ImpactScore = from.GetCvssV2().GetImpactScore()
+	}
+	return ret
+}
+
 // EmbeddedVulnerabilityToClusterCVE converts *storage.EmbeddedVulnerability object to *storage.ClusterCVE object
 func EmbeddedVulnerabilityToClusterCVE(cveType storage.CVE_CVEType, from *storage.EmbeddedVulnerability) *storage.ClusterCVE {
 	ret := &storage.ClusterCVE{

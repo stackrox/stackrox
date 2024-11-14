@@ -33,8 +33,11 @@ const (
 	imagesTable              = pkgSchema.ImagesTableName
 	imageComponentEdgesTable = pkgSchema.ImageComponentEdgesTableName
 	imageComponentsTable     = pkgSchema.ImageComponentsTableName
+	imageComponentsV2Table   = pkgSchema.ImageComponentV2TableName
 	componentCVEEdgesTable   = pkgSchema.ImageComponentCveEdgesTableName
+	componentCVEEdgesV2Table = pkgSchema.ImageComponentCveEdgesV2TableName
 	imageCVEsTable           = pkgSchema.ImageCvesTableName
+	imageCVEsV2Table         = pkgSchema.ImageCvesV2TableName
 	imageCVEEdgesTable       = pkgSchema.ImageCveEdgesTableName
 
 	getImageMetaStmt = "SELECT serialized FROM " + imagesTable + " WHERE Id = $1"
@@ -61,6 +64,9 @@ type imagePartsAsSlice struct {
 	imageComponentEdges []*storage.ImageComponentEdge
 	componentCVEEdges   []*storage.ComponentCVEEdge
 	imageCVEEdges       []*storage.ImageCVEEdge
+	componentsV2        []*storage.ImageComponentV2
+	vulnsV2             []*storage.ImageCVEV2
+	componentCVEEdgesV2 []*storage.ComponentCVEEdgeV2
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -154,10 +160,19 @@ func (s *storeImpl) insertIntoImages(
 	if err := copyFromImageComponents(ctx, tx, parts.components...); err != nil {
 		return err
 	}
+	if err := copyFromImageComponentsV2(ctx, tx, parts.componentsV2...); err != nil {
+		return err
+	}
 	if err := copyFromImageComponentCVEEdges(ctx, tx, parts.componentCVEEdges...); err != nil {
 		return err
 	}
+	if err := copyFromImageComponentCVEEdgesV2(ctx, tx, parts.componentCVEEdgesV2...); err != nil {
+		return err
+	}
 	if err := copyFromImageCves(ctx, tx, iTime, parts.vulns...); err != nil {
+		return err
+	}
+	if err := copyFromImageCvesV2(ctx, tx, iTime, parts.vulnsV2...); err != nil {
 		return err
 	}
 	return copyFromImageCVEEdges(ctx, tx, iTime, false, parts.imageCVEEdges...)
@@ -165,20 +180,31 @@ func (s *storeImpl) insertIntoImages(
 
 func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
 	components := make([]*storage.ImageComponent, 0, len(parts.Children))
+	componentsV2 := make([]*storage.ImageComponentV2, 0, len(parts.Children))
 	imageComponentEdges := make([]*storage.ImageComponentEdge, 0, len(parts.Children))
 	vulnMap := make(map[string]*storage.ImageCVE)
+	vulnV2Map := make(map[string]*storage.ImageCVEV2)
 	var componentCVEEdges []*storage.ComponentCVEEdge
+	var componentCVEEdgesV2 []*storage.ComponentCVEEdgeV2
 	for _, child := range parts.Children {
 		components = append(components, child.Component)
+		componentsV2 = append(componentsV2, child.ComponentV2)
 		imageComponentEdges = append(imageComponentEdges, child.Edge)
 		for _, gChild := range child.Children {
 			componentCVEEdges = append(componentCVEEdges, gChild.Edge)
 			vulnMap[gChild.CVE.GetId()] = gChild.CVE
+
+			componentCVEEdgesV2 = append(componentCVEEdgesV2, gChild.EdgeV2)
+			vulnV2Map[gChild.CVEV2.GetId()] = gChild.CVEV2
 		}
 	}
 	vulns := make([]*storage.ImageCVE, 0, len(vulnMap))
 	for _, vuln := range vulnMap {
 		vulns = append(vulns, vuln)
+	}
+	vulnsV2 := make([]*storage.ImageCVEV2, 0, len(vulnMap))
+	for _, vuln := range vulnV2Map {
+		vulnsV2 = append(vulnsV2, vuln)
 	}
 	imageCVEEdges := make([]*storage.ImageCVEEdge, 0, len(parts.ImageCVEEdges))
 	for _, imageCVEEdge := range parts.ImageCVEEdges {
@@ -191,6 +217,9 @@ func getPartsAsSlice(parts common.ImageParts) *imagePartsAsSlice {
 		imageComponentEdges: imageComponentEdges,
 		componentCVEEdges:   componentCVEEdges,
 		imageCVEEdges:       imageCVEEdges,
+		vulnsV2:             vulnsV2,
+		componentsV2:        componentsV2,
+		componentCVEEdgesV2: componentCVEEdgesV2,
 	}
 }
 
@@ -276,6 +305,77 @@ func copyFromImageComponents(ctx context.Context, tx *postgres.Tx, objs ...*stor
 		}
 	}
 	return removeOrphanedImageComponent(ctx, tx)
+}
+
+func copyFromImageComponentsV2(ctx context.Context, tx *postgres.Tx, objs ...*storage.ImageComponentV2) error {
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	var deletes []string
+
+	copyCols := []string{
+		"id",
+		"name",
+		"version",
+		"operatingsystem",
+		"priority",
+		"source",
+		"riskscore",
+		"topcvss",
+		"imageid",
+		"location",
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+
+		serialized, marshalErr := obj.MarshalVT()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+			obj.GetId(),
+			obj.GetName(),
+			obj.GetVersion(),
+			obj.GetOperatingSystem(),
+			obj.GetPriority(),
+			obj.GetSource(),
+			obj.GetRiskScore(),
+			obj.GetTopCvss(),
+			obj.GetImageId(),
+			obj.GetLocation(),
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// Copy does not upsert so have to delete first.
+			_, err = tx.Exec(ctx, "DELETE FROM "+imageComponentsV2Table+" WHERE id = ANY($1::text[])", deletes)
+			if err != nil {
+				return err
+			}
+
+			// clear the inserts for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{imageComponentsV2Table}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+	// May not need this orphan depending on how we set up relationships
+	//return removeOrphanedImageComponentV2(ctx, tx)
+	return nil
 }
 
 func copyFromImageComponentEdges(ctx context.Context, tx *postgres.Tx, imageID string, objs ...*storage.ImageComponentEdge) error {
@@ -418,6 +518,96 @@ func copyFromImageCves(ctx context.Context, tx *postgres.Tx, iTime time.Time, ob
 	return removeOrphanedImageCVEs(ctx, tx)
 }
 
+func copyFromImageCvesV2(ctx context.Context, tx *postgres.Tx, iTime time.Time, objs ...*storage.ImageCVEV2) error {
+	inputRows := [][]interface{}{}
+
+	var err error
+
+	// This is a copy so first we must delete the rows and re-add them
+	var deletes []string
+
+	copyCols := []string{
+		"id",
+		"cvebaseinfo_cve",
+		"cvebaseinfo_publishedon",
+		"cvebaseinfo_createdat",
+		"operatingsystem",
+		"cvss",
+		"nvdcvss",
+		"severity",
+		"impactscore",
+		"state",
+		"firstimageoccurrence",
+		"imageid",
+		"serialized",
+	}
+
+	ids := set.NewStringSet()
+	for _, obj := range objs {
+		ids.Add(obj.GetId())
+	}
+	existingCVEs, err := getCVEsV2(ctx, tx, ids.AsSlice())
+	if err != nil {
+		return err
+	}
+
+	for idx, obj := range objs {
+		if storedCVE := existingCVEs[obj.GetId()]; storedCVE != nil {
+			obj.CveBaseInfo.CreatedAt = storedCVE.GetCveBaseInfo().GetCreatedAt()
+			obj.FirstImageOccurrence = storedCVE.GetFirstImageOccurrence()
+		} else {
+			obj.CveBaseInfo.CreatedAt = protocompat.ConvertTimeToTimestampOrNil(&iTime)
+		}
+
+		serialized, marshalErr := obj.MarshalVT()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+			obj.GetId(),
+			obj.GetCveBaseInfo().GetCve(),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
+			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+			obj.GetOperatingSystem(),
+			obj.GetCvss(),
+			obj.GetNvdcvss(),
+			obj.GetSeverity(),
+			obj.GetImpactScore(),
+			obj.GetState(),
+			protocompat.NilOrTime(obj.GetFirstImageOccurrence()),
+			obj.GetImageId(),
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes = append(deletes, obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// Copy does not upsert so have to delete first.
+			_, err = tx.Exec(ctx, "DELETE FROM "+imageCVEsV2Table+" WHERE id = ANY($1::text[])", deletes)
+			if err != nil {
+				return err
+			}
+			// Clear the inserts for the next batch.
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{imageCVEsV2Table}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// Clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	//return removeOrphanedImageCVEs(ctx, tx)
+	return nil
+}
+
 func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs ...*storage.ComponentCVEEdge) error {
 	inputRows := [][]interface{}{}
 	var err error
@@ -462,6 +652,64 @@ func copyFromImageComponentCVEEdges(ctx context.Context, tx *postgres.Tx, objs .
 			deletes = nil
 
 			_, err = tx.CopyFrom(ctx, pgx.Identifier{componentCVEEdgesTable}, copyCols, pgx.CopyFromRows(inputRows))
+
+			if err != nil {
+				return err
+			}
+
+			// Clear the input rows for the next batch
+			inputRows = inputRows[:0]
+		}
+	}
+
+	// Due to referential constraints, orphaned component-cve edges are removed when orphaned image components are removed.
+	return nil
+}
+
+func copyFromImageComponentCVEEdgesV2(ctx context.Context, tx *postgres.Tx, objs ...*storage.ComponentCVEEdgeV2) error {
+	inputRows := [][]interface{}{}
+	var err error
+	deletes := set.NewStringSet()
+
+	copyCols := []string{
+		"id",
+		"isfixable",
+		"fixedby",
+		"imagecomponentid",
+		"imagecveid",
+		"serialized",
+	}
+
+	for idx, obj := range objs {
+		serialized, marshalErr := obj.MarshalVT()
+		if marshalErr != nil {
+			return marshalErr
+		}
+
+		inputRows = append(inputRows, []interface{}{
+			obj.GetId(),
+			obj.GetIsFixable(),
+			obj.GetFixedBy(),
+			obj.GetImageComponentId(),
+			obj.GetImageCveId(),
+			serialized,
+		})
+
+		// Add the id to be deleted.
+		deletes.Add(obj.GetId())
+
+		// if we hit our batch size we need to push the data
+		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
+			// Copy does not upsert so have to delete first.
+			_, err = tx.Exec(ctx, "DELETE FROM "+componentCVEEdgesV2Table+" WHERE id = ANY($1::text[])", deletes.AsSlice())
+			if err != nil {
+				return err
+			}
+
+			// Clear the inserts for the next batch
+			deletes = nil
+
+			_, err = tx.CopyFrom(ctx, pgx.Identifier{componentCVEEdgesV2Table}, copyCols, pgx.CopyFromRows(inputRows))
 
 			if err != nil {
 				return err
@@ -1043,6 +1291,29 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 	return idToCVEMap, rows.Err()
 }
 
+func getCVEsV2(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]*storage.ImageCVEV2, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "ImageCVEsV2")
+
+	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageCVEsV2Table+" WHERE id = ANY($1::text[])", cveIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	idToCVEMap := make(map[string]*storage.ImageCVEV2)
+	for rows.Next() {
+		var data []byte
+		if err := rows.Scan(&data); err != nil {
+			return nil, err
+		}
+		msg := &storage.ImageCVEV2{}
+		if err := msg.UnmarshalVTUnsafe(data); err != nil {
+			return nil, err
+		}
+		idToCVEMap[msg.GetId()] = msg
+	}
+	return idToCVEMap, rows.Err()
+}
+
 // Delete removes the specified ID from the store.
 func (s *storeImpl) Delete(ctx context.Context, id string) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Remove, "Image")
@@ -1088,6 +1359,8 @@ func (s *storeImpl) deleteImageTree(ctx context.Context, tx *postgres.Tx, imageI
 	if _, err := tx.Exec(ctx, "delete from "+imageCVEsTable+" where not exists (select "+componentCVEEdgesTable+".imagecveid FROM "+componentCVEEdgesTable+" where "+imageCVEsTable+".id = "+componentCVEEdgesTable+".imagecveid)"); err != nil {
 		return err
 	}
+
+	// TODO:  Put in delete if we don't just use referential integrity
 	return nil
 }
 

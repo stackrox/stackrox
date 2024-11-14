@@ -46,6 +46,7 @@ func (m *ActiveComponent) CloneVT() *ActiveComponent {
 	r.Id = m.Id
 	r.DeploymentId = m.DeploymentId
 	r.ComponentId = m.ComponentId
+	r.ComponentIdV2 = m.ComponentIdV2
 	if rhs := m.DEPRECATEDActiveContexts; rhs != nil {
 		tmpContainer := make(map[string]*ActiveComponent_ActiveContext, len(rhs))
 		for k, v := range rhs {
@@ -145,6 +146,9 @@ func (this *ActiveComponent) EqualVT(that *ActiveComponent) bool {
 			}
 		}
 	}
+	if this.ComponentIdV2 != that.ComponentIdV2 {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -231,6 +235,13 @@ func (m *ActiveComponent) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.ComponentIdV2) > 0 {
+		i -= len(m.ComponentIdV2)
+		copy(dAtA[i:], m.ComponentIdV2)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ComponentIdV2)))
+		i--
+		dAtA[i] = 0x32
 	}
 	if len(m.ActiveContextsSlice) > 0 {
 		for iNdEx := len(m.ActiveContextsSlice) - 1; iNdEx >= 0; iNdEx-- {
@@ -344,6 +355,10 @@ func (m *ActiveComponent) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	l = len(m.ComponentIdV2)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -775,6 +790,42 @@ func (m *ActiveComponent) UnmarshalVTUnsafe(dAtA []byte) error {
 			if err := m.ActiveContextsSlice[len(m.ActiveContextsSlice)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ComponentIdV2", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ComponentIdV2 = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

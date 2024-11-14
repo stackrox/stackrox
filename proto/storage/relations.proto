@@ -37,6 +37,20 @@ message ComponentCVEEdge {
   string image_cve_id = 5; // @gotags: sql:"fk(ImageCVE:id),no-fk-constraint,index=hash"
 }
 
+message ComponentCVEEdgeV2 {
+  // base 64 encoded Component:CVE ids.
+  string id = 1; // @gotags: sql:"pk,id"
+
+  bool is_fixable = 2; // @gotags: search:"Fixable,store"
+
+  // Whether there is a version the CVE is fixed in the component.
+  oneof has_fixed_by {
+    string fixed_by = 3; // @gotags: search:"Fixed By,store,hidden"
+  }
+  string image_component_id = 4; // @gotags: sql:"fk(ImageComponentV2:id),index=hash"
+  string image_cve_id = 5; // @gotags: sql:"fk(ImageCVEV2:id),no-fk-constraint,index=hash"
+}
+
 message ImageCVEEdge {
   // base 64 encoded Image:CVE ids.
   string id = 1; // @gotags: sql:"pk,id"

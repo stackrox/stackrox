@@ -22,4 +22,5 @@ message ActiveComponent {
   map<string, ActiveContext> DEPRECATED_active_contexts = 2; // @gotags: search:"-"
 
   repeated ActiveContext active_contexts_slice = 5;
+  string component_id_v2 = 6; // @gotags: search:"Component ID,hidden" sql:"fk(ImageComponentV2:id),no-fk-constraint,directional"
 }

@@ -90,6 +90,40 @@ func (m *ComponentCVEEdge_FixedBy) CloneVT() isComponentCVEEdge_HasFixedBy {
 	return r
 }
 
+func (m *ComponentCVEEdgeV2) CloneVT() *ComponentCVEEdgeV2 {
+	if m == nil {
+		return (*ComponentCVEEdgeV2)(nil)
+	}
+	r := new(ComponentCVEEdgeV2)
+	r.Id = m.Id
+	r.IsFixable = m.IsFixable
+	r.ImageComponentId = m.ImageComponentId
+	r.ImageCveId = m.ImageCveId
+	if m.HasFixedBy != nil {
+		r.HasFixedBy = m.HasFixedBy.(interface {
+			CloneVT() isComponentCVEEdgeV2_HasFixedBy
+		}).CloneVT()
+	}
+	if len(m.unknownFields) > 0 {
+		r.unknownFields = make([]byte, len(m.unknownFields))
+		copy(r.unknownFields, m.unknownFields)
+	}
+	return r
+}
+
+func (m *ComponentCVEEdgeV2) CloneMessageVT() proto.Message {
+	return m.CloneVT()
+}
+
+func (m *ComponentCVEEdgeV2_FixedBy) CloneVT() isComponentCVEEdgeV2_HasFixedBy {
+	if m == nil {
+		return (*ComponentCVEEdgeV2_FixedBy)(nil)
+	}
+	r := new(ComponentCVEEdgeV2_FixedBy)
+	r.FixedBy = m.FixedBy
+	return r
+}
+
 func (m *ImageCVEEdge) CloneVT() *ImageCVEEdge {
 	if m == nil {
 		return (*ImageCVEEdge)(nil)
@@ -316,6 +350,63 @@ func (this *ComponentCVEEdge) EqualMessageVT(thatMsg proto.Message) bool {
 }
 func (this *ComponentCVEEdge_FixedBy) EqualVT(thatIface isComponentCVEEdge_HasFixedBy) bool {
 	that, ok := thatIface.(*ComponentCVEEdge_FixedBy)
+	if !ok {
+		return false
+	}
+	if this == that {
+		return true
+	}
+	if this == nil && that != nil || this != nil && that == nil {
+		return false
+	}
+	if this.FixedBy != that.FixedBy {
+		return false
+	}
+	return true
+}
+
+func (this *ComponentCVEEdgeV2) EqualVT(that *ComponentCVEEdgeV2) bool {
+	if this == that {
+		return true
+	} else if this == nil || that == nil {
+		return false
+	}
+	if this.HasFixedBy == nil && that.HasFixedBy != nil {
+		return false
+	} else if this.HasFixedBy != nil {
+		if that.HasFixedBy == nil {
+			return false
+		}
+		if !this.HasFixedBy.(interface {
+			EqualVT(isComponentCVEEdgeV2_HasFixedBy) bool
+		}).EqualVT(that.HasFixedBy) {
+			return false
+		}
+	}
+	if this.Id != that.Id {
+		return false
+	}
+	if this.IsFixable != that.IsFixable {
+		return false
+	}
+	if this.ImageComponentId != that.ImageComponentId {
+		return false
+	}
+	if this.ImageCveId != that.ImageCveId {
+		return false
+	}
+	return string(this.unknownFields) == string(that.unknownFields)
+}
+
+func (this *ComponentCVEEdgeV2) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ComponentCVEEdgeV2)
+	if !ok {
+		return false
+	}
+	return this.EqualVT(that)
+}
+func (this *ComponentCVEEdgeV2_FixedBy) EqualVT(thatIface isComponentCVEEdgeV2_HasFixedBy) bool {
+	that, ok := thatIface.(*ComponentCVEEdgeV2_FixedBy)
 	if !ok {
 		return false
 	}
@@ -687,6 +778,93 @@ func (m *ComponentCVEEdge_FixedBy) MarshalToVT(dAtA []byte) (int, error) {
 }
 
 func (m *ComponentCVEEdge_FixedBy) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	i -= len(m.FixedBy)
+	copy(dAtA[i:], m.FixedBy)
+	i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.FixedBy)))
+	i--
+	dAtA[i] = 0x1a
+	return len(dAtA) - i, nil
+}
+func (m *ComponentCVEEdgeV2) MarshalVT() (dAtA []byte, err error) {
+	if m == nil {
+		return nil, nil
+	}
+	size := m.SizeVT()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBufferVT(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ComponentCVEEdgeV2) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ComponentCVEEdgeV2) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+	if m == nil {
+		return 0, nil
+	}
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.unknownFields != nil {
+		i -= len(m.unknownFields)
+		copy(dAtA[i:], m.unknownFields)
+	}
+	if vtmsg, ok := m.HasFixedBy.(interface {
+		MarshalToSizedBufferVT([]byte) (int, error)
+	}); ok {
+		size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+	}
+	if len(m.ImageCveId) > 0 {
+		i -= len(m.ImageCveId)
+		copy(dAtA[i:], m.ImageCveId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageCveId)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.ImageComponentId) > 0 {
+		i -= len(m.ImageComponentId)
+		copy(dAtA[i:], m.ImageComponentId)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ImageComponentId)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.IsFixable {
+		i--
+		if m.IsFixable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ComponentCVEEdgeV2_FixedBy) MarshalToVT(dAtA []byte) (int, error) {
+	size := m.SizeVT()
+	return m.MarshalToSizedBufferVT(dAtA[:size])
+}
+
+func (m *ComponentCVEEdgeV2_FixedBy) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	i -= len(m.FixedBy)
 	copy(dAtA[i:], m.FixedBy)
@@ -1113,6 +1291,44 @@ func (m *ComponentCVEEdge) SizeVT() (n int) {
 }
 
 func (m *ComponentCVEEdge_FixedBy) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.FixedBy)
+	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	return n
+}
+func (m *ComponentCVEEdgeV2) SizeVT() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if m.IsFixable {
+		n += 2
+	}
+	if vtmsg, ok := m.HasFixedBy.(interface{ SizeVT() int }); ok {
+		n += vtmsg.SizeVT()
+	}
+	l = len(m.ImageComponentId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.ImageCveId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	n += len(m.unknownFields)
+	return n
+}
+
+func (m *ComponentCVEEdgeV2_FixedBy) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -1606,6 +1822,221 @@ func (m *ComponentCVEEdge) UnmarshalVTUnsafe(dAtA []byte) error {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.HasFixedBy = &ComponentCVEEdge_FixedBy{FixedBy: stringValue}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageComponentId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ImageComponentId = stringValue
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ImageCveId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ImageCveId = stringValue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.unknownFields = append(m.unknownFields, dAtA[iNdEx:iNdEx+skippy]...)
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ComponentCVEEdgeV2) UnmarshalVTUnsafe(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return protohelpers.ErrIntOverflow
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ComponentCVEEdgeV2: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ComponentCVEEdgeV2: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Id = stringValue
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IsFixable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IsFixable = bool(v != 0)
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FixedBy", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.HasFixedBy = &ComponentCVEEdgeV2_FixedBy{FixedBy: stringValue}
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
