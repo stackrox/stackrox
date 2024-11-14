@@ -66,7 +66,7 @@ RUN mkdir -p build/ && \
     cp -v ../config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml build/bundle/manifests/ && \
     ./bundle_helpers/patch-csv.py \
       --use-version "${OPERATOR_IMAGE_TAG}" \
-      --first-version 3.62.0 \
+      --first-version 4.0.0 \
       --related-images-mode=konflux \
       --operator-image "${OPERATOR_IMAGE_REF}" \
       --add-supported-arch amd64 \
