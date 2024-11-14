@@ -23,6 +23,7 @@ ENV CI=1 GOFLAGS=""
 # TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
 # ENV GOTAGS="release"
+ENV GOTAGS="strictfipsruntime"
 
 RUN RACE=0 CGO_ENABLED=1 GOEXPERIMENT=strictfipsruntime GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build.sh ./roxctl && \
     cp bin/linux_$(go env GOARCH)/roxctl image/bin/roxctl

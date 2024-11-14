@@ -49,6 +49,7 @@ ENV GOEXPERIMENT=strictfipsruntime
 # TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
 # ENV GOTAGS="release"
+ENV GOTAGS="strictfipsruntime"
 ENV CI=1
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
