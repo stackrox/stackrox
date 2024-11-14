@@ -17,7 +17,7 @@ const (
 func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCertificateSet) map[string]string {
 	serviceCerts := certSet.GetServiceCerts()
 	caCert := certSet.GetCaPem()
-	fileMap := make(map[string]string, 1+2*len(serviceCerts))
+	fileMap := make(map[string]string, 1+2*len(serviceCerts)) // 1 for CA cert, and key+cert for each service
 	if caCert != nil {
 		fileMap[caCertKey] = string(caCert)
 	}
