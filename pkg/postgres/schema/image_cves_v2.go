@@ -62,17 +62,17 @@ const (
 // ImageCvesV2 holds the Gorm model for Postgres table `image_cves_v2`.
 type ImageCvesV2 struct {
 	ID                     string                        `gorm:"column:id;type:varchar;primaryKey"`
-	ImageID                string                        `gorm:"column:imageid;type:varchar;index:imagecvesv2_imageid,type:hash"`
+	ImageID                string                        `gorm:"column:imageid;type:varchar;index:imagecvesv2_imageid,type:btree"`
 	CveBaseInfoCve         string                        `gorm:"column:cvebaseinfo_cve;type:varchar;index:imagecvesv2_cvebaseinfo_cve,type:btree"`
 	CveBaseInfoPublishedOn *time.Time                    `gorm:"column:cvebaseinfo_publishedon;type:timestamp"`
 	CveBaseInfoCreatedAt   *time.Time                    `gorm:"column:cvebaseinfo_createdat;type:timestamp"`
 	OperatingSystem        string                        `gorm:"column:operatingsystem;type:varchar"`
 	Cvss                   float32                       `gorm:"column:cvss;type:numeric"`
-	Severity               storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:imagecvesv2_severity,type:hash"`
+	Severity               storage.VulnerabilitySeverity `gorm:"column:severity;type:integer;index:imagecvesv2_severity,type:btree"`
 	ImpactScore            float32                       `gorm:"column:impactscore;type:numeric"`
 	Nvdcvss                float32                       `gorm:"column:nvdcvss;type:numeric"`
 	FirstImageOccurrence   *time.Time                    `gorm:"column:firstimageoccurrence;type:timestamp"`
-	State                  storage.VulnerabilityState    `gorm:"column:state;type:integer;index:imagecvesv2_state,type:hash"`
+	State                  storage.VulnerabilityState    `gorm:"column:state;type:integer;index:imagecvesv2_state,type:btree"`
 	Serialized             []byte                        `gorm:"column:serialized;type:bytea"`
 	ImagesRef              Images                        `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

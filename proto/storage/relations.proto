@@ -47,8 +47,8 @@ message ComponentCVEEdgeV2 {
   oneof has_fixed_by {
     string fixed_by = 3; // @gotags: search:"Fixed By,store,hidden"
   }
-  string image_component_id = 4; // @gotags: sql:"fk(ImageComponentV2:id),index=hash"
-  string image_cve_id = 5; // @gotags: sql:"fk(ImageCVEV2:id),no-fk-constraint,index=hash"
+  string image_component_id = 4; // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
+  string image_cve_id = 5; // @gotags: sql:"fk(ImageCVEV2:id),no-fk-constraint,index=btree"
 }
 
 message ImageCVEEdge {

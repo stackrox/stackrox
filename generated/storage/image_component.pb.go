@@ -179,7 +179,7 @@ type ImageComponentV2 struct {
 	FixedBy         string `protobuf:"bytes,9,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
 	OperatingSystem string `protobuf:"bytes,10,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
 	// was hash index, making it btree
-	ImageId string `protobuf:"bytes,11,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"` // @gotags: sql:"fk(Image:id),index=hash"
+	ImageId string `protobuf:"bytes,11,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree"` // @gotags: sql:"fk(Image:id),index=btree"
 	// / Layer that contains this component
 	//
 	// Types that are assignable to HasLayerIndex:

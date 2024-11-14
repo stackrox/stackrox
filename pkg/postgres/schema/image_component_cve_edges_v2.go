@@ -64,8 +64,8 @@ type ImageComponentCveEdgesV2 struct {
 	ID                  string           `gorm:"column:id;type:varchar;primaryKey"`
 	IsFixable           bool             `gorm:"column:isfixable;type:bool"`
 	FixedBy             string           `gorm:"column:fixedby;type:varchar"`
-	ImageComponentID    string           `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentcveedgesv2_imagecomponentid,type:hash"`
-	ImageCveID          string           `gorm:"column:imagecveid;type:varchar;index:imagecomponentcveedgesv2_imagecveid,type:hash"`
+	ImageComponentID    string           `gorm:"column:imagecomponentid;type:varchar;index:imagecomponentcveedgesv2_imagecomponentid,type:btree"`
+	ImageCveID          string           `gorm:"column:imagecveid;type:varchar;index:imagecomponentcveedgesv2_imagecveid,type:btree"`
 	Serialized          []byte           `gorm:"column:serialized;type:bytea"`
 	ImageComponentV2Ref ImageComponentV2 `gorm:"foreignKey:imagecomponentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

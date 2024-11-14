@@ -235,8 +235,8 @@ type ComponentCVEEdgeV2 struct {
 	//
 	//	*ComponentCVEEdgeV2_FixedBy
 	HasFixedBy       isComponentCVEEdgeV2_HasFixedBy `protobuf_oneof:"has_fixed_by"`
-	ImageComponentId string                          `protobuf:"bytes,4,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"fk(ImageComponentV2:id),index=hash"` // @gotags: sql:"fk(ImageComponentV2:id),index=hash"
-	ImageCveId       string                          `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"fk(ImageCVEV2:id),no-fk-constraint,index=hash"`                   // @gotags: sql:"fk(ImageCVEV2:id),no-fk-constraint,index=hash"
+	ImageComponentId string                          `protobuf:"bytes,4,opt,name=image_component_id,json=imageComponentId,proto3" json:"image_component_id,omitempty" sql:"fk(ImageComponentV2:id),index=btree"` // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
+	ImageCveId       string                          `protobuf:"bytes,5,opt,name=image_cve_id,json=imageCveId,proto3" json:"image_cve_id,omitempty" sql:"fk(ImageCVEV2:id),no-fk-constraint,index=btree"`                   // @gotags: sql:"fk(ImageCVEV2:id),no-fk-constraint,index=btree"
 }
 
 func (x *ComponentCVEEdgeV2) Reset() {

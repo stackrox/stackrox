@@ -39,7 +39,7 @@ message ImageComponentV2 {
   string fixed_by = 9;
   string operating_system = 10; // @gotags: search:"Operating System"
   // was hash index, making it btree
-  string image_id = 11; // @gotags: sql:"fk(Image:id),index=hash"
+  string image_id = 11; // @gotags: sql:"fk(Image:id),index=btree"
   /// Layer that contains this component
   oneof has_layer_index {
     int32 layer_index = 12;

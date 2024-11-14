@@ -1453,12 +1453,12 @@ type ImageCVEV2 struct {
 	// keeping id similar construction for now during investigation.  May just need to be auto-generated
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"CVE ID,hidden" sql:"pk,id"` // This field is composite of cve and image id. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
 	// was hash index, making it btree
-	ImageId         string   `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=hash"` // @gotags: sql:"fk(Image:id),index=hash"
+	ImageId         string   `protobuf:"bytes,2,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty" sql:"fk(Image:id),index=btree"` // @gotags: sql:"fk(Image:id),index=btree"
 	CveBaseInfo     *CVEInfo `protobuf:"bytes,3,opt,name=cve_base_info,json=cveBaseInfo,proto3" json:"cve_base_info,omitempty"`
 	OperatingSystem string   `protobuf:"bytes,4,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Operating System"` // @gotags: search:"Operating System"
 	// cvss stores ACS preferred cvss score
 	Cvss        float32               `protobuf:"fixed32,5,opt,name=cvss,proto3" json:"cvss,omitempty" search:"CVSS,store"`                                           // @gotags: search:"CVSS,store"
-	Severity    VulnerabilitySeverity `protobuf:"varint,6,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity" sql:"index=hash"` // @gotags: search:"Severity" sql:"index=hash"
+	Severity    VulnerabilitySeverity `protobuf:"varint,6,opt,name=severity,proto3,enum=storage.VulnerabilitySeverity" json:"severity,omitempty" search:"Severity" sql:"index=btree"` // @gotags: search:"Severity" sql:"index=btree"
 	ImpactScore float32               `protobuf:"fixed32,7,opt,name=impact_score,json=impactScore,proto3" json:"impact_score,omitempty" search:"Impact Score"`          // @gotags: search:"Impact Score"
 	// nvdcvss stores cvss score for a cve from NVD
 	Nvdcvss float32 `protobuf:"fixed32,8,opt,name=nvdcvss,proto3" json:"nvdcvss,omitempty" search:"NVD CVSS,store"` // @gotags: search:"NVD CVSS,store"
@@ -1466,7 +1466,7 @@ type ImageCVEV2 struct {
 	CvssMetrics          []*CVSSScore           `protobuf:"bytes,9,rep,name=cvss_metrics,json=cvssMetrics,proto3" json:"cvss_metrics,omitempty"`
 	NvdScoreVersion      CvssScoreVersion       `protobuf:"varint,10,opt,name=nvd_score_version,json=nvdScoreVersion,proto3,enum=storage.CvssScoreVersion" json:"nvd_score_version,omitempty"`
 	FirstImageOccurrence *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=first_image_occurrence,json=firstImageOccurrence,proto3" json:"first_image_occurrence,omitempty" search:"First Image Occurrence Timestamp,hidden"` // @gotags: search:"First Image Occurrence Timestamp,hidden"
-	State                VulnerabilityState     `protobuf:"varint,12,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State" sql:"index=hash"`                            // @gotags: search:"Vulnerability State" sql:"index=hash"
+	State                VulnerabilityState     `protobuf:"varint,12,opt,name=state,proto3,enum=storage.VulnerabilityState" json:"state,omitempty" search:"Vulnerability State" sql:"index=btree"`                            // @gotags: search:"Vulnerability State" sql:"index=btree"
 }
 
 func (x *ImageCVEV2) Reset() {

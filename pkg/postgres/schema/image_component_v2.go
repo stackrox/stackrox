@@ -68,7 +68,7 @@ type ImageComponentV2 struct {
 	RiskScore       float32            `gorm:"column:riskscore;type:numeric"`
 	TopCvss         float32            `gorm:"column:topcvss;type:numeric"`
 	OperatingSystem string             `gorm:"column:operatingsystem;type:varchar"`
-	ImageID         string             `gorm:"column:imageid;type:varchar;index:imagecomponentv2_imageid,type:hash"`
+	ImageID         string             `gorm:"column:imageid;type:varchar;index:imagecomponentv2_imageid,type:btree"`
 	Location        string             `gorm:"column:location;type:varchar"`
 	Serialized      []byte             `gorm:"column:serialized;type:bytea"`
 	ImagesRef       Images             `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
