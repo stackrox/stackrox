@@ -62,7 +62,7 @@ func (c *CRS) Certificate() (*tls.Certificate, error) {
 	}
 	cert, err := tls.X509KeyPair([]byte(c.Cert), []byte(c.Key))
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing CRS certificate")
+		return nil, errors.Wrap(err, "parsing CRS certificate and key")
 	}
 	return &cert, nil
 }
