@@ -25,7 +25,7 @@ var (
 	// KeyFilePathSetting allows configuring the MTLS key from the environment.
 	KeyFilePathSetting = env.RegisterSetting(KeyFileEnvName, env.WithDefault(defaultKeyFilePath))
 	// CrsFilePathSetting allows configuring the CRS from the environment.
-	CrsFilePathSetting = env.RegisterSetting(CrsFilePathEnvName, env.WithDefault(defaultCrsFilePath))
+	CrsFilePathSetting = env.RegisterSetting(CrsFilePathEnvName, env.WithDefault(defaultCRSFilePath))
 )
 
 // CAFilePath returns the path where the CA certificate is stored.
