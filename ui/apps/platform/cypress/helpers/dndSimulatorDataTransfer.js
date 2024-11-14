@@ -1,4 +1,3 @@
-/* eslint-disable func-names */
 // workaround to get cypress to interact with react-dnd
 // https://github.com/cypress-io/cypress/issues/1752
 

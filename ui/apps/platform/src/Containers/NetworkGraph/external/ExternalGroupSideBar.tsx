@@ -35,7 +35,6 @@ type ExternalGroupSideBarProps = {
     onNodeSelect: (id: string) => void;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ExternalGroupSideBar({
     labelledById,
     id,

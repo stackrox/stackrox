@@ -1,4 +1,3 @@
-/* eslint-disable no-void */
 import React, { useState, ReactElement } from 'react';
 import {
     Card,
