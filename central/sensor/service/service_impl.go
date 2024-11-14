@@ -70,8 +70,8 @@ func (s *serviceImpl) RegisterServiceHandler(_ context.Context, _ *runtime.Serve
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	authorizer := or.Or(idcheck.SensorsOnly(), idcheck.SensorRegistrantsOnly())
-	return ctx, authorizer.Authorized(ctx, fullMethodName)
+	sensorsOrRegistrants := or.Or(idcheck.SensorsOnly(), idcheck.SensorRegistrantsOnly())
+	return ctx, sensorsOrRegistrants.Authorized(ctx, fullMethodName)
 }
 
 func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer) error {
