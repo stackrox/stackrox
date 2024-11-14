@@ -11,8 +11,8 @@ metadata:
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "pull_request" || (
         event == "push" && (
-          target_branch == "release-4.6" ||
-          target_branch.matches("^refs/tags/.?")
+          target_branch.startsWith("release-") ||
+          target_branch.startsWith("refs/tags/")
         )
       )
   labels:
