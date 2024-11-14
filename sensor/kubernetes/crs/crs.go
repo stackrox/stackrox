@@ -237,7 +237,7 @@ func useRegistrationSecret(crs *crs.CRS) error {
 		envVar := spec.setting.EnvVar()
 		err = os.WriteFile(filePath, []byte(spec.content), 0600)
 		if err != nil {
-			return errors.Wrapf(err, "writing MTLS material to file %s", filePath)
+			return errors.Wrapf(err, "writing mTLS material to file %q", filePath)
 		}
 		err = os.Setenv(envVar, filePath)
 		if err != nil {
