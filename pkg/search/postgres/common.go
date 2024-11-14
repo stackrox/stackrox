@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"runtime/debug"
 	"strconv"
@@ -335,7 +337,10 @@ func (q *query) AsSQL() string {
 	// can only contain alphanumeric and underscore character.
 	queryString := replaceVars(querySB.String())
 	if env.PostgresQueryLogger.BooleanSetting() {
-		log.Info(queryString)
+		md5Hash := md5.New()
+		md5Hash.Write(querySB.String())
+		queryHash := hex.EncodeToString(md5Hash.Sum(nil))
+		log.Info(queryHash, " - ", queryString)
 	}
 	return queryString
 }
