@@ -87,7 +87,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 	svcType := svc.GetType()
 	if !(svcType == storage.ServiceType_SENSOR_SERVICE || svcType == storage.ServiceType_REGISTRANT_SERVICE) {
-		return errox.NotAuthorized.CausedByf("only sensor may access this API, unexpected client identity %s", svcType)
+		return errox.NotAuthorized.CausedByf("only sensor may access this API, unexpected client identity %q", svcType)
 	}
 
 	sensorHello, sensorSupportsHello, err := receiveSensorHello(server)
