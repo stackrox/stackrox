@@ -12,7 +12,7 @@ metadata:
       event == "pull_request" || (
         event == "push" && (
           target_branch == "release-4.6" ||
-          target_branch.matches("^refs/tags/4\\.6\\..?")
+          target_branch.matches("^refs/tags/.?")
         )
       )
   labels:
