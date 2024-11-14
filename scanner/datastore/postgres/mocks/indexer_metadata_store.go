@@ -22,6 +22,7 @@ import (
 type MockIndexerMetadataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockIndexerMetadataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockIndexerMetadataStoreMockRecorder is the mock recorder for MockIndexerMetadataStore.
