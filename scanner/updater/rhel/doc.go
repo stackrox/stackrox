@@ -19,6 +19,6 @@
 //  2. A workaround to overcome the limitations of OVAL regarding unfixed
 //     OpenShift vulns.
 //
-// [1]: https://access.redhat.com/security/data/csaf/
+// [1]: https://security.access.redhat.com/data/csaf/v2/
 // [2]: https://github.com/quay/claircore/tree/8fd9a12427a036b9a8456cf60a555bddc2fcdf0c/rhel
 package rhel
