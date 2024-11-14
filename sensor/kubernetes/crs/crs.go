@@ -222,7 +222,7 @@ func useRegistrationSecret(crs *crs.CRS) error {
 		caCert = crs.CAs[0]
 	}
 	if caCert == "" {
-		return errors.New("empty CA in CRS")
+		return errors.New("malformed Cluster Registration Secret (missing CA certificate)")
 	}
 
 	for fileName, spec := range map[string]struct {
