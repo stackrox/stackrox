@@ -2,7 +2,7 @@ package manifest
 
 import (
 	"context"
-	"math/rand/v2"
+	"math/rand"
 	"time"
 
 	"github.com/quay/claircore/libvuln/updates"
@@ -266,5 +266,5 @@ func (m *Manager) StopGC() error {
 }
 
 func jitter() time.Duration {
-	return jitterMinutes[rand.IntN(len(jitterMinutes))]
+	return jitterMinutes[rand.Intn(len(jitterMinutes))]
 }

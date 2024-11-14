@@ -6,7 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"math/rand/v2"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -436,7 +436,7 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 // randomExpiry generates a random time.Time within the manifest deletion interval
 // rounding down to the nearest second.
 func (i *localIndexer) randomExpiry(now time.Time) time.Time {
-	expirySec := now.Unix() + rand.Int64N(i.deleteIntervalDuration) + i.deleteIntervalStart
+	expirySec := now.Unix() + rand.Int63n(i.deleteIntervalDuration) + i.deleteIntervalStart
 	return time.Unix(expirySec, 0)
 }
 
