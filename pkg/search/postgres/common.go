@@ -338,7 +338,7 @@ func (q *query) AsSQL() string {
 	queryString := replaceVars(querySB.String())
 	if env.PostgresQueryLogger.BooleanSetting() {
 		md5Hash := md5.New()
-		md5Hash.Write(querySB.String())
+		md5Hash.Write([]byte(querySB.String()))
 		queryHash := hex.EncodeToString(md5Hash.Sum(nil))
 		log.Info(queryHash, " - ", queryString)
 	}
