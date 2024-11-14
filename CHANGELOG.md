@@ -64,6 +64,17 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
   - Now the metadata and layers pulled will be based on the digest of the image provided by the container runtime (when available) instead of just the tag.
 - ROX-26748: Replaced 'unsafe' characters in the CSV report file name.
 - The endpoint `/v2/compliance/scan/configurations/reports/run` method has changed from `PUT` to `POST`.
+- ROX-23956, ROX-17355: Scanner V4 Indexer will now re-index manifests/images for one of two reasons: (1) upon Indexer update which knowingly affects manifests/images or (2) after some random amount of time between 7 and 30 days after indexing.
+  - This means Scanner V4 Indexer will now pull images from the registry more than just once.
+  - This will allow image scans to reflect the latest features (for example, we support a new language, we will re-index an image to see if artifacts of the new language exist).
+  - This will also clean up manifests/Index Reports from Scanner V4 DB which are no longer relevant in the environment or may have previously been indexed incorrectly due to a bug or missing data.
+  - Any manifests indexed prior to this change will be deleted upon update to this version to ensure any incorrect Index Reports are amended.
+  - The interval in which manifests are randomly deleted may be modified via `ROX_SCANNER_V4_MANIFEST_DELETE_INTERVAL_START` (default: 7 days) and `ROX_SCANNER_V4_MANIFEST_DELETE_DURATION` (default: 23 days) in Scanner V4 Indexer.
+  - Scanner V4 Indexer periodically checks for expired manifests at the interval specified by `ROX_SCANNER_V4_MANIFEST_GC_INTERVAL` (default: 4 hours).
+  - Each GC process only deletes a subset of expired manifests specified by `ROX_SCANNER_V4_MANIFEST_GC_THROTTLE` (default: 100) in Scanner V4 Indexer.
+  - Scanner V4 Indexer will also run a periodic "full" GC process at the interval specified by `ROX_SCANNER_V4_FULL_MANIFEST_GC_INTERVAL` (default: 24 hours).
+  - Re-indexing may be disabled by setting `ROX_SCANNER_V4_REINDEX` to `false` in the Scanner V4 Indexer.
+- Alpine vulnerabilities will now have a link to https://security.alpinelinux.org instead of https://www.cve.org.
 
 ## [4.5.0]
 
