@@ -20,6 +20,7 @@ import (
 	mockindexer "github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	uberMock "go.uber.org/mock/gomock"
 )
 
 // mustLoadIndexerConfig parses the provided YAML data and returns the IndexerConfig.
@@ -73,7 +74,8 @@ func TestGetIndexReport(t *testing.T) {
 	store.EXPECT().
 		RegisterScanners(gomock.Any(), gomock.Any()).
 		Return(nil)
-	metadataStore := mockindexer.NewMockIndexerMetadataStore(ctrl)
+	uCtrl := uberMock.NewController(t)
+	metadataStore := mockindexer.NewMockIndexerMetadataStore(uCtrl)
 
 	ccIndexer, err := libindex.New(ctx, &libindex.Options{
 		Store:      store,
@@ -248,7 +250,7 @@ func TestRandomExpiry(t *testing.T) {
 	}
 
 	const iterations = 1000
-	for range iterations {
+	for idx := 0; idx < iterations; idx++ {
 		expiry := i.randomExpiry(now)
 		assert.False(t, expiry.Before(oneMinute))
 		assert.True(t, expiry.Before(threeMinutes))
