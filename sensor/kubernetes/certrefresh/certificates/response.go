@@ -1,18 +1,9 @@
 package certificates
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 )
-
-// Requester defines an interface for requesting TLS certificates from Central
-type Requester interface {
-	Start()
-	Stop()
-	RequestCertificates(ctx context.Context) (*Response, error)
-}
 
 // Response represents the response to a certificate request. It contains a set of certificates or an error.
 type Response struct {
