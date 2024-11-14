@@ -111,6 +111,7 @@ func (resolver *Resolver) ImageComponent(ctx context.Context, args IDQuery) (Ima
 // ImageComponents returns image components that match the input query.
 func (resolver *Resolver) ImageComponents(ctx context.Context, q PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageComponents")
+	log.Info("GraphQL ImageComponents resolver")
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -370,6 +371,7 @@ func (resolver *imageComponentResolver) ImageVulnerabilityCount(ctx context.Cont
 
 func (resolver *imageComponentResolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "ImageVulnerabilityCounter")
+	log.Info("GraphQL ImageComponent ImageVulnerabilityCounter resolver")
 	return resolver.root.ImageVulnerabilityCounter(resolver.imageComponentScopeContext(ctx), args)
 }
 

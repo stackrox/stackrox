@@ -106,6 +106,7 @@ func (resolver *Resolver) Namespace(ctx context.Context, args struct{ graphql.ID
 // Namespaces returns GraphQL resolvers for all namespaces based on an optional query.
 func (resolver *Resolver) Namespaces(ctx context.Context, args PaginatedQuery) ([]*namespaceResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Namespaces")
+	log.Info("GraphQL Namespaces resolver")
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
@@ -641,6 +642,7 @@ func (resolver *namespaceResolver) LatestViolation(ctx context.Context, args Raw
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *namespaceResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "PlottedImageVulnerabilities")
+	log.Info("GraphQL Namespace PlottedImageVulnerabilities resolver")
 	return resolver.root.PlottedImageVulnerabilities(resolver.namespaceScopeContext(ctx), args)
 }
 

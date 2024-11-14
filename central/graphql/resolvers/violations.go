@@ -28,6 +28,7 @@ func init() {
 // Violations returns a list of all violations, or those that match the requested query
 func (resolver *Resolver) Violations(ctx context.Context, args PaginatedQuery) ([]*alertResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Violations")
+	log.Info("GraphQL Violations resolver")
 	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
@@ -44,6 +45,7 @@ func (resolver *Resolver) Violations(ctx context.Context, args PaginatedQuery) (
 // ViolationCount returns count of all violations, or those that match the requested query
 func (resolver *Resolver) ViolationCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ViolationCount")
+	log.Info("GraphQL ViolationCount resolver")
 	if err := readAlerts(ctx); err != nil {
 		return 0, err
 	}

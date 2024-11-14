@@ -136,6 +136,7 @@ func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }
 // Clusters returns GraphQL resolvers for all clusters
 func (resolver *Resolver) Clusters(ctx context.Context, args PaginatedQuery) ([]*clusterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Clusters")
+	log.Info("GraphQL Clusters resolver")
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
@@ -197,6 +198,7 @@ func (resolver *Resolver) clustersForReadPermission(ctx context.Context, args Pa
 // ClusterCount returns count of all clusters across infrastructure
 func (resolver *Resolver) ClusterCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ClusterCount")
+	log.Info("GraphQL ClusterCount resolver")
 	if err := readClusters(ctx); err != nil {
 		return 0, err
 	}
@@ -605,11 +607,13 @@ func (resolver *clusterResolver) ImageVulnerabilityCounter(ctx context.Context, 
 
 func (resolver *clusterResolver) ClusterVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ClusterVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilities")
+	log.Info("GraphQL Clusters ClusterVulnerabilities resolver")
 	return resolver.root.ClusterVulnerabilities(resolver.clusterScopeContext(ctx), args)
 }
 
 func (resolver *clusterResolver) ClusterVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Cluster, "ClusterVulnerabilityCount")
+	log.Info("GraphQL Cluster ClusterVulnerabilityCount resolver")
 	return resolver.root.ClusterVulnerabilityCount(resolver.clusterScopeContext(ctx), args)
 }
 

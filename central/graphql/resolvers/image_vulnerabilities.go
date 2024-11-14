@@ -92,6 +92,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 // ImageVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
+	log.Info("GraphQL ImageVulnerabilities resolver")
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -129,6 +130,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 // ImageVulnerabilityCount returns count of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCount")
+	log.Info("GraphQL ImageVulnerabilityCount resolver")
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -154,6 +156,7 @@ func (resolver *Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQ
 // ImageVulnerabilityCounter returns a VulnerabilityCounterResolver for the input query
 func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilityCounter")
+	log.Info("GraphQL ImageVulnerabilityCounter resolver")
 
 	// check permissions
 	if err := readImages(ctx); err != nil {
@@ -332,6 +335,7 @@ func (resolver *imageCVEResolver) FixedByVersion(ctx context.Context) (string, e
 
 func (resolver *imageCVEResolver) IsFixable(ctx context.Context, args RawQuery) (bool, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "IsFixable")
+	log.Info("GraphQL ImageVulnerability IsFixable resolver")
 
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
@@ -559,6 +563,7 @@ func (resolver *imageCVEResolver) EffectiveVulnerabilityRequest(ctx context.Cont
 
 func (resolver *imageCVEResolver) DeploymentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "DeploymentCount")
+	log.Info("GraphQL ImageVulnerability DeploymentCount resolver")
 	return resolver.root.DeploymentCount(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
@@ -615,6 +620,7 @@ func (resolver *imageCVEResolver) ImageComponentCount(ctx context.Context, args 
 
 func (resolver *imageCVEResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "ImageCount")
+	log.Info("GraphQL ImageVulnerability ImageCount resolver")
 	return resolver.root.ImageCount(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 

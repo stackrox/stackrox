@@ -38,6 +38,7 @@ func (resolver *Resolver) wrapPlottedImageVulnerabilitiesWithContext(ctx context
 
 // PlottedImageVulnerabilities - returns image vulns
 func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	log.Info("GraphQL PlottedImageVulnerabilities resolver")
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -74,6 +75,7 @@ func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args 
 
 // BasicImageVulnerabilityCounter returns the ImageVulnerabilityCounter for scatter-plot with only total and fixable
 func (resolver *PlottedImageVulnerabilitiesResolver) BasicImageVulnerabilityCounter(_ context.Context) (*VulnerabilityCounterResolver, error) {
+	log.Info("GraphQL BasicImageVulnerabilityCounter resolver")
 	return &VulnerabilityCounterResolver{
 		all: &VulnerabilityFixableCounterResolver{
 			total:   int32(len(resolver.all)),
