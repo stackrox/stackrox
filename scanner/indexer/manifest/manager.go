@@ -145,7 +145,7 @@ func (m *Manager) MigrateManifests(ctx context.Context, expiration time.Time) er
 
 // StartGC begins periodic garbage collection.
 func (m *Manager) StartGC() error {
-	ctx := zlog.ContextWithValues(m.gcCtx, "component", "indexer/manifest/Manager.Start")
+	ctx := zlog.ContextWithValues(m.gcCtx, "component", "indexer/manifest/Manager.StartGC")
 
 	if err := m.runFullGC(ctx); err != nil {
 		zlog.Error(ctx).Err(err).Msg("errors encountered during initial full manifest GC run")
@@ -239,6 +239,7 @@ func (m *Manager) runGC(ctx context.Context) error {
 	}
 
 	zlog.Info(ctx).Msg("starting manifest metadata garbage collection")
+
 	ms, err := m.runGCNoLock(ctx)
 	if err != nil {
 		return err
