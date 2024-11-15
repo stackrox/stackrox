@@ -708,7 +708,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 					s.T().Logf("Exec operation=%s (tick %d). State after operation:", op, tickNo)
 					switch op {
 					case mapReset:
-						entityStore.resetMaps()
+						entityStore.Cleanup()
 					case deleteDeployment1:
 						// purgeNoLock accepts deploymentID, not containerID
 						entityStore.purgeNoLock("depl1")

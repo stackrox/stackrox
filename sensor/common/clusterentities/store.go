@@ -96,9 +96,7 @@ func (e *Store) initMaps() {
 	e.historicalContainerIDs = make(map[string]map[ContainerMetadata]*entityStatus)
 }
 
-func (e *Store) resetMaps() {
-	e.mutex.Lock()
-	defer e.mutex.Unlock()
+func (e *Store) resetMapsNoLock() {
 	// Maps holding historical data must not be wiped on reset! Instead, all entities must be marked as historical.
 	// Must be called before the respective source maps are wiped!
 	e.resetHistoricalMapsNoLock()
@@ -169,8 +167,8 @@ func (e *Store) updateMetrics() {
 func (e *Store) Cleanup() {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	defer e.updateMetrics()
-	e.resetMaps()
+	e.resetMapsNoLock()
+	e.updateMetrics()
 }
 
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment
