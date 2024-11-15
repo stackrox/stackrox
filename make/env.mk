@@ -40,10 +40,14 @@ endif
 TAG := # make sure tag is never injectable as an env var
 RELEASE_GOTAGS := release
 
-# Use a release go -tag when CI is targetting a tag
+# Use a release go -tag when CI is targeting a tag
 ifdef CI
 ifneq ($(BUILD_TAG),)
+ifeq ($(GOTAGS),)
 GOTAGS := $(RELEASE_GOTAGS)
+else
+GOTAGS := $(GOTAGS),$(RELEASE_GOTAGS)
+endif
 endif
 endif
 
