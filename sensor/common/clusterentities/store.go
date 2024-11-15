@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
 )
 
-// ContainerMetadata is the container metadata that is stored per instance
+// ContainerMetadata is the container metadata stored per instance
 type ContainerMetadata struct {
 	DeploymentID  string
 	DeploymentTS  int64
@@ -65,7 +65,6 @@ type Store struct {
 	historicalIPs map[net.IPAddress]map[string]*entityStatus
 	// historicalContainerIDs is mimicking containerIDMap: container IDs -> container metadata -> historyStatus
 	historicalContainerIDs map[string]map[ContainerMetadata]*entityStatus
-	historyMutex           sync.RWMutex
 }
 
 // NewStore creates and returns a new store instance.
@@ -81,8 +80,8 @@ func NewStoreWithMemory(numTicks uint16) *Store {
 }
 
 func (e *Store) initMaps() {
-	e.historyMutex.Lock()
-	defer e.historyMutex.Unlock()
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 	e.ipMap = make(map[net.IPAddress]map[string]struct{})
 	e.endpointMap = make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{})
 	e.containerIDMap = make(map[string]ContainerMetadata)
@@ -98,8 +97,8 @@ func (e *Store) initMaps() {
 }
 
 func (e *Store) resetMaps() {
-	e.historyMutex.Lock()
-	defer e.historyMutex.Unlock()
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 	// Maps holding historical data must not be wiped on reset! Instead, all entities must be marked as historical.
 	// Must be called before the respective source maps are wiped!
 	e.resetHistoricalMapsNoLock()
@@ -145,7 +144,7 @@ func (ed *EntityData) AddIP(ip net.IPAddress) {
 	ed.ips[ip] = struct{}{}
 }
 
-// AddEndpoint adds an endpoint along with a target info to the endpoints of the respective deployment.
+// AddEndpoint adds an endpoint along with target info to the endpoints of the respective deployment.
 func (ed *EntityData) AddEndpoint(ep net.NumericEndpoint, info EndpointTargetInfo) {
 	if ed.endpoints == nil {
 		ed.endpoints = make(map[net.NumericEndpoint][]EndpointTargetInfo)
@@ -178,17 +177,15 @@ func (e *Store) Cleanup() {
 // that is a key in the map will be replaced (or deleted).
 func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 	e.mutex.Lock()
-	e.historyMutex.Lock()
 	defer e.mutex.Unlock()
-	defer e.historyMutex.Unlock()
 	defer e.updateMetrics()
 	e.applyNoLock(updates, incremental)
 }
 
-// RecordTick records the information that a unit of time (1 tick) has passed
+// RecordTick records the information that a unit of time (one tick) has passed
 func (e *Store) RecordTick() {
-	e.historyMutex.Lock()
-	defer e.historyMutex.Unlock()
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 	for deploymentID, m := range e.historicalEndpoints {
 		for endpoint, status := range m {
 			status.recordTick()
@@ -569,7 +566,7 @@ func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResu
 	return
 }
 
-// RegisterPublicIPsListener registers a listener that listens on changes to the set of public IP addresses.
+// RegisterPublicIPsListener registers a listener that listens to changes to the set of public IP addresses.
 // It returns a boolean indicating whether the listener was actually unregistered (i.e., a return value of false
 // indicates that the listener was already registered).
 func (e *Store) RegisterPublicIPsListener(listener PublicIPsListener) bool {
