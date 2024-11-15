@@ -333,7 +333,11 @@ func (q *query) AsSQL() string {
 	}
 	// Performing this operation on full query is safe since table names and column names
 	// can only contain alphanumeric and underscore character.
-	return replaceVars(querySB.String())
+	queryString := replaceVars(querySB.String())
+	if env.PostgresQueryLogger.BooleanSetting() {
+		log.Info(queryString)
+	}
+	return queryString
 }
 
 func findImageIDTableAndField(joins []innerJoin) string {
