@@ -14,7 +14,6 @@ metadata:
       (event == "pull_request" && (source_branch.matches("(konflux|renovate|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
   labels:
     appstudio.openshift.io/application: acs
-    pipelines.appstudio.openshift.io/type: build
   name: retag-collector-full
   namespace: rh-acs-tenant
 
