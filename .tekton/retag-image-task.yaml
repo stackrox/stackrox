@@ -55,8 +55,6 @@ spec:
         echo ">>> Copying image from ${input_url} ..."
         echo ">>> ... to ${output_url} ..."
 
-        #skopeo copy --all --retry-times="${SKOPEO_RETRIES}" "docker://${input_url}" "docker://${output_url}"
-
         # cosign copies not just cosign artifacts but also images. It understands and copies index images.
         # --force argument is needed to prevent the command failing when it runs into (partial) previous copies with
         # errors like the following.

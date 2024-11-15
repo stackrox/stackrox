@@ -65,6 +65,11 @@ spec:
   # IMAGE_URL and IMAGE_DIGEST must not be declared here because Tekton Chains will overwrite the original pipeline
   # information linked to the image with this pipeline's info, and it will most certainly fail EC checks.
 
+  # This resulting parameter is to make retagged image's pull spec conveniently displayed in Konflux UI.
+  - name: RESULTING_REF
+    description: Image reference of the output image containing both the repository, the tag and the digest.
+    value: $(tasks.retag-image.results.RESULTING_REF)
+
   workspaces:
   - name: git-auth
 
