@@ -250,6 +250,26 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPast() {
 				{"pod1": true, "pod2": true},
 			},
 		},
+		"Unknown containers shall not be found": {
+			numTicksToRemember: 2,
+			entityUpdates: map[int][]eUpdate{
+				0: {
+					{
+						deploymentID: "depl1",
+						containerID:  "pod1",
+						ipAddr:       "10.0.0.1",
+						port:         80,
+						incremental:  true,
+					},
+				},
+			},
+			endpointsAfterTick: []map[string]bool{
+				{"10.0.0.1": true},
+			},
+			containerIDsAfterTick: []map[string]bool{
+				{"pod1": true, "unknown": false},
+			},
+		},
 	}
 	for name, tCase := range cases {
 		s.Run(name, func() {
