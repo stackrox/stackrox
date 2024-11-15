@@ -42,13 +42,13 @@ type DataRow struct {
 type ScanMarshaller struct {
 	scanner *bufio.Scanner
 
-	rows          []*DataRow
-	currentTable  string
-	hasSerialized bool
-	index         int
-	header        string
 	outputDir     string
 	metadataFile  *os.File
+	rows          []*DataRow
+	currTable     string
+	tableSeq      int
+	hasSerialized bool
+	header        string
 }
 
 // NewScanMashaller creates and initializes a new ScanMarshaller
@@ -86,7 +86,7 @@ func (ds *ScanMarshaller) ScanMarshal() error {
 
 		// Catch table name
 		if trimmed, hasPrefix := stringutils.MaybeTrimPrefix(line, dataPrefix); hasPrefix {
-			ds.currentTable, _ = stringutils.Split2(trimmed, ";")
+			ds.currTable, _ = stringutils.Split2(trimmed, ";")
 			continue
 		}
 
@@ -107,7 +107,7 @@ func (ds *ScanMarshaller) ScanMarshal() error {
 		}
 
 		// Process metadata or table rows
-		if ds.currentTable == "" || ds.header == "" {
+		if ds.currTable == "" || ds.header == "" {
 			if _, err := io.WriteString(ds.metadataFile, ds.scanner.Text()+"\n"); err != nil {
 				return errors.Wrap(err, "failed to write metadata")
 			}
@@ -116,7 +116,7 @@ func (ds *ScanMarshaller) ScanMarshal() error {
 
 		// Process a data row
 		if err := ds.processRow(line); err != nil {
-			fmt.Printf("Warning: failed to process row for table %s: %v line:%s\n", ds.currentTable, err, line)
+			fmt.Printf("Warning: failed to process row for table %s: %v line:%s\n", ds.currTable, err, line)
 		}
 	}
 	return ds.scanner.Err()
@@ -124,7 +124,7 @@ func (ds *ScanMarshaller) ScanMarshal() error {
 
 // processRow parses a line into a DataRow and appends it to rows
 func (ds *ScanMarshaller) processRow(line string) error {
-	row, err := createDataRow(ds.header, line, ds.currentTable, ds.hasSerialized)
+	row, err := createDataRow(ds.header, line, ds.currTable, ds.hasSerialized)
 	if err != nil {
 		return err
 	}
@@ -145,20 +145,20 @@ func (ds *ScanMarshaller) flushData() error {
 		return nil
 	}
 	suffix := ""
-	if ds.index > 0 {
-		suffix = fmt.Sprintf("_%d", ds.index)
+	if ds.tableSeq > 0 {
+		suffix = fmt.Sprintf("_%d", ds.tableSeq)
 	}
-	fileName := filepath.Join(ds.outputDir, fmt.Sprintf("%s%s.json", ds.currentTable, suffix))
-	ds.index++
+	fileName := filepath.Join(ds.outputDir, fmt.Sprintf("%s%s.json", ds.currTable, suffix))
+	ds.tableSeq++
 	return marshalToJson(ds.rows, fileName)
 }
 
 // endOfTable resets the scanner state for a new table
 func (ds *ScanMarshaller) endOfTable() {
 	ds.rows = ds.rows[:0]
-	ds.currentTable = ""
+	ds.currTable = ""
 	ds.hasSerialized = false
-	ds.index = 0
+	ds.tableSeq = 0
 	ds.header = ""
 }
 
