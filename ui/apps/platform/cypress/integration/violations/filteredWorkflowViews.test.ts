@@ -4,7 +4,7 @@ import { visitViolations } from './Violations.helpers';
 
 const filteredWorkflowSelectButton = 'button[aria-label="Filtered workflow select"]';
 const getFilteredWorkflowOptionButton = (viewName) =>
-    `div[aria-label="Filtered workflow select options"] button:contains("${viewName}")`;
+    `ul[aria-label="Filtered workflow select options"] button:contains("${viewName}")`;
 
 describe('Violations - Filtered Workflow Views', () => {
     withAuth();
@@ -29,7 +29,7 @@ describe('Violations - Filtered Workflow Views', () => {
         const options = ['Applications view', 'Platform view', 'Full view'];
         options.forEach((option, index) => {
             cy.get(
-                `div[aria-label="Filtered workflow select options"] li:nth(${index}) button span.pf-v5-c-menu__item-text`
+                `ul[aria-label="Filtered workflow select options"] li:nth(${index}) button span.pf-v5-c-menu__item-text`
             ).should('have.text', option);
         });
     });
