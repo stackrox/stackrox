@@ -454,9 +454,8 @@ spec:
       value: $(tasks.build-image-index.results.IMAGE_URL)
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    # TODO(ROX-26900): uncomment CACHI2_ARTIFACT after KFLUXBUGS-1508 is resolved.
-    # - name: CACHI2_ARTIFACT
-    #   value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
     taskRef:
       params:
       - name: name
@@ -473,10 +472,6 @@ spec:
     - input: $(params.build-source-image)
       operator: in
       values: [ "true" ]
-    # Pushing source container for main is known to fail a lot with timeout in Quay. See KFLUXBUGS-1508
-    # By trying a few more times, we hope to make this step succeed and not fail the pipeline.
-    # TODO: remove retries once KFLUXBUGS-1508 gets resolved.
-    retries: 3
 
   - name: deprecated-base-image-check
     params:

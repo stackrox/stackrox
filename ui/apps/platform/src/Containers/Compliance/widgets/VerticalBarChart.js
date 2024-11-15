@@ -23,7 +23,6 @@ const sortByXValue = (a, b) => {
 };
 
 // Component state was needed only for deleted HoverHint, but we will not rewrite.
-/* eslint-disable react/prefer-stateless-function */
 class VerticalBarChart extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.object).isRequired,

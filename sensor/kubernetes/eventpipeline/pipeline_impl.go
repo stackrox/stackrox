@@ -120,7 +120,7 @@ func (p *eventPipeline) Stop(_ error) {
 }
 
 func (p *eventPipeline) Notify(e common.SensorComponentEvent) {
-	log.Info(common.LogSensorComponentEvent(e))
+	log.Info(common.LogSensorComponentEvent(e, "Event Pipeline"))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		// Start listening to events if not yet listening

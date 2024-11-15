@@ -12,7 +12,6 @@ import (
 	nexusFactory "github.com/stackrox/rox/pkg/registries/nexus"
 	quayFactory "github.com/stackrox/rox/pkg/registries/quay"
 	rhelFactory "github.com/stackrox/rox/pkg/registries/rhel"
-
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 

@@ -309,7 +309,7 @@ func (s *Sensor) Start() {
 			s.stoppedSig.SignalWithErrorWrap(errSig.Err(), "getting connection from connection factory")
 			return
 		case <-okSig.Done():
-			s.changeState(common.SensorComponentEventCentralReachable)
+			s.changeState(common.SensorComponentEventCentralReachableHTTP)
 		case <-s.stoppedSig.Done():
 			return
 		}
@@ -386,6 +386,10 @@ func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 func (s *Sensor) changeState(state common.SensorComponentEvent) {
 	s.currentStateMtx.Lock()
 	defer s.currentStateMtx.Unlock()
+	s.changeStateNoLock(state)
+}
+
+func (s *Sensor) changeStateNoLock(state common.SensorComponentEvent) {
 	if s.currentState != state {
 		log.Infof("Updating Sensor State to: %s", state)
 		s.currentState = state
@@ -393,9 +397,12 @@ func (s *Sensor) changeState(state common.SensorComponentEvent) {
 	}
 }
 
-func (s *Sensor) notifyAllComponents(notification common.SensorComponentEvent) {
-	for _, component := range s.notifyList {
-		component.Notify(notification)
+// notifyAllComponents sends each notification one-by-one to all components
+func (s *Sensor) notifyAllComponents(notifications ...common.SensorComponentEvent) {
+	for _, notification := range notifications {
+		for _, component := range s.notifyList {
+			component.Notify(notification)
+		}
 	}
 }
 
@@ -407,11 +414,20 @@ func wrapOrNewError(err error, message string) error {
 }
 
 func (s *Sensor) notifySyncDone(syncDone *concurrency.Signal, centralCommunication CentralCommunication) {
+	// SensorComponentEventSyncFinished is the first event that guarantees that the gRPC connection was successful
+	// at least once, because data has been exchanged over gRPC. This is sufficient condition for going online.
+	// The order of events is preserved, so first all components receive EventCentralReachable and when that is done,
+	// all will get EventSyncFinished.
+	s.notifyAllOnSignal(syncDone, centralCommunication, common.SensorComponentEventCentralReachable, common.SensorComponentEventSyncFinished)
+}
+
+// notifyAllOnSignal sends `notification` to all components when `signal` is raised
+func (s *Sensor) notifyAllOnSignal(signal *concurrency.Signal, centralCommunication CentralCommunication, notifications ...common.SensorComponentEvent) {
 	select {
-	case <-syncDone.Done():
+	case <-signal.Done():
 		s.currentStateMtx.Lock()
 		defer s.currentStateMtx.Unlock()
-		s.notifyAllComponents(common.SensorComponentEventSyncFinished)
+		s.notifyAllComponents(notifications...)
 	case <-centralCommunication.Stopped().WaitC():
 		return
 	case <-s.stoppedSig.WaitC():
@@ -434,8 +450,9 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		log.Infof("Attempting connection setup (client reconciliation = %s)", strconv.FormatBool(s.reconcile.Load()))
 		select {
 		case <-s.centralConnectionFactory.OkSignal().WaitC():
-			// Connection is up, we can try to create a new central communication
-			s.changeState(common.SensorComponentEventCentralReachable)
+			// Connection is up, we can try to create a new central communication,
+			// but we should not go online yet as the first data exchange over gRPC has not happened yet.
+			s.changeState(common.SensorComponentEventCentralReachableHTTP)
 		case <-s.centralConnectionFactory.StopSignal().WaitC():
 			// Save the error before retrying
 			err := wrapOrNewError(s.centralConnectionFactory.StopSignal().Err(), "communication stopped")

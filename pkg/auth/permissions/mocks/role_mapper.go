@@ -21,6 +21,7 @@ import (
 type MockRoleMapper struct {
 	ctrl     *gomock.Controller
 	recorder *MockRoleMapperMockRecorder
+	isgomock struct{}
 }
 
 // MockRoleMapperMockRecorder is the mock recorder for MockRoleMapper.
@@ -59,6 +60,7 @@ func (mr *MockRoleMapperMockRecorder) FromUserDescriptor(ctx, user any) *gomock.
 type MockRoleStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockRoleStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockRoleStoreMockRecorder is the mock recorder for MockRoleStore.
@@ -112,6 +114,7 @@ func (mr *MockRoleStoreMockRecorder) GetAndResolveRole(ctx, name any) *gomock.Ca
 type MockRoleMapperFactory struct {
 	ctrl     *gomock.Controller
 	recorder *MockRoleMapperFactoryMockRecorder
+	isgomock struct{}
 }
 
 // MockRoleMapperFactoryMockRecorder is the mock recorder for MockRoleMapperFactory.

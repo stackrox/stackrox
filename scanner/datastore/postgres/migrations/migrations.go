@@ -5,10 +5,28 @@ import (
 	"embed"
 
 	"github.com/remind101/migrate"
+	"github.com/stackrox/rox/pkg/features"
 )
 
-// MatcherMigrationTable specifies the name of the matcher migration table.
-const MatcherMigrationTable = "matcher_migrations"
+const (
+	// IndexerMigrationTable specifies the name of the indexer migration table.
+	IndexerMigrationTable = "indexer_migrations"
+
+	// MatcherMigrationTable specifies the name of the matcher migration table.
+	MatcherMigrationTable = "matcher_migrations"
+)
+
+// IndexerMigrations lists the indexer migrations, in order.
+var IndexerMigrations []migrate.Migration
+
+func init() {
+	if features.ScannerV4ReIndex.Enabled() {
+		IndexerMigrations = append(IndexerMigrations, migrate.Migration{
+			ID: 1,
+			Up: runFile("indexer/01-init.sql"),
+		})
+	}
+}
 
 // MatcherMigrations lists the matcher migrations, in order.
 var MatcherMigrations = []migrate.Migration{

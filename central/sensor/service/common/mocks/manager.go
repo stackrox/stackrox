@@ -22,6 +22,7 @@ import (
 type MockClusterManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockClusterManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockClusterManagerMockRecorder is the mock recorder for MockClusterManager.
@@ -118,6 +119,7 @@ func (mr *MockClusterManagerMockRecorder) UpdateSensorDeploymentIdentification(c
 type MockPolicyManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockPolicyManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockPolicyManagerMockRecorder is the mock recorder for MockPolicyManager.
@@ -156,6 +158,7 @@ func (mr *MockPolicyManagerMockRecorder) GetAllPolicies(ctx any) *gomock.Call {
 type MockProcessBaselineManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockProcessBaselineManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockProcessBaselineManagerMockRecorder is the mock recorder for MockProcessBaselineManager.
@@ -193,6 +196,7 @@ func (mr *MockProcessBaselineManagerMockRecorder) WalkAll(ctx, fn any) *gomock.C
 type MockNetworkBaselineManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockNetworkBaselineManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockNetworkBaselineManagerMockRecorder is the mock recorder for MockNetworkBaselineManager.
@@ -230,6 +234,7 @@ func (mr *MockNetworkBaselineManagerMockRecorder) Walk(ctx, fn any) *gomock.Call
 type MockDelegatedRegistryConfigManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockDelegatedRegistryConfigManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockDelegatedRegistryConfigManagerMockRecorder is the mock recorder for MockDelegatedRegistryConfigManager.
@@ -269,6 +274,7 @@ func (mr *MockDelegatedRegistryConfigManagerMockRecorder) GetConfig(ctx any) *go
 type MockImageIntegrationManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockImageIntegrationManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockImageIntegrationManagerMockRecorder is the mock recorder for MockImageIntegrationManager.
@@ -307,6 +313,7 @@ func (mr *MockImageIntegrationManagerMockRecorder) GetImageIntegrations(ctx, int
 type MockNetworkEntityManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockNetworkEntityManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockNetworkEntityManagerMockRecorder is the mock recorder for MockNetworkEntityManager.
@@ -345,6 +352,7 @@ func (mr *MockNetworkEntityManagerMockRecorder) GetAllEntitiesForCluster(ctx, cl
 type MockComplianceOperatorManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockComplianceOperatorManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockComplianceOperatorManagerMockRecorder is the mock recorder for MockComplianceOperatorManager.

@@ -9,9 +9,17 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
-    pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
-      (event == "pull_request" && (source_branch.matches("(konflux|renovate|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
+    pipelinesascode.tekton.dev/on-cel-expression: (
+        event == "push" && (
+          source_branch == "master" ||
+          target_branch.startsWith("refs/tags/")
+        )
+      ) || (
+        event == "pull_request" && (
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          body.pull_request.labels.exists(l, l.name == "konflux-build")
+        )
+      )
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: operator-bundle
@@ -31,8 +39,6 @@ spec:
     value: '52w'
   - name: output-image-repo
     value: quay.io/rhacs-eng/stackrox-operator-bundle
-  - name: operator-image-repo
-    value: quay.io/rhacs-eng/stackrox-operator
   - name: revision
     value: '{{revision}}'
   - name: rebuild
