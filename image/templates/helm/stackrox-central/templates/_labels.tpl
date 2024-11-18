@@ -23,6 +23,9 @@
 {{ if not (contains "/" $component) }}
   {{ $_ = set $labels "app.kubernetes.io/component" $component }}
 {{ end }}
+{{ if and (contains $objType "secret") (hasSuffix $objName "-tls") }}
+  {{ $_= set $labels "rhacs.redhat.com/tls" "true" }}
+{{ end }}
 {{ $metadataNames := list "labels" }}
 {{ if $forPod }}
   {{ $metadataNames = append $metadataNames "podLabels" }}
