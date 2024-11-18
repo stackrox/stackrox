@@ -24,7 +24,7 @@ clusterConfig:
     admissionControllerEvents: true
     tolerationsConfig:
       disabled: false
-    slimCollector: true
+    slimCollector: false
   dynamicConfig:
     disableAuditLogs: true
     admissionControllerConfig:
