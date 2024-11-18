@@ -149,12 +149,6 @@ func (c *resourceCountByFixability) GetFixable() int {
 
 type nodeResponse struct {
 	NodeID string `db:"node_id"`
-
-	// Following are supported sort options.
-	NodeName        string     `db:"node_name"`
-	ClusterName     string     `db:"cluster"`
-	OperatingSystem string     `db:"operating_system"`
-	ScanTime        *time.Time `db:"node_scan_time"`
 }
 
 func (r *nodeResponse) GetNodeID() string {
