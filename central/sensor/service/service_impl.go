@@ -83,7 +83,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	svc := identity.Service()
 	if svc == nil {
-		return errox.NotAuthorized.CausedBy("only sensor may access this API")
+		return errox.NotAuthorized.CausedBy("missing service identity for this API")
 	}
 	svcType := svc.GetType()
 	if !(svcType == storage.ServiceType_SENSOR_SERVICE || svcType == storage.ServiceType_REGISTRANT_SERVICE) {
