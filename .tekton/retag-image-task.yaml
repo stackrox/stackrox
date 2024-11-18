@@ -24,11 +24,15 @@ spec:
     description: Tag of the output image.
     type: string
   results:
-  - name: IMAGE_DIGEST
+  # Names *IMAGE_DIGEST, *IMAGE_URL must not be declared here. Otherwise, Tekton Chains will overwrite the original
+  # pipeline information linked to the image with info of the pipeline which executes this task and that pipeline
+  # doesn't pass EC checks. See https://tekton.dev/docs/chains/slsa-provenance/#image_url--image_digest
+  # We could skip providing any results here at all, but it's nice to find them in UI for the task.
+  - name: RESULTING_DIGEST
     description: Digest of the output image (will be the same as of the input one).
-  - name: IMAGE_URL
+  - name: RESULTING_URL
     description: Image repository and tag of the output image.
-  - name: IMAGE_REF
+  - name: RESULTING_REF
     description: Image reference of the output image containing both the repository, the tag and the digest.
   steps:
   - name: retag-image
@@ -109,7 +113,6 @@ spec:
 
       echo ">>> Done"
 
-      echo -n "${OUTPUT_DIGEST}" | tee "$(results.IMAGE_DIGEST.path)"; echo
-      echo -n "${OUTPUT_URL}" | tee "$(results.IMAGE_URL.path)"; echo
-      # build-image-index task provides both tag and the digest in the IMAGE_REF. We follow its example.
-      echo -n "${OUTPUT_URL}@${OUTPUT_DIGEST}" | tee "$(results.IMAGE_REF.path)"; echo
+      echo -n "${OUTPUT_DIGEST}" | tee "$(results.RESULTING_DIGEST.path)"; echo
+      echo -n "${OUTPUT_URL}" | tee "$(results.RESULTING_URL.path)"; echo
+      echo -n "${OUTPUT_URL}@${OUTPUT_DIGEST}" | tee "$(results.RESULTING_REF.path)"; echo
