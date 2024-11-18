@@ -252,6 +252,7 @@ func useRegistrationSecret(crs *crs.CRS) error {
 func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8sClient kubernetes.Interface) error {
 	podName := os.Getenv("POD_NAME")
 	sensorNamespace := pods.GetPodNamespace()
+	log.Infof("Persisting retrieved certificates as Kubernetes Secrets in namespace %q.", sensorNamespace)
 	secretsClient := k8sClient.CoreV1().Secrets(sensorNamespace)
 
 	typedServiceCerts := protoconv.ConvertFileMapToTypedServiceCertificateSet(certsFileMap)
