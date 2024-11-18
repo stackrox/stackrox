@@ -1,6 +1,8 @@
 package common
 
 import (
+	"strings"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -105,4 +107,27 @@ func WithCountBySeverityAndFixabilityQuery(q *v1.Query, countOn search.FieldLabe
 			).Proto(),
 	)
 	return cloned
+}
+
+// IsSortBySeverityCounts returns true if the query has sort options requesting to sort by CVE severity counts
+func IsSortBySeverityCounts(q *v1.Query) bool {
+	severitySortFields := []string{
+		search.CriticalSeverityCount.String(),
+		search.FixableCriticalSeverityCount.String(),
+		search.ImportantSeverityCount.String(),
+		search.FixableImportantSeverityCount.String(),
+		search.ModerateSeverityCount.String(),
+		search.FixableModerateSeverityCount.String(),
+		search.LowSeverityCount.String(),
+		search.FixableLowSeverityCount.String(),
+	}
+
+	// Check to see if a severity sort is in the query
+	for _, severity := range severitySortFields {
+		if strings.Contains(q.GetPagination().String(), severity) {
+			return true
+		}
+	}
+
+	return false
 }
