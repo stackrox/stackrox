@@ -7,6 +7,11 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.4.7]
+
+### Technical Changes
+- Upgrade cross-spawn to 7.0.5
+
 ## [4.4.6]
 
 ### Technical Changes
