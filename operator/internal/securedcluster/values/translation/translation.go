@@ -371,8 +371,9 @@ func (t Translator) getCollectorContainerValues(collectorContainerSpec *platform
 	if collectorContainerSpec.ImageFlavor != nil {
 		switch *collectorContainerSpec.ImageFlavor {
 		case platform.ImageFlavorSlim:
-			cv.SetBoolValue("slimMode", true)
 		case platform.ImageFlavorRegular:
+			// Slim images no longer exist.
+			// Disable slim mode to force use of collector image with no suffix.
 			cv.SetBoolValue("slimMode", false)
 		default:
 			return cv.SetError(fmt.Errorf("invalid spec.collector.collector.imageFlavor %q", *collectorContainerSpec.ImageFlavor))
