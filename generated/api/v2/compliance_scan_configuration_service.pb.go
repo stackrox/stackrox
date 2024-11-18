@@ -72,11 +72,12 @@ func (ComplianceRunReportResponse_RunState) EnumDescriptor() ([]byte, []int) {
 type ComplianceReportStatus_RunState int32
 
 const (
-	ComplianceReportStatus_WAITING   ComplianceReportStatus_RunState = 0
-	ComplianceReportStatus_PREPARING ComplianceReportStatus_RunState = 1
-	ComplianceReportStatus_GENERATED ComplianceReportStatus_RunState = 2
-	ComplianceReportStatus_DELIVERED ComplianceReportStatus_RunState = 3
-	ComplianceReportStatus_FAILURE   ComplianceReportStatus_RunState = 4
+	ComplianceReportStatus_WAITING       ComplianceReportStatus_RunState = 0
+	ComplianceReportStatus_PREPARING     ComplianceReportStatus_RunState = 1
+	ComplianceReportStatus_GENERATED     ComplianceReportStatus_RunState = 2
+	ComplianceReportStatus_DELIVERED     ComplianceReportStatus_RunState = 3
+	ComplianceReportStatus_FAILURE       ComplianceReportStatus_RunState = 4
+	ComplianceReportStatus_PARTIAL_ERROR ComplianceReportStatus_RunState = 5
 )
 
 // Enum value maps for ComplianceReportStatus_RunState.
@@ -87,13 +88,15 @@ var (
 		2: "GENERATED",
 		3: "DELIVERED",
 		4: "FAILURE",
+		5: "PARTIAL_ERROR",
 	}
 	ComplianceReportStatus_RunState_value = map[string]int32{
-		"WAITING":   0,
-		"PREPARING": 1,
-		"GENERATED": 2,
-		"DELIVERED": 3,
-		"FAILURE":   4,
+		"WAITING":       0,
+		"PREPARING":     1,
+		"GENERATED":     2,
+		"DELIVERED":     3,
+		"FAILURE":       4,
+		"PARTIAL_ERROR": 5,
 	}
 )
 
@@ -121,7 +124,7 @@ func (x ComplianceReportStatus_RunState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ComplianceReportStatus_RunState.Descriptor instead.
 func (ComplianceReportStatus_RunState) EnumDescriptor() ([]byte, []int) {
-	return file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP(), []int{11, 0}
+	return file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP(), []int{12, 0}
 }
 
 type ComplianceReportStatus_ReportMethod int32
@@ -167,7 +170,7 @@ func (x ComplianceReportStatus_ReportMethod) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ComplianceReportStatus_ReportMethod.Descriptor instead.
 func (ComplianceReportStatus_ReportMethod) EnumDescriptor() ([]byte, []int) {
-	return file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP(), []int{11, 1}
+	return file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP(), []int{12, 1}
 }
 
 // ClusterScanStatus holds status based on cluster in the event that a scan configuration
@@ -901,6 +904,74 @@ func (x *ComplianceReportSnapshot) GetIsDownloadAvailable() bool {
 	return false
 }
 
+type FailedCluster struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ClusterId       string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	ClusterName     string                 `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
+	Reason          string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	OperatorVersion string                 `protobuf:"bytes,4,opt,name=operator_version,json=operatorVersion,proto3" json:"operator_version,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *FailedCluster) Reset() {
+	*x = FailedCluster{}
+	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FailedCluster) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FailedCluster) ProtoMessage() {}
+
+func (x *FailedCluster) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FailedCluster.ProtoReflect.Descriptor instead.
+func (*FailedCluster) Descriptor() ([]byte, []int) {
+	return file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *FailedCluster) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
+}
+
+func (x *FailedCluster) GetClusterName() string {
+	if x != nil {
+		return x.ClusterName
+	}
+	return ""
+}
+
+func (x *FailedCluster) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *FailedCluster) GetOperatorVersion() string {
+	if x != nil {
+		return x.OperatorVersion
+	}
+	return ""
+}
+
 type ComplianceReportStatus struct {
 	state                    protoimpl.MessageState              `protogen:"open.v1"`
 	RunState                 ComplianceReportStatus_RunState     `protobuf:"varint,1,opt,name=run_state,json=runState,proto3,enum=v2.ComplianceReportStatus_RunState" json:"run_state,omitempty"`
@@ -909,13 +980,14 @@ type ComplianceReportStatus struct {
 	ErrorMsg                 string                              `protobuf:"bytes,4,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`
 	ReportRequestType        ComplianceReportStatus_ReportMethod `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,proto3,enum=v2.ComplianceReportStatus_ReportMethod" json:"report_request_type,omitempty"`
 	ReportNotificationMethod NotificationMethod                  `protobuf:"varint,6,opt,name=report_notification_method,json=reportNotificationMethod,proto3,enum=v2.NotificationMethod" json:"report_notification_method,omitempty"`
+	FailedClusters           []*FailedCluster                    `protobuf:"bytes,7,rep,name=failed_clusters,json=failedClusters,proto3" json:"failed_clusters,omitempty"`
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ComplianceReportStatus) Reset() {
 	*x = ComplianceReportStatus{}
-	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[11]
+	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -927,7 +999,7 @@ func (x *ComplianceReportStatus) String() string {
 func (*ComplianceReportStatus) ProtoMessage() {}
 
 func (x *ComplianceReportStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[11]
+	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -940,7 +1012,7 @@ func (x *ComplianceReportStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ComplianceReportStatus.ProtoReflect.Descriptor instead.
 func (*ComplianceReportStatus) Descriptor() ([]byte, []int) {
-	return file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP(), []int{11}
+	return file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ComplianceReportStatus) GetRunState() ComplianceReportStatus_RunState {
@@ -985,6 +1057,13 @@ func (x *ComplianceReportStatus) GetReportNotificationMethod() NotificationMetho
 	return NotificationMethod_EMAIL
 }
 
+func (x *ComplianceReportStatus) GetFailedClusters() []*FailedCluster {
+	if x != nil {
+		return x.FailedClusters
+	}
+	return nil
+}
+
 type ListComplianceScanConfigsProfileResponse struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
 	Profiles      []*ComplianceProfileSummary `protobuf:"bytes,1,rep,name=profiles,proto3" json:"profiles,omitempty"`
@@ -995,7 +1074,7 @@ type ListComplianceScanConfigsProfileResponse struct {
 
 func (x *ListComplianceScanConfigsProfileResponse) Reset() {
 	*x = ListComplianceScanConfigsProfileResponse{}
-	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[12]
+	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1007,7 +1086,7 @@ func (x *ListComplianceScanConfigsProfileResponse) String() string {
 func (*ListComplianceScanConfigsProfileResponse) ProtoMessage() {}
 
 func (x *ListComplianceScanConfigsProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[12]
+	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1020,7 +1099,7 @@ func (x *ListComplianceScanConfigsProfileResponse) ProtoReflect() protoreflect.M
 
 // Deprecated: Use ListComplianceScanConfigsProfileResponse.ProtoReflect.Descriptor instead.
 func (*ListComplianceScanConfigsProfileResponse) Descriptor() ([]byte, []int) {
-	return file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP(), []int{12}
+	return file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ListComplianceScanConfigsProfileResponse) GetProfiles() []*ComplianceProfileSummary {
@@ -1049,7 +1128,7 @@ type ListComplianceScanConfigsClusterProfileResponse struct {
 
 func (x *ListComplianceScanConfigsClusterProfileResponse) Reset() {
 	*x = ListComplianceScanConfigsClusterProfileResponse{}
-	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[13]
+	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1061,7 +1140,7 @@ func (x *ListComplianceScanConfigsClusterProfileResponse) String() string {
 func (*ListComplianceScanConfigsClusterProfileResponse) ProtoMessage() {}
 
 func (x *ListComplianceScanConfigsClusterProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[13]
+	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1074,7 +1153,7 @@ func (x *ListComplianceScanConfigsClusterProfileResponse) ProtoReflect() protore
 
 // Deprecated: Use ListComplianceScanConfigsClusterProfileResponse.ProtoReflect.Descriptor instead.
 func (*ListComplianceScanConfigsClusterProfileResponse) Descriptor() ([]byte, []int) {
-	return file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP(), []int{13}
+	return file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ListComplianceScanConfigsClusterProfileResponse) GetClusterId() string {
@@ -1118,7 +1197,7 @@ type ClusterScanStatus_SuiteStatus struct {
 
 func (x *ClusterScanStatus_SuiteStatus) Reset() {
 	*x = ClusterScanStatus_SuiteStatus{}
-	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[14]
+	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1130,7 +1209,7 @@ func (x *ClusterScanStatus_SuiteStatus) String() string {
 func (*ClusterScanStatus_SuiteStatus) ProtoMessage() {}
 
 func (x *ClusterScanStatus_SuiteStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[14]
+	mi := &file_api_v2_compliance_scan_configuration_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1245,7 +1324,13 @@ const file_api_v2_compliance_scan_configuration_service_proto_rawDesc = "" +
 	"\vreport_data\x18\x06 \x01(\v2%.v2.ComplianceScanConfigurationStatusR\n" +
 	"reportData\x12 \n" +
 	"\x04user\x18\a \x01(\v2\f.v2.SlimUserR\x04user\x122\n" +
-	"\x15is_download_available\x18\b \x01(\bR\x13isDownloadAvailable\"\xa1\x04\n" +
+	"\x15is_download_available\x18\b \x01(\bR\x13isDownloadAvailable\"\x94\x01\n" +
+	"\rFailedCluster\x12\x1d\n" +
+	"\n" +
+	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12!\n" +
+	"\fcluster_name\x18\x02 \x01(\tR\vclusterName\x12\x16\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\x12)\n" +
+	"\x10operator_version\x18\x04 \x01(\tR\x0foperatorVersion\"\xf0\x04\n" +
 	"\x16ComplianceReportStatus\x12@\n" +
 	"\trun_state\x18\x01 \x01(\x0e2#.v2.ComplianceReportStatus.RunStateR\brunState\x129\n" +
 	"\n" +
@@ -1253,13 +1338,15 @@ const file_api_v2_compliance_scan_configuration_service_proto_rawDesc = "" +
 	"\fcompleted_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\vcompletedAt\x12\x1b\n" +
 	"\terror_msg\x18\x04 \x01(\tR\berrorMsg\x12W\n" +
 	"\x13report_request_type\x18\x05 \x01(\x0e2'.v2.ComplianceReportStatus.ReportMethodR\x11reportRequestType\x12T\n" +
-	"\x1areport_notification_method\x18\x06 \x01(\x0e2\x16.v2.NotificationMethodR\x18reportNotificationMethod\"Q\n" +
+	"\x1areport_notification_method\x18\x06 \x01(\x0e2\x16.v2.NotificationMethodR\x18reportNotificationMethod\x12:\n" +
+	"\x0ffailed_clusters\x18\a \x03(\v2\x11.v2.FailedClusterR\x0efailedClusters\"d\n" +
 	"\bRunState\x12\v\n" +
 	"\aWAITING\x10\x00\x12\r\n" +
 	"\tPREPARING\x10\x01\x12\r\n" +
 	"\tGENERATED\x10\x02\x12\r\n" +
 	"\tDELIVERED\x10\x03\x12\v\n" +
-	"\aFAILURE\x10\x04\",\n" +
+	"\aFAILURE\x10\x04\x12\x11\n" +
+	"\rPARTIAL_ERROR\x10\x05\",\n" +
 	"\fReportMethod\x12\r\n" +
 	"\tON_DEMAND\x10\x00\x12\r\n" +
 	"\tSCHEDULED\x10\x01\"\x85\x01\n" +
@@ -1302,7 +1389,7 @@ func file_api_v2_compliance_scan_configuration_service_proto_rawDescGZIP() []byt
 }
 
 var file_api_v2_compliance_scan_configuration_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_api_v2_compliance_scan_configuration_service_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_api_v2_compliance_scan_configuration_service_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_api_v2_compliance_scan_configuration_service_proto_goTypes = []any{
 	(ComplianceRunReportResponse_RunState)(0),               // 0: v2.ComplianceRunReportResponse.RunState
 	(ComplianceReportStatus_RunState)(0),                    // 1: v2.ComplianceReportStatus.RunState
@@ -1318,78 +1405,80 @@ var file_api_v2_compliance_scan_configuration_service_proto_goTypes = []any{
 	(*ComplianceReportHistoryRequest)(nil),                  // 11: v2.ComplianceReportHistoryRequest
 	(*ComplianceReportHistoryResponse)(nil),                 // 12: v2.ComplianceReportHistoryResponse
 	(*ComplianceReportSnapshot)(nil),                        // 13: v2.ComplianceReportSnapshot
-	(*ComplianceReportStatus)(nil),                          // 14: v2.ComplianceReportStatus
-	(*ListComplianceScanConfigsProfileResponse)(nil),        // 15: v2.ListComplianceScanConfigsProfileResponse
-	(*ListComplianceScanConfigsClusterProfileResponse)(nil), // 16: v2.ListComplianceScanConfigsClusterProfileResponse
-	(*ClusterScanStatus_SuiteStatus)(nil),                   // 17: v2.ClusterScanStatus.SuiteStatus
-	(*Schedule)(nil),                                        // 18: v2.Schedule
-	(*NotifierConfiguration)(nil),                           // 19: v2.NotifierConfiguration
-	(*timestamppb.Timestamp)(nil),                           // 20: google.protobuf.Timestamp
-	(*SlimUser)(nil),                                        // 21: v2.SlimUser
-	(*RawQuery)(nil),                                        // 22: v2.RawQuery
-	(NotificationMethod)(0),                                 // 23: v2.NotificationMethod
-	(*ComplianceProfileSummary)(nil),                        // 24: v2.ComplianceProfileSummary
-	(*ResourceByID)(nil),                                    // 25: v2.ResourceByID
-	(*Empty)(nil),                                           // 26: v2.Empty
+	(*FailedCluster)(nil),                                   // 14: v2.FailedCluster
+	(*ComplianceReportStatus)(nil),                          // 15: v2.ComplianceReportStatus
+	(*ListComplianceScanConfigsProfileResponse)(nil),        // 16: v2.ListComplianceScanConfigsProfileResponse
+	(*ListComplianceScanConfigsClusterProfileResponse)(nil), // 17: v2.ListComplianceScanConfigsClusterProfileResponse
+	(*ClusterScanStatus_SuiteStatus)(nil),                   // 18: v2.ClusterScanStatus.SuiteStatus
+	(*Schedule)(nil),                                        // 19: v2.Schedule
+	(*NotifierConfiguration)(nil),                           // 20: v2.NotifierConfiguration
+	(*timestamppb.Timestamp)(nil),                           // 21: google.protobuf.Timestamp
+	(*SlimUser)(nil),                                        // 22: v2.SlimUser
+	(*RawQuery)(nil),                                        // 23: v2.RawQuery
+	(NotificationMethod)(0),                                 // 24: v2.NotificationMethod
+	(*ComplianceProfileSummary)(nil),                        // 25: v2.ComplianceProfileSummary
+	(*ResourceByID)(nil),                                    // 26: v2.ResourceByID
+	(*Empty)(nil),                                           // 27: v2.Empty
 }
 var file_api_v2_compliance_scan_configuration_service_proto_depIdxs = []int32{
-	17, // 0: v2.ClusterScanStatus.suite_status:type_name -> v2.ClusterScanStatus.SuiteStatus
-	18, // 1: v2.BaseComplianceScanConfigurationSettings.scan_schedule:type_name -> v2.Schedule
-	19, // 2: v2.BaseComplianceScanConfigurationSettings.notifiers:type_name -> v2.NotifierConfiguration
+	18, // 0: v2.ClusterScanStatus.suite_status:type_name -> v2.ClusterScanStatus.SuiteStatus
+	19, // 1: v2.BaseComplianceScanConfigurationSettings.scan_schedule:type_name -> v2.Schedule
+	20, // 2: v2.BaseComplianceScanConfigurationSettings.notifiers:type_name -> v2.NotifierConfiguration
 	4,  // 3: v2.ComplianceScanConfiguration.scan_config:type_name -> v2.BaseComplianceScanConfigurationSettings
 	4,  // 4: v2.ComplianceScanConfigurationStatus.scan_config:type_name -> v2.BaseComplianceScanConfigurationSettings
 	3,  // 5: v2.ComplianceScanConfigurationStatus.cluster_status:type_name -> v2.ClusterScanStatus
-	20, // 6: v2.ComplianceScanConfigurationStatus.created_time:type_name -> google.protobuf.Timestamp
-	20, // 7: v2.ComplianceScanConfigurationStatus.last_updated_time:type_name -> google.protobuf.Timestamp
-	21, // 8: v2.ComplianceScanConfigurationStatus.modified_by:type_name -> v2.SlimUser
-	20, // 9: v2.ComplianceScanConfigurationStatus.last_executed_time:type_name -> google.protobuf.Timestamp
-	22, // 10: v2.ComplianceConfigClusterProfileRequest.query:type_name -> v2.RawQuery
+	21, // 6: v2.ComplianceScanConfigurationStatus.created_time:type_name -> google.protobuf.Timestamp
+	21, // 7: v2.ComplianceScanConfigurationStatus.last_updated_time:type_name -> google.protobuf.Timestamp
+	22, // 8: v2.ComplianceScanConfigurationStatus.modified_by:type_name -> v2.SlimUser
+	21, // 9: v2.ComplianceScanConfigurationStatus.last_executed_time:type_name -> google.protobuf.Timestamp
+	23, // 10: v2.ComplianceConfigClusterProfileRequest.query:type_name -> v2.RawQuery
 	6,  // 11: v2.ListComplianceScanConfigurationsResponse.configurations:type_name -> v2.ComplianceScanConfigurationStatus
-	23, // 12: v2.ComplianceRunReportRequest.report_notification_method:type_name -> v2.NotificationMethod
+	24, // 12: v2.ComplianceRunReportRequest.report_notification_method:type_name -> v2.NotificationMethod
 	0,  // 13: v2.ComplianceRunReportResponse.run_state:type_name -> v2.ComplianceRunReportResponse.RunState
-	20, // 14: v2.ComplianceRunReportResponse.submitted_at:type_name -> google.protobuf.Timestamp
-	22, // 15: v2.ComplianceReportHistoryRequest.report_param_query:type_name -> v2.RawQuery
+	21, // 14: v2.ComplianceRunReportResponse.submitted_at:type_name -> google.protobuf.Timestamp
+	23, // 15: v2.ComplianceReportHistoryRequest.report_param_query:type_name -> v2.RawQuery
 	13, // 16: v2.ComplianceReportHistoryResponse.compliance_report_snapshots:type_name -> v2.ComplianceReportSnapshot
-	14, // 17: v2.ComplianceReportSnapshot.report_status:type_name -> v2.ComplianceReportStatus
+	15, // 17: v2.ComplianceReportSnapshot.report_status:type_name -> v2.ComplianceReportStatus
 	6,  // 18: v2.ComplianceReportSnapshot.report_data:type_name -> v2.ComplianceScanConfigurationStatus
-	21, // 19: v2.ComplianceReportSnapshot.user:type_name -> v2.SlimUser
+	22, // 19: v2.ComplianceReportSnapshot.user:type_name -> v2.SlimUser
 	1,  // 20: v2.ComplianceReportStatus.run_state:type_name -> v2.ComplianceReportStatus.RunState
-	20, // 21: v2.ComplianceReportStatus.started_at:type_name -> google.protobuf.Timestamp
-	20, // 22: v2.ComplianceReportStatus.completed_at:type_name -> google.protobuf.Timestamp
+	21, // 21: v2.ComplianceReportStatus.started_at:type_name -> google.protobuf.Timestamp
+	21, // 22: v2.ComplianceReportStatus.completed_at:type_name -> google.protobuf.Timestamp
 	2,  // 23: v2.ComplianceReportStatus.report_request_type:type_name -> v2.ComplianceReportStatus.ReportMethod
-	23, // 24: v2.ComplianceReportStatus.report_notification_method:type_name -> v2.NotificationMethod
-	24, // 25: v2.ListComplianceScanConfigsProfileResponse.profiles:type_name -> v2.ComplianceProfileSummary
-	24, // 26: v2.ListComplianceScanConfigsClusterProfileResponse.profiles:type_name -> v2.ComplianceProfileSummary
-	20, // 27: v2.ClusterScanStatus.SuiteStatus.last_transition_time:type_name -> google.protobuf.Timestamp
-	22, // 28: v2.ComplianceScanConfigurationService.ListComplianceScanConfigurations:input_type -> v2.RawQuery
-	25, // 29: v2.ComplianceScanConfigurationService.GetComplianceScanConfiguration:input_type -> v2.ResourceByID
-	5,  // 30: v2.ComplianceScanConfigurationService.CreateComplianceScanConfiguration:input_type -> v2.ComplianceScanConfiguration
-	5,  // 31: v2.ComplianceScanConfigurationService.UpdateComplianceScanConfiguration:input_type -> v2.ComplianceScanConfiguration
-	25, // 32: v2.ComplianceScanConfigurationService.DeleteComplianceScanConfiguration:input_type -> v2.ResourceByID
-	25, // 33: v2.ComplianceScanConfigurationService.RunComplianceScanConfiguration:input_type -> v2.ResourceByID
-	9,  // 34: v2.ComplianceScanConfigurationService.RunReport:input_type -> v2.ComplianceRunReportRequest
-	11, // 35: v2.ComplianceScanConfigurationService.GetReportHistory:input_type -> v2.ComplianceReportHistoryRequest
-	11, // 36: v2.ComplianceScanConfigurationService.GetMyReportHistory:input_type -> v2.ComplianceReportHistoryRequest
-	25, // 37: v2.ComplianceScanConfigurationService.DeleteReport:input_type -> v2.ResourceByID
-	22, // 38: v2.ComplianceScanConfigurationService.ListComplianceScanConfigProfiles:input_type -> v2.RawQuery
-	7,  // 39: v2.ComplianceScanConfigurationService.ListComplianceScanConfigClusterProfiles:input_type -> v2.ComplianceConfigClusterProfileRequest
-	8,  // 40: v2.ComplianceScanConfigurationService.ListComplianceScanConfigurations:output_type -> v2.ListComplianceScanConfigurationsResponse
-	6,  // 41: v2.ComplianceScanConfigurationService.GetComplianceScanConfiguration:output_type -> v2.ComplianceScanConfigurationStatus
-	5,  // 42: v2.ComplianceScanConfigurationService.CreateComplianceScanConfiguration:output_type -> v2.ComplianceScanConfiguration
-	26, // 43: v2.ComplianceScanConfigurationService.UpdateComplianceScanConfiguration:output_type -> v2.Empty
-	26, // 44: v2.ComplianceScanConfigurationService.DeleteComplianceScanConfiguration:output_type -> v2.Empty
-	26, // 45: v2.ComplianceScanConfigurationService.RunComplianceScanConfiguration:output_type -> v2.Empty
-	10, // 46: v2.ComplianceScanConfigurationService.RunReport:output_type -> v2.ComplianceRunReportResponse
-	12, // 47: v2.ComplianceScanConfigurationService.GetReportHistory:output_type -> v2.ComplianceReportHistoryResponse
-	12, // 48: v2.ComplianceScanConfigurationService.GetMyReportHistory:output_type -> v2.ComplianceReportHistoryResponse
-	26, // 49: v2.ComplianceScanConfigurationService.DeleteReport:output_type -> v2.Empty
-	15, // 50: v2.ComplianceScanConfigurationService.ListComplianceScanConfigProfiles:output_type -> v2.ListComplianceScanConfigsProfileResponse
-	16, // 51: v2.ComplianceScanConfigurationService.ListComplianceScanConfigClusterProfiles:output_type -> v2.ListComplianceScanConfigsClusterProfileResponse
-	40, // [40:52] is the sub-list for method output_type
-	28, // [28:40] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	24, // 24: v2.ComplianceReportStatus.report_notification_method:type_name -> v2.NotificationMethod
+	14, // 25: v2.ComplianceReportStatus.failed_clusters:type_name -> v2.FailedCluster
+	25, // 26: v2.ListComplianceScanConfigsProfileResponse.profiles:type_name -> v2.ComplianceProfileSummary
+	25, // 27: v2.ListComplianceScanConfigsClusterProfileResponse.profiles:type_name -> v2.ComplianceProfileSummary
+	21, // 28: v2.ClusterScanStatus.SuiteStatus.last_transition_time:type_name -> google.protobuf.Timestamp
+	23, // 29: v2.ComplianceScanConfigurationService.ListComplianceScanConfigurations:input_type -> v2.RawQuery
+	26, // 30: v2.ComplianceScanConfigurationService.GetComplianceScanConfiguration:input_type -> v2.ResourceByID
+	5,  // 31: v2.ComplianceScanConfigurationService.CreateComplianceScanConfiguration:input_type -> v2.ComplianceScanConfiguration
+	5,  // 32: v2.ComplianceScanConfigurationService.UpdateComplianceScanConfiguration:input_type -> v2.ComplianceScanConfiguration
+	26, // 33: v2.ComplianceScanConfigurationService.DeleteComplianceScanConfiguration:input_type -> v2.ResourceByID
+	26, // 34: v2.ComplianceScanConfigurationService.RunComplianceScanConfiguration:input_type -> v2.ResourceByID
+	9,  // 35: v2.ComplianceScanConfigurationService.RunReport:input_type -> v2.ComplianceRunReportRequest
+	11, // 36: v2.ComplianceScanConfigurationService.GetReportHistory:input_type -> v2.ComplianceReportHistoryRequest
+	11, // 37: v2.ComplianceScanConfigurationService.GetMyReportHistory:input_type -> v2.ComplianceReportHistoryRequest
+	26, // 38: v2.ComplianceScanConfigurationService.DeleteReport:input_type -> v2.ResourceByID
+	23, // 39: v2.ComplianceScanConfigurationService.ListComplianceScanConfigProfiles:input_type -> v2.RawQuery
+	7,  // 40: v2.ComplianceScanConfigurationService.ListComplianceScanConfigClusterProfiles:input_type -> v2.ComplianceConfigClusterProfileRequest
+	8,  // 41: v2.ComplianceScanConfigurationService.ListComplianceScanConfigurations:output_type -> v2.ListComplianceScanConfigurationsResponse
+	6,  // 42: v2.ComplianceScanConfigurationService.GetComplianceScanConfiguration:output_type -> v2.ComplianceScanConfigurationStatus
+	5,  // 43: v2.ComplianceScanConfigurationService.CreateComplianceScanConfiguration:output_type -> v2.ComplianceScanConfiguration
+	27, // 44: v2.ComplianceScanConfigurationService.UpdateComplianceScanConfiguration:output_type -> v2.Empty
+	27, // 45: v2.ComplianceScanConfigurationService.DeleteComplianceScanConfiguration:output_type -> v2.Empty
+	27, // 46: v2.ComplianceScanConfigurationService.RunComplianceScanConfiguration:output_type -> v2.Empty
+	10, // 47: v2.ComplianceScanConfigurationService.RunReport:output_type -> v2.ComplianceRunReportResponse
+	12, // 48: v2.ComplianceScanConfigurationService.GetReportHistory:output_type -> v2.ComplianceReportHistoryResponse
+	12, // 49: v2.ComplianceScanConfigurationService.GetMyReportHistory:output_type -> v2.ComplianceReportHistoryResponse
+	27, // 50: v2.ComplianceScanConfigurationService.DeleteReport:output_type -> v2.Empty
+	16, // 51: v2.ComplianceScanConfigurationService.ListComplianceScanConfigProfiles:output_type -> v2.ListComplianceScanConfigsProfileResponse
+	17, // 52: v2.ComplianceScanConfigurationService.ListComplianceScanConfigClusterProfiles:output_type -> v2.ListComplianceScanConfigsClusterProfileResponse
+	41, // [41:53] is the sub-list for method output_type
+	29, // [29:41] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_compliance_scan_configuration_service_proto_init() }
@@ -1408,7 +1497,7 @@ func file_api_v2_compliance_scan_configuration_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_compliance_scan_configuration_service_proto_rawDesc), len(file_api_v2_compliance_scan_configuration_service_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   15,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
