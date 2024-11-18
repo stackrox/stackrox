@@ -367,7 +367,7 @@ const rules = {
                             typeof node.value.expression.raw === 'string' &&
                             node.value.expression.raw.length >= 2
                         ) {
-                            // Use raw for accuracy if value includes newline characters.
+                            // Use raw for clarity if value includes newline characters.
                             const { raw } = node.value.expression;
                             const braces = `${name}={${raw}}`;
                             const double = `${name}="${raw.slice(1, -1)}"`;
@@ -411,6 +411,7 @@ const rules = {
                         const { raw, value } = node.value;
                         const single = `${name}=${raw}`;
 
+                        // Use raw for clarity if value includes newline characters.
                         if (value.includes('"')) {
                             const braces = `${name}={${raw}}`;
                             context.report({
@@ -418,7 +419,7 @@ const rules = {
                                 message: `Enclose single quotes in ${single} prop with braces ${braces} if value includes double quote`,
                             });
                         } else {
-                            const double = `${name}="${value}"`;
+                            const double = `${name}="${raw.slice(1, -1)}"`;
                             context.report({
                                 node,
                                 message: `Replace single quotes in ${single} prop with double quotes ${double}`,
