@@ -57,7 +57,7 @@ function ReviewConfig({ clusters, errorMessage }: ReviewConfigProps) {
                     <FlexItem>Review the scan schedule before you save changes</FlexItem>
                     {errorMessage && (
                         <Alert
-                            title={'Scan configuration request failure'}
+                            title="Scan configuration request failure"
                             component="p"
                             variant="danger"
                             isInline

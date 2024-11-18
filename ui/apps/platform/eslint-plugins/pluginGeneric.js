@@ -340,6 +340,95 @@ const rules = {
             };
         },
     },
+    'no-prop-value-string-literal-redundant-braces': {
+        // Forbid prop value that has string literal in redundant braces.
+        // Reduce risk to miss relevant results from Find in Files.
+        // Go style apparently conflicts with JSX style.
+        //
+        // See counterpart rule for edge case when string value includes double quote.
+        // That is, when braces are not redundant.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Forbid prop value that has string literal in redundant braces',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXAttribute(node) {
+                    if (
+                        typeof node.name?.name === 'string' &&
+                        typeof node.value?.expression?.value === 'string' &&
+                        !node.value.expression.value.includes('"')
+                    ) {
+                        const { name } = node.name;
+                        if (
+                            typeof node.value.expression.raw === 'string' &&
+                            node.value.expression.raw.length >= 2
+                        ) {
+                            // Use raw for accuracy if value includes newline characters.
+                            const { raw } = node.value.expression;
+                            const braces = `${name}={${raw}}`;
+                            const double = `${name}="${raw.slice(1, -1)}"`;
+                            context.report({
+                                node,
+                                message: `Replace redundant braces in ${braces} prop with double quotes ${double}`,
+                            });
+                        } else {
+                            const braces = `${name}={'…'}`;
+                            const double = `${name}="…"`;
+                            context.report({
+                                node,
+                                message: `Replace redundant braces in ${braces} prop with double quotes ${double}`,
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'no-prop-value-string-literal-single-quotes': {
+        // Forbid prop value that has string literal in single quotes.
+        // Reduce risk to miss relevant results from Find in Files.
+        // Go style apparently conflicts with JSX style.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Forbid prop value that has string literal in single quotes',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXAttribute(node) {
+                    if (
+                        typeof node.name?.name === 'string' &&
+                        typeof node.value?.value === 'string' &&
+                        node.value.raw?.startsWith("'")
+                    ) {
+                        const { name } = node.name;
+                        const { raw, value } = node.value;
+                        const single = `${name}=${raw}`;
+
+                        if (value.includes('"')) {
+                            const braces = `${name}={${raw}}`;
+                            context.report({
+                                node,
+                                message: `Enclose single quotes in ${single} prop with braces ${braces} if value includes double quote`,
+                            });
+                        } else {
+                            const double = `${name}="${value}"`;
+                            context.report({
+                                node,
+                                message: `Replace single quotes in ${single} prop with double quotes ${double}`,
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
 };
 
 const pluginKey = 'generic'; // key of pluginGeneric in eslint.config.js file

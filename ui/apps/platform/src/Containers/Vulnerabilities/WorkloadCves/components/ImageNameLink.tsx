@@ -59,7 +59,7 @@ function ImageNameLink({ name, id, children }: ImageNameLinkProps) {
                     <Button
                         className="pf-v5-u-pt-xs"
                         id={`copy-image-name-button-${id}`}
-                        aria-label={'Copy image name'}
+                        aria-label="Copy image name"
                         type="button"
                         variant="plain"
                         onClick={copyImageName}

@@ -193,9 +193,7 @@ function PolicyBehaviorForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                         errors={errors}
                         isRequired
                         touched={touched}
-                        helperText={
-                            'Choose lifecycle stage to which your policy is applicable. You can select more than one stage.'
-                        }
+                        helperText="Choose lifecycle stage to which your policy is applicable. You can select more than one stage."
                     >
                         <Flex direction={{ default: 'row' }} className="pf-v5-u-pb-sm">
                             <Checkbox
