@@ -3,6 +3,7 @@ import path from 'path';
 import { visitFromLeftNav } from '../../helpers/nav';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
+import { selectors } from './Violations.selectors';
 
 // Source of truth for keys in routeMatcherMap and staticResponseMap objects.
 export const alertsAlias = 'alerts';
@@ -235,4 +236,11 @@ export function exportAndWaitForNetworkPolicyYaml(fileName, onDownload) {
     ).click();
 
     cy.readFile(path.join(Cypress.config('downloadsFolder'), fileName)).then(onDownload);
+}
+
+export function selectFilteredWorkflowView(viewName) {
+    cy.get(selectors.filteredWorkflowSelectButton).click();
+    cy.get(
+        `ul[aria-label="Filtered workflow select options"] button:contains("${viewName}")`
+    ).click();
 }
