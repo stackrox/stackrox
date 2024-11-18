@@ -445,12 +445,12 @@ func (s *ImageCVEViewTestSuite) TestCountBySeverity() {
 
 func (s *ImageCVEViewTestSuite) testCases() []testCase {
 	return []testCase{
-		//{
-		//	desc:        "search all",
-		//	ctx:         context.Background(),
-		//	q:           search.EmptyQuery(),
-		//	matchFilter: matchAllFilter(),
-		//},
+		{
+			desc:        "search all",
+			ctx:         context.Background(),
+			q:           search.EmptyQuery(),
+			matchFilter: matchAllFilter(),
+		},
 		{
 			desc: "search one cve",
 			ctx:  context.Background(),
