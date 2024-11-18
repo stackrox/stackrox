@@ -57,7 +57,7 @@ func (s *testSuite) TestDumpScan() {
 
 	// Get DB Dump
 	buf := bytes.NewBuffer(nil)
-	cmd := exec.Command("pg_dump", "-d", s.testDB.DB.Config().ConnConfig.Database, "-Fc")
+	cmd := exec.Command("pg_dump", "-d", s.testDB.DB.Config().ConnConfig.Database, "-U", s.testDB.Config().ConnConfig.User, "-Fc")
 	cmd.Stdout = buf
 	s.NoError(pgadmin.ExecutePostgresCmd(cmd))
 
