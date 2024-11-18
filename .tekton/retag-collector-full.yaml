@@ -14,9 +14,7 @@ metadata:
       (event == "pull_request" && (source_branch.matches("(konflux|renovate|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
   labels:
     appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: scanner-db-slim-retagged
-    pipelines.appstudio.openshift.io/type: build
-  name: scanner-db-slim-retagged-on-push
+  name: retag-collector-full
   namespace: rh-acs-tenant
 
 spec:
@@ -27,11 +25,11 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/scanner-db-slim
+    value: quay.io/rhacs-eng/collector
   - name: input-image-repo
-    value: quay.io/rhacs-eng/scanner-db-slim
+    value: quay.io/rhacs-eng/collector
   - name: input-image-tag-makefile-target
-    value: scanner-tag
+    value: collector-tag
 
   workspaces:
   - name: git-auth
