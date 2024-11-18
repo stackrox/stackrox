@@ -66,7 +66,7 @@ RUN mkdir -p build/ && \
     cp -v ../config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml build/bundle/manifests/ && \
     ./bundle_helpers/patch-csv.py \
       --use-version "${OPERATOR_IMAGE_TAG}" \
-      --first-version 3.62.0 \
+      --first-version 4.0.0 \
       --related-images-mode=konflux \
       --operator-image "${OPERATOR_IMAGE_REF}" \
       --add-supported-arch amd64 \
@@ -105,8 +105,6 @@ LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1
 LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
 LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
 LABEL operators.operatorframework.io.bundle.package.v1=rhacs-operator
-LABEL operators.operatorframework.io.bundle.channels.v1=fast
-LABEL operators.operatorframework.io.bundle.channel.default.v1=fast
 LABEL operators.operatorframework.io.metrics.builder=operator-sdk-unknown
 LABEL operators.operatorframework.io.metrics.mediatype.v1=metrics+v1
 LABEL operators.operatorframework.io.metrics.project_layout=go.kubebuilder.io/v3
