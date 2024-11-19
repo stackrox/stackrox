@@ -50,7 +50,7 @@ func NewClient(endpoint string) (*Client, error) {
 	return NewClientWithCert(endpoint, nil)
 }
 
-// NewClientWithCert creates a new client, using the provided certificates.
+// NewClientWithCert creates a new client, using the provided certificate.
 func NewClientWithCert(endpoint string, clientCert *tls.Certificate) (*Client, error) {
 	if endpoint == "" {
 		return nil, errors.New("creating Client with empty endpoint is not allowed")
