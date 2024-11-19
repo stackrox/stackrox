@@ -63,10 +63,6 @@ GOOS := $(HOST_OS)
 comma := ,
 GOTAGS := $(if $(GOTAGS),$(GOTAGS)$(comma)strictfipsruntime,strictfipsruntime)
 
-.PHONY: vartest
-vartest:
-	@echo $(GOTAGS)
-
 GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) GOEXPERIMENT=strictfipsruntime
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
                    -trimpath \
