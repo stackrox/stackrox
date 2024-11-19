@@ -39,11 +39,14 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) *stor
 	if caCert := fileMap[caCertKey]; caCert != "" {
 		caPem = []byte(caCert)
 	}
-	delete(fileMap, caCertKey)
 
 	serviceCertMap := make(map[storage.ServiceType]*storage.ServiceCertificate)
 
 	for fileName, pemData := range fileMap {
+		if fileName == caCertKey {
+			// We handle the CA special and don't process it as part of this loop.
+			continue
+		}
 		var serviceSlugName string
 		var certPem, keyPem []byte
 
