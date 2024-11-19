@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"runtime/pprof"
 	"strconv"
 	"strings"
@@ -420,21 +422,45 @@ func getLogs(zipWriter *zipWriter) error {
 	return nil
 }
 
-func getLogFile(zipWriter *zipWriter, targetPath string, sourcePath string) error {
-	logFile, err := os.Open(sourcePath)
-	if err != nil {
-		return err
-	}
+func forEachRotation(sourcePath string, f func(filepath string) error) error {
+	dir, fileext := filepath.Split(sourcePath)
+	ext := filepath.Ext(fileext)
+	filename := strings.TrimSuffix(fileext, ext)
+	pattern := filename + "*" + ext
 
+	// The files are walked in lexical order: the current log will be
+	// read last.
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		if ok, _ := filepath.Match(pattern, d.Name()); ok {
+			return f(path)
+		}
+		return nil
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to copy log files")
+	}
+	return nil
+}
+
+func getLogFile(zipWriter *zipWriter, targetPath string, sourcePath string) error {
 	zipWriter.LockWrite()
 	defer zipWriter.UnlockWrite()
 	w, err := zipWriter.writerWithCurrentTimestampNoLock(targetPath)
 	if err != nil {
 		return err
 	}
-
-	_, err = io.Copy(w, logFile)
-	return err
+	return forEachRotation(sourcePath, func(filepath string) error {
+		logFile, err := os.Open(filepath)
+		if err != nil {
+			return err
+		}
+		defer logFile.Close()
+		_, err = io.Copy(w, logFile)
+		return err
+	})
 }
 
 func getVersion(ctx context.Context, zipWriter *zipWriter) error {

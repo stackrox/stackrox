@@ -6,6 +6,8 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -22,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -225,4 +228,40 @@ func (s *debugServiceTestSuite) TestGetBundle() {
 		s.T().Log("Reading file:", zipFile.Name)
 		s.Assert().Equal(stubTime, zipFile.Modified.UTC())
 	}
+}
+
+func Test_forEachRotation(t *testing.T) {
+	dir := t.TempDir()
+	prefix := "test"
+	ext := ".log"
+	for _, timestamp := range []string{
+		"", // current log file.
+		"-2017-11-04T18-30-00.000",
+		"-2016-11-04T18-30-00.001",
+		"-2016-11-04T18-30-00.003",
+		"-2016-11-04T18-30-00.002",
+		"-2016-11-04T18-30-00.000",
+		"-2017-12-04T18-30-00.000",
+	} {
+		f, _ := os.Create(filepath.Join(dir, prefix+timestamp+ext))
+		_, _ = f.WriteString(timestamp)
+		_ = f.Close()
+	}
+	var lines = make([]string, 0, 3)
+	err := forEachRotation(filepath.Join(dir, prefix+ext), func(filepath string) error {
+		b, err := os.ReadFile(filepath)
+		assert.NoError(t, err)
+		lines = append(lines, string(b))
+		return nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, lines, []string{
+		"-2016-11-04T18-30-00.000",
+		"-2016-11-04T18-30-00.001",
+		"-2016-11-04T18-30-00.002",
+		"-2016-11-04T18-30-00.003",
+		"-2017-11-04T18-30-00.000",
+		"-2017-12-04T18-30-00.000",
+		"",
+	}, "files have to be read in the older-first order")
 }

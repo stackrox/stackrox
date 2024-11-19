@@ -348,7 +348,6 @@ func withRotatingCore(lc *zap.Config) func(c zapcore.Core) zapcore.Core {
 				Filename:   path,
 				MaxSize:    20, // megabytes
 				MaxBackups: 3,
-				MaxAge:     28, // days
 			})
 		}
 		var encoder zapcore.Encoder
