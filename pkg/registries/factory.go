@@ -7,6 +7,7 @@ import (
 	azureFactory "github.com/stackrox/rox/pkg/registries/azure"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	ecrFactory "github.com/stackrox/rox/pkg/registries/ecr"
+	ghcrFactory "github.com/stackrox/rox/pkg/registries/ghcr"
 	googleFactory "github.com/stackrox/rox/pkg/registries/google"
 	ibmFactory "github.com/stackrox/rox/pkg/registries/ibm"
 	nexusFactory "github.com/stackrox/rox/pkg/registries/nexus"
@@ -29,6 +30,7 @@ var AllCreatorFuncs = []types.CreatorWrapper{
 	azureFactory.Creator,
 	dockerFactory.Creator,
 	ecrFactory.Creator,
+	ghcrFactory.Creator,
 	googleFactory.Creator,
 	ibmFactory.Creator,
 	nexusFactory.Creator,
@@ -43,6 +45,7 @@ var AllCreatorFuncsWithoutRepoList = []types.CreatorWrapper{
 	azureFactory.CreatorWithoutRepoList,
 	dockerFactory.CreatorWithoutRepoList,
 	ecrFactory.CreatorWithoutRepoList,
+	ghcrFactory.CreatorWithoutRepoList,
 	googleFactory.CreatorWithoutRepoList,
 	ibmFactory.CreatorWithoutRepoList,
 	nexusFactory.CreatorWithoutRepoList,

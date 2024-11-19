@@ -15,6 +15,7 @@ import ClairV4IntegrationForm from './Forms/ClairV4IntegrationForm';
 import ClairifyIntegrationForm from './Forms/ClairifyIntegrationForm';
 import DockerIntegrationForm from './Forms/DockerIntegrationForm';
 import EcrIntegrationForm from './Forms/EcrIntegrationForm';
+import GhcrIntegrationForm from './Forms/GhcrIntegrationForm';
 import GoogleIntegrationForm from './Forms/GoogleIntegrationForm';
 import IbmIntegrationForm from './Forms/IbmIntegrationForm';
 import NexusIntegrationForm from './Forms/NexusIntegrationForm';
@@ -86,6 +87,7 @@ const ComponentFormMap = {
         clairify: ClairifyIntegrationForm,
         docker: DockerIntegrationForm,
         ecr: EcrIntegrationForm,
+        ghcr: GhcrIntegrationForm,
         google: GoogleIntegrationForm,
         ibm: IbmIntegrationForm,
         nexus: NexusIntegrationForm,

@@ -23,6 +23,9 @@ const (
 	// ECRType represents the AWS ECR image integration.
 	ECRType = "ecr"
 
+	// GhcrType represents the GitHub container registry image integration.
+	GhcrType = "ghcr"
+
 	// GoogleType represents the Google container registry image integration.
 	GoogleType = "google"
 

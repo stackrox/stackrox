@@ -14,6 +14,7 @@ import objects.ClairScannerIntegration
 import objects.Deployment
 import objects.ECRRegistryIntegration
 import objects.EmailNotifier
+import objects.GHCRImageIntegration
 import objects.GoogleArtifactRegistry
 import objects.GCRImageIntegration
 import objects.GenericNotifier
@@ -706,6 +707,7 @@ class IntegrationsTest extends BaseSpecification {
         new StackroxScannerIntegration() | [:]                | "default config"
         new ClairScannerIntegration()    | [:]                | "default config"
         new QuayImageIntegration()       | [:]                | "default config"
+        new GHCRImageIntegration()       | [:]                | "default config"
         new GoogleArtifactRegistry()     | [:]                | "default config"
         new GoogleArtifactRegistry()     | [wifEnabled: true]
                                                               | "requires workload identity"

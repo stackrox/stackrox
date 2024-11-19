@@ -172,6 +172,7 @@ const integrationTitleMap = {
         clairify: 'StackRox Scanner',
         docker: 'Generic Docker Registry',
         ecr: 'Amazon ECR',
+        ghcr: 'GitHub Container Registry',
         google: 'Google Container Registry',
         ibm: 'IBM Cloud',
         nexus: 'Sonatype Nexus',

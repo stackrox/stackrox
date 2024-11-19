@@ -37,6 +37,7 @@ export type ImageIntegrationType =
     | 'clairify'
     | 'docker'
     | 'ecr'
+    | 'ghcr'
     | 'google'
     | 'ibm'
     | 'nexus'
