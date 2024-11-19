@@ -273,7 +273,7 @@ run_proxy_tests() {
             local central_cert
             central_cert="$(mktemp -d)/central_cert.pem"
             info "Fetching central certificate for ${name}..."
-            roxctl "${extra_args[@]}" -e "$endpoint" -p "$ROX_PASSWORD" \
+            roxctl "${extra_args[@]}" -e "$endpoint" \
                 central cert --insecure-skip-tls-verify 1>"$central_cert" || \
                 failures+=("$p,fetch-CA")
             extra_args+=(--ca "$central_cert")

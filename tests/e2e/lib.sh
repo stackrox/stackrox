@@ -502,14 +502,14 @@ export_central_cert() {
     ci_export ROX_SERVER_NAME "central.${CENTRAL_NAMESPACE:-stackrox}"
 
     require_environment "API_ENDPOINT"
-    require_environment "ROX_PASSWORD"
+    require_environment "ROX_ADMIN_PASSWORD"
 
     local central_cert
     central_cert="$(mktemp -d)/central_cert.pem"
     info "Storing central certificate in ${central_cert} for ${API_ENDPOINT}"
     stacktrace
 
-    roxctl -e "$API_ENDPOINT" -p "$ROX_PASSWORD" \
+    roxctl -e "$API_ENDPOINT" \
         central cert --insecure-skip-tls-verify 1>"$central_cert"
 
     ci_export ROX_CA_CERT_FILE "$central_cert"
