@@ -15,6 +15,16 @@ function selectFirstAutocompleteSearchOption() {
     cy.get(`ul[aria-label="Filter results select menu"] li:nth(0) button`).click();
 }
 
+function verifyTableCellsMatchFilterChip(cellSelector) {
+    cy.get('.search-filter-chips .pf-v5-c-chip .pf-v5-c-chip__text')
+        .invoke('text')
+        .then((textValue) => {
+            cy.get('table tbody tr').each(($row) => {
+                cy.wrap($row).find(cellSelector).invoke('text').should('equal', textValue);
+            });
+        });
+}
+
 describe('Violations - Search Filter', () => {
     withAuth();
 
@@ -40,16 +50,7 @@ describe('Violations - Search Filter', () => {
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
         cy.wait('@getViolations');
 
-        cy.get('.search-filter-chips .pf-v5-c-chip .pf-v5-c-chip__text')
-            .invoke('text')
-            .then((textValue) => {
-                cy.get('table tbody tr').each(($row) => {
-                    cy.wrap($row)
-                        .find('td[data-label="Policy"] a')
-                        .invoke('text')
-                        .should('equal', textValue);
-                });
-            });
+        verifyTableCellsMatchFilterChip('td[data-label="Policy"] a');
     });
 
     it('should filter violations by policy category', () => {
@@ -66,16 +67,7 @@ describe('Violations - Search Filter', () => {
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
         cy.wait('@getViolations');
 
-        cy.get('.search-filter-chips .pf-v5-c-chip .pf-v5-c-chip__text')
-            .invoke('text')
-            .then((textValue) => {
-                cy.get('table tbody tr').each(($row) => {
-                    cy.wrap($row)
-                        .find('td[data-label="Categories"]')
-                        .invoke('text')
-                        .should('equal', textValue);
-                });
-            });
+        verifyTableCellsMatchFilterChip('td[data-label="Categories"]');
     });
 
     it('should filter violations by severity', () => {
@@ -97,16 +89,7 @@ describe('Violations - Search Filter', () => {
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
         cy.wait('@getViolations');
 
-        cy.get('.search-filter-chips .pf-v5-c-chip .pf-v5-c-chip__text')
-            .invoke('text')
-            .then((textValue) => {
-                cy.get('table tbody tr').each(($row) => {
-                    cy.wrap($row)
-                        .find('td[data-label="Severity"]')
-                        .invoke('text')
-                        .should('equal', textValue);
-                });
-            });
+        verifyTableCellsMatchFilterChip('td[data-label="Severity"]');
     });
 
     it('should filter violations by lifecycle stage', () => {
@@ -128,15 +111,6 @@ describe('Violations - Search Filter', () => {
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
         cy.wait('@getViolations');
 
-        cy.get('.search-filter-chips .pf-v5-c-chip .pf-v5-c-chip__text')
-            .invoke('text')
-            .then((textValue) => {
-                cy.get('table tbody tr').each(($row) => {
-                    cy.wrap($row)
-                        .find('td[data-label="Lifecycle"]')
-                        .invoke('text')
-                        .should('equal', textValue);
-                });
-            });
+        verifyTableCellsMatchFilterChip('td[data-label="Lifecycle"]');
     });
 });
