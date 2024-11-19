@@ -255,9 +255,9 @@ func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8
 	log.Infof("Persisting retrieved certificates as Kubernetes Secrets in namespace %q.", sensorNamespace)
 	secretsClient := k8sClient.CoreV1().Secrets(sensorNamespace)
 
-	typedServiceCerts := protoconv.ConvertFileMapToTypedServiceCertificateSet(certsFileMap)
-	if typedServiceCerts == nil {
-		return errors.New("empty typed service certificates")
+	typedServiceCerts, err := protoconv.ConvertFileMapToTypedServiceCertificateSet(certsFileMap)
+	if err != nil {
+		return errors.Wrap(err, "converting file map into typed service certificate set")
 	}
 	ownerRef, err := certrefresh.FetchSensorDeploymentOwnerRef(ctx, podName, sensorNamespace, k8sClient, fetchSensorDeploymentOwnerRefBackoff)
 	if err != nil {
