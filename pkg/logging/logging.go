@@ -38,6 +38,7 @@ import (
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 const (
@@ -336,10 +337,24 @@ func CreateLogger(module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 func createLoggerWithConfig(lc *zap.Config, module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 	lc.Level = module.logLevel
 
-	logger, err := lc.Build(zap.AddCallerSkip(skip))
-	if err != nil {
-		panic(errors.Wrap(err, "failed to instantiate logger"))
+	var cores = []zapcore.Core{}
+	for _, path := range lc.OutputPaths {
+		writer := zapcore.AddSync(&lumberjack.Logger{
+			Filename:   path,
+			MaxSize:    20, // megabytes
+			MaxBackups: 3,
+			MaxAge:     28, // days
+		})
+		var encoder zapcore.Encoder
+		switch lc.Encoding {
+		case "console":
+			encoder = zapcore.NewConsoleEncoder(lc.EncoderConfig)
+		case "json":
+			encoder = zapcore.NewJSONEncoder(lc.EncoderConfig)
+		}
+		cores = append(cores, zapcore.NewCore(encoder, writer, lc.Level))
 	}
+	logger := zap.New(zapcore.NewTee(cores...), zap.AddCallerSkip(skip))
 
 	o := &options{}
 	for _, opt := range opts {
