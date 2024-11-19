@@ -256,12 +256,18 @@ export function selectMultipleCvesForException(exceptionType) {
         .get(selectors.nthTableRow(1))
         .then(($row) => {
             cveNames.push($row.find('td[data-label="CVE"]').text());
-            cy.wrap($row).find(selectors.tableRowSelectCheckbox).click();
+            cy.wrap($row).then(($rowElement) => {
+                const checkbox = $rowElement.find(selectors.tableRowSelectCheckbox);
+                cy.wrap(checkbox).click();
+            });
             return cy.get(selectors.nthTableRow(2));
         })
         .then(($nextRow) => {
             cveNames.push($nextRow.find('td[data-label="CVE"]').text());
-            cy.wrap($nextRow).find(selectors.tableRowSelectCheckbox).click();
+            cy.wrap($nextRow).then(($rowElement) => {
+                const checkbox = $rowElement.find(selectors.tableRowSelectCheckbox);
+                cy.wrap(checkbox).click();
+            });
 
             cy.get(selectors.bulkActionMenuToggle).click();
             cy.get(selectors.menuOption(menuOption)).click();
