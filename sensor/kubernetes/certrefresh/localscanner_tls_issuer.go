@@ -29,18 +29,16 @@ func NewLocalScannerTLSIssuer(
 	sensorNamespace string,
 	sensorPodName string,
 ) common.SensorComponent {
-	msgToCentralC := make(chan *message.ExpiringMessage)
-	msgFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
+	respFromCentralC := make(chan *central.IssueLocalScannerCertsResponse)
 	return &localScannerTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    k8sClient,
-		msgToCentralC:                msgToCentralC,
-		msgFromCentralC:              msgFromCentralC,
+		respFromCentralC:             respFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: localscanner.NewServiceCertificatesRepo,
-		certRequester:                certificates.NewLocalScannerCertificateRequester(msgToCentralC, msgFromCentralC),
+		certRequester:                certificates.NewLocalScannerCertificateRequester(respFromCentralC),
 	}
 }
 
@@ -48,8 +46,7 @@ type localScannerTLSIssuerImpl struct {
 	sensorNamespace              string
 	sensorPodName                string
 	k8sClient                    kubernetes.Interface
-	msgToCentralC                chan *message.ExpiringMessage
-	msgFromCentralC              chan *central.IssueLocalScannerCertsResponse
+	respFromCentralC             chan *central.IssueLocalScannerCertsResponse
 	certRefreshBackoff           wait.Backoff
 	getCertificateRefresherFn    certificateRefresherGetter
 	getServiceCertificatesRepoFn serviceCertificatesRepoGetter
@@ -57,7 +54,7 @@ type localScannerTLSIssuerImpl struct {
 	certRefresher                concurrency.RetryTicker
 }
 
-// Start starts the sensor component and launches a certificate refresher that immediately checks the certificates, and
+// Start starts the Sensor component and launches a certificate refresher that immediately checks the certificates, and
 // that keeps them updated.
 // In case a secret doesn't have the expected owner, this logs a warning and returns nil.
 // In case this component was already started it fails immediately.
@@ -112,13 +109,13 @@ func (i *localScannerTLSIssuerImpl) Capabilities() []centralsensor.SensorCapabil
 	return []centralsensor.SensorCapability{centralsensor.LocalScannerCredentialsRefresh}
 }
 
-// ResponsesC is called "responses" because for other SensorComponent it is central that
-// initiates the interaction. However, here it is sensor which sends a request to central.
+// ResponsesC is called "responses" because for other SensorComponent it is Central that
+// initiates the interaction. However, here it is Sensor which sends a request to Central.
 func (i *localScannerTLSIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
-	return i.msgToCentralC
+	return i.certRequester.MsgToCentralC()
 }
 
-// ProcessMessage dispatches Central's messages to Sensor received via the central receiver.
+// ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.
 func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
@@ -132,7 +129,7 @@ func (i *localScannerTLSIssuerImpl) ProcessMessage(msg *central.MsgToSensor) err
 			case <-ctx.Done():
 				// certRefresher will retry.
 				log.Errorf("timeout forwarding response %s from central: %s", response, ctx.Err())
-			case i.msgFromCentralC <- response:
+			case i.respFromCentralC <- response:
 			}
 		}()
 		return nil

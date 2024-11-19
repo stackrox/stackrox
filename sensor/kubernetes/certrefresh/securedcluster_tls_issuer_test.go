@@ -59,14 +59,12 @@ func newSecuredClusterTLSIssuerFixture(k8sClientConfig fakeK8sClientConfig) *sec
 		componentGetter: &componentGetterMock{},
 		k8sClient:       getFakeK8sClient(k8sClientConfig),
 	}
-	msgToCentralC := make(chan *message.ExpiringMessage)
-	msgFromCentralC := make(chan *central.IssueSecuredClusterCertsResponse)
+	respFromCentralC := make(chan *central.IssueSecuredClusterCertsResponse)
 	fixture.tlsIssuer = &securedClusterTLSIssuerImpl{
 		sensorNamespace:              sensorNamespace,
 		sensorPodName:                sensorPodName,
 		k8sClient:                    fixture.k8sClient,
-		msgToCentralC:                msgToCentralC,
-		msgFromCentralC:              msgFromCentralC,
+		respFromCentralC:             respFromCentralC,
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    fixture.componentGetter.getCertificateRefresher,
 		getServiceCertificatesRepoFn: fixture.componentGetter.getServiceCertificatesRepo,
@@ -192,7 +190,7 @@ func TestSecuredClusterTLSIssuerProcessMessageKnownMessage(t *testing.T) {
 	select {
 	case <-ctx.Done():
 		assert.Fail(t, ctx.Err().Error())
-	case response := <-fixture.tlsIssuer.msgFromCentralC:
+	case response := <-fixture.tlsIssuer.respFromCentralC:
 		protoassert.Equal(t, expectedResponse, response)
 	}
 
@@ -216,7 +214,7 @@ func TestSecuredClusterTLSIssuerProcessMessageUnknownMessage(t *testing.T) {
 
 	select {
 	case <-ctx.Done():
-	case <-fixture.tlsIssuer.msgFromCentralC:
+	case <-fixture.tlsIssuer.respFromCentralC:
 		assert.Fail(t, "unknown message is not ignored")
 	}
 	_, ok := processMessageDoneSignal.WaitWithTimeout(100 * time.Millisecond)

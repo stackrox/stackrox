@@ -132,6 +132,18 @@ func TestLocalScannerCertificateRequesterResponsesWithUnknownIDAreIgnored(t *tes
 	assert.Equal(t, context.DeadlineExceeded, requestErr)
 }
 
+func TestSecuredClusterCertificateRequesterResponsesWithNoReply(t *testing.T) {
+	f := newSecuredClusterFixture(200 * time.Millisecond)
+	f.requester.Start()
+	defer f.tearDown()
+
+	certs, requestErr := f.requester.RequestCertificates(f.ctx)
+
+	// No response was set using `f.respondRequest`, which simulates Sensor offline mode
+	assert.Nil(t, certs)
+	assert.Equal(t, context.DeadlineExceeded, requestErr)
+}
+
 func TestSecuredClusterCertificateRequesterResponsesWithUnknownIDAreIgnored(t *testing.T) {
 	f := newSecuredClusterFixture(100 * time.Millisecond)
 	f.requester.Start()
@@ -248,10 +260,10 @@ func (f *certificateRequesterFixture[ReqT, RespT]) tearDown() {
 	f.requester.Stop()
 }
 
-// respondRequest reads a request from `f.sendC` and responds with `responseOverwrite` if not nil, or with
+// respondRequest reads a request from `f.msgToCentralC` and responds with `responseOverwrite` if not nil, or with
 // a response with the same ID as the request otherwise. If `responseDelay` is greater than 0 then this function
 // waits for that time before sending the response.
-// Before sending the response, it stores in `f.interceptedRequestID` the request ID for the requests read from `f.sendC`.
+// Before sending the response, it stores in `f.interceptedRequestID` the request ID for the requests read from `f.msgToCentralC`.
 func (f *certificateRequesterFixture[ReqT, RespT]) respondRequest(
 	t *testing.T,
 	responseDelay time.Duration,
