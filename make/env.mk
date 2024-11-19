@@ -46,6 +46,7 @@ ifneq ($(BUILD_TAG),)
 ifeq ($(GOTAGS),)
 GOTAGS := $(RELEASE_GOTAGS)
 else
+# Preserve existing GOTAGS and append release tags
 GOTAGS := $(GOTAGS),$(RELEASE_GOTAGS)
 endif
 endif
