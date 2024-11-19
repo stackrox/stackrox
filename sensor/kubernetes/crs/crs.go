@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/policyversion"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/env"
 	grpcUtil "github.com/stackrox/rox/pkg/grpc/util"
@@ -27,9 +26,9 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralclient"
-	"github.com/stackrox/rox/sensor/common/sensor/helmconfig"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/securedcluster"
+	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -139,10 +138,11 @@ func registerCluster() error {
 	// Prepare Hello message.
 	deploymentIdentification := sensor.FetchDeploymentIdentification(context.Background(), k8sClient)
 	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
-	helmManagedConfigInit, err := getHelmManagedConfig()
+	helmManagedConfigInit, err := helm.GetHelmManagedConfig(storage.ServiceType_REGISTRANT_SERVICE)
 	if err != nil {
 		return errors.Wrap(err, "assembling Helm configuration")
 	}
+
 	sensorHello := &central.SensorHello{
 		SensorVersion:            version.GetMainVersion(),
 		PolicyVersion:            policyversion.CurrentVersion().String(),
@@ -273,38 +273,6 @@ func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8
 		log.Infof("Persisted certificate and key for service %s", persistedCert.ServiceType.String())
 	}
 	return nil
-}
-
-func getHelmManagedConfig() (*central.HelmManagedConfigInit, error) {
-	var helmManagedConfig *central.HelmManagedConfigInit
-	if configFP := helmconfig.HelmConfigFingerprint.Setting(); configFP != "" {
-		var err error
-		helmManagedConfig, err = helmconfig.Load()
-		if err != nil {
-			return nil, errors.Wrap(err, "loading Helm cluster config")
-		}
-		if helmManagedConfig.GetClusterConfig().GetConfigFingerprint() != configFP {
-			return nil, errors.Errorf("fingerprint %q of loaded config does not match expected fingerprint %q, config changes can only be applied via 'helm upgrade' or a similar chart-based mechanism", helmManagedConfig.GetClusterConfig().GetConfigFingerprint(), configFP)
-		}
-		log.Infof("Loaded Helm cluster configuration with fingerprint %q", configFP)
-
-		if err := helmconfig.CheckEffectiveClusterName(helmManagedConfig); err != nil {
-			return nil, errors.Wrap(err, "validating cluster name")
-		}
-	}
-
-	if helmManagedConfig.GetClusterName() == "" {
-		certClusterID, err := clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_REGISTRANT_SERVICE)
-		if err != nil {
-			return nil, errors.Wrap(err, "parsing cluster ID from service certificate")
-		}
-		if centralsensor.IsInitCertClusterID(certClusterID) {
-			return nil, errors.New("a sensor that uses certificates from an init bundle must have a cluster name specified")
-		}
-	} else {
-		log.Infof("Cluster name from Helm configuration: %q", helmManagedConfig.GetClusterName())
-	}
-	return helmManagedConfig, nil
 }
 
 func communicateWithAutoSensedEncoding(ctx context.Context, client central.SensorServiceClient) (central.SensorService_CommunicateClient, error) {
