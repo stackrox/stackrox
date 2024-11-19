@@ -43,8 +43,21 @@ func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCer
 	return fileMap, nil
 }
 
-// ConvertFileMapToTypedServiceCertificateSet ...
-func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) *storage.TypedServiceCertificateSet {
+// ConvertFileMapToTypedServiceCertificateSet is the inverse for ConvertTypedServiceCertificateSetToFileMap.
+// It converts a map of the form
+//
+//	{
+//	   "ca-cert.pem": "<PEM encoded CA certificate>",
+//	   "<service>-cert.pem": "<PEM encoded service certificate>",
+//	   "<service>-key.pem": "<PEM encoded service key>",
+//	   ...
+//	}
+//
+// into a TypedServiceCertificateSet.
+//
+// It returns error in case the input map contains keys of unexpected shape or in case it was
+// not possible to derive proper service types from the respective file name.
+func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*storage.TypedServiceCertificateSet, error) {
 	var caPem []byte
 	if caCert := fileMap[caCertKey]; caCert != "" {
 		caPem = []byte(caCert)
