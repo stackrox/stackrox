@@ -65,13 +65,14 @@ function invoke_go() {
   tool="$1"
   shift
 
+  # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so
   # ${parameter:+word}: If parameter is null or unset, nothing is substituted, otherwise the expansion of word is substituted.
   # - https://www.gnu.org/software/bash/manual/bash.html#Shell-Parameter-Expansion
   GOTAGS="${GOTAGS:+${GOTAGS},}strictfipsruntime"
   if [[ "$RACE" == "true" ]]; then
-    GOEXPERIMENT=strictfipsruntime CGO_ENABLED=1 go "$tool" -race -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+    GOEXPERIMENT=strictfipsruntime CGO_ENABLED=1 go "$tool" -race -ldflags="${ldflags[*]}" -tags "$GOTAGS" "$@"
   else
-    GOEXPERIMENT=strictfipsruntime go "$tool" -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+    GOEXPERIMENT=strictfipsruntime go "$tool" -ldflags="${ldflags[*]}" -tags "$GOTAGS" "$@"
   fi
 }
 
