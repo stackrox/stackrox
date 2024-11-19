@@ -57,7 +57,7 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) *stor
 			serviceSlugName = strings.TrimSuffix(fileName, "-key.pem")
 			keyPem = []byte(pemData)
 		} else {
-			// TODO?
+			utils.Should(errors.Errorf("unexpected file name %q in file map while trying to convert to typed service certificate set", fileName))
 			continue
 		}
 		serviceType := services.SlugNameToServiceType(serviceSlugName)
