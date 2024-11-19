@@ -11,11 +11,19 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+- Scanner V4 adds supports for openSUSE Leap 15.5 and 15.6
+
 ### Removed Features
 
-### Deprecated Fatures
+- Scanner V4 drops support for openSUSE Leap 15.0 and 15.1
+
+### Deprecated Features
 
 ### Technical Changes
+
+- Scanner V4 now tracks fewer unnecessary vulnerabilities than before.
+  - This speeds up initialization time for first time users.
+  - This also frees up space in Scanner V4 DB, as the unnecessary vulnerabilities will be deleted.
 
 ## [4.6.0]
 
