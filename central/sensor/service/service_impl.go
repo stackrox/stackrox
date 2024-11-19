@@ -126,6 +126,9 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if features.ScannerV4.Enabled() {
 			capabilities = append(capabilities, centralsensor.ScannerV4Supported)
 		}
+		if features.ClusterRegistrationSecrets.Enabled() {
+			capabilities = append(capabilities, centralsensor.ClusterRegistrationSecretSupported)
+		}
 
 		preferences := s.manager.GetConnectionPreference(clusterID)
 
