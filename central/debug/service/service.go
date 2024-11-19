@@ -53,6 +53,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/telemetry/data"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -416,10 +417,7 @@ func getGoroutines(zipWriter *zipWriter) error {
 }
 
 func getLogs(zipWriter *zipWriter) error {
-	if err := getLogFile(zipWriter, "central.log", logging.LoggingPath); err != nil {
-		return err
-	}
-	return nil
+	return getLogFile(zipWriter, "central.log", logging.LoggingPath)
 }
 
 func forEachRotation(sourcePath string, f func(filepath string) error) error {
@@ -455,11 +453,10 @@ func getLogFile(zipWriter *zipWriter, targetPath string, sourcePath string) erro
 	return forEachRotation(sourcePath, func(filepath string) error {
 		logFile, err := os.Open(filepath)
 		if err != nil {
-			return err
+			defer utils.IgnoreError(logFile.Close)
+			_, err = io.Copy(w, logFile)
 		}
-		defer logFile.Close()
-		_, err = io.Copy(w, logFile)
-		return err
+		return errors.Wrap(err, "failed to append log file to the bundle")
 	})
 }
 
