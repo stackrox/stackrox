@@ -19,6 +19,9 @@ type CRS struct {
 
 // SerializeSecret serializes the given CRS into its opaque form.
 func SerializeSecret(crs *CRS) (string, error) {
+	if crs == nil {
+		return "", errors.New("CRS is not initialized")
+	}
 	jsonSerialized, err := json.Marshal(crs)
 	if err != nil {
 		return "", errors.Wrap(err, "JSON marshalling CRS")
