@@ -144,7 +144,10 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			if err != nil {
 				return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
 			}
-			centralHello.CertBundle = protoconv.ConvertTypedServiceCertificateSetToFileMap(certificateSet)
+			centralHello.CertBundle, err = protoconv.ConvertTypedServiceCertificateSetToFileMap(certificateSet)
+			if err != nil {
+				return errors.Wrap(err, "converting typed service certificate set to file map")
+			}
 			return nil
 		}); err != nil {
 			log.Errorf("Could not include certificate bundle in sensor hello message: %s", err)
