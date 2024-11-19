@@ -13,7 +13,18 @@ const (
 	caCertKey = "ca-cert.pem"
 )
 
-// ConvertTypedServiceCertificateSetToFileMap ...
+// ConvertTypedServiceCertificateSetToFileMap converts a TypedServiceCertificateSet into a map
+// of the shape
+//
+//	{
+//	   "ca-cert.pem": "<PEM encoded CA certificate>",
+//	   "<service>-cert.pem": "<PEM encoded service certificate>",
+//	   "<service>-key.pem": "<PEM encoded service key>",
+//	   ...
+//	}
+//
+// It returns error in case a service type contained in the input failed to be converted into
+// its associated slug-name representation.
 func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCertificateSet) (map[string]string, error) {
 	serviceCerts := certSet.GetServiceCerts()
 	caCert := certSet.GetCaPem()
