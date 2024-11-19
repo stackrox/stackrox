@@ -14,7 +14,7 @@ const (
 )
 
 // ConvertTypedServiceCertificateSetToFileMap ...
-func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCertificateSet) map[string]string {
+func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCertificateSet) (map[string]string, error) {
 	serviceCerts := certSet.GetServiceCerts()
 	caCert := certSet.GetCaPem()
 	fileMap := make(map[string]string, 1+2*len(serviceCerts)) // 1 for CA cert, and key+cert for each service
@@ -24,13 +24,12 @@ func ConvertTypedServiceCertificateSetToFileMap(certSet *storage.TypedServiceCer
 	for _, cert := range certSet.GetServiceCerts() {
 		serviceName := services.ServiceTypeToSlugName(cert.ServiceType)
 		if serviceName == "" {
-			utils.Should(errors.Errorf("invalid service type %v when converting certificate bundle to file map", cert.ServiceType))
-			continue // ignore
+			return nil, errors.Errorf("failed to obtain slug-name for service type %v", cert.ServiceType)
 		}
 		fileMap[serviceName+"-cert.pem"] = string(cert.Cert.CertPem)
 		fileMap[serviceName+"-key.pem"] = string(cert.Cert.KeyPem)
 	}
-	return fileMap
+	return fileMap, nil
 }
 
 // ConvertFileMapToTypedServiceCertificateSet ...
