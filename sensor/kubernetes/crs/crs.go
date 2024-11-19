@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/pods"
 	protoconv "github.com/stackrox/rox/pkg/protoconv/certs"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
@@ -193,6 +194,11 @@ func registerCluster() error {
 	clusterID := centralHello.GetClusterId()
 	log.Infof("Received ClusterID %s", clusterID)
 	log.Infof("Received CentralID %s", centralHello.GetCentralId())
+
+	centralCaps := set.NewFrozenStringSet(centralHello.GetCapabilities()...)
+	if !centralCaps.Contains(centralsensor.ClusterRegistrationSecretSupported) {
+		return errors.New("central does not support CRS-based cluster registration")
+	}
 
 	// Persisting freshly retrieved service certificates.
 	certsFileMap := centralHello.GetCertBundle()
