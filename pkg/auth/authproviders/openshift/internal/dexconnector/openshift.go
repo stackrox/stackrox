@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
@@ -110,6 +111,7 @@ func (c *Config) Open() (*openshiftConnector, error) {
 
 	// Discover information about the OAuth server.
 	wellKnownURL := strings.TrimSuffix(c.Issuer, "/") + openshiftWellKnownURL
+	log.Info("Contacting", wellKnownURL)
 	req, err := http.NewRequest(http.MethodGet, wellKnownURL, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating a well-known request")

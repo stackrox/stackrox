@@ -104,6 +104,7 @@ func createOpenshiftConnector() (callbackAndRefreshConnector, error) {
 		ClientSecret:    settings.clientSecret,
 		TrustedCertPool: settings.trustedCertPool,
 	}
+	log.Info("dex connector issuer", openshiftAPIUrl)
 
 	openshiftConnector, err := dexCfg.Open()
 	if err != nil {
