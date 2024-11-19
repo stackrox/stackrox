@@ -47,9 +47,7 @@ describe('Violations - Search Filter', () => {
                     cy.wrap($row)
                         .find('td[data-label="Policy"] a')
                         .invoke('text')
-                        .then((linkText) => {
-                            expect(linkText.trim()).to.equal(textValue);
-                        });
+                        .should('equal', textValue);
                 });
             });
     });
@@ -67,9 +65,6 @@ describe('Violations - Search Filter', () => {
 
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
         cy.wait('@getViolations');
-        // this accounts for a slight delay in the table results being updated after a successful fetch
-        // this test was the only one that would sometimes fail without this "wait"
-        cy.wait(1000);
 
         cy.get('.search-filter-chips .pf-v5-c-chip .pf-v5-c-chip__text')
             .invoke('text')
@@ -78,9 +73,7 @@ describe('Violations - Search Filter', () => {
                     cy.wrap($row)
                         .find('td[data-label="Categories"]')
                         .invoke('text')
-                        .then((linkText) => {
-                            expect(linkText.trim()).to.equal(textValue);
-                        });
+                        .should('equal', textValue);
                 });
             });
     });
@@ -111,9 +104,7 @@ describe('Violations - Search Filter', () => {
                     cy.wrap($row)
                         .find('td[data-label="Severity"]')
                         .invoke('text')
-                        .then((linkText) => {
-                            expect(linkText.trim()).to.equal(textValue);
-                        });
+                        .should('equal', textValue);
                 });
             });
     });
@@ -144,9 +135,7 @@ describe('Violations - Search Filter', () => {
                     cy.wrap($row)
                         .find('td[data-label="Lifecycle"]')
                         .invoke('text')
-                        .then((linkText) => {
-                            expect(linkText.trim()).to.equal(textValue);
-                        });
+                        .should('equal', textValue);
                 });
             });
     });
