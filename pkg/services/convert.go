@@ -10,6 +10,8 @@ import (
 
 // ServiceTypeToSlugName converts a service type (such as storage.ADMISSION_CONTROL_SERVICE) to the
 // slug-case name of the service ('admission-control').
+//
+// Returns the empty string for invalid service types.
 func ServiceTypeToSlugName(ty storage.ServiceType) string {
 	tyName := ty.String()
 	if !stringutils.ConsumeSuffix(&tyName, "_SERVICE") {
