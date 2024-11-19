@@ -43,7 +43,12 @@ RELEASE_GOTAGS := release
 # Use a release go -tag when CI is targeting a tag
 ifdef CI
 ifneq ($(BUILD_TAG),)
+ifeq ($(GOTAGS),)
 GOTAGS := $(RELEASE_GOTAGS)
+else
+# Preserve existing GOTAGS and append release tags
+GOTAGS := $(GOTAGS),$(RELEASE_GOTAGS)
+endif
 endif
 endif
 

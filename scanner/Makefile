@@ -56,19 +56,12 @@ ifeq ($(shell uname -s),Darwin)
 endif
 GOOS := $(HOST_OS)
 
-# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so
-# Make doesn't support commas in function arguments; however, we can hide them in variables.
-# See the manual for more details:
-# - https://www.gnu.org/software/make/manual/html_node/Syntax-of-Functions.html
-comma := ,
-GOTAGS := $(if $(GOTAGS),$(GOTAGS)$(comma)strictfipsruntime,strictfipsruntime)
-
-GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) GOEXPERIMENT=strictfipsruntime
+GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
                    -trimpath \
                    -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)" \
                    -ldflags="-X github.com/stackrox/rox/scanner/internal/version.VulnerabilityVersion=$(SCANNER_VULNERABILITY_VERSION)" \
-                   -tags="$(GOTAGS)" \
+                   -tags=$(GOTAGS) \
                    $(RACE_FLAG)
 GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
 
