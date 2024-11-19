@@ -38,14 +38,11 @@ GOBIN := $(GOPATH)/bin
 endif
 
 TAG := # make sure tag is never injectable as an env var
-# TODO(ROX-27054): Remove strictfipsruntime if it's redundant with GOEXPERIMENT=strictfipsruntime
-RELEASE_GOTAGS := release,strictfipsruntime
+RELEASE_GOTAGS := release
 
 # Use a release go -tag when CI is targeting a tag
 ifdef CI
 ifneq ($(BUILD_TAG),)
-# TODO(ROX-27054): Remove GOEXPERIMENT=strictfipsruntime if it's redundant with strictfipsruntime
-export GOEXPERIMENT=strictfipsruntime
 ifeq ($(GOTAGS),)
 GOTAGS := $(RELEASE_GOTAGS)
 else

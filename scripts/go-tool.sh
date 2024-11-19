@@ -64,10 +64,16 @@ fi
 function invoke_go() {
   tool="$1"
   shift
-  if [[ "$RACE" == "true" ]]; then
-    CGO_ENABLED=1 go "$tool" -race -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+  # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so
+  if [[ -z "$GOTAGS" ]]; then
+    GOTAGS="$GOTAGS,strictfipsruntime"
   else
-    go "$tool" -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+    GOTAGS="strictfipsruntime"
+  fi
+  if [[ "$RACE" == "true" ]]; then
+    GOEXPERIMENT=strictfipsruntime CGO_ENABLED=1 go "$tool" -race -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
+  else
+    GOEXPERIMENT=strictfipsruntime go "$tool" -ldflags="${ldflags[*]}" -tags "$(tr , ' ' <<<"$GOTAGS")" "$@"
   fi
 }
 
