@@ -64,7 +64,7 @@ func Load() (*CRS, error) {
 // Certificate returns the X509 key pair contained in the CRS.
 func (c *CRS) Certificate() (*tls.Certificate, error) {
 	if c == nil {
-		return nil, errors.New("empty CRS")
+		return nil, errors.New("CRS is not initialized")
 	}
 	cert, err := tls.X509KeyPair([]byte(c.Cert), []byte(c.Key))
 	if err != nil {
