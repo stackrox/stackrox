@@ -29,6 +29,9 @@ func ServiceTypeToSlugName(ty storage.ServiceType) string {
 // - uppercasing
 // - replacing dashes with underscores
 // - appending the "_SERVICE" suffix.
+//
+// Returns ServiceType_UNKNOWN_SERVICE (0) in case the provided service slug-name
+// representation does not correspond to a valid service type.
 func SlugNameToServiceType(tyName string) storage.ServiceType {
 	tyName = strings.ToUpper(tyName)
 	tyName = strings.ReplaceAll(tyName, "-", "_")
