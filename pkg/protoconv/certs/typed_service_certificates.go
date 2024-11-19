@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/services"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -80,10 +79,12 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 			serviceSlugName = strings.TrimSuffix(fileName, "-key.pem")
 			keyPem = []byte(pemData)
 		} else {
-			utils.Should(errors.Errorf("unexpected file name %q in file map while trying to convert to typed service certificate set", fileName))
-			continue
+			return nil, errors.Errorf("unexpected file name %q in file map", fileName)
 		}
 		serviceType := services.SlugNameToServiceType(serviceSlugName)
+		if serviceType == storage.ServiceType_UNKNOWN_SERVICE {
+			return nil, errors.Errorf("failed to obtain service type for slug-name %q", serviceSlugName)
+		}
 		if serviceCertMap[serviceType] == nil {
 			serviceCertMap[serviceType] = &storage.ServiceCertificate{}
 		}
@@ -109,5 +110,5 @@ func ConvertFileMapToTypedServiceCertificateSet(fileMap map[string]string) (*sto
 		ServiceCerts: typedServiceCerts,
 	}
 
-	return &certSet
+	return &certSet, nil
 }
