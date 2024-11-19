@@ -20,7 +20,13 @@ func ServiceTypeToSlugName(ty storage.ServiceType) string {
 	return tyName
 }
 
-// SlugNameToServiceType ...
+// SlugNameToServiceType converts a "service slug name", e.g. "admission-control", to the
+// corresponding ServiceType identifier, e.g. ServiceType_ADMISSION_CONTROL_SERVICE.
+//
+// This is done by
+// - uppercasing
+// - replacing dashes with underscores
+// - appending the "_SERVICE" suffix.
 func SlugNameToServiceType(tyName string) storage.ServiceType {
 	tyName = strings.ToUpper(tyName)
 	tyName = strings.ReplaceAll(tyName, "-", "_")
