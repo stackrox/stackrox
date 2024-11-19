@@ -334,27 +334,46 @@ func CreateLogger(module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
 	return createLoggerWithConfig(&lc, module, skip+1, opts...)
 }
 
-func createLoggerWithConfig(lc *zap.Config, module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
-	lc.Level = module.logLevel
-
-	var cores = []zapcore.Core{}
+func withRotatingCore(lc *zap.Config) func(c zapcore.Core) zapcore.Core {
+	var cores = make([]zapcore.Core, 0, len(lc.OutputPaths))
 	for _, path := range lc.OutputPaths {
-		writer := zapcore.AddSync(&lumberjack.Logger{
-			Filename:   path,
-			MaxSize:    20, // megabytes
-			MaxBackups: 3,
-			MaxAge:     28, // days
-		})
+		var writer zapcore.WriteSyncer
+		switch path {
+		case "stderr":
+			writer = os.Stderr
+		case "stdout":
+			writer = os.Stdout
+		default:
+			writer = zapcore.AddSync(&lumberjack.Logger{
+				Filename:   path,
+				MaxSize:    20, // megabytes
+				MaxBackups: 3,
+				MaxAge:     28, // days
+			})
+		}
 		var encoder zapcore.Encoder
 		switch lc.Encoding {
 		case "console":
 			encoder = zapcore.NewConsoleEncoder(lc.EncoderConfig)
 		case "json":
 			encoder = zapcore.NewJSONEncoder(lc.EncoderConfig)
+		default:
+			panic("unexpected logger encoding: " + lc.Encoding)
 		}
 		cores = append(cores, zapcore.NewCore(encoder, writer, lc.Level))
 	}
-	logger := zap.New(zapcore.NewTee(cores...), zap.AddCallerSkip(skip))
+	return func(c zapcore.Core) zapcore.Core {
+		return zapcore.NewTee(cores...)
+	}
+}
+
+func createLoggerWithConfig(lc *zap.Config, module *Module, skip int, opts ...OptionsFunc) *LoggerImpl {
+	lc.Level = module.logLevel
+
+	logger, err := lc.Build(zap.AddCallerSkip(skip), zap.WrapCore(withRotatingCore(lc)))
+	if err != nil {
+		panic(errors.Wrap(err, "failed to instantiate logger"))
+	}
 
 	o := &options{}
 	for _, opt := range opts {
