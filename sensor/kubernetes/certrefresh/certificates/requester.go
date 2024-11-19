@@ -25,38 +25,38 @@ type Requester interface {
 	Start()
 	Stop()
 	RequestCertificates(ctx context.Context) (*Response, error)
+	MsgToCentralC() <-chan *message.ExpiringMessage
 }
 
-// NewLocalScannerCertificateRequester creates a new local scanner certificate requester that communicates through
-// the specified channels and initializes a new request ID for reach request.
-// To use it call Start, and then make requests with RequestCertificates, concurrent requests are supported.
-// This assumes that the returned certificate requester is the only consumer of `receiveC`.
-func NewLocalScannerCertificateRequester(sendC chan<- *message.ExpiringMessage,
-	receiveC <-chan *central.IssueLocalScannerCertsResponse) Requester {
+// NewLocalScannerCertificateRequester creates a new certificate requester for Local Scanner certificates
+// (Scanner V2 and Scanner V4). It receives responses through the channel given as parameter,
+// and initializes a new request ID for reach request.
+// To use it call Start and then make requests with RequestCertificates. Concurrent requests are supported.
+// This assumes that the returned certificate requester is the only consumer of `respFromCentralC`.
+func NewLocalScannerCertificateRequester(respFromCentralC <-chan *central.IssueLocalScannerCertsResponse) Requester {
 	return newRequester[
 		*central.IssueLocalScannerCertsRequest,
 		*central.IssueLocalScannerCertsResponse,
 	](
-		sendC,
-		receiveC,
+		make(chan *message.ExpiringMessage),
+		respFromCentralC,
 		&localScannerMessageFactory{},
 		&localScannerResponseFactory{},
 		nil,
 	)
 }
 
-// NewSecuredClusterCertificateRequester creates a new certificate requester that communicates through
-// the specified channels and initializes a new request ID for reach request.
-// To use it call Start, and then make requests with RequestCertificates, concurrent requests are supported.
-// This assumes that the returned certificate requester is the only consumer of `receiveC`.
-func NewSecuredClusterCertificateRequester(sendC chan<- *message.ExpiringMessage,
-	receiveC <-chan *central.IssueSecuredClusterCertsResponse) Requester {
+// NewSecuredClusterCertificateRequester creates a new certificate requester for Secured Cluster certificates.
+// It receives responses through the channel given as parameter, and initializes a new request ID for reach request.
+// To use it call Start and then make requests with RequestCertificates. Concurrent requests are supported.
+// This assumes that the returned certificate requester is the only consumer of `respFromCentralC`.
+func NewSecuredClusterCertificateRequester(respFromCentralC <-chan *central.IssueSecuredClusterCertsResponse) Requester {
 	return newRequester[
 		*central.IssueSecuredClusterCertsResponse,
 		*central.IssueSecuredClusterCertsResponse,
 	](
-		sendC,
-		receiveC,
+		make(chan *message.ExpiringMessage),
+		respFromCentralC,
 		&securedClusterMessageFactory{},
 		&securedClusterResponseFactory{},
 		func() *centralsensor.CentralCapability {
@@ -67,15 +67,15 @@ func NewSecuredClusterCertificateRequester(sendC chan<- *message.ExpiringMessage
 }
 
 func newRequester[ReqT any, RespT protobufResponse](
-	sendC chan<- *message.ExpiringMessage,
-	receiveC <-chan RespT,
+	msgToCentralC chan *message.ExpiringMessage,
+	respFromCentralC <-chan RespT,
 	messageFactory messageFactory,
 	responseFactory responseFactory[RespT],
 	requiredCentralCapability *centralsensor.CentralCapability,
 ) *genericRequester[ReqT, RespT] {
 	return &genericRequester[ReqT, RespT]{
-		sendC:                     sendC,
-		receiveC:                  receiveC,
+		msgToCentralC:             msgToCentralC,
+		respFromCentralC:          respFromCentralC,
 		messageFactory:            messageFactory,
 		responseFactory:           responseFactory,
 		requiredCentralCapability: requiredCentralCapability,
@@ -83,8 +83,8 @@ func newRequester[ReqT any, RespT protobufResponse](
 }
 
 type genericRequester[ReqT any, RespT protobufResponse] struct {
-	sendC                     chan<- *message.ExpiringMessage
-	receiveC                  <-chan RespT
+	msgToCentralC             chan *message.ExpiringMessage
+	respFromCentralC          <-chan RespT
 	stopC                     concurrency.ErrorSignal
 	requests                  sync.Map
 	messageFactory            messageFactory
@@ -140,7 +140,7 @@ func (f *localScannerMessageFactory) newMsgFromSensor(requestID string) *central
 	}
 }
 
-// Start makes the certificate requester listen to `receiveC` and forwards responses to any request that is running
+// Start makes the certificate requester listen to `respFromCentralC` and forwards responses to any request that is running
 // as a call to RequestCertificates.
 func (r *genericRequester[ReqT, RespT]) Start() {
 	r.stopC.Reset()
@@ -155,15 +155,17 @@ func (r *genericRequester[ReqT, RespT]) Stop() {
 	r.stopC.Signal()
 }
 
+// dispatchResponses processes all certificate refresh responses from Central and forwards them
+// to their appropriate channel
 func (r *genericRequester[ReqT, RespT]) dispatchResponses() {
 	for {
 		select {
 		case <-r.stopC.Done():
 			return
-		case msg := <-r.receiveC:
-			responseC, ok := r.requests.Load(msg.GetRequestId())
+		case msg := <-r.respFromCentralC:
+			certsResponseC, ok := r.requests.Load(msg.GetRequestId())
 			if !ok {
-				log.Debugf("request ID %q does not match any known request ID, dropping response",
+				log.Debugf("Request ID %q does not match any known request ID, dropping response",
 					msg.GetRequestId())
 				continue
 			}
@@ -171,7 +173,8 @@ func (r *genericRequester[ReqT, RespT]) dispatchResponses() {
 			// Doesn't block even if the corresponding call to RequestCertificates is cancelled and no one
 			// ever reads this, because requestC has buffer of 1, and we removed it from `r.requests` above,
 			// in case we get more than 1 response for `msg.GetRequestId()`.
-			responseC.(chan RespT) <- msg
+			certsResponseC.(chan RespT) <- msg
+			close(certsResponseC.(chan RespT))
 		}
 	}
 }
@@ -187,37 +190,45 @@ func (r *genericRequester[ReqT, RespT]) RequestCertificates(ctx context.Context)
 		}
 	}
 
+	// create a new channel for this specific request, and store it in the requests map
 	requestID := uuid.NewV4().String()
-	receiveC := make(chan RespT, 1)
-	r.requests.Store(requestID, receiveC)
-	defer r.requests.Delete(requestID)
+	certsResponseC := make(chan RespT, 1)
+	r.requests.Store(requestID, certsResponseC)
+
 	// Always delete this entry when leaving this scope to account for requests that are never responded, to avoid
 	// having entries in `r.requests` that are never removed.
+	defer r.requests.Delete(requestID)
+
 	if err := r.send(ctx, requestID); err != nil {
 		return nil, err
 	}
-	return r.receive(ctx, receiveC)
+	return r.receive(ctx, certsResponseC)
 }
 
+// MsgToCentralC exposes a read channel that contains messages from this component to Central
+func (r *genericRequester[ReqT, RespT]) MsgToCentralC() <-chan *message.ExpiringMessage {
+	return r.msgToCentralC
+}
+
+// send a cert refresh request to Central
 func (r *genericRequester[ReqT, RespT]) send(ctx context.Context, requestID string) error {
-	// Assuming the `message.New` function is generic and can handle different request types.
 	msg := r.messageFactory.newMsgFromSensor(requestID)
 	select {
 	case <-r.stopC.Done():
 		return r.stopC.ErrorWithDefault(ErrCertificateRequesterStopped)
 	case <-ctx.Done():
 		return ctx.Err()
-	case r.sendC <- message.New(msg): // Use a generic `message.New` method for ReqT.
+	case r.msgToCentralC <- message.New(msg):
 		return nil
 	}
 }
 
-func (r *genericRequester[ReqT, RespT]) receive(ctx context.Context, receiveC <-chan RespT) (*Response, error) {
+// receive handles the response to a specific certificate request
+func (r *genericRequester[ReqT, RespT]) receive(ctx context.Context, certsResponseC <-chan RespT) (*Response, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
-	case response := <-receiveC:
-		// Convert RespT to `certificates.Response` here, e.g. with a generic conversion function.
+	case response := <-certsResponseC:
 		return r.responseFactory.convertToResponse(response), nil
 	}
 }
