@@ -51,7 +51,8 @@ func TestConvertTypedServiceCertificateSetToFileMap(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.description, func(t *testing.T) {
 			inputTypedServiceCertificateSet := c.input
-			fileMap := ConvertTypedServiceCertificateSetToFileMap(inputTypedServiceCertificateSet)
+			fileMap, err := ConvertTypedServiceCertificateSetToFileMap(inputTypedServiceCertificateSet)
+			assert.NoError(t, err)
 			assert.Equal(t, c.expected, fileMap)
 			// roundTripTypedServiceCertificateSet := ConvertFileMapToTypedServiceCertificateSet(fileMap)
 			// assert.Equal(t, inputTypedServiceCertificateSet, roundTripTypedServiceCertificateSet)
