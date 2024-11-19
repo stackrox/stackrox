@@ -50,6 +50,9 @@ func LoadFromFile(filePath string) (*CRS, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "reading file %q", filePath)
 	}
+	if len(fileContent) == 0 {
+		return nil, errors.New("CRS file is empty")
+	}
 	return DeserializeSecret(string(fileContent))
 }
 
