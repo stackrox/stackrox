@@ -12,10 +12,11 @@ ENV GOFLAGS=""
 # TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
 # ENV GOTAGS="release"
-ENV GOTAGS="strictfipsruntime"
+# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so
+ENV GOTAGS=strictfipsruntime
+ENV GOEXPERIMENT=strictfipsruntime
 # TODO(ROX-23335): Properly set the build tag
 ENV BUILD_TAG="dev"
-ENV GOEXPERIMENT=strictfipsruntime
 ENV CI=1
 
 COPY . /src
