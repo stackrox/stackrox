@@ -3,99 +3,117 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/enrichment"
-	"github.com/stackrox/rox/central/imageintegration"
+	clusterUtil "github.com/stackrox/rox/central/cluster/util"
+	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/images/integration"
-	"github.com/stackrox/rox/pkg/scanners/types"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
 
-type sbomHandler struct {
-	integration integration.Set
-	enricher    enricher.ImageEnricher
+const (
+	NumberBytes = 100
+)
+
+type sbomRequestBody struct {
+	Cluster   string `json:"cluster"`
+	ImageName string `json:"image_name"`
+	Force     bool   `json:"force"`
 }
 
-type SBOMRequestBody struct {
-	ClusterID string `json:"clusterID"`
-	ImageName string `json:"imageName"`
-	force     bool   `json:"force"`
+type httpHandler struct {
+	integration      integration.Set
+	enricher         enricher.ImageEnricher
+	clusterSACHelper sachelper.ClusterSacHelper
 }
 
-func ImageHandler() http.HandlerFunc {
+var _ http.Handler = (*httpHandler)(nil)
 
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-		var params SBOMRequestBody
-		err := json.NewDecoder(r.Body).Decode(&params)
-		if err != nil {
-			httputil.WriteGRPCStyleError(w, codes.Internal, err)
-			return
-		}
-		bytes, err := getSbom(params, r.Context())
-		if err != nil {
-			httputil.WriteGRPCStyleError(w, codes.Internal, err)
-			return
-		}
+// Handler returns a handler for policy http requests
+func Handler(integration integration.Set, enricher enricher.ImageEnricher, clusterSACHelper sachelper.ClusterSacHelper) http.Handler {
+	return httpHandler{
+		integration:      integration,
+		enricher:         enricher,
+		clusterSACHelper: clusterSACHelper,
+	}
 
-		// Tell the browser this is a download.
-		w.Header().Add("Content-Disposition", fmt.Sprintf(`attachment; filename="values-%s.json"`, "sbom.json"))
-		w.Header().Add("Content-Type", "text/yaml")
-		w.Header().Add("Content-Length", fmt.Sprint(len(bytes)))
-		_, _ = w.Write(bytes)
+}
+func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
+	var params sbomRequestBody
+	const maxSize = NumberBytes * 1024 // (100 KiB is way more than needed for this request, ideally make this configurable)
+
+	lr := io.LimitReader(r.Body, maxSize)
+	err := json.NewDecoder(lr).Decode(&params)
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, err)
+		return
+	}
+	bytes, err := h.getSbom(params, r.Context())
+	if err != nil {
+		httputil.WriteGRPCStyleError(w, codes.Internal, errors.Wrap(err, "decoding json request body"))
+		return
+	}
+
+	// Tell the browser this is a download.
+	w.Header().Add("Content-Disposition", "attachment; sbom.json")
+	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Content-Length", fmt.Sprint(len(bytes)))
+	_, _ = w.Write(bytes)
+	return
 }
 
-func enrichImage(params SBOMRequestBody, ctx context.Context) (*storage.Image, error) {
+func (h httpHandler) enrichImage(params sbomRequestBody, ctx context.Context) (*storage.Image, error) {
 	enrichmentCtx := enricher.EnrichmentContext{
 		FetchOpt:  enricher.UseCachesIfPossible,
 		Delegable: true,
 	}
 
-	if params.force {
+	if params.Force {
 		enrichmentCtx.FetchOpt = enricher.UseImageNamesRefetchCachedValues
 	}
 
-	if params.ClusterID != "" {
-		enrichmentCtx.ClusterID = params.ClusterID
+	if params.Cluster != "" {
+		// The request indicates enrichment should be delegated to a specific cluster.
+		clusterID, err := clusterUtil.GetClusterIDFromNameOrID(ctx, h.clusterSACHelper, params.Cluster, delegateScanPermissions)
+		if err != nil {
+			return nil, err
+		}
+		enrichmentCtx.ClusterID = clusterID
 	}
 
-	img, err := enricher.EnrichImageByName(ctx, enrichment.ImageEnricherSingleton(), enrichmentCtx, params.ImageName)
+	log.Infof("params %s", params)
+
+	img, err := enricher.EnrichImageByName(ctx, h.enricher, enrichmentCtx, params.ImageName)
 	if err != nil {
 		return nil, err
 	}
 	return img, nil
 }
 
-func getSbom(params SBOMRequestBody, ctx context.Context) ([]byte, error) {
+func (h httpHandler) getSbom(params sbomRequestBody, ctx context.Context) ([]byte, error) {
 	//verify scanner v4 is enabled
-	scannerv4Enabled := false
-	scanners := imageintegration.Set().ScannerSet()
-	for _, scanner := range scanners.GetAll() {
-		if scanner.GetScanner().Type() == types.ScannerV4 {
-			scannerv4Enabled = true
-		}
-	}
-	if !scannerv4Enabled {
+	if !features.ScannerV4.Enabled() {
 		return nil, errors.New("Scanner v4 is not enabled. Enabled scanner v4 to get SBOMs")
 	}
 
 	//enrich image checks image metadata cache if fetchopt = UseCachesIfPossible otherwise fetches metdata from registry
 	//enrich image calls get scans on image which creates index report for image if it does not exsist
-	_, err := enrichImage(params, ctx)
-	if err != nil {
-		return nil, err
-	}
+	//_, err := h.enrichImage(params, ctx)
+	//if err != nil {
+	//	return nil, err
+	//}
 	//how to verify enrichimage failed because index report not found
 	//get sbom from matcher
 	//for testing only
