@@ -48,7 +48,7 @@ ENV CGO_ENABLED=1
 # TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
 # ENV GOTAGS="release"
-# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so
+# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
 ENV GOTAGS=strictfipsruntime
 ENV GOEXPERIMENT=strictfipsruntime
 ENV CI=1
