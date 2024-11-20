@@ -79,7 +79,7 @@ describe('Exception Management - Approved False Positives Table', () => {
         approveRequest();
         visitApprovedFalsePositivesTab();
 
-        const requestNameSelector = 'table tr:nth(1) td[data-label="Request name"]';
+        const requestNameSelector = 'table tr:nth(1) td[data-label="Request name"] a';
 
         cy.get(requestNameSelector)
             .invoke('text')
