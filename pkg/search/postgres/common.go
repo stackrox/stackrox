@@ -28,7 +28,7 @@ import (
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/ternary"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -385,7 +385,7 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	if len(p.OrderBys) > 0 {
 		orderByClauses := make([]string, 0, len(p.OrderBys))
 		for _, entry := range p.OrderBys {
-			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s", entry.Field.SelectPath, ternary.String(entry.Descending, "desc", "asc")))
+			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s", entry.Field.SelectPath, pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
 		}
 		paginationSB.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
 	}
