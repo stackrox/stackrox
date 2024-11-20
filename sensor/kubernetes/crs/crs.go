@@ -27,20 +27,15 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	sensorCommon "github.com/stackrox/rox/sensor/common/sensor"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/securedcluster"
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 )
-
-const crsTempDirEnvVarName = "ROX_CRS_TMP_DIR"
 
 var (
 	log                                  = logging.LoggerForModule()
@@ -55,14 +50,15 @@ var (
 
 // EnsureClusterRegistered initiates the CRS based cluster registration flow if
 //
-//  1. no Kubernetes secret named `sensor-tls` exists -- indicating that service-specific
-//     secrets have already been set up using e.g. an init-bundle.
+//  1. no Kubernetes secret named `sensor-tls` exists -- existence of this secret
+//     would indicate that service-specific secrets have already been set up using
+//     e.g. an init-bundle.
 //
 //     and
 //
-//  2. no Kubernetes secret named `tls-sensor` exists -- indicating that service-specific
-//     secrets have already been retrieved via the CRS-flow (or a regular follow-up certificate
-//     rotation).
+//  2. no Kubernetes secret named `tls-sensor` exists -- existence of this secret
+//     would indicate that service-specific secrets have already been retrieved via
+//     the CRS-flow (or a regular follow-up certificate rotation).
 func EnsureClusterRegistered() error {
 	log.Infof("Ensuring Secured Cluster is registered.")
 	clientconn.SetUserAgent(fmt.Sprintf("%s CRS", clientconn.Sensor))
@@ -81,16 +77,23 @@ func EnsureClusterRegistered() error {
 	}
 
 	log.Infof("No sensor service certificate found, initiating CRS-based cluster registration.")
-	err := registerCluster()
-	if err != nil {
+	if err := registerCluster(); err != nil {
 		return errors.Wrap(err, "registering secured cluster")
 	}
 	log.Info("CRS-based cluster registration complete.")
 
 	return nil
-
 }
 
+// registerCluster implements the CRS-based registration flow for secured clusters.
+// It
+//   - retrieves the CRS secret
+//   - unpacks the contained mTLS certificate+key pair for the REGISTRANT_SERVICE identity from the
+//     CRS and stores it in /run/secrets/stackrox.io/certs (which must be a memory-backed
+//     emptyDir) so that they will be picked up automatically for our mTLS authentication towards Central.
+//   - connects to Central and sends a sensorHello message for this new secured cluster
+//   - expects to receive a centralHello response containing newly issued service certificates+keys
+//     which are then stored as Kubernetes secrets named `tls-<service slug name>`.
 func registerCluster() error {
 	ctx := context.Background()
 
@@ -101,41 +104,33 @@ func registerCluster() error {
 		return errors.Wrap(err, "loading CRS")
 	}
 
-	// Store certificates and key in crs-tmp volume, so that we can reference them using
-	// the MTLS environment variables and hook them directly into the existing MTLS authentication.
-	err = useRegistrationSecret(crs)
+	err = temporarilyStoreRegistrantSecret(crs)
 	if err != nil {
-		return errors.Wrap(err, "preparing registration secret for MTLS authentication")
+		return errors.Wrap(err, "preparing registration secret for mTLS authentication")
 	}
 
-	// New Kubernetes client.
+	// Connect to Central.
+	centralConnection, err := openCentralConnection(crs)
+	if err != nil {
+		return errors.Wrap(err, "opening connection to Central")
+	}
+
+	// Create Kubernetes client.
 	config, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "obtaining in-cluster Kubernetes config")
 	}
 	k8sClient := k8sutil.MustCreateK8sClient(config)
 
-	sensorHello, err := prepareSensorHelloMessage(k8sClient)
-	if err != nil {
-		return errors.Wrap(err, "preparing SensorHello message")
-	}
-
-	centralConnection, err := openCentralConnection(ctx, crs)
-	if err != nil {
-		return errors.Wrap(err, "opening connection to Central")
-	}
-
-	centralHello, err := centralHandshake(ctx, crs, sensorHello, centralConnection)
+	// Execute handshake with central.
+	centralHello, err := centralHandshake(ctx, k8sClient, centralConnection)
 	if err != nil {
 		return errors.Wrap(err, "handshake with central")
 	}
 
-	// Persisting freshly retrieved service certificates.
-	certsFileMap := centralHello.GetCertBundle()
-	for fileName := range certsFileMap {
-		log.Infof("Received certificate from Central named %s", fileName)
-	}
-	err = persistCertificates(ctx, certsFileMap, k8sClient)
+	// Store certificates+keys contained in Central's centralHello response as
+	// Kubernetes secrets named `tls-<service name>`.
+	err = persistCertificates(ctx, centralHello, k8sClient)
 	if err != nil {
 		return errors.Wrap(err, "persisting certificates")
 	}
@@ -143,17 +138,11 @@ func registerCluster() error {
 	return nil
 }
 
-func useRegistrationSecret(crs *crs.CRS) error {
-	crsTmpDir := os.Getenv(crsTempDirEnvVarName)
-	if crsTmpDir == "" {
-		log.Errorf("environment variable %s must point to a directory suitable for writing sensitive data to", crsTempDirEnvVarName)
-		return errors.Errorf("environment variable %s unset", crsTempDirEnvVarName)
-	}
-
+// temporarilyStoreRegistrantSecret extracts the REGISTRANT_SERVICE certificate+key pair from the CRS
+// and stores it alongside the CA certificate in the temporary storage.
+func temporarilyStoreRegistrantSecret(crs *crs.CRS) error {
 	// Extract (first) CA certificate from the CRS.
 	var caCert string
-	var err error
-
 	if len(crs.CAs) > 0 {
 		caCert = crs.CAs[0]
 	}
@@ -161,31 +150,22 @@ func useRegistrationSecret(crs *crs.CRS) error {
 		return errors.New("malformed Cluster Registration Secret (missing CA certificate)")
 	}
 
-	for fileName, spec := range map[string]struct {
-		setting env.Setting
-		content string
-	}{
-		"ca.pem":   {setting: mtls.CAFilePathSetting, content: caCert},
-		"cert.pem": {setting: mtls.CertFilePathSetting, content: crs.Cert},
-		"key.pem":  {setting: mtls.KeyFilePathSetting, content: crs.Key},
+	for fileName, content := range map[string]string{
+		"ca.pem":   caCert,
+		"cert.pem": crs.Cert,
+		"key.pem":  crs.Key,
 	} {
-		filePath := filepath.Join(crsTmpDir, fileName)
-		envVar := spec.setting.EnvVar()
-		err = os.WriteFile(filePath, []byte(spec.content), 0600)
-		if err != nil {
+		filePath := filepath.Join(mtls.CertsPrefix, fileName)
+		if err := os.WriteFile(filePath, []byte(content), 0600); err != nil {
 			return errors.Wrapf(err, "writing mTLS material to file %q", filePath)
 		}
-		err = os.Setenv(envVar, filePath)
-		if err != nil {
-			return errors.Wrapf(err, "setting environment variable %s", envVar)
-		}
-		log.Infof("Successfully wrote file %s", filePath)
+		log.Infof("Successfully wrote file %s.", filePath)
 	}
 
 	return nil
 }
 
-func openCentralConnection(ctx context.Context, crs *crs.CRS) (*grpcUtil.LazyClientConn, error) {
+func openCentralConnection(crs *crs.CRS) (*grpcUtil.LazyClientConn, error) {
 	// Extract registrator client certificate.
 	clientCert, err := tls.X509KeyPair([]byte(crs.Cert), []byte(crs.Key))
 	if err != nil {
@@ -206,22 +186,26 @@ func openCentralConnection(ctx context.Context, crs *crs.CRS) (*grpcUtil.LazyCli
 
 	log.Infof("Connecting to Central server %s", centralEndpoint)
 
+	// Wait for connection to be ready.
 	okSig := centralConnFactory.OkSignal()
 	errSig := centralConnFactory.StopSignal()
 	select {
 	case <-errSig.Done():
-		log.Errorf("failed to get a connection from Central connection factory: %v", errSig.Err())
+		log.Errorf("failed to get a connection from Central connection factory: %v.", errSig.Err())
 		return nil, errors.Wrap(err, "waiting for Central connection from factory")
 	case <-okSig.Done():
-		log.Info("Central connection ready")
 	}
 
+	log.Info("Central connection ready.")
 	return centralConnection, nil
 }
 
-// Hello Handshake with Central.
-func centralHandshake(ctx context.Context, crs *crs.CRS, sensorHello *central.SensorHello, centralConnection *grpcUtil.LazyClientConn) (*central.CentralHello, error) {
-	var err error
+// centralHandshake performs the hello-handshake with Central and returns Central's CentralHello reponse on success.
+func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centralConnection *grpcUtil.LazyClientConn) (*central.CentralHello, error) {
+	sensorHello, err := prepareSensorHelloMessage(k8sClient)
+	if err != nil {
+		return nil, errors.Wrap(err, "preparing SensorHello message")
+	}
 
 	ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.SensorHelloMetadataKey, "true")
 	ctx, err = centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
@@ -230,14 +214,14 @@ func centralHandshake(ctx context.Context, crs *crs.CRS, sensorHello *central.Se
 	}
 
 	client := central.NewSensorServiceClient(centralConnection)
-	stream, err := communicateWithAutoSensedEncoding(ctx, client)
+	stream, err := sensorCommon.CommunicateWithAutoSensedEncoding(ctx, client)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating central stream with auto-sensed encoding")
+		return nil, errors.Wrap(err, "creating bidirectional stream with auto-sensed encoding")
 	}
 
 	rawHdr, err := stream.Header()
 	if err != nil {
-		return nil, errors.Wrap(err, "receiving headers from central")
+		return nil, errors.Wrap(err, "receiving headers from Central")
 	}
 
 	hdr := metautils.MD(rawHdr)
@@ -249,22 +233,20 @@ func centralHandshake(ctx context.Context, crs *crs.CRS, sensorHello *central.Se
 	if err != nil {
 		return nil, errors.Wrap(err, "sending SensorHello message to Central")
 	}
-	log.Debug("Sent SensorHello to Central")
+	log.Debug("Sent SensorHello to Central.")
 
 	firstMsg, err := stream.Recv()
 	if err != nil {
-		return nil, errors.Wrap(err, "receiving first message from central")
+		return nil, errors.Wrap(err, "receiving first message from Central")
 	}
-	log.Debug("Received Central response")
+	log.Debug("Received Central response.")
 
 	centralHello := firstMsg.GetHello()
 	if centralHello == nil {
 		return nil, errors.Errorf("first message received from central was not CentralHello but of type %T", firstMsg.GetMsg())
 	}
 
-	clusterID := centralHello.GetClusterId()
-	log.Infof("Received ClusterID %s", clusterID)
-	log.Infof("Received CentralID %s", centralHello.GetCentralId())
+	log.Infof("Received CentralHello message from Central %s for Cluster %s.", centralHello.GetCentralId(), centralHello.GetClusterId())
 
 	centralCaps := set.NewFrozenStringSet(centralHello.GetCapabilities()...)
 	if !centralCaps.Contains(centralsensor.ClusterRegistrationSecretSupported) {
@@ -274,7 +256,13 @@ func centralHandshake(ctx context.Context, crs *crs.CRS, sensorHello *central.Se
 	return centralHello, nil
 }
 
-func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8sClient kubernetes.Interface) error {
+// persistCertificates persists the certificates and keys retrieved from Central during the cluster-registration handshake.
+func persistCertificates(ctx context.Context, centralHello *central.CentralHello, k8sClient kubernetes.Interface) error {
+	certsFileMap := centralHello.GetCertBundle()
+	for fileName := range certsFileMap {
+		log.Infof("Received certificate from Central named %s.", fileName)
+	}
+
 	podName := os.Getenv("POD_NAME")
 	sensorNamespace := pods.GetPodNamespace()
 	log.Infof("Persisting retrieved certificates as Kubernetes Secrets in namespace %q.", sensorNamespace)
@@ -295,59 +283,24 @@ func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8
 	}
 
 	for _, persistedCert := range persistedCertificates {
-		log.Infof("Persisted certificate and key for service %s", persistedCert.ServiceType.String())
+		log.Infof("Persisted certificate and key for service %s.", persistedCert.ServiceType.String())
 	}
 	return nil
 }
 
+// prepareSensorHelloMessage assembles the SensorHello message to be sent to Central for the hello-handshake.
 func prepareSensorHelloMessage(k8sClient kubernetes.Interface) (*central.SensorHello, error) {
-	// Prepare Hello message.
 	deploymentIdentification := sensor.FetchDeploymentIdentification(context.Background(), k8sClient)
-	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+	log.Infof("Sensor deployment identification for this secured cluster: %s.", protoutils.NewWrapper(deploymentIdentification))
 	helmManagedConfigInit, err := helm.GetHelmManagedConfig(storage.ServiceType_REGISTRANT_SERVICE)
 	if err != nil {
 		return nil, errors.Wrap(err, "assembling Helm configuration")
 	}
 
-	sensorHello := &central.SensorHello{
+	return &central.SensorHello{
 		SensorVersion:            version.GetMainVersion(),
 		PolicyVersion:            policyversion.CurrentVersion().String(),
 		DeploymentIdentification: deploymentIdentification,
-	}
-	sensorHello.HelmManagedConfigInit = helmManagedConfigInit
-	return sensorHello, nil
-}
-
-func communicateWithAutoSensedEncoding(ctx context.Context, client central.SensorServiceClient) (central.SensorService_CommunicateClient, error) {
-	opts := []grpc.CallOption{grpc.UseCompressor(gzip.Name)}
-
-	for {
-		stream, err := client.Communicate(ctx, opts...)
-		if err != nil {
-			if isUnimplemented(err) && len(opts) > 0 {
-				opts = nil
-				continue
-			}
-			return nil, errors.Wrap(err, "opening stream")
-		}
-
-		_, err = stream.Header()
-		if err != nil {
-			if isUnimplemented(err) && len(opts) > 0 {
-				opts = nil
-				continue
-			}
-			return nil, errors.Wrap(err, "receiving initial metadata")
-		}
-
-		return stream, nil
-	}
-}
-
-func isUnimplemented(err error) bool {
-	spb, ok := status.FromError(err)
-	if spb == nil || !ok {
-		return false
-	}
-	return spb.Code() == codes.Unimplemented
+		HelmManagedConfigInit:    helmManagedConfigInit,
+	}, nil
 }
