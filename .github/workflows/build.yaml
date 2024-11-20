@@ -723,12 +723,14 @@ jobs:
           roxctl image scan --retries=10 --retry-delay=15 --force --output=sarif \
             --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
             > results.sarif
+          cat results.sarif
 
-      - name: Upload roxctl scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          category: ${{ matrix.image }}
-          sarif_file: results.sarif
+      # TODO: re-enable roxctl scan results upload once quota issue has been resolved
+      # - name: Upload roxctl scan results to GitHub Security tab
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     category: ${{ matrix.image }}
+      #     sarif_file: results.sarif
 
   slack-on-build-failure:
     env:
