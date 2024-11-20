@@ -56,7 +56,7 @@ func LoadFromFile(filePath string) (*CRS, error) {
 	return DeserializeSecret(string(fileContent))
 }
 
-// Load loads an opaque CRS according to environment settings.
+// Load loads an opaque CRS using environment settings given by mtls.CrsFilePathSetting.
 func Load() (*CRS, error) {
 	return LoadFromFile(mtls.CrsFilePath())
 }
