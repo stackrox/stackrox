@@ -455,8 +455,10 @@ export function changeObservedCveViewingMode(modeText) {
 export function interactAndWaitForCveList(callback) {
     const cveListOpname = 'getImageCVEList';
     const cveListRouteMatcherMap = getRouteMatcherMapForGraphQL([cveListOpname]);
-    cveListRouteMatcherMap[cveListOpname].times = 1;
-    return interactAndWaitForResponses(callback, cveListRouteMatcherMap);
+    const staticResponseMap = {
+        [cveListOpname]: { fixture: 'vulnerabilities/workloadCves/getImageCVEList.json' },
+    };
+    return interactAndWaitForResponses(callback, cveListRouteMatcherMap, staticResponseMap);
 }
 
 /**
