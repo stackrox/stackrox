@@ -67,20 +67,21 @@ func EnsureClusterRegistered() error {
 	log.Infof("Ensuring Secured Cluster is registered.")
 	clientconn.SetUserAgent(fmt.Sprintf("%s CRS", clientconn.Sensor))
 
-	// Check if service certificates are missing.
-	_, err := mtls.LeafCertificateFromFile()
-	if err == nil {
-		// Standard certificates already exist.
-		log.Infof("Service certificates found, skipping CRS-based cluster registration.")
+	// Check if legacy sensor service certificate, e.g. created via init-bundle, exists.
+	if legacySensorServiceCert := os.Getenv(crs.LegacySensorServiceCertEnvName); legacySensorServiceCert != "" {
+		log.Infof("Legacy sensor service certificate available, skipping CRS-based cluster registration.")
 		return nil
 	}
-	if !os.IsNotExist(err) {
-		log.Errorf("Failed to check for service certificate existence: %v", err)
-		return errors.Wrap(err, "checking for existing service certificates")
+
+	// Check if modern sensor service certificate, e.g. created by CRS-based cluster registration or
+	// refreshed by periodic cert rotation, exists.
+	if sensorServiceCert := os.Getenv(crs.SensorServiceCertEnvName); sensorServiceCert != "" {
+		log.Infof("Sensor service certificate available, skipping CRS-based cluster registration.")
+		return nil
 	}
 
-	log.Infof("Service certificates not found, attempting CRS-based cluster registration.")
-	err = registerCluster()
+	log.Infof("No sensor service certificate found, initiating CRS-based cluster registration.")
+	err := registerCluster()
 	if err != nil {
 		return errors.Wrap(err, "registering secured cluster")
 	}
