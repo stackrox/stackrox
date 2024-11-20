@@ -53,13 +53,21 @@ var (
 	}
 )
 
-// EnsureClusterRegistered initiates the CRS based cluster registration flow in case a
-// CRS is found instead of regular service certificate.
+// EnsureClusterRegistered initiates the CRS based cluster registration flow if
+//
+//  1. no Kubernetes secret named `sensor-tls` exists -- indicating that service-specific
+//     secrets have already been set up using e.g. an init-bundle.
+//
+//     and
+//
+//  2. no Kubernetes secret named `tls-sensor` exists -- indicating that service-specific
+//     secrets have already been retrieved via the CRS-flow (or a regular follow-up certificate
+//     rotation).
 func EnsureClusterRegistered() error {
 	log.Infof("Ensuring Secured Cluster is registered.")
-	clientconn.SetUserAgent(fmt.Sprintf("%s CSR", clientconn.Sensor))
+	clientconn.SetUserAgent(fmt.Sprintf("%s CRS", clientconn.Sensor))
 
-	// Check if we service certificates are missing.
+	// Check if service certificates are missing.
 	_, err := mtls.LeafCertificateFromFile()
 	if err == nil {
 		// Standard certificates already exist.
@@ -92,41 +100,11 @@ func registerCluster() error {
 		return errors.Wrap(err, "loading CRS")
 	}
 
-	// Extract registrator client certificate.
-	clientCert, err := tls.X509KeyPair([]byte(crs.Cert), []byte(crs.Key))
-	if err != nil {
-		return errors.Wrap(err, "parsing CRS certificate")
-	}
-
 	// Store certificates and key in crs-tmp volume, so that we can reference them using
 	// the MTLS environment variables and hook them directly into the existing MTLS authentication.
 	err = useRegistrationSecret(crs)
 	if err != nil {
 		return errors.Wrap(err, "preparing registration secret for MTLS authentication")
-	}
-
-	// Create central client.
-	centralEndpoint := env.CentralEndpoint.Setting()
-	centralClient, err := centralclient.NewClientWithCert(centralEndpoint, &clientCert)
-	if err != nil {
-		return errors.Wrapf(err, "initializing Central client for endpoint %s", env.CentralEndpoint.Setting())
-	}
-
-	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
-	centralConnection := grpcUtil.NewLazyClientConn()
-	certLoader := centralclient.RemoteCertLoader(centralClient)
-	go centralConnFactory.SetCentralConnectionWithRetries(centralConnection, certLoader)
-
-	log.Infof("Connecting to Central server %s", centralEndpoint)
-
-	okSig := centralConnFactory.OkSignal()
-	errSig := centralConnFactory.StopSignal()
-	select {
-	case <-errSig.Done():
-		log.Errorf("failed to get a connection from Central connection factory: %v", errSig.Err())
-		return errors.Wrap(err, "waiting for Central connection from factory")
-	case <-okSig.Done():
-		log.Info("Central connection ready")
 	}
 
 	// New Kubernetes client.
@@ -136,68 +114,19 @@ func registerCluster() error {
 	}
 	k8sClient := k8sutil.MustCreateK8sClient(config)
 
-	// Prepare Hello message.
-	deploymentIdentification := sensor.FetchDeploymentIdentification(context.Background(), k8sClient)
-	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
-	helmManagedConfigInit, err := helm.GetHelmManagedConfig(storage.ServiceType_REGISTRANT_SERVICE)
+	sensorHello, err := prepareSensorHelloMessage(k8sClient)
 	if err != nil {
-		return errors.Wrap(err, "assembling Helm configuration")
+		return errors.Wrap(err, "preparing SensorHello message")
 	}
 
-	sensorHello := &central.SensorHello{
-		SensorVersion:            version.GetMainVersion(),
-		PolicyVersion:            policyversion.CurrentVersion().String(),
-		DeploymentIdentification: deploymentIdentification,
-	}
-	sensorHello.HelmManagedConfigInit = helmManagedConfigInit
-
-	// Prepare communication channel towards Central.
-	ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.SensorHelloMetadataKey, "true")
-	ctx, err = centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
+	centralConnection, err := openCentralConnection(ctx, crs)
 	if err != nil {
-		return errors.Wrap(err, "appending SensorHello to outgoing metadata")
+		return errors.Wrap(err, "opening connection to Central")
 	}
-	client := central.NewSensorServiceClient(centralConnection)
-	stream, err := communicateWithAutoSensedEncoding(ctx, client)
+
+	centralHello, err := centralHandshake(ctx, crs, sensorHello, centralConnection)
 	if err != nil {
-		return errors.Wrap(err, "creating central stream with auto-sensed encoding")
-	}
-
-	rawHdr, err := stream.Header()
-	if err != nil {
-		return errors.Wrap(err, "receiving headers from central")
-	}
-
-	hdr := metautils.MD(rawHdr)
-	if hdr.Get(centralsensor.SensorHelloMetadataKey) != "true" {
-		return errors.New("central headers is missing SensorHello metadata key")
-	}
-
-	// Hello Handshake with Central.
-	err = stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: sensorHello}})
-	if err != nil {
-		return errors.Wrap(err, "sending SensorHello message to Central")
-	}
-	log.Debug("Sent SensorHello to Central")
-
-	firstMsg, err := stream.Recv()
-	if err != nil {
-		return errors.Wrap(err, "receiving first message from central")
-	}
-	log.Debug("Received Central response")
-
-	centralHello := firstMsg.GetHello()
-	if centralHello == nil {
-		return errors.Errorf("first message received from central was not CentralHello but of type %T", firstMsg.GetMsg())
-	}
-
-	clusterID := centralHello.GetClusterId()
-	log.Infof("Received ClusterID %s", clusterID)
-	log.Infof("Received CentralID %s", centralHello.GetCentralId())
-
-	centralCaps := set.NewFrozenStringSet(centralHello.GetCapabilities()...)
-	if !centralCaps.Contains(centralsensor.ClusterRegistrationSecretSupported) {
-		return errors.New("central does not support CRS-based cluster registration")
+		return errors.Wrap(err, "handshake with central")
 	}
 
 	// Persisting freshly retrieved service certificates.
@@ -255,6 +184,95 @@ func useRegistrationSecret(crs *crs.CRS) error {
 	return nil
 }
 
+func openCentralConnection(ctx context.Context, crs *crs.CRS) (*grpcUtil.LazyClientConn, error) {
+	// Extract registrator client certificate.
+	clientCert, err := tls.X509KeyPair([]byte(crs.Cert), []byte(crs.Key))
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing CRS certificate")
+	}
+
+	// Create central client.
+	centralEndpoint := env.CentralEndpoint.Setting()
+	centralClient, err := centralclient.NewClientWithCert(centralEndpoint, &clientCert)
+	if err != nil {
+		return nil, errors.Wrapf(err, "initializing Central client for endpoint %s", env.CentralEndpoint.Setting())
+	}
+
+	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
+	centralConnection := grpcUtil.NewLazyClientConn()
+	certLoader := centralclient.RemoteCertLoader(centralClient)
+	go centralConnFactory.SetCentralConnectionWithRetries(centralConnection, certLoader)
+
+	log.Infof("Connecting to Central server %s", centralEndpoint)
+
+	okSig := centralConnFactory.OkSignal()
+	errSig := centralConnFactory.StopSignal()
+	select {
+	case <-errSig.Done():
+		log.Errorf("failed to get a connection from Central connection factory: %v", errSig.Err())
+		return nil, errors.Wrap(err, "waiting for Central connection from factory")
+	case <-okSig.Done():
+		log.Info("Central connection ready")
+	}
+
+	return centralConnection, nil
+}
+
+// Hello Handshake with Central.
+func centralHandshake(ctx context.Context, crs *crs.CRS, sensorHello *central.SensorHello, centralConnection *grpcUtil.LazyClientConn) (*central.CentralHello, error) {
+	var err error
+
+	ctx = metadata.AppendToOutgoingContext(ctx, centralsensor.SensorHelloMetadataKey, "true")
+	ctx, err = centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
+	if err != nil {
+		return nil, errors.Wrap(err, "appending SensorHello info to outgoing metadata")
+	}
+
+	client := central.NewSensorServiceClient(centralConnection)
+	stream, err := communicateWithAutoSensedEncoding(ctx, client)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating central stream with auto-sensed encoding")
+	}
+
+	rawHdr, err := stream.Header()
+	if err != nil {
+		return nil, errors.Wrap(err, "receiving headers from central")
+	}
+
+	hdr := metautils.MD(rawHdr)
+	if hdr.Get(centralsensor.SensorHelloMetadataKey) != "true" {
+		return nil, errors.New("central headers is missing SensorHello metadata key")
+	}
+
+	err = stream.Send(&central.MsgFromSensor{Msg: &central.MsgFromSensor_Hello{Hello: sensorHello}})
+	if err != nil {
+		return nil, errors.Wrap(err, "sending SensorHello message to Central")
+	}
+	log.Debug("Sent SensorHello to Central")
+
+	firstMsg, err := stream.Recv()
+	if err != nil {
+		return nil, errors.Wrap(err, "receiving first message from central")
+	}
+	log.Debug("Received Central response")
+
+	centralHello := firstMsg.GetHello()
+	if centralHello == nil {
+		return nil, errors.Errorf("first message received from central was not CentralHello but of type %T", firstMsg.GetMsg())
+	}
+
+	clusterID := centralHello.GetClusterId()
+	log.Infof("Received ClusterID %s", clusterID)
+	log.Infof("Received CentralID %s", centralHello.GetCentralId())
+
+	centralCaps := set.NewFrozenStringSet(centralHello.GetCapabilities()...)
+	if !centralCaps.Contains(centralsensor.ClusterRegistrationSecretSupported) {
+		return nil, errors.New("central does not support CRS-based cluster registration")
+	}
+
+	return centralHello, nil
+}
+
 func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8sClient kubernetes.Interface) error {
 	podName := os.Getenv("POD_NAME")
 	sensorNamespace := pods.GetPodNamespace()
@@ -279,6 +297,24 @@ func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8
 		log.Infof("Persisted certificate and key for service %s", persistedCert.ServiceType.String())
 	}
 	return nil
+}
+
+func prepareSensorHelloMessage(k8sClient kubernetes.Interface) (*central.SensorHello, error) {
+	// Prepare Hello message.
+	deploymentIdentification := sensor.FetchDeploymentIdentification(context.Background(), k8sClient)
+	log.Infof("Determined deployment identification: %s", protoutils.NewWrapper(deploymentIdentification))
+	helmManagedConfigInit, err := helm.GetHelmManagedConfig(storage.ServiceType_REGISTRANT_SERVICE)
+	if err != nil {
+		return nil, errors.Wrap(err, "assembling Helm configuration")
+	}
+
+	sensorHello := &central.SensorHello{
+		SensorVersion:            version.GetMainVersion(),
+		PolicyVersion:            policyversion.CurrentVersion().String(),
+		DeploymentIdentification: deploymentIdentification,
+	}
+	sensorHello.HelmManagedConfigInit = helmManagedConfigInit
+	return sensorHello, nil
 }
 
 func communicateWithAutoSensedEncoding(ctx context.Context, client central.SensorServiceClient) (central.SensorService_CommunicateClient, error) {
