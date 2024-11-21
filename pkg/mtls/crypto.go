@@ -49,8 +49,6 @@ const (
 	defaultCertFilePath = CertsPrefix + ServiceCertFileName
 	// defaultKeyFilePath is where the key is stored.
 	defaultKeyFilePath = CertsPrefix + ServiceKeyFileName
-	// defaultCRSFilePath is where the Cluster Registration Secret is stored.
-	defaultCRSFilePath = "/run/secrets/stackrox.io/crs/crs"
 
 	// To account for clock skew, set certificates to be valid some time in the past.
 	beforeGracePeriod = 1 * time.Hour
