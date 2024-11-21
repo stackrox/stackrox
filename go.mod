@@ -5,7 +5,7 @@ go 1.22.5
 require (
 	cloud.google.com/go/artifactregistry v1.15.1
 	cloud.google.com/go/compute/metadata v0.5.2
-	cloud.google.com/go/containeranalysis v0.13.1
+	cloud.google.com/go/containeranalysis v0.13.2
 	cloud.google.com/go/securitycenter v1.35.1
 	cloud.google.com/go/storage v1.47.0
 	github.com/Azure/azure-sdk-for-go-extensions v0.1.8
