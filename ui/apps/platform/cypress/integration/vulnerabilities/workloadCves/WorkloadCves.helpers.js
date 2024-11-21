@@ -227,7 +227,10 @@ export function selectSingleCveForException(exceptionType) {
 
     return cy.get(selectors.firstTableRow).then(($row) => {
         const cveName = $row.find('td[data-label="CVE"]').text();
-        cy.wrap($row).find(selectors.tableRowMenuToggle).click();
+        cy.wrap($row).then(($rowElement) => {
+            const menuToggle = $rowElement.find(selectors.tableRowMenuToggle);
+            cy.wrap(menuToggle).click();
+        });
         cy.get(selectors.menuOption(menuOption)).click();
 
         cy.get('button:contains("CVE selections")').click();
