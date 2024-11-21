@@ -1,6 +1,6 @@
 hba_file = '/etc/stackrox.d/config/pg_hba.conf'
 listen_addresses = '*'
-max_connections = "{{ ._rox.central.db.config.maxConnections }}"
+max_connections = {{ ._rox.central.db.config.maxConnections }}
 password_encryption = scram-sha-256
 
 ssl = on
@@ -8,15 +8,15 @@ ssl_ca_file = '/run/secrets/stackrox.io/certs/root.crt'
 ssl_cert_file = '/run/secrets/stackrox.io/certs/server.crt'
 ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
 
-shared_buffers = "{{ ._rox.central.db.config.sharedBuffers }}"
-work_mem = "{{ ._rox.central.db.config.workMem }}"
-hash_mem_multiplier = "{{ ._rox.central.db.config.hashMemMultiplier }}"
-maintenance_work_mem = "{{ ._rox.central.db.config.maintenanceWorkMem }}"
-effective_cache_size = "{{ ._rox.central.db.config.effectiveCacheSize }}"
+shared_buffers = {{ ._rox.central.db.config.sharedBuffers }}
+work_mem = {{ ._rox.central.db.config.workMem }}
+hash_mem_multiplier = {{ ._rox.central.db.config.hashMemMultiplier }}
+maintenance_work_mem = {{ ._rox.central.db.config.maintenanceWorkMem }}
+effective_cache_size = {{ ._rox.central.db.config.effectiveCacheSize }}
 
 dynamic_shared_memory_type = posix
-max_wal_size = "{{ ._rox.central.db.config.maxWalSize }}
-min_wal_size = "{{ ._rox.central.db.config.minWalSize }}
+max_wal_size = {{ ._rox.central.db.config.maxWalSize }}
+min_wal_size = {{ ._rox.central.db.config.minWalSize }}
 
 log_timezone = 'Etc/UTC'
 datestyle = 'iso, mdy'
