@@ -67,7 +67,7 @@ func Test_withRotatingCore(t *testing.T) {
 	core := withRotatingCore(&cfg)
 
 	logger, err := cfg.Build(zap.WrapCore(core))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	logger.Info("begin")
 	for i := 0; i < 10000; i++ {
 		logger.Info("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
