@@ -28,10 +28,12 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLPagination from 'hooks/useURLPagination';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
+import useHasGenerateSBOMAbility from '../../hooks/useHasGenerateSBOMAbility';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import { detailsTabValues } from '../../types';
@@ -42,8 +44,6 @@ import ImageDetailBadges, {
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
-import useHasGenerateSBOMAbility from 'Containers/Vulnerabilities/hooks/useHasGenerateSBOMAbility';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const workloadCveOverviewImagePath = getOverviewPagePath('Workload', {
     vulnerabilityState: 'OBSERVED',
