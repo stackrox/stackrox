@@ -36,6 +36,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -346,8 +347,8 @@ func withRotatingCore(lc *zap.Config) func(c zapcore.Core) zapcore.Core {
 		default:
 			writer = zapcore.AddSync(&lumberjack.Logger{
 				Filename:   path,
-				MaxSize:    20, // megabytes
-				MaxBackups: 3,
+				MaxSize:    env.LoggingMaxSizeMB.IntegerSetting(),
+				MaxBackups: env.LoggingMaxBackups.IntegerSetting(),
 			})
 		}
 		var encoder zapcore.Encoder
