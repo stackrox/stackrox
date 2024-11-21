@@ -12,6 +12,7 @@ import {
     exportAndWaitForNetworkPolicyYaml,
     interactAndWaitForNetworkPoliciesResponse,
     interactAndWaitForSortedViolationsResponses,
+    selectFilteredWorkflowView,
     visitViolationFromTableWithFixture,
     visitViolationWithFixture,
     visitViolations,
@@ -252,5 +253,50 @@ describe('Violations', () => {
         cy.get(tdSelector).then((items) => {
             assertSortedItems(items, callbackForPairOfAscendingPolicySeverityValuesFromElements);
         });
+    });
+
+    it('should show an active violation in the details page', () => {
+        visitViolations();
+
+        // filter to show the "Full view" of violations
+        selectFilteredWorkflowView('Full view');
+
+        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
+        cy.wait('@getViolations');
+
+        // go to the details page
+        cy.get('#ViolationsTable table tr:nth(1) td[data-label="Policy"] a').click();
+
+        // check if the "Violation state" is "Active"
+        cy.get('ul[aria-label="Violation state and resolution"] li:eq(0)').should(
+            'have.text',
+            'State: Active'
+        );
+    });
+
+    it('should show a resolved violation in the details page', () => {
+        visitViolations();
+
+        // view "Resolved" violations
+        cy.get('button[role="tab"]:contains("Resolved")').click();
+
+        // filter to show the "Full view" of violations
+        selectFilteredWorkflowView('Full view');
+
+        cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
+        cy.wait('@getViolations');
+
+        // go to the details page
+        cy.get('#ViolationsTable table tr:nth(1) td[data-label="Policy"] a').click();
+
+        // check if the "Violation state" is "Resolved" and has a "Resolved on" label chip
+        cy.get('ul[aria-label="Violation state and resolution"] li:eq(0)').should(
+            'have.text',
+            'State: Resolved'
+        );
+        cy.get('ul[aria-label="Violation state and resolution"] li:eq(1)').should(
+            'contain.text',
+            'Resolved on:'
+        );
     });
 });
