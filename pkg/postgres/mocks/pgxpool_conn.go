@@ -22,6 +22,7 @@ import (
 type MockPgxPoolConn struct {
 	ctrl     *gomock.Controller
 	recorder *MockPgxPoolConnMockRecorder
+	isgomock struct{}
 }
 
 // MockPgxPoolConnMockRecorder is the mock recorder for MockPgxPoolConn.

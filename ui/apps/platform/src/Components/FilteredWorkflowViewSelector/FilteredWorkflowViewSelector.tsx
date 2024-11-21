@@ -53,7 +53,7 @@ function FilteredWorkflowViewSelector({
             )}
             shouldFocusToggleOnSelect
         >
-            <SelectList style={{ width }}>
+            <SelectList style={{ width }} aria-label="Filtered workflow select options">
                 <SelectOption
                     value="Applications view"
                     description="Display findings for application workloads."

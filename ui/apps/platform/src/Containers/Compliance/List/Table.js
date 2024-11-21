@@ -78,7 +78,6 @@ function formatResourceData(data, resourceType) {
         const curEntity = aggregationKeys[entityKeyIndex].id;
         const curStandard = aggregationKeys[standardKeyIndex].id;
         const entity = keys[entityKeyIndex];
-        // eslint-disable-next-line no-underscore-dangle
         if (entity.__typename === '') {
             return;
         }

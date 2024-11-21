@@ -76,7 +76,6 @@ function UserMenu({ logout, setInviteModalVisibility, userData }) {
     ];
 
     const inviteMenuItem = (
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         <DropdownItem key="open-invite" onClick={onClickInviteUsers}>
             Invite users
         </DropdownItem>

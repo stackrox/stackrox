@@ -26,6 +26,7 @@ message CollectorConfig {
 
   message Networking {
     ExternalIPs external_ips = 1;
+    int64 per_container_rate_limit = 2;
   }
 
   Networking networking = 1;

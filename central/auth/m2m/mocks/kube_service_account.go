@@ -19,6 +19,7 @@ import (
 type MockServiceAccountIssuerFetcher struct {
 	ctrl     *gomock.Controller
 	recorder *MockServiceAccountIssuerFetcherMockRecorder
+	isgomock struct{}
 }
 
 // MockServiceAccountIssuerFetcherMockRecorder is the mock recorder for MockServiceAccountIssuerFetcher.
@@ -57,6 +58,7 @@ func (mr *MockServiceAccountIssuerFetcherMockRecorder) GetServiceAccountIssuer()
 type MockserviceAccountTokenReader struct {
 	ctrl     *gomock.Controller
 	recorder *MockserviceAccountTokenReaderMockRecorder
+	isgomock struct{}
 }
 
 // MockserviceAccountTokenReaderMockRecorder is the mock recorder for MockserviceAccountTokenReader.

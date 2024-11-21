@@ -21,6 +21,7 @@ import (
 type MockMatcherMetadataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockMatcherMetadataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockMatcherMetadataStoreMockRecorder is the mock recorder for MockMatcherMetadataStore.

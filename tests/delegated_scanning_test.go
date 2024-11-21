@@ -21,8 +21,8 @@ import (
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/retry"
-	"github.com/stackrox/rox/pkg/ternary"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stretchr/testify/assert"
@@ -457,7 +457,7 @@ func (ts *DelegatedScanningSuite) TestAdHocScans() {
 	withClusterFlag := true
 
 	scanImgReq := func(imageStr string, withClusterFlag bool) *v1.ScanImageRequest {
-		cluster := ternary.String(withClusterFlag, ts.remoteCluster.GetId(), "")
+		cluster := pkgUtils.IfThenElse(withClusterFlag, ts.remoteCluster.GetId(), "")
 		return &v1.ScanImageRequest{
 			ImageName: imageStr,
 			Force:     true,

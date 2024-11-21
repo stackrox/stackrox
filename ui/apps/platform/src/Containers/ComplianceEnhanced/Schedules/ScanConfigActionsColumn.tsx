@@ -67,7 +67,6 @@ function ScanConfigActionsColumn({
             },
             isDisabled: isSnapshotStatusPending,
         },
-        /* eslint-disable no-nested-ternary */
         {
             title: 'Send report',
             description:
@@ -83,7 +82,6 @@ function ScanConfigActionsColumn({
             isHidden: !isComplianceReportingEnabled,
             isDisabled: notifiers.length === 0 || isSnapshotStatusPending,
         },
-        /* eslint-enable no-nested-ternary */
         {
             title: 'Generate download',
             onClick: (event) => {

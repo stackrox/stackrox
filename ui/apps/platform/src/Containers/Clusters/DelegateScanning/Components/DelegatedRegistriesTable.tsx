@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-shadow */
-/* eslint-disable no-param-reassign */
-/* eslint-disable react/no-array-index-key */
-// TODO: remove lint override after @typescript-eslint deps can be resolved to ^5.2.x
-/* eslint-disable react/prop-types */
 import React, { useState } from 'react';
 import { Button, TextInput } from '@patternfly/react-core';
 import { Select, SelectOption } from '@patternfly/react-core/deprecated';

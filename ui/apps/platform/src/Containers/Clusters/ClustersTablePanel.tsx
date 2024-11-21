@@ -153,7 +153,6 @@ function ClustersTablePanel({
         </div>
     ));
 
-    /* eslint-disable no-nested-ternary */
     const installMenuOptions = [
         <DropdownItem
             key="init-bundle"
@@ -182,7 +181,6 @@ function ClustersTablePanel({
             }
         />,
     ];
-    /* eslint-enable no-nested-ternary */
 
     function refreshClusterList(restSearch?: RestSearchOption[]) {
         // Although return works around typescript-eslint/no-floating-promises error elsewhere,

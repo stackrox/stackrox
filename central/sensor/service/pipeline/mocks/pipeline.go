@@ -25,6 +25,7 @@ import (
 type MockBasePipeline struct {
 	ctrl     *gomock.Controller
 	recorder *MockBasePipelineMockRecorder
+	isgomock struct{}
 }
 
 // MockBasePipelineMockRecorder is the mock recorder for MockBasePipeline.
@@ -74,6 +75,7 @@ func (mr *MockBasePipelineMockRecorder) OnFinish(clusterID any) *gomock.Call {
 type MockClusterPipeline struct {
 	ctrl     *gomock.Controller
 	recorder *MockClusterPipelineMockRecorder
+	isgomock struct{}
 }
 
 // MockClusterPipelineMockRecorder is the mock recorder for MockClusterPipeline.
@@ -151,6 +153,7 @@ func (mr *MockClusterPipelineMockRecorder) Run(ctx, msg, injector any) *gomock.C
 type MockFactory struct {
 	ctrl     *gomock.Controller
 	recorder *MockFactoryMockRecorder
+	isgomock struct{}
 }
 
 // MockFactoryMockRecorder is the mock recorder for MockFactory.
@@ -189,6 +192,7 @@ func (mr *MockFactoryMockRecorder) PipelineForCluster(ctx, clusterID any) *gomoc
 type MockFragment struct {
 	ctrl     *gomock.Controller
 	recorder *MockFragmentMockRecorder
+	isgomock struct{}
 }
 
 // MockFragmentMockRecorder is the mock recorder for MockFragment.
@@ -280,6 +284,7 @@ func (mr *MockFragmentMockRecorder) Run(ctx, clusterID, msg, injector any) *gomo
 type MockFragmentFactory struct {
 	ctrl     *gomock.Controller
 	recorder *MockFragmentFactoryMockRecorder
+	isgomock struct{}
 }
 
 // MockFragmentFactoryMockRecorder is the mock recorder for MockFragmentFactory.

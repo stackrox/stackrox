@@ -20,6 +20,7 @@ import (
 type MockPruner struct {
 	ctrl     *gomock.Controller
 	recorder *MockPrunerMockRecorder
+	isgomock struct{}
 }
 
 // MockPrunerMockRecorder is the mock recorder for MockPruner.

@@ -20,6 +20,7 @@ import (
 type MockDeploymentObservationQueue struct {
 	ctrl     *gomock.Controller
 	recorder *MockDeploymentObservationQueueMockRecorder
+	isgomock struct{}
 }
 
 // MockDeploymentObservationQueueMockRecorder is the mock recorder for MockDeploymentObservationQueue.

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import React, { useEffect, useState, ReactElement, FormEvent } from 'react';
 import {
     Form,

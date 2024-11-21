@@ -20,6 +20,7 @@ import (
 type MockTLSConfigurer struct {
 	ctrl     *gomock.Controller
 	recorder *MockTLSConfigurerMockRecorder
+	isgomock struct{}
 }
 
 // MockTLSConfigurerMockRecorder is the mock recorder for MockTLSConfigurer.

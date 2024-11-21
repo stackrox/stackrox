@@ -22,7 +22,6 @@ export function getAxiosErrorMessage(error: unknown): string {
 
             if (typeof error.response?.data?.message === 'string') {
                 // The server responded to the request with an error.
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                 return error.response.data.message;
             }
 

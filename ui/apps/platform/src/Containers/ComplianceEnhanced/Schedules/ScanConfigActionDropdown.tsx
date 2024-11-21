@@ -87,7 +87,6 @@ function ScanConfigActionDropdown({
     ];
 
     if (isComplianceReportingEnabled) {
-        /* eslint-disable no-nested-ternary */
         dropdownItems.push(
             <DropdownItem
                 key="Send report"
@@ -107,7 +106,6 @@ function ScanConfigActionDropdown({
                 Send report
             </DropdownItem>
         );
-        /* eslint-enable no-nested-ternary */
     }
 
     if (isComplianceReportingEnabled && isReportJobsEnabled) {

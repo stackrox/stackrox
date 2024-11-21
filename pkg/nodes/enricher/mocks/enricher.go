@@ -22,6 +22,7 @@ import (
 type MockNodeEnricher struct {
 	ctrl     *gomock.Controller
 	recorder *MockNodeEnricherMockRecorder
+	isgomock struct{}
 }
 
 // MockNodeEnricherMockRecorder is the mock recorder for MockNodeEnricher.
@@ -114,6 +115,7 @@ func (mr *MockNodeEnricherMockRecorder) UpsertNodeIntegration(integration any) *
 type MockCVESuppressor struct {
 	ctrl     *gomock.Controller
 	recorder *MockCVESuppressorMockRecorder
+	isgomock struct{}
 }
 
 // MockCVESuppressorMockRecorder is the mock recorder for MockCVESuppressor.

@@ -21,6 +21,26 @@ export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 # `envsubst`` before passing it to `env`.
 envsubst=$(command -v envsubst)
 
+CHECK_POD_RESTARTS_TEST_NAME="Check unexpected pod restarts"
+# Define map of all stackrox pod->containers and their log dump files.
+declare -A POD_CONTAINERS_MAP
+POD_CONTAINERS_MAP["pod: central - container: central"]="central-[A-Za-z0-9]+-[A-Za-z0-9]+-central-previous.log"
+POD_CONTAINERS_MAP["pod: central-db - container: init-db"]="central-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
+POD_CONTAINERS_MAP["pod: central-db - container: central-db"]="central-db-[A-Za-z0-9]+-[A-Za-z0-9]+-central-db-previous.log"
+POD_CONTAINERS_MAP["pod: config-controller - container: manager"]="config-controller-[A-Za-z0-9]+-[A-Za-z0-9]+-manager-previous.log"
+POD_CONTAINERS_MAP["pod: scanner - container: scanner"]="scanner-[A-Za-z0-9]+-[A-Za-z0-9]+-scanner-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-db - container: init-db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-db - container: db"]="scanner-db-[A-Za-z0-9]+-[A-Za-z0-9]+-db-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-v4 - container: matcher"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-matcher-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-v4 - container: indexer"]="scanner-v4-[A-Za-z0-9]+-[A-Za-z0-9]+-indexer-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-v4-db - container: init-db"]="scanner-v4-db-[A-Za-z0-9]+-[A-Za-z0-9]+-init-db-previous.log"
+POD_CONTAINERS_MAP["pod: scanner-v4-db - container: db"]="scanner-v4-db-[A-Za-z0-9]+-[A-Za-z0-9]+-db-previous.log"
+POD_CONTAINERS_MAP["pod: sensor - container: sensor"]="sensor-[A-Za-z0-9]+-[A-Za-z0-9]+-sensor-previous.log"
+POD_CONTAINERS_MAP["pod: admission-control - container: admission-control"]="admission-control-[A-Za-z0-9]+-[A-Za-z0-9]+-admission-control-previous.log"
+POD_CONTAINERS_MAP["pod: collector - container: collector"]="collector-[A-Za-z0-9]+-collector-previous.log"
+POD_CONTAINERS_MAP["pod: collector - container: compliance"]="collector-[A-Za-z0-9]+-compliance-previous.log"
+POD_CONTAINERS_MAP["pod: collector - container: node-inventory"]="collector-[A-Za-z0-9]+-node-inventory-previous.log"
+
 # shellcheck disable=SC2120
 deploy_stackrox() {
     local tls_client_certs=${1:-}
@@ -160,6 +180,7 @@ export_test_environment() {
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_NVD_CVSS "${ROX_NVD_CVSS_UI:-true}"
+    ci_export ROX_CVE_ADVISORY_SEPARATION "${ROX_CVE_ADVISORY_SEPARATION:-true}"
     ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
@@ -295,6 +316,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NVD_CVSS_UI'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_CVE_ADVISORY_SEPARATION'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLUSTERS_PAGE_MIGRATION_UI'
     customize_envVars+=$'\n        value: "true"'
@@ -665,6 +688,60 @@ check_for_stackrox_OOMs() {
     fi
 }
 
+junit_report_pod_restarts() {
+    local check_output="${1:-}"
+
+    local previous_logs=()
+    while IFS='' read -r line; do previous_logs+=("$line"); done < <(echo "${check_output}" | grep "copied to Artifacts" | cut -d" " -f1 | sort -u)
+
+    local previous_log_regex=""
+    declare -A found_previous_logs
+    declare -A found_pod_container_keys
+    for previous_log in "${previous_logs[@]}"
+    do
+        found_previous_logs["${previous_log}"]=""
+        for map_key in "${!POD_CONTAINERS_MAP[@]}"
+        do
+            previous_log_regex="${POD_CONTAINERS_MAP[${map_key}]}"
+            if [[ "${previous_log}" =~ $previous_log_regex ]]; then
+                found_previous_logs["${previous_log}"]="${map_key}"
+                found_pod_container_keys["${map_key}"]="found"
+                break
+            fi
+        done
+    done
+
+    # (FAILURES - Fallback) Report failed, but not found pods in defined pod->container map.
+    local crop_pod_name=""
+    for previous_log in "${!found_previous_logs[@]}"
+    do
+        if [[ "${found_previous_logs[${previous_log}]}" != "" ]]; then
+            continue
+        fi
+
+        crop_pod_name="$(echo "${previous_log}" | cut -d- -f1)"
+        save_junit_failure "${CHECK_POD_RESTARTS_TEST_NAME}" "${crop_pod_name}" "${check_output}"
+    done
+
+    # (FAILURES) Report failed and found pods. We use improved test name matching.
+    for map_key in "${!found_pod_container_keys[@]}"
+    do
+        save_junit_failure "${CHECK_POD_RESTARTS_TEST_NAME}" "${map_key}" "${check_output}"
+    done
+
+    # Report pods without restarts (SUCCESSES).
+    local found_map_key=""
+    for map_key in "${!POD_CONTAINERS_MAP[@]}"
+    do
+        found_map_key="${found_pod_container_keys[${map_key}]:-}"
+        if [[ "${found_map_key}" == "found" ]]; then
+            continue
+        fi
+
+        save_junit_success "${CHECK_POD_RESTARTS_TEST_NAME}" "${map_key}"
+    done
+}
+
 check_for_stackrox_restarts() {
     info "Checking for unexplained restarts by stackrox pods"
 
@@ -685,8 +762,7 @@ check_for_stackrox_restarts() {
         local check_out=""
         # shellcheck disable=SC2086
         if ! check_out="$(scripts/ci/logcheck/check-restart-logs.sh "${CI_JOB_NAME}" $previous_logs)"; then
-            names=$(echo "${check_out}" | grep "copied to Artifacts" | cut -d- -f1 | sort -u | tr '\n' ' ')
-            save_junit_failure "Pod Restarts" "${names}" "${check_out}"
+            junit_report_pod_restarts "${check_out}"
             die "ERROR: Found at least one unexplained pod restart. ${check_out}"
         fi
         info "Restarts were considered benign"
@@ -695,7 +771,7 @@ check_for_stackrox_restarts() {
         info "No pod restarts were found"
     fi
 
-    save_junit_success "Pod Restarts" "Check for unexplained pod restart"
+    junit_report_pod_restarts
 }
 
 check_for_errors_in_stackrox_logs() {

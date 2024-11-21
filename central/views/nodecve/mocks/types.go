@@ -24,6 +24,7 @@ import (
 type MockCveCore struct {
 	ctrl     *gomock.Controller
 	recorder *MockCveCoreMockRecorder
+	isgomock struct{}
 }
 
 // MockCveCoreMockRecorder is the mock recorder for MockCveCore.
@@ -159,6 +160,7 @@ func (mr *MockCveCoreMockRecorder) GetTopCVSS() *gomock.Call {
 type MockCveView struct {
 	ctrl     *gomock.Controller
 	recorder *MockCveViewMockRecorder
+	isgomock struct{}
 }
 
 // MockCveViewMockRecorder is the mock recorder for MockCveView.

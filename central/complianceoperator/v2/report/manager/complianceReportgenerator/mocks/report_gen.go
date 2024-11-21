@@ -20,6 +20,7 @@ import (
 type MockComplianceReportGenerator struct {
 	ctrl     *gomock.Controller
 	recorder *MockComplianceReportGeneratorMockRecorder
+	isgomock struct{}
 }
 
 // MockComplianceReportGeneratorMockRecorder is the mock recorder for MockComplianceReportGenerator.

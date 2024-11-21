@@ -23,6 +23,7 @@ import (
 type MockRegistry struct {
 	ctrl     *gomock.Controller
 	recorder *MockRegistryMockRecorder
+	isgomock struct{}
 }
 
 // MockRegistryMockRecorder is the mock recorder for MockRegistry.
@@ -131,6 +132,7 @@ func (mr *MockRegistryMockRecorder) Test() *gomock.Call {
 type MockImageRegistry struct {
 	ctrl     *gomock.Controller
 	recorder *MockImageRegistryMockRecorder
+	isgomock struct{}
 }
 
 // MockImageRegistryMockRecorder is the mock recorder for MockImageRegistry.

@@ -3,7 +3,11 @@ package certrefresh
 import (
 	"time"
 
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 var (
@@ -25,3 +29,9 @@ var (
 		Cap:      10 * time.Minute,
 	}
 )
+
+type certificateRefresherGetter func(certsDescription string, requestCertificates requestCertificatesFunc,
+	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
+
+type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
+	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo

@@ -24,6 +24,7 @@ import (
 type MockImageEnricher struct {
 	ctrl     *gomock.Controller
 	recorder *MockImageEnricherMockRecorder
+	isgomock struct{}
 }
 
 // MockImageEnricherMockRecorder is the mock recorder for MockImageEnricher.
@@ -92,6 +93,7 @@ func (mr *MockImageEnricherMockRecorder) EnrichWithVulnerabilities(image, compon
 type MockCVESuppressor struct {
 	ctrl     *gomock.Controller
 	recorder *MockCVESuppressorMockRecorder
+	isgomock struct{}
 }
 
 // MockCVESuppressorMockRecorder is the mock recorder for MockCVESuppressor.

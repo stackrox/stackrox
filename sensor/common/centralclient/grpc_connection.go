@@ -65,12 +65,14 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 	return f.httpClient.GetGRPCPreferences(ctx)
 }
 
-// SetCentralConnectionWithRetries will set conn pointer once the connection is ready.
+// SetCentralConnectionWithRetries will set conn pointer once the connection is set up.
 // This function is supposed to be called asynchronously and allows sensor components to be
 // started with an empty util.LazyClientConn. The pointer will be swapped once this
 // func finishes.
-// f.okSignal is used if the connection is successful and f.stopSignal if the
-// connection failed to start. Hence, both signals are reset here.
+// f.okSignal is used if the connection setup was successful and f.stopSignal if the
+// connection setup failed. Hence, both signals are reset here.
+// There is no guarantee that the connection to central will be ready when this function finishes!
+// Connection setup involves the configuration of certificates, parameters, and the endpoint.
 func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn, certLoader CertLoader) {
 	// Both signals should not be in a triggered state at the same time.
 	// If we run into this situation something went wrong with the handling of these signals.
@@ -81,10 +83,11 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	f.okSignal.Reset()
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
-	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
+	// Waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal.
+	// This ping runs over HTTP and does check the health of gRPC connection.
 	if err := f.pingCentral(); err != nil {
-		log.Errorf("checking central status failed: %v", err)
-		f.stopSignal.SignalWithError(errors.Wrap(err, "checking central status failed"))
+		log.Errorf("checking central status over HTTP failed: %v", err)
+		f.stopSignal.SignalWithError(errors.Wrap(err, "checking central status over HTTP failed"))
 		return
 	}
 
@@ -109,6 +112,8 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	}
 	opts = append(opts, clientconn.MaxMsgReceiveSize(maxGRPCSize))
 
+	// This returns a dial function, but does not call dial!
+	// Thus, we cannot treat the connection as established and ready at this point.
 	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {
 		log.Errorf("creating the gRPC client: %v", err)
@@ -118,5 +123,5 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 
 	conn.Set(centralConnection)
 	f.okSignal.Signal()
-	log.Info("Initial gRPC connection with central successful")
+	log.Info("Done setting up gRPC connection with central")
 }

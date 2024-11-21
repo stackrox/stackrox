@@ -4,6 +4,150 @@ const rules = {
     // ESLint naming convention for positive rules:
     // If your rule is enforcing the inclusion of something, use a short name without a special prefix.
 
+    'Td-dataLabel-Th-text': {
+        // Require that if Td element has dataLabel prop with string value,
+        // then Th element with same index has corresponding text (or screenReaderText).
+        //
+        // Exceptions:
+        // Rule does not apply for column configurations like integration columns.
+        // Rule does not apply if Table is not ancestor of Td in rendered elements.
+        // Therefore, minimize use of abstrations to render tables.
+        meta: {
+            type: 'problem',
+            docs: {
+                description:
+                    'Require that if Td element has dataLabel prop with string value, then Th element with same index has corresponding text (or screenReaderText).',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXOpeningElement(node) {
+                    // Strict equality here versus endsWith method in isTd predicate below.
+                    if (node.name?.name === 'Td') {
+                        const dataLabel = node.attributes.find(
+                            (attribute) =>
+                                attribute.name?.name === 'dataLabel' &&
+                                typeof attribute.value?.value === 'string'
+                        )?.value?.value;
+
+                        // Another rule reports absence of dataLabel prop in Td element.
+                        if (typeof dataLabel === 'string') {
+                            const ancestors = context.sourceCode.getAncestors(node);
+
+                            // Replace with findLast method when browser support includes ECMAScript 2023.
+                            let ancestorTable;
+                            for (let i = ancestors.length - 1; i >= 0; i -= 1) {
+                                const ancestor = ancestors[i];
+                                if (ancestor.openingElement?.name?.name === 'Table') {
+                                    ancestorTable = ancestor;
+                                    break;
+                                }
+                            }
+
+                            if (ancestorTable) {
+                                const isThead = (child) =>
+                                    child.openingElement?.name?.name === 'Thead';
+                                const childThead = ancestorTable.children?.find(isThead);
+
+                                if (childThead) {
+                                    const isTr = (child) =>
+                                        child.openingElement?.name?.name === 'Tr';
+                                    const childTr = childThead.children?.find(isTr);
+
+                                    if (childTr) {
+                                        // Element is right of expression even with multiple conditions.
+                                        const getElement = (child) =>
+                                            child.openingElement ? child : child.expression?.right;
+
+                                        const hasValueAsText = (arg) =>
+                                            arg?.children?.some(
+                                                (child) =>
+                                                    typeof child.value === 'string' &&
+                                                    child.value.trim() === dataLabel
+                                            );
+
+                                        // PatternFly adds screenReaderText prop of Th element.
+                                        // const hasValueAsScreenReaderText = (arg) =>
+                                        //     arg?.openingElement?.attributes?.some(
+                                        //         (attribute) =>
+                                        //             attribute.name?.name === 'screenReaderText' &&
+                                        //             attribute.value?.value === dataLabel
+                                        //     );
+                                        const hasValueAsScreenReaderText = (arg) =>
+                                            arg?.children?.some(
+                                                (child) =>
+                                                    child.openingElement?.name?.name === 'span' &&
+                                                    child.openingElement.attributes?.some(
+                                                        (attribute) =>
+                                                            attribute.name?.name === 'className' &&
+                                                            attribute.value?.value ===
+                                                                'pf-v5-screen-reader'
+                                                    ) &&
+                                                    hasValueAsText(child)
+                                            );
+
+                                        const hasValue = (arg) =>
+                                            hasValueAsText(arg) || hasValueAsScreenReaderText(arg);
+
+                                        const isTh = (arg) =>
+                                            typeof arg?.openingElement?.name?.name === 'string' &&
+                                            arg.openingElement.name.name.endsWith('Th');
+                                        const iTh = childTr.children
+                                            ?.filter((child) => isTh(getElement(child)))
+                                            .findIndex((child) => hasValue(getElement(child)));
+
+                                        if (iTh >= 0) {
+                                            let ancestorTr;
+                                            let childOfTr = node;
+                                            for (let i = ancestors.length - 1; i >= 0; i -= 1) {
+                                                const ancestor = ancestors[i];
+                                                if (ancestor.openingElement?.name?.name === 'Tr') {
+                                                    ancestorTr = ancestor;
+                                                    break;
+                                                } else {
+                                                    childOfTr = ancestor;
+                                                }
+                                            }
+
+                                            const isTd = (arg) =>
+                                                typeof arg?.openingElement?.name?.name ===
+                                                    'string' &&
+                                                arg.openingElement.name.name.endsWith('Td');
+                                            const iTd = ancestorTr?.children
+                                                ?.filter((child) => isTd(getElement(child)))
+                                                .indexOf(childOfTr);
+
+                                            if (iTd >= 0 && iTd !== iTh) {
+                                                context.report({
+                                                    node,
+                                                    message: `Td has dataLabel="${dataLabel}" prop and Th element has corresponding text or screen reader text but zero-based index ${iTd} !== ${iTh}`,
+                                                });
+                                            } else {
+                                                // console.log(`dataLabel="${dataLabel}"`); // eslint-disable-line no-console
+                                            }
+                                        } else {
+                                            context.report({
+                                                node,
+                                                message: `Td has dataLabel="${dataLabel}" prop but no Th element has corresponding text or screen reader text`,
+                                            });
+                                        }
+                                    } else {
+                                        // console.log(`dataLabel="${dataLabel}" without Tr ancestor`); // eslint-disable-line no-console
+                                    }
+                                } else {
+                                    // console.log(`dataLabel="${dataLabel}" without Thead ancestor`); // eslint-disable-line no-console
+                                }
+                            } else {
+                                // console.log(`dataLabel="${dataLabel}" without Table ancestor`); // eslint-disable-line no-console
+                            }
+                        }
+                    }
+                },
+            };
+        },
+    },
+
     // ESLint naming convention for negative rules.
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.

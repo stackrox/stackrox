@@ -20,6 +20,7 @@ import (
 type MockPathMapGenerator struct {
 	ctrl     *gomock.Controller
 	recorder *MockPathMapGeneratorMockRecorder
+	isgomock struct{}
 }
 
 // MockPathMapGeneratorMockRecorder is the mock recorder for MockPathMapGenerator.

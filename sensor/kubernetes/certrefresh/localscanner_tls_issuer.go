@@ -2,7 +2,6 @@ package certrefresh
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -12,12 +11,9 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certificates"
-	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/certrepo"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh/localscanner"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 var (
@@ -27,7 +23,7 @@ var (
 )
 
 // NewLocalScannerTLSIssuer creates a sensor component that will keep the local scanner certificates
-// up to date, using the specified retry parameters.
+// up to date, using the retry parameters in tls_issuer_common.go
 func NewLocalScannerTLSIssuer(
 	k8sClient kubernetes.Interface,
 	sensorNamespace string,
@@ -44,7 +40,7 @@ func NewLocalScannerTLSIssuer(
 		certRefreshBackoff:           certRefreshBackoff,
 		getCertificateRefresherFn:    newCertificatesRefresher,
 		getServiceCertificatesRepoFn: localscanner.NewServiceCertificatesRepo,
-		certRequester:                localscanner.NewCertificateRequester(msgToCentralC, msgFromCentralC),
+		certRequester:                certificates.NewLocalScannerCertificateRequester(msgToCentralC, msgFromCentralC),
 	}
 }
 
@@ -61,18 +57,12 @@ type localScannerTLSIssuerImpl struct {
 	certRefresher                concurrency.RetryTicker
 }
 
-type certificateRefresherGetter func(certsDescription string, requestCertificates requestCertificatesFunc,
-	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
-
-type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
-	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo
-
 // Start starts the sensor component and launches a certificate refresher that immediately checks the certificates, and
 // that keeps them updated.
 // In case a secret doesn't have the expected owner, this logs a warning and returns nil.
 // In case this component was already started it fails immediately.
 func (i *localScannerTLSIssuerImpl) Start() error {
-	log.Debug("starting local scanner TLS issuer.")
+	log.Debug("Starting local scanner TLS issuer.")
 	ctx, cancel := context.WithTimeout(context.Background(), startTimeout)
 	defer cancel()
 
@@ -96,12 +86,12 @@ func (i *localScannerTLSIssuerImpl) Start() error {
 		return i.abortStart(errors.Wrap(refreshStartErr, "starting certificate certRefresher"))
 	}
 
-	log.Debug("local scanner TLS issuer started.")
+	log.Debug("Local Scanner TLS issuer started.")
 	return nil
 }
 
 func (i *localScannerTLSIssuerImpl) abortStart(err error) error {
-	log.Errorf("local scanner TLS issuer start aborted due to error: %s", err)
+	log.Errorf("Local Scanner TLS issuer start aborted due to error: %s", err)
 	i.Stop(err)
 	return err
 }
@@ -113,7 +103,7 @@ func (i *localScannerTLSIssuerImpl) Stop(_ error) {
 	}
 
 	i.certRequester.Stop()
-	log.Debug("local scanner TLS issuer stopped.")
+	log.Debug("Local Scanner TLS issuer stopped.")
 }
 
 func (i *localScannerTLSIssuerImpl) Notify(common.SensorComponentEvent) {}

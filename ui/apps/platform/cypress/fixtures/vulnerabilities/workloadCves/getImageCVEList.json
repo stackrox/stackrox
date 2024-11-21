@@ -1,0 +1,86 @@
+{
+    "data": {
+        "imageCVEs": [
+            {
+                "cve": "MOCK-2023-123456",
+                "affectedImageCountBySeverity": {
+                    "critical": {
+                        "total": 4,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "important": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "moderate": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "low": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "__typename": "ResourceCountByCVESeverity"
+                },
+                "topCVSS": 9.800000190734863,
+                "affectedImageCount": 4,
+                "firstDiscoveredInSystem": "2024-03-25T14:35:43.111026Z",
+                "publishedOn": "2023-10-14T02:15:00Z",
+                "topNvdCVSS": 0,
+                "distroTuples": [
+                    {
+                        "summary": "This is a MOCKED CYPRESS RESPONSE for a CVE",
+                        "operatingSystem": "debian:11",
+                        "cvss": 9.8,
+                        "scoreVersion": "V3",
+                        "nvdCvss": 0,
+                        "nvdScoreVersion": "UNKNOWN_VERSION",
+                        "__typename": "ImageVulnerability"
+                    }
+                ],
+                "pendingExceptionCount": 0,
+                "__typename": "ImageCVECore"
+            },
+            {
+                "cve": "MOCK-2024-123456",
+                "affectedImageCountBySeverity": {
+                    "critical": {
+                        "total": 2,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "important": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "moderate": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "low": {
+                        "total": 0,
+                        "__typename": "ResourceCountByFixability"
+                    },
+                    "__typename": "ResourceCountByCVESeverity"
+                },
+                "topCVSS": 9.8,
+                "affectedImageCount": 2,
+                "firstDiscoveredInSystem": "2024-06-21T17:02:53.144435Z",
+                "publishedOn": "2023-07-01T05:15:00Z",
+                "topNvdCVSS": 0,
+                "distroTuples": [
+                    {
+                        "summary": "This is a MOCKED CYPRESS RESPONSE for a CVE",
+                        "operatingSystem": "debian:12",
+                        "cvss": 9.800000190734863,
+                        "scoreVersion": "V3",
+                        "nvdCvss": 0,
+                        "nvdScoreVersion": "UNKNOWN_VERSION",
+                        "__typename": "ImageVulnerability"
+                    }
+                ],
+                "pendingExceptionCount": 0,
+                "__typename": "ImageCVECore"
+            }
+        ]
+    }
+}

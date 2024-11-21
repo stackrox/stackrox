@@ -16,7 +16,6 @@ const OrchestratorComponentsToggle = (): ReactElement => {
     function handleToggle(value) {
         const storedValue = value ? 'true' : 'false';
         localStorage.setItem(ORCHESTRATOR_COMPONENTS_KEY, storedValue);
-        // eslint-disable-next-line no-restricted-globals
         location.reload(); // TODO instead pages could re-render on change to Redux store.
     }
 

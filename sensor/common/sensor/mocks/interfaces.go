@@ -22,6 +22,7 @@ import (
 type MockServiceCommunicateClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockServiceCommunicateClientMockRecorder
+	isgomock struct{}
 }
 
 // MockServiceCommunicateClientMockRecorder is the mock recorder for MockServiceCommunicateClient.
@@ -100,17 +101,17 @@ func (mr *MockServiceCommunicateClientMockRecorder) Recv() *gomock.Call {
 }
 
 // RecvMsg mocks base method.
-func (m *MockServiceCommunicateClient) RecvMsg(arg0 any) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecvMsg", arg0)
+func (m_2 *MockServiceCommunicateClient) RecvMsg(m any) error {
+	m_2.ctrl.T.Helper()
+	ret := m_2.ctrl.Call(m_2, "RecvMsg", m)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RecvMsg indicates an expected call of RecvMsg.
-func (mr *MockServiceCommunicateClientMockRecorder) RecvMsg(arg0 any) *gomock.Call {
+func (mr *MockServiceCommunicateClientMockRecorder) RecvMsg(m any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockServiceCommunicateClient)(nil).RecvMsg), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecvMsg", reflect.TypeOf((*MockServiceCommunicateClient)(nil).RecvMsg), m)
 }
 
 // Send mocks base method.
@@ -128,17 +129,17 @@ func (mr *MockServiceCommunicateClientMockRecorder) Send(arg0 any) *gomock.Call 
 }
 
 // SendMsg mocks base method.
-func (m *MockServiceCommunicateClient) SendMsg(arg0 any) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendMsg", arg0)
+func (m_2 *MockServiceCommunicateClient) SendMsg(m any) error {
+	m_2.ctrl.T.Helper()
+	ret := m_2.ctrl.Call(m_2, "SendMsg", m)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SendMsg indicates an expected call of SendMsg.
-func (mr *MockServiceCommunicateClientMockRecorder) SendMsg(arg0 any) *gomock.Call {
+func (mr *MockServiceCommunicateClientMockRecorder) SendMsg(m any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockServiceCommunicateClient)(nil).SendMsg), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMsg", reflect.TypeOf((*MockServiceCommunicateClient)(nil).SendMsg), m)
 }
 
 // Trailer mocks base method.

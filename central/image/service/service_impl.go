@@ -39,7 +39,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/ternary"
 	"github.com/stackrox/rox/pkg/timestamp"
 	pkgUtils "github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/waiter"
@@ -559,7 +558,7 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	if !hasErrors {
 		if forceScanUpdate {
 			if err := s.enrichWithVulnerabilities(img, request); err != nil {
-				imgName := ternary.String(existingImg != nil, existingImg.GetName().GetFullName(), request.GetImageName().GetFullName())
+				imgName := pkgUtils.IfThenElse(existingImg != nil, existingImg.GetName().GetFullName(), request.GetImageName().GetFullName())
 				log.Errorw("Enriching image with vulnerabilities",
 					logging.ImageName(imgName),
 					logging.ImageID(imgID),

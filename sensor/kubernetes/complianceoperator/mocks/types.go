@@ -23,6 +23,7 @@ import (
 type MockStatusInfo struct {
 	ctrl     *gomock.Controller
 	recorder *MockStatusInfoMockRecorder
+	isgomock struct{}
 }
 
 // MockStatusInfoMockRecorder is the mock recorder for MockStatusInfo.
@@ -60,6 +61,7 @@ func (mr *MockStatusInfoMockRecorder) GetNamespace() *gomock.Call {
 type MockInfoUpdater struct {
 	ctrl     *gomock.Controller
 	recorder *MockInfoUpdaterMockRecorder
+	isgomock struct{}
 }
 
 // MockInfoUpdaterMockRecorder is the mock recorder for MockInfoUpdater.

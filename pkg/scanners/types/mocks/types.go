@@ -25,6 +25,7 @@ import (
 type MockScanner struct {
 	ctrl     *gomock.Controller
 	recorder *MockScannerMockRecorder
+	isgomock struct{}
 }
 
 // MockScannerMockRecorder is the mock recorder for MockScanner.
@@ -148,6 +149,7 @@ func (mr *MockScannerMockRecorder) Type() *gomock.Call {
 type MockImageScannerWithDataSource struct {
 	ctrl     *gomock.Controller
 	recorder *MockImageScannerWithDataSourceMockRecorder
+	isgomock struct{}
 }
 
 // MockImageScannerWithDataSourceMockRecorder is the mock recorder for MockImageScannerWithDataSource.
@@ -199,6 +201,7 @@ func (mr *MockImageScannerWithDataSourceMockRecorder) GetScanner() *gomock.Call 
 type MockImageVulnerabilityGetter struct {
 	ctrl     *gomock.Controller
 	recorder *MockImageVulnerabilityGetterMockRecorder
+	isgomock struct{}
 }
 
 // MockImageVulnerabilityGetterMockRecorder is the mock recorder for MockImageVulnerabilityGetter.
@@ -237,6 +240,7 @@ func (mr *MockImageVulnerabilityGetterMockRecorder) GetVulnerabilities(image, co
 type MockNodeScanner struct {
 	ctrl     *gomock.Controller
 	recorder *MockNodeScannerMockRecorder
+	isgomock struct{}
 }
 
 // MockNodeScannerMockRecorder is the mock recorder for MockNodeScanner.
@@ -346,6 +350,7 @@ func (mr *MockNodeScannerMockRecorder) Type() *gomock.Call {
 type MockNodeScannerWithDataSource struct {
 	ctrl     *gomock.Controller
 	recorder *MockNodeScannerWithDataSourceMockRecorder
+	isgomock struct{}
 }
 
 // MockNodeScannerWithDataSourceMockRecorder is the mock recorder for MockNodeScannerWithDataSource.
@@ -397,6 +402,7 @@ func (mr *MockNodeScannerWithDataSourceMockRecorder) GetNodeScanner() *gomock.Ca
 type MockOrchestratorScanner struct {
 	ctrl     *gomock.Controller
 	recorder *MockOrchestratorScannerMockRecorder
+	isgomock struct{}
 }
 
 // MockOrchestratorScannerMockRecorder is the mock recorder for MockOrchestratorScanner.

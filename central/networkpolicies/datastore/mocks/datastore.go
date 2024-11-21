@@ -21,6 +21,7 @@ import (
 type MockUndoDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockUndoDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockUndoDataStoreMockRecorder is the mock recorder for MockUndoDataStore.
@@ -74,6 +75,7 @@ func (mr *MockUndoDataStoreMockRecorder) UpsertUndoRecord(ctx, undoRecord any) *
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockDataStoreMockRecorder is the mock recorder for MockDataStore.
@@ -231,6 +233,7 @@ func (mr *MockDataStoreMockRecorder) UpsertUndoRecord(ctx, undoRecord any) *gomo
 type MockUndoDeploymentDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockUndoDeploymentDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockUndoDeploymentDataStoreMockRecorder is the mock recorder for MockUndoDeploymentDataStore.

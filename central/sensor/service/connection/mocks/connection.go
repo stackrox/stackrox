@@ -26,6 +26,7 @@ import (
 type MockSensorConnection struct {
 	ctrl     *gomock.Controller
 	recorder *MockSensorConnectionMockRecorder
+	isgomock struct{}
 }
 
 // MockSensorConnectionMockRecorder is the mock recorder for MockSensorConnection.

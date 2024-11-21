@@ -63,4 +63,7 @@ const (
 
 	// SecuredClusterCertificatesReissue identifies the capability of Central to reissue a new set of Secured Clusters certificates
 	SecuredClusterCertificatesReissue = "SecuredClusterCertificatesReissue"
+
+	// SecuredClusterCertificatesRefresh identifies the capability to maintain the Secured Cluster TLS certificates refreshed
+	SecuredClusterCertificatesRefresh SensorCapability = "SecuredClusterCertificatesRefresh"
 )

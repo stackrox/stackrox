@@ -142,7 +142,6 @@ function AuthProviderForm({
                 });
                 return keys.length === new Set(keys).size;
             }),
-        /* eslint-disable @typescript-eslint/no-unsafe-return */
         config: yup
             .object()
             .when('type', {
@@ -225,7 +224,6 @@ function AuthProviderForm({
                         audience: yup.string().required('An audience is required.'),
                     }),
             }),
-        /* eslint-enable @typescript-eslint/no-unsafe-return */
     });
 
     const formik = useFormik({

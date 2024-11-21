@@ -24,6 +24,7 @@ import (
 type MockBackend struct {
 	ctrl     *gomock.Controller
 	recorder *MockBackendMockRecorder
+	isgomock struct{}
 }
 
 // MockBackendMockRecorder is the mock recorder for MockBackend.
@@ -159,6 +160,7 @@ func (mr *MockBackendMockRecorder) Validate(ctx, claims any) *gomock.Call {
 type MockRefreshTokenEnabledBackend struct {
 	ctrl     *gomock.Controller
 	recorder *MockRefreshTokenEnabledBackendMockRecorder
+	isgomock struct{}
 }
 
 // MockRefreshTokenEnabledBackendMockRecorder is the mock recorder for MockRefreshTokenEnabledBackend.

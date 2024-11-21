@@ -19,6 +19,7 @@ import (
 type MockCache[K comparable, V any] struct {
 	ctrl     *gomock.Controller
 	recorder *MockCacheMockRecorder[K, V]
+	isgomock struct{}
 }
 
 // MockCacheMockRecorder is the mock recorder for MockCache.

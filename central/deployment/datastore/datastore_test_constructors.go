@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"context"
 	"errors"
 	"testing"
 
@@ -40,13 +39,10 @@ func NewTestDataStore(
 	testDB *pgtest.TestPostgres,
 	storeParams *DeploymentTestStoreParams,
 ) (DataStore, error) {
-	ctx := context.Background()
-	pgStore.Destroy(ctx, testDB.DB)
-	deploymentStore := pgStore.NewFullTestStore(ctx, t, pgStore.New(testDB.DB), testDB.GetGormDB(t))
 	if t == nil {
 		return nil, errors.New("NewTestDataStore called without testing")
 	}
-
+	deploymentStore := pgStore.FullStoreWrap(pgStore.New(testDB.DB))
 	searcher := search.NewV2(deploymentStore)
 	ds := newDatastoreImpl(
 		deploymentStore,

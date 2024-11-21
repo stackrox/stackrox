@@ -21,6 +21,7 @@ import (
 type MockUndoStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockUndoStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockUndoStoreMockRecorder is the mock recorder for MockUndoStore.

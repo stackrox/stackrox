@@ -40,7 +40,6 @@ const initialDelegatedState: DelegatedRegistryConfig = {
 function getUuid() {
     const MAX_RANDOM = 1000000;
 
-    // eslint-disable-next-line no-restricted-globals
     const uuid = self?.crypto?.randomUUID() ?? Math.floor(Math.random() * MAX_RANDOM).toString();
 
     return uuid;

@@ -25,6 +25,7 @@ import (
 type MockregistryStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockregistryStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockregistryStoreMockRecorder is the mock recorder for MockregistryStore.
@@ -106,6 +107,7 @@ func (mr *MockregistryStoreMockRecorder) IsLocal(arg0 any) *gomock.Call {
 type MockcentralClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockcentralClientMockRecorder
+	isgomock struct{}
 }
 
 // MockcentralClientMockRecorder is the mock recorder for MockcentralClient.
@@ -169,6 +171,7 @@ func (mr *MockcentralClientMockRecorder) ScanImageInternal(arg0, arg1 any, arg2 
 type MocklocalScan struct {
 	ctrl     *gomock.Controller
 	recorder *MocklocalScanMockRecorder
+	isgomock struct{}
 }
 
 // MocklocalScanMockRecorder is the mock recorder for MocklocalScan.

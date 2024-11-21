@@ -23,6 +23,7 @@ import (
 type MockPermissionSetStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockPermissionSetStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockPermissionSetStoreMockRecorder is the mock recorder for MockPermissionSetStore.
@@ -148,6 +149,7 @@ func (mr *MockPermissionSetStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
 type MockSimpleAccessScopeStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockSimpleAccessScopeStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockSimpleAccessScopeStoreMockRecorder is the mock recorder for MockSimpleAccessScopeStore.
@@ -288,6 +290,7 @@ func (mr *MockSimpleAccessScopeStoreMockRecorder) Walk(ctx, fn any) *gomock.Call
 type MockRoleStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockRoleStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockRoleStoreMockRecorder is the mock recorder for MockRoleStore.

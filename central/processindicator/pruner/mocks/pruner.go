@@ -22,6 +22,7 @@ import (
 type MockPruner struct {
 	ctrl     *gomock.Controller
 	recorder *MockPrunerMockRecorder
+	isgomock struct{}
 }
 
 // MockPrunerMockRecorder is the mock recorder for MockPruner.
@@ -71,6 +72,7 @@ func (mr *MockPrunerMockRecorder) Prune(arg0 any) *gomock.Call {
 type MockFactory struct {
 	ctrl     *gomock.Controller
 	recorder *MockFactoryMockRecorder
+	isgomock struct{}
 }
 
 // MockFactoryMockRecorder is the mock recorder for MockFactory.

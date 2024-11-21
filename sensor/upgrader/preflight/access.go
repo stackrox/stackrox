@@ -18,7 +18,7 @@ import (
 const (
 	defaultServiceAccountName   = `sensor-upgrader`
 	fallbackServiceAccountName  = `sensor`
-	upgraderTroubleshootingLink = "https://docs.openshift.com/acs/upgrading/upgrade-roxctl.html#troubleshooting_upgrader_upgrade-roxctl"
+	upgraderTroubleshootingLink = "https://docs.openshift.com/acs/upgrading/upgrade-roxctl.html#troubleshooting-upgrader_upgrade-roxctl"
 )
 
 var defaultClusterRoleBinding = pods.GetPodNamespace() + ":upgrade-sensors"
