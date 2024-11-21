@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/mtls"
 )
 
 // CRS holds all core data which is required for a cluster registration secret.
@@ -58,7 +57,7 @@ func LoadFromFile(filePath string) (*CRS, error) {
 
 // Load loads an opaque CRS using environment settings given by mtls.CrsFilePathSetting.
 func Load() (*CRS, error) {
-	return LoadFromFile(mtls.CrsFilePath())
+	return LoadFromFile(crsFilePath())
 }
 
 // Certificate returns the X509 key pair contained in the CRS.
