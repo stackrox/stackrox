@@ -43,8 +43,7 @@ func registerDurationSetting(envVar string, defaultDuration time.Duration, optio
 		o.apply(&opts)
 	}
 
-	err := validateDuration(defaultDuration, opts)
-	if err != nil {
+	if err := validateDuration(defaultDuration, opts); err != nil {
 		panic.HardPanic(fmt.Sprintf("%+v", err))
 	}
 

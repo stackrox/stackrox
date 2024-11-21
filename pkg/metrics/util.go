@@ -79,16 +79,16 @@ func validateTLS() error {
 	return nil
 }
 
-// ValidateMetricsSetting returns an error if the environment variable is invalid.
-func ValidateMetricsSetting() error {
+// validateMetricsSetting returns an error if the environment variable is invalid.
+func validateMetricsSetting() error {
 	if !env.MetricsEnabled() {
 		return nil
 	}
 	return validatePort(env.MetricsPort)
 }
 
-// ValidateSecureMetricsSetting returns an error if the environment variable is invalid.
-func ValidateSecureMetricsSetting() error {
+// validateSecureMetricsSetting returns an error if the environment variable is invalid.
+func validateSecureMetricsSetting() error {
 	if !env.SecureMetricsEnabled() {
 		return nil
 	}
