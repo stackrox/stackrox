@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/utils/panic"
 )
 
 // DurationSetting represents an environment variable which should be parsed into a duration
@@ -43,7 +43,10 @@ func registerDurationSetting(envVar string, defaultDuration time.Duration, optio
 		o.apply(&opts)
 	}
 
-	utils.CrashOnError(validateDuration(defaultDuration, opts))
+	err := validateDuration(defaultDuration, opts)
+	if err != nil {
+		panic.HardPanic(fmt.Sprintf("%+v", err))
+	}
 
 	s := &DurationSetting{
 		envVar:          envVar,
