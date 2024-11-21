@@ -16,7 +16,7 @@ import { Select, SelectOption } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Thead, Td, Th, Tr } from '@patternfly/react-table';
 
 import { ENFORCEMENT_ACTIONS } from 'constants/enforcementActions';
-import VIOLATION_STATES from 'constants/violationStates';
+import { VIOLATION_STATES } from 'constants/violationStates';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import TableCell from 'Components/PatternFly/TableCell';
 import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
