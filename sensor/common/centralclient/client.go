@@ -47,11 +47,6 @@ type Client struct {
 
 // NewClient creates a new client
 func NewClient(endpoint string) (*Client, error) {
-	return NewClientWithCert(endpoint, nil)
-}
-
-// NewClientWithCert creates a new client, using the provided certificate.
-func NewClientWithCert(endpoint string, clientCert *tls.Certificate) (*Client, error) {
 	if endpoint == "" {
 		return nil, errors.New("creating Client with empty endpoint is not allowed")
 	}
@@ -75,25 +70,22 @@ func NewClientWithCert(endpoint string, clientCert *tls.Certificate) (*Client, e
 		return nil, errors.Wrap(err, "parsing endpoint url")
 	}
 
-	if clientCert == nil {
-		// Load the client certificate. Note that while all endpoints accessed by the client do not require
-		// authentication, it is possible that a user has required client certificate authentication for the
-		// endpoint Sensor is connecting to. Since a client certificate can be used without harm even if the
-		// remote is not trusted, make it available here to be on the safe side.
-		//
-		// Moreover, authentication requirements can be tightened in future and thus having an older version
-		// of Sensor authenticating itself will enable backward compatibility with newer Centrals. This has
-		// indeed happened in the past when `/v1/metadata` became authenticated.
-		loadedCert, err := mtls.LeafCertificateFromFile()
-		if err != nil {
-			return nil, errors.Wrap(err, "obtaining client certificate")
-		}
-		clientCert = &loadedCert
+	// Load the client certificate. Note that while all endpoints accessed by the client do not require
+	// authentication, it is possible that a user has required client certificate authentication for the
+	// endpoint Sensor is connecting to. Since a client certificate can be used without harm even if the
+	// remote is not trusted, make it available here to be on the safe side.
+	//
+	// Moreover, authentication requirements can be tightened in future and thus having an older version
+	// of Sensor authenticating itself will enable backward compatibility with newer Centrals. This has
+	// indeed happened in the past when `/v1/metadata` became authenticated.
+	clientCert, err := mtls.LeafCertificateFromFile()
+	if err != nil {
+		return nil, errors.Wrap(err, "obtaining client certificate")
 	}
 	tlsConf := &tls.Config{
 		InsecureSkipVerify: true,
 		Certificates: []tls.Certificate{
-			*clientCert,
+			clientCert,
 		},
 	}
 	httpClient := &http.Client{

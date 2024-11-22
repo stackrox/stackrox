@@ -2,7 +2,6 @@ package crs
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -139,7 +138,7 @@ func registerCluster() error {
 }
 
 // temporarilyStoreRegistrantSecret extracts the REGISTRANT_SERVICE certificate+key pair from the CRS
-// and stores it alongside the CA certificate in the temporary storage.
+// and stores it alongside the CA certificate in the temporary storage /run/secrets/stackrox.io/certs.
 func temporarilyStoreRegistrantSecret(crs *crs.CRS) error {
 	// Extract (first) CA certificate from the CRS.
 	var caCert string
@@ -166,15 +165,9 @@ func temporarilyStoreRegistrantSecret(crs *crs.CRS) error {
 }
 
 func openCentralConnection(crs *crs.CRS) (*grpcUtil.LazyClientConn, error) {
-	// Extract registrator client certificate.
-	clientCert, err := tls.X509KeyPair([]byte(crs.Cert), []byte(crs.Key))
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing CRS certificate")
-	}
-
 	// Create central client.
 	centralEndpoint := env.CentralEndpoint.Setting()
-	centralClient, err := centralclient.NewClientWithCert(centralEndpoint, &clientCert)
+	centralClient, err := centralclient.NewClient(centralEndpoint)
 	if err != nil {
 		return nil, errors.Wrapf(err, "initializing Central client for endpoint %s", env.CentralEndpoint.Setting())
 	}
