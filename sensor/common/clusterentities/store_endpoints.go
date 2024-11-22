@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/clusterentities/metrics"
 )
 
 type endpointsStore struct {
@@ -65,6 +66,7 @@ func (e *endpointsStore) historyEnabled() bool {
 }
 
 func (e *endpointsStore) updateMetricsNoLock() {
+	metrics.UpdateNumberOfEndpoints(len(e.endpointMap), len(e.historicalEndpoints))
 }
 
 // RecordTick records a tick and returns all public IP addresses for which the count should be decremented

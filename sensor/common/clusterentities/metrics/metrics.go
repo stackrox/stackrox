@@ -57,8 +57,8 @@ func UpdateNumberOfEndpoints(current, historical int) {
 	endpointsStored.With(prometheus.Labels{"type": "historical"}).Set(float64(historical))
 }
 
-// ObserveIPHavingMultipleIPs records a situation when one IP belongs to more than one container
-func ObserveIPHavingMultipleIPs(ip string, containers []string) {
+// ObserveManyDeploymentsSharingSingleIP records a situation when one IP belongs to more than one container
+func ObserveManyDeploymentsSharingSingleIP(ip string, containers []string) {
 	ipsHavingMultipleContainers.With(
 		prometheus.Labels{
 			"ip":         ip,

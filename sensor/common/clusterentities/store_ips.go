@@ -161,7 +161,7 @@ func (e *ipsStore) applySingleNoLock(deploymentID string, data EntityData) (dec,
 		deplSet.Add(deploymentID)
 		// This IP has more than one deployment! Interesting, let's record it.
 		if deplSet.Cardinality() > 1 {
-			metrics.ObserveIPHavingMultipleIPs(ip.AsNetIP().String(), deplSet.AsSlice())
+			metrics.ObserveManyDeploymentsSharingSingleIP(ip.AsNetIP().String(), deplSet.AsSlice())
 		}
 		e.ipMap[ip] = deplSet
 		if ip.IsPublic() {
