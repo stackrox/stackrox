@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
@@ -275,10 +276,18 @@ func persistCertificates(ctx context.Context, centralHello *central.CentralHello
 		return errors.Wrap(err, "ensuring service certificates are persisted")
 	}
 
-	for _, persistedCert := range persistedCertificates {
-		log.Infof("Persisted certificate and key for service %s.", persistedCert.ServiceType.String())
-	}
+	serviceTypeNames := getServiceTypeNames(persistedCertificates)
+	log.Infof("Successfully persisted CRS cerificates for: %v.", strings.Join(serviceTypeNames, ", "))
+
 	return nil
+}
+
+func getServiceTypeNames(serviceCertificates []*storage.TypedServiceCertificate) []string {
+	serviceTypeNames := make([]string, 0, len(serviceCertificates))
+	for _, c := range serviceCertificates {
+		serviceTypeNames = append(serviceTypeNames, c.ServiceType.String())
+	}
+	return serviceTypeNames
 }
 
 // prepareSensorHelloMessage assembles the SensorHello message to be sent to Central for the hello-handshake.
