@@ -51,7 +51,7 @@ func InitializeStore() *StoreProvider {
 	entityStore := clusterentities.NewStoreWithMemory(uint16(memSizeSetting))
 
 	go func(s *clusterentities.Store) {
-		http.HandleFunc("/debug", func(w http.ResponseWriter, req *http.Request) {
+		http.HandleFunc("/debug.json", func(w http.ResponseWriter, req *http.Request) {
 			fmt.Fprintf(w, "%s\n", s.Debug())
 		})
 		err := http.ListenAndServe(":8099", nil)

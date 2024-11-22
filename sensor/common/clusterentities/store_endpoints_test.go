@@ -235,7 +235,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 					s.T().Fatalf("No expectations for tick %d - test case may miss assertions", tickNo)
 				}
 				for _, want := range expectations {
-					current, historical, ipCurrent, ipHistorical := store.endpointsStore.lookupEndpoint(want.query, store.ipsStore)
+					current, historical, ipCurrent, ipHistorical := store.endpointsStore.lookupEndpoint(want.query, store.podIPsStore)
 					switch want.wantLocation {
 					case theMap:
 						s.Containsf(append(current, ipCurrent...), want.wantLookupResult, "expected to find endpoint %q in the map in tick %d", want.query.IPAndPort.String(), tickNo)

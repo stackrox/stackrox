@@ -250,10 +250,21 @@ func (e *endpointsStore) removeFromHistoryIfExpired(deploymentID string, ep net.
 	return set.NewFrozenSet[net.IPAddress]()
 }
 
+func (e *endpointsStore) existsInCurrent(deploymentID string, ep net.NumericEndpoint) bool {
+	if m1, ok := e.endpointMap[ep]; ok {
+		if _, ok2 := m1[deploymentID]; ok2 {
+			return true
+		}
+	}
+	return false
+}
+
 // moveToHistory is a convenience function that removes data from the current map and adds it to history
 func (e *endpointsStore) moveToHistory(deploymentID string, ep net.NumericEndpoint) {
-	e.copyToHistory(deploymentID, ep)
-	e.deleteFromCurrent(deploymentID, ep)
+	if e.existsInCurrent(deploymentID, ep) {
+		e.addToHistory(deploymentID, ep)
+		e.deleteFromCurrent(deploymentID, ep)
+	}
 }
 
 // deleteFromHistory marks previously marked historical endpoint as no longer historical
@@ -298,18 +309,14 @@ func (e *endpointsStore) deleteFromCurrent(deploymentID string, ep net.NumericEn
 func (e *endpointsStore) moveAllToHistory() {
 	for ep, m1 := range e.endpointMap {
 		for deplID := range m1 {
-			e.copyToHistory(deplID, ep)
+			e.addToHistory(deplID, ep)
 			e.deleteFromCurrent(deplID, ep)
 		}
 	}
 }
 
-// copyToHistory adds endpoint data to the history, but does not remove it from the current map
-func (e *endpointsStore) copyToHistory(deploymentID string, ep net.NumericEndpoint) {
-	// Marking something historical should not happen when the memory setting is 0.
-	if !e.historyEnabled() {
-		return
-	}
+// addToHistory adds endpoint data to the history, but does not remove it from the current map
+func (e *endpointsStore) addToHistory(deploymentID string, ep net.NumericEndpoint) {
 	// Prepare maps if empty
 	if _, ok := e.historicalEndpoints[ep]; !ok {
 		e.historicalEndpoints[ep] = make(map[string]map[EndpointTargetInfo]*entityStatus)

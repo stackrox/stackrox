@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"golang.org/x/exp/maps"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -46,6 +47,11 @@ type EntityData struct {
 	containerIDs map[string]ContainerMetadata
 }
 
+func (ed *EntityData) String() string {
+	return fmt.Sprintf("ips: %v, endpoints: %v, containerIDs: %v",
+		maps.Keys(ed.ips), maps.Keys(ed.endpoints), maps.Keys(ed.containerIDs))
+}
+
 // AddIP adds an IP address to the set of IP addresses of the respective deployment.
 func (ed *EntityData) AddIP(ip net.IPAddress) {
 	if ed.ips == nil {
@@ -74,7 +80,7 @@ func (ed *EntityData) AddContainerID(containerID string, container ContainerMeta
 // endpoint.
 type Store struct {
 	endpointsStore    *endpointsStore
-	ipsStore          *ipsStore
+	podIPsStore       *ipsStore
 	containerIDsStore *containerIDsStore
 
 	ipRefCountMutex    sync.RWMutex
@@ -97,7 +103,7 @@ func NewStore() *Store {
 func NewStoreWithMemory(numTicks uint16) *Store {
 	store := &Store{
 		endpointsStore:    newEndpointsStoreWithMemory(numTicks),
-		ipsStore:          newIPsStoreWithMemory(numTicks),
+		podIPsStore:       newIPsStoreWithMemory(numTicks),
 		containerIDsStore: newContainerIDsStoreWithMemory(numTicks),
 		memorySize:        numTicks,
 	}
@@ -117,11 +123,11 @@ func (e *Store) resetMaps() {
 		if e.memorySize == 0 {
 			e.publicIPRefCounts = make(map[net.IPAddress]*int)
 		}
-		// Call to e.ipsStore.resetMaps() will move all IPs to history, so we do not reset the publicIPRefCounts.
+		// Call to e.podIPsStore.resetMaps() will move all IPs to history, so we do not reset the publicIPRefCounts.
 		// publicIPsListeners should not be reset at all, as we have no guarantee that the listeners will be re-added.
 	})
 	e.endpointsStore.resetMaps()
-	e.ipsStore.resetMaps()
+	e.podIPsStore.resetMaps()
 	e.containerIDsStore.resetMaps()
 }
 
@@ -134,8 +140,9 @@ func (e *Store) Cleanup() {
 // that is a key in the map will be replaced (or deleted).
 func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 	// Public IPs for which the counter must be incremented or decremented
+	// Order matters: Endpoints must be added before IP!
 	decIPs1, incIPs1 := e.endpointsStore.Apply(updates, incremental)
-	decIPs2, incIPs2 := e.ipsStore.Apply(updates, incremental)
+	decIPs2, incIPs2 := e.podIPsStore.Apply(updates, incremental)
 
 	// For safety, we increment first and decrement later as reaching 0 will cause panic.
 	// The incIPs1 and incIPs2 may differ when we add an endpoint to existing deployment (e.g., new IP).
@@ -158,7 +165,7 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 // RecordTick records the information that a unit of time (1 tick) has passed
 func (e *Store) RecordTick() {
 	// There may be public IP addresses expiring in this tick, and we may need to decrement the counters for them
-	decIPs := e.ipsStore.RecordTick()
+	decIPs := e.podIPsStore.RecordTick()
 	decEp := e.endpointsStore.RecordTick()
 	if decEp.Cardinality() == decIPs.Cardinality() {
 		for _, ip := range decEp.Union(decIPs).AsSlice() {
@@ -204,7 +211,7 @@ type LookupResult struct {
 
 // LookupByEndpoint returns possible target deployments by endpoint (if any).
 func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
-	current, historical, ipLookup, ipLookupHistorical := e.endpointsStore.lookupEndpoint(endpoint, e.ipsStore)
+	current, historical, ipLookup, ipLookupHistorical := e.endpointsStore.lookupEndpoint(endpoint, e.podIPsStore)
 	// Return early to avoid potential duplicates... not sure if duplicates are bad here.
 	if len(current)+len(historical) > 0 {
 		return append(current, historical...)

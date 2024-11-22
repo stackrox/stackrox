@@ -93,7 +93,7 @@ func (e *ipsStore) applyNoLock(updates map[string]*EntityData, incremental bool)
 	dec = set.NewFrozenSet[net.IPAddress]()
 	inc = set.NewFrozenSet[net.IPAddress]()
 	if !incremental {
-		for deploymentID := range updates {
+		for deploymentID, data := range updates {
 			dec = dec.Union(e.purgeNoLock(deploymentID))
 		}
 	}

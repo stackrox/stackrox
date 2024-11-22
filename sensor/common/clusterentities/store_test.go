@@ -74,22 +74,24 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryWhenGoingOffline() {
 			entityStore := NewStoreWithMemory(tc.numTicksToRemember)
 			entityStore.Apply(tc.initialState, true)
 			// We start online
-			s.Len(entityStore.ipsStore.ipMap, tc.wantMapSizeOnline)
+			s.Len(entityStore.podIPsStore.ipMap, tc.wantMapSizeOnline)
 			s.Len(entityStore.endpointsStore.endpointMap, tc.wantMapSizeOnline)
 			s.Len(entityStore.containerIDsStore.containerIDMap, tc.wantMapSizeOnline)
 
-			s.Len(entityStore.ipsStore.historicalIPs, tc.wantHistorySizeOnline)
+			s.Len(entityStore.podIPsStore.historicalIPs, tc.wantHistorySizeOnline)
 			s.Len(entityStore.endpointsStore.reverseHistoricalEndpoints, tc.wantHistorySizeOnline)
 			s.Len(entityStore.containerIDsStore.historicalContainerIDs, tc.wantHistorySizeOnline)
+
+			s.T().Logf("%s", string(entityStore.Debug()))
 
 			// Transition to offline
 			entityStore.Cleanup()
 
-			s.Len(entityStore.ipsStore.ipMap, tc.wantMapSizeOffline, "error in current IPs after cleanup")
+			s.Len(entityStore.podIPsStore.ipMap, tc.wantMapSizeOffline, "error in current IPs after cleanup")
 			s.Len(entityStore.endpointsStore.endpointMap, tc.wantMapSizeOffline, "error in current endpoints after cleanup")
 			s.Len(entityStore.containerIDsStore.containerIDMap, tc.wantMapSizeOffline, "error in current container IDs after cleanup")
 
-			s.Len(entityStore.ipsStore.historicalIPs, tc.wantHistorySizeOffline, "error in historical IPs after cleanup")
+			s.Len(entityStore.podIPsStore.historicalIPs, tc.wantHistorySizeOffline, "error in historical IPs after cleanup")
 			s.Len(entityStore.endpointsStore.historicalEndpoints, tc.wantHistorySizeOffline, "error in historical endpoints after cleanup")
 			s.Len(entityStore.containerIDsStore.historicalContainerIDs, tc.wantHistorySizeOffline, "error in historical container IDs after cleanup")
 		})

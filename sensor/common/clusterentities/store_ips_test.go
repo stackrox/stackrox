@@ -370,20 +370,20 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 					}
 				}
 				// Assert on IPs
-				s.T().Logf("IPs (tick %d):\n%s", tickNo, store.ipsStore.String())
+				s.T().Logf("IPs (tick %d):\n%s", tickNo, store.podIPsStore.String())
 				s.T().Logf("IP listener (tick %d): %s", tickNo, ipListener.String())
 				// convert to slice of strings to enable using Contains assertion
 				var historicalIPs []string
-				for _, address := range maps.Keys(store.ipsStore.historicalIPs) {
+				for _, address := range maps.Keys(store.podIPsStore.historicalIPs) {
 					historicalIPs = append(historicalIPs, address.String())
 				}
 				var currentIPs []string
-				for _, address := range maps.Keys(store.ipsStore.ipMap) {
+				for _, address := range maps.Keys(store.podIPsStore.ipMap) {
 					currentIPs = append(currentIPs, address.String())
 				}
 				for endpointIP, whereFound := range expect {
 					netIP := net.ParseIP(endpointIP)
-					current, historical := store.ipsStore.LookupByNetAddr(netIP, 80)
+					current, historical := store.podIPsStore.LookupByNetAddr(netIP, 80)
 					switch whereFound {
 					case theMap:
 						s.Greaterf(len(current), 0, "IP address lookup should return at least one result from the map")
@@ -415,7 +415,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 						// This is a trick to delete data from the store
 						store.Apply(map[string]*EntityData{"depl1": nil}, false)
 					}
-					s.T().Logf("\t\tIPs (tick %d): %s", tickNo, store.ipsStore.String())
+					s.T().Logf("\t\tIPs (tick %d): %s", tickNo, store.podIPsStore.String())
 
 				}
 			}
