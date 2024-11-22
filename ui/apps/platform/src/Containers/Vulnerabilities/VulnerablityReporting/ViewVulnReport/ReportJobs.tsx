@@ -54,7 +54,7 @@ import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
 import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
-import ReportJobStatus from './ReportJobStatus';
+import ReportJobStatus from '../../../../Components/ReportJob/ReportJobStatus';
 import JobDetails from './JobDetails';
 
 export type RunHistoryProps = {
