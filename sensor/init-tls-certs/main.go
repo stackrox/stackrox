@@ -79,7 +79,11 @@ func findFiles(sourceDir string) ([]string, error) {
 	}
 	log.Printf("Walking %q.", realSource)
 	var files []string
-	err = filepath.WalkDir(realSource, func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(realSource, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			log.Printf("Error accessing path %q: %s", path, walkErr)
+			return nil
+		}
 		if strings.HasPrefix(path, ".") {
 			log.Printf("Ignoring hidden file %q", path)
 			return nil
