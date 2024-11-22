@@ -1,6 +1,10 @@
 package resources
 
 import (
+	"fmt"
+	"net/http"
+
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -45,6 +49,17 @@ func InitializeStore() *StoreProvider {
 	svcStore := newServiceStore()
 	nodeStore := newNodeStore()
 	entityStore := clusterentities.NewStoreWithMemory(uint16(memSizeSetting))
+
+	go func(s *clusterentities.Store) {
+		http.HandleFunc("/debug", func(w http.ResponseWriter, req *http.Request) {
+			fmt.Fprintf(w, "%s\n", s.Debug())
+		})
+		err := http.ListenAndServe(":8099", nil)
+		if err != nil {
+			log.Error(errors.Wrap(err, "unable to start cluster entities store debug server"))
+		}
+	}(entityStore)
+
 	endpointManager := newEndpointManager(svcStore, deployStore, podStore, nodeStore, entityStore)
 	p := &StoreProvider{
 		deploymentStore:        deployStore,
