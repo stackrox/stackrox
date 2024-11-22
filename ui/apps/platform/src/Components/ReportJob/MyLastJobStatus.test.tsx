@@ -39,6 +39,7 @@ describe('MyLastJobStatus', () => {
             errorMsg: '',
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
+            failedClusters: [],
         };
         const snapshot: ReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
@@ -69,6 +70,7 @@ describe('MyLastJobStatus', () => {
             errorMsg: '',
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
+            failedClusters: [],
         };
         const snapshot: ReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
@@ -99,6 +101,7 @@ describe('MyLastJobStatus', () => {
             errorMsg: '',
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
+            failedClusters: [],
         };
         const snapshot: ReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
@@ -129,6 +132,7 @@ describe('MyLastJobStatus', () => {
             errorMsg: 'Some error',
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
+            failedClusters: [],
         };
         const snapshot: ReportSnapshot = cloneDeep({
             ...baseReportSnapshot,

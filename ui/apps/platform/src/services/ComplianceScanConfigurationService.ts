@@ -276,7 +276,36 @@ export function fetchComplianceReportHistory({
             `/v2/compliance/scan/configurations/${id}/reports/${showMyHistory ? 'my-history' : 'history'}?${params}`
         )
         .then((response) => {
-            return response.data.complianceReportSnapshots;
+            const { complianceReportSnapshots } = response.data;
+            const modifiedComplianceReportSnapshots = complianceReportSnapshots.map((snapshot) => {
+                const modifiedReportStatus = { ...snapshot.reportStatus };
+                modifiedReportStatus.runState = 'PARTIAL_ERROR';
+                modifiedReportStatus.failedClusters = [
+                    {
+                        clusterId: '1',
+                        clusterName: 'dev-cluster',
+                        reason: 'The cluster is under heavy load and cannot process the request',
+                        operatorVersion: 'v1.6.0',
+                    },
+                    {
+                        clusterId: '2',
+                        clusterName: 'frontend-team-cluster',
+                        reason: 'The cluster has incorrect or missing configurations required for report generation',
+                        operatorVersion: 'v1.6.0',
+                    },
+                    {
+                        clusterId: '3',
+                        clusterName: 'monitoring-cluster',
+                        reason: 'Supporting services (e.g., databases, message queues) that the cluster depends on are down or unreachable',
+                        operatorVersion: 'v1.6.0',
+                    },
+                ];
+                return {
+                    ...snapshot,
+                    reportStatus: modifiedReportStatus,
+                };
+            });
+            return modifiedComplianceReportSnapshots;
         })
         .catch((error) => {
             Raven.captureException(error);

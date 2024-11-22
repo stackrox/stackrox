@@ -12,6 +12,7 @@ import { Button, Flex, FlexItem, Tooltip } from '@patternfly/react-core';
 import capitalize from 'lodash/capitalize';
 
 import { ReportStatus } from 'types/reportJob';
+import PartialReportModal from './PartialReportModal';
 
 export type ReportJobStatusProps = {
     reportStatus: ReportStatus;
@@ -76,6 +77,24 @@ function ReportJobStatus({
                     </Tooltip>
                 </FlexItem>
             </Flex>
+        );
+    } else if (
+        isDownload &&
+        isDownloadAvailable &&
+        !areDownloadActionsDisabled &&
+        reportStatus.runState === 'PARTIAL_ERROR'
+    ) {
+        statusIcon = (
+            <ExclamationTriangleIcon
+                title="Report download prepared with partial errors"
+                className="pf-v5-u-warning-color-100"
+            />
+        );
+        statusText = (
+            <PartialReportModal
+                failedClusters={reportStatus.failedClusters}
+                onConfirm={onDownload}
+            />
         );
     } else if (isDownload && isDownloadAvailable && !areDownloadActionsDisabled) {
         statusColorClass = 'pf-v5-u-primary-color-100';
