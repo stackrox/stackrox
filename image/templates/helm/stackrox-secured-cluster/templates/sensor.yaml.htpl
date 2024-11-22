@@ -53,6 +53,25 @@ spec:
         fsGroup: 4000
       {{- end }}
       serviceAccountName: sensor
+      initContainers:
+        - name: init-tls-certs
+          image: {{ quote ._rox.image.main.fullRef }}
+          command:
+          - /stackrox/bin/init-tls-certs
+          resources:
+            {{- ._rox.admissionControl._resources | nindent 12 }}
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+          volumeMounts:
+          - name: certs-legacy
+            mountPath: /tmp/certs-legacy
+            readOnly: true
+          - name: certs-new
+            mountPath: /tmp/certs-new
+            readOnly: true
+          - name: certs
+            mountPath: /tmp/certs
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy }}
@@ -169,12 +188,26 @@ spec:
         {{- end }}
       volumes:
       - name: certs
+        emptyDir: {}
+      - name: certs-legacy
         secret:
           secretName: sensor-tls
+          optional: true
           items:
           - key: sensor-cert.pem
             path: cert.pem
           - key: sensor-key.pem
+            path: key.pem
+          - key: ca.pem
+            path: ca.pem
+      - name: certs-new
+        secret:
+          secretName: tls-cert-sensor
+          optional: true
+          items:
+          - key: cert.pem
+            path: cert.pem
+          - key: key.pem
             path: key.pem
           - key: ca.pem
             path: ca.pem
