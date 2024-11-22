@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: securedclusters.platform.stackrox.io
 spec:
   group: platform.stackrox.io
@@ -102,7 +102,6 @@ spec:
                     description: |-
                       Set this to 'true' to enable preventive policy enforcement for object updates.
 
-
                       Note: this will not have any effect unless 'Listen On Creates' is set to 'true' as well.
                     type: boolean
                   nodeSelector:
@@ -127,10 +126,8 @@ spec:
                           Claims lists the names of resources, defined in spec.resourceClaims,
                           that are used by this container.
 
-
                           This is an alpha field and requires enabling the
                           DynamicResourceAllocation feature gate.
-
 
                           This field is immutable. It can only be set for containers.
                         items:
@@ -312,9 +309,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the ConfigMap or its
@@ -380,9 +375,7 @@ spec:
                                     This field is effectively required, but due to backwards compatibility is
                                     allowed to be empty. Instances of this type with an empty value here are
                                     almost certainly wrong.
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -462,21 +455,21 @@ spec:
                 items:
                   description: "K8sObjectOverlay is an overlay that applies a set
                     of patches to a resource.\nIt targets a resource by its API version,
-                    kind, and name, and applies\na list of patches to this resource.\n\n\n#
-                    Examples\n\n\n## Adding an annotation to a resource\n\n\n\tapiVersion:
+                    kind, and name, and applies\na list of patches to this resource.\n\n#
+                    Examples\n\n## Adding an annotation to a resource\n\n\tapiVersion:
                     v1\n\tkind: ServiceAccount\n\tname: central\n\tpatches:\n\t- path:
                     metadata.annotations.eks\\.amazonaws\\.com/role-arn\n\t  value:
-                    \"\\\"arn:aws:iam:1234:role\\\"\"\n\n\n## Adding an environment
-                    variable to a deployment\n\n\n\tapiVersion: apps/v1\n\tkind: Deployment\n\tname:
+                    \"\\\"arn:aws:iam:1234:role\\\"\"\n\n## Adding an environment
+                    variable to a deployment\n\n\tapiVersion: apps/v1\n\tkind: Deployment\n\tname:
                     central\n\tpatches:\n\t- path: spec.template.spec.containers[name:central].env[-1]\n\t
-                    \ value: |\n\t    name: MY_ENV_VAR\n\t    value: value\n\n\n##
-                    Adding an ingress to a network policy\n\n\n\tapiVersion: networking.k8s.io/v1\n\tkind:
+                    \ value: |\n\t    name: MY_ENV_VAR\n\t    value: value\n\n## Adding
+                    an ingress to a network policy\n\n\tapiVersion: networking.k8s.io/v1\n\tkind:
                     NetworkPolicy\n\tname: allow-ext-to-central\n\tpatches:\n\t- path:
                     spec.ingress[-1]\n\t  value: |\n\t    ports:\n\t    - port: 999\n\t
-                    \     protocol: TCP\n\n\n## Changing the value of a configMap\n\n\n\tapiVersion:
+                    \     protocol: TCP\n\n## Changing the value of a configMap\n\n\tapiVersion:
                     v1\n\tkind: ConfigMap\n\tname: central-endpoints\n\tpatches:\n\t-
                     path: data\n\t  value: |\n\t    endpoints.yaml: |\n\t    disableDefault:
-                    false\n\n\n## Adding a container to a deployment\n\n\n\tapiVersion:
+                    false\n\n## Adding a container to a deployment\n\n\tapiVersion:
                     apps/v1\n\tkind: Deployment\n\tname: central\n\tpatches:\n\t  -
                     path: spec.template.spec.containers[-1]\n\t    value: |\n\t      name:
                     nginx\n\t      image: nginx\n\t      ports:\n\t      - containerPort:
@@ -571,10 +564,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -633,10 +624,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -716,10 +705,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -825,10 +812,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -986,10 +971,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -1171,10 +1154,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -1299,10 +1280,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -1485,10 +1464,8 @@ spec:
                           Claims lists the names of resources, defined in spec.resourceClaims,
                           that are used by this container.
 
-
                           This is an alpha field and requires enabling the
                           DynamicResourceAllocation feature gate.
-
 
                           This field is immutable. It can only be set for containers.
                         items:
