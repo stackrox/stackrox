@@ -92,7 +92,7 @@ func EnsureClusterRegistered() error {
 //     emptyDir) so that they will be picked up automatically for our mTLS authentication towards Central.
 //   - connects to Central and sends a sensorHello message for this new secured cluster
 //   - expects to receive a centralHello response containing newly issued service certificates+keys
-//     which are then stored as Kubernetes secrets named `tls-<service slug name>`.
+//     which are then stored as Kubernetes secrets named `tls-cert-<service slug name>`.
 func registerCluster() error {
 	ctx := context.Background()
 
@@ -128,7 +128,7 @@ func registerCluster() error {
 	}
 
 	// Store certificates+keys contained in Central's centralHello response as
-	// Kubernetes secrets named `tls-<service name>`.
+	// Kubernetes secrets named `tls-cert-<service slug name>`.
 	err = persistCertificates(ctx, centralHello, k8sClient)
 	if err != nil {
 		return errors.Wrap(err, "persisting certificates")
