@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { AlertTriangle } from 'react-feather';
+import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 import { Tooltip } from '@patternfly/react-core';
 
 import DetailedTooltipContent from 'Components/DetailedTooltipContent';
@@ -98,7 +98,10 @@ const CVEStackedPill = ({
                         />
                     }
                 >
-                    <AlertTriangle className="w-4 h-4 text-alert-700 ml-2" />
+                    <ExclamationTriangleIcon
+                        className="w-4 h-4 ml-2"
+                        color="var(--pf-v5-global--warning-color--100)"
+                    />
                 </Tooltip>
             )}
         </div>
