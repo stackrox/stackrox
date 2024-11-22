@@ -17,7 +17,6 @@ func (e *Store) Debug() []byte {
 	return ret
 }
 
-
 func (e *containerIDsStore) debug() interface{} {
 	dbg := make(map[string]map[string]interface{})
 	dbg["containerIDMap"] = make(map[string]interface{})
@@ -37,20 +36,19 @@ func (e *containerIDsStore) debug() interface{} {
 	return dbg
 }
 
-
 func (e *ipsStore) debug() interface{} {
 	dbg := make(map[string]map[string]interface{})
 	dbg["ipMap"] = make(map[string]interface{})
 	dbg["historicalIPs"] = make(map[string]interface{})
 
 	for addr, deplSet := range e.ipMap {
-			dbg["ipMap"][addr.AsNetIP().String()] = deplSet.AsSlice()
+		dbg["ipMap"][addr.AsNetIP().String()] = deplSet.AsSlice()
 	}
 	for addr, submap := range e.historicalIPs {
 		for deplID, status := range submap {
 			dbg["historicalIPs"][addr.AsNetIP().String()] = map[string]interface{}{
 				"deplID": deplID,
-				"status":   status,
+				"status": status,
 			}
 		}
 	}
@@ -74,7 +72,7 @@ func (e *endpointsStore) debug() interface{} {
 			for targetInfo, status := range targetInfoSetMap {
 				dbg["historicalEndpoints"][ep.String()][deplID] = map[string]interface{}{
 					"targetInfo": targetInfo,
-					"status":   status,
+					"status":     status,
 				}
 			}
 		}
