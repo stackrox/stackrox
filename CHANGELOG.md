@@ -28,6 +28,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-26124: Added a `--with-database-only` only to diagnostic bundle.
   - `roxctl central debug download-diagnostics --with-database-only`
 - ROX-18899: Added Microsoft Sentinel notifier to send alerts and audit logs to Azure Log Analytics Workspace.
+- ROX-22216: Policy as Code -- represent policies using a SecurityPolicy Kubernetes custom resource
 
 ### Removed Features
 
