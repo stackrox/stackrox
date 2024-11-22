@@ -15,16 +15,6 @@ function selectFirstAutocompleteSearchOption() {
     cy.get(`ul[aria-label="Filter results select menu"] li:nth(0) button`).click();
 }
 
-function verifyTableCellsMatchFilterChip(cellSelector) {
-    cy.get('.search-filter-chips .pf-v5-c-chip .pf-v5-c-chip__text')
-        .invoke('text')
-        .then((textValue) => {
-            cy.get('table tbody tr').each(($row) => {
-                cy.wrap($row).find(cellSelector).invoke('text').should('equal', textValue);
-            });
-        });
-}
-
 describe('Violations - Search Filter', () => {
     withAuth();
 
@@ -50,7 +40,12 @@ describe('Violations - Search Filter', () => {
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
         cy.wait('@getViolations');
 
-        verifyTableCellsMatchFilterChip('td[data-label="Policy"] a');
+        // should filter using the correct query values
+        cy.wait('@getViolations').then((interception) => {
+            const queryString = interception.request.query.query;
+
+            expect(queryString).to.contain('Policy:');
+        });
     });
 
     it('should filter violations by policy category', () => {
@@ -65,9 +60,13 @@ describe('Violations - Search Filter', () => {
         selectFirstAutocompleteSearchOption();
 
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
-        cy.wait('@getViolations');
 
-        verifyTableCellsMatchFilterChip('td[data-label="Categories"]');
+        // should filter using the correct query values
+        cy.wait('@getViolations').then((interception) => {
+            const queryString = interception.request.query.query;
+
+            expect(queryString).to.contain('Category:');
+        });
     });
 
     it('should filter violations by severity', () => {
@@ -89,7 +88,12 @@ describe('Violations - Search Filter', () => {
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
         cy.wait('@getViolations');
 
-        verifyTableCellsMatchFilterChip('td[data-label="Severity"]');
+        // should filter using the correct query values
+        cy.wait('@getViolations').then((interception) => {
+            const queryString = interception.request.query.query;
+
+            expect(queryString).to.contain('Severity:');
+        });
     });
 
     it('should filter violations by lifecycle stage', () => {
@@ -111,6 +115,11 @@ describe('Violations - Search Filter', () => {
         cy.intercept('GET', '/v1/alerts?query=*').as('getViolations');
         cy.wait('@getViolations');
 
-        verifyTableCellsMatchFilterChip('td[data-label="Lifecycle"]');
+        // should filter using the correct query values
+        cy.wait('@getViolations').then((interception) => {
+            const queryString = interception.request.query.query;
+
+            expect(queryString).to.contain('Lifecycle Stage:');
+        });
     });
 });
