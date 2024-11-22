@@ -15,6 +15,7 @@ import (
 const (
 	destinationDir  = "/tmp/certs"
 	legacySourceDir = "/tmp/certs-legacy"
+	newSourceDir    = "/tmp/certs-new"
 )
 
 func main() {
@@ -24,10 +25,7 @@ func main() {
 		log.Fatalf("Cannot check destination directory %q: %s", destinationDir, err)
 	}
 	log.Printf("Destination directory %q looks sane.", destinationDir)
-	files, err := waitForSource()
-	if err != nil {
-		log.Fatalf("Cannot find source files in %q: %s", legacySourceDir, err)
-	}
+	files := waitForSource()
 	if err = copyFiles(files, realDest); err != nil {
 		log.Fatalf("Cannot copy files: %s", err)
 	}
@@ -48,46 +46,70 @@ func copyFiles(files []string, destDir string) error {
 	return nil
 }
 
-func waitForSource() ([]string, error) {
+func waitForSource() []string {
 	log.Printf("Looking for files in the source directory %q.", legacySourceDir)
 	for {
-		realSource, err := filepath.EvalSymlinks(legacySourceDir)
+		// Check new certificates first
+		files, err := findFiles(newSourceDir)
 		if err != nil {
-			return nil, err
+			log.Printf("Error checking certificates in %q: %s", newSourceDir, err)
+		} else {
+			log.Printf("Using new certificates from %q.", newSourceDir)
+			return files
 		}
-		log.Printf("Walking %q.", realSource)
-		var files []string
-		err = filepath.WalkDir(realSource, func(path string, d fs.DirEntry, err error) error {
-			if strings.HasPrefix(path, ".") {
-				log.Printf("Ignoring hidden file %q", path)
-				return nil
-			}
-			realFile, err := filepath.EvalSymlinks(path)
-			if err != nil {
-				log.Printf("Ignoring file %q: %s", path, err)
-				return nil
-			}
-			st, err := os.Stat(realFile)
-			if err != nil {
-				log.Printf("Ignoring file %q: %s", realFile, err)
-				return nil
-			}
-			if st.IsDir() {
-				return nil
-			}
-			log.Printf("Found file %q (%q)", path, realFile)
-			files = append(files, realFile)
-			return nil
-		})
+
+		// Fall back to legacy certificates
+		files, err = findFiles(legacySourceDir)
 		if err != nil {
-			return nil, err
+			log.Printf("Error checking legacy certificates in %q: %s", legacySourceDir, err)
+		} else {
+			log.Printf("Using legacy certificates from %q.", legacySourceDir)
+			return files
 		}
-		if len(files) >= 3 {
-			return files, nil
-		}
-		log.Printf("Did not find (enough) files, sleeping.")
+
+		log.Printf(" No certificates found. Retrying...")
 		time.Sleep(time.Second)
 	}
+}
+
+func findFiles(sourceDir string) ([]string, error) {
+	realSource, err := filepath.EvalSymlinks(sourceDir)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("Walking %q.", realSource)
+	var files []string
+	err = filepath.WalkDir(realSource, func(path string, d fs.DirEntry, err error) error {
+		if strings.HasPrefix(path, ".") {
+			log.Printf("Ignoring hidden file %q", path)
+			return nil
+		}
+		realFile, err := filepath.EvalSymlinks(path)
+		if err != nil {
+			log.Printf("Ignoring file %q: %s", path, err)
+			return nil
+		}
+		st, err := os.Stat(realFile)
+		if err != nil {
+			log.Printf("Ignoring file %q: %s", realFile, err)
+			return nil
+		}
+		if st.IsDir() {
+			return nil
+		}
+		log.Printf("Found file %q (%q)", path, realFile)
+		files = append(files, realFile)
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	if len(files) >= 3 {
+		return files, nil
+	}
+
+	return nil, fmt.Errorf("not enough files found at %q", sourceDir)
 }
 
 func sanityCheckDestination() (string, error) {

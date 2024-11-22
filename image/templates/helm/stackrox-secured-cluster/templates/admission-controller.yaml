@@ -67,6 +67,9 @@ spec:
           - name: certs-legacy
             mountPath: /tmp/certs-legacy
             readOnly: true
+          - name: certs-new
+            mountPath: /tmp/certs-new
+            readOnly: true
           - name: certs
             mountPath: /tmp/certs
       containers:
@@ -141,6 +144,17 @@ spec:
                 path: key.pem
               - key: ca.pem
                 path: ca.pem
+        - name: certs-new
+          secret:
+            secretName: tls-cert-admission-control
+            optional: true
+            items:
+            - key: cert.pem
+              path: cert.pem
+            - key: key.pem
+              path: key.pem
+            - key: ca.pem
+              path: ca.pem
         - name: ca
           secret:
             secretName: service-ca
