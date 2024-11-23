@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: collector-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "configmap" "collector-config") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "configmap" "collector-config") | nindent 4 }}
+data:
+  config.yaml: |
+    {{- tpl (.Files.Get "config-templates/collector/collector-config.yaml.tpl") . | nindent 4 }}
