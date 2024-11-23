@@ -8,5 +8,5 @@ metadata:
   annotations:
     {{- include "srox.annotations" (list . "configmap" "collector-config") | nindent 4 }}
 data:
-  config.yaml: |
-    {{- tpl (.Files.Get "config-templates/collector/collector-config.yaml.tpl") . | nindent 4 }}
+  runtime_config.yaml: |
+    {{- tpl (.Files.Get "config-templates/collector/config.yaml.tpl") . | nindent 4 }}
