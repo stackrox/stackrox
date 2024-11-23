@@ -146,6 +146,8 @@ echo "Creating collector RBAC roles..."
 ${KUBE_COMMAND} apply -f "$DIR/collector-rbac.yaml" || print_rbac_instructions
 echo "Creating collector network policies..."
 ${KUBE_COMMAND} apply -f "$DIR/collector-netpol.yaml"
+echo "Creating collector ConfigMap.."
+${KUBE_COMMAND} apply -f "$DIR/collector-config.yaml"
 if [[ -f "$DIR/collector-pod-security.yaml" ]]; then
   if [[ "${SUPPORTS_PSP}" -eq 0 ]]; then
     echo "Pod security policies are not supported on this cluster. Skipping..."
