@@ -82,7 +82,9 @@ jobs:
     - fetch-nvd-feeds
     - fetch-nvd-api
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+    if: |
+      needs.fetch-nvd-feeds.result == 'success' || needs.fetch-nvd-api.result == 'success'
+      # github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -108,11 +110,17 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Upload nvd to Google Cloud Storage
-      run: gsutil cp nvd-feeds.zip "gs://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
+    - name: Upload nvd-feeds.zip (if exists)
+      run: |
+        if [ -f nvd-feeds.zip ]; then
+          gsutil cp nvd-feeds.zip "gs://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
+        fi
 
-    - name: Upload nvd-api to Google Cloud Storage
-      run: gsutil cp nvd-api.zip "gs://definitions.stackrox.io/v4/nvd/nvd-api.zip"
+    - name: Upload nvd-api.zip (if exists)
+      run: |
+        if [ -f nvd-api.zip ]; then
+          gsutil cp nvd-api.zip "gs://definitions.stackrox.io/v4/nvd/nvd-api.zip"
+        fi
 
   send-notification:
     needs:
