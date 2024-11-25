@@ -1162,7 +1162,7 @@ get_ingress_endpoint() {
     local namespace="$1"
     local object="$2"
     local field_accessor="$3"
-    local timeout="${4:-1800}"
+    local timeout="${4:-3600}"
 
     local cli_cmd="kubectl"
     if [[ "$object" =~ route ]]; then
