@@ -84,7 +84,6 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       needs.fetch-nvd-feeds.result == 'success' || needs.fetch-nvd-api.result == 'success'
-      # github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
