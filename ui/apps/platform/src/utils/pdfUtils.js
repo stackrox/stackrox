@@ -128,7 +128,7 @@ const createPDFTable = (tableData, entityType, query, pdfId, tableColumns) => {
                             String(flattenedObj[key]).replace(/\s+/g, ' ').trim()) ||
                         'N/A';
                 }
-                td.innerHTML = colValue.replace(/<\/?[^>]+(>|$)/g, "");
+                td.innerHTML = colValue.replace(/<\/?[^>]+(>|$)/g, '');
                 tr.appendChild(td);
             });
             tbdy.appendChild(tr);
