@@ -65,7 +65,7 @@ require (
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.1-0.20210315223345-82c243799c99
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.23.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/go-version v1.7.0
@@ -123,7 +123,7 @@ require (
 	github.com/stackrox/helmtest v0.0.1
 	github.com/stackrox/k8s-overlay-patch v0.0.0-20240610103501-74a2a4fd2bae
 	github.com/stackrox/pkcs7 v0.0.0-20240314170115-841ca6b5f88d
-	github.com/stackrox/scanner v0.0.0-20240830165150-d133ba942d59
+	github.com/stackrox/scanner v0.0.0-20241125214720-5c3534926069
 	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/gjson v1.18.0
 	github.com/tkuchiki/go-timezone v0.2.3
@@ -145,8 +145,8 @@ require (
 	golang.org/x/time v0.8.0
 	golang.org/x/tools v0.26.0
 	golang.stackrox.io/grpc-http1 v0.3.13
-	google.golang.org/api v0.203.0
-	google.golang.org/genproto v0.0.0-20241015192408-796eee8c2d53
+	google.golang.org/api v0.204.0
+	google.golang.org/genproto v0.0.0-20241021214115-324edc3d5d38
 	google.golang.org/grpc v1.67.1
 	google.golang.org/grpc/examples v0.0.0-20210902184326-c93e472777b9
 	google.golang.org/protobuf v1.35.1
@@ -482,8 +482,8 @@ require (
 	go.step.sm/crypto v0.44.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20241007155032-5fefd90f89a9 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20241021214115-324edc3d5d38 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241021214115-324edc3d5d38 // indirect
 	google.golang.org/grpc/stats/opentelemetry v0.0.0-20240907200651-3ffb98b2c93a // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
