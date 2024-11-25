@@ -197,3 +197,6 @@ network:
   enableNetworkPolicies: null # bool
 system:
   enablePodSecurityPolicies: null # bool
+networking:
+  externalIps:
+    enable: null # bool
