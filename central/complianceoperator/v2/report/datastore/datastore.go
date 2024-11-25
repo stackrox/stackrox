@@ -2,10 +2,12 @@ package datastore
 
 import (
 	"context"
+	"testing"
 
 	pgStore "github.com/stackrox/rox/central/complianceoperator/v2/report/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/postgres"
 )
 
 // DataStore is the entry point for storing/retrieving compliance operator report snapshot objects.
@@ -29,4 +31,9 @@ func New(reportSnapshotStorage pgStore.Store) DataStore {
 	return &datastoreImpl{
 		store: reportSnapshotStorage,
 	}
+}
+
+// GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
+	return New(pgStore.New(pool))
 }

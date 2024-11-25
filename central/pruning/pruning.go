@@ -181,6 +181,7 @@ func (g *garbageCollectorImpl) pruneBasedOnConfig() {
 	g.removeExpiredVulnRequests()
 	g.collectClusters(pvtConfig)
 	g.removeOldReportHistory(pvtConfig)
+	g.removeOldComplianceReportHistory(pvtConfig)
 	g.removeOldReportBlobs(pvtConfig)
 	g.removeExpiredAdministrationEvents(pvtConfig)
 	g.removeExpiredDiscoveredClusters()
@@ -633,6 +634,13 @@ func (g *garbageCollectorImpl) removeOldReportHistory(config *storage.PrivateCon
 	reportHistoryRetentionConfig := config.GetReportRetentionConfig().GetHistoryRetentionDurationDays()
 	dur := time.Duration(reportHistoryRetentionConfig) * 24 * time.Hour
 	postgres.PruneReportHistory(pruningCtx, g.postgres, dur)
+}
+
+func (g *garbageCollectorImpl) removeOldComplianceReportHistory(config *storage.PrivateConfig) {
+	defer metrics.SetPruningDuration(time.Now(), "ComplianceReportHistory")
+	reportHistoryRetentionConfig := config.GetReportRetentionConfig().GetHistoryRetentionDurationDays()
+	dur := time.Duration(reportHistoryRetentionConfig) * 24 * time.Hour
+	postgres.PruneComplianceReportHistory(pruningCtx, g.postgres, dur)
 }
 
 func (g *garbageCollectorImpl) removeOldReportBlobs(config *storage.PrivateConfig) {
