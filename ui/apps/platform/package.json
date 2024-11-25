@@ -138,8 +138,8 @@
         "@types/react-dom": "^18.3.1",
         "@types/react-redux": "^7.1.34",
         "@types/segment-analytics": "^0.0.38",
-        "@typescript-eslint/eslint-plugin": "^8.15.0",
-        "@typescript-eslint/parser": "^8.15.0",
+        "@typescript-eslint/eslint-plugin": "^8.16.0",
+        "@typescript-eslint/parser": "^8.16.0",
         "axe-core": "^4.10.0",
         "cypress": "^13.14.2",
         "cypress-axe": "^1.5.0",
@@ -177,8 +177,8 @@
     },
     "overrides": {
         "@jest/types": "^29.6.3",
-        "@typescript-eslint/eslint-plugin": "^8.15.0",
-        "@typescript-eslint/parser": "^8.15.0",
+        "@typescript-eslint/eslint-plugin": "^8.16.0",
+        "@typescript-eslint/parser": "^8.16.0",
         "autoprefixer": "10.4.5",
         "babel-jest": "^29.7.0",
         "connected-react-router": {
