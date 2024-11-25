@@ -139,6 +139,10 @@ collector:
     enabled: null # bool
   runtimeConfig:
     enabled: null # bool
+    networking:
+      externalIps:
+        enable: null # bool
+      perContainerRateLimit: 1024 # int
 auditLogs:
   disableCollection: null # bool
 customize:
@@ -197,6 +201,3 @@ network:
   enableNetworkPolicies: null # bool
 system:
   enablePodSecurityPolicies: null # bool
-networking:
-  externalIps:
-    enable: null # bool
