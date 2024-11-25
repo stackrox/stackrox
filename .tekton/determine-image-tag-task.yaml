@@ -40,7 +40,7 @@ spec:
     - use
     - $(params.SOURCE_ARTIFACT)=/var/workdir/source
   - name: determine-image-tag
-    image: registry.access.redhat.com/ubi8:latest
+    image: registry.access.redhat.com/ubi9:latest
     workingDir: /var/workdir/source
     script: |
       #!/usr/bin/env bash
