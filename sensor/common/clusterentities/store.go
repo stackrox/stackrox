@@ -80,7 +80,7 @@ func (ed *EntityData) AddContainerID(containerID string, container ContainerMeta
 // endpoint.
 type Store struct {
 	endpointsStore    *endpointsStore
-	podIPsStore       *ipsStore
+	podIPsStore       *podIPsStore
 	containerIDsStore *containerIDsStore
 
 	ipRefCountMutex    sync.RWMutex
@@ -103,7 +103,7 @@ func NewStore() *Store {
 func NewStoreWithMemory(numTicks uint16) *Store {
 	store := &Store{
 		endpointsStore:    newEndpointsStoreWithMemory(numTicks),
-		podIPsStore:       newIPsStoreWithMemory(numTicks),
+		podIPsStore:       newPodIPsStoreWithMemory(numTicks),
 		containerIDsStore: newContainerIDsStoreWithMemory(numTicks),
 		memorySize:        numTicks,
 	}

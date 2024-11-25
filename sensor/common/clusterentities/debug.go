@@ -40,7 +40,7 @@ func (e *containerIDsStore) debug() interface{} {
 	return dbg
 }
 
-func (e *ipsStore) debug() interface{} {
+func (e *podIPsStore) debug() interface{} {
 	dbg := make(map[string]map[string]interface{})
 	dbg["ipMap"] = make(map[string]interface{})
 	dbg["reverseIPMap"] = make(map[string]interface{})

@@ -29,7 +29,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 						containerID:  "pod1",
 						ipAddr:       "10.3.0.1",
 						port:         80,
-						incremental:  false, // replace
+						incremental:  false, // delete all data for the deployment, then apply update
 					},
 				},
 			},
