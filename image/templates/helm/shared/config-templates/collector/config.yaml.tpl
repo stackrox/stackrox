@@ -5,9 +5,10 @@
   via `--set`/values-files specified via `-f`.
      */ -}}
 
+{{- include "srox.init" . -}}
 # Configuration file for collector.
 
 networking:
   externalIps:
-    enable: false
+    enable: {{ ._rox.networking.externalIps.enable | default false }}
   perContainerRateLimit: 1024
