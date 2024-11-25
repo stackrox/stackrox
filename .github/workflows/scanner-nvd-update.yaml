@@ -36,7 +36,9 @@ jobs:
         set -eu
         dir=$(mktemp -d)
         python3 .github/workflows/scripts/scanner-update-nvd-feeds.py "$dir"
-        zip -j nvd-feeds.zip "$dir"/*.nvd.json
+        if [ "$(find "$dir" -name "*.nvd.json" | wc -l)" -gt 0 ]; then
+          zip -j nvd-feeds.zip "$dir"/*.nvd.json
+        fi
 
     - uses: ./.github/actions/upload-artifact-with-retry
       with:
@@ -61,7 +63,7 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Fetch NVD Api
+    - name: Fetch NVD API
       env:
         SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
@@ -69,7 +71,9 @@ jobs:
         set -eu
         dir=$(mktemp -d)
         python3 .github/workflows/scripts/scanner-update-nvd-api.py "$dir"
-        zip -j nvd-api.zip "$dir"/*.nvd.json
+        if [ "$(find "$dir" -name "*.nvd.json" | wc -l)" -gt 0 ]; then
+          zip -j nvd-api.zip "$dir"/*.nvd.json
+        fi
 
     - uses: ./.github/actions/upload-artifact-with-retry
       with:
@@ -85,6 +89,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.ref }}
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
@@ -111,6 +118,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.ref }}
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
