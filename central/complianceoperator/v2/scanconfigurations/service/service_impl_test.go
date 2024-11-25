@@ -650,13 +650,20 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
 
 	allAccessContext := sac.WithAllAccess(context.Background())
 
+	user := &storage.SlimUser{
+		Id:   "user-1",
+		Name: "user-1",
+	}
+
+	ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, user)
+
 	invalidID := ""
-	_, err := s.service.RunReport(allAccessContext, &v2.ComplianceRunReportRequest{ScanConfigId: invalidID})
+	_, err := s.service.RunReport(ctx, &v2.ComplianceRunReportRequest{ScanConfigId: invalidID})
 	s.Require().Error(err)
 
 	nonExistentScanConfigID := "does-not-exist-scan-config-1"
-	s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, nonExistentScanConfigID).Return(nil, false, nil)
-	_, err = s.service.RunReport(allAccessContext, &v2.ComplianceRunReportRequest{ScanConfigId: nonExistentScanConfigID})
+	s.scanConfigDatastore.EXPECT().GetScanConfiguration(ctx, nonExistentScanConfigID).Return(nil, false, nil)
+	_, err = s.service.RunReport(ctx, &v2.ComplianceRunReportRequest{ScanConfigId: nonExistentScanConfigID})
 	s.Require().Error(err)
 
 	validScanConfigID := "scan-config-1"
@@ -664,20 +671,20 @@ func (s *ComplianceScanConfigServiceTestSuite) TestRunReport() {
 		Id:             "scan-config-1",
 		ScanConfigName: "scan-config-1",
 	}
-	s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, validScanConfigID).Return(validScanConfig, true, nil)
-	s.reportManager.EXPECT().SubmitReportRequest(allAccessContext, validScanConfig, storage.ComplianceOperatorReportStatus_EMAIL).Return(nil)
+	s.scanConfigDatastore.EXPECT().GetScanConfiguration(ctx, validScanConfigID).Return(validScanConfig, true, nil)
+	s.reportManager.EXPECT().SubmitReportRequest(ctx, validScanConfig, storage.ComplianceOperatorReportStatus_EMAIL).Return(nil)
 
-	resp, err := s.service.RunReport(allAccessContext, &v2.ComplianceRunReportRequest{
+	resp, err := s.service.RunReport(ctx, &v2.ComplianceRunReportRequest{
 		ScanConfigId:             validScanConfigID,
 		ReportNotificationMethod: v2.NotificationMethod_EMAIL,
 	})
 	s.Require().NoError(err)
 	s.Equal(v2.ComplianceRunReportResponse_SUBMITTED, resp.RunState, "Failed to submit report")
 
-	s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, validScanConfigID).Return(validScanConfig, true, nil)
-	s.reportManager.EXPECT().SubmitReportRequest(allAccessContext, validScanConfig, storage.ComplianceOperatorReportStatus_DOWNLOAD).Return(nil)
+	s.scanConfigDatastore.EXPECT().GetScanConfiguration(ctx, validScanConfigID).Return(validScanConfig, true, nil)
+	s.reportManager.EXPECT().SubmitReportRequest(ctx, validScanConfig, storage.ComplianceOperatorReportStatus_DOWNLOAD).Return(nil)
 
-	resp, err = s.service.RunReport(allAccessContext, &v2.ComplianceRunReportRequest{
+	resp, err = s.service.RunReport(ctx, &v2.ComplianceRunReportRequest{
 		ScanConfigId:             validScanConfigID,
 		ReportNotificationMethod: v2.NotificationMethod_DOWNLOAD,
 	})
