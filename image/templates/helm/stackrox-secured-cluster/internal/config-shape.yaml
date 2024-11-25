@@ -200,3 +200,6 @@ system:
   enablePodSecurityPolicies: null # bool
 crs:
   file: null # string
+networking:
+  externalIps:
+    enable: null # bool
