@@ -11,7 +11,7 @@ import { sortValue, sortDate } from 'sorters/sorters';
 import { riskBasePath } from 'routePaths';
 
 function DeploymentNameColumn({ original }) {
-    const isSuspicious = !find(original.baselineStatuses, {
+    const isSuspicious = find(original.baselineStatuses, {
         anomalousProcessesExecuted: true,
     });
     // Borrow layout from IconText component.
