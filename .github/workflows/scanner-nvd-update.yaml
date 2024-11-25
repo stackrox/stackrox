@@ -77,24 +77,40 @@ jobs:
         path: nvd-api.zip
         if-no-files-found: error
 
-  upload:
+  upload-nvd-feeds:
     needs:
     - fetch-nvd-feeds
-    - fetch-nvd-api
     runs-on: ubuntu-latest
-    if: |
-      needs.fetch-nvd-feeds.result == 'success' || needs.fetch-nvd-api.result == 'success'
+    # if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.ref }}
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
         name: nvd-feeds
         path: .
+
+    - name: Authenticate with Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Upload NVD Feeds to Google Cloud Storage
+      run: |
+        gsutil cp nvd-feeds.zip "gs://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
+
+  upload-nvd-api:
+    needs:
+    - fetch-nvd-api
+    runs-on: ubuntu-latest
+    # if: github.event_name != 'pull_request'
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
     - uses: ./.github/actions/download-artifact-with-retry
       with:
@@ -109,21 +125,14 @@ jobs:
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
 
-    - name: Upload nvd-feeds.zip (if exists)
-      run: |
-        if [ -f nvd-feeds.zip ]; then
-          gsutil cp nvd-feeds.zip "gs://definitions.stackrox.io/v4/nvd/nvd-feeds.zip"
-        fi
-
-    - name: Upload nvd-api.zip (if exists)
-      run: |
-        if [ -f nvd-api.zip ]; then
-          gsutil cp nvd-api.zip "gs://definitions.stackrox.io/v4/nvd/nvd-api.zip"
-        fi
+    - name: Upload NVD API to Google Cloud Storage
+      run:
+        gsutil cp nvd-api.zip "gs://definitions.stackrox.io/v4/nvd/nvd-api.zip"
 
   send-notification:
     needs:
-      - upload
+      - upload-nvd-feeds
+      - upload-nvd-api
     runs-on: ubuntu-latest
     if: failure()
     steps:
