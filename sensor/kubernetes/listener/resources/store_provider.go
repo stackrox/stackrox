@@ -50,8 +50,10 @@ func InitializeStore() *StoreProvider {
 	nodeStore := newNodeStore()
 	entityStore := clusterentities.NewStoreWithMemory(uint16(memSizeSetting))
 
+	// FIXME: Hide behind an env flag
 	go func(s *clusterentities.Store) {
-		http.HandleFunc("/debug.json", func(w http.ResponseWriter, req *http.Request) {
+		http.HandleFunc("/debug/clusterentities.json", func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprintf(w, "%s\n", s.Debug())
 		})
 		err := http.ListenAndServe(":8099", nil)
