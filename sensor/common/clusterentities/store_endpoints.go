@@ -70,10 +70,10 @@ func (e *endpointsStore) updateMetricsNoLock() {
 }
 
 // RecordTick records a tick and returns all public IP addresses for which the count should be decremented
-func (e *endpointsStore) RecordTick() set.FrozenSet[net.IPAddress] {
+func (e *endpointsStore) RecordTick() set.Set[net.NumericEndpoint] {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	dec := set.NewFrozenSet[net.IPAddress]()
+	expiredEndpointsWithPublicIP := set.NewSet[net.NumericEndpoint]()
 	for endpoint, m1 := range e.historicalEndpoints {
 		for deploymentID, m2 := range m1 {
 			for _, status := range m2 {
@@ -81,22 +81,22 @@ func (e *endpointsStore) RecordTick() set.FrozenSet[net.IPAddress] {
 			}
 			e.reverseHistoricalEndpoints[deploymentID][endpoint].recordTick()
 			// Remove all historical entries that expired in this tick.
-			dec = dec.Union(e.removeFromHistoryIfExpired(deploymentID, endpoint))
+			expiredEndpointsWithPublicIP = expiredEndpointsWithPublicIP.Union(e.removeFromHistoryIfExpired(deploymentID, endpoint))
 		}
 	}
-	return dec
+	return expiredEndpointsWithPublicIP
 }
 
-func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) (dec, inc set.FrozenSet[net.IPAddress]) {
+func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) (dec, inc set.Set[net.NumericEndpoint]) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 	return e.applyNoLock(updates, incremental)
 }
 
-func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) (dec, inc set.FrozenSet[net.IPAddress]) {
+func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental bool) (dec, inc set.Set[net.NumericEndpoint]) {
 	defer e.updateMetricsNoLock()
-	dec = set.NewFrozenSet[net.IPAddress]()
-	inc = set.NewFrozenSet[net.IPAddress]()
+	dec = set.NewSet[net.NumericEndpoint]()
+	inc = set.NewSet[net.NumericEndpoint]()
 	if !incremental {
 		for deploymentID := range updates {
 			dec = dec.Union(e.purgeNoLock(deploymentID))
@@ -117,8 +117,8 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 	return dec, inc
 }
 
-func (e *endpointsStore) purgeNoLock(deploymentID string) set.FrozenSet[net.IPAddress] {
-	dec := set.NewSet[net.IPAddress]()
+func (e *endpointsStore) purgeNoLock(deploymentID string) set.Set[net.NumericEndpoint] {
+	dec := set.NewSet[net.NumericEndpoint]()
 	// We will be manipulating reverseEndpointMap when calling deleteFromCurrent or moveToHistory,
 	// so let's make a temporary copy
 	endpointsSet := e.reverseEndpointMap[deploymentID]
@@ -129,16 +129,16 @@ func (e *endpointsStore) purgeNoLock(deploymentID string) set.FrozenSet[net.IPAd
 		} else {
 			e.deleteFromCurrent(deploymentID, ep)
 			if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
-				dec.Add(ipAddr)
+				dec.Add(ep)
 			}
 		}
 	}
-	return dec.Freeze()
+	return dec
 }
 
-func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData) (dec, inc set.FrozenSet[net.IPAddress]) {
-	publicIPsToIncrement := set.NewFrozenSet[net.IPAddress]()
-	publicIPsToDecrement := set.NewFrozenSet[net.IPAddress]()
+func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData) (dec, inc set.Set[net.NumericEndpoint]) {
+	publicIPsToIncrement := set.NewSet[net.NumericEndpoint]()
+	publicIPsToDecrement := set.NewSet[net.NumericEndpoint]()
 
 	dSet, deploymentFound := e.reverseEndpointMap[deploymentID]
 	if !deploymentFound || dSet == nil {
@@ -163,9 +163,9 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 				}
 			}
 		}
-		newPublicIPsOfThisEndpoint := set.NewFrozenSet[net.IPAddress]()
+		newPublicIPsOfThisEndpoint := set.NewSet[net.NumericEndpoint]()
 		if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
-			newPublicIPsOfThisEndpoint = set.NewFrozenSet[net.IPAddress](ipAddr)
+			newPublicIPsOfThisEndpoint.Add(ep)
 		}
 		etiSet, targetFound := e.endpointMap[ep][deploymentID]
 		if !targetFound {
@@ -241,13 +241,13 @@ func searchInMap[T any](ep net.NumericEndpoint, src map[net.NumericEndpoint]map[
 }
 
 // removeFromHistoryIfExpired iterates over all historical entries and deletes all that are expired
-func (e *endpointsStore) removeFromHistoryIfExpired(deploymentID string, ep net.NumericEndpoint) set.FrozenSet[net.IPAddress] {
+func (e *endpointsStore) removeFromHistoryIfExpired(deploymentID string, ep net.NumericEndpoint) set.Set[net.NumericEndpoint] {
 	// Assumption: If an entry in reverseHistoricalMap is expired,
 	// then the respective entry in historicalEndpoints should also be expired
 	if status, ok := e.reverseHistoricalEndpoints[deploymentID][ep]; ok && status.IsExpired() {
 		return e.deleteFromHistory(deploymentID, ep)
 	}
-	return set.NewFrozenSet[net.IPAddress]()
+	return set.NewSet[net.NumericEndpoint]()
 }
 
 func (e *endpointsStore) existsInCurrent(deploymentID string, ep net.NumericEndpoint) bool {
@@ -268,10 +268,10 @@ func (e *endpointsStore) moveToHistory(deploymentID string, ep net.NumericEndpoi
 }
 
 // deleteFromHistory marks previously marked historical endpoint as no longer historical
-func (e *endpointsStore) deleteFromHistory(deploymentID string, ep net.NumericEndpoint) set.FrozenSet[net.IPAddress] {
+func (e *endpointsStore) deleteFromHistory(deploymentID string, ep net.NumericEndpoint) set.Set[net.NumericEndpoint] {
 	if _, ok := e.reverseHistoricalEndpoints[deploymentID]; !ok {
 		// Prevent decrementing the count of public IPs if nothing is being removed
-		return set.NewFrozenSet[net.IPAddress]()
+		return set.NewSet[net.NumericEndpoint]()
 	}
 	delete(e.reverseHistoricalEndpoints[deploymentID], ep)
 	if len(e.reverseHistoricalEndpoints[deploymentID]) == 0 {
@@ -281,10 +281,10 @@ func (e *endpointsStore) deleteFromHistory(deploymentID string, ep net.NumericEn
 	if len(e.historicalEndpoints[ep]) == 0 {
 		delete(e.historicalEndpoints, ep)
 		if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
-			return set.NewFrozenSet(ipAddr)
+			return set.NewSet(ep)
 		}
 	}
-	return set.NewFrozenSet[net.IPAddress]()
+	return set.NewSet[net.NumericEndpoint]()
 }
 
 // deleteFromCurrent is a helper that removes data from the current map, but does not manipulate history

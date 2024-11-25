@@ -10,7 +10,10 @@ func (e *Store) Debug() []byte {
 	m["endpoints"] = e.endpointsStore.debug()
 	m["IPs"] = e.podIPsStore.debug()
 	m["containerIDs"] = e.containerIDsStore.debug()
-	ret, err := json.Marshal(m)
+	// json pretty-printer will sort it for us
+	m["events"] = e.trace
+
+		ret, err := json.Marshal(m)
 	if err != nil {
 		log.Errorf("Error marshalling store debug: %v", err)
 	}

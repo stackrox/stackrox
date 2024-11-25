@@ -2,12 +2,15 @@ package clusterentities
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/exp/maps"
@@ -92,6 +95,9 @@ type Store struct {
 	// memorySize defines how many ticks old endpoint data should be remembered after removal request
 	// Set to 0 to disable memory
 	memorySize uint16
+
+	// list of events for debugging purposes
+	trace map[string]string
 }
 
 // NewStore creates and returns a new store instance.
@@ -106,9 +112,25 @@ func NewStoreWithMemory(numTicks uint16) *Store {
 		podIPsStore:       newPodIPsStoreWithMemory(numTicks),
 		containerIDsStore: newContainerIDsStoreWithMemory(numTicks),
 		memorySize:        numTicks,
+		trace: 	 make(map[string]string),
 	}
 	store.initMaps()
 	return store
+}
+
+func (e *Store) track(format string, vals... interface{}){
+	e.trace[time.Now().Format(time.RFC3339Nano)] = fmt.Sprintf(format, vals...)
+}
+
+func (e *Store) StartDebugServer() {
+	http.HandleFunc("/debug/clusterentities/state.json", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, "%s\n", e.Debug())
+	})
+	err := http.ListenAndServe(":8099", nil)
+	if err != nil {
+		log.Error(errors.Wrap(err, "unable to start cluster entities store debug server"))
+	}
 }
 
 func (e *Store) initMaps() {
@@ -139,21 +161,36 @@ func (e *Store) Cleanup() {
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment
 // that is a key in the map will be replaced (or deleted).
 func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
+	for id, data := range updates {
+		if data == nil {
+			e.track("add-deployment overwrite=%t ID=%s, data=nil", !incremental, id)
+		} else {
+			e.track("add-deployment overwrite=%t ID=%s, data=%v", !incremental, id, data.String())
+		}
+	}
 	// Public IPs for which the counter must be incremented or decremented
 	// Order matters: Endpoints must be added before IP!
-	decIPs1, incIPs1 := e.endpointsStore.Apply(updates, incremental)
-	decIPs2, incIPs2 := e.podIPsStore.Apply(updates, incremental)
+	decEndpoints, incEndpoints := e.endpointsStore.Apply(updates, incremental)
+	decPodIPs, incPodIPs := e.podIPsStore.Apply(updates, incremental)
 
 	// For safety, we increment first and decrement later as reaching 0 will cause panic.
-	// The incIPs1 and incIPs2 may differ when we add an endpoint to existing deployment (e.g., new IP).
-	for _, ip := range incIPs1.Union(incIPs2).AsSlice() {
+	// The incEndpoints and incPodIPs may differ when we add an endpoint to existing deployment (e.g., new IP).
+	incIPs := set.NewSet[net.IPAddress]()
+	for ep := range incEndpoints {
+		incIPs.Add(ep.IPAndPort.Address)
+	}
+	for ip := range incIPs.Union(incPodIPs.Unfreeze()) {
 		e.incPublicIPRef(ip)
 	}
-	// If there is some IP that should be decremented more than once, the call to Union will loose this information.
-	// TODO: Check if it is possible that we decrement a single IP more than once
-	for _, ip := range decIPs1.Union(decIPs2).AsSlice() {
+
+	decIPs := set.NewSet[net.IPAddress]()
+	for ep := range decEndpoints {
+		decIPs.Add(ep.IPAndPort.Address)
+	}
+	for ip := range decIPs.Union(decPodIPs.Unfreeze()) {
 		e.decPublicIPRef(ip)
 	}
+
 	callbacks := e.containerIDsStore.Apply(updates, incremental)
 	if callbacks != nil {
 		if e.callbackChannel != nil && len(callbacks) > 0 {
@@ -164,22 +201,24 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 
 // RecordTick records the information that a unit of time (1 tick) has passed
 func (e *Store) RecordTick() {
-	// There may be public IP addresses expiring in this tick, and we may need to decrement the counters for them
-	decIPs := e.podIPsStore.RecordTick()
-	decEp := e.endpointsStore.RecordTick()
-	if decEp.Cardinality() == decIPs.Cardinality() {
-		for _, ip := range decEp.Union(decIPs).AsSlice() {
-			log.Infof("REGULAR: Refcount decrease for ip %s in tick. enpoints: %v, ips: %v. Unioned: %v", ip.AsNetIP().String(), decEp, decIPs, decEp.Union(decIPs).AsSlice())
-			e.decPublicIPRef(ip)
+	e.track("Tick")
+	// There may be public pod IP addresses expiring in this tick, and we may need to decrement the counters for them
+	publicPodIPs := e.podIPsStore.RecordTick()
+
+	endpointsWithPublicIPs := e.endpointsStore.RecordTick()
+	for _, ep := range endpointsWithPublicIPs.AsSlice() {
+		// The public IPs that expired in this tick may also belong to another deployments that are still in memory.
+		if len(e.LookupByEndpoint(ep)) > 0 {
+			endpointsWithPublicIPs.Remove(ep)
 		}
-	} else {
-		for _, ip := range decEp.Union(decIPs).AsSlice() {
-			log.Infof("SPECIAL-CASE!!! Refcount decrease for ip %s in tick. enpoints: %v, ips: %v. Unioned: %v", ip.AsNetIP().String(), decEp, decIPs, decEp.Union(decIPs).AsSlice())
-		}
-		// FIXME: ticking endpoint may generate an IP to be decreased, while ticking an IP not.
-		// This happens in the case when
-		// one deployment may have many IPs or (exotic) many deployments share one IP.
-		// In that case, we should not decrease the counter!
+	}
+	// Convert set of endpoints to set of IPs
+	pubIPs := set.NewSet[net.IPAddress]()
+	for endpoint := range endpointsWithPublicIPs {
+		pubIPs.Add(endpoint.IPAndPort.Address)
+	}
+	for _, ip := range pubIPs.Freeze().Union(publicPodIPs).AsSlice() {
+		e.decPublicIPRef(ip)
 	}
 	e.containerIDsStore.RecordTick()
 }

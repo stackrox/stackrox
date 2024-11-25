@@ -53,7 +53,9 @@ func (e *podIPsStore) resetMaps() {
 		e.initMapsNoLock()
 		return
 	}
-	e.moveAllToHistory()
+	for deplID := range e.reverseIPMap {
+		e.moveDeploymentToHistory(deplID)
+	}
 
 	e.ipMap = make(map[net.IPAddress]set.StringSet)
 	e.reverseIPMap = make(map[string]set.FrozenSet[net.IPAddress])
@@ -114,17 +116,12 @@ func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bo
 
 func (e *podIPsStore) purgeDeploymentNoLock(deploymentID string) set.FrozenSet[net.IPAddress] {
 	decPublicIPs := set.NewFrozenSet[net.IPAddress]()
-	ipSet := e.reverseIPMap[deploymentID]
-	for _, ip := range ipSet.AsSlice() {
-		if e.historyEnabled() {
-			e.moveToHistory(deploymentID, ip)
-		} else {
-			decPublicIPs = decPublicIPs.Union(e.deleteFromCurrent(deploymentID, ip))
-			// If memory is disabled, we should not wait for a tick and delete all historical data immediately.
-			// This should not be needed as the entries would never land in history in the first place,
-			// but it may be useful if in the future we allow enabling/disabling history during runtime.
-			decPublicIPs = decPublicIPs.Union(e.removeFromHistoryIfExpired(deploymentID, ip))
-		}
+	if e.historyEnabled() {
+		e.moveDeploymentToHistory(deploymentID)
+	} else {
+		decPublicIPs = decPublicIPs.Union(e.deleteDeploymentFromCurrent(deploymentID))
+		// In case we allow in the future to disable history during runtime, we would need to remove here all
+		// expired data for deploymentID from the history.
 	}
 	return decPublicIPs
 }
@@ -158,6 +155,7 @@ func (e *podIPsStore) applySingleNoLock(deploymentID string, data EntityData) (d
 	for ip := range data.ips {
 		ipsSet.Add(ip)
 
+		// check if this IP already belongs to other deployment
 		deplSet := e.ipMap[ip]
 		deplSet.Add(deploymentID)
 		// This IP has more than one deployment! Interesting, let's record it.
@@ -174,69 +172,42 @@ func (e *podIPsStore) applySingleNoLock(deploymentID string, data EntityData) (d
 	}
 
 	e.reverseIPMap[deploymentID] = ipsSet.Freeze()
-
 	return decPublicIPs, incPublicIPs.Freeze()
 }
 
-// moveToHistory is a convenience function that removes data from the current map and adds it to history
-func (e *podIPsStore) moveToHistory(deploymentID string, ip net.IPAddress) {
-	// Sometimes the call to existsInCurrent is not necessary, but I prefer to have it here, because it is cheap.
-	if e.existsInCurrent(deploymentID, ip) {
-		e.addToHistory(deploymentID, ip)
-		e.deleteFromCurrent(deploymentID, ip)
-	}
+// moveDeploymentToHistory is a convenience function that removes data from the current map and adds it to history
+func (e *podIPsStore) moveDeploymentToHistory(deploymentID string) {
+	e.addToHistory(deploymentID)
+	e.deleteDeploymentFromCurrent(deploymentID)
 }
 
-func (e *podIPsStore) existsInCurrent(deploymentID string, ip net.IPAddress) bool {
-	// If the map has no entry for this ip, then the set of deployment IDs will be empty and Contains returns false
-	return e.ipMap[ip].Contains(deploymentID)
-}
-
-func (e *podIPsStore) addToHistory(deploymentID string, ip net.IPAddress) {
-	if _, ok := e.historicalIPs[ip]; !ok {
-		e.historicalIPs[ip] = make(map[string]*entityStatus)
-	}
-	e.historicalIPs[ip][deploymentID] = newHistoricalEntity(e.memorySize)
-}
-
-func (e *podIPsStore) deleteFromCurrent(deploymentID string, ip net.IPAddress) set.FrozenSet[net.IPAddress]{
-	// The deletedPublicIPs generated here, are required for decrementing the counters if history is disabled
-	deletedPublicIPs := set.NewFrozenSet[net.IPAddress]()
-	deployments := e.ipMap[ip]
-	preDeleteCard := deployments.Cardinality()
-	deployments.Remove(deploymentID)
-	// Let's check if the deletion has happened
-	if deployments.Cardinality() != preDeleteCard && ip.IsPublic() {
-		deletedPublicIPs = set.NewFrozenSet(ip)
-	}
-	if deployments.Cardinality() == 0 {
-		// Usually one IP belongs to maximally one deployment, but let's be on the safe side.
-		delete(e.ipMap, ip)
-	} else {
-		e.ipMap[ip] = deployments
-	}
-
-	ips := e.reverseIPMap[deploymentID]
-	// To optimize memory allocations, we prevent unfreezing the set unless absolutely necessary
-	switch ips.Cardinality() {
-	case 0:
-		// Deleting an IP from a deployment that has no IPs - this should occur extremely rarely
-		delete(e.reverseIPMap, deploymentID)
-		return deletedPublicIPs
-	case 1:
-		if ips.Contains(ip) {
-			// The set has one element that we want to remove - let's drop the entire set
-			delete(e.reverseIPMap, deploymentID)
-			return deletedPublicIPs
+func (e *podIPsStore) addToHistory(deploymentID string) {
+	ipSet := e.reverseIPMap[deploymentID]
+	for _, ip := range ipSet.AsSlice() {
+		if _, ok := e.historicalIPs[ip]; !ok {
+			e.historicalIPs[ip] = make(map[string]*entityStatus)
 		}
-	default:
-		// Interesting part! This deployment has more IPs, and we are removing only one of them
-		log.Warnf("Deleting IP %s that belongs to multiple deployments", ip)
-		us := ips.Unfreeze()
-		us.Remove(ip)
-		e.reverseIPMap[deploymentID] = us.Freeze()
+		e.historicalIPs[ip][deploymentID] = newHistoricalEntity(e.memorySize)
 	}
-	return deletedPublicIPs
+}
+
+// deleteDeploymentFromCurrent deletes all data for given deployment from the current map
+func (e *podIPsStore) deleteDeploymentFromCurrent(deploymentID string) set.FrozenSet[net.IPAddress]{
+	deletedPublicIPs := set.NewSet[net.IPAddress]()
+	ips := e.reverseIPMap[deploymentID]
+	for _, address := range ips.AsSlice() {
+		deploymentsHavingIP := e.ipMap[address]
+		if deploymentsHavingIP.Cardinality() < 2 {
+			if address.IsPublic() {
+				deletedPublicIPs.Add(address)
+			}
+			delete(e.ipMap, address)
+		} else {
+			log.Warnf("The same pod IP %s belongs to 2 or more deployments:%v !", address, deploymentsHavingIP.AsSlice())
+		}
+	}
+	delete(e.reverseIPMap, deploymentID)
+	return deletedPublicIPs.Freeze()
 }
 
 // deleteFromHistory removes all entries matching <deploymentID, IP> from history.
@@ -263,14 +234,6 @@ func (e *podIPsStore) removeFromHistoryIfExpired(deploymentID string, ip net.IPA
 		return e.deleteFromHistory(deploymentID, ip)
 	}
 	return set.NewFrozenSet[net.IPAddress]()
-}
-
-func (e *podIPsStore) moveAllToHistory() {
-	for ip, set1 := range e.ipMap {
-		for deplID := range set1 {
-			e.moveToHistory(deplID, ip)
-		}
-	}
 }
 
 func (e *podIPsStore) String() string {

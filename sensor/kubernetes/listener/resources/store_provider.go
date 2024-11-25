@@ -1,10 +1,6 @@
 package resources
 
 import (
-	"fmt"
-	"net/http"
-
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/registrymirror"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/registry"
@@ -49,18 +45,9 @@ func InitializeStore() *StoreProvider {
 	svcStore := newServiceStore()
 	nodeStore := newNodeStore()
 	entityStore := clusterentities.NewStoreWithMemory(uint16(memSizeSetting))
-
-	// FIXME: Hide behind an env flag
-	go func(s *clusterentities.Store) {
-		http.HandleFunc("/debug/clusterentities.json", func(w http.ResponseWriter, req *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, "%s\n", s.Debug())
-		})
-		err := http.ListenAndServe(":8099", nil)
-		if err != nil {
-			log.Error(errors.Wrap(err, "unable to start cluster entities store debug server"))
-		}
-	}(entityStore)
+	if debugClusterEntitiesStore.BooleanSetting() {
+		go entityStore.StartDebugServer()
+	}
 
 	endpointManager := newEndpointManager(svcStore, deployStore, podStore, nodeStore, entityStore)
 	p := &StoreProvider{
