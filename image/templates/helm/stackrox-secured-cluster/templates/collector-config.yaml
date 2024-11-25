@@ -1,3 +1,5 @@
+{{- include "srox.init" . -}}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
