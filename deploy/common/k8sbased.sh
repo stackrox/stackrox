@@ -633,6 +633,11 @@ function launch_sensor {
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
+    echo "Before setting networking.externalIps.enable"
+    if [[ "${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE:-false}" == "true" ]]; then
+      extra_helm_config+=(--set "networking.externalIps.enable=${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE}")
+    fi
+
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")
