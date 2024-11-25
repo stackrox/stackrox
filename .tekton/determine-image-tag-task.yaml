@@ -5,7 +5,7 @@ metadata:
   namespace: rh-acs-tenant
 # TODO(ROX-23812): Refactor to a task bundle
 spec:
-  description: Determines the tag for the output image using the StackRox convention from 'make tag' output.
+  description: Determines the tag for input or output image using the StackRox conventions.
   params:
   - name: TAG_SUFFIX
     description: Suffix to append to generated image tag.
@@ -23,6 +23,17 @@ spec:
     description: Makefile target to run.
     type: string
     default: "tag"
+  - name: SOURCE_BRANCH
+    description: Branch or tag that triggered a build pipeline with this task.
+      Must be set to {{ source_branch }} Pipelines as Code variable.
+      See https://pipelinesascode.com/docs/guide/authoringprs/#dynamic-variables
+    type: string
+  - name: SUPPRESS_TAG_SUFFIX_ON_SOURCE_BRANCH_REGEX
+    description: Regular expression which, when matches SOURCE_BRANCH param, prevents TAG_SUFFIX to be appended to the
+      resulting tag. Intended for Stable Stream builds where we want to produce image tags without the "-fast" suffix.
+      Set to release branches, release and RC tags by default.
+    type: string
+    default: ^(release-.*|refs/tags/[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?)$
   results:
   - name: IMAGE_TAG
     description: Image Tag determined by custom logic.
@@ -50,13 +61,40 @@ spec:
 
       .konflux/scripts/fail-build-if-git-is-dirty.sh
 
-      # Basic protection against running something arbitrary.
-      allowed_targets="tag|collector-tag|scanner-tag"
-      if [[ "|${allowed_targets}|" != *"|$(params.MAKEFILE_TARGET)|"* ]]; then
-        >&2 echo "Error: provided MAKEFILE_TARGET $(params.MAKEFILE_TARGET) is not one of the allowed targets ${allowed_targets}"
+      suffix="$(params.TAG_SUFFIX)"
+      makefile_target="$(params.MAKEFILE_TARGET)"
+
+      if [[ "${makefile_target}" == "collector-tag" || "${makefile_target}" == "scanner-tag" ]]; then
+
+        # For dependencies (i.e. scanner and collector) tags, we always take what make returns. Konflux builds of
+        # scanner and collector don't replace quay.io/rhacs-eng/ builds that's why we currently locate Konflux images
+        # via the suffix.
+        image_tag="$(make -C "$(params.MAKEFILE_DIRECTORY)" --quiet --no-print-directory "${makefile_target}")${suffix}"
+
+      elif [[ "${makefile_target}" != "tag" ]]; then
+
+        >&2 echo "Error: provided MAKEFILE_TARGET ${makefile_target} is not recognized."
         exit 2
+
+      else # "${makefile_target}" is "tag"
+
+        source_branch="$(params.SOURCE_BRANCH)"
+
+        if grep -qE '$(params.SUPPRESS_TAG_SUFFIX_ON_SOURCE_BRANCH_REGEX)' <<< "${source_branch}"; then
+          echo "Target branch ${source_branch} matches regex, the image tag suffix ${suffix} will be omitted."
+          suffix=""
+        fi
+
+        if [[ "${source_branch}" == refs/tags/* ]]; then
+          echo "${source_branch} seems to be a build of a git tag, will use this git tag."
+          image_tag="${source_branch#refs/tags/}"
+        else
+          # Otherwise, delegate the work to Makefiles.
+          image_tag="$(make -C "$(params.MAKEFILE_DIRECTORY)" --quiet --no-print-directory "${makefile_target}")"
+        fi
+
+        image_tag="${image_tag}${suffix}"
+
       fi
 
-      image_tag="$(make -C "$(params.MAKEFILE_DIRECTORY)" --quiet --no-print-directory "$(params.MAKEFILE_TARGET)")$(params.TAG_SUFFIX)"
-
-      echo -n "$image_tag" | tee "$(results.IMAGE_TAG.path)"
+      echo -n "${image_tag}" | tee "$(results.IMAGE_TAG.path)"

@@ -186,6 +186,8 @@ spec:
       value: $(params.output-tag-suffix)
     - name: SOURCE_ARTIFACT
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: SOURCE_BRANCH
+      value: "{{source_branch}}"
     taskRef:
       name: determine-image-tag
 

@@ -192,6 +192,8 @@ spec:
       value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
     - name: MAKEFILE_DIRECTORY
       value: $(params.image-tag-makefile-directory)
+    - name: SOURCE_BRANCH
+      value: "{{source_branch}}"
     taskRef:
       name: determine-image-tag
 
