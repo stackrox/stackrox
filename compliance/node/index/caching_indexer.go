@@ -39,7 +39,10 @@ func NewCachingNodeIndexer(indexerConfig *NodeIndexerConfig, cacheDuration time.
 
 // IndexNode will serve a cached report if it's fresh enough. Otherwise, it creates a new one and caches it.
 func (c cachingNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, error) {
-	r := loadCachedReport(c.cachePath)
+	r, err := loadCachedReport(c.cachePath)
+	if err != nil {
+		log.Debugf("Unable to load cached report. Will create a new cache. Error: %v. ", err)
+	}
 	if r != nil {
 		return r, nil
 	}
@@ -49,6 +52,7 @@ func (c cachingNodeIndexer) IndexNode(ctx context.Context) (*v4.IndexReport, err
 	if err != nil {
 		return nil, errors.Wrap(err, "error indexing node")
 	}
+	log.Debugf("Caching report for %s at path %s", c.cacheDuration, c.cachePath)
 	err = cacheReport(report, c.cachePath, c.cacheDuration)
 	if err != nil {
 		log.Warnf("Failed to cache report - caching will be ineffective: %v", err)
@@ -68,17 +72,16 @@ func cacheReport(report *v4.IndexReport, cachePath string, cacheDuration time.Du
 	return os.WriteFile(cachePath, jsonWrap, 0600)
 }
 
-// loadCachedReport returns a report if found and new enough, or nil otherwise.
-func loadCachedReport(cachePath string) *v4.IndexReport {
+// loadCachedReport returns a report if found and new enough.
+func loadCachedReport(cachePath string) (*v4.IndexReport, error) {
 	wrap, err := loadCachedWrap(cachePath)
 	if err != nil {
-		log.Warnf("Failed to load cached index report wrap. Creating new cache. Error: %v", err)
-		return nil
+		return nil, err
 	}
 	if wrap != nil && wrap.CacheValidUntil.After(time.Now()) {
-		return wrap.Report
+		return wrap.Report, nil
 	}
-	return nil
+	return nil, errors.New("cached report too old")
 }
 
 func loadCachedWrap(cachePath string) (*reportWrap, error) {
