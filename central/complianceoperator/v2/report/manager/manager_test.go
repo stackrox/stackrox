@@ -18,6 +18,8 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/assert"
@@ -77,7 +79,11 @@ func (m *ManagerTestSuite) TearDownTest() {
 
 func (m *ManagerTestSuite) TestHandleReportRequest() {
 	m.T().Setenv(env.ReportExecutionMaxConcurrency.EnvVar(), "1")
-	ctx := context.Background()
+	identity := mocks.NewMockIdentity(m.mockCtrl)
+	identity.EXPECT().UID().AnyTimes().Return("user-id")
+	identity.EXPECT().FullName().AnyTimes().Return("user-name")
+	identity.EXPECT().FriendlyName().AnyTimes().Return("user-friendly-name")
+	ctx := authn.ContextWithIdentity(context.Background(), identity, m.T())
 
 	m.Run("Successful report, no watchers running", func() {
 		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.reportGen)

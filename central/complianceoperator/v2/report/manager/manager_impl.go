@@ -20,11 +20,13 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -240,6 +242,11 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 		return true, nil
 	}
 
+	requesterID := authn.IdentityFromContextOrNil(request.ctx)
+	if requesterID == nil {
+		return false, errors.New("could not determine user identity from provided context")
+	}
+
 	var w watcher.ScanConfigWatcher
 	concurrency.WithLock(&m.watchingScanConfigsLock, func() {
 		w = m.watchingScanConfigs[request.scanConfig.GetId()]
@@ -255,7 +262,10 @@ func (m *managerImpl) handleReportRequest(request *reportRequest) (bool, error) 
 			ReportRequestType:        storage.ComplianceOperatorReportStatus_ON_DEMAND,
 			ReportNotificationMethod: request.notificationMethod,
 		},
-		User: request.scanConfig.GetModifiedBy(),
+		User: &storage.SlimUser{
+			Id:   requesterID.UID(),
+			Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
+		},
 	}
 	if w == nil {
 		// The report is going to be generated now

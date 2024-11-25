@@ -284,7 +284,11 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 	if !features.ComplianceReporting.Enabled() {
 		return nil, errors.Wrap(errox.NotImplemented, "Not implemented")
 	}
-	if request.GetScanConfigId() == "" {
+	requesterID := authn.IdentityFromContextOrNil(ctx)
+	if requesterID == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+	if request.GetScanConfigId() == "" && features.ScanScheduleReportJobs.Enabled() {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required to run an a report")
 	}
 
