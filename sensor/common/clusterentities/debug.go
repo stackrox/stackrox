@@ -29,8 +29,8 @@ func (e *containerIDsStore) debug() interface{} {
 	for cID, submap := range e.historicalContainerIDs {
 		for metadata, status := range submap {
 			dbg["historicalContainerIDs"][cID] = map[string]interface{}{
-				"metadata": metadata,
-				"ticksLeft":   status.ticksLeft,
+				"metadata":  metadata,
+				"ticksLeft": status.ticksLeft,
 			}
 		}
 	}
@@ -49,7 +49,7 @@ func (e *podIPsStore) debug() interface{} {
 	for addr, deplSet := range e.ipMap {
 		dbg["ipMap"][addr.AsNetIP().String()] = deplSet.AsSlice()
 	}
-	for deplID, addrSet  := range e.reverseIPMap {
+	for deplID, addrSet := range e.reverseIPMap {
 		// addrSet.AsSlice() does not print well
 		arr := make([]string, 0, addrSet.Cardinality())
 		for _, addr := range addrSet.AsSlice() {
@@ -60,7 +60,7 @@ func (e *podIPsStore) debug() interface{} {
 	for addr, submap := range e.historicalIPs {
 		for deplID, status := range submap {
 			dbg["historicalIPs"][addr.AsNetIP().String()] = map[string]interface{}{
-				"deplID": deplID,
+				"deplID":    deplID,
 				"ticksLeft": status.ticksLeft,
 			}
 		}
@@ -97,7 +97,7 @@ func (e *endpointsStore) debug() interface{} {
 			for targetInfo, status := range targetInfoSetMap {
 				dbg["historicalEndpoints"][ep.String()][deplID] = map[string]interface{}{
 					"targetInfo": targetInfo,
-					"ticksLeft":     status.ticksLeft,
+					"ticksLeft":  status.ticksLeft,
 				}
 			}
 		}
@@ -105,11 +105,11 @@ func (e *endpointsStore) debug() interface{} {
 	dbg["reverseHistoricalEndpoints"] = make(map[string]map[string]interface{})
 	for deplID, submap := range e.reverseHistoricalEndpoints {
 		dbg["reverseHistoricalEndpoints"][deplID] = make(map[string]interface{})
-			for ep, status := range submap {
-				dbg["reverseHistoricalEndpoints"][deplID] = map[string]interface{}{
-					"endpoint": ep.String(),
-					"ticksLeft":     status.ticksLeft,
-				}
+		for ep, status := range submap {
+			dbg["reverseHistoricalEndpoints"][deplID] = map[string]interface{}{
+				"endpoint":  ep.String(),
+				"ticksLeft": status.ticksLeft,
+			}
 		}
 	}
 	return dbg
