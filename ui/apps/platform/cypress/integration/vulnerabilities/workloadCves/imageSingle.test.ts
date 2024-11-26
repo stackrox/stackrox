@@ -3,6 +3,8 @@ import { hasFeatureFlag } from '../../../helpers/features';
 import {
     getRouteMatcherMapForGraphQL,
     interactAndWaitForResponses,
+    interceptAndOverrideFeatureFlags,
+    interceptAndOverridePermissions,
 } from '../../../helpers/request';
 import { verifyColumnManagement } from '../../../helpers/tableHelpers';
 
@@ -34,7 +36,11 @@ describe('Workload CVE Image Single page', () => {
         // Ensure the data in the table has settled
         cy.get(selectors.isUpdatingTable).should('not.exist');
 
-        cy.get('tbody tr td[data-label="Image"] a').first().click();
+        return cy.get('tbody tr td[data-label="Image"] a').then(([$imageLink]) => {
+            const imageName = $imageLink.innerText.replace('\n', '');
+            cy.wrap($imageLink).click();
+            return cy.get('h1').contains(imageName);
+        });
     }
 
     it('should contain the correct search filters in the toolbar', () => {
@@ -306,6 +312,44 @@ describe('Workload CVE Image Single page', () => {
         it('should allow the user to hide and show columns on the CVE table', () => {
             visitFirstImage();
             verifyColumnManagement({ tableSelector: 'table' });
+        });
+    });
+
+    describe('SBOM generation tests', () => {
+        const sbomGenerationButtonSelector = 'button:contains("Generate SBOM")';
+
+        before(function () {
+            if (!hasFeatureFlag('ROX_SBOM_GENERATION')) {
+                this.skip();
+            }
+        });
+
+        it('should hide the SBOM generation button when the user does not have write access to the Image resource', () => {
+            interceptAndOverridePermissions({ Image: 'READ_ACCESS' });
+
+            visitFirstImage();
+
+            cy.get(sbomGenerationButtonSelector).should('not.exist');
+        });
+
+        it('should disable the SBOM generation button when Scanner V4 is not enabled', () => {
+            interceptAndOverrideFeatureFlags({ ROX_SCANNER_V4: false });
+
+            visitFirstImage();
+
+            cy.get(sbomGenerationButtonSelector).should('have.attr', 'aria-disabled', 'true');
+        });
+
+        it('should trigger a download of the image SBOM via confirmation modal', function () {
+            if (!hasFeatureFlag('ROX_SCANNER_V4')) {
+                this.skip();
+            }
+
+            visitFirstImage();
+
+            cy.get(sbomGenerationButtonSelector).should('not.have.attr', 'aria-disabled');
+
+            // TODO Add to implementation
         });
     });
 });
