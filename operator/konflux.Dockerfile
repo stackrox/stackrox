@@ -15,6 +15,10 @@ ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" S
 # TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
 # GOTAGS="release"
+# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
+ENV GOTAGS=strictfipsruntime
+ENV GOEXPERIMENT=strictfipsruntime
+
 ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 
 RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator
