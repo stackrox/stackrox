@@ -109,9 +109,6 @@ func (e *containerIDsStore) purgeNoLock(deploymentID string) {
 }
 
 func (e *containerIDsStore) applySingleNoLock(deploymentID string, data EntityData) []ContainerMetadata {
-	if len(data.containerIDs) == 0 {
-		return []ContainerMetadata{}
-	}
 	cSet, found := e.reverseContainerIDMap[deploymentID]
 	if cSet == nil || !found {
 		cSet = set.NewStringSet()
