@@ -74,7 +74,7 @@ func (m *endpointManagerImpl) addEndpointDataForPod(pod *v1.Pod, data *clusteren
 	podIP := net.ParseIP(pod.Status.PodIP)
 	// Do not register the pod if it is using the host network (i.e., pod IP = node IP), as this causes issues with
 	// kube-proxy connections.
-	if !pod.Spec.HostNetwork && podIP.IsValid() {
+	if allowHostNetworkPodIPsInEntitiesStore.BooleanSetting() || (!pod.Spec.HostNetwork && podIP.IsValid()) {
 		data.AddIP(podIP)
 	}
 
@@ -209,7 +209,7 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 		}
 	}
 
-	m.entityStore.Apply(updates, true)
+	m.entityStore.Apply(updates, true, "OnNodeCreate")
 }
 
 func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
@@ -226,7 +226,7 @@ func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)
 	}
 
-	m.entityStore.Apply(updates, false)
+	m.entityStore.Apply(updates, false, "OnNodeUpdateOrRemove")
 }
 
 func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
@@ -241,14 +241,14 @@ func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentW
 	updates := map[string]*clusterentities.EntityData{
 		deployment.GetId(): m.endpointDataForDeployment(deployment),
 	}
-	m.entityStore.Apply(updates, false)
+	m.entityStore.Apply(updates, false, "OnDeploymentCreateOrUpdateByID")
 }
 
 func (m *endpointManagerImpl) OnDeploymentRemove(deployment *deploymentWrap) {
 	updates := map[string]*clusterentities.EntityData{
 		deployment.GetId(): nil,
 	}
-	m.entityStore.Apply(updates, false)
+	m.entityStore.Apply(updates, false, "OnDeploymentRemove")
 }
 
 func convertL4Proto(proto v1.Protocol) net.L4Proto {

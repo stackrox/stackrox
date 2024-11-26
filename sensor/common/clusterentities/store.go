@@ -171,13 +171,9 @@ func (e *Store) Cleanup() {
 
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment
 // that is a key in the map will be replaced (or deleted).
-func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
+func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo ...string) {
 	for id, data := range updates {
-		if data == nil {
-			e.track("add-deployment overwrite=%t ID=%s, data=nil", !incremental, id)
-		} else {
-			e.track("add-deployment overwrite=%t ID=%s, data=%v", !incremental, id, data.String())
-		}
+		e.track("add-deployment (%s) overwrite=%t ID=%s, data=%v", auxInfo, !incremental, id, data.String())
 	}
 	// We track the number of references to Public IPs.
 	// Each operation may cause the counter to be incremented or decremented.
@@ -267,14 +263,20 @@ func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 	current, historical, ipLookup, ipLookupHistorical := e.endpointsStore.lookupEndpoint(endpoint, e.podIPsStore)
 	// Return early to avoid potential duplicates... not sure if duplicates are bad here.
 	if len(current)+len(historical) > 0 {
+		e.track("LookupByEndpoint(%s): %d endpoints found", endpoint.String(), len(current)+len(historical))
 		return append(current, historical...)
 	}
-	return append(ipLookup, ipLookupHistorical...)
+	if len(ipLookup)+len(ipLookupHistorical) > 0 {
+		e.track("LookupByEndpoint(%s): ipLookup results %d ", endpoint.String(), len(ipLookup)+len(ipLookupHistorical))
+	}
+	e.track("LookupByEndpoint(%s): miss", endpoint.String())
+	return []LookupResult{}
 }
 
 // LookupByContainerID retrieves the deployment ID by a container ID.
 func (e *Store) LookupByContainerID(containerID string) (result ContainerMetadata, found bool) {
 	result, found, _ = e.containerIDsStore.lookupByContainer(containerID)
+	e.track("LookupByContainerID(%s): found=%t", containerID, found)
 	return result, found
 }
 
