@@ -11,6 +11,8 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Added Features
 
+- ROX-26849: Introduce report caching for RHCOS Node Indexing
+
 ### Removed Features
 
 ### Deprecated Fatures

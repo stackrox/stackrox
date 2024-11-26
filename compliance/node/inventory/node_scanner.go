@@ -1,11 +1,11 @@
-package node
+package inventory
 
 import (
 	"context"
 	"time"
 
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
-	"github.com/stackrox/rox/compliance/node/inventory"
+	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/utils"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -21,12 +21,12 @@ var (
 
 // NodeInventoryComponentScanner connects to node-inventory container to provide node-inventory object
 type NodeInventoryComponentScanner struct {
-	nodeNameProvider NodeNameProvider
+	nodeNameProvider node.NodeNameProvider
 	client           scannerV1.NodeInventoryServiceClient
 }
 
 // NewNodeInventoryComponentScanner builds new NodeInventoryComponentScanner
-func NewNodeInventoryComponentScanner(nnp NodeNameProvider) *NodeInventoryComponentScanner {
+func NewNodeInventoryComponentScanner(nnp node.NodeNameProvider) *NodeInventoryComponentScanner {
 	return &NodeInventoryComponentScanner{nodeNameProvider: nnp}
 }
 
@@ -68,7 +68,7 @@ func (n *NodeInventoryComponentScanner) ScanNode(ctx context.Context) (*sensor.M
 		return nil, err
 	}
 	cmetrics.ObserveNodeInventoryCallDuration(time.Since(startCall), result.GetNodeName(), err)
-	inv := inventory.ToNodeInventory(result)
+	inv := ToNodeInventory(result)
 	msg := &sensor.MsgFromCompliance{
 		Node: result.GetNodeName(),
 		Msg:  &sensor.MsgFromCompliance_NodeInventory{NodeInventory: inv},
