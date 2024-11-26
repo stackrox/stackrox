@@ -55,6 +55,16 @@ func (ed *EntityData) String() string {
 		maps.Keys(ed.ips), maps.Keys(ed.endpoints), maps.Keys(ed.containerIDs))
 }
 
+func (ed *EntityData) isDeleteOnly() bool {
+	if ed == nil {
+		return true
+	}
+	if len(ed.endpoints) + len(ed.containerIDs) + len(ed.ips) == 0 {
+		return true
+	}
+	return false
+}
+
 // AddIP adds an IP address to the set of IP addresses of the respective deployment.
 func (ed *EntityData) AddIP(ip net.IPAddress) {
 	if ed.ips == nil {

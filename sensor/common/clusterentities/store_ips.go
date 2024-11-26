@@ -100,7 +100,8 @@ func (e *podIPsStore) applyNoLock(updates map[string]*EntityData, incremental bo
 		}
 	}
 	for deploymentID, data := range updates {
-		if data == nil {
+		if data.isDeleteOnly() {
+			// A call to Apply() with empty payload of the updates map (no values) is meant to be a delete operation.
 			continue
 		}
 		decA, incA := e.applySingleNoLock(deploymentID, *data)
@@ -192,7 +193,7 @@ func (e *podIPsStore) addToHistory(deploymentID string) {
 }
 
 // deleteDeploymentFromCurrent deletes all data for given deployment from the current map
-func (e *podIPsStore) deleteDeploymentFromCurrent(deploymentID string) set.FrozenSet[net.IPAddress]{
+func (e *podIPsStore) deleteDeploymentFromCurrent(deploymentID string) set.FrozenSet[net.IPAddress] {
 	deletedPublicIPs := set.NewSet[net.IPAddress]()
 	ips := e.reverseIPMap[deploymentID]
 	for _, address := range ips.AsSlice() {
