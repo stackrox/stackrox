@@ -38,7 +38,7 @@ func copyFiles(files []string, destDir string) error {
 			return err
 		}
 		destPath := path.Join(destDir, path.Base(file))
-		if err = os.WriteFile(destPath, content, 0666); err != nil {
+		if err = os.WriteFile(destPath, content, 0600); err != nil {
 			return err
 		}
 		log.Printf("Copied %q to %q", file, destPath)
