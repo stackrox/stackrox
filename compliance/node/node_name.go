@@ -3,8 +3,13 @@ package node
 import (
 	"os"
 
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // EnvNodeNameProvider gets the node name from Env Variable

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/compliance"
 	"github.com/stackrox/rox/compliance/node"
 	"github.com/stackrox/rox/compliance/node/index"
+	"github.com/stackrox/rox/compliance/node/inventory"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/retry/handler"
@@ -19,13 +20,13 @@ func main() {
 	np := &node.EnvNodeNameProvider{}
 	cfg := index.NewNodeIndexerConfigFromEnv()
 
-	scanner := node.NewNodeInventoryComponentScanner(np)
+	scanner := inventory.NewNodeInventoryComponentScanner(np)
 	scanner.Connect(env.NodeScanningEndpoint.Setting())
-	nodeIndexer := index.NewNodeIndexer(cfg)
+	cachedNodeIndexer := index.NewCachingNodeIndexer(cfg, env.NodeIndexCacheDuration.DurationSetting(), env.NodeIndexCachePath.Setting())
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	umh := handler.NewUnconfirmedMessageHandler(ctx, env.NodeScanningAckDeadlineBase.DurationSetting())
-	c := compliance.NewComplianceApp(np, scanner, nodeIndexer, umh)
+	c := compliance.NewComplianceApp(np, scanner, cachedNodeIndexer, umh)
 	c.Start()
 }
