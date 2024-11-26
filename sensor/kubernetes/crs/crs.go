@@ -65,7 +65,7 @@ func EnsureClusterRegistered() error {
 
 	// Check if legacy sensor service certificate, e.g. created via init-bundle, exists.
 	if legacySensorServiceCert := os.Getenv(crs.LegacySensorServiceCertEnvName); legacySensorServiceCert != "" {
-		log.Infof("Legacy sensor service certificate available, skipping CRS-based cluster registration.")
+		log.Infof("Legacy sensor service certificate available, skipping cluster registration using Cluster Registration Secret.")
 		return nil
 	}
 
@@ -76,11 +76,11 @@ func EnsureClusterRegistered() error {
 		return nil
 	}
 
-	log.Infof("No sensor service certificate found, initiating CRS-based cluster registration.")
+	log.Infof("No sensor service certificate found, initiating cluster registration using Cluster Registration Secret.")
 	if err := registerCluster(); err != nil {
 		return errors.Wrap(err, "registering secured cluster")
 	}
-	log.Info("CRS-based cluster registration complete.")
+	log.Info("Cluster registration complete.")
 
 	return nil
 }
@@ -254,7 +254,7 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 func persistCertificates(ctx context.Context, centralHello *central.CentralHello, k8sClient kubernetes.Interface) error {
 	certsFileMap := centralHello.GetCertBundle()
 	for fileName := range certsFileMap {
-		log.Infof("Received certificate from Central named %s.", fileName)
+		log.Debugf("Received certificate from Central named %s.", fileName)
 	}
 
 	podName := os.Getenv("POD_NAME")
@@ -277,7 +277,7 @@ func persistCertificates(ctx context.Context, centralHello *central.CentralHello
 	}
 
 	serviceTypeNames := getServiceTypeNames(persistedCertificates)
-	log.Infof("Successfully persisted CRS cerificates for: %v.", strings.Join(serviceTypeNames, ", "))
+	log.Infof("Successfully persisted received certificates for: %v.", strings.Join(serviceTypeNames, ", "))
 
 	return nil
 }
