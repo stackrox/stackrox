@@ -102,6 +102,16 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 	clusterID := cluster.GetId()
 
+	// Disallow secured cluster impersonation using a leaked CRS certificate.
+	// Note: New clusters which have never been properly connected to central have their HealthStatus.LastContact empty.
+	// If, for whatever reason, a cluster needs to re-retrieve CRS-issued service certificates, the cluster can do so
+	// as long as that cluster has never successfully connected to central with proper service certificates
+	// (not ServiceType_REGISTRANT_SERVICE).
+	if svcType == storage.ServiceType_REGISTRANT_SERVICE && cluster.GetHealthStatus().GetLastContact() != nil {
+		log.Errorf("it is forbidden to connect with a Cluster Registration Certificate as already-existing cluster %q.", cluster.GetName())
+		return errox.NotAuthorized.CausedByf("forbidden to use a Cluster Registration Certificate for already-existing cluster %q", cluster.GetName())
+	}
+
 	// Generate a pipeline for the cluster to use.
 	eventPipeline, err := s.pf.PipelineForCluster(server.Context(), cluster.GetId())
 	if err != nil {
