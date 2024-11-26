@@ -93,6 +93,8 @@ func (k *listenerImpl) Stop(_ error) {
 	if k.credentialsManager != nil {
 		k.credentialsManager.Stop()
 	}
+	// wait for the informers to be started before stopping them
+	k.mayCreateHandlers.Wait()
 	k.stopSig.Signal()
 	k.storeProvider.CleanupStores()
 	k.shutdownSharedInformers()
