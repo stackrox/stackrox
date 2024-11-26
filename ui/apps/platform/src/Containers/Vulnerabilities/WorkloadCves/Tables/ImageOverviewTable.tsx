@@ -328,12 +328,10 @@ function ImageOverviewTable({
                                     </Td>
                                     {hasActionColumn && (
                                         <Td isActionCell>
-                                            {name?.tag && (
-                                                <ActionsColumn
-                                                    popperProps={ACTION_COLUMN_POPPER_PROPS}
-                                                    items={rowActions}
-                                                />
-                                            )}
+                                            <ActionsColumn
+                                                popperProps={ACTION_COLUMN_POPPER_PROPS}
+                                                items={rowActions}
+                                            />
                                         </Td>
                                     )}
                                 </Tr>
