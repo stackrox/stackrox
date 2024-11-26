@@ -28,7 +28,7 @@ const BackLink = ({ workflowState, enabled }) => {
         </Link>
     ) : (
         <EntityIcon
-            className="flex items-center justify-center border-r  px-4 mr-4 h-full w-16 border-base-300"
+            className="flex items-center justify-center border-r px-4 mr-4 h-full w-16 border-base-300"
             entityType={workflowState.getCurrentEntity().entityType}
         />
     );
