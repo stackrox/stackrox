@@ -1241,7 +1241,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Fixable CVSS >= 6 and Privileged",
+			policyName: "Privileged containers with fixable CVEs and CVSS >= 6",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				heartbleedDep.GetId(): {
 					{
@@ -1254,7 +1254,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Fixable CVSS >= 7",
+			policyName: "Containers with fixable CVEs and CVSS >= 7",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				strutsDep.GetId(): {
 					{
@@ -1269,7 +1269,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Fixable Severity at least Important",
+			policyName: "Containers with fixable CVEs and Severity at least Important",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				strutsDep.GetId(): {
 					{
@@ -1750,7 +1750,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Fixable CVSS >= 7",
+			policyName: "Containers with fixable CVEs and CVSS >= 7",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(strutsDep): {
 					{
@@ -1765,7 +1765,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Fixable Severity at least Important",
+			policyName: "Containers with fixable CVEs and Severity at least Important",
 			expectedViolations: map[string][]*storage.Alert_Violation{
 				suite.imageIDFromDep(strutsDep): {
 					{
