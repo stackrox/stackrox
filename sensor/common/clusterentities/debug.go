@@ -13,7 +13,7 @@ func (e *Store) Debug() []byte {
 	// json pretty-printer will sort it for us
 	m["events"] = e.trace
 
-		ret, err := json.Marshal(m)
+	ret, err := json.Marshal(m)
 	if err != nil {
 		log.Errorf("Error marshalling store debug: %v", err)
 	}

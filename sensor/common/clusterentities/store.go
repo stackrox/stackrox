@@ -112,13 +112,13 @@ func NewStoreWithMemory(numTicks uint16) *Store {
 		podIPsStore:       newPodIPsStoreWithMemory(numTicks),
 		containerIDsStore: newContainerIDsStoreWithMemory(numTicks),
 		memorySize:        numTicks,
-		trace: 	 make(map[string]string),
+		trace:             make(map[string]string),
 	}
 	store.initMaps()
 	return store
 }
 
-func (e *Store) track(format string, vals... interface{}){
+func (e *Store) track(format string, vals ...interface{}) {
 	e.trace[time.Now().Format(time.RFC3339Nano)] = fmt.Sprintf(format, vals...)
 }
 

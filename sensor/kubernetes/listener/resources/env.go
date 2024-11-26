@@ -15,6 +15,6 @@ import "github.com/stackrox/rox/pkg/env"
 // Setting this value too high will result in higher memory consumption of Sensor (especially in clusters with many
 // deletions or dynamic changes to services or IP addresses).
 var (
-	pastEndpointsMemorySize = env.RegisterIntegerSetting("ROX_PAST_ENDPOINTS_MEMORY_SIZE", 20)
+	pastEndpointsMemorySize   = env.RegisterIntegerSetting("ROX_PAST_ENDPOINTS_MEMORY_SIZE", 20)
 	debugClusterEntitiesStore = env.RegisterBooleanSetting("ROX_DEBUG_CLUSTER_ENTITIES_STORE", false)
 )
