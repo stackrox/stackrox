@@ -428,7 +428,7 @@ function JiraIntegrationForm({
                         {/* </FormSection>
                         )} */}
                         <FormLabelGroup
-                            label="Default Fields JSON"
+                            label="Default fields JSON"
                             fieldId="notifier.jira.defaultFieldsJson"
                             touched={touched}
                             errors={errors}

@@ -275,7 +275,7 @@ function GhcrIntegrationForm({
                         errors={errors}
                     >
                         <Checkbox
-                            label="Create Integration Without Testing"
+                            label="Create integration without testing"
                             id="config.skipTestIntegration"
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}
