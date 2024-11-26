@@ -48,17 +48,8 @@ var (
 	}
 )
 
-// EnsureClusterRegistered initiates the CRS based cluster registration flow if
-//
-//  1. no Kubernetes secret named `sensor-tls` exists -- existence of this secret
-//     would indicate that service-specific secrets have already been set up using
-//     e.g. an init-bundle.
-//
-//     and
-//
-//  2. no Kubernetes secret named `tls-sensor` exists -- existence of this secret
-//     would indicate that service-specific secrets have already been retrieved via
-//     the CRS-flow (or a regular follow-up certificate rotation).
+// EnsureClusterRegistered initiates the CRS based cluster registration flow in case a
+// CRS is found instead of regular service certificate.
 func EnsureClusterRegistered() error {
 	log.Infof("Ensuring Secured Cluster is registered.")
 	clientconn.SetUserAgent(fmt.Sprintf("%s Cluster Registration Helper", clientconn.Sensor))
