@@ -1068,6 +1068,7 @@ wait_for_api() {
         # OCP Interop tests are run on minimal instances and will take longer
         # Allow override with MAX_WAIT_SECONDS
         max_seconds=${MAX_WAIT_SECONDS:-600}
+        info "Waiting ${max_seconds}s (increased for openshift-ci provisioned clusters) for central api and $(( max_seconds * 6 )) for ingress..."
     fi
     max_ingress_seconds=$(( max_seconds * 6 ))
 
