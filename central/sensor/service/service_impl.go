@@ -107,8 +107,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	// If, for whatever reason, a cluster needs to re-retrieve CRS-issued service certificates, the cluster can do so
 	// as long as that cluster has never successfully connected to central with proper service certificates
 	// (not ServiceType_REGISTRANT_SERVICE).
-	lastSensorId := cluster.GetMostRecentSensorId()
-	if svcType == storage.ServiceType_REGISTRANT_SERVICE && lastSensorId != nil {
+	if svcType == storage.ServiceType_REGISTRANT_SERVICE && cluster.GetMostRecentSensorId().GetK8SNodeName() != "" {
 		log.Errorf("it is forbidden to connect with a Cluster Registration Certificate as already-existing cluster %q.", cluster.GetName())
 		return errox.NotAuthorized.CausedByf("forbidden to use a Cluster Registration Certificate for already-existing cluster %q", cluster.GetName())
 	}
