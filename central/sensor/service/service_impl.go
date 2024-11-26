@@ -161,6 +161,11 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		}
 	}
 
+	if svcType == storage.ServiceType_REGISTRANT_SERVICE {
+		// Terminate connection using a CRS certificate at this point.
+		return nil
+	}
+
 	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {
 		notBefore, notAfter := identity.ValidityPeriod()
 		log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v",
