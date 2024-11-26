@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"runtime"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -30,6 +31,8 @@ func init() {
 }
 
 func main() {
+	runtime.SetMutexProfileFraction(5)
+	runtime.SetBlockProfileRate(5)
 	premain.StartMain()
 
 	devmode.StartOnDevBuilds("bin/kubernetes-sensor")
