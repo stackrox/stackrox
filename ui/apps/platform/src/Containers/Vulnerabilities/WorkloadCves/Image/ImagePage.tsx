@@ -66,9 +66,7 @@ export const imageDetailsQuery = gql`
 `;
 
 function ScannerV4RequiredTooltip({ children }: { children: ReactElement }) {
-    return (
-        <Tooltip content="SBOM generation requires Scanner V4 to be enabled">{children}</Tooltip>
-    );
+    return <Tooltip content="SBOM generation requires Scanner V4">{children}</Tooltip>;
 }
 
 function ImagePage() {

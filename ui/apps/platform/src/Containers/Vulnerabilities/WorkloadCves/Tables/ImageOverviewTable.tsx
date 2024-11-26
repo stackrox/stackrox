@@ -234,7 +234,7 @@ function ImageOverviewTable({
                                 title: 'Generate SBOM',
                                 isAriaDisabled: !isScannerV4Enabled,
                                 description: !isScannerV4Enabled
-                                    ? 'SBOM generation requires Scanner V4 to be enabled'
+                                    ? 'SBOM generation requires Scanner V4'
                                     : undefined,
                                 onClick: () => {},
                             });
