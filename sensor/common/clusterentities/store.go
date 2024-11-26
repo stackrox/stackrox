@@ -59,7 +59,7 @@ func (ed *EntityData) isDeleteOnly() bool {
 	if ed == nil {
 		return true
 	}
-	if len(ed.endpoints) + len(ed.containerIDs) + len(ed.ips) == 0 {
+	if len(ed.endpoints)+len(ed.containerIDs)+len(ed.ips) == 0 {
 		return true
 	}
 	return false
@@ -178,12 +178,15 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool) {
 			e.track("add-deployment overwrite=%t ID=%s, data=%v", !incremental, id, data.String())
 		}
 	}
-	// Public IPs for which the counter must be incremented or decremented
-	// Order matters: Endpoints must be added before IP!
+	// We track the number of references to Public IPs.
+	// Each operation may cause the counter to be incremented or decremented.
+
+	// Order matters: Endpoints must be applied before IPs, as the IP store may query the endpoints store to check
+	// whether a given IP is used by other endpoints.
 	decEndpoints, incEndpoints := e.endpointsStore.Apply(updates, incremental)
 	decPodIPs, incPodIPs := e.podIPsStore.Apply(updates, incremental)
 
-	// For safety, we increment first and decrement later as reaching 0 will cause panic.
+	// For safety, we increment first and decrement later as reaching 0 will cause panic in non-release builds.
 	// The incEndpoints and incPodIPs may differ when we add an endpoint to existing deployment (e.g., new IP).
 	incIPs := set.NewSet[net.IPAddress]()
 	for ep := range incEndpoints {
