@@ -19,7 +19,6 @@ import { configureMonacoYaml } from 'monaco-yaml';
 
 import ErrorBoundary from 'Components/PatternFly/ErrorBoundary/ErrorBoundary';
 import AppPage from 'Containers/AppPage';
-import { ThemeProvider } from 'Containers/ThemeProvider';
 import configureStore from 'store/configureStore';
 import installRaven from 'installRaven';
 import { ThunkAction, ThunkDispatch } from 'redux-thunk';
@@ -73,11 +72,9 @@ root.render(
             */}
             {/* @ts-expect-error `connected-react-router does not support React 18 */}
             <ConnectedRouter history={history}>
-                <ThemeProvider>
-                    <ErrorBoundary>
-                        <AppPage />
-                    </ErrorBoundary>
-                </ThemeProvider>
+                <ErrorBoundary>
+                    <AppPage />
+                </ErrorBoundary>
             </ConnectedRouter>
         </ApolloProvider>
     </Provider>

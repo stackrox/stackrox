@@ -7,7 +7,6 @@ import PageHeader from 'Components/PageHeader';
 import EntitiesMenu from 'Components/workflow/EntitiesMenu';
 import ExportButton from 'Components/ExportButton';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
-import { useTheme } from 'Containers/ThemeProvider';
 import workflowStateContext from 'Containers/workflowStateContext';
 import entityTypes from 'constants/entityTypes';
 import parseURL from 'utils/URLParser';
@@ -26,7 +25,6 @@ import EntityTabs from './EntityTabs';
 
 const WorkflowEntityPageLayout = () => {
     const [isExporting, setIsExporting] = useState(false);
-    const { isDarkMode } = useTheme();
     const location = useLocation();
 
     const workflowState = parseURL(location);
@@ -134,7 +132,7 @@ const WorkflowEntityPageLayout = () => {
                         />
                     </div>
 
-                    <SidePanelAnimatedArea isDarkMode={isDarkMode} isOpen={!!sidePanelEntityId}>
+                    <SidePanelAnimatedArea isOpen={!!sidePanelEntityId}>
                         <WorkflowSidePanel>
                             <EntityComponent
                                 entityId={sidePanelEntityId}

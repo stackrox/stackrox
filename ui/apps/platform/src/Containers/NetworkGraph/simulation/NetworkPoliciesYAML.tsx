@@ -2,7 +2,6 @@ import React from 'react';
 import { CodeEditor, CodeEditorControl, Language } from '@patternfly/react-code-editor';
 import { DownloadIcon } from '@patternfly/react-icons';
 
-import { useTheme } from 'Containers/ThemeProvider';
 import useAnalytics, { DOWNLOAD_NETWORK_POLICIES } from 'hooks/useAnalytics';
 import useURLSearch from 'hooks/useURLSearch';
 import download from 'utils/download';
@@ -29,8 +28,7 @@ function NetworkPoliciesYAML({
     const { analyticsTrack } = useAnalytics();
     const { searchFilter } = useURLSearch();
 
-    const { isDarkMode } = useTheme();
-    const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
+    const [customDarkMode, setCustomDarkMode] = React.useState(false);
 
     function onToggleDarkMode() {
         setCustomDarkMode((prevValue) => !prevValue);

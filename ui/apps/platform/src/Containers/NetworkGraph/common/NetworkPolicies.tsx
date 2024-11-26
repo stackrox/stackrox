@@ -16,7 +16,6 @@ import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import download from 'utils/download';
 import SelectSingle from 'Components/SelectSingle';
-import { useTheme } from 'Containers/ThemeProvider';
 import useFetchNetworkPolicies from 'hooks/useFetchNetworkPolicies';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
@@ -36,8 +35,7 @@ const allNetworkPoliciesId = 'All network policies';
 function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React.ReactElement {
     const { networkPolicies, networkPolicyErrors, isLoading, error } =
         useFetchNetworkPolicies(policyIds);
-    const { isDarkMode } = useTheme();
-    const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
+    const [customDarkMode, setCustomDarkMode] = React.useState(false);
 
     const allNetworkPoliciesYAML = useMemo(
         () => ({
