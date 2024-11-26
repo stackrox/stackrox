@@ -88,7 +88,7 @@ describe('Workload CVE overview page tests', () => {
             // Ensure that only the correct filter chip is present
             const filterChipGroupName = isAdvancedFiltersEnabled ? 'CVE severity' : 'Severity';
             cy.get(selectors.filterChipGroupItem(filterChipGroupName, 'Critical'));
-            cy.get(selectors.filterChipGroupItems).should('have.lengthOf', 1);
+            cy.get(selectors.filterChipGroupItems(filterChipGroupName)).should('have.lengthOf', 1);
 
             // TODO - See if there is a clean way to re-enable this to handle both cases where the
             // feature flag is not enabled and not enabled
@@ -158,11 +158,17 @@ describe('Workload CVE overview page tests', () => {
 
             visitWorkloadCveOverview();
             selectEntityTab('Image');
-            openTableRowActionMenu(selectors.firstTableRow);
 
-            cy.get(sbomGenerationButtonSelector).should('not.have.attr', 'aria-disabled');
+            cy.get(selectors.firstTableRow)
+                .find('td[data-label="Image"] a')
+                .then(($link) => {
+                    const imageFullName = $link.text();
+                    openTableRowActionMenu(selectors.firstTableRow);
 
-            // TODO Add to implementation
+                    cy.get(sbomGenerationButtonSelector).click();
+                    cy.get(selectors.generateSbomModal).contains(imageFullName);
+                    // TODO Add to implementation
+                });
         });
     });
 
