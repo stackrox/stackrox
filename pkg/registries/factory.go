@@ -26,28 +26,28 @@ type Factory interface {
 var AllCreatorFuncs = []types.CreatorWrapper{
 	artifactRegistryFactory.Creator,
 	artifactoryFactory.Creator,
+	azureFactory.Creator,
 	dockerFactory.Creator,
 	ecrFactory.Creator,
 	googleFactory.Creator,
-	quayFactory.Creator,
-	nexusFactory.Creator,
-	azureFactory.Creator,
-	rhelFactory.Creator,
 	ibmFactory.Creator,
+	nexusFactory.Creator,
+	quayFactory.Creator,
+	rhelFactory.Creator,
 }
 
 // AllCreatorFuncsWithoutRepoList defines all known registry creators with repo list disabled.
 var AllCreatorFuncsWithoutRepoList = []types.CreatorWrapper{
 	artifactRegistryFactory.CreatorWithoutRepoList,
 	artifactoryFactory.CreatorWithoutRepoList,
+	azureFactory.CreatorWithoutRepoList,
 	dockerFactory.CreatorWithoutRepoList,
 	ecrFactory.CreatorWithoutRepoList,
 	googleFactory.CreatorWithoutRepoList,
-	quayFactory.CreatorWithoutRepoList,
-	nexusFactory.CreatorWithoutRepoList,
-	azureFactory.CreatorWithoutRepoList,
-	rhelFactory.CreatorWithoutRepoList,
 	ibmFactory.CreatorWithoutRepoList,
+	nexusFactory.CreatorWithoutRepoList,
+	quayFactory.CreatorWithoutRepoList,
+	rhelFactory.CreatorWithoutRepoList,
 }
 
 // NewFactory creates a new registries factory.
