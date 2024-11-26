@@ -97,7 +97,7 @@ func EnsureClusterRegistered() error {
 func registerCluster() error {
 	ctx := context.Background()
 
-	log.Infof("Trying to load CRS.")
+	log.Infof("Trying to load Cluster Registration Secret.")
 	crs, err := crs.Load()
 	if err != nil {
 		log.Errorf("failed to load CRS: %v", err)
