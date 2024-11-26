@@ -1069,6 +1069,7 @@ wait_for_api() {
         # Allow override with MAX_WAIT_SECONDS
         max_seconds=${MAX_WAIT_SECONDS:-600}
     fi
+    max_ingress_seconds=$(( max_seconds * 6 ))
 
     while true; do
         central_json="$(kubectl -n "${central_namespace}" get deploy/central -o json)"
@@ -1101,12 +1102,12 @@ wait_for_api() {
     LOAD_BALANCER="${LOAD_BALANCER:-}"
     case "${LOAD_BALANCER}" in
         lb)
-            get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname'
+            get_ingress_endpoint "${central_namespace}" svc/central-loadbalancer '.status.loadBalancer.ingress[0] | .ip // .hostname' "${max_ingress_seconds}"
             API_HOSTNAME="${ingress_endpoint}"
             API_PORT=443
             ;;
         route)
-            get_ingress_endpoint "${central_namespace}" routes/central '.spec.host'
+            get_ingress_endpoint "${central_namespace}" routes/central '.spec.host' "${max_ingress_seconds}"
             API_HOSTNAME="${ingress_endpoint}"
             API_PORT=443
             ;;
