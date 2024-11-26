@@ -1,8 +1,10 @@
-import React, { ReactNode } from 'react';
+import React, { ReactElement, ReactNode } from 'react';
 import {
+    Alert,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
+    Button,
     ClipboardCopy,
     Divider,
     Flex,
@@ -13,7 +15,7 @@ import {
     Tabs,
     TabTitleText,
     Title,
-    Alert,
+    Tooltip,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useParams } from 'react-router-dom';
@@ -26,10 +28,12 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useURLPagination from 'hooks/useURLPagination';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
+import useHasGenerateSBOMAbility from '../../hooks/useHasGenerateSBOMAbility';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import { detailsTabValues } from '../../types';
@@ -61,7 +65,14 @@ export const imageDetailsQuery = gql`
     }
 `;
 
+function ScannerV4RequiredTooltip({ children }: { children: ReactElement }) {
+    return (
+        <Tooltip content="SBOM generation requires Scanner V4 to be enabled">{children}</Tooltip>
+    );
+}
+
 function ImagePage() {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { imageId } = useParams();
     const { data, error } = useQuery<
         {
@@ -84,6 +95,9 @@ function ImagePage() {
     const { invalidateAll: refetchAll } = useInvalidateVulnerabilityQueries();
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+
+    const hasGenerateSBOMAbility = useHasGenerateSBOMAbility();
+    const isScannerV4Enabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const imageData = data && data.image;
     const imageName = imageData?.name;
@@ -109,6 +123,7 @@ function ImagePage() {
             </PageSection>
         );
     } else {
+        const SBOMButtonWrapper = isScannerV4Enabled ? React.Fragment : ScannerV4RequiredTooltip;
         const sha = imageData?.id;
         mainContent = (
             <>
@@ -116,22 +131,40 @@ function ImagePage() {
                     {imageData ? (
                         <Flex
                             direction={{ default: 'column' }}
-                            alignItems={{ default: 'alignItemsFlexStart' }}
+                            alignItems={{ default: 'alignItemsStretch' }}
                         >
-                            <Title headingLevel="h1" className="pf-v5-u-m-0">
-                                {imageDisplayName}
-                            </Title>
-                            {sha && (
-                                <ClipboardCopy
-                                    hoverTip="Copy SHA"
-                                    clickTip="Copied!"
-                                    variant="inline-compact"
-                                    className="pf-v5-u-display-inline-flex pf-v5-u-align-items-center pf-v5-u-mt-sm pf-v5-u-mb-md pf-v5-u-font-size-sm"
+                            <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+                                <Flex
+                                    direction={{ default: 'column' }}
+                                    spaceItems={{ default: 'spaceItemsSm' }}
                                 >
-                                    {sha}
-                                </ClipboardCopy>
-                            )}
-                            <ImageDetailBadges imageData={imageData} />
+                                    <Title headingLevel="h1">{imageDisplayName}</Title>
+                                    {sha && (
+                                        <ClipboardCopy
+                                            hoverTip="Copy SHA"
+                                            clickTip="Copied!"
+                                            variant="inline-compact"
+                                            className="pf-v5-u-font-size-sm"
+                                        >
+                                            {sha}
+                                        </ClipboardCopy>
+                                    )}
+                                    <ImageDetailBadges imageData={imageData} />
+                                </Flex>
+                                {hasGenerateSBOMAbility && (
+                                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                                        <SBOMButtonWrapper>
+                                            <Button
+                                                variant="secondary"
+                                                onClick={() => {}}
+                                                isAriaDisabled={!isScannerV4Enabled}
+                                            >
+                                                Generate SBOM
+                                            </Button>
+                                        </SBOMButtonWrapper>
+                                    </FlexItem>
+                                )}
+                            </Flex>
                             {!isEmpty(scanMessage) && (
                                 <Alert
                                     className="pf-v5-u-w-100"
