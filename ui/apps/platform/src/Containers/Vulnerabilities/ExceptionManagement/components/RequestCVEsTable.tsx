@@ -12,7 +12,7 @@ import {
     VulnerabilityExceptionScope,
     VulnerabilityState,
 } from 'services/VulnerabilityExceptionService';
-import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
@@ -52,8 +52,8 @@ function RequestCVEsTable({
     expandedRowSet,
     vulnerabilityState,
 }: RequestCVEsTableProps) {
-    const { page, perPage, setPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
-    const { sortOption, getSortParams } = useURLSort({
+    const { setPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { getSortParams } = useURLSort({
         sortFields: getWorkloadSortFields('CVE'),
         defaultSortOption: getDefaultWorkloadSortOption('CVE'),
         onSort: () => setPage(1),
@@ -73,7 +73,6 @@ function RequestCVEsTable({
     } = useQuery<CVEListQueryResult>(cveListQuery, {
         variables: {
             query,
-            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 
