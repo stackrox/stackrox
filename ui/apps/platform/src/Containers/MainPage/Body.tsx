@@ -244,7 +244,7 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
     const routePredicates = { hasReadAccess, isFeatureFlagEnabled };
 
     return (
-        <div className="flex flex-col h-full w-full relative overflow-auto 'bg-base-100">
+        <div className="flex flex-col h-full w-full relative overflow-auto bg-base-100">
             <ErrorBoundary>
                 <Switch>
                     <Route path="/" exact render={() => <Redirect to={dashboardPath} />} />
