@@ -250,7 +250,7 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 	return centralHello, nil
 }
 
-// persistCertificates persists the certificates and keys retrieved from Central during the cluster-registration handshake.
+// persistCertificates persists as Kubernetes Secrets the certificates and keys retrieved from Central during the cluster-registration handshake.
 func persistCertificates(ctx context.Context, centralHello *central.CentralHello, k8sClient kubernetes.Interface) error {
 	certsFileMap := centralHello.GetCertBundle()
 	for fileName := range certsFileMap {
