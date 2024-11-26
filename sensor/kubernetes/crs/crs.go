@@ -61,7 +61,7 @@ var (
 //     the CRS-flow (or a regular follow-up certificate rotation).
 func EnsureClusterRegistered() error {
 	log.Infof("Ensuring Secured Cluster is registered.")
-	clientconn.SetUserAgent(fmt.Sprintf("%s CRS", clientconn.Sensor))
+	clientconn.SetUserAgent(fmt.Sprintf("%s Cluster Registration Helper", clientconn.Sensor))
 
 	// Check if legacy sensor service certificate, e.g. created via init-bundle, exists.
 	if legacySensorServiceCert := os.Getenv(crs.LegacySensorServiceCertEnvName); legacySensorServiceCert != "" {
