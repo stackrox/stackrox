@@ -412,8 +412,8 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 					case mapReset:
 						store.resetMaps()
 					case deleteDeployment1:
-						// This is a trick to delete data from the store
-						store.Apply(map[string]*EntityData{"depl1": nil}, false)
+						// This is how a DELETE operation is implemented
+						store.Apply(map[string]*EntityData{"depl1": {}}, false)
 					}
 					s.T().Logf("\t\tIPs (tick %d): %s", tickNo, store.podIPsStore.String())
 

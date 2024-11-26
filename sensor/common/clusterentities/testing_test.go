@@ -25,6 +25,10 @@ func buildEndpoint(ip string) net.NumericEndpoint {
 	}
 }
 func entityUpdate(ip, contID string, port uint16) *EntityData {
+	// Check if this is a DELETE request
+	if ip == "" && contID == "" && port == 0 {
+		return &EntityData{}
+	}
 	return entityUpdateWithPortName(ip, contID, port, "http")
 }
 

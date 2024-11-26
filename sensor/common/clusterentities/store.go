@@ -55,6 +55,7 @@ func (ed *EntityData) String() string {
 		maps.Keys(ed.ips), maps.Keys(ed.endpoints), maps.Keys(ed.containerIDs))
 }
 
+// isDeleteOnly prevents from treating a request as ADD with empty values, as such requests should be treated as DELETE
 func (ed *EntityData) isDeleteOnly() bool {
 	if ed == nil {
 		return true

@@ -255,8 +255,8 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 					case mapReset:
 						store.resetMaps()
 					case deleteDeployment1:
-						// This is a trick to delete data from the store
-						store.Apply(map[string]*EntityData{"depl1": nil}, false)
+						// This is how a DELETE operation is implemented
+						store.Apply(map[string]*EntityData{"depl1": {}}, false)
 					}
 					s.T().Logf("\t\tEndpoints (tick %d): %s", tickNo, store.endpointsStore.String())
 
