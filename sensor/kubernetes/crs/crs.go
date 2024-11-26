@@ -109,20 +109,17 @@ func registerCluster() error {
 		return errors.Wrap(err, "preparing registration secret for mTLS authentication")
 	}
 
-	// Connect to Central.
 	centralConnection, err := openCentralConnection(crs)
 	if err != nil {
 		return errors.Wrap(err, "opening connection to Central")
 	}
 
-	// Create Kubernetes client.
 	config, err := k8sutil.GetK8sInClusterConfig()
 	if err != nil {
 		return errors.Wrap(err, "obtaining in-cluster Kubernetes config")
 	}
 	k8sClient := k8sutil.MustCreateK8sClient(config)
 
-	// Execute handshake with central.
 	centralHello, err := centralHandshake(ctx, k8sClient, centralConnection)
 	if err != nil {
 		return errors.Wrap(err, "handshake with central")
