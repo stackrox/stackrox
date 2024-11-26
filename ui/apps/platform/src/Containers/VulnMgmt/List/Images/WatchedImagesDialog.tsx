@@ -154,7 +154,7 @@ const WatchedImagesDialog = ({ closeDialog }: WatchedImagesDialogProps): ReactEl
                                     className={inputTextClassName}
                                 />
                                 {touched.imageTag && errors.imageTag ? (
-                                    <div className="bg-alert-300 p-2 text-alert-800 text-xs rounded-b border-alert-400 border-b border-l border-r flex flex-col">
+                                    <div className="p-2 text-xs rounded-b border-b border-l border-r flex flex-col">
                                         <ErrorMessage name="imageTag" />
                                     </div>
                                 ) : null}

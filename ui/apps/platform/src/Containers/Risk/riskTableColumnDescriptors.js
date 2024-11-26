@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
 import find from 'lodash/find';
 import dateFns from 'date-fns';
 import { Tooltip } from '@patternfly/react-core';
+import { CheckIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { sortValue, sortDate } from 'sorters/sorters';
@@ -14,17 +14,25 @@ function DeploymentNameColumn({ original }) {
     const isSuspicious = find(original.baselineStatuses, {
         anomalousProcessesExecuted: true,
     });
+    // Borrow layout from IconText component.
     return (
         <div className="flex items-center">
-            <span className="pr-1">
-                {isSuspicious && (
+            <span className="pf-v5-u-display-inline-flex pf-v5-u-align-items-center">
+                {isSuspicious ? (
                     <Tooltip content="Abnormal processes discovered">
-                        <Icon.Circle className="h-2 w-2 text-alert-400" fill="#ffebf1" />
+                        <ExclamationCircleIcon color="var(--pf-v5-global--danger-color--100)" />
+                    </Tooltip>
+                ) : (
+                    <Tooltip content="No abnormal processes discovered">
+                        <CheckIcon />
                     </Tooltip>
                 )}
-                {!isSuspicious && <Icon.Circle className="h-2 w-2" />}
+                <span className="pf-v5-u-pl-sm pf-v5-u-text-nowrap">
+                    <Link to={`${riskBasePath}/${original.deployment.id}`}>
+                        {original.deployment.name}
+                    </Link>
+                </span>
             </span>
-            <Link to={`${riskBasePath}/${original.deployment.id}`}>{original.deployment.name}</Link>
         </div>
     );
 }
