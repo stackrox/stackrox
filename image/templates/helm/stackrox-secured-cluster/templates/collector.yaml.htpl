@@ -45,6 +45,25 @@ spec:
       hostAliases: {{ toYaml ._rox.collector.hostAliases | nindent 8 }}
       {{- end }}
       serviceAccountName: collector
+      initContainers:
+        - name: init-tls-certs
+          image: {{ quote ._rox.image.main.fullRef }}
+          command:
+          - /stackrox/bin/init-tls-certs
+          resources:
+            {{- ._rox.admissionControl._resources | nindent 12 }}
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+          volumeMounts:
+          - name: certs-legacy
+            mountPath: /tmp/certs-legacy
+            readOnly: true
+          - name: certs-new
+            mountPath: /tmp/certs-new
+            readOnly: true
+          - name: certs
+            mountPath: /tmp/certs
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
       - name: collector
@@ -238,6 +257,8 @@ spec:
           path: /dev
         name: dev-ro
       - name: certs
+        emptyDir: {}
+      - name: certs-legacy
         secret:
           secretName: collector-tls
           items:
@@ -247,6 +268,9 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      - name: certs-new
+        secret:
+          secretName: tls-cert-collector
       - hostPath:
           path: /
         name: host-root-ro
