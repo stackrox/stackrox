@@ -90,7 +90,7 @@ export const defaultValues: AzureIntegrationFormValues = {
     updatePassword: true,
 };
 
-function ClairifyIntegrationForm({
+function AzureIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<AzureIntegration>): ReactElement {
@@ -271,4 +271,4 @@ function ClairifyIntegrationForm({
     );
 }
 
-export default ClairifyIntegrationForm;
+export default AzureIntegrationForm;
