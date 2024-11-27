@@ -2,6 +2,8 @@ package clusterentities
 
 import (
 	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 )
@@ -22,6 +24,15 @@ func (e *Store) Debug() []byte {
 		log.Errorf("Error marshalling store debug: %v", err)
 	}
 	return ret
+}
+
+func (e *Store) track(format string, vals ...interface{}) {
+	if !e.debugMode {
+		return
+	}
+	e.traceMutex.Lock()
+	defer e.traceMutex.Unlock()
+	e.trace[time.Now().Format(time.RFC3339Nano)] = fmt.Sprintf(format, vals...)
 }
 
 func (e *containerIDsStore) debug() interface{} {

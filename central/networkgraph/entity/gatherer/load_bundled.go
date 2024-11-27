@@ -8,6 +8,7 @@ import (
 	"path"
 
 	"github.com/pkg/errors"
+
 	blobstore "github.com/stackrox/rox/central/blob/datastore"
 	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/pkg/networkgraph/defaultexternalsrcs"

@@ -111,11 +111,6 @@ func (e *endpointsStore) applyNoLock(updates map[string]*EntityData, incremental
 		dec = dec.Union(decApply)
 		inc = inc.Union(incApply)
 	}
-	// All IPs from `inc` will get +1, whereas all from `dec` will get -1.
-	// Let's optimize a bit and remove those that would cancel each other out.
-	common := inc.Intersect(dec)
-	inc = inc.Difference(common)
-	dec = dec.Difference(common)
 	return dec, inc
 }
 

@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"golang.org/x/exp/maps"
+
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-	"golang.org/x/exp/maps"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -132,15 +133,6 @@ func NewStoreWithMemory(numTicks uint16, debugMode bool) *Store {
 	}
 	store.initMaps()
 	return store
-}
-
-func (e *Store) track(format string, vals ...interface{}) {
-	if !e.debugMode {
-		return
-	}
-	e.traceMutex.Lock()
-	defer e.traceMutex.Unlock()
-	e.trace[time.Now().Format(time.RFC3339Nano)] = fmt.Sprintf(format, vals...)
 }
 
 // StartDebugServer starts HTTP server that allows to look inside the clusterentities store.
