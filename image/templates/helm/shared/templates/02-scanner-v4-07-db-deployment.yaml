@@ -47,6 +47,26 @@ spec:
       serviceAccountName: scanner-v4
       terminationGracePeriodSeconds: 120
       initContainers:
+      {{- if not ._rox.env.centralServices }}
+      - name: init-tls-certs
+        image: {{ quote ._rox.image.main.fullRef }}
+        command:
+        - /stackrox/bin/init-tls-certs
+        resources:
+          {{- ._rox.admissionControl._resources | nindent 12 }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: certs-legacy
+          mountPath: /tmp/certs-legacy
+          readOnly: true
+        - name: certs-new
+          mountPath: /tmp/certs-new
+          readOnly: true
+        - name: certs
+          mountPath: /tmp/certs
+      {{- end }}
       - name: init-db
         image: {{ ._rox.scannerV4.db.image.fullRef | quote }}
         env:
@@ -108,7 +128,7 @@ spec:
           mountPath: /var/lib/postgresql/data
         - name: config-volume
           mountPath: /etc/stackrox.d/config/
-        - name: scanner-db-tls-volume
+        - name: certs
           mountPath: /run/secrets/stackrox.io/certs
         - name: shared-memory
           mountPath: /dev/shm
@@ -120,7 +140,8 @@ spec:
       - name: config-volume
         configMap:
           name: {{ default "scanner-v4-db-config" ._rox.scannerV4.db.configOverride }}
-      - name: scanner-db-tls-volume
+      {{- if ._rox.env.centralServices }}
+      - name: certs
         secret:
           secretName: scanner-v4-db-tls
           defaultMode: 0640
@@ -131,6 +152,32 @@ spec:
             path: server.key
           - key: ca.pem
             path: root.crt
+      {{- else }}
+      - name: certs
+        emptyDir: {}
+      - name: certs-legacy
+        secret:
+          secretName: scanner-v4-db-tls
+          optional: true
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      - name: certs-new
+        secret:
+          secretName: tls-cert-scanner-v4-db
+          optional: true
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      {{- end }}
       - name: shared-memory
         emptyDir:
           medium: Memory
