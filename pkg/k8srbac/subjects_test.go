@@ -76,10 +76,10 @@ func TestGetSubjectsAdjustedByKind(t *testing.T) {
 		},
 		"non-namespaced duplicates are adjusted": {
 			rb: &storage.K8SRoleBinding{Subjects: []*storage.Subject{
-				{Kind: storage.SubjectKind_USER, Namespace: "namespace"},
+				{Kind: storage.SubjectKind_USER, Namespace: "is-first-in-the-list"},
 				{Kind: storage.SubjectKind_USER},
-				{Kind: storage.SubjectKind_GROUP, Namespace: "namespace"},
 				{Kind: storage.SubjectKind_GROUP},
+				{Kind: storage.SubjectKind_GROUP, Namespace: "is-second-in-the-list"},
 			}},
 			expect: []*storage.Subject{
 				{Kind: storage.SubjectKind_USER},
