@@ -279,13 +279,15 @@ func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 	current, historical, ipLookup, ipLookupHistorical := e.endpointsStore.lookupEndpoint(endpoint, e.podIPsStore)
 	// Return early to avoid potential duplicates... not sure if duplicates are bad here.
 	if len(current)+len(historical) > 0 {
-		e.track("LookupByEndpoint(%s): %d endpoints found", endpoint.String(), len(current)+len(historical))
+		e.track("LookupByEndpoint(%s): found=true, foundIn=endpointsStore", endpoint.String(), len(current)+len(historical))
 		return append(current, historical...)
 	}
+	// TODO: cover this if-case with tests!
 	if len(ipLookup)+len(ipLookupHistorical) > 0 {
-		e.track("LookupByEndpoint(%s): ipLookup results %d ", endpoint.String(), len(ipLookup)+len(ipLookupHistorical))
+		e.track("LookupByEndpoint(%s): found=true, foundIn=ipLookup", endpoint.String(), len(ipLookup)+len(ipLookupHistorical))
+		return append(ipLookupHistorical, ipLookup...)
 	}
-	e.track("LookupByEndpoint(%s): miss", endpoint.String())
+	e.track("LookupByEndpoint(%s): found=false", endpoint.String())
 	return []LookupResult{}
 }
 
