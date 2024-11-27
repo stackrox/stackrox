@@ -36,20 +36,15 @@ jobs:
         set -eu
         dir=$(mktemp -d)
         python3 .github/workflows/scripts/scanner-update-nvd-feeds.py "$dir"
-        if [ "$(find "$dir" -name "*.nvd.json" | wc -l)" -gt 0 ]; then
-          echo "Listing JSON files"
-          ls -l "$dir"/*.nvd.json # if no *.json this will fail, and print $dir
-          for f in "$dir"/*.nvd.json; do
-               echo "Checking contents of '$f' with 'jq' and adding to zip"
-               jq . $f >/dev/null
-               zip -j nvd-feeds.zip $f
-           done
-            zip -j nvd-feeds.zip "$dir"/*.nvd.json
+        for f in "$dir"/*.nvd.json; do
+          if jq . "$f" >/dev/null 2>&1; then
+            echo "Validating and adding '$f' to nvd-feeds.zip"
+            zip -j nvd-feeds.zip "$f"
           else
-            echo "Error: One or more JSON files are invalid!"
-            exit 1  # Fail the step if validation fails
+            echo "Error: Invalid JSON file '$f'"
+            exit 1
           fi
-        fi
+        done
 
     - uses: ./.github/actions/upload-artifact-with-retry
       with:
@@ -82,14 +77,15 @@ jobs:
         set -eu
         dir=$(mktemp -d)
         python3 .github/workflows/scripts/scanner-update-nvd-api.py "$dir"
-        if [ "$(find "$dir" -name "*.nvd.json" | wc -l)" -gt 0 ]; then
-          if jq . -r "$dir"/*.nvd.json > /dev/null 2>&1; then
-            zip -j nvd-api.zip "$dir"/*.nvd.json
+        for f in "$dir"/*.nvd.json; do
+          if jq . "$f" >/dev/null 2>&1; then
+            echo "Validating and adding '$f' to nvd-api.zip"
+            zip -j nvd-api.zip "$f"
           else
-            echo "Error: One or more JSON files are invalid!"
-            exit 1  # Fail the step if validation fails
+            echo "Error: Invalid JSON file '$f'"
+            exit 1
           fi
-        fi
+        done
 
     - uses: ./.github/actions/upload-artifact-with-retry
       with:
