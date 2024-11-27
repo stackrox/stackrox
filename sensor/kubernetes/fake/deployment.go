@@ -449,7 +449,7 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 		}
 		w.manageDeploymentLifecycle(ctx, resources)
 		log.Infof("Deployment %s finished its lifecycle #%d. Here's the Pod data:", resources.deployment.Name, count)
-		log.Infof(podCounter.printStats())
+		log.Infof("%v", podCounter.printStats())
 	}
 }
 
