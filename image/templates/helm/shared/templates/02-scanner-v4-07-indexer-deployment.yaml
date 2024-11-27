@@ -44,6 +44,27 @@ spec:
       {{- if ._rox.scannerV4.indexer.hostAliases }}
       hostAliases: {{ toYaml ._rox.scannerV4.indexer.hostAliases | nindent 8 }}
       {{- end }}
+      {{- if not ._rox.env.centralServices }}
+      initContainers:
+      - name: init-tls-certs
+        image: {{ quote ._rox.image.main.fullRef }}
+        command:
+        - /stackrox/bin/init-tls-certs
+        resources:
+          {{- ._rox.admissionControl._resources | nindent 12 }}
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: certs-legacy
+          mountPath: /tmp/certs-legacy
+          readOnly: true
+        - name: certs-new
+          mountPath: /tmp/certs-new
+          readOnly: true
+        - name: certs
+          mountPath: /tmp/certs
+      {{- end }}
       containers:
       - name: indexer
         image: {{ ._rox.scannerV4.indexer.image.fullRef | quote }}
@@ -112,7 +133,7 @@ spec:
           mountPath: /etc/ssl
         - name: etc-pki-volume
           mountPath: /etc/pki/ca-trust
-        - name: tls-volume
+        - name: certs
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
         - name: config-volume
@@ -148,9 +169,22 @@ spec:
         emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
-      - name: tls-volume
+      {{- if ._rox.env.centralServices }}
+      - name: certs
         secret:
           secretName: scanner-v4-indexer-tls
+      {{- else }}
+      - name: certs
+        emptyDir: {}
+      - name: certs-legacy
+        secret:
+          secretName: scanner-v4-indexer-tls
+          optional: true
+      - name: certs-new
+        secret:
+          secretName: tls-cert-scanner-v4-indexer
+          optional: true
+      {{- end }}
       - name: config-volume
         configMap:
           name: scanner-v4-indexer-config
