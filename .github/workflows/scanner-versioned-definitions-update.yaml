@@ -17,7 +17,7 @@ on:
         - nvd-api
         - nvd-feeds
         required: true
-        default: nvd-api
+        default: nvd-feeds
 
 jobs:
   parse-versions:
