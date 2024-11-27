@@ -40,7 +40,7 @@ export type NetworkPolicyPort = {
     protocol: Protocol;
     portRef: {
         port?: number;
-        portName?: string;
+        portName?: string | number;
     };
 };
 
