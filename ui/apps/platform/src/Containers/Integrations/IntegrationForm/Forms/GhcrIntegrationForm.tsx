@@ -45,19 +45,7 @@ export const validationSchema = yup.object().shape({
         docker: yup.object().shape({
             endpoint: yup.string().trim().required('An endpoint is required'),
             username: yup.string(),
-            password: yup
-                .string()
-                .test(
-                    'password-test',
-                    'A password is required',
-                    (value, context: yup.TestContext) => {
-                        const requirePasswordField = !!context?.from?.[2]?.value?.updatePassword;
-                        if (!requirePasswordField) {
-                            return true;
-                        }
-                        return !!value?.trim();
-                    }
-                ),
+            password: yup.string(),
             insecure: yup.bool(),
         }),
         skipTestIntegration: yup.bool(),
