@@ -59,7 +59,7 @@ spec:
           command:
           - /stackrox/bin/init-tls-certs
           resources:
-            {{- ._rox.admissionControl._resources | nindent 12 }}
+            {{- ._rox.sensor._resources | nindent 12 }}
           securityContext:
             runAsNonRoot: true
             readOnlyRootFilesystem: true
