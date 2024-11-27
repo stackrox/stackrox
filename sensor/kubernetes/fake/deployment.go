@@ -22,7 +22,42 @@ import (
 
 var (
 	processPool = newProcessPool()
+	podCounter  = newPodCounter()
 )
+
+// PodCounter counts Pod creates and deletes
+type PodCounter struct {
+	numCreate  int
+	numDelete  int
+	createLock sync.RWMutex
+	deleteLock sync.RWMutex
+}
+
+func newPodCounter() *PodCounter {
+	return &PodCounter{
+		numCreate: 0,
+		numDelete: 0,
+	}
+}
+
+func (p *PodCounter) incrementCreate() {
+	p.createLock.Lock()
+	defer p.createLock.Unlock()
+
+	p.numCreate++
+}
+
+func (p *PodCounter) incrementDelete() {
+	p.deleteLock.Lock()
+	defer p.deleteLock.Unlock()
+
+	p.numDelete++
+}
+
+func (p *PodCounter) printStats() string {
+	return fmt.Sprintf("Counted %d pod.Create() calls and %d pod.Delete() calls, with a ratio of %d "+
+		"Creates/Deletes", p.numCreate, p.numDelete, p.numCreate/p.numDelete)
+}
 
 // ProcessPool stores processes by containerID using a map
 type ProcessPool struct {
@@ -408,9 +443,13 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 		for _, pod := range pods {
 			if _, err := w.client.Kubernetes().CoreV1().Pods(deployment.Namespace).Create(ctx, pod, metav1.CreateOptions{}); err != nil {
 				log.Errorf("error creating pod: %v", err)
+			} else {
+				podCounter.incrementCreate()
 			}
 		}
 		w.manageDeploymentLifecycle(ctx, resources)
+		log.Infof("Deployment %s finished its lifecycle #%d. Here's the Pod data:", resources.deployment.Name, count)
+		log.Infof(podCounter.printStats())
 	}
 }
 
@@ -428,7 +467,7 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 	replicaSetClient := w.client.Kubernetes().AppsV1().ReplicaSets(deployment.Namespace)
 
 	for _, pod := range resources.pods {
-		go w.managePod(ctx, &stopSig, resources.workload.PodWorkload, pod)
+		go w.managePod(ctx, &stopSig, resources.workload.PodWorkload, pod, resources.workload.LifecycleDuration)
 	}
 
 	for {
@@ -479,9 +518,11 @@ func populatePodContainerStatuses(pod *corev1.Pod) {
 	pod.Status.ContainerStatuses = statuses
 }
 
-func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurrency.Signal, podWorkload PodWorkload, pod *corev1.Pod) {
+func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurrency.Signal, podWorkload PodWorkload, pod *corev1.Pod, deploymentLifecycleDuration time.Duration) {
 	podDeadline := newTimerWithJitter(podWorkload.LifecycleDuration)
 	defer podDeadline.Stop()
+	deploymentTimer := time.NewTimer(deploymentLifecycleDuration * 2)
+	defer deploymentTimer.Stop()
 
 	podSig := concurrency.NewSignal()
 	go w.manageProcessesForPod(&podSig, podWorkload, pod)
@@ -490,6 +531,8 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 	cleanupPodFn := func(pod *corev1.Pod) {
 		if err := client.Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
 			log.Errorf("error deleting pod: %v", err)
+		} else {
+			podCounter.incrementDelete()
 		}
 		w.deleteID(podPrefix, pod.UID)
 		ipPool.remove(pod.Status.PodIP)
@@ -518,11 +561,17 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 
 			if _, err := client.Create(ctx, pod, metav1.CreateOptions{}); err != nil {
 				log.Errorf("error creating pod: %v", err)
+			} else {
+				podCounter.incrementCreate()
 			}
 			w.writeID(podPrefix, pod.UID)
 			podSig = concurrency.NewSignal()
 			go w.manageProcessesForPod(&podSig, podWorkload, pod)
 			podDeadline = newTimerWithJitter(podWorkload.LifecycleDuration)
+		case <-deploymentTimer.C:
+			log.Errorf("%v time elapsed since pod %v has been managed, which is longer than the lifecycle Duration of"+
+				"the deployment holding the pod and should NOT happen", (deploymentLifecycleDuration * 2).String(), pod.Name)
+			return
 		}
 	}
 }
