@@ -37,7 +37,13 @@ jobs:
         dir=$(mktemp -d)
         python3 .github/workflows/scripts/scanner-update-nvd-feeds.py "$dir"
         if [ "$(find "$dir" -name "*.nvd.json" | wc -l)" -gt 0 ]; then
-          if jq . -r "$dir"/*.nvd.json > /dev/null 2>&1; then
+          echo "Listing JSON files"
+          ls -l "$dir"/*.nvd.json # if no *.json this will fail, and print $dir
+          for f in "$dir"/*.nvd.json; do
+               echo "Checking contents of '$f' with 'jq' and adding to zip"
+               jq . $f >/dev/null
+               zip -j nvd-feeds.zip $f
+           done
             zip -j nvd-feeds.zip "$dir"/*.nvd.json
           else
             echo "Error: One or more JSON files are invalid!"
