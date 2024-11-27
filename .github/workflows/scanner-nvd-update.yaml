@@ -97,7 +97,7 @@ jobs:
     needs:
     - fetch-nvd-feeds
     runs-on: ubuntu-latest
-    # if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -126,7 +126,7 @@ jobs:
     needs:
     - fetch-nvd-api
     runs-on: ubuntu-latest
-    # if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
