@@ -178,7 +178,7 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 		historicalPublicIPsOfThisEndpoint := e.deleteFromHistory(deploymentID, ep)
 		toIncrement := newPublicIPsOfThisEndpoint.Difference(historicalPublicIPsOfThisEndpoint)
 		publicIPsToIncrement = publicIPsToIncrement.Union(toIncrement)
-		toDecrement := historicalPublicIPsOfThisEndpoint.Difference(newPublicIPsOfThisEndpoint)
+		toDecrement := newPublicIPsOfThisEndpoint.Difference(historicalPublicIPsOfThisEndpoint)
 		publicIPsToDecrement = publicIPsToDecrement.Union(toDecrement)
 	}
 	return publicIPsToDecrement, publicIPsToIncrement
