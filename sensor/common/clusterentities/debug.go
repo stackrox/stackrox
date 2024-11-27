@@ -2,6 +2,8 @@ package clusterentities
 
 import (
 	"encoding/json"
+
+	"github.com/stackrox/rox/pkg/concurrency"
 )
 
 // Debug returns an object that represents the current state of the entire store
@@ -11,7 +13,9 @@ func (e *Store) Debug() []byte {
 	m["IPs"] = e.podIPsStore.debug()
 	m["containerIDs"] = e.containerIDsStore.debug()
 	// json pretty-printer will sort it for us
-	m["events"] = e.trace
+	concurrency.WithRLock(&e.traceMutex, func() {
+		m["events"] = e.trace
+	})
 
 	ret, err := json.Marshal(m)
 	if err != nil {

@@ -44,7 +44,7 @@ func InitializeStore() *StoreProvider {
 	podStore := newPodStore()
 	svcStore := newServiceStore()
 	nodeStore := newNodeStore()
-	entityStore := clusterentities.NewStoreWithMemory(uint16(memSizeSetting))
+	entityStore := clusterentities.NewStoreWithMemory(uint16(memSizeSetting), debugClusterEntitiesStore.BooleanSetting())
 	if debugClusterEntitiesStore.BooleanSetting() {
 		go entityStore.StartDebugServer()
 	}

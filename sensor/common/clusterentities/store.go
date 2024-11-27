@@ -111,28 +111,35 @@ type Store struct {
 	memorySize uint16
 
 	// list of events for debugging purposes
-	trace map[string]string
+	debugMode  bool
+	traceMutex sync.RWMutex
+	trace      map[string]string
 }
 
 // NewStore creates and returns a new store instance.
 func NewStore() *Store {
-	return NewStoreWithMemory(0)
+	return NewStoreWithMemory(0, false)
 }
 
 // NewStoreWithMemory returns store that remembers past IPs of an endpoint for a given number of ticks
-func NewStoreWithMemory(numTicks uint16) *Store {
+func NewStoreWithMemory(numTicks uint16, debugMode bool) *Store {
 	store := &Store{
 		endpointsStore:    newEndpointsStoreWithMemory(numTicks),
 		podIPsStore:       newPodIPsStoreWithMemory(numTicks),
 		containerIDsStore: newContainerIDsStoreWithMemory(numTicks),
 		memorySize:        numTicks,
-		trace:             make(map[string]string),
+		debugMode:         debugMode,
 	}
 	store.initMaps()
 	return store
 }
 
 func (e *Store) track(format string, vals ...interface{}) {
+	if !e.debugMode {
+		return
+	}
+	e.traceMutex.Lock()
+	defer e.traceMutex.Unlock()
 	e.trace[time.Now().Format(time.RFC3339Nano)] = fmt.Sprintf(format, vals...)
 }
 
@@ -152,6 +159,12 @@ func (e *Store) initMaps() {
 	defer e.ipRefCountMutex.Unlock()
 	e.publicIPRefCounts = make(map[net.IPAddress]*int)
 	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
+	e.trace = make(map[string]string)
+	if e.debugMode {
+		concurrency.WithLock(&e.traceMutex, func() {
+			e.trace["init"] = "events trace disabled in non-debug mode"
+		})
+	}
 }
 
 func (e *Store) resetMaps() {
