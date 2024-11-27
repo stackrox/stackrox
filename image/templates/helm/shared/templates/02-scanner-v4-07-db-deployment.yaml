@@ -90,9 +90,6 @@ spec:
           readOnly: true
         resources:
           {{- ._rox.scannerV4.db._resources | nindent 10 }}
-        securityContext:
-          runAsUser: 70
-          runAsGroup: 70
       containers:
       - name: db
         image: {{ ._rox.scannerV4.db.image.fullRef | quote }}
@@ -120,9 +117,6 @@ spec:
           timeoutSeconds: 1
         resources:
           {{- ._rox.scannerV4.db._resources | nindent 10 }}
-        securityContext:
-          runAsUser: 70
-          runAsGroup: 70
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
@@ -134,6 +128,9 @@ spec:
           mountPath: /dev/shm
       securityContext:
         fsGroup: 70
+        runAsUser: 70
+        runAsNonRoot: true
+        runAsGroup: 70
       volumes:
       - name: disk
         {{- toYaml ._rox.scannerV4.db.persistence._volumeCfg | nindent 8 }}
