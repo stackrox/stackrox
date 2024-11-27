@@ -32,7 +32,7 @@ import (
 
 const (
 	backupMaxTimeout               = 4 * time.Hour
-	testMaxTimeout                 = 5 * time.Second
+	testMaxTimeout                 = 9 * time.Second
 	initialConfigurationMaxTimeout = 5 * time.Minute
 	formatKey                      = "backup_2006-01-02T15:04:05.zip"
 )

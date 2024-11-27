@@ -29,7 +29,7 @@ import (
 
 const (
 	backupMaxTimeout = 4 * time.Hour
-	testMaxTimeout   = 5 * time.Second
+	testMaxTimeout   = 9 * time.Second
 )
 
 var log = logging.LoggerForModule(option.EnableAdministrationEvents())
