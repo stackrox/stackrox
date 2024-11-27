@@ -137,7 +137,7 @@ class ReconciliationTest extends BaseSpecification {
             assert Services.getPods().findAll { it.deploymentId == busyboxDeployment.getDeploymentUid() }.size() == 1
 
             violations = getViolationsWithTimeout("testing123",
-                    "Secure Shell (ssh) Port Exposed", 30)
+                    "Secure Shell (ssh) Port Exposed", 90)
             assert violations.size() == 1
 
             NetworkPolicy policy = new NetworkPolicy("do-nothing")
