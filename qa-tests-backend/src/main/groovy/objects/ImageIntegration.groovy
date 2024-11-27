@@ -264,6 +264,7 @@ class GHCRImageIntegration implements ImageIntegration {
     static ImageIntegrationOuterClass.ImageIntegration.Builder getCustomBuilder(Map customArgs = [:]) {
         Map defaultArgs = [
                 name: "ghcr",
+                endpoint: "https://ghcr.io",
                 username: Env.mustGet("GHCR_REGISTRY_USER"),
                 password: Env.mustGet("GHCR_REGISTRY_PASSWORD"),
         ]
@@ -271,6 +272,7 @@ class GHCRImageIntegration implements ImageIntegration {
 
         ImageIntegrationOuterClass.DockerConfig.Builder config =
                 ImageIntegrationOuterClass.DockerConfig.newBuilder()
+                        .setEndpoint(args.endpoint as String)
                         .setUsername(args.username as String)
                         .setPassword(args.password as String)
 
