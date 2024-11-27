@@ -332,7 +332,7 @@ func (e *Store) incPublicIPRef(addr net.IPAddress) {
 		e.notifyPublicIPsListenersNoLock(PublicIPsListener.OnAdded, addr)
 	}
 	*refCnt++
-	log.Infof("Increasing count for %s: now is %d", addr.String(), *refCnt)
+	log.Debugf("Increasing count for %s: now is %d", addr.String(), *refCnt)
 }
 
 func (e *Store) decPublicIPRef(addr net.IPAddress) {
@@ -344,10 +344,9 @@ func (e *Store) decPublicIPRef(addr net.IPAddress) {
 		return
 	}
 	*refCnt--
-	log.Infof("Decreasing count for %s: now is %d", addr.String(), *refCnt)
+	log.Debugf("Decreasing count for %s: now is %d", addr.String(), *refCnt)
 	if *refCnt == 0 {
 		delete(e.publicIPRefCounts, addr)
-		log.Infof("Refcount for %s is 0, deleting", addr.String())
 		e.notifyPublicIPsListenersNoLock(PublicIPsListener.OnRemoved, addr)
 	}
 }
