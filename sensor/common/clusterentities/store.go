@@ -163,7 +163,7 @@ func (e *Store) initMaps() {
 	e.publicIPRefCounts = make(map[net.IPAddress]*int)
 	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
 	e.trace = make(map[string]string)
-	if e.debugMode {
+	if !e.debugMode {
 		concurrency.WithLock(&e.traceMutex, func() {
 			e.trace["init"] = "events trace disabled in non-debug mode"
 		})
