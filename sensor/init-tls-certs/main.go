@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"log"
@@ -25,6 +24,7 @@ func main() {
 		log.Fatalf("Cannot check destination directory %q: %s", destinationDir, err)
 	}
 	log.Printf("Destination directory %q looks sane.", destinationDir)
+
 	files := waitForSource()
 	if err = copyFiles(files, realDest); err != nil {
 		log.Fatalf("Cannot copy files: %s", err)
@@ -38,7 +38,8 @@ func copyFiles(files []string, destDir string) error {
 			return err
 		}
 		destPath := path.Join(destDir, path.Base(file))
-		if err = os.WriteFile(destPath, content, 0600); err != nil {
+		perm := os.FileMode(0600) // 0600 is required by Postgres (used by scanner-db)
+		if err = os.WriteFile(destPath, content, perm); err != nil {
 			return err
 		}
 		log.Printf("Copied %q to %q", file, destPath)
@@ -67,8 +68,8 @@ func waitForSource() []string {
 			return files
 		}
 
-		log.Printf(" No certificates found. Retrying...")
-		time.Sleep(time.Second)
+		log.Printf("No certificates found. Retrying...")
+		time.Sleep(5 * time.Second)
 	}
 }
 
@@ -77,6 +78,7 @@ func findFiles(sourceDir string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	log.Printf("Walking %q.", realSource)
 	var files []string
 	err = filepath.WalkDir(realSource, func(path string, d fs.DirEntry, walkErr error) error {
@@ -84,23 +86,29 @@ func findFiles(sourceDir string) ([]string, error) {
 			log.Printf("Error accessing path %q: %s", path, walkErr)
 			return nil
 		}
-		if strings.HasPrefix(path, ".") {
+
+		base := filepath.Base(path)
+		if strings.HasPrefix(base, ".") {
 			log.Printf("Ignoring hidden file %q", path)
 			return nil
 		}
+
 		realFile, err := filepath.EvalSymlinks(path)
 		if err != nil {
 			log.Printf("Ignoring file %q: %s", path, err)
 			return nil
 		}
+
 		st, err := os.Stat(realFile)
 		if err != nil {
 			log.Printf("Ignoring file %q: %s", realFile, err)
 			return nil
 		}
+
 		if st.IsDir() {
 			return nil
 		}
+
 		log.Printf("Found file %q (%q)", path, realFile)
 		files = append(files, realFile)
 		return nil
@@ -109,11 +117,13 @@ func findFiles(sourceDir string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(files) >= 3 {
+
+	requiredFiles := 3
+	if len(files) >= requiredFiles {
 		return files, nil
 	}
 
-	return nil, fmt.Errorf("not enough files found at %q", sourceDir)
+	return nil, fmt.Errorf("expecting at least %d files at %q", requiredFiles, sourceDir)
 }
 
 func sanityCheckDestination() (string, error) {
@@ -126,7 +136,7 @@ func sanityCheckDestination() (string, error) {
 		return "", fmt.Errorf("stat failed: %w", err)
 	}
 	if !st.IsDir() {
-		return "", errors.New("%q is not a directory")
+		return "", fmt.Errorf("%q is not a directory", realDest)
 	}
 	return realDest, nil
 }
