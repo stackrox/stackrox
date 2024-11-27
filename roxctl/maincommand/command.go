@@ -61,6 +61,7 @@ func Command() *cobra.Command {
 	flags.AddPassword(c)
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
+	flags.AddConfigurationFile(c)
 
 	cliEnvironment := environment.CLIEnvironment()
 	c.SetErr(errorWriter{
