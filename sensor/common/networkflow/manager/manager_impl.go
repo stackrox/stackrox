@@ -7,8 +7,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -506,27 +508,33 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
-func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
+// enrichConnection returns error with a reason about why the enrichment did not fully succeed
+func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
+	var failReasons error
 
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
+		failReasons = multierror.Append(failReasons, fmt.Errorf("ContainerID %s unknown", conn.containerID))
 		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
 		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
 			if activeConn, found := m.activeConnections[*conn]; found {
 				enrichedConnections[*activeConn] = timestamp.Now()
 				delete(m.activeConnections, *conn)
 				flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
-				return
+				return nil // connection has been enriched
 			}
 			status.rotten = true
 			// Only increment metric once the connection is marked rotten
 			flowMetrics.ContainerIDMisses.Inc()
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
+		} else {
+			failReasons = multierror.Append(failReasons, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
 		}
-		return
+		return failReasons
 	}
+	failReasons = multierror.Append(failReasons, fmt.Errorf("ContainerID lookup successful"))
 
 	var lookupResults []clusterentities.LookupResult
 	var isInternet = false
@@ -535,6 +543,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	if conn.remote.IPAndPort.Address == externalIPv4Addr || conn.remote.IPAndPort.Address == externalIPv6Addr {
 		isFresh = false
 		isInternet = true
+		failReasons = multierror.Append(failReasons, fmt.Errorf("remote part is the Internet"))
 	} else {
 		// Otherwise, check if the remote entity is actually a cluster entity.
 		lookupResults = m.clusterEntities.LookupByEndpoint(conn.remote)
@@ -556,19 +565,25 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	}
 
 	if len(lookupResults) == 0 {
+		failReasons = multierror.Append(failReasons, fmt.Errorf("no lookup results for endpoint %s", conn.remote.String()))
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
 		if isFresh && conn.remote.IPAndPort.Address.IsValid() {
-			return
+			return multierror.Append(failReasons, fmt.Errorf("connection is fresh and remote IP address is valid"))
 		}
 
 		extSrc := m.externalSrcs.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
 		if extSrc != nil {
+			failReasons = multierror.Append(failReasons,
+				fmt.Errorf("network lookup succeded for network %s", conn.remote.IPAndPort.IPNetwork.String()))
 			isFresh = false
+		} else {
+			failReasons = multierror.Append(failReasons,
+				fmt.Errorf("no network lookup results for network %s", conn.remote.IPAndPort.IPNetwork.String()))
 		}
 
 		if isFresh {
-			return
+			return multierror.Append(failReasons, fmt.Errorf("connection is fresh"))
 		}
 
 		defer func() {
@@ -582,7 +597,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				// IP is malformed or unknown - do not show on the graph and log the info
 				// TODO(ROX-22388): Change log level back to warning when potential Collector issue is fixed
 				log.Debugf("Not showing flow on the network graph: %v", err)
-				return
+				return multierror.Append(failReasons,
+					fmt.Errorf("connection (%s) not recognized as external: %v", conn.String(), err))
 			}
 			if isExternal {
 				// If Central does not handle DiscoveredExternalEntities, report an Internet entity as it used to be.
@@ -641,9 +657,9 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		}
 		status.used = true
 		if conn.incoming {
-			// Only report incoming connections from outside of the cluster. These are already taken care of by the
+			// Only report incoming connections from outside the cluster. These are already taken care of by the
 			// corresponding outgoing connection from the other end.
-			return
+			return multierror.Append(failReasons, fmt.Errorf("connection is incoming (we handle only outgoing to avoid duplicates)"))
 		}
 	}
 
@@ -678,6 +694,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			}
 		}
 	}
+	return errors.New("end of function")
 }
 
 func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, status *connStatus, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
@@ -772,7 +789,10 @@ func (m *networkFlowManager) enrichHostConnections(hostConns *hostConnections, e
 
 	prevSize := len(hostConns.connections)
 	for conn, status := range hostConns.connections {
-		m.enrichConnection(&conn, status, enrichedConnections)
+		reason := m.enrichConnection(&conn, status, enrichedConnections)
+		if reason != nil {
+			log.Warnf("Connection %q not enriched due to: %s", conn.String(), reason)
+		}
 		if status.rotten || (status.used && status.lastSeen != timestamp.InfiniteFuture) {
 			// connections that are no longer active and have already been used can be deleted.
 			delete(hostConns.connections, conn)
