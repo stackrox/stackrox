@@ -51,6 +51,9 @@ type EntityData struct {
 }
 
 func (ed *EntityData) String() string {
+	if ed == nil {
+		return "nil"
+	}
 	return fmt.Sprintf("ips: %v, endpoints: %v, containerIDs: %v",
 		maps.Keys(ed.ips), maps.Keys(ed.endpoints), maps.Keys(ed.containerIDs))
 }
