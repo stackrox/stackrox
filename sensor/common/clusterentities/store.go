@@ -143,10 +143,13 @@ func (e *Store) track(format string, vals ...interface{}) {
 	e.trace[time.Now().Format(time.RFC3339Nano)] = fmt.Sprintf(format, vals...)
 }
 
+// StartDebugServer starts HTTP server that allows to look inside the clusterentities store.
+// This blocks and should be always started in a goroutine!
 func (e *Store) StartDebugServer() {
 	http.HandleFunc("/debug/clusterentities/state.json", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, "%s\n", e.Debug())
+		n, err := fmt.Fprintf(w, "%s\n", e.Debug())
+		log.Debugf("Serving debug http endpoint: n=%d, err=%v", n, err)
 	})
 	err := http.ListenAndServe(":8099", nil)
 	if err != nil {
@@ -275,16 +278,17 @@ type LookupResult struct {
 }
 
 // LookupByEndpoint returns possible target deployments by endpoint (if any).
+// If no matching graph Entity is found by Endpoint, the podIP store is searched
 func (e *Store) LookupByEndpoint(endpoint net.NumericEndpoint) []LookupResult {
 	current, historical, ipLookup, ipLookupHistorical := e.endpointsStore.lookupEndpoint(endpoint, e.podIPsStore)
 	// Return early to avoid potential duplicates... not sure if duplicates are bad here.
 	if len(current)+len(historical) > 0 {
-		e.track("LookupByEndpoint(%s): found=true, foundIn=endpointsStore", endpoint.String(), len(current)+len(historical))
+		e.track("LookupByEndpoint(%s): found=true, foundIn=endpointsStore", endpoint.String())
 		return append(current, historical...)
 	}
 	// TODO: cover this if-case with tests!
 	if len(ipLookup)+len(ipLookupHistorical) > 0 {
-		e.track("LookupByEndpoint(%s): found=true, foundIn=ipLookup", endpoint.String(), len(ipLookup)+len(ipLookupHistorical))
+		e.track("LookupByEndpoint(%s): found=true, foundIn=ipLookup", endpoint.String())
 		return append(ipLookupHistorical, ipLookup...)
 	}
 	e.track("LookupByEndpoint(%s): found=false", endpoint.String())
