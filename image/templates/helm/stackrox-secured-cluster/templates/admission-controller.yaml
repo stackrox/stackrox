@@ -148,13 +148,6 @@ spec:
           secret:
             secretName: tls-cert-admission-control
             optional: true
-            items:
-            - key: cert.pem
-              path: cert.pem
-            - key: key.pem
-              path: key.pem
-            - key: ca.pem
-              path: ca.pem
         - name: ca
           secret:
             secretName: service-ca

@@ -204,13 +204,6 @@ spec:
         secret:
           secretName: tls-cert-sensor
           optional: true
-          items:
-          - key: cert.pem
-            path: cert.pem
-          - key: key.pem
-            path: key.pem
-          - key: ca.pem
-            path: ca.pem
       - name: sensor-etc-ssl-volume
         emptyDir: {}
       - name: sensor-etc-pki-volume
