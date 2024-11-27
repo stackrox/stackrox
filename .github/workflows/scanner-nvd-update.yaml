@@ -37,7 +37,12 @@ jobs:
         dir=$(mktemp -d)
         python3 .github/workflows/scripts/scanner-update-nvd-feeds.py "$dir"
         if [ "$(find "$dir" -name "*.nvd.json" | wc -l)" -gt 0 ]; then
-          zip -j nvd-feeds.zip "$dir"/*.nvd.json
+          if jq . -r "$dir"/*.nvd.json > /dev/null 2>&1; then
+            zip -j nvd-feeds.zip "$dir"/*.nvd.json
+          else
+            echo "Error: One or more JSON files are invalid!"
+            exit 1  # Fail the step if validation fails
+          fi
         fi
 
     - uses: ./.github/actions/upload-artifact-with-retry
@@ -72,7 +77,12 @@ jobs:
         dir=$(mktemp -d)
         python3 .github/workflows/scripts/scanner-update-nvd-api.py "$dir"
         if [ "$(find "$dir" -name "*.nvd.json" | wc -l)" -gt 0 ]; then
-          zip -j nvd-api.zip "$dir"/*.nvd.json
+          if jq . -r "$dir"/*.nvd.json > /dev/null 2>&1; then
+            zip -j nvd-api.zip "$dir"/*.nvd.json
+          else
+            echo "Error: One or more JSON files are invalid!"
+            exit 1  # Fail the step if validation fails
+          fi
         fi
 
     - uses: ./.github/actions/upload-artifact-with-retry
