@@ -114,6 +114,10 @@ collector:
     enabled: {{ ne ._rox.env.openshift 0 }}
   runtimeConfig:
     enabled: true
+    networking:
+      externalIps:
+        enable: false
+      per_container_rate_limit: 1024
   [<- end >]
 
 auditLogs:
