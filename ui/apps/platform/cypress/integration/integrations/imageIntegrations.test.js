@@ -572,6 +572,8 @@ describe('Image Integrations', () => {
         // Step 1, check empty fields
         getInputByLabel('Integration name').clear().type(' ');
         getInputByLabel('Endpoint').clear().type(' ');
+        getInputByLabel('User').clear().type(' ');
+        getInputByLabel('Password').clear().type(' ').blur();
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Endpoint').contains('An endpoint is required');
