@@ -11,4 +11,4 @@
 networking:
   externalIps:
     enable: {{ ._rox.collector.runtimeConfig.networking.externalIps.enable | default false }}
-  per_container_rate_limit: {{ ._rox.collector.runtimeConfig.networking.perContainerRateLimit | default 1024 }}
+  perContainerRateLimit: {{ ._rox.collector.runtimeConfig.networking.perContainerRateLimit | default 1024 }}
