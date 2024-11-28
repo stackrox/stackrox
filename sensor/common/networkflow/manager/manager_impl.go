@@ -652,6 +652,8 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			}
 		}
 	} else {
+		failReasons = multierror.Append(failReasons,
+			fmt.Errorf("got %d lookup results for endpoint %s", len(lookupResults), conn.remote.String()))
 		if !status.used {
 			flowMetrics.NetworkEntityFlowCounter.With(metricDirection).Inc()
 		}
@@ -694,7 +696,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 			}
 		}
 	}
-	return errors.New("end of function")
+	return nil
 }
 
 func (m *networkFlowManager) enrichContainerEndpoint(ep *containerEndpoint, status *connStatus, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
