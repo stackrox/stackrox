@@ -26,6 +26,7 @@ import (
 	fakeDynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	fakecore "k8s.io/client-go/kubernetes/typed/core/v1/fake"
 )
 
 const (
@@ -174,6 +175,15 @@ func (w *WorkloadManager) clearActions() {
 	t := time.NewTicker(10 * time.Second)
 	for range t.C {
 		w.fakeClient.ClearActions()
+		log.Infof("Cleared %d Actions from w.fakeClient", len(w.fakeClient.Actions()))
+		c := w.client.Kubernetes().CoreV1().Pods("")
+		d, ok := c.(*fakecore.FakePods)
+		if ok {
+			log.Infof("Cleared %d Actions from w.client", len(d.Fake.Actions()))
+			d.Fake.ClearActions()
+		} else {
+			log.Errorf("Failed to cast client to FakePods.")
+		}
 	}
 }
 
@@ -181,7 +191,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 	var objects []runtime.Object
 
 	numNamespaces := defaultNamespaceNum
-	if num := w.workload.NumNamespaces; num != 0 {
+	if num := w.workload.NumNamespaces; num > 0 {
 		numNamespaces = num
 	}
 	for _, n := range getNamespaces(numNamespaces, w.getIDsForPrefix(namespacePrefix)) {

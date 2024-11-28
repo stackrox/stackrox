@@ -443,9 +443,8 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 		for _, pod := range pods {
 			if _, err := w.client.Kubernetes().CoreV1().Pods(deployment.Namespace).Create(ctx, pod, metav1.CreateOptions{}); err != nil {
 				log.Errorf("error creating pod: %v", err)
-			} else {
-				podCounter.incrementCreate()
 			}
+			podCounter.incrementCreate()
 		}
 		w.manageDeploymentLifecycle(ctx, resources)
 		log.Infof("Deployment %s finished its lifecycle #%d. Here's the Pod data:", resources.deployment.Name, count)
@@ -531,9 +530,9 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 	cleanupPodFn := func(pod *corev1.Pod) {
 		if err := client.Delete(ctx, pod.Name, metav1.DeleteOptions{}); err != nil {
 			log.Errorf("error deleting pod: %v", err)
-		} else {
-			podCounter.incrementDelete()
 		}
+		podCounter.incrementDelete()
+
 		w.deleteID(podPrefix, pod.UID)
 		ipPool.remove(pod.Status.PodIP)
 
@@ -551,24 +550,22 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 			cleanupPodFn(pod)
 			return
 		case <-podDeadline.C:
-			/*
-				cleanupPodFn(pod)
+			cleanupPodFn(pod)
 
-				// New pod name and UUID
-				pod.Name = randString()
-				pod.UID = newUUID()
-				pod.Status.PodIP = generateAndAddIPToPool()
-				populatePodContainerStatuses(pod)
+			// New pod name and UUID
+			pod.Name = randString()
+			pod.UID = newUUID()
+			pod.Status.PodIP = generateAndAddIPToPool()
+			populatePodContainerStatuses(pod)
 
-				if _, err := client.Create(ctx, pod, metav1.CreateOptions{}); err != nil {
-					log.Errorf("error creating pod: %v", err)
-				} else {
-					podCounter.incrementCreate()
-				}
-				w.writeID(podPrefix, pod.UID)
-				podSig = concurrency.NewSignal()
-				go w.manageProcessesForPod(&podSig, podWorkload, pod)
-			*/
+			if _, err := client.Create(ctx, pod, metav1.CreateOptions{}); err != nil {
+				log.Errorf("error creating pod: %v", err)
+			}
+			podCounter.incrementCreate()
+
+			w.writeID(podPrefix, pod.UID)
+			podSig = concurrency.NewSignal()
+			go w.manageProcessesForPod(&podSig, podWorkload, pod)
 			podDeadline = newTimerWithJitter(podWorkload.LifecycleDuration)
 		case <-deploymentTimer.C:
 			log.Errorf("%v time elapsed since pod %v has been managed, which is longer than the lifecycle Duration of"+
