@@ -261,6 +261,7 @@ spec:
       - name: certs-legacy
         secret:
           secretName: collector-tls
+          optional: true
           items:
           - key: collector-cert.pem
             path: cert.pem
@@ -271,6 +272,7 @@ spec:
       - name: certs-new
         secret:
           secretName: tls-cert-collector
+          optional: true
       - hostPath:
           path: /
         name: host-root-ro
