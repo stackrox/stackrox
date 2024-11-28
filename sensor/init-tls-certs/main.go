@@ -89,6 +89,11 @@ func findFiles(sourceDir string) ([]string, error) {
 
 		base := filepath.Base(path)
 		if strings.HasPrefix(base, ".") {
+			if d.IsDir() {
+				log.Printf("Skipping hidden dir %q", path)
+				return filepath.SkipDir
+			}
+
 			log.Printf("Ignoring hidden file %q", path)
 			return nil
 		}
@@ -99,13 +104,7 @@ func findFiles(sourceDir string) ([]string, error) {
 			return nil
 		}
 
-		st, err := os.Stat(realFile)
-		if err != nil {
-			log.Printf("Ignoring file %q: %s", realFile, err)
-			return nil
-		}
-
-		if st.IsDir() {
+		if d.IsDir() {
 			return nil
 		}
 
