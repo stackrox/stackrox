@@ -208,7 +208,7 @@ func (resolver *imageResolver) withImageScopeContext(ctx context.Context) contex
 		}
 	}
 	if resolver.ctx == nil {
-		resolver.ctx = sac.WithUnrestrictedResourceRead(ctx, resources.Image.GetResource())
+		resolver.ctx = sac.WithUnrestrictedResourceRead(ctx, resources.Image)
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,

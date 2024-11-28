@@ -89,13 +89,13 @@ func (scc *accessResourceFullAccessScopeCheckerCore) EffectiveAccessScope(resour
 
 // WithUnrestrictedResourceRead returns a context that allows unrestricted read to the target resource on top of
 // the current context access scopes.
-func WithUnrestrictedResourceRead(ctx context.Context, resource permissions.Resource) context.Context {
+func WithUnrestrictedResourceRead(ctx context.Context, resource permissions.ResourceMetadata) context.Context {
 	return withUnrestrictedResourceAccess(ctx, storage.Access_READ_ACCESS, resource)
 }
 
 // WithUnrestrictedResourceReadWrite returns a context that allows unrestricted read and write to the target resource
 // on top of the current context access scopes.
-func WithUnrestrictedResourceReadWrite(ctx context.Context, resource permissions.Resource) context.Context {
+func WithUnrestrictedResourceReadWrite(ctx context.Context, resource permissions.ResourceMetadata) context.Context {
 	return withUnrestrictedResourceAccess(ctx, storage.Access_READ_WRITE_ACCESS, resource)
 }
 
