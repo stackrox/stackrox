@@ -29,7 +29,8 @@ import (
 
 const (
 	backupMaxTimeout = 4 * time.Hour
-	testMaxTimeout   = 9 * time.Second
+	// Keep test timeout smaller than the UI timeout (see apps/platform/src/services/instance.js#7).
+	testMaxTimeout = 9 * time.Second
 )
 
 var log = logging.LoggerForModule(option.EnableAdministrationEvents())

@@ -26,7 +26,8 @@ import (
 
 const (
 	backupMaxTimeout = 4 * time.Hour
-	testMaxTimeout   = 9 * time.Second
+	// Keep test timeout smaller than the UI timeout (see apps/platform/src/services/instance.js#7).
+	testMaxTimeout = 9 * time.Second
 
 	backupPrefix = "stackrox-backup"
 	timeFormat   = "2006-01-02-15-04-05"
