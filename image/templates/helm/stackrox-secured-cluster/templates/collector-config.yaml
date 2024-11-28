@@ -1,5 +1,6 @@
 {{- include "srox.init" . -}}
 
+{{- if ._rox.collector.runtimeConfig.enable -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,3 +14,4 @@ metadata:
 data:
   runtime_config.yaml: |
     {{- tpl (.Files.Get "config-templates/collector/config.yaml.tpl") . | nindent 4 }}
+{{ end -}}
