@@ -55,8 +55,8 @@ func (p *PodCounter) incrementDelete() {
 }
 
 func (p *PodCounter) printStats() string {
-	return fmt.Sprintf("Counted %d pod.Create() calls and %d pod.Delete() calls, with a ratio of %d "+
-		"Creates/Deletes", p.numCreate, p.numDelete, p.numCreate/p.numDelete)
+	return fmt.Sprintf("Counted %d pod.Create() calls and %d pod.Delete() calls, with a ratio of %.3f "+
+		"Creates/Deletes", p.numCreate, p.numDelete, float64(p.numCreate)/float64(p.numDelete))
 }
 
 // ProcessPool stores processes by containerID using a map

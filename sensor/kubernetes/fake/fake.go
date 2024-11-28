@@ -174,8 +174,8 @@ func (w *WorkloadManager) SetSignalHandlers(processPipeline signal.Pipeline, net
 func (w *WorkloadManager) clearActions() {
 	t := time.NewTicker(10 * time.Second)
 	for range t.C {
-		w.fakeClient.ClearActions()
 		log.Infof("Cleared %d Actions from w.fakeClient", len(w.fakeClient.Actions()))
+		w.fakeClient.ClearActions()
 		c := w.client.Kubernetes().CoreV1().Pods("")
 		d, ok := c.(*fakecore.FakePods)
 		if ok {
