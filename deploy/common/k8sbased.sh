@@ -633,13 +633,17 @@ function launch_sensor {
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
-    if [[ "${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE:-false}" == "true" ]]; then
-        extra_helm_config+=(--set "collector.runtimeConfig.networking.externalIps.enable=${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE}")
+    if [[ "${ROX_COLLECTOR_RUNTIME_CONFIG:-false}" == "true" ]]; then
+        extra_helm_config+=(--set "collector.runtimeConfig.enable=${ROX_COLLECTOR_RUNTIME_CONFIG}")
+        if [[ "${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE:-false}" == "true" ]]; then
+            extra_helm_config+=(--set "collector.runtimeConfig.networking.externalIps.enable=${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE}")
+        fi
+
+        if [[ -n "${ROX_COLLECTOR_NETWORKING_PER_CONTAINER_RATE_LIMIT:-}" ]]; then
+            extra_helm_config+=(--set "collector.runtimeConfig.networking.perContainerRateLimit=${ROX_COLLECTOR_NETWORKING_PER_CONTAINER_RATE_LIMIT}")
+        fi
     fi
 
-    if [[ -n "${ROX_COLLECTOR_NETWORKING_PER_CONTAINER_RATE_LIMIT:-}" ]]; then
-	extra_helm_config+=(--set "collector.runtimeConfig.networking.perContainerRateLimit=${ROX_COLLECTOR_NETWORKING_PER_CONTAINER_RATE_LIMIT}")
-    fi
 
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
