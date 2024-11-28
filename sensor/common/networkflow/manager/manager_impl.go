@@ -661,7 +661,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 		if conn.incoming {
 			// Only report incoming connections from outside the cluster. These are already taken care of by the
 			// corresponding outgoing connection from the other end.
-			return multierror.Append(failReasons, fmt.Errorf("connection is incoming (we handle only outgoing to avoid duplicates)"))
+			return nil // returning reasons here would flood the logs
 		}
 	}
 
