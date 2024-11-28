@@ -5,6 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,10 +23,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
-	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -394,7 +395,7 @@ func (s *NetworkFlowManagerTestSuite) TestEnrichConnection() {
 			tCase.expectEntityLookupContainer.runIfSet()
 			tCase.expectEntityLookupEndpoint.runIfSet()
 			tCase.expectExternalLookup.runIfSet()
-			m.enrichConnection(tCase.connPair.conn, tCase.connPair.status, tCase.enrichedConnections)
+			_ = m.enrichConnection(tCase.connPair.conn, tCase.connPair.status, tCase.enrichedConnections)
 			s.Assert().Equal(tCase.expectedStatus.used, tCase.connPair.status.used)
 			s.Assert().Equal(tCase.expectedStatus.rotten, tCase.connPair.status.rotten)
 			if tCase.expectedIndicator != nil {
