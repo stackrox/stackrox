@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/utils"
@@ -207,7 +208,7 @@ func (resolver *imageResolver) withImageScopeContext(ctx context.Context) contex
 		}
 	}
 	if resolver.ctx == nil {
-		resolver.ctx = ctx
+		resolver.ctx = sac.WithUnrestrictedResourceRead(ctx, resources.Image.GetResource())
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,

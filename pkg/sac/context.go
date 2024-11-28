@@ -12,12 +12,16 @@ type globalAccessScopeContextKey struct{}
 // GlobalAccessScopeChecker retrieves the global access scope from the context.
 // This function is guaranteed to return a non-nil value.
 func GlobalAccessScopeChecker(ctx context.Context) ScopeChecker {
+	return NewScopeChecker(globalAccessScopeCheckerCore(ctx))
+}
+
+func globalAccessScopeCheckerCore(ctx context.Context) ScopeCheckerCore {
 	core, _ := ctx.Value(globalAccessScopeContextKey{}).(ScopeCheckerCore)
 	if core == nil {
 		utils.Must(errors.New("global access scope was not found in context"))
 		core = DenyAllAccessScopeChecker()
 	}
-	return NewScopeChecker(core)
+	return core
 }
 
 // WithGlobalAccessScopeChecker returns a context that is a child of the given context and contains
