@@ -155,6 +155,10 @@ spec:
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       securityContext:
         runAsNonRoot: true
+        {{- if not ._rox.env.openshift }}
+        runAsUser: 4000
+        fsGroup: 4000
+        {{- end }}
       serviceAccountName: scanner-v4
       volumes:
       - name: additional-ca-volume
