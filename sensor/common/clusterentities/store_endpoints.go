@@ -173,14 +173,10 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 		}
 		e.endpointMap[ep][deploymentID] = etiSet
 		// Endpoints previously marked as historical may need to be restored.
-		// Note that historicalPublicIPsOfThisEndpoint may be totally different from newPublicIPsOfThisEndpoint!
-		// So we must compute which counters to increment and which to decrement
-		historicalPublicIPsOfThisEndpoint := e.deleteFromHistory(deploymentID, ep)
-		toIncrement := newPublicIPsOfThisEndpoint.Difference(historicalPublicIPsOfThisEndpoint)
-		publicIPsToIncrement = publicIPsToIncrement.Union(toIncrement) // append
-
-		//toDecrement := historicalPublicIPsOfThisEndpoint.Difference(publicIPsToDecrement)
-		publicIPsToDecrement = publicIPsToDecrement.Union(historicalPublicIPsOfThisEndpoint)
+		// Note that the endpoints deleted from history may be totally different from the newPublicIPsOfThisEndpoint,
+		// so there may be some IPs for which we will need to decrement the counters.
+		publicIPsToIncrement = publicIPsToIncrement.Union(newPublicIPsOfThisEndpoint) // append
+		publicIPsToDecrement = publicIPsToDecrement.Union(e.deleteFromHistory(deploymentID, ep))
 	}
 	return publicIPsToDecrement, publicIPsToIncrement
 }
