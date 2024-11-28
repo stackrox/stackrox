@@ -12,7 +12,7 @@ import {
     VulnerabilityExceptionScope,
     VulnerabilityState,
 } from 'services/VulnerabilityExceptionService';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 import CvssFormatted from 'Components/CvssFormatted';
 import DateDistance from 'Components/DateDistance';
@@ -52,8 +52,8 @@ function RequestCVEsTable({
     expandedRowSet,
     vulnerabilityState,
 }: RequestCVEsTableProps) {
-    const { setPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
-    const { getSortParams } = useURLSort({
+    const { page, perPage, setPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
+    const { sortOption, getSortParams } = useURLSort({
         sortFields: getWorkloadSortFields('CVE'),
         defaultSortOption: getDefaultWorkloadSortOption('CVE'),
         onSort: () => setPage(1),
@@ -73,6 +73,7 @@ function RequestCVEsTable({
     } = useQuery<CVEListQueryResult>(cveListQuery, {
         variables: {
             query,
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 
@@ -89,137 +90,153 @@ function RequestCVEsTable({
         <PageSection variant="light">
             <Flex direction={{ default: 'column' }}>
                 <Title headingLevel="h2">{data?.imageCVEs.length || 0} results found</Title>
-                <Table variant="compact">
-                    <Thead noWrap>
-                        <Tr>
-                            <Th>
-                                <span className="pf-v5-screen-reader">Row expansion</span>
-                            </Th>
-                            <Th sort={getSortParams('CVE')}>CVE</Th>
-                            <Th
-                                sort={getSortParams(
-                                    'Images By Severity',
-                                    getSeveritySortOptions([])
-                                )}
-                            >
-                                Images by severity
-                            </Th>
-                            <Th sort={getSortParams('CVSS', aggregateByCVSS)}>CVSS</Th>
-                            <Th sort={getSortParams('Image Sha', aggregateByDistinctCount)}>
-                                Affected images
-                            </Th>
-                            <Th sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}>
-                                First discovered
-                            </Th>
-                        </Tr>
-                    </Thead>
-                    <TbodyUnified
-                        tableState={tableState}
-                        colSpan={colSpan}
-                        emptyProps={{
-                            title: 'No CVEs',
-                            message: 'This request currently has no CVEs associated with it.',
+                <div className="pf-v5-u-background-color-100 pf-v5-u-flex-grow-1 pf-v5-u-p-lg">
+                    <Pagination
+                        itemCount={clusterCount}
+                        perPage={perPage}
+                        page={page}
+                        onSetPage={(_, newPage) => setPage(newPage)}
+                        onPerPageSelect={(_, newPerPage) => {
+                            setPerPage(newPerPage);
                         }}
-                        renderer={({ data }) =>
-                            data.map((imageCVE, rowIndex) => {
-                                const {
-                                    cve,
-                                    affectedImageCountBySeverity,
-                                    topCVSS,
-                                    affectedImageCount,
-                                    firstDiscoveredInSystem,
-                                    distroTuples,
-                                } = imageCVE;
-                                const isExpanded = expandedRowSet.has(cve);
-
-                                const criticalCount = affectedImageCountBySeverity.critical.total;
-                                const importantCount = affectedImageCountBySeverity.important.total;
-                                const moderateCount = affectedImageCountBySeverity.moderate.total;
-                                const lowCount = affectedImageCountBySeverity.low.total;
-                                const filteredSeverities: VulnerabilitySeverityLabel[] = [
-                                    'Critical',
-                                    'Important',
-                                    'Moderate',
-                                    'Low',
-                                ];
-                                const prioritizedDistros = sortCveDistroList(distroTuples);
-                                const scoreVersions = getScoreVersionsForTopCVSS(
-                                    topCVSS,
-                                    distroTuples
-                                );
-                                const summary =
-                                    prioritizedDistros.length > 0
-                                        ? prioritizedDistros[0].summary
-                                        : '';
-
-                                const cveURLQueryOptions = {
-                                    s: {
-                                        IMAGE: queryObject.Image,
-                                    },
-                                };
-                                const cveURL = getWorkloadEntityPagePath(
-                                    'CVE',
-                                    cve,
-                                    vulnerabilityState,
-                                    cveURLQueryOptions
-                                );
-
-                                return (
-                                    <Tbody key={cve} isExpanded={isExpanded}>
-                                        <Tr>
-                                            <Td
-                                                expand={{
-                                                    rowIndex,
-                                                    isExpanded,
-                                                    onToggle: () => expandedRowSet.toggle(cve),
-                                                }}
-                                            />
-                                            <Td dataLabel="CVE">
-                                                <Link to={cveURL}>{cve}</Link>
-                                            </Td>
-                                            <Td dataLabel="Images by severity">
-                                                <SeverityCountLabels
-                                                    criticalCount={criticalCount}
-                                                    importantCount={importantCount}
-                                                    moderateCount={moderateCount}
-                                                    lowCount={lowCount}
-                                                    filteredSeverities={filteredSeverities}
-                                                />
-                                            </Td>
-                                            <Td dataLabel="CVSS">
-                                                <CvssFormatted
-                                                    cvss={topCVSS}
-                                                    scoreVersion={
-                                                        scoreVersions.length > 0
-                                                            ? scoreVersions.join('/')
-                                                            : undefined
-                                                    }
-                                                />
-                                            </Td>
-                                            <Td dataLabel="Affected images">{`${affectedImageCount} ${pluralize(
-                                                'image',
-                                                affectedImageCount
-                                            )}`}</Td>
-                                            <Td dataLabel="First discovered">
-                                                <DateDistance date={firstDiscoveredInSystem} />
-                                            </Td>
-                                        </Tr>
-                                        <Tr isExpanded={isExpanded}>
-                                            <Td />
-                                            <Td colSpan={colSpan - 1}>
-                                                <ExpandableRowContent>
-                                                    {prioritizedDistros.length > 0 && (
-                                                        <Text>{summary}</Text>
-                                                    )}
-                                                </ExpandableRowContent>
-                                            </Td>
-                                        </Tr>
-                                    </Tbody>
-                                );
-                            })
-                        }
                     />
-                </Table>
+                    <Table variant="compact">
+                        <Thead noWrap>
+                            <Tr>
+                                <Th>
+                                    <span className="pf-v5-screen-reader">Row expansion</span>
+                                </Th>
+                                <Th sort={getSortParams('CVE')}>CVE</Th>
+                                <Th
+                                    sort={getSortParams(
+                                        'Images By Severity',
+                                        getSeveritySortOptions([])
+                                    )}
+                                >
+                                    Images by severity
+                                </Th>
+                                <Th sort={getSortParams('CVSS', aggregateByCVSS)}>CVSS</Th>
+                                <Th sort={getSortParams('Image Sha', aggregateByDistinctCount)}>
+                                    Affected images
+                                </Th>
+                                <Th
+                                    sort={getSortParams('CVE Created Time', aggregateByCreatedTime)}
+                                >
+                                    First discovered
+                                </Th>
+                            </Tr>
+                        </Thead>
+                        <TbodyUnified
+                            tableState={tableState}
+                            colSpan={colSpan}
+                            emptyProps={{
+                                title: 'No CVEs',
+                                message: 'This request currently has no CVEs associated with it.',
+                            }}
+                            renderer={({ data }) =>
+                                data.map((imageCVE, rowIndex) => {
+                                    const {
+                                        cve,
+                                        affectedImageCountBySeverity,
+                                        topCVSS,
+                                        affectedImageCount,
+                                        firstDiscoveredInSystem,
+                                        distroTuples,
+                                    } = imageCVE;
+                                    const isExpanded = expandedRowSet.has(cve);
+
+                                    const criticalCount =
+                                        affectedImageCountBySeverity.critical.total;
+                                    const importantCount =
+                                        affectedImageCountBySeverity.important.total;
+                                    const moderateCount =
+                                        affectedImageCountBySeverity.moderate.total;
+                                    const lowCount = affectedImageCountBySeverity.low.total;
+                                    const filteredSeverities: VulnerabilitySeverityLabel[] = [
+                                        'Critical',
+                                        'Important',
+                                        'Moderate',
+                                        'Low',
+                                    ];
+                                    const prioritizedDistros = sortCveDistroList(distroTuples);
+                                    const scoreVersions = getScoreVersionsForTopCVSS(
+                                        topCVSS,
+                                        distroTuples
+                                    );
+                                    const summary =
+                                        prioritizedDistros.length > 0
+                                            ? prioritizedDistros[0].summary
+                                            : '';
+
+                                    const cveURLQueryOptions = {
+                                        s: {
+                                            IMAGE: queryObject.Image,
+                                        },
+                                    };
+                                    const cveURL = getWorkloadEntityPagePath(
+                                        'CVE',
+                                        cve,
+                                        vulnerabilityState,
+                                        cveURLQueryOptions
+                                    );
+
+                                    return (
+                                        <Tbody key={cve} isExpanded={isExpanded}>
+                                            <Tr>
+                                                <Td
+                                                    expand={{
+                                                        rowIndex,
+                                                        isExpanded,
+                                                        onToggle: () => expandedRowSet.toggle(cve),
+                                                    }}
+                                                />
+                                                <Td dataLabel="CVE">
+                                                    <Link to={cveURL}>{cve}</Link>
+                                                </Td>
+                                                <Td dataLabel="Images by severity">
+                                                    <SeverityCountLabels
+                                                        criticalCount={criticalCount}
+                                                        importantCount={importantCount}
+                                                        moderateCount={moderateCount}
+                                                        lowCount={lowCount}
+                                                        filteredSeverities={filteredSeverities}
+                                                    />
+                                                </Td>
+                                                <Td dataLabel="CVSS">
+                                                    <CvssFormatted
+                                                        cvss={topCVSS}
+                                                        scoreVersion={
+                                                            scoreVersions.length > 0
+                                                                ? scoreVersions.join('/')
+                                                                : undefined
+                                                        }
+                                                    />
+                                                </Td>
+                                                <Td dataLabel="Affected images">{`${affectedImageCount} ${pluralize(
+                                                    'image',
+                                                    affectedImageCount
+                                                )}`}</Td>
+                                                <Td dataLabel="First discovered">
+                                                    <DateDistance date={firstDiscoveredInSystem} />
+                                                </Td>
+                                            </Tr>
+                                            <Tr isExpanded={isExpanded}>
+                                                <Td />
+                                                <Td colSpan={colSpan - 1}>
+                                                    <ExpandableRowContent>
+                                                        {prioritizedDistros.length > 0 && (
+                                                            <Text>{summary}</Text>
+                                                        )}
+                                                    </ExpandableRowContent>
+                                                </Td>
+                                            </Tr>
+                                        </Tbody>
+                                    );
+                                })
+                            }
+                        />
+                    </Table>
+                </div>
             </Flex>
         </PageSection>
     );
