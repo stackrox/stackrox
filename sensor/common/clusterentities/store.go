@@ -191,26 +191,35 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 
 	// Order matters: Endpoints must be applied before IPs, as the IP store may query the endpoints store to check
 	// whether a given IP is used by other endpoints.
-	decEndpoints, incEndpoints := e.endpointsStore.Apply(updates, incremental)
-	decPodIPs, incPodIPs := e.podIPsStore.Apply(updates, incremental)
+	preIPs := e.currentlyStoredPublicIPs()
+	e.endpointsStore.Apply(updates, incremental)
+	e.podIPsStore.Apply(updates, incremental)
+	postIPs := e.currentlyStoredPublicIPs()
+
+	for ip := range postIPs.Difference(preIPs) {
+		e.incPublicIPRef(ip)
+	}
+	for ip := range preIPs.Difference(postIPs) {
+		e.decPublicIPRef(ip)
+	}
 
 	// For safety, we increment first and decrement later as reaching 0 will cause panic in non-release builds.
 	// The incEndpoints and incPodIPs may differ when we add an endpoint to existing deployment (e.g., new IP).
-	incIPs := set.NewSet[net.IPAddress]()
-	for ep := range incEndpoints {
-		incIPs.Add(ep.IPAndPort.Address)
-	}
-	for ip := range incIPs.Union(incPodIPs.Unfreeze()) {
-		e.incPublicIPRef(ip)
-	}
-
-	decIPs := set.NewSet[net.IPAddress]()
-	for ep := range decEndpoints {
-		decIPs.Add(ep.IPAndPort.Address)
-	}
-	for ip := range decIPs.Union(decPodIPs.Unfreeze()) {
-		e.decPublicIPRef(ip)
-	}
+	//incIPs := set.NewSet[net.IPAddress]()
+	//for ep := range incEndpoints {
+	//	incIPs.Add(ep.IPAndPort.Address)
+	//}
+	//for ip := range incIPs.Union(incPodIPs.Unfreeze()) {
+	//	e.incPublicIPRef(ip)
+	//}
+	//
+	//decIPs := set.NewSet[net.IPAddress]()
+	//for ep := range decEndpoints {
+	//	decIPs.Add(ep.IPAndPort.Address)
+	//}
+	//for ip := range decIPs.Union(decPodIPs.Unfreeze()) {
+	//	e.decPublicIPRef(ip)
+	//}
 
 	callbacks := e.containerIDsStore.Apply(updates, incremental)
 	if callbacks != nil {
@@ -220,27 +229,58 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 	}
 }
 
+// currentlyStoredPublicIPs is an easy (but computationally costly) method to get all public IPs stored in the store
+func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
+	s := set.NewSet[net.IPAddress]()
+	for endpoint := range e.endpointsStore.endpointMap {
+		if endpoint.IPAndPort.Address.IsPublic() {
+			s.Add(endpoint.IPAndPort.Address)
+		}
+	}
+	for endpoint := range e.endpointsStore.historicalEndpoints {
+		if endpoint.IPAndPort.Address.IsPublic() {
+			s.Add(endpoint.IPAndPort.Address)
+		}
+	}
+	for address := range e.podIPsStore.ipMap {
+		if address.IsPublic() {
+			s.Add(address)
+		}
+	}
+	for address := range e.podIPsStore.historicalIPs {
+		if address.IsPublic() {
+			s.Add(address)
+		}
+	}
+	return s
+}
+
 // RecordTick records the information that a unit of time (1 tick) has passed
 func (e *Store) RecordTick() {
 	e.track("Tick")
 	// There may be public pod IP addresses expiring in this tick, and we may need to decrement the counters for them
-	publicPodIPs := e.podIPsStore.RecordTick()
+	preIPs := e.currentlyStoredPublicIPs()
+	e.podIPsStore.RecordTick()
+	e.endpointsStore.RecordTick()
+	postIPs := e.currentlyStoredPublicIPs()
 
-	endpointsWithPublicIPs := e.endpointsStore.RecordTick()
-	for _, ep := range endpointsWithPublicIPs.AsSlice() {
-		// The public IPs that expired in this tick may also belong to another deployments that are still in memory.
-		if len(e.LookupByEndpoint(ep)) > 0 {
-			endpointsWithPublicIPs.Remove(ep)
-		}
-	}
-	// Convert set of endpoints to set of IPs
-	pubIPs := set.NewSet[net.IPAddress]()
-	for endpoint := range endpointsWithPublicIPs {
-		pubIPs.Add(endpoint.IPAndPort.Address)
-	}
-	for _, ip := range pubIPs.Freeze().Union(publicPodIPs).AsSlice() {
+	for ip := range preIPs.Difference(postIPs) {
 		e.decPublicIPRef(ip)
 	}
+	//for _, ep := range endpointsWithPublicIPs.AsSlice() {
+	//	// The public IPs that expired in this tick may also belong to another deployments that are still in memory.
+	//	if len(e.LookupByEndpoint(ep)) > 0 {
+	//		endpointsWithPublicIPs.Remove(ep)
+	//	}
+	//}
+	//// Convert set of endpoints to set of IPs
+	//pubIPs := set.NewSet[net.IPAddress]()
+	//for endpoint := range endpointsWithPublicIPs {
+	//	pubIPs.Add(endpoint.IPAndPort.Address)
+	//}
+	//for _, ip := range pubIPs.Freeze().Union(publicPodIPs).AsSlice() {
+	//	e.decPublicIPRef(ip)
+	//}
 	e.containerIDsStore.RecordTick()
 }
 

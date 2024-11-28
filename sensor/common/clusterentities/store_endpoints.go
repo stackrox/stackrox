@@ -177,9 +177,10 @@ func (e *endpointsStore) applySingleNoLock(deploymentID string, data EntityData)
 		// So we must compute which counters to increment and which to decrement
 		historicalPublicIPsOfThisEndpoint := e.deleteFromHistory(deploymentID, ep)
 		toIncrement := newPublicIPsOfThisEndpoint.Difference(historicalPublicIPsOfThisEndpoint)
-		publicIPsToIncrement = publicIPsToIncrement.Union(toIncrement)
-		toDecrement := newPublicIPsOfThisEndpoint.Difference(historicalPublicIPsOfThisEndpoint)
-		publicIPsToDecrement = publicIPsToDecrement.Union(toDecrement)
+		publicIPsToIncrement = publicIPsToIncrement.Union(toIncrement) // append
+
+		//toDecrement := historicalPublicIPsOfThisEndpoint.Difference(publicIPsToDecrement)
+		publicIPsToDecrement = publicIPsToDecrement.Union(historicalPublicIPsOfThisEndpoint)
 	}
 	return publicIPsToDecrement, publicIPsToIncrement
 }

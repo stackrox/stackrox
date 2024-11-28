@@ -10,6 +10,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 		// (e.g., deletion of a container, or going offline).
 		operationAfterTick    map[int]operation
 		containerIDsAfterTick []map[string]whereThingIsStored
+		publicIPsAtCleanup    []string
 	}{
 		"Memory disabled with no reset should remember pod1 forever": {
 			numTicksToRemember: 0,
@@ -28,6 +29,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 				{"pod1": theMap}, // after tick 1: no reset - should be in the map forever
 				{"pod1": theMap},
 			},
+			publicIPsAtCleanup: []string{},
 		},
 		"Memory disabled with no reset and container overwrite should remember pod1 forever": {
 			numTicksToRemember: 0,
@@ -223,10 +225,19 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 			store := NewStoreWithMemory(tCase.numTicksToRemember, true)
 			ipListener := newTestPublicIPsListener(s.T())
 			store.RegisterPublicIPsListener(ipListener)
+			// Set up the cleanup-assertions
 			defer func() {
 				s.True(store.UnregisterPublicIPsListener(ipListener))
-				s.Emptyf(maps.Keys(store.publicIPRefCounts),
-					"the map for publicIPRefCounts should be empty at the end of the test")
+				if len(tCase.publicIPsAtCleanup) == 0 {
+					s.Emptyf(maps.Keys(store.publicIPRefCounts),
+						"the map for publicIPRefCounts should be empty at the end of the test")
+				} else {
+					s.Lenf(store.publicIPRefCounts, len(tCase.publicIPsAtCleanup),
+						"the publicIPRefCounts map has incorrect len at test cleanup")
+					for gotIP := range store.publicIPRefCounts {
+						s.Contains(tCase.publicIPsAtCleanup, gotIP.AsNetIP().String())
+					}
+				}
 			}()
 
 			for tickNo, expectation := range tCase.containerIDsAfterTick {
