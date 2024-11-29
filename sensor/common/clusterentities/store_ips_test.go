@@ -348,15 +348,10 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastIPs() {
 			// Set up the cleanup-assertions
 			defer func() {
 				s.True(store.UnregisterPublicIPsListener(ipListener))
-				if len(tCase.publicIPsAtCleanup) == 0 {
-					s.Equalf(0, ipListener.data.Cardinality(),
-						"the map for publicIPRefCounts should be empty at the end of the test")
-				} else {
-					s.Equalf(len(tCase.publicIPsAtCleanup), ipListener.data.Cardinality(),
-						"the publicIPRefCounts map has incorrect len at test cleanup")
-					for gotIP := range ipListener.data {
-						s.Contains(tCase.publicIPsAtCleanup, gotIP.AsNetIP().String())
-					}
+				s.Equalf(len(tCase.publicIPsAtCleanup), ipListener.data.Cardinality(),
+					"the listeners of public IPs have incorrect data at test cleanup")
+				for gotIP := range ipListener.data {
+					s.Contains(tCase.publicIPsAtCleanup, gotIP.AsNetIP().String())
 				}
 			}()
 

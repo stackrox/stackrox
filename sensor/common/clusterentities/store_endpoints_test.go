@@ -23,6 +23,7 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 		// (e.g., deletion of a container, or going offline).
 		operationAfterTick     map[int]operation
 		lookupResultsAfterTick map[int][]expectation
+		publicIPsAtCleanup     []string
 	}{
 		"Memory disabled with no reset should remember endpoint forever": {
 			numTicksToRemember: 0,
@@ -215,18 +216,11 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 			store.RegisterPublicIPsListener(ipListener)
 			defer func() {
 				s.True(store.UnregisterPublicIPsListener(ipListener))
-				//if len(tCase.publicIPsAtCleanup) == 0 {
-				//	s.Equalf(0, ipListener.data.Cardinality(),
-				//		"the map for publicIPRefCounts should be empty at the end of the test")
-				//} else {
-				//	s.Equalf(len(tCase.publicIPsAtCleanup), ipListener.data.Cardinality(),
-				//		"the publicIPRefCounts map has incorrect len at test cleanup")
-				//	for gotIP := range ipListener.data {
-				//		s.Contains(tCase.publicIPsAtCleanup, gotIP.AsNetIP().String())
-				//	}
-				//}
-				s.Equalf(0, ipListener.data.Cardinality(),
-					"the map for publicIPRefCounts should be empty at the end of the test")
+				s.Equalf(len(tCase.publicIPsAtCleanup), ipListener.data.Cardinality(),
+					"the listeners of public IPs have incorrect data at test cleanup")
+				for gotIP := range ipListener.data {
+					s.Contains(tCase.publicIPsAtCleanup, gotIP.AsNetIP().String())
+				}
 			}()
 
 			// TODO: Check if that range call works for Go <1.22

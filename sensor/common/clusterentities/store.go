@@ -193,9 +193,7 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 	}
 }
 
-// currentlyStoredPublicIPs is an easy (but computationally costly) method to get all public IPs stored in the store.
-// Implementing smarter way of counting the IPs is a bit tricky and requires many set operations,
-// thus this computationally-expensive method may be not so expensive in general.
+// currentlyStoredPublicIPs returns all public IPs currently stored in the store (including history).
 func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
 	s := set.NewSet[net.IPAddress]()
 	for endpoint := range e.endpointsStore.endpointMap {
