@@ -2,15 +2,21 @@ package flags
 
 import (
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/env"
 =======
+=======
+>>>>>>> Stashed changes
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stackrox/rox/pkg/env"
 	fileutils "github.com/stackrox/rox/pkg/fileutils"
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 )
 
@@ -32,7 +38,11 @@ func NewConfig() *Config {
 
 type ClientConfig struct {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	config      Config
+=======
+	config      *Config
+>>>>>>> Stashed changes
 =======
 	config      *Config
 >>>>>>> Stashed changes
@@ -41,17 +51,23 @@ type ClientConfig struct {
 
 var (
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 	configFile string
 	// configApiTokenFileSet      bool
 	// configCaCertificateFileSet bool
 	// configEndpointSet          bool
 	configFileChanged *bool
 =======
+=======
+>>>>>>> Stashed changes
 	configFile        string
 	configFileChanged *bool
 	// configApiTokenFileSet      bool
 	// configCaCertificateFileSet bool
 	// configEndpointSet          bool
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 )
 
@@ -62,7 +78,11 @@ func AddConfigurationFile(c *cobra.Command) {
 		"",
 		"",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 		"Utilize instance-specific metadata defined within a configuration file. "+
+=======
+		"Utilize instance-specific metadata defined within a configuration file hello. "+
+>>>>>>> Stashed changes
 =======
 		"Utilize instance-specific metadata defined within a configuration file hello. "+
 >>>>>>> Stashed changes
@@ -81,8 +101,11 @@ func ConfigurationFileChanged() bool {
 }
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 func ReadConfigFile(fileName string) (string, error) {}
 =======
+=======
+>>>>>>> Stashed changes
 // Load loads a config file from a given path
 //   - Load will prioritize the values that are defined within
 //     the configuration files over variables defined within the environment
@@ -122,4 +145,7 @@ func Load(configPath string) (*ClientConfig, error) {
 }
 
 // func ReadConfigFile(fileName string) (string, error) {}
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
