@@ -228,21 +228,10 @@ func (e *endpointsStore) removeFromHistoryIfExpired(deploymentID string, ep net.
 	return set.NewSet[net.NumericEndpoint]()
 }
 
-func (e *endpointsStore) existsInCurrent(deploymentID string, ep net.NumericEndpoint) bool {
-	if m1, ok := e.endpointMap[ep]; ok {
-		if _, ok2 := m1[deploymentID]; ok2 {
-			return true
-		}
-	}
-	return false
-}
-
 // moveToHistory is a convenience function that removes data from the current map and adds it to history
 func (e *endpointsStore) moveToHistory(deploymentID string, ep net.NumericEndpoint) {
-	if e.existsInCurrent(deploymentID, ep) {
-		e.addToHistory(deploymentID, ep)
-		e.deleteFromCurrent(deploymentID, ep)
-	}
+	e.addToHistory(deploymentID, ep)
+	e.deleteFromCurrent(deploymentID, ep)
 }
 
 // deleteFromHistory marks previously marked historical endpoint as no longer historical

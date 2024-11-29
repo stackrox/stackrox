@@ -3,9 +3,10 @@ package clusterentities
 import (
 	"slices"
 
+	"golang.org/x/exp/maps"
+
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
-	"golang.org/x/exp/maps"
 )
 
 type expectation struct {
@@ -214,7 +215,17 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastEndpoints() {
 			store.RegisterPublicIPsListener(ipListener)
 			defer func() {
 				s.True(store.UnregisterPublicIPsListener(ipListener))
-				s.Emptyf(maps.Keys(store.publicIPRefCounts),
+				//if len(tCase.publicIPsAtCleanup) == 0 {
+				//	s.Equalf(0, ipListener.data.Cardinality(),
+				//		"the map for publicIPRefCounts should be empty at the end of the test")
+				//} else {
+				//	s.Equalf(len(tCase.publicIPsAtCleanup), ipListener.data.Cardinality(),
+				//		"the publicIPRefCounts map has incorrect len at test cleanup")
+				//	for gotIP := range ipListener.data {
+				//		s.Contains(tCase.publicIPsAtCleanup, gotIP.AsNetIP().String())
+				//	}
+				//}
+				s.Equalf(0, ipListener.data.Cardinality(),
 					"the map for publicIPRefCounts should be empty at the end of the test")
 			}()
 

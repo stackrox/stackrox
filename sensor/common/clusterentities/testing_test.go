@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/set"
+
 	"golang.org/x/exp/maps"
 )
 
@@ -55,13 +57,13 @@ func entityUpdateWithPortName(ip, contID string, port uint16, portName string) *
 }
 
 type testPublicIPsListener struct {
-	data map[net.IPAddress]struct{}
+	data set.Set[net.IPAddress]
 	t    *testing.T
 }
 
 func newTestPublicIPsListener(t *testing.T) *testPublicIPsListener {
 	return &testPublicIPsListener{
-		data: make(map[net.IPAddress]struct{}),
+		data: set.NewSet[net.IPAddress](),
 		t:    t,
 	}
 }
@@ -70,12 +72,7 @@ func (p *testPublicIPsListener) String() string {
 	return fmt.Sprintf("%s", maps.Keys(p.data))
 }
 
-func (p *testPublicIPsListener) OnAdded(ip net.IPAddress) {
-	p.data[ip] = struct{}{}
-	p.t.Logf("Added new public IP %s", ip)
-}
-
-func (p *testPublicIPsListener) OnRemoved(ip net.IPAddress) {
-	delete(p.data, ip)
-	p.t.Logf("Deleted public IP %s", ip)
+func (p *testPublicIPsListener) OnUpdate(ips set.Set[net.IPAddress]) {
+	p.data = ips
+	p.t.Logf("Updatet public IPs to %s", p.String())
 }

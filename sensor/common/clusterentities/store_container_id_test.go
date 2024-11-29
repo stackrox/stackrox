@@ -1,7 +1,5 @@
 package clusterentities
 
-import "golang.org/x/exp/maps"
-
 func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 	cases := map[string]struct {
 		numTicksToRemember uint16
@@ -229,12 +227,12 @@ func (s *ClusterEntitiesStoreTestSuite) TestMemoryAboutPastContainerIDs() {
 			defer func() {
 				s.True(store.UnregisterPublicIPsListener(ipListener))
 				if len(tCase.publicIPsAtCleanup) == 0 {
-					s.Emptyf(maps.Keys(store.publicIPRefCounts),
+					s.Equalf(0, ipListener.data.Cardinality(),
 						"the map for publicIPRefCounts should be empty at the end of the test")
 				} else {
-					s.Lenf(store.publicIPRefCounts, len(tCase.publicIPsAtCleanup),
+					s.Equalf(len(tCase.publicIPsAtCleanup), ipListener.data.Cardinality(),
 						"the publicIPRefCounts map has incorrect len at test cleanup")
-					for gotIP := range store.publicIPRefCounts {
+					for gotIP := range ipListener.data {
 						s.Contains(tCase.publicIPsAtCleanup, gotIP.AsNetIP().String())
 					}
 				}

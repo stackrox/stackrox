@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -34,8 +33,7 @@ type ContainerMetadata struct {
 // Note: Implementors of this interface must ensure the methods complete in a very short time/do not block, as they
 // get invoked synchronously in a critical section.
 type PublicIPsListener interface {
-	OnAdded(ip net.IPAddress)
-	OnRemoved(ip net.IPAddress)
+	OnUpdate(ips set.Set[net.IPAddress])
 }
 
 // EndpointTargetInfo is the target port for an endpoint (container port, service port, etc.).
@@ -101,9 +99,8 @@ type Store struct {
 	podIPsStore       *podIPsStore
 	containerIDsStore *containerIDsStore
 
-	ipRefCountMutex    sync.RWMutex
-	publicIPRefCounts  map[net.IPAddress]*int
-	publicIPsListeners map[PublicIPsListener]struct{}
+	publicIPsTrackingMutex sync.RWMutex
+	publicIPsListeners     map[PublicIPsListener]struct{}
 	// callbackChannel is a channel to send container metadata upon resolution
 	callbackChannel chan<- ContainerMetadata
 
@@ -150,9 +147,8 @@ func (e *Store) StartDebugServer() {
 }
 
 func (e *Store) initMaps() {
-	e.ipRefCountMutex.Lock()
-	defer e.ipRefCountMutex.Unlock()
-	e.publicIPRefCounts = make(map[net.IPAddress]*int)
+	e.publicIPsTrackingMutex.Lock()
+	defer e.publicIPsTrackingMutex.Unlock()
 	e.publicIPsListeners = make(map[PublicIPsListener]struct{})
 	e.trace = make(map[string]string)
 	if !e.debugMode {
@@ -163,13 +159,6 @@ func (e *Store) initMaps() {
 }
 
 func (e *Store) resetMaps() {
-	concurrency.WithLock(&e.ipRefCountMutex, func() {
-		if e.memorySize == 0 {
-			e.publicIPRefCounts = make(map[net.IPAddress]*int)
-		}
-		// Call to e.podIPsStore.resetMaps() will move all IPs to history, so we do not reset the publicIPRefCounts.
-		// publicIPsListeners should not be reset at all, as we have no guarantee that the listeners will be re-added.
-	})
 	e.endpointsStore.resetMaps()
 	e.podIPsStore.resetMaps()
 	e.containerIDsStore.resetMaps()
@@ -191,17 +180,10 @@ func (e *Store) Apply(updates map[string]*EntityData, incremental bool, auxInfo 
 
 	// Order matters: Endpoints must be applied before IPs, as the IP store may query the endpoints store to check
 	// whether a given IP is used by other endpoints.
-	preIPs := e.currentlyStoredPublicIPs()
 	e.endpointsStore.Apply(updates, incremental)
 	e.podIPsStore.Apply(updates, incremental)
-	postIPs := e.currentlyStoredPublicIPs()
 
-	for ip := range postIPs.Difference(preIPs) {
-		e.incPublicIPRef(ip)
-	}
-	for ip := range preIPs.Difference(postIPs) {
-		e.decPublicIPRef(ip)
-	}
+	e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
 
 	callbacks := e.containerIDsStore.Apply(updates, incremental)
 	if callbacks != nil {
@@ -242,14 +224,10 @@ func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
 // RecordTick records the information that a unit of time (1 tick) has passed
 func (e *Store) RecordTick() {
 	e.track("Tick")
-	// There may be public pod IP addresses expiring in this tick, and we may need to decrement the counters for them.
-	preIPs := e.currentlyStoredPublicIPs()
 	e.podIPsStore.RecordTick()
 	e.endpointsStore.RecordTick()
-	postIPs := e.currentlyStoredPublicIPs()
-	for ip := range preIPs.Difference(postIPs) {
-		e.decPublicIPRef(ip)
-	}
+	// There may be public pod IP addresses expiring in this tick, and we may need to decrement the counters for them.
+	e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
 	e.containerIDsStore.RecordTick()
 }
 
@@ -263,8 +241,8 @@ func sendMetadataCallbacks(callbackC chan<- ContainerMetadata, mds []ContainerMe
 // Any previously registered callback channel will get overwritten by repeatedly calling this method. The previous
 // callback channel (if any) is returned by this function.
 func (e *Store) RegisterContainerMetadataCallbackChannel(callbackChan chan<- ContainerMetadata) chan<- ContainerMetadata {
-	e.ipRefCountMutex.Lock()
-	defer e.ipRefCountMutex.Unlock()
+	e.publicIPsTrackingMutex.Lock()
+	defer e.publicIPsTrackingMutex.Unlock()
 
 	oldChan := e.callbackChannel
 	e.callbackChannel = callbackChan
@@ -307,10 +285,10 @@ func (e *Store) LookupByContainerID(containerID string) (result ContainerMetadat
 // It returns a boolean indicating whether the listener was actually unregistered (i.e., a return value of false
 // indicates that the listener was already registered).
 func (e *Store) RegisterPublicIPsListener(listener PublicIPsListener) bool {
-	// This ipRefCountMutex is pretty broad in scope, but since registering listeners occurs rarely, it's better than adding
-	// another ipRefCountMutex that would need to get locked separately.
-	e.ipRefCountMutex.Lock()
-	defer e.ipRefCountMutex.Unlock()
+	// This publicIPsTrackingMutex is pretty broad in scope, but since registering listeners occurs rarely, it's better than adding
+	// another publicIPsTrackingMutex that would need to get locked separately.
+	e.publicIPsTrackingMutex.Lock()
+	defer e.publicIPsTrackingMutex.Unlock()
 
 	oldLen := len(e.publicIPsListeners)
 	e.publicIPsListeners[listener] = struct{}{}
@@ -322,8 +300,8 @@ func (e *Store) RegisterPublicIPsListener(listener PublicIPsListener) bool {
 // indicating whether the listener was actually unregistered (i.e., a return value of false indicates that the listener
 // was not registered in the first place).
 func (e *Store) UnregisterPublicIPsListener(listener PublicIPsListener) bool {
-	e.ipRefCountMutex.Lock()
-	defer e.ipRefCountMutex.Unlock()
+	e.publicIPsTrackingMutex.Lock()
+	defer e.publicIPsTrackingMutex.Unlock()
 
 	oldLen := len(e.publicIPsListeners)
 	delete(e.publicIPsListeners, listener)
@@ -331,38 +309,13 @@ func (e *Store) UnregisterPublicIPsListener(listener PublicIPsListener) bool {
 	return len(e.publicIPsListeners) < oldLen
 }
 
-func (e *Store) incPublicIPRef(addr net.IPAddress) {
-	e.ipRefCountMutex.Lock()
-	defer e.ipRefCountMutex.Unlock()
-	refCnt := e.publicIPRefCounts[addr]
-	if refCnt == nil {
-		refCnt = new(int)
-		e.publicIPRefCounts[addr] = refCnt
-		e.notifyPublicIPsListenersNoLock(PublicIPsListener.OnAdded, addr)
-	}
-	*refCnt++
-	log.Debugf("Increasing count for %s: now is %d", addr.String(), *refCnt)
+func (e *Store) updatePublicIPRefs(addrs set.Set[net.IPAddress]) {
+	e.notifyPublicIPsListenersNoLock(PublicIPsListener.OnUpdate, addrs)
 }
 
-func (e *Store) decPublicIPRef(addr net.IPAddress) {
-	e.ipRefCountMutex.Lock()
-	defer e.ipRefCountMutex.Unlock()
-	refCnt := e.publicIPRefCounts[addr]
-	if refCnt == nil {
-		utils.Should(fmt.Errorf("public IP %s has zero refcount already", addr))
-		return
-	}
-	*refCnt--
-	log.Debugf("Decreasing count for %s: now is %d", addr.String(), *refCnt)
-	if *refCnt == 0 {
-		delete(e.publicIPRefCounts, addr)
-		e.notifyPublicIPsListenersNoLock(PublicIPsListener.OnRemoved, addr)
-	}
-}
-
-func (e *Store) notifyPublicIPsListenersNoLock(notifyFunc func(PublicIPsListener, net.IPAddress), ip net.IPAddress) {
+func (e *Store) notifyPublicIPsListenersNoLock(notifyFunc func(PublicIPsListener, set.Set[net.IPAddress]), ips set.Set[net.IPAddress]) {
 	for listener := range e.publicIPsListeners {
-		notifyFunc(listener, ip)
+		notifyFunc(listener, ips)
 	}
 }
 
