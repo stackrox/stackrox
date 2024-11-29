@@ -1,54 +1,36 @@
 package flags
 
 import (
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/env"
-=======
-=======
->>>>>>> Stashed changes
-	"path/filepath"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/stackrox/rox/pkg/env"
-	fileutils "github.com/stackrox/rox/pkg/fileutils"
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+	"github.com/stackrox/rox/pkg/logging"
+	"os"
 )
 
-// TODO: Where do we put these type definitions?
-type Config struct {
-	ApiTokenFile string
-	Endpoint     string
-	CaCertFile   string
+type Instance struct {
+	ProfileName       string `yaml:"name"`
+	CaCertificatePath string `yaml:"caCertPath"`
+	ApiTokenFilePath  string `yaml:"apiTokenPath"`
+	Endpoint          string `yaml:"endpoint"`
 }
 
-func NewConfig() *Config {
-	return &Config{
-		ApiTokenFile: "",
-		Endpoint:     "",
-		CaCertFile:   "",
-	}
-
+type yamlConfig interface {
+	instanceConfig
 }
 
-type ClientConfig struct {
-	config      *Config
-	contextName string
+type instanceConfig struct {
+	Instance Instance `yaml:"instance"`
 }
 
 var (
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 	configFile string
 	// configApiTokenFileSet      bool
 	// configCaCertificateFileSet bool
 	// configEndpointSet          bool
 	configFileChanged *bool
+
+	log = logging.CreateLogger(logging.CurrentModule(), 0)
 )
 
 // AddConfigurationFile adds --config-file flag to the base command.
@@ -72,47 +54,57 @@ func ConfigurationFileChanged() bool {
 	return configFileChanged != nil && *configFileChanged
 }
 
-func ReadConfigFile(fileName string) (string, error) {}
+// readConfig is a utilty function for reading YAML-based configuration files
+func readConfig(path string) (*Instance, error) {
+	var conf Instance
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &conf, nil
+		}
+		return nil, err
+	}
+	if err := yaml.Unmarshal(bytes, &conf); err != nil {
+		return nil, err
+	}
+
+	return &conf, nil
+}
+
 // Load loads a config file from a given path
 //   - Load will prioritize the values that are defined within
 //     the configuration files over variables defined within the environment
-func Load(configPath string) (*ClientConfig, error) {
+func Load() (*instanceConfig, error) {
 
-	config := NewConfig()
+	var config *instanceConfig
 
-	if configPath != "" {
-		path := filepath.Dir(configPath)
-		filename := filepath.Base(configPath)
-		ext := filepath.Ext(configPath)
+	if configFile == "" || ConfigurationFileChanged() == false {
+		return nil, nil
 	}
 
-	exists, err := fileutils.Exists(path)
+	instance, err := readConfig(configFile)
 
 	if err != nil {
-		return config, err
+		config = nil
+		log.Errorf("Error reading instance config file: %v", err)
 	}
 
-	// Checks for the existing values defined by environment variables
+	config.Instance = *instance
 
-	// NOTE: *Changed indicates that something is different from the default value
-	endpoint, plaintext, err := EndpointAndPlaintextSetting()
+	// TODO: Fix priority
+	// TODO: Should it be file > flag > env?
 
-	if err != nil {
-		return config, err
+	if instance.Endpoint != "" {
+		endpoint = instance.Endpoint
 	}
 
-	caCertFile := CAFile()
-	apiTokenFile := APITokenFile()
+	if instance.CaCertificatePath != "" {
+		caCertFile = instance.CaCertificatePath
+	}
 
-	// if len(data) == 0 {
-	// 	return &ClientConfig{config, ""}, nil
-	// }
+	if instance.ApiTokenFilePath != "" {
+		apiTokenFile = instance.ApiTokenFilePath
+	}
 
-	return &ClientConfig{config, ""}, nil
+	return config, nil
 }
-
-// func ReadConfigFile(fileName string) (string, error) {}
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
