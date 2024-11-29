@@ -70,10 +70,10 @@ func (e *endpointsStore) updateMetricsNoLock() {
 }
 
 // RecordTick records a tick and returns all public IP addresses for which the count should be decremented
-func (e *endpointsStore) RecordTick() set.Set[net.NumericEndpoint] {
+func (e *endpointsStore) RecordTick() bool {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
-	expiredEndpointsWithPublicIP := set.NewSet[net.NumericEndpoint]()
+	removed := false
 	for endpoint, m1 := range e.historicalEndpoints {
 		for deploymentID, m2 := range m1 {
 			for _, status := range m2 {
@@ -81,10 +81,10 @@ func (e *endpointsStore) RecordTick() set.Set[net.NumericEndpoint] {
 			}
 			e.reverseHistoricalEndpoints[deploymentID][endpoint].recordTick()
 			// Remove all historical entries that expired in this tick.
-			expiredEndpointsWithPublicIP = expiredEndpointsWithPublicIP.Union(e.removeFromHistoryIfExpired(deploymentID, endpoint))
+			removed = e.removeFromHistoryIfExpired(deploymentID, endpoint) || removed
 		}
 	}
-	return expiredEndpointsWithPublicIP
+	return removed
 }
 
 func (e *endpointsStore) Apply(updates map[string]*EntityData, incremental bool) {
@@ -219,13 +219,13 @@ func searchInMap[T any](ep net.NumericEndpoint, src map[net.NumericEndpoint]map[
 }
 
 // removeFromHistoryIfExpired iterates over all historical entries and deletes all that are expired
-func (e *endpointsStore) removeFromHistoryIfExpired(deploymentID string, ep net.NumericEndpoint) set.Set[net.NumericEndpoint] {
+func (e *endpointsStore) removeFromHistoryIfExpired(deploymentID string, ep net.NumericEndpoint) bool {
 	// Assumption: If an entry in reverseHistoricalMap is expired,
 	// then the respective entry in historicalEndpoints should also be expired
 	if status, ok := e.reverseHistoricalEndpoints[deploymentID][ep]; ok && status.IsExpired() {
 		return e.deleteFromHistory(deploymentID, ep)
 	}
-	return set.NewSet[net.NumericEndpoint]()
+	return false
 }
 
 // moveToHistory is a convenience function that removes data from the current map and adds it to history
@@ -235,10 +235,10 @@ func (e *endpointsStore) moveToHistory(deploymentID string, ep net.NumericEndpoi
 }
 
 // deleteFromHistory marks previously marked historical endpoint as no longer historical
-func (e *endpointsStore) deleteFromHistory(deploymentID string, ep net.NumericEndpoint) set.Set[net.NumericEndpoint] {
+func (e *endpointsStore) deleteFromHistory(deploymentID string, ep net.NumericEndpoint) bool {
 	if _, ok := e.reverseHistoricalEndpoints[deploymentID]; !ok {
 		// Prevent decrementing the count of public IPs if nothing is being removed
-		return set.NewSet[net.NumericEndpoint]()
+		return false
 	}
 	delete(e.reverseHistoricalEndpoints[deploymentID], ep)
 	if len(e.reverseHistoricalEndpoints[deploymentID]) == 0 {
@@ -247,11 +247,8 @@ func (e *endpointsStore) deleteFromHistory(deploymentID string, ep net.NumericEn
 	delete(e.historicalEndpoints[ep], deploymentID)
 	if len(e.historicalEndpoints[ep]) == 0 {
 		delete(e.historicalEndpoints, ep)
-		if ipAddr := ep.IPAndPort.Address; ipAddr.IsPublic() {
-			return set.NewSet(ep)
-		}
 	}
-	return set.NewSet[net.NumericEndpoint]()
+	return true
 }
 
 // deleteFromCurrent is a helper that removes data from the current map, but does not manipulate history

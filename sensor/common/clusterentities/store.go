@@ -2,11 +2,9 @@ package clusterentities
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"golang.org/x/exp/maps"
 
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -132,20 +130,6 @@ func NewStoreWithMemory(numTicks uint16, debugMode bool) *Store {
 	return store
 }
 
-// StartDebugServer starts HTTP server that allows to look inside the clusterentities store.
-// This blocks and should be always started in a goroutine!
-func (e *Store) StartDebugServer() {
-	http.HandleFunc("/debug/clusterentities/state.json", func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		n, err := fmt.Fprintf(w, "%s\n", e.Debug())
-		log.Debugf("Serving debug http endpoint: n=%d, err=%v", n, err)
-	})
-	err := http.ListenAndServe(":8099", nil)
-	if err != nil {
-		log.Error(errors.Wrap(err, "unable to start cluster entities store debug server"))
-	}
-}
-
 func (e *Store) initMaps() {
 	e.publicIPsTrackingMutex.Lock()
 	defer e.publicIPsTrackingMutex.Unlock()
@@ -162,6 +146,10 @@ func (e *Store) resetMaps() {
 	e.endpointsStore.resetMaps()
 	e.podIPsStore.resetMaps()
 	e.containerIDsStore.resetMaps()
+	if e.memorySize == 0 {
+		// delete all tracked public IPs
+		e.updatePublicIPRefs(set.NewSet[net.IPAddress]())
+	}
 }
 
 // Cleanup deletes all entries from store
@@ -222,10 +210,12 @@ func (e *Store) currentlyStoredPublicIPs() set.Set[net.IPAddress] {
 // RecordTick records the information that a unit of time (1 tick) has passed
 func (e *Store) RecordTick() {
 	e.track("Tick")
-	e.podIPsStore.RecordTick()
-	e.endpointsStore.RecordTick()
-	// There may be public pod IP addresses expiring in this tick, and we may need to decrement the counters for them.
-	e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
+	removed1 := e.podIPsStore.RecordTick()
+	removed2 := e.endpointsStore.RecordTick()
+	if removed1 || removed2 {
+		// There may be public pod IP addresses expiring in this tick, and we may need to decrement the counters for them.
+		e.updatePublicIPRefs(e.currentlyStoredPublicIPs())
+	}
 	e.containerIDsStore.RecordTick()
 }
 

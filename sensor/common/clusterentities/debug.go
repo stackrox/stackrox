@@ -3,10 +3,27 @@ package clusterentities
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 )
+
+// StartDebugServer starts HTTP server that allows to look inside the clusterentities store.
+// This blocks and should be always started in a goroutine!
+func (e *Store) StartDebugServer() {
+	http.HandleFunc("/debug/clusterentities/state.json", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		n, err := fmt.Fprintf(w, "%s\n", e.Debug())
+		log.Debugf("Serving debug http endpoint: n=%d, err=%v", n, err)
+	})
+	err := http.ListenAndServe(":8099", nil)
+	if err != nil {
+		log.Error(errors.Wrap(err, "unable to start cluster entities store debug server"))
+	}
+}
 
 // Debug returns an object that represents the current state of the entire store
 func (e *Store) Debug() []byte {
