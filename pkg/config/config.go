@@ -22,10 +22,6 @@ var (
 	defaultDBSource           = "host=central-db.stackrox port=5432 user=postgres sslmode=verify-full statement_timeout=600000 pool_min_conns=1 pool_max_conns=90 client_encoding=UTF8"
 	defaultDatabase           = "central_active"
 
-	defaultCaCertificate = ""
-	defaultApiToken      = ""
-	defaultEndpoint      = "" // TODO: Should this be an array of strings?
-
 	once   sync.Once
 	config *Config
 
@@ -139,40 +135,12 @@ type instanceConfig struct {
 type Instance struct {
 	CaCertificate string `yaml:"caCertificate"`
 	ApiToken      string `yaml:"apiToken"`
-	endpoint      string `yaml:"endpoint"`
-}
-
-func (i *Instance) applyDefaults() {
-	i.CaCertificate = strings.TrimSpace(i.CaCertificate)
-	i.ApiToken = strings.TrimSpace(i.ApiToken)
-	i.endpoint = strings.TrimSpace(i.endpoint)
-
-	if i.CaCertificate == "" {
-		i.CaCertificate = defaultCaCertificate
-	}
-	if i.ApiToken == "" {
-		i.ApiToken = defaultApiToken
-	}
-	if i.endpoint == "" {
-		i.endpoint = defaultEndpoint
-	}
-}
-
-// TODO: Should the validate function be checking for
-// environment-defined variables?
-func (i *Instance) validate() {
-	if i.CaCertificate == "" {
-	}
-	if i.ApiToken == "" {
-	}
-	if i.endpoint == "" {
-	}
+	endpoints     string `yaml:"endpoints"`
 }
 
 func (c *Config) applyDefaults() {
 	c.Maintenance.applyDefaults()
 	c.CentralDB.applyDefaults()
-	c.Instance.applyDefaults()
 }
 
 func (c *Config) validate() error {
