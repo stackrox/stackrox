@@ -27,8 +27,10 @@ package logging
 
 import (
 	"fmt"
+	"io/fs"
 	"math"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
@@ -348,22 +350,24 @@ func withRotatingCore(lc *zap.Config) func(c zapcore.Core) zapcore.Core {
 			writer = zapcore.AddSync(&lumberjack.Logger{
 				Filename:   path,
 				MaxSize:    env.LoggingMaxSizeMB.IntegerSetting(),
-				MaxBackups: env.LoggingMaxBackups.IntegerSetting(),
+				MaxBackups: env.LoggingMaxRotationFiles.IntegerSetting(),
 			})
 		}
-		var encoder zapcore.Encoder
-		switch lc.Encoding {
-		case "console":
-			encoder = zapcore.NewConsoleEncoder(lc.EncoderConfig)
-		case "json":
-			encoder = zapcore.NewJSONEncoder(lc.EncoderConfig)
-		default:
-			panic("unexpected logger encoding: " + lc.Encoding)
-		}
-		cores = append(cores, zapcore.NewCore(encoder, writer, lc.Level))
+		cores = append(cores, zapcore.NewCore(getEncoderForConfig(lc), writer, lc.Level))
 	}
 	return func(c zapcore.Core) zapcore.Core {
 		return zapcore.NewTee(cores...)
+	}
+}
+
+func getEncoderForConfig(lc *zap.Config) zapcore.Encoder {
+	switch lc.Encoding {
+	case "console":
+		return zapcore.NewConsoleEncoder(lc.EncoderConfig)
+	case "json":
+		return zapcore.NewJSONEncoder(lc.EncoderConfig)
+	default:
+		panic("unexpected logger encoding: " + lc.Encoding)
 	}
 }
 
@@ -418,4 +422,34 @@ func parseDefaultModuleLevels(str string) (map[string]zapcore.Level, []error) {
 	}
 
 	return result, errs
+}
+
+// ForEachRotation calls the provided function on each rotation of the given
+// log file, including the given log file, starting from the oldest.
+func ForEachRotation(logFile string, f func(rotationFileName string) error) error {
+	dir, fileext := filepath.Split(logFile)
+	ext := filepath.Ext(fileext)
+	filename := strings.TrimSuffix(fileext, ext)
+	// Example: central-2024-11-12T13-14-15.167.log
+	const ts = `-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]\.[0-9][0-9][0-9]`
+	pattern := filename + ts + ext
+
+	// The files are walked in lexical order: the current log will be
+	// read last.
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		if path == logFile {
+			return f(path)
+		}
+		if ok, _ := filepath.Match(pattern, d.Name()); ok {
+			return f(path)
+		}
+		return nil
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to copy log files")
+	}
+	return nil
 }
