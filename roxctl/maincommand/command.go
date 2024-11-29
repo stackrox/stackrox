@@ -62,6 +62,7 @@ func Command() *cobra.Command {
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
 	flags.AddConfigurationFile(c)
+	flags.Load() // TODO: Should this be moved?
 
 	cliEnvironment := environment.CLIEnvironment()
 	c.SetErr(errorWriter{
