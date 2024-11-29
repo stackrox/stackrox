@@ -508,30 +508,38 @@ func (m *networkFlowManager) enrichAndSendProcesses() {
 	}
 }
 
+func (m *networkFlowManager) handleContainerNotFound(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
+	var failReasons error
+	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
+	// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
+	if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
+		if activeConn, found := m.activeConnections[*conn]; found {
+			enrichedConnections[*activeConn] = timestamp.Now()
+			delete(m.activeConnections, *conn)
+			flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
+			return nil // connection has been enriched
+		}
+		status.rotten = true
+		// Only increment metric once the connection is marked rotten
+		flowMetrics.ContainerIDMisses.Inc()
+		log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
+	} else {
+		failReasons = multierror.Append(failReasons, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
+	}
+	return failReasons
+}
+
 // enrichConnection returns error with a reason about why the enrichment did not fully succeed
 func (m *networkFlowManager) enrichConnection(conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) error {
 	timeElapsedSinceFirstSeen := timestamp.Now().ElapsedSince(status.firstSeen)
 	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
 	var failReasons error
-
 	container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 	if !ok {
+		// There is an incoming connection to a container that we do not know.
+		// 90% of the cases that container is Sensor itself before being restarted.
 		failReasons = multierror.Append(failReasons, fmt.Errorf("ContainerID %s unknown", conn.containerID))
-		// Expire the connection if the container cannot be found within the clusterEntityResolutionWaitPeriod
-		if timeElapsedSinceFirstSeen > maxContainerResolutionWaitPeriod {
-			if activeConn, found := m.activeConnections[*conn]; found {
-				enrichedConnections[*activeConn] = timestamp.Now()
-				delete(m.activeConnections, *conn)
-				flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
-				return nil // connection has been enriched
-			}
-			status.rotten = true
-			// Only increment metric once the connection is marked rotten
-			flowMetrics.ContainerIDMisses.Inc()
-			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
-		} else {
-			failReasons = multierror.Append(failReasons, fmt.Errorf("time for container resolution (%s) not elapsed yet", maxContainerResolutionWaitPeriod))
-		}
+		failReasons = multierror.Append(failReasons, m.handleContainerNotFound(conn, status, enrichedConnections))
 		return failReasons
 	}
 	failReasons = multierror.Append(failReasons, fmt.Errorf("ContainerID lookup successful"))
@@ -565,7 +573,7 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 	}
 
 	if len(lookupResults) == 0 {
-		failReasons = multierror.Append(failReasons, fmt.Errorf("no lookup results for endpoint %s", conn.remote.String()))
+		failReasons = multierror.Append(failReasons, fmt.Errorf("lookup in clusterEntitiesStore failed for endpoint %s", conn.remote.String()))
 		// If the address is set and is not resolvable, we want to we wait for `clusterEntityResolutionWaitPeriod` time
 		// before associating it to a known network or INTERNET.
 		if isFresh && conn.remote.IPAndPort.Address.IsValid() {
@@ -626,10 +634,13 @@ func (m *networkFlowManager) enrichConnection(conn *connection, status *connStat
 				log.Debugf("Incoming connection to container %s/%s from %s:%s. "+
 					"Marking it as '%s' in the network graph.",
 					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), strconv.Itoa(int(port)), entitiesName)
+				// Reason: the IP is there, but something else has failed - mainly: lookup failed.
+				// If the lookup had succeeded, then we would skip this connection - see the else block.
 			} else {
 				log.Debugf("Outgoing connection from container %s/%s to %s. "+
 					"Marking it as '%s' in the network graph.",
 					container.Namespace, container.ContainerName, conn.remote.IPAndPort.String(), entitiesName)
+				// Reason: Collector gave the IP 255.255.255.255
 			}
 
 			if !status.used {
