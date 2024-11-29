@@ -37,15 +37,7 @@ func NewConfig() *Config {
 }
 
 type ClientConfig struct {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-	config      Config
-=======
 	config      *Config
->>>>>>> Stashed changes
-=======
-	config      *Config
->>>>>>> Stashed changes
 	contextName string
 }
 
@@ -57,18 +49,6 @@ var (
 	// configCaCertificateFileSet bool
 	// configEndpointSet          bool
 	configFileChanged *bool
-=======
-=======
->>>>>>> Stashed changes
-	configFile        string
-	configFileChanged *bool
-	// configApiTokenFileSet      bool
-	// configCaCertificateFileSet bool
-	// configEndpointSet          bool
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 )
 
 // AddConfigurationFile adds --config-file flag to the base command.
@@ -77,15 +57,7 @@ func AddConfigurationFile(c *cobra.Command) {
 		"config-file",
 		"",
 		"",
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 		"Utilize instance-specific metadata defined within a configuration file. "+
-=======
-		"Utilize instance-specific metadata defined within a configuration file hello. "+
->>>>>>> Stashed changes
-=======
-		"Utilize instance-specific metadata defined within a configuration file hello. "+
->>>>>>> Stashed changes
 			"Alternatively, set the path via the ROX_CONFIG_FILE environment variable")
 	configFileChanged = &c.PersistentFlags().Lookup("config-file").Changed
 }
@@ -100,12 +72,7 @@ func ConfigurationFileChanged() bool {
 	return configFileChanged != nil && *configFileChanged
 }
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 func ReadConfigFile(fileName string) (string, error) {}
-=======
-=======
->>>>>>> Stashed changes
 // Load loads a config file from a given path
 //   - Load will prioritize the values that are defined within
 //     the configuration files over variables defined within the environment
