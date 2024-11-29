@@ -47,7 +47,7 @@ spec:
       serviceAccountName: scanner-v4
       terminationGracePeriodSeconds: 120
       initContainers:
-      {{- if not ._rox.env.centralServices }}
+      {{- if ._rox.env.securedClusterCertRefresh }}
       - name: init-tls-certs
         image: {{ quote ._rox.image.main.fullRef }}
         command:
@@ -137,19 +137,7 @@ spec:
       - name: config-volume
         configMap:
           name: {{ default "scanner-v4-db-config" ._rox.scannerV4.db.configOverride }}
-      {{- if ._rox.env.centralServices }}
-      - name: certs
-        secret:
-          secretName: scanner-v4-db-tls
-          defaultMode: 0640
-          items:
-          - key: cert.pem
-            path: server.crt
-          - key: key.pem
-            path: server.key
-          - key: ca.pem
-            path: root.crt
-      {{- else }}
+      {{- if ._rox.env.securedClusterCertRefresh }}
       - name: certs
         emptyDir: {}
       - name: certs-legacy
@@ -167,6 +155,18 @@ spec:
         secret:
           secretName: tls-cert-scanner-v4-db
           optional: true
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      {{- else }}
+      - name: certs
+        secret:
+          secretName: scanner-v4-db-tls
+          defaultMode: 0640
           items:
           - key: cert.pem
             path: server.crt

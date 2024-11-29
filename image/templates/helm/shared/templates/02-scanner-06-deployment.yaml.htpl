@@ -49,7 +49,7 @@ spec:
       {{- if ._rox.scanner.priorityClassName }}
       priorityClassName: {{ ._rox.scanner.priorityClassName }}
       {{- end }}
-      {{- if not ._rox.env.centralServices }}
+      {{- if ._rox.env.securedClusterCertRefresh }}
       initContainers:
         - name: init-tls-certs
           image: {{ quote ._rox.image.main.fullRef }}
@@ -169,11 +169,7 @@ spec:
       - name: scanner-config-volume
         configMap:
           name: scanner-config
-      {{- if ._rox.env.centralServices }}
-      - name: certs
-        secret:
-          secretName: scanner-tls
-      {{- else }}
+      {{- if ._rox.env.securedClusterCertRefresh }}
       - name: certs
         emptyDir: {}
       - name: certs-legacy
@@ -184,6 +180,10 @@ spec:
         secret:
           secretName: tls-cert-scanner
           optional: true
+      {{- else }}
+      - name: certs
+        secret:
+          secretName: scanner-tls
       {{- end }}
       - name: vuln-temp-db
         emptyDir: {}
@@ -276,7 +276,7 @@ spec:
       priorityClassName: {{ ._rox.scanner.dbPriorityClassName }}
       {{- end }}
       initContainers:
-        {{- if not ._rox.env.centralServices }}
+        {{- if ._rox.env.securedClusterCertRefresh }}
         - name: init-tls-certs
           image: {{ quote ._rox.image.main.fullRef }}
           command:
@@ -349,19 +349,7 @@ spec:
       - name: scanner-config-volume
         configMap:
           name: scanner-config
-      {{- if ._rox.env.centralServices }}
-      - name: certs
-        secret:
-          secretName: scanner-db-tls
-          defaultMode: 0640
-          items:
-          - key: cert.pem
-            path: server.crt
-          - key: key.pem
-            path: server.key
-          - key: ca.pem
-            path: root.crt
-      {{- else }}
+      {{- if ._rox.env.securedClusterCertRefresh }}
       - name: certs
         emptyDir: {}
       - name: certs-legacy
@@ -379,6 +367,18 @@ spec:
         secret:
           secretName: tls-cert-scanner-db
           optional: true
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      {{- else }}
+      - name: certs
+        secret:
+          secretName: scanner-db-tls
+          defaultMode: 0640
           items:
           - key: cert.pem
             path: server.crt

@@ -129,6 +129,8 @@
 
 {{ include "srox.setInstallMethod" (list $) }}
 
+{{ include "srox.setSecuredClusterCertRefresh" (list $) }}
+
 {{ include "srox.applyDefaults" $ }}
 {{ include "srox.ensureCentralEndpointContainsPort" $ }}
 

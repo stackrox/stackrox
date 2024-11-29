@@ -44,7 +44,7 @@ spec:
       {{- if ._rox.scannerV4.indexer.hostAliases }}
       hostAliases: {{ toYaml ._rox.scannerV4.indexer.hostAliases | nindent 8 }}
       {{- end }}
-      {{- if not ._rox.env.centralServices }}
+      {{- if ._rox.env.securedClusterCertRefresh }}
       initContainers:
       - name: init-tls-certs
         image: {{ quote ._rox.image.main.fullRef }}
@@ -173,11 +173,7 @@ spec:
         emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
-      {{- if ._rox.env.centralServices }}
-      - name: certs
-        secret:
-          secretName: scanner-v4-indexer-tls
-      {{- else }}
+      {{- if ._rox.env.securedClusterCertRefresh }}
       - name: certs
         emptyDir: {}
       - name: certs-legacy
@@ -188,6 +184,10 @@ spec:
         secret:
           secretName: tls-cert-scanner-v4-indexer
           optional: true
+      {{- else }}
+      - name: certs
+        secret:
+          secretName: scanner-v4-indexer-tls
       {{- end }}
       - name: config-volume
         configMap:

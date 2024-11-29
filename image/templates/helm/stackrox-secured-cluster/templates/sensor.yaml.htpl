@@ -53,6 +53,7 @@ spec:
         fsGroup: 4000
       {{- end }}
       serviceAccountName: sensor
+      {{- if ._rox.env.securedClusterCertRefresh }}
       initContainers:
         - name: init-tls-certs
           image: {{ quote ._rox.image.main.fullRef }}
@@ -72,6 +73,7 @@ spec:
             readOnly: true
           - name: certs
             mountPath: /tmp/certs
+      {{- end }}
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy }}
@@ -187,6 +189,7 @@ spec:
           readOnly: true
         {{- end }}
       volumes:
+      {{- if ._rox.env.securedClusterCertRefresh }}
       - name: certs
         emptyDir: {}
       - name: certs-legacy
@@ -204,6 +207,19 @@ spec:
         secret:
           secretName: tls-cert-sensor
           optional: true
+      {{- else }}
+      - name: certs
+        secret:
+          secretName: sensor-tls
+          optional: true
+          items:
+          - key: sensor-cert.pem
+            path: cert.pem
+          - key: sensor-key.pem
+            path: key.pem
+          - key: ca.pem
+            path: ca.pem
+      {{- end }}
       - name: sensor-etc-ssl-volume
         emptyDir: {}
       - name: sensor-etc-pki-volume

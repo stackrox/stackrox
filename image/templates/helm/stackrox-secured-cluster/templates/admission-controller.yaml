@@ -53,6 +53,7 @@ spec:
         fsGroup: 4000
       {{- end }}
       serviceAccountName: admission-control
+      {{- if ._rox.env.securedClusterCertRefresh }}
       initContainers:
         - name: init-tls-certs
           image: {{ quote ._rox.image.main.fullRef }}
@@ -72,6 +73,7 @@ spec:
             readOnly: true
           - name: certs
             mountPath: /tmp/certs
+      {{- end }}
       containers:
         - image: {{ quote ._rox.image.main.fullRef }}
           imagePullPolicy: {{ ._rox.admissionControl.imagePullPolicy }}
@@ -131,6 +133,7 @@ spec:
               readOnly: true
             {{- include "srox.injectedCABundleVolumeMount" . | nindent 12 }}
       volumes:
+        {{- if ._rox.env.securedClusterCertRefresh }}
         - name: certs
           emptyDir: {}
         - name: certs-legacy
@@ -148,6 +151,19 @@ spec:
           secret:
             secretName: tls-cert-admission-control
             optional: true
+        {{- else }}
+        - name: certs
+          secret:
+            secretName: admission-control-tls
+            optional: true
+            items:
+            - key: admission-control-cert.pem
+              path: cert.pem
+            - key: admission-control-key.pem
+              path: key.pem
+            - key: ca.pem
+              path: ca.pem
+        {{- end }}
         - name: ca
           secret:
             secretName: service-ca
