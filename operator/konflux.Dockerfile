@@ -12,9 +12,8 @@ ARG VERSIONS_SUFFIX
 ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
 
 # Build the operator binary.
-# TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
-# GOTAGS="release"
+ENV GOTAGS="release"
 ENV CI=1 GOFLAGS="" CGO_ENABLED=1
 
 RUN GOOS=linux GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go image/bin/operator
