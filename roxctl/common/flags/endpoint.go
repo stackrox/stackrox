@@ -40,8 +40,8 @@ var (
 
 const (
 	caCertFileFlagName            = "ca"
-	endpointFlagName              = "endpoint"
 	directGRPCFlagName            = "direct-grpc"
+	endpointFlagName              = "endpoint"
 	forceHTTP1FlagName            = "force-http1"
 	insecureFlagName              = "insecure"
 	insecureSkipTLSVerifyFlagName = "insecure-skip-tls-verify"
