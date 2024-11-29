@@ -208,6 +208,7 @@ func (resolver *imageResolver) withImageScopeContext(ctx context.Context) contex
 		}
 	}
 	if resolver.ctx == nil {
+		log.Info("Image resolver withImageScopeContext")
 		resolver.ctx = sac.WithUnrestrictedResourceRead(ctx, resources.Image)
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{

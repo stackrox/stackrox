@@ -107,6 +107,7 @@ func WithUnrestrictedResourceReadWrite(ctx context.Context, resource permissions
 }
 
 func withUnrestrictedResourceAccess(ctx context.Context, access storage.Access, resource permissions.ResourceMetadata) context.Context {
+	log.Info("withUnrestrictedResourceAccess for (", access.String(), ",", resource.String(), ")")
 	wrappedScopeCheckerCore := globalAccessScopeCheckerCore(ctx)
 	wrappedResourceAccessScope, err := wrappedScopeCheckerCore.EffectiveAccessScope(permissions.ResourceWithAccess{Access: access, Resource: resource})
 	// If the existing access scope for the target resource is already unrestricted, don't wrap.
