@@ -25,8 +25,9 @@ import (
 )
 
 const (
-	timeout          = 5 * time.Second
 	backupMaxTimeout = 4 * time.Hour
+	// Keep test timeout smaller than the UI timeout (see apps/platform/src/services/instance.js#7).
+	testMaxTimeout = 9 * time.Second
 
 	backupPrefix = "stackrox-backup"
 	timeFormat   = "2006-01-02-15-04-05"
@@ -83,11 +84,8 @@ func newGCS(integration *storage.ExternalBackup) (*gcs, error) {
 	}, nil
 }
 
-func (s *gcs) send(client *googleStorage.Client, duration time.Duration, objectPath string, reader io.Reader) error {
-	ctx, cancel := context.WithTimeout(context.Background(), duration)
-	defer cancel()
-
-	bucketHandle := client.Bucket(s.bucket)
+func (s *gcs) send(ctx context.Context, objectPath string, reader io.Reader) error {
+	bucketHandle := s.client.Bucket(s.bucket)
 	wc := bucketHandle.Object(objectPath).NewWriter(ctx)
 	if _, err := io.Copy(wc, reader); err != nil {
 		if err := wc.Close(); err != nil {
@@ -101,11 +99,8 @@ func (s *gcs) send(client *googleStorage.Client, duration time.Duration, objectP
 	return nil
 }
 
-func (s *gcs) delete(client *googleStorage.Client, objectPath string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-
-	bucketHandle := client.Bucket(s.bucket)
+func (s *gcs) delete(ctx context.Context, objectPath string) error {
+	bucketHandle := s.client.Bucket(s.bucket)
 	err := bucketHandle.Object(objectPath).Delete(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "deleting object: %s", objectPath)
@@ -113,10 +108,8 @@ func (s *gcs) delete(client *googleStorage.Client, objectPath string) error {
 	return nil
 }
 
-func (s *gcs) pruneBackupsIfNecessary(client *googleStorage.Client) error {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	bucketHandle := client.Bucket(s.bucket)
+func (s *gcs) pruneBackupsIfNecessary(ctx context.Context) error {
+	bucketHandle := s.client.Bucket(s.bucket)
 	objectIterator := bucketHandle.Objects(ctx, &googleStorage.Query{
 		Prefix: s.objectPrefix,
 	})
@@ -150,7 +143,7 @@ func (s *gcs) pruneBackupsIfNecessary(client *googleStorage.Client) error {
 	numBackupsToRemove := len(currentBackups) - s.backupsToKeep
 	for _, attrToRemove := range currentBackups[:numBackupsToRemove] {
 		log.Infof("Pruning old backup %s", attrToRemove.Name)
-		if err := s.delete(client, attrToRemove.Name); err != nil {
+		if err := s.delete(ctx, attrToRemove.Name); err != nil {
 			errorList.AddError(s.createError(
 				fmt.Sprintf("deleting object %q from bucket %q", attrToRemove.Name, s.bucket), err),
 			)
@@ -173,26 +166,31 @@ func (s *gcs) Backup(reader io.ReadCloser) error {
 			log.Errorf("Error closing reader: %v", err)
 		}
 	}()
+	ctx, cancel := context.WithTimeout(context.Background(), backupMaxTimeout)
+	defer cancel()
 
 	key := fmt.Sprintf("%s-%s.zip", backupPrefix, formattedTime())
 	formattedKey := s.prefixKey(key)
 
 	log.Infof("Starting GCS Backup for file %v", formattedKey)
-	if err := s.send(s.client, backupMaxTimeout, formattedKey, reader); err != nil {
+	if err := s.send(ctx, formattedKey, reader); err != nil {
 		return s.createError(fmt.Sprintf("creating backup in bucket %q with key %q", s.bucket, formattedKey), err)
 	}
 	log.Info("Successfully backed up to GCS")
-	return s.pruneBackupsIfNecessary(s.client)
+	return s.pruneBackupsIfNecessary(ctx)
 }
 
 func (s *gcs) Test() error {
+	ctx, cancel := context.WithTimeout(context.Background(), testMaxTimeout)
+	defer cancel()
+
 	formattedKey := s.prefixKey(fmt.Sprintf("%s-test-%s", backupPrefix, formattedTime()))
 	reader := strings.NewReader("This is a test of the StackRox integration with this bucket")
-	if err := s.send(s.client, timeout, formattedKey, reader); err != nil {
+	if err := s.send(ctx, formattedKey, reader); err != nil {
 		return s.createError(fmt.Sprintf("creating test object %q in bucket %q", formattedKey, s.bucket), err)
 	}
 
-	if err := s.delete(s.client, formattedKey); err != nil {
+	if err := s.delete(ctx, formattedKey); err != nil {
 		return s.createError(fmt.Sprintf("deleting test object %q from bucket %q",
 			formattedKey, s.bucket), err)
 	}
